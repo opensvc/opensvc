@@ -27,6 +27,7 @@ import rcLogger
 import logging
 import rcAddService
 import rcLXC
+import rcHosted
 
 def install_actions(conf):
 	rcEnv.do = rcAction.do()
@@ -38,19 +39,19 @@ def install_actions(conf):
 	generic_actions = [ 'syncnodes', 'syncdrp', 'start', 'stop',
 			    'startapp', 'stopapp' ]
 	rcEnv.actions = generic_actions
-	mode = conf.get("default", "mode")
-	print "1XXXXXXXX"
+	if conf.has_option("default", "mode"):
+		rcEnv.svcmode = conf.get("default", "mode")
+	else:
+		rcEnv.svcmode = "hosted"
 
-	if mode is None or mode == "hosted":
-		rcEnv.do.configure = rcHosted.configure
+	if rcEnv.svcmode == "hosted":
 		rcEnv.do.syncnodes = rcHosted.syncnodes
 		rcEnv.do.syncdrp = rcHosted.syncdrp
 		rcEnv.do.start = rcHosted.start
 		rcEnv.do.stop = rcHosted.stop
 		rcEnv.do.startapp = rcHosted.startapp
 		rcEnv.do.stopapp = rcHosted.stopapp
-		rcEnv.do.start = rcLXC.start
-		print "3XXXXXXXX"
+		rcEnv.do.start = rcHosted.start
 		if conf.has_section("fs1") is True or conf.has_section("disk1"):
 			rcEnv.actions.extend(["mount", "umount"])
 			rcEnv.do.mount = rcHosted.mount
@@ -63,13 +64,17 @@ def install_actions(conf):
 			rcEnv.actions.extend(["startip", "stopip"])
 			rcEnv.do.startip = rcHosted.startip
 			rcEnv.do.stopip = rcHosted.stopip
-	elif mode == "lxc":
+			rcEnv.ips = []
+			ipname = conf.get("ip1", "ipname")
+			ipdev = conf.get("ip1", "ipdev")
+			ip = rcHosted.ip(ipname, ipdev)
+			rcEnv.ips.append(ip)
+	elif rcEnv.svcmode == "lxc":
 		rcEnv.actions.append("configure")
 		rcEnv.do.configure = rcLXC.configure
 		rcEnv.do.syncnodes = rcLXC.syncnodes
 		rcEnv.do.syncdrp = rcLXC.syncdrp
 		rcEnv.do.start = rcLXC.start
-		print "2XXXXXXXX"
 		rcEnv.do.stop = rcLXC.stop
 		rcEnv.do.startapp = rcLXC.startapp
 		rcEnv.do.stopapp = rcLXC.stopapp
@@ -129,6 +134,7 @@ class svc:
 		log.debug('service name = ' + rcEnv.svcname)
 		log.debug('service config file = ' + rcEnv.svcconf)
                 log.debug('service log file = ' + rcEnv.logfile)
+                log.debug('service init dir = ' + rcEnv.svcinitd)
 		log.debug('service supported actions = ' + str(rcEnv.actions))
                 log.debug('sysname = ' + rcEnv.sysname)
                 log.debug('nodename = ' + rcEnv.nodename)
@@ -140,7 +146,7 @@ class svc:
                 log.debug('pathlib = ' + rcEnv.pathlib)
                 log.debug('pathlog = ' + rcEnv.pathlog)
                 log.debug('pathtmp = ' + rcEnv.pathtmp)
-		log.debug('service mode = ' + self.cf.get('default', 'mode'))
+		log.debug('service mode = ' + rcEnv.svcmode)
 
 		#
 		# instanciate appropiate actions class

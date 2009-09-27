@@ -71,6 +71,7 @@ def discover_node():
 	rcEnv.pathvar = rcEnv.pathsvc + "/var"
 	rcEnv.logfile = rcEnv.pathlog + '/' + rcEnv.svcname + '.log'
 	rcEnv.svcconf = rcEnv.pathetc + "/" + rcEnv.svcname + ".env"
+	rcEnv.svcinitd = rcEnv.pathetc + "/" + rcEnv.svcname + ".d"
 
 	#
 	# node desc
