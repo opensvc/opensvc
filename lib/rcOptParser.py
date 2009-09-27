@@ -18,16 +18,16 @@ action_desc = {
 	'create':	'create a new service configuration file'
 }
 
-def format_desc(actions):
+def format_desc():
 	desc = "Commands available to this service:\n"
-	for a in actions:
+	for a in rcEnv.actions:
 		desc += "  {0:13s}{1:65s}\n".format(a, action_desc[a])
 	return desc
 
 class svcOptionParser:
-	def __init__(self, actions):
+	def __init__(self):
 		__ver = rcEnv.prog + " version " + str(rcEnv.ver)
-		__usage = "%prog [options] command\n\n" + format_desc(actions)
+		__usage = "%prog [options] command\n\n" + format_desc()
 		parser = optparse.OptionParser(version=__ver, usage=__usage)
 		parser.add_option("--debug", default="False",
 				  action="store_true", dest="debug",
@@ -41,7 +41,7 @@ class svcOptionParser:
 		if len(self.args) is 0:
 			parser.error("Missing action")
 		self.action = self.args[0]
-		if self.action not in actions:
+		if self.action not in rcEnv.actions:
 			parser.error("unsupported action")
 	def show(self):
 		print ":: option parser dump"

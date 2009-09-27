@@ -22,4 +22,3 @@ class rcEnv:
 	#
 	ez_startapp_bg = True
 
-
