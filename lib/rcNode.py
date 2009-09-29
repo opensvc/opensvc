@@ -20,6 +20,7 @@ import os
 import sys
 import re
 from rcGlobalEnv import *
+import logging
 
 def node_cap_ez_ha():
 	if not os.path.exists(rcEnv.ez_path):
@@ -43,41 +44,33 @@ def node_cap_lxc():
 				return False
 	return True
 
-def node_get_pathsvc():
-	return os.path.realpath(os.path.dirname(__file__) + "/..")
-
 def node_get_hostmode(d):
 	__f = d + "/host_mode"
 	if os.path.exists(__f):
 		with open(__f) as f:
 			for line in f:
-				if line is "DEV" or "EXP":
-					return line
+				w = line.split()[0]
+				if w == 'DEV' or w == 'EXP':
+					return w
 	print "Set DEV or EXP in " + __f
 	sys.exit(1)
 
 def discover_node():
 	"""Fill rcEnv class with information from node discovery
 	"""
-	#
-	# paths
-	#
-	rcEnv.pathsvc = node_get_pathsvc()
-	rcEnv.pathbin = rcEnv.pathsvc + "/bin"
-	rcEnv.pathetc = rcEnv.pathsvc + "/etc"
-	rcEnv.pathlib = rcEnv.pathsvc + "/lib"
-	rcEnv.pathlog = rcEnv.pathsvc + "/log"
-	rcEnv.pathtmp = rcEnv.pathsvc + "/tmp"
-	rcEnv.pathvar = rcEnv.pathsvc + "/var"
-	rcEnv.logfile = rcEnv.pathlog + '/' + rcEnv.svcname + '.log'
-	rcEnv.svcconf = rcEnv.pathetc + "/" + rcEnv.svcname + ".env"
-	rcEnv.svcinitd = rcEnv.pathetc + "/" + rcEnv.svcname + ".d"
+	global log
+	log = logging.getLogger('INIT')
 
 	#
 	# node desc
 	#
 	rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
-	rcEnv.hostmode = node_get_hostmode(rcEnv.pathvar)
+	log.debug('sysname = ' + rcEnv.sysname)
+	log.debug('nodename = ' + rcEnv.nodename)
+	log.debug('machine = ' + rcEnv.machine)
+
+	rcEnv.host_mode = node_get_hostmode(rcEnv.pathvar)
+	log.debug('host mode = ' + rcEnv.host_mode)
 
 	#
 	# node capabilities
@@ -87,4 +80,4 @@ def discover_node():
 		rcEnv.capabilities.append("lxc")
 	if node_cap_ez_ha():
 		rcEnv.capabilities.append("ez_ha")
-
+	log.debug('capabilities = ' + str(rcEnv.capabilities))

@@ -1,4 +1,6 @@
+import logging
+
 def addservice():
-	log = rcLogger.logger('CREATE')
+	log = logging.getLogger('CREATE')
 	log.info('enter')
 

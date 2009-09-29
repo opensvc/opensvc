@@ -1,5 +1,5 @@
 import rcIP
-import rcLogger
+import logging
 
 def start():
 	startip()
@@ -14,38 +14,38 @@ def stop():
 def startip():
 	"""startip is a noop for LXC : ips are plumbed at container start-up
 	"""
-	log = rcLogger.logger('STARTIP')
+	log = logging.getLogger('STARTIP')
 	log.info('done')
 
 def mount():
-	log = rcLogger.logger('MOUNT')
+	log = logging.getLogger('MOUNT')
 	log.info('done')
 
 def startapp():
-	log = rcLogger.logger('STARTAPP')
+	log = logging.getLogger('STARTAPP')
 	log.info('done')
 
 def stopip():
-	log = rcLogger.logger('STOPIP')
+	log = logging.getLogger('STOPIP')
 	log.info('done')
 
 def umount():
-	log = rcLogger.logger('UMOUNT')
+	log = logging.getLogger('UMOUNT')
 	log.info('done')
 
 def stopapp():
-	log = rcLogger.logger('STOPAPP')
+	log = logging.getLogger('STOPAPP')
 	log.info('done')
 
 def configure():
-	log = rcLogger.logger('CONFIGURE')
+	log = logging.getLogger('CONFIGURE')
 	log.info('done')
 
 def syncnodes():
-	log = rcLogger.logger('SYNCNODES')
+	log = logging.getLogger('SYNCNODES')
 	log.info('done')
 
 def syncdrp():
-	log = rcLogger.logger('SYNCDRP')
+	log = logging.getLogger('SYNCDRP')
 	log.info('done')
 
