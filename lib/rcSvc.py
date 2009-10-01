@@ -76,6 +76,21 @@ class svc():
 	"""
 
 	def __init__(self, name):
+		#
+		# file tree abstraction
+		#
+		rcEnv.pathsvc = os.path.realpath(os.path.dirname(__file__) + "/..")
+		rcEnv.pathbin = rcEnv.pathsvc + "/bin"
+		rcEnv.pathetc = rcEnv.pathsvc + "/etc"
+		rcEnv.pathlib = rcEnv.pathsvc + "/lib"
+		rcEnv.pathlog = rcEnv.pathsvc + "/log"
+		rcEnv.pathtmp = rcEnv.pathsvc + "/tmp"
+		rcEnv.pathvar = rcEnv.pathsvc + "/var"
+		rcEnv.logfile = rcEnv.pathlog + '/' + rcEnv.svcname + '.log'
+		rcEnv.svcconf = rcEnv.pathetc + "/" + rcEnv.svcname + ".env"
+		rcEnv.svcinitd = rcEnv.pathetc + "/" + rcEnv.svcname + ".d"
+		rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+
 		setup_logging()
 		if name == "rcService":
 			log.error("do not execute rcService directly")
@@ -84,6 +99,9 @@ class svc():
 		#
 		# print stuff we determined so far
 		#
+		log.debug('sysname = ' + rcEnv.sysname)
+		log.debug('nodename = ' + rcEnv.nodename)
+		log.debug('machine = ' + rcEnv.machine)
                 log.debug('pathsvc = ' + rcEnv.pathsvc)
                 log.debug('pathbin = ' + rcEnv.pathbin)
                 log.debug('pathetc = ' + rcEnv.pathetc)

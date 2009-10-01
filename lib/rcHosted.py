@@ -191,7 +191,7 @@ def app(name, action):
 	f = open(outf, 'a')
 	t = datetime.now()
 	f.write(str(t))
-	p = Popen([name, 'start'], stdout=PIPE)
+	p = Popen([name, action], stdout=PIPE)
 	ret = p.wait()
 	f.write(p.communicate()[0])
 	len = datetime.now() - t

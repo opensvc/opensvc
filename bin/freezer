@@ -23,10 +23,22 @@ import os
 #
 # add project lib to path
 #
-sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 
-import rcSvc
-from rcGlobalEnv import *
+from rcFreeze import Freezer
 
-rcEnv.svcname = os.path.basename(__file__)
-s = rcSvc.svc(rcEnv.svcname)
+cmd = os.path.basename(__file__)
+if len(sys.argv) == 1:
+	f = Freezer()
+elif len(sys.argv) == 2:
+	f = Freezer(sys.argv[1])
+else:
+	print __file__ + " [service]"
+	sys.exit(1)
+
+if cmd == 'svcfreeze':
+	sys.exit(f.freeze())
+elif cmd == 'svcthaw':
+	sys.exit(f.thaw())
+elif cmd == 'svcfrozen':
+	sys.exit(int(f.frozen()))

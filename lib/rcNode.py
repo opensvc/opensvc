@@ -58,16 +58,9 @@ def node_get_hostmode(d):
 def discover_node():
 	"""Fill rcEnv class with information from node discovery
 	"""
+
 	global log
 	log = logging.getLogger('INIT')
-
-	#
-	# node desc
-	#
-	rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
-	log.debug('sysname = ' + rcEnv.sysname)
-	log.debug('nodename = ' + rcEnv.nodename)
-	log.debug('machine = ' + rcEnv.machine)
 
 	rcEnv.host_mode = node_get_hostmode(rcEnv.pathvar)
 	log.debug('host mode = ' + rcEnv.host_mode)
