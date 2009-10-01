@@ -18,12 +18,12 @@
 #
 import os
 import sys
+import ConfigParser
+import logging
+
 from rcGlobalEnv import *
 from rcNode import discover_node
 import rcOptParser
-import rcAction
-import ConfigParser
-import logging
 import rcLogger
 import rcAddService
 import rcLXC
@@ -33,70 +33,18 @@ def install_actions(conf):
 	"""Setup the class svc methods as per node capabilities and
 	service configuration.
 	"""
-	rcEnv.do = rcAction.do()
-	if conf is None:
-		rcEnv.actions = [ "create" ]
-		rcEnv.do.create = rcAddService.addservice
-		return
-
-	generic_actions = [ 'syncnodes', 'syncdrp', 'start', 'stop',
-			    'startapp', 'stopapp' ]
-	rcEnv.actions = generic_actions
 	if conf.has_option("default", "mode"):
 		rcEnv.svcmode = conf.get("default", "mode")
 	else:
 		rcEnv.svcmode = "hosted"
 
 	if rcEnv.svcmode == "hosted":
-		rcEnv.do.syncnodes = rcHosted.syncnodes
-		rcEnv.do.syncdrp = rcHosted.syncdrp
-		rcEnv.do.start = rcHosted.start
-		rcEnv.do.stop = rcHosted.stop
-		rcEnv.do.startapp = rcHosted.startapp
-		rcEnv.do.stopapp = rcHosted.stopapp
-		rcEnv.do.start = rcHosted.start
-		if conf.has_section("fs1") is True or conf.has_section("disk1"):
-			rcEnv.actions.extend(["mount", "umount"])
-			rcEnv.do.mount = rcHosted.mount
-			rcEnv.do.umount = rcHosted.umount
-		if conf.has_section("nfs1") is True:
-			rcEnv.actions.extend(["mountnfs", "umountnfs"])
-			rcEnv.do.mountnfs = rcHosted.mountnfs
-			rcEnv.do.umountnfs = rcHosted.umountnfs
-		if conf.has_section("ip1") is True:
-			ipname = conf.get("ip1", "ipname")
-			ipdev = conf.get("ip1", "ipdev")
-			ip = rcHosted.ip(ipname, ipdev)
-			if ip is None:
-				log.error("initialization failed for ip1 (%s@%s)" % (ipname, ipdev))
-				return 1
-			log.debug("initialization succeeded for ip1 (%s@%s)" % (ipname, ipdev))
-			rcEnv.actions.extend(["startip", "stopip"])
-			rcEnv.do.startip = rcHosted.startip
-			rcEnv.do.stopip = rcHosted.stopip
-			rcEnv.ips = []
-			rcEnv.ips.append(ip)
+		rcEnv.do = rcHosted.hosted_do()
 	elif rcEnv.svcmode == "lxc":
-		rcEnv.actions.append("configure")
-		rcEnv.do.configure = rcLXC.configure
-		rcEnv.do.syncnodes = rcLXC.syncnodes
-		rcEnv.do.syncdrp = rcLXC.syncdrp
-		rcEnv.do.start = rcLXC.start
-		rcEnv.do.stop = rcLXC.stop
-		rcEnv.do.startapp = rcLXC.startapp
-		rcEnv.do.stopapp = rcLXC.stopapp
-		if conf.has_section("fs1") is True or conf.has_section("disk1"):
-			rcEnv.actions.extend(["mount", "umount"])
-			rcEnv.do.mount = rcLXC.mount
-			rcEnv.do.umount = rcLXC.umount
-		if conf.has_section("nfs1") is True:
-			rcEnv.actions.extend(["mountnfs", "umountnfs"])
-			rcEnv.do.mountnfs = rcLXC.mountnfs
-			rcEnv.do.umountnfs = rcLXC.umountnfs
-		if conf.has_section("ip1") is True:
-			rcEnv.actions.extend(["startip", "stopip"])
-			rcEnv.do.startip = rcLXC.startip
-			rcEnv.do.stopip = rcLXC.stopip
+		rcEnv.do = rcLXC.lxc_do()
+
+	rcEnv.actions = rcEnv.do.__dict__.keys()
+	rcEnv.actions.sort()
 	return 0
 
 def setup_logging():
@@ -158,9 +106,9 @@ class svc():
 		# class RawConfigParser instance name: 'conf'
 		#
 		if os.path.isfile(rcEnv.svcconf):
-			self.cf = ConfigParser.RawConfigParser()
-			self.cf.read(rcEnv.svcconf)
-			if install_actions(self.cf) != 0: return None
+			rcEnv.conf = ConfigParser.RawConfigParser()
+			rcEnv.conf.read(rcEnv.svcconf)
+			if install_actions(rcEnv.conf) != 0: return None
 			log.debug('service mode = ' + rcEnv.svcmode)
 		else:
 			install_actions(None)

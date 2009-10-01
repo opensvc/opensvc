@@ -1,2 +1,0 @@
-class do:
-	pass

@@ -15,7 +15,9 @@ action_desc = {
 	'syncnodes':	'send to peer nodes the service config files and additional files described in the config file',
 	'syncdrp':	'send to drp nodes the service config files and additional files described in the config file',
 	'configure':	'configure a service container, using configuration file information',
-	'create':	'create a new service configuration file'
+	'create':	'create a new service configuration file',
+	'startlxc':	'start a LinuX Container',
+	'stoplxc':	'stop a LinuX Container'
 }
 
 def format_desc():
