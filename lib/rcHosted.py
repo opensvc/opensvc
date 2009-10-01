@@ -6,6 +6,7 @@ from datetime import datetime
 from subprocess import *
 
 from rcGlobalEnv import *
+from rcFreeze import Freezer
 import rcIP
 import rcFilesystem
 import rcIfconfig
@@ -212,6 +213,15 @@ def _create():
 	log = logging.getLogger('CREATE')
 	return 0
 
+def _status():
+	rcEnv.status_net = 0
+	rcEnv.status_fs = 0
+
+	for ip in rcEnv.ips and ip.status() != 0:
+		rcEnv.status_net = rcEnv.status_net + 1
+	for fs in rcEnv.filesystems and fs.status() != 0:
+		rcEnv.status_fs = rcEnv.status_fs + 1
+
 class hosted_do:
 	start = _start
 	stop = _stop
@@ -226,8 +236,15 @@ class hosted_do:
 	create = _create
 
 	def __init__(self):
+		log = logging.getLogger('INIT')
+
 		if rcEnv.conf is None:
 			self.create = _create
+			return None
+		if Freezer(rcEnv.svcname).frozen():
+			self.status = _status
+			log.info("service is frozen")
+			return None
 
 		# generic actions
 		self.start = _start
@@ -236,6 +253,7 @@ class hosted_do:
 		self.stopapp = _stopapp
 		self.syncnodes = _syncnodes
 		self.syncdrp = _syncdrp
+		self.status = _status
 
 		if rcEnv.conf.has_section("fs1") is True or \
 		   rcEnv.conf.has_section("disk1") is True:

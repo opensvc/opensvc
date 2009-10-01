@@ -17,7 +17,8 @@ action_desc = {
 	'configure':	'configure a service container, using configuration file information',
 	'create':	'create a new service configuration file',
 	'startlxc':	'start a LinuX Container',
-	'stoplxc':	'stop a LinuX Container'
+	'stoplxc':	'stop a LinuX Container',
+	'status':	'display service resource status'
 }
 
 def format_desc():
