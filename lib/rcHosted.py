@@ -227,6 +227,19 @@ def _status():
 		status.add(fs.status())
 	print "global: %s" % status.str(status.status)
 
+def _freeze ():
+	f = Freezer(rcEnv.svcname)
+	f.freeze()
+
+def _thaw ():
+	f = Freezer(rcEnv.svcname)
+	f.thaw()
+
+def _frozen ():
+	f = Freezer(rcEnv.svcname)
+	print str(f.frozen())
+	return f.frozen()
+
 class hosted_do:
 	start = _start
 	stop = _stop
@@ -242,13 +255,20 @@ class hosted_do:
 
 	def __init__(self):
 		log = logging.getLogger('INIT')
+		instanciate_filesystems()
+		instanciate_ips()
 
 		if rcEnv.conf is None:
 			self.create = _create
 			return None
-		if Freezer(rcEnv.svcname).frozen():
-			self.status = _status
-			log.info("service is frozen")
+
+		self.status = _status
+		self.frozen = _frozen
+
+		if not Freezer(rcEnv.svcname).frozen():
+			self.freeze = _freeze
+		else:
+			self.thaw = _thaw
 			return None
 
 		# generic actions
@@ -258,18 +278,15 @@ class hosted_do:
 		self.stopapp = _stopapp
 		self.syncnodes = _syncnodes
 		self.syncdrp = _syncdrp
-		self.status = _status
 
 		if rcEnv.conf.has_section("fs1") is True or \
 		   rcEnv.conf.has_section("disk1") is True:
                         self.mount = _mount
                         self.umount = _umount
-			instanciate_filesystems()
 		if rcEnv.conf.has_section("nfs1") is True:
                         self.mountnfs = _mountnfs
                         self.umountnfs = _umountnfs
 		if rcEnv.conf.has_section("ip1") is True:
                         self.startip = _startip
                         self.stopip = _stopip
-			instanciate_ips()
 
