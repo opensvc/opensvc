@@ -5,7 +5,7 @@ import rcStatus
 import rcMounts
 from rcGlobalEnv import *
 
-class HostedFilesystem:
+class Filesystem:
 	def __init__(self, dev, mnt, type, mnt_opt):
 		log = logging.getLogger('INIT')
 		self.dev = dev

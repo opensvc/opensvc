@@ -12,46 +12,6 @@ import rcIP
 import rcFilesystem
 import rcIfconfig
 
-def instanciate_ip(section):
-	log = logging.getLogger('INIT')
-	ipname = rcEnv.conf.get(section, "ipname")
-	ipdev = rcEnv.conf.get(section, "ipdev")
-	ip = HostedIp(ipname, ipdev)
-	if ip is None:
-		log.error("initialization failed for %s (%s@%s)" %
-			 (section, ipname, ipdev))
-		return 1
-	log.debug("initialization succeeded for %s (%s@%s)" %
-		 (section, ipname, ipdev))
-	rcEnv.ips.append(ip)
-
-def instanciate_ips():
-	rcEnv.ips = []
-	for s in rcEnv.conf.sections():
-		if 'ip' in s:
-			instanciate_ip(s)
-
-def instanciate_filesystem(section):
-	log = logging.getLogger('INIT')
-	dev = rcEnv.conf.get(section, "dev")
-	mnt = rcEnv.conf.get(section, "mnt")
-	type = rcEnv.conf.get(section, "type")
-	mnt_opt = rcEnv.conf.get(section, "mnt_opt")
-	fs = rcFilesystem.HostedFilesystem(dev, mnt, type, mnt_opt)
-	if fs is None:
-		log.error("initialization failed for %s (%s %s %s %s)" %
-			 (section, dev, mnt, type, mnt_opt))
-		return 1
-	log.debug("initialization succeeded for %s (%s %s %s %s)" %
-		 (section, dev, mnt, type, mnt_opt))
-	rcEnv.filesystems.append(fs)
-
-def instanciate_filesystems():
-	rcEnv.filesystems = []
-	for s in rcEnv.conf.sections():
-		if 'fs' in s:
-			instanciate_filesystem(s)
-
 def next_stacked_dev(dev):
 	"""Return the first available interfaceX:Y on  interfaceX
 	"""
@@ -80,7 +40,7 @@ def get_stacked_dev(dev, addr, log):
 		log.debug("allocate new stacked device %s" % stacked_dev)
 	return stacked_dev
 
-class HostedIp(rcIP.ip):
+class Ip(rcIP.ip):
 	def __init__(self, name, dev):
 		log = logging.getLogger('INIT')
 		rcIP.ip.__init__(self, name, dev)
@@ -140,6 +100,10 @@ class HostedIp(rcIP.ip):
 			log.error("failed")
 			return 1
 		return 0
+
+class Filesystem(rcFilesystem.Filesystem):
+	def __init__(self, dev, mnt, type, mnt_opt):
+		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
 def _start():
 	if _startip() != 0: return 1
@@ -240,7 +204,7 @@ def _frozen ():
 	print str(f.frozen())
 	return f.frozen()
 
-class hosted_do:
+class do:
 	start = _start
 	stop = _stop
 	startip = _startip
@@ -255,8 +219,6 @@ class hosted_do:
 
 	def __init__(self):
 		log = logging.getLogger('INIT')
-		instanciate_filesystems()
-		instanciate_ips()
 
 		if rcEnv.conf is None:
 			self.create = _create

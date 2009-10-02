@@ -97,7 +97,7 @@ def _create(self):
 	log = logging.getLogger('CREATE')
 	return 0
 
-class lxc_do(rcHosted.hosted_do):
+class do(rcHosted.do):
 	"""
 	start = _start
 	stop = _stop
@@ -141,7 +141,7 @@ class lxc_do(rcHosted.hosted_do):
 			self.stopip = _stopip
 	"""
 	def __init__(self):
-		rcHosted.hosted_do.__init__(self)
+		rcHosted.do.__init__(self)
 		self.startlxc = _startlxc
 		self.stoplxc = _stoplxc
 

@@ -22,7 +22,7 @@ def _merge(s1, s2):
 	if (s1, s2) == (NA, NA): return NA
 	if (s1, s2) == (NA, TODO): return WARN
 	if (s1, s2) == (TODO, TODO): return TODO
-	return merge(s2, s1)
+	return _merge(s2, s1)
 
 class Status:
 	"""Class that wraps printing and calculation of resource status

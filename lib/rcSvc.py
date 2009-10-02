@@ -26,20 +26,38 @@ from rcNode import discover_node
 import rcOptParser
 import rcLogger
 import rcAddService
-import rcLXC
-import rcHosted
 
-def install_actions(conf):
+def svcmode_mod_name():
+	if rcEnv.svcmode == 'lxc':
+		return 'rcLXC'
+	elif rcEnv.svcmode == 'hosted':
+		return 'rcHosted'
+	return 1 # raise something instead ?
+
+def add_ips(self):
+	rcEnv.ips = []
+	for s in rcEnv.conf.sections():
+		if 'ip' in s:
+			ipname = rcEnv.conf.get(s, "ipname")
+			ipdev = rcEnv.conf.get(s, "ipdev")
+			self.add_ip(ipname, ipdev)
+
+def add_filesystems(self):
+	rcEnv.filesystems = []
+	for s in rcEnv.conf.sections():
+		if 'fs' in s:
+			dev = rcEnv.conf.get(s, "dev")
+			mnt = rcEnv.conf.get(s, "mnt")
+			type = rcEnv.conf.get(s, "type")
+			mnt_opt = rcEnv.conf.get(s, "mnt_opt")
+			self.add_filesystem(dev, mnt, type, mnt_opt)
+
+def install_actions():
 	"""Setup the class svc methods as per node capabilities and
 	service configuration.
 	"""
-	if conf.has_option("default", "mode"):
-		rcEnv.svcmode = conf.get("default", "mode")
-	else:
-		rcEnv.svcmode = "hosted"
-
 	if rcEnv.svcmode == "hosted":
-		rcEnv.do = rcHosted.hosted_do()
+		rcEnv.do = rcEnv.rcMode.do()
 	elif rcEnv.svcmode == "lxc":
 		rcEnv.do = rcLXC.lxc_do()
 
@@ -74,6 +92,27 @@ class svc():
 	It's meant to be enriched by inheriting class for specialized services,
 	like LXC containers, ...
 	"""
+	def add_ip(self, ipname, ipdev):
+		log = logging.getLogger('INIT')
+		ip = rcEnv.rcMode.Ip(ipname, ipdev)
+		if ip is None:
+			log.error("initialization failed for ip (%s@%s)" %
+				 (ipname, ipdev))
+			return 1
+		log.debug("initialization succeeded for ip (%s@%s)" %
+			 (ipname, ipdev))
+		rcEnv.ips.append(ip)
+
+	def add_filesystem(self, dev, mnt, type, mnt_opt):
+		log = logging.getLogger('INIT')
+		fs = rcEnv.rcMode.Filesystem(dev, mnt, type, mnt_opt)
+		if fs is None:
+			log.error("initialization failed for fs (%s %s %s %s)" %
+				 (dev, mnt, type, mnt_opt))
+			return 1
+		log.debug("initialization succeeded for fs (%s %s %s %s)" %
+			 (dev, mnt, type, mnt_opt))
+		rcEnv.filesystems.append(fs)
 
 	def __init__(self, name):
 		#
@@ -123,13 +162,18 @@ class svc():
 		# parse service configuration file
 		# class RawConfigParser instance name: 'conf'
 		#
+		rcEnv.svcmode = "hosted"
 		if os.path.isfile(rcEnv.svcconf):
 			rcEnv.conf = ConfigParser.RawConfigParser()
 			rcEnv.conf.read(rcEnv.svcconf)
-			if install_actions(rcEnv.conf) != 0: return None
-			log.debug('service mode = ' + rcEnv.svcmode)
-		else:
-			install_actions(None)
+			if rcEnv.conf.has_option("default", "mode"):
+				rcEnv.svcmode = conf.get("default", "mode")
+
+		log.debug('service mode = ' + rcEnv.svcmode)
+		rcEnv.rcMode = __import__(svcmode_mod_name(), globals(), locals(), [], -1)
+
+		if install_actions() != 0: return None
+
 		log.debug('service supported actions = ' + str(rcEnv.actions))
 
 		#
@@ -138,6 +182,8 @@ class svc():
 		#
 		self.parser = rcOptParser.svcOptionParser()
 
+		add_ips(self)
+		add_filesystems(self)
 		#
 		# instanciate appropiate actions class
 		# class do instance name: 'do'
