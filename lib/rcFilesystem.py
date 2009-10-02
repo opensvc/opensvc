@@ -1,6 +1,7 @@
 import logging
 import os
 
+import rcStatus
 import rcMounts
 from rcGlobalEnv import *
 
@@ -19,12 +20,15 @@ class HostedFilesystem:
 
 	def is_up(self):
 		if rcEnv.Mounts.has_mount(self.dev, self.mnt) != 0:
-			return 1
-		return 0
+			return False
+		return True
+
+	def status(self):
+		return rcStatus.TODO
 
 	def start(self):
 		log = logging.getLogger('MOUNT')
-                if self.is_up() == 0:
+                if self.is_up() is True:
                         log.info("fs(%s %s) is already mounted"%
 				(self.dev, self.mnt))
                         return 0
@@ -37,7 +41,7 @@ class HostedFilesystem:
 
 	def stop(self):
 		log = logging.getLogger('UMOUNT')
-                if self.is_up() != 0:
+                if self.is_up() is False:
                         log.info("fs(%s %s) is already umounted"%
 				(self.dev, self.mnt))
                         return 0

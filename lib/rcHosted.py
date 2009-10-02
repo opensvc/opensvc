@@ -7,6 +7,7 @@ from subprocess import *
 
 from rcGlobalEnv import *
 from rcFreeze import Freezer
+import rcStatus
 import rcIP
 import rcFilesystem
 import rcIfconfig
@@ -85,18 +86,21 @@ class HostedIp(rcIP.ip):
 		rcIP.ip.__init__(self, name, dev)
 
 	def is_up(self):
+		rcEnv.ifconfig = rcIfconfig.ifconfig()
+		rcEnv.ifconfig.interface(self.dev).show()
+
 		if rcEnv.ifconfig.has_param("ipaddr", self.addr) is not None:
-			return 0
-		return 1
+			return True
+		return False
+
+	def status(self):
+		if self.is_up() is True:
+			return rcStatus.UP
+		else:
+			return rcStatus.DOWN
 
 	def start(self):
 		log = logging.getLogger('STARTIP')
-
-		#
-		# fetch ifconfig information
-		#
-		rcEnv.ifconfig = rcIfconfig.ifconfig()
-		rcEnv.ifconfig.interface(self.dev).show()
 
 		if not rcEnv.ifconfig.interface(self.dev).flag_up:
 			log.error("Device %s is not up. Cannot stack over it." % self.dev)
@@ -110,7 +114,7 @@ class HostedIp(rcIP.ip):
 			log.error("No netmask set on parent interface %s" % self.dev)
 			return None
 
-		if self.is_up() == 0:
+		if self.is_up() is True:
 			log.info("%s is already up on %s" % (self.addr, self.dev))
 			return 0
 		if self.mask == '':
@@ -127,7 +131,7 @@ class HostedIp(rcIP.ip):
 		log = logging.getLogger('STOPIP')
 		rcEnv.ifconfig = rcIfconfig.ifconfig()
 		rcEnv.ifconfig.interface(self.dev).show()
-		if self.is_up() != 0:
+		if self.is_up() is False:
 			log.info("%s is already down on %s" % (self.addr, self.dev))
 			return 0
 		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
@@ -214,13 +218,14 @@ def _create():
 	return 0
 
 def _status():
-	rcEnv.status_net = 0
-	rcEnv.status_fs = 0
-
-	for ip in rcEnv.ips and ip.status() != 0:
-		rcEnv.status_net = rcEnv.status_net + 1
-	for fs in rcEnv.filesystems and fs.status() != 0:
-		rcEnv.status_fs = rcEnv.status_fs + 1
+	status = rcStatus.Status()
+	for ip in rcEnv.ips:
+		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
+		status.add(ip.status())
+	for fs in rcEnv.filesystems:
+		print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
+		status.add(fs.status())
+	print "global: %s" % status.str(status.status)
 
 class hosted_do:
 	start = _start
