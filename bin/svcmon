@@ -23,13 +23,21 @@ import os
 #
 # add project lib to path
 #
-sys.path.append(os.path.join(os.path.dirname(__file__), '..' , 'lib'))
+pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathetc = os.path.join(pathsvc, 'etc')
+rcService = os.path.join(pathsvc, 'bin', 'rcService')
+sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import rcSvc
-import rcOptParser
 from rcGlobalEnv import rcEnv
 
+def is_service(f):
+	if os.path.realpath(f) == os.path.realpath(rcService):
+		return True
+	return False
 
-s = rcSvc.svc(os.path.basename(__file__))
-parser = rcOptParser.svcOptionParser()
-getattr(rcEnv.do, parser.action)()
+for name in os.listdir(pathetc):
+	if is_service(os.path.join(pathetc, name)):
+		print name
+		s = rcSvc.svc(name)
+		rcEnv.do.status()

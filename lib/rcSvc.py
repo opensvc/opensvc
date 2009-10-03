@@ -118,16 +118,17 @@ class svc():
 		#
 		# file tree abstraction
 		#
-		rcEnv.pathsvc = os.path.realpath(os.path.dirname(__file__) + "/..")
-		rcEnv.pathbin = rcEnv.pathsvc + "/bin"
-		rcEnv.pathetc = rcEnv.pathsvc + "/etc"
-		rcEnv.pathlib = rcEnv.pathsvc + "/lib"
-		rcEnv.pathlog = rcEnv.pathsvc + "/log"
-		rcEnv.pathtmp = rcEnv.pathsvc + "/tmp"
-		rcEnv.pathvar = rcEnv.pathsvc + "/var"
-		rcEnv.logfile = rcEnv.pathlog + '/' + rcEnv.svcname + '.log'
-		rcEnv.svcconf = rcEnv.pathetc + "/" + rcEnv.svcname + ".env"
-		rcEnv.svcinitd = rcEnv.pathetc + "/" + rcEnv.svcname + ".d"
+		rcEnv.svcname = name
+		rcEnv.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+		rcEnv.pathbin = os.path.join(rcEnv.pathsvc, 'bin')
+		rcEnv.pathetc = os.path.join(rcEnv.pathsvc, 'etc')
+		rcEnv.pathlib = os.path.join(rcEnv.pathsvc, 'lib')
+		rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
+		rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
+		rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
+		rcEnv.logfile = os.path.join(rcEnv.pathlog, rcEnv.svcname) + '.log'
+		rcEnv.svcconf = os.path.join(rcEnv.pathetc, rcEnv.svcname) + '.env'
+		rcEnv.svcinitd = os.path.join(rcEnv.pathetc, rcEnv.svcname) + '.d'
 		rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
 
 		setup_logging()
@@ -169,6 +170,9 @@ class svc():
 			if rcEnv.conf.has_option("default", "mode"):
 				rcEnv.svcmode = conf.get("default", "mode")
 
+		#
+		# dynamically import the action class matching the service mode
+		#
 		log.debug('service mode = ' + rcEnv.svcmode)
 		rcEnv.rcMode = __import__(svcmode_mod_name(), globals(), locals(), [], -1)
 
@@ -176,17 +180,6 @@ class svc():
 
 		log.debug('service supported actions = ' + str(rcEnv.actions))
 
-		#
-		# parse command line
-		# class svcOptionParser instance name: 'parser'
-		#
-		self.parser = rcOptParser.svcOptionParser()
-
 		add_ips(self)
 		add_filesystems(self)
-		#
-		# instanciate appropiate actions class
-		# class do instance name: 'do'
-		#
-		getattr(rcEnv.do, self.parser.action)()
 
