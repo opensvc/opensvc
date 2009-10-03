@@ -24,7 +24,10 @@ class Filesystem:
 		return True
 
 	def status(self):
-		return rcStatus.TODO
+		if self.is_up() is True:
+			return rcStatus.UP
+		else:
+			return rcStatus.DOWN
 
 	def start(self):
 		log = logging.getLogger('MOUNT')

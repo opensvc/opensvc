@@ -61,6 +61,8 @@ class Ip(rcIP.ip):
 
 	def start(self):
 		log = logging.getLogger('STARTIP')
+		rcEnv.ifconfig = rcIfconfig.ifconfig()
+		rcEnv.ifconfig.interface(self.dev).show()
 
 		if not rcEnv.ifconfig.interface(self.dev).flag_up:
 			log.error("Device %s is not up. Cannot stack over it." % self.dev)

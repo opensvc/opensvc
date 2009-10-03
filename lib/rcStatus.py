@@ -3,10 +3,12 @@ DOWN = 1
 WARN = 2
 NA = 3
 TODO = 4
+UNDEF = 4
 
 def _merge(s1, s2):
 	"""Merge too status: WARN and TODO taint UP and DOWN
 	"""
+	if s1 == UNDEF: return s2
 	if (s1, s2) == (UP, UP): return UP
 	if (s1, s2) == (UP, DOWN): return WARN
 	if (s1, s2) == (UP, WARN): return WARN
@@ -27,7 +29,7 @@ def _merge(s1, s2):
 class Status:
 	"""Class that wraps printing and calculation of resource status
 	"""
-	status = 0
+	status = UNDEF
 
 	def str(self, s):
 		if s == UP: return 'UP'
@@ -35,9 +37,10 @@ class Status:
 		if s == WARN: return 'WARN'
 		if s == NA: return 'N/A'
 		if s == TODO: return 'TODO'
+		if s == UNDEF: return 'UNDEF'
 
 	def reset(self):
-		self.status = 0
+		self.status = UNDEF
 
 	def add(self, s):
 		"""Merge a status with current global status
