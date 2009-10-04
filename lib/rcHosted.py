@@ -94,6 +94,9 @@ class Ip(rcIp.ip):
 		if self.is_up() is True:
 			log.info("%s is already up on %s" % (self.addr, self.dev))
 			return 0
+		if self.is_alive():
+			log.error("%s@%s is already up on another host" % (self.addr, self.dev))
+			return 1
 		if self.mask == '':
 			log.error("No netmask found. Abort")
 			return 1

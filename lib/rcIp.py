@@ -17,8 +17,17 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import socket
+import os
 
 class ip:
+	def is_alive(self):
+		count=1
+		timeout=5
+		cmd = [ 'ping', '-c', count, '-W', timeout, self.addr ]
+		if os.spawnlp(os.P_WAIT, cmd) != 0:
+			return True
+		return False
+
 	def __init__(self, name, dev):
 		self.name = name
 		self.dev = dev
