@@ -1,2 +1,6 @@
 *.pyc
 *.swp
+etc/
+log/
+var/
+test/

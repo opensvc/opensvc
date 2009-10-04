@@ -170,12 +170,12 @@ def app(name, action):
 	f.close()
 
 def _startapp():
-	for name in glob.glob(rcEnv.svcinitd + '/S*'):
+	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):
 		app(name, 'start')
 	return 0
 
 def _stopapp():
-	for name in glob.glob(rcEnv.svcinitd + '/K*'):
+	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'K*')):
 		app(name, 'stop')
 	return 0
 
