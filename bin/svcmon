@@ -29,7 +29,6 @@ rcService = os.path.join(pathsvc, 'bin', 'rcService')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import rcSvc
-from rcGlobalEnv import rcEnv
 
 def is_service(f):
 	if os.path.realpath(f) != os.path.realpath(rcService):
