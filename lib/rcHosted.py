@@ -107,45 +107,45 @@ class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
-def _start():
-	if _startip() != 0: return 1
-	if _mount() != 0: return 1
-	if _startapp() != 0: return 1
+def start():
+	if startip() != 0: return 1
+	if mount() != 0: return 1
+	if startapp() != 0: return 1
 	return 0
 
-def _stop():
-	if _stopapp() != 0: return 1
-	if _umount() != 0: return 1
-	if _stopip() != 0: return 1
+def stop():
+	if stopapp() != 0: return 1
+	if umount() != 0: return 1
+	if stopip() != 0: return 1
 	return 0
 
-def _syncnodes():
+def syncnodes():
 	log = logging.getLogger('SYNCNODES')
 	return 0
 
-def _syncdrp():
+def syncdrp():
 	log = logging.getLogger('SYNCDRP')
 	return 0
 
-def _startip():
+def startip():
 	log = logging.getLogger('STARTIP')
 	for ip in rcEnv.ips:
 		if ip.start() != 0: return 1
 	return 0
 
-def _stopip():
+def stopip():
 	log = logging.getLogger('STOPIP')
 	for ip in rcEnv.ips:
 		if ip.stop() != 0: return 1
 	return 0
 
-def _mount():
+def mount():
 	log = logging.getLogger('MOUNT')
 	for f in rcEnv.filesystems:
 		if f.start() != 0: return 1
 	return 0
 
-def _umount():
+def umount():
 	log = logging.getLogger('UMOUNT')
 	for f in rcEnv.filesystems:
 		if f.stop() != 0: return 1
@@ -169,21 +169,21 @@ def app(name, action):
 	log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
 	f.close()
 
-def _startapp():
+def startapp():
 	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):
 		app(name, 'start')
 	return 0
 
-def _stopapp():
+def stopapp():
 	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'K*')):
 		app(name, 'stop')
 	return 0
 
-def _create():
+def create():
 	log = logging.getLogger('CREATE')
 	return 0
 
-def _status():
+def status():
 	status = rcStatus.Status()
 	for ip in rcEnv.ips:
 		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
@@ -193,15 +193,15 @@ def _status():
 		status.add(fs.status())
 	print "global: %s" % status.str(status.status)
 
-def _freeze ():
+def freeze ():
 	f = Freezer(rcEnv.svcname)
 	f.freeze()
 
-def _thaw ():
+def thaw ():
 	f = Freezer(rcEnv.svcname)
 	f.thaw()
 
-def _frozen ():
+def frozen ():
 	f = Freezer(rcEnv.svcname)
 	print str(f.frozen())
 	return f.frozen()

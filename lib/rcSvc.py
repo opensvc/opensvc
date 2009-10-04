@@ -28,66 +28,66 @@ import rcOptParser
 import rcLogger
 import rcAddService
 
-def svcmode_mod_name():
-	if rcEnv.svcmode == 'lxc':
+def svcmode_mod_name(svcmode=''):
+	if svcmode == 'lxc':
 		return 'rcLXC'
-	elif rcEnv.svcmode == 'hosted':
+	elif svcmode == 'hosted':
 		return 'rcHosted'
 	return 1 # raise something instead ?
 
 def add_ips(self):
 	rcEnv.ips = []
-	for s in rcEnv.conf.sections():
+	for s in self.conf.sections():
 		if 'ip' in s:
-			ipname = rcEnv.conf.get(s, "ipname")
-			ipdev = rcEnv.conf.get(s, "ipdev")
+			ipname = self.conf.get(s, "ipname")
+			ipdev = self.conf.get(s, "ipdev")
 			self.add_ip(ipname, ipdev)
 
 def add_filesystems(self):
 	rcEnv.filesystems = []
-	for s in rcEnv.conf.sections():
+	for s in self.conf.sections():
 		if 'fs' in s:
-			dev = rcEnv.conf.get(s, "dev")
-			mnt = rcEnv.conf.get(s, "mnt")
-			type = rcEnv.conf.get(s, "type")
-			mnt_opt = rcEnv.conf.get(s, "mnt_opt")
+			dev = self.conf.get(s, "dev")
+			mnt = self.conf.get(s, "mnt")
+			type = self.conf.get(s, "type")
+			mnt_opt = self.conf.get(s, "mnt_opt")
 			self.add_filesystem(dev, mnt, type, mnt_opt)
 
 def install_actions(self):
 	"""Setup the class svc methods as per node capabilities and
 	service configuration.
 	"""
-	if rcEnv.conf is None:
-		self.create = self.rcMode._create
+	if self.conf is None:
+		self.create = self.rcMode.create
 		return None
 
-	self.status = self.rcMode._status
-	self.frozen = self.rcMode._frozen
+	self.status = self.rcMode.status
+	self.frozen = self.rcMode.frozen
 
 	if not Freezer(rcEnv.svcname).frozen():
-		self.freeze = self.rcMode._freeze
+		self.freeze = self.rcMode.freeze
 	else:
-		self.thaw = self.rcMode._thaw
+		self.thaw = self.rcMode.thaw
 		return None
 
 	# generic actions
-	self.start = self.rcMode._start
-	self.stop = self.rcMode._stop
-	self.startapp = self.rcMode._startapp
-	self.stopapp = self.rcMode._stopapp
-	self.syncnodes = self.rcMode._syncnodes
-	self.syncdrp = self.rcMode._syncdrp
+	self.start = self.rcMode.start
+	self.stop = self.rcMode.stop
+	self.startapp = self.rcMode.startapp
+	self.stopapp = self.rcMode.stopapp
+	self.syncnodes = self.rcMode.syncnodes
+	self.syncdrp = self.rcMode.syncdrp
 
-	if rcEnv.conf.has_section("fs1") is True or \
-	   rcEnv.conf.has_section("disk1") is True:
-		self.mount = self.rcMode._mount
-		self.umount = self.rcMode._umount
-	if rcEnv.conf.has_section("nfs1") is True:
-		self.mountnfs = self.rcMode._mountnfs
-		self.umountnfs = self.rcMode._umountnfs
-	if rcEnv.conf.has_section("ip1") is True:
-		self.startip = self.rcMode._startip
-		self.stopip = self.rcMode._stopip
+	if self.conf.has_section("fs1") is True or \
+	   self.conf.has_section("disk1") is True:
+		self.mount = self.rcMode.mount
+		self.umount = self.rcMode.umount
+	if self.conf.has_section("nfs1") is True:
+		self.mountnfs = self.rcMode.mountnfs
+		self.umountnfs = self.rcMode.umountnfs
+	if self.conf.has_section("ip1") is True:
+		self.startip = self.rcMode.startip
+		self.stopip = self.rcMode.stopip
 
 	return 0
 
@@ -189,18 +189,18 @@ class svc():
 		# parse service configuration file
 		# class RawConfigParser instance name: 'conf'
 		#
-		rcEnv.svcmode = "hosted"
+		self.svcmode = "hosted"
 		if os.path.isfile(rcEnv.svcconf):
-			rcEnv.conf = ConfigParser.RawConfigParser()
-			rcEnv.conf.read(rcEnv.svcconf)
-			if rcEnv.conf.has_option("default", "mode"):
-				rcEnv.svcmode = conf.get("default", "mode")
+			self.conf = ConfigParser.RawConfigParser()
+			self.conf.read(rcEnv.svcconf)
+			if self.conf.has_option("default", "mode"):
+				self.svcmode = conf.get("default", "mode")
 
 		#
 		# dynamically import the action class matching the service mode
 		#
-		log.debug('service mode = ' + rcEnv.svcmode)
-		self.rcMode = __import__(svcmode_mod_name(), globals(), locals(), [], -1)
+		log.debug('service mode = ' + self.svcmode)
+		self.rcMode = __import__(svcmode_mod_name(self.svcmode), globals(), locals(), [], -1)
 
 		if install_actions(self) != 0: return None
 

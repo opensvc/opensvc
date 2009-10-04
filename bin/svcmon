@@ -32,9 +32,11 @@ import rcSvc
 from rcGlobalEnv import rcEnv
 
 def is_service(f):
-	if os.path.realpath(f) == os.path.realpath(rcService):
-		return True
-	return False
+	if os.path.realpath(f) != os.path.realpath(rcService):
+		return False
+	if not os.path.exists(f + '.env'):
+		return False
+	return True
 
 for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
