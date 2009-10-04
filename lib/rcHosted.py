@@ -26,7 +26,7 @@ from subprocess import *
 from rcGlobalEnv import *
 from rcFreeze import Freezer
 import rcStatus
-import rcIP
+import rcIp
 import rcFilesystem
 import rcIfconfig
 
@@ -59,10 +59,10 @@ def get_stacked_dev(dev, addr, log):
 		log.debug("allocate new stacked device %s" % stacked_dev)
 	return stacked_dev
 
-class Ip(rcIP.ip):
+class Ip(rcIp.ip):
 	def __init__(self, name, dev):
 		log = logging.getLogger('INIT')
-		rcIP.ip.__init__(self, name, dev)
+		rcIp.ip.__init__(self, name, dev)
 
 	def is_up(self):
 		ifconfig = rcIfconfig.ifconfig()

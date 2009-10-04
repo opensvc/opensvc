@@ -21,7 +21,7 @@ from datetime import datetime
 from subprocess import *
 
 from rcGlobalEnv import *
-import rcIP
+import rcIp
 import rcHosted
 
 def lxc(action):
