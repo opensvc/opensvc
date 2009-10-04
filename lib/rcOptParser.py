@@ -24,16 +24,18 @@ action_desc = {
 	'frozen':	'report on the current blocking of actions on this service',
 }
 
-def format_desc():
+def format_desc(svc=False):
 	desc = "Commands available to this service:\n"
-	for a in rcEnv.actions:
+	for a in action_desc.keys():
+		if svc and not hasattr(svc, a):
+			continue
 		desc += "  {0:13s}{1:65s}\n".format(a, action_desc[a])
 	return desc
 
 class svcOptionParser:
-	def __init__(self):
+	def __init__(self, svc=False):
 		__ver = rcEnv.prog + " version " + str(rcEnv.ver)
-		__usage = "%prog [options] command\n\n" + format_desc()
+		__usage = "%prog [options] command\n\n" + format_desc(svc)
 		parser = optparse.OptionParser(version=__ver, usage=__usage)
 		parser.add_option("--debug", default="False",
 				  action="store_true", dest="debug",
@@ -47,7 +49,7 @@ class svcOptionParser:
 		if len(self.args) is 0:
 			parser.error("Missing action")
 		self.action = self.args[0]
-		if self.action not in rcEnv.actions:
+		if svc and not hasattr(svc, self.action):
 			parser.error("unsupported action")
 	def show(self):
 		print ":: option parser dump"

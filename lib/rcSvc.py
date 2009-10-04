@@ -22,6 +22,7 @@ import ConfigParser
 import logging
 
 from rcGlobalEnv import *
+from rcFreeze import Freezer
 from rcNode import discover_node
 import rcOptParser
 import rcLogger
@@ -52,17 +53,42 @@ def add_filesystems(self):
 			mnt_opt = rcEnv.conf.get(s, "mnt_opt")
 			self.add_filesystem(dev, mnt, type, mnt_opt)
 
-def install_actions():
+def install_actions(self):
 	"""Setup the class svc methods as per node capabilities and
 	service configuration.
 	"""
-	if rcEnv.svcmode == "hosted":
-		rcEnv.do = rcEnv.rcMode.do()
-	elif rcEnv.svcmode == "lxc":
-		rcEnv.do = rcLXC.lxc_do()
+	if rcEnv.conf is None:
+		self.create = self.rcMode._create
+		return None
 
-	rcEnv.actions = rcEnv.do.__dict__.keys()
-	rcEnv.actions.sort()
+	self.status = self.rcMode._status
+	self.frozen = self.rcMode._frozen
+
+	if not Freezer(rcEnv.svcname).frozen():
+		self.freeze = self.rcMode._freeze
+	else:
+		self.thaw = self.rcMode._thaw
+		return None
+
+	# generic actions
+	self.start = self.rcMode._start
+	self.stop = self.rcMode._stop
+	self.startapp = self.rcMode._startapp
+	self.stopapp = self.rcMode._stopapp
+	self.syncnodes = self.rcMode._syncnodes
+	self.syncdrp = self.rcMode._syncdrp
+
+	if rcEnv.conf.has_section("fs1") is True or \
+	   rcEnv.conf.has_section("disk1") is True:
+		self.mount = self.rcMode._mount
+		self.umount = self.rcMode._umount
+	if rcEnv.conf.has_section("nfs1") is True:
+		self.mountnfs = self.rcMode._mountnfs
+		self.umountnfs = self.rcMode._umountnfs
+	if rcEnv.conf.has_section("ip1") is True:
+		self.startip = self.rcMode._startip
+		self.stopip = self.rcMode._stopip
+
 	return 0
 
 def setup_logging():
@@ -94,7 +120,7 @@ class svc():
 	"""
 	def add_ip(self, ipname, ipdev):
 		log = logging.getLogger('INIT')
-		ip = rcEnv.rcMode.Ip(ipname, ipdev)
+		ip = self.rcMode.Ip(ipname, ipdev)
 		if ip is None:
 			log.error("initialization failed for ip (%s@%s)" %
 				 (ipname, ipdev))
@@ -105,7 +131,7 @@ class svc():
 
 	def add_filesystem(self, dev, mnt, type, mnt_opt):
 		log = logging.getLogger('INIT')
-		fs = rcEnv.rcMode.Filesystem(dev, mnt, type, mnt_opt)
+		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt)
 		if fs is None:
 			log.error("initialization failed for fs (%s %s %s %s)" %
 				 (dev, mnt, type, mnt_opt))
@@ -174,11 +200,9 @@ class svc():
 		# dynamically import the action class matching the service mode
 		#
 		log.debug('service mode = ' + rcEnv.svcmode)
-		rcEnv.rcMode = __import__(svcmode_mod_name(), globals(), locals(), [], -1)
+		self.rcMode = __import__(svcmode_mod_name(), globals(), locals(), [], -1)
 
-		if install_actions() != 0: return None
-
-		log.debug('service supported actions = ' + str(rcEnv.actions))
+		if install_actions(self) != 0: return None
 
 		add_ips(self)
 		add_filesystems(self)

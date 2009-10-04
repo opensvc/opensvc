@@ -39,5 +39,4 @@ def is_service(f):
 for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
 		print name
-		s = rcSvc.svc(name)
-		rcEnv.do.status()
+		rcSvc.svc(name).status()

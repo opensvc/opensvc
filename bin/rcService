@@ -30,6 +30,6 @@ import rcOptParser
 from rcGlobalEnv import rcEnv
 
 
-s = rcSvc.svc(os.path.basename(__file__))
-parser = rcOptParser.svcOptionParser()
-getattr(rcEnv.do, parser.action)()
+svc = rcSvc.svc(os.path.basename(__file__))
+parser = rcOptParser.svcOptionParser(svc)
+getattr(svc, parser.action)()
