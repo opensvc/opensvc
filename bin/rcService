@@ -31,4 +31,4 @@ import rcOptParser
 
 svc = rcSvc.svc(os.path.basename(__file__))
 parser = rcOptParser.svcOptionParser(svc)
-getattr(svc, parser.action)()
+getattr(svc, parser.action)(svc)

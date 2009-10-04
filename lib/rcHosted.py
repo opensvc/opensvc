@@ -30,13 +30,13 @@ import rcIP
 import rcFilesystem
 import rcIfconfig
 
-def next_stacked_dev(dev):
+def next_stacked_dev(dev, ifconfig):
 	"""Return the first available interfaceX:Y on  interfaceX
 	"""
 	i = 0
 	while True:
 		stacked_dev = dev+':'+str(i)
-		if not rcEnv.ifconfig.has_interface(stacked_dev):
+		if not ifconfig.has_interface(stacked_dev):
 			return stacked_dev
 			break
 		i = i + 1
@@ -46,7 +46,8 @@ def get_stacked_dev(dev, addr, log):
 	Upon stop, the currently assigned interfaceX:Y will have to be
 	found for ifconfig down
 	"""
-	stacked_intf = rcEnv.ifconfig.has_param("ipaddr", addr)
+	ifconfig = rcIfconfig.ifconfig()
+	stacked_intf = ifconfig.has_param("ipaddr", addr)
 	if stacked_intf is not None:
 		if dev not in stacked_intf.name:
 			log.error("%s is plumbed but not on %s" % (addr, dev))
@@ -54,7 +55,7 @@ def get_stacked_dev(dev, addr, log):
 		stacked_dev = stacked_intf.name
 		log.debug("found matching stacked device %s" % stacked_dev)
 	else:
-		stacked_dev = next_stacked_dev(dev)
+		stacked_dev = next_stacked_dev(dev, ifconfig)
 		log.debug("allocate new stacked device %s" % stacked_dev)
 	return stacked_dev
 
@@ -64,10 +65,8 @@ class Ip(rcIP.ip):
 		rcIP.ip.__init__(self, name, dev)
 
 	def is_up(self):
-		rcEnv.ifconfig = rcIfconfig.ifconfig()
-		rcEnv.ifconfig.interface(self.dev).show()
-
-		if rcEnv.ifconfig.has_param("ipaddr", self.addr) is not None:
+		ifconfig = rcIfconfig.ifconfig()
+		if ifconfig.has_param("ipaddr", self.addr) is not None:
 			return True
 		return False
 
@@ -79,17 +78,15 @@ class Ip(rcIP.ip):
 
 	def start(self):
 		log = logging.getLogger('STARTIP')
-		rcEnv.ifconfig = rcIfconfig.ifconfig()
-		rcEnv.ifconfig.interface(self.dev).show()
-
-		if not rcEnv.ifconfig.interface(self.dev).flag_up:
+		ifconfig = rcIfconfig.ifconfig()
+		if not ifconfig.interface(self.dev).flag_up:
 			log.error("Device %s is not up. Cannot stack over it." % self.dev)
 			return None
 
 		#
 		# get netmask from ipdev
 		#
-		self.mask = rcEnv.ifconfig.interface(self.dev).mask
+		self.mask = ifconfig.interface(self.dev).mask
 		if self.mask == '':
 			log.error("No netmask set on parent interface %s" % self.dev)
 			return None
@@ -109,8 +106,6 @@ class Ip(rcIP.ip):
 
 	def stop(self):
 		log = logging.getLogger('STOPIP')
-		rcEnv.ifconfig = rcIfconfig.ifconfig()
-		rcEnv.ifconfig.interface(self.dev).show()
 		if self.is_up() is False:
 			log.info("%s is already down on %s" % (self.addr, self.dev))
 			return 0
@@ -125,58 +120,58 @@ class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
-def start():
-	if startip() != 0: return 1
-	if mount() != 0: return 1
-	if startapp() != 0: return 1
+def start(self):
+	if startip(self) != 0: return 1
+	if mount(self) != 0: return 1
+	if startapp(self) != 0: return 1
 	return 0
 
-def stop():
-	if stopapp() != 0: return 1
-	if umount() != 0: return 1
-	if stopip() != 0: return 1
+def stop(self):
+	if stopapp(self) != 0: return 1
+	if umount(self) != 0: return 1
+	if stopip(self) != 0: return 1
 	return 0
 
-def syncnodes():
+def syncnodes(self):
 	log = logging.getLogger('SYNCNODES')
 	return 0
 
-def syncdrp():
+def syncdrp(self):
 	log = logging.getLogger('SYNCDRP')
 	return 0
 
-def startip():
+def startip(self):
 	log = logging.getLogger('STARTIP')
-	for ip in rcEnv.ips:
+	for ip in self.ips:
 		if ip.start() != 0: return 1
 	return 0
 
-def stopip():
+def stopip(self):
 	log = logging.getLogger('STOPIP')
-	for ip in rcEnv.ips:
+	for ip in self.ips:
 		if ip.stop() != 0: return 1
 	return 0
 
-def mount():
+def mount(self):
 	log = logging.getLogger('MOUNT')
-	for f in rcEnv.filesystems:
+	for f in self.filesystems:
 		if f.start() != 0: return 1
 	return 0
 
-def umount():
+def umount(self):
 	log = logging.getLogger('UMOUNT')
-	for f in rcEnv.filesystems:
+	for f in self.filesystems:
 		if f.stop() != 0: return 1
 	return 0
 
-def app(name, action):
+def app(self, name, action):
 	if action == 'start':
 		log = logging.getLogger('STARTAPP')
 	else:
 		log = logging.getLogger('STOPAPP')
 
 	log.info('spawn: %s %s' % (name, action))
-	outf = '/var/tmp/svc_'+rcEnv.svcname+'_'+os.path.basename(name)+'.log'
+	outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
 	f = open(outf, 'a')
 	t = datetime.now()
 	f.write(str(t))
@@ -187,40 +182,40 @@ def app(name, action):
 	log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
 	f.close()
 
-def startapp():
+def startapp(self):
 	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):
-		app(name, 'start')
+		app(self, name, 'start')
 	return 0
 
-def stopapp():
+def stopapp(self):
 	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'K*')):
-		app(name, 'stop')
+		app(self, name, 'stop')
 	return 0
 
-def create():
+def create(self):
 	log = logging.getLogger('CREATE')
 	return 0
 
-def status():
+def status(self):
 	status = rcStatus.Status()
-	for ip in rcEnv.ips:
+	for ip in self.ips:
 		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
 		status.add(ip.status())
-	for fs in rcEnv.filesystems:
+	for fs in self.filesystems:
 		print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
 		status.add(fs.status())
 	print "global: %s" % status.str(status.status)
 
-def freeze ():
-	f = Freezer(rcEnv.svcname)
+def freeze(self):
+	f = Freezer(self.svcname)
 	f.freeze()
 
-def thaw ():
-	f = Freezer(rcEnv.svcname)
+def thaw(self):
+	f = Freezer(self.svcname)
 	f.thaw()
 
-def frozen ():
-	f = Freezer(rcEnv.svcname)
+def frozen(self):
+	f = Freezer(self.svcname)
 	print str(f.frozen())
 	return f.frozen()
 

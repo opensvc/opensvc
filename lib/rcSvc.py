@@ -36,7 +36,6 @@ def svcmode_mod_name(svcmode=''):
 	return 1 # raise something instead ?
 
 def add_ips(self):
-	rcEnv.ips = []
 	for s in self.conf.sections():
 		if 'ip' in s:
 			ipname = self.conf.get(s, "ipname")
@@ -44,7 +43,6 @@ def add_ips(self):
 			self.add_ip(ipname, ipdev)
 
 def add_filesystems(self):
-	rcEnv.filesystems = []
 	for s in self.conf.sections():
 		if 'fs' in s:
 			dev = self.conf.get(s, "dev")
@@ -64,7 +62,7 @@ def install_actions(self):
 	self.status = self.rcMode.status
 	self.frozen = self.rcMode.frozen
 
-	if not Freezer(rcEnv.svcname).frozen():
+	if not Freezer(self.svcname).frozen():
 		self.freeze = self.rcMode.freeze
 	else:
 		self.thaw = self.rcMode.thaw
@@ -118,6 +116,10 @@ class svc():
 	It's meant to be enriched by inheriting class for specialized services,
 	like LXC containers, ...
 	"""
+
+	ips = []
+	filesystems = []
+
 	def add_ip(self, ipname, ipdev):
 		log = logging.getLogger('INIT')
 		ip = self.rcMode.Ip(ipname, ipdev)
@@ -127,7 +129,7 @@ class svc():
 			return 1
 		log.debug("initialization succeeded for ip (%s@%s)" %
 			 (ipname, ipdev))
-		rcEnv.ips.append(ip)
+		self.ips.append(ip)
 
 	def add_filesystem(self, dev, mnt, type, mnt_opt):
 		log = logging.getLogger('INIT')
@@ -138,13 +140,13 @@ class svc():
 			return 1
 		log.debug("initialization succeeded for fs (%s %s %s %s)" %
 			 (dev, mnt, type, mnt_opt))
-		rcEnv.filesystems.append(fs)
+		self.filesystems.append(fs)
 
 	def __init__(self, name):
 		#
 		# file tree abstraction
 		#
-		rcEnv.svcname = name
+		self.svcname = name
 		rcEnv.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 		rcEnv.pathbin = os.path.join(rcEnv.pathsvc, 'bin')
 		rcEnv.pathetc = os.path.join(rcEnv.pathsvc, 'etc')
@@ -152,9 +154,9 @@ class svc():
 		rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
 		rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
 		rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
-		rcEnv.logfile = os.path.join(rcEnv.pathlog, rcEnv.svcname) + '.log'
-		rcEnv.svcconf = os.path.join(rcEnv.pathetc, rcEnv.svcname) + '.env'
-		rcEnv.svcinitd = os.path.join(rcEnv.pathetc, rcEnv.svcname) + '.d'
+		rcEnv.logfile = os.path.join(rcEnv.pathlog, self.svcname) + '.log'
+		rcEnv.svcconf = os.path.join(rcEnv.pathetc, self.svcname) + '.env'
+		rcEnv.svcinitd = os.path.join(rcEnv.pathetc, self.svcname) + '.d'
 		rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
 
 		setup_logging()
@@ -174,7 +176,7 @@ class svc():
                 log.debug('pathlib = ' + rcEnv.pathlib)
                 log.debug('pathlog = ' + rcEnv.pathlog)
                 log.debug('pathtmp = ' + rcEnv.pathtmp)
-		log.debug('service name = ' + rcEnv.svcname)
+		log.debug('service name = ' + self.svcname)
 		log.debug('service config file = ' + rcEnv.svcconf)
                 log.debug('service log file = ' + rcEnv.logfile)
                 log.debug('service init dir = ' + rcEnv.svcinitd)

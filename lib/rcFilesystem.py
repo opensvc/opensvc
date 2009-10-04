@@ -31,13 +31,13 @@ class Filesystem:
 		self.type = type
 		self.mnt_opt = mnt_opt
 
-                rcEnv.Mounts = rcMounts.Mounts()
-                m = rcEnv.Mounts.mount(dev, mnt)
+                self.Mounts = rcMounts.Mounts()
+                m = self.Mounts.mount(dev, mnt)
 		if m is not None:
 			m.show()
 
 	def is_up(self):
-		if rcEnv.Mounts.has_mount(self.dev, self.mnt) != 0:
+		if self.Mounts.has_mount(self.dev, self.mnt) != 0:
 			return False
 		return True
 
