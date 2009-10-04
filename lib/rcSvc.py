@@ -117,9 +117,6 @@ class svc():
 	like LXC containers, ...
 	"""
 
-	ips = []
-	filesystems = []
-
 	def add_ip(self, ipname, ipdev):
 		log = logging.getLogger('INIT')
 		ip = self.rcMode.Ip(ipname, ipdev)
@@ -206,6 +203,8 @@ class svc():
 
 		if install_actions(self) != 0: return None
 
+		self.ips = []
+		self.filesystems = []
 		add_ips(self)
 		add_filesystems(self)
 

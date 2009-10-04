@@ -40,4 +40,5 @@ def is_service(f):
 for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
 		print name
-		rcSvc.svc(name).status()
+		svc = rcSvc.svc(name)
+		svc.status(svc)
