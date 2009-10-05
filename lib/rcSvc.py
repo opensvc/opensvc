@@ -30,9 +30,9 @@ import rcAddService
 
 def svcmode_mod_name(svcmode=''):
 	if svcmode == 'lxc':
-		return 'rcLXC'
+		return 'rcSvcLxc'
 	elif svcmode == 'hosted':
-		return 'rcHosted'
+		return 'rcSvcHosted'
 	return 1 # raise something instead ?
 
 def add_ips(self):
@@ -86,6 +86,9 @@ def install_actions(self):
 	if self.conf.has_section("ip1") is True:
 		self.startip = self.rcMode.startip
 		self.stopip = self.rcMode.stopip
+	if self.svcmode == 'lxc':
+		self.startlxc = self.rcMode.startlxc
+		self.stoplxc = self.rcMode.stoplxc
 
 	return 0
 
@@ -193,7 +196,7 @@ class svc():
 			self.conf = ConfigParser.RawConfigParser()
 			self.conf.read(rcEnv.svcconf)
 			if self.conf.has_option("default", "mode"):
-				self.svcmode = conf.get("default", "mode")
+				self.svcmode = self.conf.get("default", "mode")
 
 		#
 		# dynamically import the action class matching the service mode

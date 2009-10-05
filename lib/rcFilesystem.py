@@ -21,7 +21,6 @@ import os
 
 import rcStatus
 import rcMounts
-from rcGlobalEnv import *
 
 class Filesystem:
 	def __init__(self, dev, mnt, type, mnt_opt):
@@ -53,6 +52,8 @@ class Filesystem:
                         log.info("fs(%s %s) is already mounted"%
 				(self.dev, self.mnt))
                         return 0
+		if not os.path.exists(self.mnt):
+			os.mkdir(self.mnt, 0755)
                 log.info("mount -t %s -o %s %s %s"%
 			(self.type, self.mnt_opt, self.dev, self.mnt))
                 if os.spawnlp(os.P_WAIT, 'mount', 'mount', '-t', self.type, '-o', self.mnt_opt, self.dev, self.mnt) != 0:

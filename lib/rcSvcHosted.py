@@ -30,94 +30,9 @@ import rcIp
 import rcFilesystem
 import rcIfconfig
 
-def next_stacked_dev(dev, ifconfig):
-	"""Return the first available interfaceX:Y on  interfaceX
-	"""
-	i = 0
-	while True:
-		stacked_dev = dev+':'+str(i)
-		if not ifconfig.has_interface(stacked_dev):
-			return stacked_dev
-			break
-		i = i + 1
-
-def get_stacked_dev(dev, addr, log):
-	"""Upon start, a new interfaceX:Y will have to be assigned.
-	Upon stop, the currently assigned interfaceX:Y will have to be
-	found for ifconfig down
-	"""
-	ifconfig = rcIfconfig.ifconfig()
-	stacked_intf = ifconfig.has_param("ipaddr", addr)
-	if stacked_intf is not None:
-		if dev not in stacked_intf.name:
-			log.error("%s is plumbed but not on %s" % (addr, dev))
-			return
-		stacked_dev = stacked_intf.name
-		log.debug("found matching stacked device %s" % stacked_dev)
-	else:
-		stacked_dev = next_stacked_dev(dev, ifconfig)
-		log.debug("allocate new stacked device %s" % stacked_dev)
-	return stacked_dev
-
-class Ip(rcIp.ip):
+class Ip(rcIp.Ip):
 	def __init__(self, name, dev):
-		log = logging.getLogger('INIT')
-		rcIp.ip.__init__(self, name, dev)
-
-	def is_up(self):
-		ifconfig = rcIfconfig.ifconfig()
-		if ifconfig.has_param("ipaddr", self.addr) is not None:
-			return True
-		return False
-
-	def status(self):
-		if self.is_up() is True:
-			return rcStatus.UP
-		else:
-			return rcStatus.DOWN
-
-	def start(self):
-		log = logging.getLogger('STARTIP')
-		ifconfig = rcIfconfig.ifconfig()
-		if not ifconfig.interface(self.dev).flag_up:
-			log.error("Device %s is not up. Cannot stack over it." % self.dev)
-			return None
-
-		#
-		# get netmask from ipdev
-		#
-		self.mask = ifconfig.interface(self.dev).mask
-		if self.mask == '':
-			log.error("No netmask set on parent interface %s" % self.dev)
-			return None
-
-		if self.is_up() is True:
-			log.info("%s is already up on %s" % (self.addr, self.dev))
-			return 0
-		if self.is_alive():
-			log.error("%s@%s is already up on another host" % (self.addr, self.dev))
-			return 1
-		if self.mask == '':
-			log.error("No netmask found. Abort")
-			return 1
-		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
-		log.info("ifconfig "+stacked_dev+" "+self.addr+" netmask "+self.mask+" up")
-		if os.spawnlp(os.P_WAIT, 'ifconfig', 'ifconfig', stacked_dev, self.addr, 'netmask', self.mask, 'up') != 0:
-			log.error("failed")
-			return 1
-		return 0
-
-	def stop(self):
-		log = logging.getLogger('STOPIP')
-		if self.is_up() is False:
-			log.info("%s is already down on %s" % (self.addr, self.dev))
-			return 0
-		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
-		log.info("ifconfig "+stacked_dev+" down")
-		if os.spawnlp(os.P_WAIT, 'ifconfig', 'ifconfig', stacked_dev, 'down') != 0:
-			log.error("failed")
-			return 1
-		return 0
+		rcIp.Ip.__init__(self, name, dev)
 
 class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
