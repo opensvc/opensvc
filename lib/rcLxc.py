@@ -21,6 +21,7 @@ from datetime import datetime
 from subprocess import *
 
 import rcLogger
+import rcStatus
 
 def lxc(self, action):
 	if action == 'start':
@@ -28,7 +29,7 @@ def lxc(self, action):
 		cmd = ['lxc-start', '-d', '-n', self.svcname]
         elif action == 'stop':
                 log = logging.getLogger('STOPLXC')
-		cmd = ['lxc-stop', '-d', '-n', self.svcname]
+		cmd = ['lxc-stop', '-n', self.svcname]
 	else:
                 log = logging.getLogger()
 		log.error("unsupported lxc action: %s" % action)
@@ -40,24 +41,42 @@ def lxc(self, action):
         t = datetime.now()
         f.write(str(t))
         p = Popen(cmd, stdout=PIPE)
-        ret = p.wait()
         f.write(p.communicate()[0])
         len = datetime.now() - t
-        log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
+        log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
         f.close()
+	return p.returncode
 
 class Lxc:
         def start(self):
+                log = logging.getLogger('Lxc.stop')
+		if self.is_up():
+			log.info("lxc container %s already started" % self.svcname)
+			return 0
 		return lxc(self, 'start')
 
         def stop(self):
+                log = logging.getLogger('Lxc.stop')
+		if not self.is_up():
+			log.info("lxc container %s already stopped" % self.svcname)
+			return 0
 		return lxc(self, 'stop')
 
         def is_up(self):
-		cmd = [ 'grep', '-w', self.svcname, '/proc/[0-9]*/cgroup' ]
-		if os.spawnlp(os.P_WAIT, cmd) == 0:
+                log = logging.getLogger('Lxc.is_up')
+		log.debug("call: lxc-ps --name %s | grep %s" % (self.svcname, self.svcname))
+		p1 = Popen(['lxc-ps', '--name', self.svcname], stdout=PIPE)
+		p2 = Popen(["grep", self.svcname], stdin=p1.stdout, stdout=PIPE)
+		p2.communicate()[0]
+		if p2.returncode == 0:
 			return True
 		return False
+
+	def status(self):
+		if self.is_up():
+			return rcStatus.UP
+		else:
+			return rcStatus.DOWN
 
 	def __init__(self, svcname):
 		self.svcname = svcname

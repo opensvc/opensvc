@@ -24,7 +24,6 @@ from rcGlobalEnv import *
 class Mount:
 	def show(self):
 		log = logging.getLogger('INIT')
-		log.debug('mount:')
 		log.debug('dev:' + self.dev + ' on:' + self.mnt + ' type:' + self.type + ' opt:' + self.mnt_opt)
 
 	def __init__(self, dev, mnt, type, mnt_opt):

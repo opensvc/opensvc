@@ -18,6 +18,7 @@
 #
 import socket
 import os
+from subprocess import *
 
 from rcLogger import *
 import rcIfconfig
@@ -66,17 +67,24 @@ class IpConflict(Exception):
 
 class Ip:
 	def is_alive(self):
+		log = logging.getLogger('Ip.is_alive')
 		count=1
 		timeout=5
-		cmd = [ 'ping', '-c', count, '-W', timeout, self.addr ]
-		if os.spawnlp(os.P_WAIT, cmd) == 0:
+		cmd = [ 'ping', '-c', repr(count), '-W', repr(timeout), self.addr ]
+		log.debug('call: %s' % ' '.join(cmd))
+		p = Popen(cmd, stdout=PIPE)
+		p.communicate()[0]
+		if p.returncode == 0:
 			return True
 		return False
 
 	def is_up(self):
+		log = logging.getLogger('Ip.is_up')
 		ifconfig = rcIfconfig.ifconfig()
 		if ifconfig.has_param("ipaddr", self.addr) is not None:
+			log.debug("%s@%s is up" % (self.addr, self.dev))
 			return True
+		log.debug("%s@%s is down" % (self.addr, self.dev))
 		return False
 
 	def status(self):
@@ -106,6 +114,7 @@ class Ip:
 				return 0
 		except IpConflict, IpDevDown:
 			return 1
+		log.debug('pre-checks passed')
 
 		ifconfig = rcIfconfig.ifconfig()
 		self.mask = ifconfig.interface(self.dev).mask

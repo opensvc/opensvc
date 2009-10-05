@@ -26,18 +26,21 @@ import rcIp
 import rcFilesystem
 import rcSvcHosted
 import rcLxc
+import rcStatus
 
 def start(self):
-	startip(self)
-	mount(self)
-	startlxc(self)
-	startapp(self)
+	if startip(self) != 0: return 1
+	if mount(self) != 0: return 1
+	if startlxc(self) != 0: return 1
+	if startapp(self) != 0: return 1
+	return 0
 
 def stop(self):
-	stopapp(self)
-	stoplxc(self)
-	umount(self)
-	stopip(self)
+	if stopapp(self) != 0: return 1
+	if stoplxc(self) != 0: return 1
+	if umount(self) != 0: return 1
+	if stopip(self) != 0: return 1
+	return 0
 
 def startip(self):
 	"""startip is a noop for LXC : ips are plumbed on container start-up
@@ -98,9 +101,15 @@ def create(self):
 	return 0
 
 def status(self):
-	log = logging.getLogger('STATUS')
-	log.info("TODO")
-	return 0
+	status = rcStatus.Status()
+	print "lxc: %s" % status.str(self.lxc.status())
+	for ip in self.ips:
+		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
+		status.add(ip.status())
+	for fs in self.filesystems:
+		print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
+		status.add(fs.status())
+	print "global: %s" % status.str(status.status)
 
 def freeze(self):
 	return rcSvcHosted.freeze(self)
@@ -113,7 +122,7 @@ def frozen(self):
 
 class Ip(rcIp.Ip):
 	def is_up(self):
-		if self.is_alive():
+		if self.svc.lxc.is_up() and self.is_alive():
 			return True
 		return False
 
@@ -127,11 +136,18 @@ class Ip(rcIp.Ip):
 				return 0
 		except rcIp.IpConflict, rcIp.IpDevDown:
 			return 1
+		log.debug('pre-checks passed')
+		log.info('nothing to do for lxc containers')
+		return 0
 
-	def __init__(self, name, dev):
+	def __init__(self, svc, name, dev):
+		self.svc = svc
 		rcIp.Ip.__init__(self, name, dev)
 
 class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
+class Lxc(rcLxc.Lxc):
+	def __init__(self, svcname):
+		rcLxc.Lxc.__init__(self, svcname)

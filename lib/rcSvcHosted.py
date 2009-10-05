@@ -31,7 +31,7 @@ import rcFilesystem
 import rcIfconfig
 
 class Ip(rcIp.Ip):
-	def __init__(self, name, dev):
+	def __init__(self, svc, name, dev):
 		rcIp.Ip.__init__(self, name, dev)
 
 class Filesystem(rcFilesystem.Filesystem):
@@ -94,11 +94,11 @@ def app(self, name, action):
 	t = datetime.now()
 	f.write(str(t))
 	p = Popen([name, action], stdout=PIPE)
-	ret = p.wait()
 	f.write(p.communicate()[0])
 	len = datetime.now() - t
-	log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
+	log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
 	f.close()
+	return p.returncode
 
 def startapp(self):
 	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):

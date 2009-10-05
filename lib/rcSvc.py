@@ -122,7 +122,7 @@ class svc():
 
 	def add_ip(self, ipname, ipdev):
 		log = logging.getLogger('INIT')
-		ip = self.rcMode.Ip(ipname, ipdev)
+		ip = self.rcMode.Ip(self, ipname, ipdev)
 		if ip is None:
 			log.error("initialization failed for ip (%s@%s)" %
 				 (ipname, ipdev))
@@ -206,8 +206,15 @@ class svc():
 
 		if install_actions(self) != 0: return None
 
+		#
+		# instanciate resources
+		#
+		self.lxc = None
+		if self.svcmode == 'lxc': self.lxc = self.rcMode.Lxc(self.svcname)
+
 		self.ips = []
-		self.filesystems = []
 		add_ips(self)
+
+		self.filesystems = []
 		add_filesystems(self)
 
