@@ -20,11 +20,13 @@ import os
 import sys
 import ConfigParser
 import logging
+import glob
 
 from rcGlobalEnv import *
 from rcFreeze import Freezer
 from rcNode import discover_node
 import rcOptParser
+import rcApp
 import rcLogger
 import rcAddService
 
@@ -218,3 +220,5 @@ class svc():
 		self.filesystems = []
 		add_filesystems(self)
 
+		self.apps = None
+		self.apps = rcApp.Apps(self)

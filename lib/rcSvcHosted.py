@@ -18,7 +18,6 @@
 #
 import logging
 import os
-import glob
 import re
 from datetime import datetime
 from subprocess import *
@@ -82,33 +81,13 @@ def umount(self):
 		if f.stop() != 0: return 1
 	return 0
 
-def app(self, name, action):
-	if action == 'start':
-		log = logging.getLogger('STARTAPP')
-	else:
-		log = logging.getLogger('STOPAPP')
 
-	log.info('spawn: %s %s' % (name, action))
-	outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
-	f = open(outf, 'a')
-	t = datetime.now()
-	f.write(str(t))
-	p = Popen([name, action], stdout=PIPE)
-	f.write(p.communicate()[0])
-	len = datetime.now() - t
-	log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
-	f.close()
-	return p.returncode
 
 def startapp(self):
-	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):
-		app(self, name, 'start')
-	return 0
+	return self.apps.start()
 
 def stopapp(self):
-	for name in glob.glob(os.path.join(rcEnv.svcinitd, 'K*')):
-		app(self, name, 'stop')
-	return 0
+	return self.apps.stop()
 
 def create(self):
 	log = logging.getLogger('CREATE')
