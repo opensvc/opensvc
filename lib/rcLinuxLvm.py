@@ -2,6 +2,7 @@ import re
 import logging
 
 from rcUtilities import process_call_argv
+import rcStatus
 
 class Vg:
 	def has_vg(self):

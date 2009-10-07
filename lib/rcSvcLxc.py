@@ -30,7 +30,7 @@ import rcStatus
 
 def start(self):
 	if startip(self) != 0: return 1
-	if mount(self) != 0: return 1
+	if diskstart(self) != 0: return 1
 	if startlxc(self) != 0: return 1
 	if startapp(self) != 0: return 1
 	return 0
@@ -38,9 +38,21 @@ def start(self):
 def stop(self):
 	if stopapp(self) != 0: return 1
 	if stoplxc(self) != 0: return 1
-	if umount(self) != 0: return 1
+	if diskstop(self) != 0: return 1
 	if stopip(self) != 0: return 1
 	return 0
+
+def diskstart(self):
+	return rcSvcHosted.diskstart(self)
+
+def diskstop(self):
+	return rcSvcHosted.diskstop(self)
+
+def startvg(self):
+	return rcSvcHosted.startvg(self)
+
+def stopvg(self):
+	return rcSvcHosted.stopvg(self)
 
 def startip(self):
 	"""startip is a noop for LXC : ips are plumbed on container start-up
