@@ -31,6 +31,11 @@ import rcLogger
 import rcAddService
 
 def svcmode_mod_name(svcmode=''):
+	"""Returns the name of the module implementing the specificities
+	of a service mode. For example:
+	lxc    => rcSvcLxc
+	hosted => rcSvcHosted
+	"""
 	if svcmode == 'lxc':
 		return 'rcSvcLxc'
 	elif svcmode == 'hosted':
@@ -38,15 +43,21 @@ def svcmode_mod_name(svcmode=''):
 	return 1 # raise something instead ?
 
 def add_ips(self):
+	"""Parse the configuration file and add an ip object for each [ip#n]
+	section. Ip objects are stored in a list in the service object.
+	"""
 	for s in self.conf.sections():
-		if 'ip' in s:
+		if 'ip#' in s:
 			ipname = self.conf.get(s, "ipname")
 			ipdev = self.conf.get(s, "ipdev")
 			self.add_ip(ipname, ipdev)
 
 def add_filesystems(self):
+	"""Parse the configuration file and add a fs object for each [fs#n]
+	section. Fs objects are stored in a list in the service object.
+	"""
 	for s in self.conf.sections():
-		if 'fs' in s:
+		if 'fs#' in s:
 			dev = self.conf.get(s, "dev")
 			mnt = self.conf.get(s, "mnt")
 			type = self.conf.get(s, "type")
@@ -78,14 +89,14 @@ def install_actions(self):
 	self.syncnodes = self.rcMode.syncnodes
 	self.syncdrp = self.rcMode.syncdrp
 
-	if self.conf.has_section("fs1") is True or \
-	   self.conf.has_section("disk1") is True:
+	if self.conf.has_section("fs#1") is True or \
+	   self.conf.has_section("disk#1") is True:
 		self.mount = self.rcMode.mount
 		self.umount = self.rcMode.umount
-	if self.conf.has_section("nfs1") is True:
+	if self.conf.has_section("nfs#1") is True:
 		self.mountnfs = self.rcMode.mountnfs
 		self.umountnfs = self.rcMode.umountnfs
-	if self.conf.has_section("ip1") is True:
+	if self.conf.has_section("ip#1") is True:
 		self.startip = self.rcMode.startip
 		self.stopip = self.rcMode.stopip
 	if self.svcmode == 'lxc':
@@ -123,6 +134,8 @@ class svc():
 	"""
 
 	def add_ip(self, ipname, ipdev):
+		"""Append an ip object the self.ips list
+		"""
 		log = logging.getLogger('INIT')
 		ip = self.rcMode.Ip(self, ipname, ipdev)
 		if ip is None:
@@ -134,6 +147,8 @@ class svc():
 		self.ips.append(ip)
 
 	def add_filesystem(self, dev, mnt, type, mnt_opt):
+		"""Append a fs object the self.ips list
+		"""
 		log = logging.getLogger('INIT')
 		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt)
 		if fs is None:
@@ -212,7 +227,7 @@ class svc():
 		# instanciate resources
 		#
 		self.lxc = None
-		if self.svcmode == 'lxc': self.lxc = self.rcMode.Lxc(self.svcname)
+		if self.svcmode == 'lxc': self.lxc = self.rcMode.Lxc(self)
 
 		self.ips = []
 		add_ips(self)

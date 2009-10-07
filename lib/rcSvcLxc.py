@@ -64,11 +64,11 @@ def umount(self):
 
 def startlxc(self):
 	log = logging.getLogger('STARTLXC')
-	return rcLxc.Lxc(self.svcname).start()
+	return self.lxc.start()
 
 def stoplxc(self):
 	log = logging.getLogger('STOPLXC')
-	return rcLxc.Lxc(self.svcname).stop()
+	return self.lxc.stop()
 
 def startapp(self):
 	log = logging.getLogger('STARTAPP')
@@ -149,5 +149,5 @@ class Filesystem(rcFilesystem.Filesystem):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
 class Lxc(rcLxc.Lxc):
-	def __init__(self, svcname):
-		rcLxc.Lxc.__init__(self, svcname)
+	def __init__(self, svc):
+		rcLxc.Lxc.__init__(self, svc)

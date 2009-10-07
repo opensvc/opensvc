@@ -25,27 +25,24 @@ import rcLogger
 import rcStatus
 
 def lxc(self, action):
+	outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
 	if action == 'start':
                 log = logging.getLogger('STARTLXC')
-		cmd = ['lxc-start', '-d', '-n', self.svcname]
+		cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
         elif action == 'stop':
                 log = logging.getLogger('STOPLXC')
-		cmd = ['lxc-stop', '-n', self.svcname]
+		cmd = ['lxc-stop', '-n', self.name, '-o', outf]
 	else:
                 log = logging.getLogger()
 		log.error("unsupported lxc action: %s" % action)
 		return 1
 
-	log.info('spawn: %s' % ' '.join(cmd))
-	outf = '/var/tmp/svc_'+self.svcname+'_lxc_'+action+'.log'
-        f = open(outf, 'a')
+	log.info('call: %s' % ' '.join(cmd))
         t = datetime.now()
-        f.write(str(t))
         p = Popen(cmd, stdout=PIPE)
-        f.write(p.communicate()[0])
+        p.communicate()[0]
         len = datetime.now() - t
         log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
-        f.close()
 	return p.returncode
 
 def lxc_rootfs_path(self):
@@ -105,13 +102,13 @@ class Lxc:
 	        ---------------------
 	"""
 	pathlxc = os.path.join('usr', 'local', 'var', 'lib', 'lxc')
-	shutdown_timout = 60
-	startup_timout = 60
+	shutdown_timeout = 60
+	startup_timeout = 60
 
         def start(self):
                 log = logging.getLogger('Lxc.stop')
 		if self.is_up():
-			log.info("lxc container %s already started" % self.svcname)
+			log.info("lxc container %s already started" % self.name)
 			return 0
 		lxc(self, 'start')
 		return lxc_wait_for_startup(self)
@@ -119,16 +116,16 @@ class Lxc:
         def stop(self):
                 log = logging.getLogger('Lxc.stop')
 		if not self.is_up():
-			log.info("lxc container %s already stopped" % self.svcname)
+			log.info("lxc container %s already stopped" % self.name)
 			return 0
 		lxc(self, 'stop')
 		return lxc_wait_for_shutdown(self)
 
         def is_up(self):
                 log = logging.getLogger('Lxc.is_up')
-		log.debug("call: lxc-ps --name %s | grep %s" % (self.svcname, self.svcname))
-		p1 = Popen(['lxc-ps', '--name', self.svcname], stdout=PIPE)
-		p2 = Popen(["grep", self.svcname], stdin=p1.stdout, stdout=PIPE)
+		log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
+		p1 = Popen(['lxc-ps', '--name', self.name], stdout=PIPE)
+		p2 = Popen(["grep", self.name], stdin=p1.stdout, stdout=PIPE)
 		p2.communicate()[0]
 		if p2.returncode == 0:
 			return True
@@ -140,6 +137,6 @@ class Lxc:
 		else:
 			return rcStatus.DOWN
 
-	def __init__(self, svcname):
-		self.svcname = svcname
+	def __init__(self, svc):
+		self.name = svc.svcname
 

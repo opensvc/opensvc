@@ -33,6 +33,9 @@ class Mount:
 		self.mnt_opt = mnt_opt
 
 def file_to_loop(f):
+	"""Given a file path, returns the loop device associated. For example,
+	/path/to/file => /dev/loop0
+	"""
 	if not os.path.isfile(f):
 		return f
 	if rcEnv.sysname != 'Linux':
@@ -41,6 +44,10 @@ def file_to_loop(f):
 	return out.split()[0].strip(':')
 
 def match_mount(i, dev, mnt):
+	"""Given a line of 'mount' output, returns True if (dev, mnt) matches
+	this line. Returns False otherwize. Also care about weirdos like loops
+	and binds, ...
+	"""
 	if i.mnt != mnt:
 		return False
 	if i.dev == dev:
