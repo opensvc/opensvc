@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import logging
+import os
 from datetime import datetime
 from subprocess import *
 
@@ -47,20 +48,81 @@ def lxc(self, action):
         f.close()
 	return p.returncode
 
+def lxc_rootfs_path(self):
+	return os.path.realpath(os.path.join(self.pathlxc, self.name, 'rootfs','rootfs'))
+
+def lxc_is_created(self):
+	cmd = [ 'lxc-info', '-n', self.name ]
+        p = Popen(cmd, stdout=PIPE)
+        p.communicate()[0]
+	return p.returncode
+
+def lxc_wait_for_startup(self):
+	tmo = self.startup_timeout
+	while --tmo > 0:
+		if self.is_up(): return 0
+	log = logging.getLogger('STARTLXC')
+	log.error("timeout out waiting for %s startup", self.name)
+	return 1
+
+def lxc_wait_for_shutdown(self):
+	tmo = self.shutdown_timeout
+	while --tmo > 0:
+		if not self.is_up(): return 0
+	log = logging.getLogger('STOPLXC')
+	log.error("timeout out waiting for %s shutdown", self.name)
+	return 1
+
+def lxc_exec(self, cmd):
+	pass
+
 class Lxc:
+	"""
+	 container status transition diagram :
+	   ---------
+	  | STOPPED |<---------------
+	   ---------                 |
+	       |                     |
+	     start                   |
+	       |                     |
+	       V                     |
+	   ----------                |
+	  | STARTING |--error-       |
+	   ----------         |      |
+	       |              |      |
+	       V              V      |
+	   ---------    ----------   |
+	  | RUNNING |  | ABORTING |  |
+	   ---------    ----------   |
+	       |              |      |
+	  no process          |      |
+	       |              |      |
+	       V              |      |
+	   ----------         |      |
+	  | STOPPING |<-------       |
+	   ----------                |
+	       |                     |
+	        ---------------------
+	"""
+	pathlxc = os.path.join('usr', 'local', 'var', 'lib', 'lxc')
+	shutdown_timout = 60
+	startup_timout = 60
+
         def start(self):
                 log = logging.getLogger('Lxc.stop')
 		if self.is_up():
 			log.info("lxc container %s already started" % self.svcname)
 			return 0
-		return lxc(self, 'start')
+		lxc(self, 'start')
+		return lxc_wait_for_startup(self)
 
         def stop(self):
                 log = logging.getLogger('Lxc.stop')
 		if not self.is_up():
 			log.info("lxc container %s already stopped" % self.svcname)
 			return 0
-		return lxc(self, 'stop')
+		lxc(self, 'stop')
+		return lxc_wait_for_shutdown(self)
 
         def is_up(self):
                 log = logging.getLogger('Lxc.is_up')
