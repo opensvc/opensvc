@@ -22,20 +22,31 @@ import logging
 from rcGlobalEnv import *
 
 class Mount:
-	def show(self):
-		log = logging.getLogger('INIT')
-		log.debug('dev:' + self.dev + ' on:' + self.mnt + ' type:' + self.type + ' opt:' + self.mnt_opt)
-
 	def __init__(self, dev, mnt, type, mnt_opt):
 		self.dev = dev
 		self.mnt = mnt
 		self.type = type
 		self.mnt_opt = mnt_opt
 
+def is_exe(fpath):
+	return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+
+def which(program):
+	fpath, fname = os.path.split(program)
+	if fpath and is_exe(program):
+		return program
+	for path in os.environ["PATH"].split(os.pathsep):
+		exe_file = os.path.join(path, program)
+		if is_exe(exe_file):
+			return exe_file
+	return None
+
 def file_to_loop(f):
 	"""Given a file path, returns the loop device associated. For example,
 	/path/to/file => /dev/loop0
 	"""
+	if which('losetup') is None:
+		return str(None)
 	if not os.path.isfile(f):
 		return f
 	if rcEnv.sysname != 'Linux':
@@ -85,4 +96,3 @@ class Mounts:
 			dev, null, mnt, null, type, mnt_opt = l.split()
 			m = Mount(dev, mnt, type, mnt_opt.strip('()'))
 			self.mounts.append(m)
-		self.show()

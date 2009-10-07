@@ -29,6 +29,8 @@ import rcIp
 import rcFilesystem
 import rcIfconfig
 
+rcLvm = __import__('rc'+rcEnv.sysname+'Lvm', globals(), locals(), [], -1)
+
 class Ip(rcIp.Ip):
 	def __init__(self, svc, name, dev):
 		rcIp.Ip.__init__(self, name, dev)
@@ -37,16 +39,38 @@ class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
 
+class Vg(rcLvm.Vg):
+	def __init__(self, name):
+		rcLvm.Vg.__init__(self, name)
+
 def start(self):
+	"""Combo action: startip => diskstart => startapp
+	"""
 	if startip(self) != 0: return 1
-	if mount(self) != 0: return 1
+	if diskstart(self) != 0: return 1
 	if startapp(self) != 0: return 1
 	return 0
 
 def stop(self):
+	"""Combo action: stopapp => diskstop => stopip
+	"""
 	if stopapp(self) != 0: return 1
-	if umount(self) != 0: return 1
+	if diskstop(self) != 0: return 1
 	if stopip(self) != 0: return 1
+	return 0
+
+def diskstart(self):
+	"""Combo action: startvg => mount
+	"""
+	if startvg(self) != 0: return 1
+	if mount(self) != 0: return 1
+	return 0
+
+def diskstop(self):
+	"""Combo action: umount => stopvg
+	"""
+	if umount(self) != 0: return 1
+	if stopvg(self) != 0: return 1
 	return 0
 
 def syncnodes(self):
@@ -59,29 +83,39 @@ def syncdrp(self):
 
 def startip(self):
 	log = logging.getLogger('STARTIP')
-	for ip in self.ips:
-		if ip.start() != 0: return 1
+	for r in self.ips:
+		if r.start() != 0: return 1
 	return 0
 
 def stopip(self):
 	log = logging.getLogger('STOPIP')
-	for ip in self.ips:
-		if ip.stop() != 0: return 1
+	for r in self.ips:
+		if r.stop() != 0: return 1
 	return 0
 
 def mount(self):
 	log = logging.getLogger('MOUNT')
-	for f in self.filesystems:
-		if f.start() != 0: return 1
+	for r in self.filesystems:
+		if r.start() != 0: return 1
 	return 0
 
 def umount(self):
 	log = logging.getLogger('UMOUNT')
-	for f in self.filesystems:
-		if f.stop() != 0: return 1
+	for r in self.filesystems:
+		if r.stop() != 0: return 1
 	return 0
 
+def startvg(self):
+	log = logging.getLogger('STARTVG')
+	for r in self.volumegroups:
+		if r.start() != 0: return 1
+	return 0
 
+def stopvg(self):
+	log = logging.getLogger('STOPVG')
+	for r in self.volumegroups:
+		if r.stop() != 0: return 1
+	return 0
 
 def startapp(self):
 	return self.apps.start()
@@ -95,12 +129,15 @@ def create(self):
 
 def status(self):
 	status = rcStatus.Status()
-	for ip in self.ips:
-		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
-		status.add(ip.status())
-	for fs in self.filesystems:
-		print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
-		status.add(fs.status())
+	for r in self.ips:
+		print "ip %s@%s: %s" % (r.name, r.dev, status.str(r.status()))
+		status.add(r.status())
+	for r in self.filesystems:
+		print "fs %s@%s: %s" % (r.dev, r.mnt, status.str(r.status()))
+		status.add(r.status())
+	for r in self.volumegroups:
+		print "vg %s: %s" % (r.name, status.str(r.status()))
+		status.add(r.status())
 	print "global: %s" % status.str(status.status)
 
 def freeze(self):

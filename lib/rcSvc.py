@@ -21,6 +21,7 @@ import sys
 import ConfigParser
 import logging
 import glob
+import re
 
 from rcGlobalEnv import *
 from rcFreeze import Freezer
@@ -47,17 +48,26 @@ def add_ips(self):
 	section. Ip objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if 'ip#' in s:
+		if re.match('^ip#[0-9]', s, re.I) is not None:
 			ipname = self.conf.get(s, "ipname")
 			ipdev = self.conf.get(s, "ipdev")
 			self.add_ip(ipname, ipdev)
+
+def add_volumegroups(self):
+	"""Parse the configuration file and add a vg object for each [vg#n]
+	section. Vg objects are stored in a list in the service object.
+	"""
+	for s in self.conf.sections():
+		if re.match('^vg#[0-9]', s, re.I) is not None:
+			name = self.conf.get(s, "vgname")
+			self.add_volumegroup(name)
 
 def add_filesystems(self):
 	"""Parse the configuration file and add a fs object for each [fs#n]
 	section. Fs objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if 'fs#' in s:
+		if re.match('^fs#[0-9]', s, re.I) is not None:
 			dev = self.conf.get(s, "dev")
 			mnt = self.conf.get(s, "mnt")
 			type = self.conf.get(s, "type")
@@ -89,13 +99,16 @@ def install_actions(self):
 	self.syncnodes = self.rcMode.syncnodes
 	self.syncdrp = self.rcMode.syncdrp
 
-	if self.conf.has_section("fs#1") is True or \
-	   self.conf.has_section("disk#1") is True:
+	if self.conf.has_section("fs#1") is True:
 		self.mount = self.rcMode.mount
 		self.umount = self.rcMode.umount
-	if self.conf.has_section("nfs#1") is True:
-		self.mountnfs = self.rcMode.mountnfs
-		self.umountnfs = self.rcMode.umountnfs
+		self.diskstop = self.rcMode.diskstop
+		self.diskstart = self.rcMode.diskstart
+	if self.conf.has_section("vg#1") is True:
+		self.startvg = self.rcMode.startvg
+		self.stopvg = self.rcMode.stopvg
+		self.diskstop = self.rcMode.diskstop
+		self.diskstart = self.rcMode.diskstart
 	if self.conf.has_section("ip#1") is True:
 		self.startip = self.rcMode.startip
 		self.stopip = self.rcMode.stopip
@@ -146,8 +159,21 @@ class svc():
 			 (ipname, ipdev))
 		self.ips.append(ip)
 
+	def add_volumegroup(self, name):
+		"""Append a vg object the self.volumegroups list
+		"""
+		log = logging.getLogger('INIT')
+		vg = self.rcMode.Vg(name)
+		if vg is None:
+			log.error("initialization failed for vg (%s)" %
+				 (name))
+			return 1
+		log.debug("initialization succeeded for vg (%s)" %
+			 (name))
+		self.volumegroups.append(vg)
+
 	def add_filesystem(self, dev, mnt, type, mnt_opt):
-		"""Append a fs object the self.ips list
+		"""Append a fs object the self.filesystems list
 		"""
 		log = logging.getLogger('INIT')
 		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt)
@@ -231,6 +257,9 @@ class svc():
 
 		self.ips = []
 		add_ips(self)
+
+		self.volumegroups = []
+		add_volumegroups(self)
 
 		self.filesystems = []
 		add_filesystems(self)

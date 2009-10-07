@@ -24,16 +24,11 @@ import rcMounts
 
 class Filesystem:
 	def __init__(self, dev, mnt, type, mnt_opt):
-		log = logging.getLogger('INIT')
 		self.dev = dev
 		self.mnt = mnt
 		self.type = type
 		self.mnt_opt = mnt_opt
-
                 self.Mounts = rcMounts.Mounts()
-                m = self.Mounts.mount(dev, mnt)
-		if m is not None:
-			m.show()
 
 	def is_up(self):
 		if self.Mounts.has_mount(self.dev, self.mnt) != 0:

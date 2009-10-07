@@ -20,15 +20,13 @@ import optparse
 from rcGlobalEnv import *
 
 action_desc = {
-	'start':	'start a service, chaining startip-mount-startapp',
+	'start':	'start a service, chaining startip-diskstart-startapp',
 	'startip':	'configure service ip adresses',
 	'mount':	'prepare devices, logical volumes, mount service filesystems, bootstrap containers',
-	'mountnfs':	'mount nfs associated with the service',
 	'startapp':	'execute service application startup script',
-	'stop':		'stop a service, chaining stopapp-umount-stopip',
+	'stop':		'stop a service, chaining stopapp-diskstop-stopip',
 	'stopip':	'unconfigure service ip adresses',
 	'umount':	'shutdown container, umount service filesystems, deactivate logical volumes',
-	'umountnfs':	'umount nfs associated with the service',
 	'stopapp':	'execute service application stop script',
 	'syncnodes':	'send to peer nodes the service config files and additional files described in the config file',
 	'syncdrp':	'send to drp nodes the service config files and additional files described in the config file',
@@ -40,6 +38,10 @@ action_desc = {
 	'freeze':	'set up a flag to block actions on this service',
 	'thaw':		'remove the flag to unblock actions on this service',
 	'frozen':	'report on the current blocking of actions on this service',
+	'startvg':	'activate/import volume group resources of this service',
+	'stopvg':	'deactivate/deport volume group resources of this service',
+	'diskstart':	'combo action, chaining startvg-mount',
+	'diskstop':	'combo action, chaining umount-stopvg',
 }
 
 def format_desc(svc=False):
