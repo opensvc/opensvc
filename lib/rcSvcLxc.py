@@ -112,16 +112,17 @@ def create(self):
 	log.info("TODO")
 	return 0
 
-def status(self):
+def status(self, verbose=False):
 	status = rcStatus.Status()
-	print "lxc: %s" % status.str(self.lxc.status())
+	if verbose: print "lxc: %s" % status.str(self.lxc.status())
 	for ip in self.ips:
-		print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
+		if verbose: print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
 		status.add(ip.status())
 	for fs in self.filesystems:
-		print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
+		if verbose: print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
 		status.add(fs.status())
-	print "global: %s" % status.str(status.status)
+	if verbose: print "global: %s" % status.str(status.status)
+	return status.status
 
 def freeze(self):
 	return rcSvcHosted.freeze(self)

@@ -41,4 +41,4 @@ for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
 		print name
 		svc = rcSvc.svc(name)
-		svc.status(svc)
+		svc.status(svc, verbose=True)

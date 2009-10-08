@@ -27,7 +27,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 
 from rcFreeze import Freezer
 
-cmd = os.path.basename(__file__)
 if len(sys.argv) == 1:
 	f = Freezer()
 elif len(sys.argv) == 2:
@@ -36,6 +35,7 @@ else:
 	print __file__ + " [service]"
 	sys.exit(1)
 
+cmd = os.path.basename(__file__)
 if cmd == 'svcfreeze':
 	sys.exit(f.freeze())
 elif cmd == 'svcthaw':

@@ -127,18 +127,19 @@ def create(self):
 	log = logging.getLogger('CREATE')
 	return 0
 
-def status(self):
+def status(self, verbose=False):
 	status = rcStatus.Status()
 	for r in self.ips:
-		print "ip %s@%s: %s" % (r.name, r.dev, status.str(r.status()))
+		if (verbose): print "ip %s@%s: %s" % (r.name, r.dev, status.str(r.status()))
 		status.add(r.status())
 	for r in self.filesystems:
-		print "fs %s@%s: %s" % (r.dev, r.mnt, status.str(r.status()))
+		if (verbose): print "fs %s@%s: %s" % (r.dev, r.mnt, status.str(r.status()))
 		status.add(r.status())
 	for r in self.volumegroups:
-		print "vg %s: %s" % (r.name, status.str(r.status()))
+		if (verbose): print "vg %s: %s" % (r.name, status.str(r.status()))
 		status.add(r.status())
-	print "global: %s" % status.str(status.status)
+	if (verbose): print "global: %s" % status.str(status.status)
+	return status.status
 
 def freeze(self):
 	f = Freezer(self.svcname)
