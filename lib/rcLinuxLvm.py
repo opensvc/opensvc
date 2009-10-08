@@ -23,6 +23,7 @@ class Vg:
 			return 0
 		cmd = [ 'vgchange', '-a', 'y', self.name ]
 		(ret, out) = process_call_argv(cmd)
+		log.info(' '.join(cmd))
 		return ret
 
 	def stop(self):
@@ -32,6 +33,7 @@ class Vg:
 			return 0
 		cmd = [ 'vgchange', '-a', 'n', self.name ]
 		(ret, out) = process_call_argv(cmd)
+		log.info(' '.join(cmd))
 		return ret
 
 	def status(self):

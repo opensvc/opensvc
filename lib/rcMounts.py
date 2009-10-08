@@ -20,6 +20,7 @@ from subprocess import *
 import os
 import logging
 from rcGlobalEnv import *
+from rcUtilities import *
 
 class Mount:
 	def __init__(self, dev, mnt, type, mnt_opt):
@@ -27,19 +28,6 @@ class Mount:
 		self.mnt = mnt
 		self.type = type
 		self.mnt_opt = mnt_opt
-
-def is_exe(fpath):
-	return os.path.exists(fpath) and os.access(fpath, os.X_OK)
-
-def which(program):
-	fpath, fname = os.path.split(program)
-	if fpath and is_exe(program):
-		return program
-	for path in os.environ["PATH"].split(os.pathsep):
-		exe_file = os.path.join(path, program)
-		if is_exe(exe_file):
-			return exe_file
-	return None
 
 def file_to_loop(f):
 	"""Given a file path, returns the loop device associated. For example,
