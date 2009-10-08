@@ -6,10 +6,19 @@ import rcStatus
 
 class Vg:
 	def has_vg(self):
-		print "TODO: rcVg.has_vg"
-		return 0
+		"""Returns True if the volume is present
+		"""
+		cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
+		(ret, out) = process_call_argv(cmd)
+		if re.match('\s'+self.name+'\s', out, re.MULTILINE) is None:
+			return False
+		return True
 
 	def is_up(self):
+		"""Returns True if the volume group is present and activated
+		"""
+		if not self.has_vg():
+			return False
 		cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
 		(ret, out) = process_call_argv(cmd)
 		if re.match(' ....-[-o]', out, re.MULTILINE) is None:
