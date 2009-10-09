@@ -81,7 +81,11 @@ def add_filesystems(self):
 			mnt = self.conf.get(s, "mnt")
 			type = self.conf.get(s, "type")
 			mnt_opt = self.conf.get(s, "mnt_opt")
-			self.add_filesystem(dev, mnt, type, mnt_opt)
+			if self.conf.has_option(s, 'optional'):
+				optional = self.conf.getboolean(s, "optional")
+			else:
+				optional = False
+			self.add_filesystem(dev, mnt, type, mnt_opt, optional)
 
 def install_actions(self):
 	"""Setup the class svc methods as per node capabilities and
@@ -199,11 +203,11 @@ class svc():
 			 (name))
 		self.volumegroups.append(vg)
 
-	def add_filesystem(self, dev, mnt, type, mnt_opt):
+	def add_filesystem(self, dev, mnt, type, mnt_opt, optional):
 		"""Append a fs object the self.filesystems list
 		"""
 		log = logging.getLogger('INIT')
-		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt)
+		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt, optional)
 		if fs is None:
 			log.error("initialization failed for fs (%s %s %s %s)" %
 				 (dev, mnt, type, mnt_opt))

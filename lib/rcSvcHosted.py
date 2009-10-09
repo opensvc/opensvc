@@ -37,8 +37,8 @@ class Ip(rcIp.Ip):
 		rcIp.Ip.__init__(self, name, dev)
 
 class Filesystem(rcFilesystem.Filesystem):
-	def __init__(self, dev, mnt, type, mnt_opt):
-		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
+	def __init__(self, dev, mnt, type, mnt_opt, optional):
+		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt, optional)
 
 class Loop(rcLinuxLoop.Loop):
 	def __init__(self, name):

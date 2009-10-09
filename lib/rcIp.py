@@ -21,6 +21,7 @@ import os
 from subprocess import *
 
 from rcLogger import *
+from rcUtilities import process_call_argv
 import rcIfconfig
 import rcStatus
 
@@ -70,11 +71,10 @@ class Ip:
 		log = logging.getLogger('Ip.is_alive')
 		count=1
 		timeout=5
-		cmd = [ 'ping', '-c', repr(count), '-W', repr(timeout), self.addr ]
-		log.debug('call: %s' % ' '.join(cmd))
-		p = Popen(cmd, stdout=PIPE)
-		p.communicate()[0]
-		if p.returncode == 0:
+		cmd = ['ping', '-c', repr(count), '-W', repr(timeout), self.addr]
+		log.debug(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
+		if ret == 0:
 			return True
 		return False
 
@@ -125,8 +125,10 @@ class Ip:
 			log.error("No netmask found. Abort")
 			return 1
 		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
-		log.info("ifconfig "+stacked_dev+" "+self.addr+" netmask "+self.mask+" up")
-		if os.spawnlp(os.P_WAIT, 'ifconfig', 'ifconfig', stacked_dev, self.addr, 'netmask', self.mask, 'up') != 0:
+		cmd = ['ifconfig', stacked_dev, self.addr, 'netmask', self.mask, 'up']
+		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
+		if ret != 0:
 			log.error("failed")
 			return 1
 		return 0
@@ -137,8 +139,10 @@ class Ip:
 			log.info("%s is already down on %s" % (self.addr, self.dev))
 			return 0
 		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
-		log.info("ifconfig "+stacked_dev+" down")
-		if os.spawnlp(os.P_WAIT, 'ifconfig', 'ifconfig', stacked_dev, 'down') != 0:
+		cmd = ['ifconfig', stacked_dev, 'down']
+		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
+		if ret != 0:
 			log.error("failed")
 			return 1
 		return 0

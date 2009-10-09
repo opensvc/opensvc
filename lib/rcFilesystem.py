@@ -21,13 +21,15 @@ import os
 
 import rcStatus
 import rcMounts
+from rcUtilities import process_call_argv
 
 class Filesystem:
-	def __init__(self, dev, mnt, type, mnt_opt):
+	def __init__(self, dev, mnt, type, mnt_opt, optional=False):
 		self.dev = dev
 		self.mnt = mnt
 		self.type = type
 		self.mnt_opt = mnt_opt
+		self.optional = optional
                 self.Mounts = rcMounts.Mounts()
 
 	def is_up(self):
@@ -49,9 +51,13 @@ class Filesystem:
                         return 0
 		if not os.path.exists(self.mnt):
 			os.mkdir(self.mnt, 0755)
-                log.info("mount -t %s -o %s %s %s"%
-			(self.type, self.mnt_opt, self.dev, self.mnt))
-                if os.spawnlp(os.P_WAIT, 'mount', 'mount', '-t', self.type, '-o', self.mnt_opt, self.dev, self.mnt) != 0:
+                cmd = ['mount', '-t', self.type, '-o', self.mnt_opt, self.dev, self.mnt]
+		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
+		if ret != 0:
+			if self.optional:
+				log.info("failed, but marked optional ... go on")
+                        	return 0
                         log.error("failed")
                         return 1
                 return 0
@@ -62,11 +68,11 @@ class Filesystem:
                         log.info("fs(%s %s) is already umounted"%
 				(self.dev, self.mnt))
                         return 0
-                log.info("umount %s"% self.mnt)
-                if os.spawnlp(os.P_WAIT, 'umount', 'umount', self.mnt) != 0:
+                cmd = ['umount', self.mnt]
+		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
+		if ret != 0:
                         log.error("failed")
                         return 1
                 return 0
-
-
 
