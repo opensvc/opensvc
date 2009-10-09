@@ -48,6 +48,12 @@ def diskstart(self):
 def diskstop(self):
 	return rcSvcHosted.diskstop(self)
 
+def startloop(self):
+	return rcSvcHosted.startloop(self)
+
+def stoploop(self):
+	return rcSvcHosted.stoploop(self)
+
 def startvg(self):
 	return rcSvcHosted.startvg(self)
 

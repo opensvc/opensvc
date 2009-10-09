@@ -19,6 +19,7 @@
 from subprocess import *
 import os
 import logging
+import rcLinuxLoop
 from rcGlobalEnv import *
 from rcUtilities import *
 
@@ -29,19 +30,6 @@ class Mount:
 		self.type = type
 		self.mnt_opt = mnt_opt
 
-def file_to_loop(f):
-	"""Given a file path, returns the loop device associated. For example,
-	/path/to/file => /dev/loop0
-	"""
-	if which('losetup') is None:
-		return str(None)
-	if not os.path.isfile(f):
-		return f
-	if rcEnv.sysname != 'Linux':
-		return f
-	out = Popen(['losetup', '-j', f], stdout=PIPE).communicate()[0]
-	return out.split()[0].strip(':')
-
 def match_mount(i, dev, mnt):
 	"""Given a line of 'mount' output, returns True if (dev, mnt) matches
 	this line. Returns False otherwize. Also care about weirdos like loops
@@ -51,7 +39,7 @@ def match_mount(i, dev, mnt):
 		return False
 	if i.dev == dev:
 		return True
-	if i.dev == file_to_loop(dev):
+	if i.dev == rcLinuxLoop.file_to_loop(dev):
 		return True
 	return False
 

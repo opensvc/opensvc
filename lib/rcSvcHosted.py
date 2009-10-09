@@ -28,6 +28,7 @@ import rcStatus
 import rcIp
 import rcFilesystem
 import rcIfconfig
+import rcLinuxLoop
 
 rcLvm = __import__('rc'+rcEnv.sysname+'Lvm', globals(), locals(), [], -1)
 
@@ -38,6 +39,10 @@ class Ip(rcIp.Ip):
 class Filesystem(rcFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt):
 		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt)
+
+class Loop(rcLinuxLoop.Loop):
+	def __init__(self, name):
+		rcLinuxLoop.Loop.__init__(self, name)
 
 class Vg(rcLvm.Vg):
 	def __init__(self, name):
@@ -60,17 +65,19 @@ def stop(self):
 	return 0
 
 def diskstart(self):
-	"""Combo action: startvg => mount
+	"""Combo action: startloop => startvg => mount
 	"""
+	if startloop(self) != 0: return 1
 	if startvg(self) != 0: return 1
 	if mount(self) != 0: return 1
 	return 0
 
 def diskstop(self):
-	"""Combo action: umount => stopvg
+	"""Combo action: umount => stopvg => stoploop
 	"""
 	if umount(self) != 0: return 1
 	if stopvg(self) != 0: return 1
+	if stoploop(self) != 0: return 1
 	return 0
 
 def syncnodes(self):
@@ -102,6 +109,18 @@ def mount(self):
 def umount(self):
 	log = logging.getLogger('UMOUNT')
 	for r in self.filesystems:
+		if r.stop() != 0: return 1
+	return 0
+
+def startloop(self):
+	log = logging.getLogger('STARTLOOP')
+	for r in self.loops:
+		if r.start() != 0: return 1
+	return 0
+
+def stoploop(self):
+	log = logging.getLogger('STOPLOOP')
+	for r in self.loops:
 		if r.stop() != 0: return 1
 	return 0
 

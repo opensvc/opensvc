@@ -31,8 +31,8 @@ class Vg:
 			log.info("%s is already up" % self.name)
 			return 0
 		cmd = [ 'vgchange', '-a', 'y', self.name ]
-		(ret, out) = process_call_argv(cmd)
 		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
 		return ret
 
 	def stop(self):
@@ -41,8 +41,8 @@ class Vg:
 			log.info("%s is already down" % self.name)
 			return 0
 		cmd = [ 'vgchange', '-a', 'n', self.name ]
-		(ret, out) = process_call_argv(cmd)
 		log.info(' '.join(cmd))
+		(ret, out) = process_call_argv(cmd)
 		return ret
 
 	def status(self):

@@ -53,6 +53,15 @@ def add_ips(self):
 			ipdev = self.conf.get(s, "ipdev")
 			self.add_ip(ipname, ipdev)
 
+def add_loops(self):
+	"""Parse the configuration file and add a loop object for each [loop#n]
+	section. Loop objects are stored in a list in the service object.
+	"""
+	for s in self.conf.sections():
+		if re.match('^loop#[0-9]', s, re.I) is not None:
+			file = self.conf.get(s, "file")
+			self.add_loop(file)
+
 def add_volumegroups(self):
 	"""Parse the configuration file and add a vg object for each [vg#n]
 	section. Vg objects are stored in a list in the service object.
@@ -102,6 +111,11 @@ def install_actions(self):
 	if self.conf.has_section("fs#1") is True:
 		self.mount = self.rcMode.mount
 		self.umount = self.rcMode.umount
+		self.diskstop = self.rcMode.diskstop
+		self.diskstart = self.rcMode.diskstart
+	if self.conf.has_section("loop#1") is True:
+		self.startloop = self.rcMode.startloop
+		self.stoploop = self.rcMode.stoploop
 		self.diskstop = self.rcMode.diskstop
 		self.diskstart = self.rcMode.diskstart
 	if self.conf.has_section("vg#1") is True:
@@ -158,6 +172,19 @@ class svc():
 		log.debug("initialization succeeded for ip (%s@%s)" %
 			 (ipname, ipdev))
 		self.ips.append(ip)
+
+	def add_loop(self, name):
+		"""Append a loop object the self.loops list
+		"""
+		log = logging.getLogger('INIT')
+		loop = self.rcMode.Loop(name)
+		if loop is None:
+			log.error("initialization failed for loop (%s)" %
+				 (name))
+			return 1
+		log.debug("initialization succeeded for loop (%s)" %
+			 (name))
+		self.loops.append(loop)
 
 	def add_volumegroup(self, name):
 		"""Append a vg object the self.volumegroups list
@@ -257,6 +284,9 @@ class svc():
 
 		self.ips = []
 		add_ips(self)
+
+		self.loops = []
+		add_loops(self)
 
 		self.volumegroups = []
 		add_volumegroups(self)

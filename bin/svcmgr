@@ -47,7 +47,6 @@ def get_services(status):
 	for name in os.listdir(pathetc):
 		if is_service(os.path.join(pathetc, name)):
 			svc = rcSvc.svc(name)
-			print "%s: %i" % (name, svc.status(svc))
 			if status == 'ANY' or svc.status(svc) == status:
 				__svcs.append(name)
 	return __svcs
