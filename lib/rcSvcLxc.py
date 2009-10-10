@@ -120,14 +120,16 @@ def create(self):
 
 def status(self, verbose=False):
 	status = rcStatus.Status()
-	if verbose: print "lxc: %s" % status.str(self.lxc.status())
+	status.add(self.lxc.status(verbose))
 	for ip in self.ips:
-		if verbose: print "ip %s@%s: %s" % (ip.name, ip.dev, status.str(ip.status()))
-		status.add(ip.status())
+		status.add(ip.status(verbose))
 	for fs in self.filesystems:
-		if verbose: print "fs %s@%s: %s" % (fs.dev, fs.mnt, status.str(fs.status()))
-		status.add(fs.status())
-	if verbose: print "global: %s" % status.str(status.status)
+		status.add(fs.status(verbose))
+	for r in self.volumegroups:
+		status.add(r.status(verbose))
+	for r in self.loops:
+		status.add(r.status(verbose))
+	if verbose: rcStatus.print_status("global", status.status)
 	return status.status
 
 def freeze(self):

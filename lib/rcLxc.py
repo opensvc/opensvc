@@ -131,11 +131,14 @@ class Lxc:
 			return True
 		return False
 
-	def status(self):
+	def status(self, verbose=False):
 		if self.is_up():
-			return rcStatus.UP
+			status = rcStatus.UP
 		else:
-			return rcStatus.DOWN
+			status = rcStatus.DOWN
+		if verbose:
+			rcStatus.print_status("lxc", status)
+		return status
 
 	def __init__(self, svc):
 		self.name = svc.svcname

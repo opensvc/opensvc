@@ -45,8 +45,8 @@ class Loop(rcLinuxLoop.Loop):
 		rcLinuxLoop.Loop.__init__(self, name)
 
 class Vg(rcLvm.Vg):
-	def __init__(self, name):
-		rcLvm.Vg.__init__(self, name)
+	def __init__(self, name, optional=False):
+		rcLvm.Vg.__init__(self, name, optional)
 
 def start(self):
 	"""Combo action: startip => diskstart => startapp
@@ -149,15 +149,14 @@ def create(self):
 def status(self, verbose=False):
 	status = rcStatus.Status()
 	for r in self.ips:
-		if (verbose): print "ip %s@%s: %s" % (r.name, r.dev, status.str(r.status()))
-		status.add(r.status())
+		status.add(r.status(verbose))
 	for r in self.filesystems:
-		if (verbose): print "fs %s@%s: %s" % (r.dev, r.mnt, status.str(r.status()))
-		status.add(r.status())
+		status.add(r.status(verbose))
 	for r in self.volumegroups:
-		if (verbose): print "vg %s: %s" % (r.name, status.str(r.status()))
-		status.add(r.status())
-	if (verbose): print "global: %s" % status.str(status.status)
+		status.add(r.status(verbose))
+	for r in self.loops:
+		status.add(r.status(verbose))
+	if (verbose): rcStatus.print_status("global", (status.status))
 	return status.status
 
 def freeze(self):

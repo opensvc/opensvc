@@ -29,6 +29,7 @@ rcService = os.path.join(pathsvc, 'bin', 'rcService')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import rcSvc
+from rcUtilities import *
 
 def is_service(f):
 	if os.path.realpath(f) != os.path.realpath(rcService):
@@ -39,6 +40,6 @@ def is_service(f):
 
 for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
-		print name
+		print banner(name)
 		svc = rcSvc.svc(name)
 		svc.status(svc, verbose=True)

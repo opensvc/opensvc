@@ -10,7 +10,7 @@ class Vg:
 		"""
 		cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
 		(ret, out) = process_call_argv(cmd)
-		if re.match('\s'+self.name+'\s', out, re.MULTILINE) is None:
+		if re.match('\s*'+self.name+'\s', out, re.MULTILINE) is None:
 			return False
 		return True
 
@@ -45,11 +45,15 @@ class Vg:
 		(ret, out) = process_call_argv(cmd)
 		return ret
 
-	def status(self):
+	def status(self, verbose=False):
 		if self.is_up():
-			return rcStatus.UP
+			status = rcStatus.UP
 		else:
-			return rcStatus.DOWN
+			status = rcStatus.DOWN
+		if (verbose):
+			rcStatus.print_status("vg %s" % self.name, status)
+		return status
 
-	def __init__(self, name):
+	def __init__(self, name, optional=False):
 		self.name = name
+		self.optional = optional

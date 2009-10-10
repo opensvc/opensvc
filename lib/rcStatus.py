@@ -16,12 +16,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+import os
+
 UP = 0
 DOWN = 1
 WARN = 2
 NA = 3
 TODO = 4
-UNDEF = 4
+UNDEF = 5
+
+GREEN = 32
+RED = 31
+YELLOW = 33
 
 def _merge(s1, s2):
 	"""Merge too status: WARN and TODO taint UP and DOWN
@@ -44,18 +50,28 @@ def _merge(s1, s2):
 	if (s1, s2) == (TODO, TODO): return TODO
 	return _merge(s2, s1)
 
+def colorize(color, text):
+	if os.isatty(1):
+		return '\033['+str(color)+'m'+text+'\033[m'
+	else:
+		return text
+
+def status_str(s):
+	if s == UP: return colorize(GREEN, 'UP')
+	if s == DOWN: return colorize(RED, 'DOWN')
+	if s == WARN: return colorize(YELLOW, 'WARN')
+	if s == NA: return 'N/A'
+	if s == TODO: return 'TODO'
+	if s == UNDEF: return 'UNDEF'
+
+def print_status(resource, status):
+	import string
+	print '{0:70} {1}'.format(resource, status_str(status))
+
 class Status:
 	"""Class that wraps printing and calculation of resource status
 	"""
 	status = UNDEF
-
-	def str(self, s):
-		if s == UP: return 'UP'
-		if s == DOWN: return 'DOWN'
-		if s == WARN: return 'WARN'
-		if s == NA: return 'N/A'
-		if s == TODO: return 'TODO'
-		if s == UNDEF: return 'UNDEF'
 
 	def reset(self):
 		self.status = UNDEF

@@ -48,7 +48,7 @@ def add_ips(self):
 	section. Ip objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('^ip#[0-9]', s, re.I) is not None:
+		if re.match('ip#[0-9]', s, re.I) is not None:
 			ipname = self.conf.get(s, "ipname")
 			ipdev = self.conf.get(s, "ipdev")
 			self.add_ip(ipname, ipdev)
@@ -58,7 +58,7 @@ def add_loops(self):
 	section. Loop objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('^loop#[0-9]', s, re.I) is not None:
+		if re.match('loop#[0-9]', s, re.I) is not None:
 			file = self.conf.get(s, "file")
 			self.add_loop(file)
 
@@ -67,16 +67,20 @@ def add_volumegroups(self):
 	section. Vg objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('^vg#[0-9]', s, re.I) is not None:
+		if re.match('vg#[0-9]', s, re.I) is not None:
 			name = self.conf.get(s, "vgname")
-			self.add_volumegroup(name)
+			if self.conf.has_option(s, 'optional'):
+				optional = self.conf.getboolean(s, "optional")
+			else:
+				optional = False
+			self.add_volumegroup(name, optional)
 
 def add_filesystems(self):
 	"""Parse the configuration file and add a fs object for each [fs#n]
 	section. Fs objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('^fs#[0-9]', s, re.I) is not None:
+		if re.match('fs#[0-9]', s, re.I) is not None:
 			dev = self.conf.get(s, "dev")
 			mnt = self.conf.get(s, "mnt")
 			type = self.conf.get(s, "type")
@@ -190,7 +194,7 @@ class svc():
 			 (name))
 		self.loops.append(loop)
 
-	def add_volumegroup(self, name):
+	def add_volumegroup(self, name, optional):
 		"""Append a vg object the self.volumegroups list
 		"""
 		log = logging.getLogger('INIT')

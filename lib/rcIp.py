@@ -87,11 +87,14 @@ class Ip:
 		log.debug("%s@%s is down" % (self.addr, self.dev))
 		return False
 
-	def status(self):
+	def status(self, verbose=False):
 		if self.is_up() is True:
-			return rcStatus.UP
+			status = rcStatus.UP
 		else:
-			return rcStatus.DOWN
+			status = rcStatus.DOWN
+		if verbose:
+			rcStatus.print_status("ip %s@%s" % (self.name, self.dev), status)
+		return status
 
 	def allow_start(self):
 		log = logging.getLogger('STARTIP')

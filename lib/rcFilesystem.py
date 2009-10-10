@@ -37,11 +37,14 @@ class Filesystem:
 			return False
 		return True
 
-	def status(self):
+	def status(self, verbose=False):
 		if self.is_up() is True:
-			return rcStatus.UP
+			status = rcStatus.UP
 		else:
-			return rcStatus.DOWN
+			status = rcStatus.DOWN
+		if verbose:
+			rcStatus.print_status("fs %s@%s" % (self.dev, self.mnt), status)
+		return status
 
 	def start(self):
 		log = logging.getLogger('MOUNT')
