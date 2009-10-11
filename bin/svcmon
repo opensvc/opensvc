@@ -31,6 +31,8 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 import rcSvc
 from rcUtilities import *
 
+check_privs()
+
 def is_service(f):
 	if os.path.realpath(f) != os.path.realpath(rcService):
 		return False

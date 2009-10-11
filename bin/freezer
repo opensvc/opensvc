@@ -26,6 +26,9 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 
 from rcFreeze import Freezer
+from rcUtilities import check_privs
+
+check_privs()
 
 if len(sys.argv) == 1:
 	f = Freezer()

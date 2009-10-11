@@ -3,6 +3,12 @@ import select
 import logging
 from subprocess import *
 
+def check_privs():
+	if os.getuid() != 0:
+		print 'Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv)
+		sys.exit(1)
+
+
 def banner(text, ch='=', length=78):
 	spaced_text = ' %s ' % text
 	banner = spaced_text.center(length, ch)

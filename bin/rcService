@@ -27,7 +27,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..' , 'lib'))
 
 import rcSvc
 import rcOptParser
+from rcUtilities import check_privs
 
+check_privs()
 
 svc = rcSvc.svc(os.path.basename(__file__))
 parser = rcOptParser.svcOptionParser(svc)
