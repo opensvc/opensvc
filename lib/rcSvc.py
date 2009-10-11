@@ -30,6 +30,7 @@ import rcOptParser
 import rcApp
 import rcLogger
 import rcAddService
+import rcRsync
 
 def svcmode_mod_name(svcmode=''):
 	"""Returns the name of the module implementing the specificities
@@ -48,48 +49,76 @@ def add_ips(self):
 	section. Ip objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('ip#[0-9]', s, re.I) is not None:
-			ipname = self.conf.get(s, "ipname")
-			ipdev = self.conf.get(s, "ipdev")
-			self.add_ip(ipname, ipdev)
+		if re.match('ip#[0-9]', s, re.I) is None:
+			continue
+		ipname = self.conf.get(s, "ipname")
+		ipdev = self.conf.get(s, "ipdev")
+		self.add_ip(ipname, ipdev)
 
 def add_loops(self):
 	"""Parse the configuration file and add a loop object for each [loop#n]
 	section. Loop objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('loop#[0-9]', s, re.I) is not None:
-			file = self.conf.get(s, "file")
-			self.add_loop(file)
+		if re.match('loop#[0-9]', s, re.I) is None:
+			continue
+		file = self.conf.get(s, "file")
+		self.add_loop(file)
 
 def add_volumegroups(self):
 	"""Parse the configuration file and add a vg object for each [vg#n]
 	section. Vg objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('vg#[0-9]', s, re.I) is not None:
-			name = self.conf.get(s, "vgname")
-			if self.conf.has_option(s, 'optional'):
-				optional = self.conf.getboolean(s, "optional")
-			else:
-				optional = False
-			self.add_volumegroup(name, optional)
+		if re.match('vg#[0-9]', s, re.I) is None:
+			continue
+		name = self.conf.get(s, "vgname")
+		if self.conf.has_option(s, 'optional'):
+			optional = self.conf.getboolean(s, "optional")
+		else:
+			optional = False
+		self.add_volumegroup(name, optional)
 
 def add_filesystems(self):
 	"""Parse the configuration file and add a fs object for each [fs#n]
 	section. Fs objects are stored in a list in the service object.
 	"""
 	for s in self.conf.sections():
-		if re.match('fs#[0-9]', s, re.I) is not None:
-			dev = self.conf.get(s, "dev")
-			mnt = self.conf.get(s, "mnt")
-			type = self.conf.get(s, "type")
-			mnt_opt = self.conf.get(s, "mnt_opt")
-			if self.conf.has_option(s, 'optional'):
-				optional = self.conf.getboolean(s, "optional")
-			else:
-				optional = False
-			self.add_filesystem(dev, mnt, type, mnt_opt, optional)
+		if re.match('fs#[0-9]', s, re.I) is None:
+			continue
+		dev = self.conf.get(s, "dev")
+		mnt = self.conf.get(s, "mnt")
+		type = self.conf.get(s, "type")
+		mnt_opt = self.conf.get(s, "mnt_opt")
+		if self.conf.has_option(s, 'optional'):
+			optional = self.conf.getboolean(s, "optional")
+		else:
+			optional = False
+		self.add_filesystem(dev, mnt, type, mnt_opt, optional)
+
+def add_syncs(self):
+	"""Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus
+	the those described in the config file.
+	"""
+	for s in self.conf.sections():
+		if re.match('sync#[0-9]', s, re.I) is None:
+			continue
+		if not self.conf.has_option(s, 'src') or \
+		   not self.conf.has_option(s, 'dst'):
+			log.error("config file section %s must have src and dst set" % s)
+			return 1
+		src = self.conf.get(s, "src")
+		dst = self.conf.get(s, "dst")
+		if self.conf.has_option(s, 'exclude'):
+			exclude = self.conf.get(s, 'exclude')
+		else:
+			exclude = ''
+		if self.conf.has_option(s, 'target'):
+			target = self.conf.get(s, 'target').split(' ')
+		else:
+			target = ['nodes', 'drpnode']
+
+		self.add_sync(src, dst, exclude, target)
 
 def install_actions(self):
 	"""Setup the class svc methods as per node capabilities and
@@ -113,8 +142,6 @@ def install_actions(self):
 	self.stop = self.rcMode.stop
 	self.startapp = self.rcMode.startapp
 	self.stopapp = self.rcMode.stopapp
-	self.syncnodes = self.rcMode.syncnodes
-	self.syncdrp = self.rcMode.syncdrp
 
 	if self.conf.has_section("fs#1") is True:
 		self.mount = self.rcMode.mount
@@ -174,10 +201,10 @@ class svc():
 		log = logging.getLogger('INIT')
 		ip = self.rcMode.Ip(self, ipname, ipdev)
 		if ip is None:
-			log.error("initialization failed for ip (%s@%s)" %
+			log.error("register failed for ip (%s@%s)" %
 				 (ipname, ipdev))
 			return 1
-		log.debug("initialization succeeded for ip (%s@%s)" %
+		log.debug("registered ip (%s@%s)" %
 			 (ipname, ipdev))
 		self.ips.append(ip)
 
@@ -187,10 +214,10 @@ class svc():
 		log = logging.getLogger('INIT')
 		loop = self.rcMode.Loop(name)
 		if loop is None:
-			log.error("initialization failed for loop (%s)" %
+			log.error("register failed for loop (%s)" %
 				 (name))
 			return 1
-		log.debug("initialization succeeded for loop (%s)" %
+		log.debug("registered loop (%s)" %
 			 (name))
 		self.loops.append(loop)
 
@@ -200,10 +227,10 @@ class svc():
 		log = logging.getLogger('INIT')
 		vg = self.rcMode.Vg(name)
 		if vg is None:
-			log.error("initialization failed for vg (%s)" %
+			log.error("register failed for vg (%s)" %
 				 (name))
 			return 1
-		log.debug("initialization succeeded for vg (%s)" %
+		log.debug("registered vg (%s)" %
 			 (name))
 		self.volumegroups.append(vg)
 
@@ -213,12 +240,32 @@ class svc():
 		log = logging.getLogger('INIT')
 		fs = self.rcMode.Filesystem(dev, mnt, type, mnt_opt, optional)
 		if fs is None:
-			log.error("initialization failed for fs (%s %s %s %s)" %
+			log.error("register failed for fs (%s %s %s %s)" %
 				 (dev, mnt, type, mnt_opt))
 			return 1
-		log.debug("initialization succeeded for fs (%s %s %s %s)" %
+		log.debug("registered fs (%s %s %s %s)" %
 			 (dev, mnt, type, mnt_opt))
 		self.filesystems.append(fs)
+
+	def add_sync(self, src, dst, exclude, target):
+		"""Append a synchronization to the self.syncs list
+		"""
+		log = logging.getLogger('INIT')
+		sync = rcRsync.Rsync(self, src, dst, exclude, target)
+		log.debug("registered sync (%s => %s on %s)" % (src, dst, target))
+		self.syncs.append(sync)
+
+	def syncnodes(self, svc):
+		"""Run all sync jobs to peer nodes for the service
+		"""
+		for s in self.syncs:
+			if s.syncnodes() != 0: return 1
+
+	def syncdrp(self, svc):
+		"""Run all sync jobs to drp nodes for the service
+		"""
+		for s in self.syncs:
+			if s.syncdrp() != 0: return 1
 
 	def __init__(self, name):
 		#
@@ -302,5 +349,9 @@ class svc():
 		self.filesystems = []
 		add_filesystems(self)
 
+		self.syncs = []
+		add_syncs(self)
+
 		self.apps = None
 		self.apps = rcApp.Apps(self)
+
