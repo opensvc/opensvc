@@ -114,7 +114,7 @@ def add_syncs(self):
 		else:
 			exclude = ''
 		if self.conf.has_option(s, 'target'):
-			target = self.conf.get(s, 'target').split(' ')
+			target = self.conf.get(s, 'target').split()
 		else:
 			target = ['nodes', 'drpnode']
 
@@ -164,7 +164,11 @@ def install_actions(self):
 	if self.svcmode == 'lxc':
 		self.startlxc = self.rcMode.startlxc
 		self.stoplxc = self.rcMode.stoplxc
-
+	if rcEnv.nodename in self.nodes:
+		if len(self.nodes) > 1:
+			self.syncnodes = syncnodes
+		if len(self.drpnode) > 0:
+			self.syncdrp = syncdrp
 	return 0
 
 def setup_logging():
@@ -187,6 +191,17 @@ def setup_logging():
 		rcEnv.loglevel = logging.INFO
 		log.setLevel(logging.INFO)
 
+def syncnodes(self):
+	"""Run all sync jobs to peer nodes for the service
+	"""
+	for s in self.syncs:
+		if s.syncnodes() != 0: return 1
+
+def syncdrp(self):
+	"""Run all sync jobs to drp nodes for the service
+	"""
+	for s in self.syncs:
+		if s.syncdrp() != 0: return 1
 
 class svc():
 	"""This base class exposes actions available to all type of services,
@@ -255,18 +270,6 @@ class svc():
 		log.debug("registered sync (%s => %s on %s)" % (src, dst, target))
 		self.syncs.append(sync)
 
-	def syncnodes(self, svc):
-		"""Run all sync jobs to peer nodes for the service
-		"""
-		for s in self.syncs:
-			if s.syncnodes() != 0: return 1
-
-	def syncdrp(self, svc):
-		"""Run all sync jobs to drp nodes for the service
-		"""
-		for s in self.syncs:
-			if s.syncdrp() != 0: return 1
-
 	def __init__(self, name):
 		#
 		# file tree abstraction
@@ -317,6 +320,7 @@ class svc():
 		# class RawConfigParser instance name: 'conf'
 		#
 		self.svcmode = "hosted"
+		self.conf = None
 		if os.path.isfile(rcEnv.svcconf):
 			self.conf = ConfigParser.RawConfigParser()
 			self.conf.read(rcEnv.svcconf)
@@ -329,6 +333,20 @@ class svc():
 		log.debug('service mode = ' + self.svcmode)
 		self.rcMode = __import__(svcmode_mod_name(self.svcmode), globals(), locals(), [], -1)
 
+
+		#
+		# Setup service properties from config file content
+		#
+		self.nodes = []
+		self.drpnode = []
+		if self.conf.has_option("default", "nodes"):
+			self.nodes = self.conf.get("default", "nodes").split()
+		if self.conf.has_option("default", "drpnode"):
+			self.drpnode = self.conf.get("default", "drpnode").split()
+
+		#
+		# plug service methods
+		#
 		if install_actions(self) != 0: return None
 
 		#
