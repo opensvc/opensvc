@@ -22,8 +22,8 @@ from subprocess import *
 
 from rcGlobalEnv import *
 from rcFreeze import Freezer
-import rcIp
-import rcFilesystem
+import ResIp
+import ResFilesystem
 import rcSvcHosted
 import rcLxc
 import rcStatus
@@ -141,7 +141,7 @@ def thaw(self):
 def frozen(self):
 	return rcSvcHosted.frozen(self)
 
-class Ip(rcIp.Ip):
+class Ip(ResIp.Ip):
 	def is_up(self):
 		if self.svc.lxc.is_up() and self.is_alive():
 			return True
@@ -155,7 +155,7 @@ class Ip(rcIp.Ip):
 		try:
 			if not self.allow_start():
 				return 0
-		except rcIp.IpConflict, rcIp.IpDevDown:
+		except ResIp.IpConflict, ResIp.IpDevDown:
 			return 1
 		log.debug('pre-checks passed')
 		log.info('nothing to do for lxc containers')
@@ -163,11 +163,11 @@ class Ip(rcIp.Ip):
 
 	def __init__(self, svc, name, dev):
 		self.svc = svc
-		rcIp.Ip.__init__(self, name, dev)
+		ResIp.Ip.__init__(self, name, dev)
 
-class Filesystem(rcFilesystem.Filesystem):
+class Filesystem(ResFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt, optional):
-		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt, optional)
+		ResFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt, optional)
 
 class Lxc(rcLxc.Lxc):
 	def __init__(self, svc):

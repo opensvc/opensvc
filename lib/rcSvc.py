@@ -30,7 +30,7 @@ import rcOptParser
 import rcApp
 import rcLogger
 import rcAddService
-import rcRsync
+import ResRsync
 
 def svcmode_mod_name(svcmode=''):
 	"""Returns the name of the module implementing the specificities
@@ -266,7 +266,7 @@ class svc():
 		"""Append a synchronization to the self.syncs list
 		"""
 		log = logging.getLogger('INIT')
-		sync = rcRsync.Rsync(self, src, dst, exclude, target)
+		sync = ResRsync.Rsync(self, src, dst, exclude, target)
 		log.debug("registered sync (%s => %s on %s)" % (src, dst, target))
 		self.syncs.append(sync)
 

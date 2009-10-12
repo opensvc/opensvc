@@ -25,24 +25,24 @@ from subprocess import *
 from rcGlobalEnv import *
 from rcFreeze import Freezer
 import rcStatus
-import rcIp
-import rcFilesystem
+import ResIp
+import ResFilesystem
 import rcIfconfig
-import rcLinuxLoop
+import ResLinuxLoop
 
-rcLvm = __import__('rc'+rcEnv.sysname+'Lvm', globals(), locals(), [], -1)
+rcLvm = __import__('Res'+rcEnv.sysname+'Lvm', globals(), locals(), [], -1)
 
-class Ip(rcIp.Ip):
+class Ip(ResIp.Ip):
 	def __init__(self, svc, name, dev):
-		rcIp.Ip.__init__(self, name, dev)
+		ResIp.Ip.__init__(self, name, dev)
 
-class Filesystem(rcFilesystem.Filesystem):
+class Filesystem(ResFilesystem.Filesystem):
 	def __init__(self, dev, mnt, type, mnt_opt, optional):
-		rcFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt, optional)
+		ResFilesystem.Filesystem.__init__(self, dev, mnt, type, mnt_opt, optional)
 
-class Loop(rcLinuxLoop.Loop):
+class Loop(ResLinuxLoop.Loop):
 	def __init__(self, name):
-		rcLinuxLoop.Loop.__init__(self, name)
+		ResLinuxLoop.Loop.__init__(self, name)
 
 class Vg(rcLvm.Vg):
 	def __init__(self, name, optional=False):
