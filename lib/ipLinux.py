@@ -16,6 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+# To change this template, choose Tools | Templates
+# and open the template in the editor.
+"Module implement Linux specific ip management"
+
+import ip
 import socket
 import os
 from subprocess import *
@@ -66,7 +71,7 @@ class IpConflict(Exception):
 	def __str__(self):
 		return repr(self.value)
 
-class Ip:
+class Ip(ip.Ip):
 	def is_alive(self):
 		log = logging.getLogger('Ip.is_alive')
 		count=1
@@ -155,5 +160,9 @@ class Ip:
 		self.dev = dev
 		self.addr = socket.gethostbyname(name)
 		log = logging.getLogger('INIT')
+                ip.Ip.__init__(self)
 
+if __name__ == "__main__":
+    for c in (Ip,) :
+        help(c)
 

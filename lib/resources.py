@@ -37,8 +37,8 @@ class Resource(object):
 
     def __str__(self):
         output="object=%s type=%s" %   (self.__class__.__name__,self.type)
-        if self.optional : output+=" opt=",self.optional
-        if self.disabled : output+=" disa=",self.disabled
+        if self.optional : output+=" opt="+str(self.optional)
+        if self.disabled : output+=" disa="+str(self.disabled)
         return output
     
     def is_optional(self): return self.optional
@@ -53,6 +53,8 @@ class Resource(object):
     def do_action(self,action):
         "Every resource should define basic doAction: start() stop() status()"
         print "call do_action on %s" % self.__class__.__name__
+        if hasattr(self, action):
+            return getattr(self, action)()
         if action in ("start","stop","status") :
             raise exc.excUndefined(action,self.__class__.__name__,\
                                     "Resource.do_action")

@@ -27,15 +27,14 @@ import mount
 
 class Mount(mount.Mount):
     """ define SunOS mount/umount doAction """
-    def do_action(self,action=None):
-        if action == "start" :
-            print "===== exec mount -F %s %s %s" % \
-                  (self.fsType,self.device,self.mountPoint)
-        elif action == "stop" :
-            print "====== exec fuser -ck %s" % (self.device)
-            print "====== exec umount %s" % (self.mountPoint)
-        else :
-            mount.Mount.do_action(self,action)
+
+    def start(self):
+        print "===== exec mount -F %s %s %s" % \
+              (self.fsType,self.device,self.mountPoint)
+
+    def stop(self):
+        print "====== exec fuser -ck %s" % (self.device)
+        print "====== exec umount %s" % (self.mountPoint)
 
 if __name__ == "__main__":
     for c in (Mount,) :

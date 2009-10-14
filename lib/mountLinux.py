@@ -18,24 +18,62 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
 
-__author__="cgaliber"
-__date__ ="$11 oct. 2009 14:38:00$"
+import logging
+import os
 
-import mount    
+import rcStatus
+import rcMounts
+import mount
+from rcUtilities import process_call_argv
 
 class Mount(mount.Mount):
     """ define Linux mount/umount doAction """
-    def do_action(self,action=None):
-        if action == "start" :
-            print "===== exec mount -t %s %s %s" % \
-                  (self.fsType,self.device,self.mountPoint)
-        elif action == "stop" :
-            print "====== exec fuser -ck %s" % (self.device)
-            print "====== exec umount %s" % (self.mountPoint)
-        else :
-            mount.Mount.do_action(self,action)
+    def __init__(self, mountPoint, device, fsType, mntOpt):
+        self.Mounts = rcMounts.Mounts()
+        mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+
+    def is_up(self):
+        if self.Mounts.has_mount(self.device, self.mountPoint) != 0:
+            return False
+        return True
+
+    def status(self, verbose=False):
+        if self.is_up() is True:
+            status = rcStatus.UP
+        else:
+            status = rcStatus.DOWN
+        if verbose:
+            rcStatus.print_status("fs %s@%s" % (self.device, self.mountPoint), status)
+        return status
+
+    def start(self):
+        log = logging.getLogger('MOUNT')
+        if self.is_up() is True:
+            log.info("fs(%s %s) is already mounted"%
+                (self.device, self.mountPoint))
+            return 0
+        if not os.path.exists(self.mountPoint):
+            os.mkdir(self.mountPoint, 0755)
+        cmd = ['mount', '-t', self.fsType, '-o', self.mntOpt, self.device,
+self.mountPoint]
+        log.info(' '.join(cmd))
+        (ret, out) = process_call_argv(cmd)
+        return ret
+
+    def stop(self):
+        log = logging.getLogger('UMOUNT')
+        if self.is_up() is False:
+            log.info("fs(%s %s) is already umounted"%
+                    (self.device, self.mountPoint))
+            return 0
+        cmd = ['umount', self.mountPoint]
+        log.info(' '.join(cmd))
+        (ret, out) = process_call_argv(cmd)
+        if ret != 0:
+            log.error("failed")
+            return 1
+        return 0
 
 if __name__ == "__main__":
     for c in (Mount,) :

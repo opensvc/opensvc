@@ -19,7 +19,7 @@
 from subprocess import *
 import os
 import logging
-import ResLinuxLoop
+import loopLinux
 from rcGlobalEnv import *
 from rcUtilities import *
 
@@ -39,7 +39,7 @@ def match_mount(i, dev, mnt):
 		return False
 	if i.dev == dev:
 		return True
-	if i.dev == ResLinuxLoop.file_to_loop(dev):
+	if i.dev == loopLinux.file_to_loop(dev):
 		return True
 	return False
 

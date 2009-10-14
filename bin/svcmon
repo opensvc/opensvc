@@ -28,7 +28,7 @@ pathetc = os.path.join(pathsvc, 'etc')
 rcService = os.path.join(pathsvc, 'bin', 'rcService')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
-import rcSvc
+import svcBuilder
 from rcUtilities import *
 
 check_privs()
@@ -43,5 +43,5 @@ def is_service(f):
 for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
 		print banner(name)
-		svc = rcSvc.svc(name)
-		svc.status(svc, verbose=True)
+		svc = svcBuilder.build(name)
+		svc.status(True)

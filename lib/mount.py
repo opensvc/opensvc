@@ -19,30 +19,28 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-__author__="cgaliber"
-__date__ ="$10 oct. 2009 09:38:20$"
-
 import resources as res
 
 class Mount(res.Resource):
     """Define a mount resource 
     """
-    def __init__(self,mountPoint=None,device=None,fsType=None,optional=False,\
+    def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
                 disabled=False):
         self.mountPoint=mountPoint
         self.device=device
         self.fsType=fsType
+        self.mntOpt=mntOpt
         res.Resource.__init__(self,"Mount",optional,disabled)
 
     def __str__(self):
-        return "%s mnt=%s dev=%s" % (res.Resource.__str__(self),\
-                                self.mountPoint,self.device)
+        return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\
+                self.mountPoint, self.device, self.fsType, self.mntOpt)
 
 if __name__ == "__main__":
     for c in (Mount,) :
         help(c)
-    print """   m=Mount("/mnt1","/dev/sda1","rw")   """
-    m=Mount("/mnt1","/dev/sda1","rw")
+    print """   m=Mount("/mnt1","/dev/sda1","ext3","rw")   """
+    m=Mount("/mnt1","/dev/sda1","ext3","rw")
     print "show m", m
 
 

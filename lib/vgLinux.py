@@ -21,8 +21,9 @@ import logging
 
 from rcUtilities import process_call_argv
 import rcStatus
+import vg
 
-class Vg:
+class Vg(vg.Vg):
 	def has_vg(self):
 		"""Returns True if the volume is present
 		"""
@@ -72,6 +73,6 @@ class Vg:
 			rcStatus.print_status("vg %s" % self.name, status)
 		return status
 
-	def __init__(self, name, optional=False):
+	def __init__(self, name):
 		self.name = name
-		self.optional = optional
+                vg.Vg.__init__(self)

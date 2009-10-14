@@ -18,23 +18,27 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
 
-__author__="cgaliber"
-__date__ ="$11 oct. 2009 14:38:00$"
+import resources as Res
 
-import ip
+class Vg(Res.Resource):
+    """ basic vg resource
+    """
+    def __init__(self,vgName=None,optional=False,disabled=False):
+        self.vgName=vgName
+        Res.Resource.__init__(self,"vg",optional,disabled)
 
-class Ip(ip.Ip):
-    """ define ip SunOS start/stop doAction """
-
-    def start(self):
-            print "====== exec ifconfig %s plumb" % (self.ipDev)
-
-    def stop(self):
-            print "====== exec ifconfig %s unplumb" % (self.ipDev)
+    def __str__(self):
+        return "%s vgname=%s" % (Res.Resource.__str__(self),\
+                                 self.vgName)
 
 if __name__ == "__main__":
-    for c in (Ip,) :
+    for c in (Vg,) :
         help(c)
+
+    print """v1=vg("myvg")"""
+    v=vg("myvg")
+    print "show v", v
+    print """v.do_action("start")"""
+    v.do_action("start")
 

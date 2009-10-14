@@ -25,12 +25,12 @@ import os
 #
 sys.path.append(os.path.join(os.path.dirname(__file__), '..' , 'lib'))
 
-import rcSvc
+import svcBuilder
 import rcOptParser
 from rcUtilities import check_privs
 
 check_privs()
 
-svc = rcSvc.svc(os.path.basename(__file__))
+svc = svcBuilder.build(os.path.basename(__file__))
 parser = rcOptParser.svcOptionParser(svc)
-getattr(svc, parser.action)(svc)
+getattr(svc, parser.action)()
