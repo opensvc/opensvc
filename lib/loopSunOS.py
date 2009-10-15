@@ -16,33 +16,31 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
+import os
+import logging
+import resources
+from rcGlobalEnv import *
+from rcUtilities import process_call_argv, which
+import rcStatus
 
-__author__="cgaliber"
-__date__ ="$10 oct. 2009 09:38:20$"
+class Loop(resources.Resource):
+    def is_up(self):
+        """Returns True if the volume group is present and activated
+        """
+        return True
 
-import resources as Res
+    def start(self):
+        pass
 
-class Ip(Res.Resource):
-    """ basic ip resource
-    """
-    def __init__(self, ipDev=None, ipName=None, optional=False, disabled=False):
-        self.ipDev=ipDev
-        self.ipName=ipName
-        Res.Resource.__init__(self,"ip",optional,disabled)
+    def stop(self):
+        pass
 
-    def __str__(self):
-        return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
-                                         self.ipDev, self.ipName)
+    def status(self, verbose=False):
+        if self.is_up():
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
-
-    print """i1=Ip("eth0","192.168.0.173")"""
-    i=Ip("eth0","192.168.0.173")
-    print "show i", i
-    print """i.do_action("start")"""
-    i.do_action("start")
-
+    def __init__(self, file):
+        self.file = file
+        resources.Resource.__init__(self)

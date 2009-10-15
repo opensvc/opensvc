@@ -57,7 +57,7 @@ def add_ips(svc, conf):
         ipname = conf.get(s, "ipname")
         ipdev = conf.get(s, "ipdev")
         ip = __import__('ip'+rcEnv.sysname)
-        r = ip.Ip(ipname, ipdev)
+        r = ip.Ip(ipdev, ipname)
         if conf.has_option(s, 'optional') and \
            conf.getboolean(s, "optional") == True:
                 r.set_optional()

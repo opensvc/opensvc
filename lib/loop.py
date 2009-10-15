@@ -19,28 +19,26 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as res
+import resources as Res
 
-class Mount(res.Resource):
-    """Define a mount resource 
+class Loop(Res.Resource):
+    """ basic loopback device resource
     """
-    def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
-                disabled=False):
-        self.mountPoint=mountPoint
-        self.device=device
-        self.fsType=fsType
-        self.mntOpt=mntOpt
-        res.Resource.__init__(self,"mount",optional,disabled)
+    def __init__(self,loopFile=None,optional=False,disabled=False):
+        self.loopFile=loopFile
+        Res.Resource.__init__(self,"loop",optional,disabled)
 
     def __str__(self):
-        return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\
-                self.mountPoint, self.device, self.fsType, self.mntOpt)
+        return "%s loopfile=%s" % (Res.Resource.__str__(self),\
+                                 self.loopFile)
 
 if __name__ == "__main__":
-    for c in (Mount,) :
+    for c in (Loop,) :
         help(c)
-    print """   m=Mount("/mnt1","/dev/sda1","ext3","rw")   """
-    m=Mount("/mnt1","/dev/sda1","ext3","rw")
-    print "show m", m
 
+    print """v1=vg("myvg")"""
+    v=vg("myvg")
+    print "show v", v
+    print """v.do_action("start")"""
+    v.do_action("start")
 

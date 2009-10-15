@@ -80,7 +80,7 @@ class Svc(Res.Resource):
         status ips
         """
         print "status %s" % self.__class__.__name__
-        for t in ("Mount","dg","ip"):
+        for t in ("mount","vg","ip"):
             for r in self.get_res_sets(t): r.action("status")
 
 
@@ -98,10 +98,10 @@ if __name__ == "__main__" :
     print "s1=",s1
     print """s1+=Res.Resource("ip")"""
     s1+=Res.Resource("ip")
-    print """s1+=Res.Resource("Mount")"""
+    print """s1+=Res.Resource("mount")"""
     s1+=Res.Resource("mount")
-    print """s1+=Res.Resource("Mount")"""
-    s1+=Res.Resource("Mount")
+    print """s1+=Res.Resource("mount")"""
+    s1+=Res.Resource("mount")
     print "s1=",s1
     
     print """s1.action("status")"""

@@ -29,7 +29,7 @@ class Vg(vg.Vg):
 		"""
 		cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
 		(ret, out) = process_call_argv(cmd)
-		if re.match('\s*'+self.name+'\s', out, re.MULTILINE) is None:
+		if re.match('\s*'+self.vgName+'\s', out, re.MULTILINE) is None:
 			return False
 		return True
 
@@ -38,7 +38,7 @@ class Vg(vg.Vg):
 		"""
 		if not self.has_vg():
 			return False
-		cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
+		cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.vgName ]
 		(ret, out) = process_call_argv(cmd)
 		if re.match(' ....-[-o]', out, re.MULTILINE) is None:
 			return True
@@ -47,9 +47,9 @@ class Vg(vg.Vg):
 	def start(self):
 		log = logging.getLogger('STARTVG')
 		if self.is_up():
-			log.info("%s is already up" % self.name)
+			log.info("%s is already up" % self.vgName)
 			return 0
-		cmd = [ 'vgchange', '-a', 'y', self.name ]
+		cmd = [ 'vgchange', '-a', 'y', self.vgName ]
 		log.info(' '.join(cmd))
 		(ret, out) = process_call_argv(cmd)
 		return ret
@@ -57,9 +57,9 @@ class Vg(vg.Vg):
 	def stop(self):
 		log = logging.getLogger('STOPVG')
 		if not self.is_up():
-			log.info("%s is already down" % self.name)
+			log.info("%s is already down" % self.vgName)
 			return 0
-		cmd = [ 'vgchange', '-a', 'n', self.name ]
+		cmd = [ 'vgchange', '-a', 'n', self.vgName ]
 		log.info(' '.join(cmd))
 		(ret, out) = process_call_argv(cmd)
 		return ret
@@ -70,9 +70,8 @@ class Vg(vg.Vg):
 		else:
 			status = rcStatus.DOWN
 		if (verbose):
-			rcStatus.print_status("vg %s" % self.name, status)
+			rcStatus.print_status("vg %s" % self.vgName, status)
 		return status
 
-	def __init__(self, name):
-		self.name = name
-                vg.Vg.__init__(self)
+	def __init__(self, vgName):
+                vg.Vg.__init__(self, vgName)

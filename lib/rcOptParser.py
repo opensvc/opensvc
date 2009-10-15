@@ -21,11 +21,11 @@ from rcGlobalEnv import *
 
 action_desc = {
 	'start':	'start a service, chaining startip-diskstart-startapp',
-	'startip':	'configure service ip adresses',
+	'startip':	'configure service ip addresses',
 	'mount':	'prepare devices, logical volumes, mount service filesystems, bootstrap containers',
 	'startapp':	'execute service application startup script',
 	'stop':		'stop a service, chaining stopapp-diskstop-stopip',
-	'stopip':	'unconfigure service ip adresses',
+	'stopip':	'unconfigure service ip addresses',
 	'umount':	'shutdown container, umount service filesystems, deactivate logical volumes',
 	'stopapp':	'execute service application stop script',
 	'syncnodes':	'send to peer nodes the service config files and additional files described in the config file',

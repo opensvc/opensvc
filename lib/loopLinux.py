@@ -20,10 +20,10 @@ import os
 import re
 import logging
 
-import resources
 from rcGlobalEnv import *
 from rcUtilities import process_call_argv, which
 import rcStatus
+import loop
 
 def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
@@ -40,11 +40,11 @@ def file_to_loop(f):
         return None
     return out.split()[0].strip(':')
 
-class Loop(resources.Resource):
+class Loop(loop.Loop):
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
-        self.loop = file_to_loop(self.file)
+        self.loop = file_to_loop(self.loopFile)
         if self.loop is None:
             return False
         return True
@@ -52,20 +52,20 @@ class Loop(resources.Resource):
     def start(self):
         log = logging.getLogger('STARTLOOP')
         if self.is_up():
-            log.info("%s is already up" % self.file)
+            log.info("%s is already up" % self.loopFile)
             return 0
-        cmd = [ 'losetup', '-f', self.file ]
+        cmd = [ 'losetup', '-f', self.loopFile ]
         log.info(' '.join(cmd))
         (ret, out) = process_call_argv(cmd)
         if ret == 0:
-            self.loop = file_to_loop(self.file)
-        log.info("%s now loops to %s" % (self.loop, self.file))
+            self.loop = file_to_loop(self.loopFile)
+        log.info("%s now loops to %s" % (self.loop, self.loopFile))
         return ret
 
     def stop(self):
         log = logging.getLogger('STOPLOOP')
         if not self.is_up():
-            log.info("%s is already down" % self.file)
+            log.info("%s is already down" % self.loopFile)
             return 0
         cmd = [ 'losetup', '-d', self.loop ]
         log.info(' '.join(cmd))
@@ -78,6 +78,5 @@ class Loop(resources.Resource):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, file):
-        self.file = file
-        resources.Resource.__init__(self)
+    def __init__(self, loopFile):
+        loop.Loop.__init__(self, loopFile)

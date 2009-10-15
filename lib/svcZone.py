@@ -44,13 +44,13 @@ class SvcZone(svc.Svc):
         start apps
         """
         print "starting %s" % self.__class__.__name__
-        for ip in self.get_res_sets("ip"):   ip.action("check_ping")
-        for z in self.get_res_sets("zone"):  z.action("ready")
-        for ip in self.get_res_sets("ip"):   ip.action("start")
-        for z in self.get_res_sets("zone"):  z.action("boot")
-        for g in self.get_res_sets("dg"):    g.action("start")
-        for m in self.get_res_sets("Mount"): m.action("start")
-        for a in self.get_res_sets("app"):   a.action("start")
+        for r in self.get_res_sets("ip"):    r.action("check_ping")
+        for r in self.get_res_sets("zone"):  r.action("ready")
+        for r in self.get_res_sets("ip"):    r.action("start")
+        for r in self.get_res_sets("zone"):  r.action("boot")
+        for r in self.get_res_sets("vg"):    r.action("start")
+        for r in self.get_res_sets("mount"): r.action("start")
+        for r in self.get_res_sets("app"):   r.action("start")
 
     def stop(self):
         """stop a zone:
@@ -61,11 +61,11 @@ class SvcZone(svc.Svc):
         stop ips
         """
         print "stopping %s" % self.__class__.__name__
-        for a in self.get_res_sets("app"):   a.action("start")
-        for m in self.get_res_sets("Mount"): m.action("stop")
-        for g in self.get_res_sets("dg"):    g.action("stop")
-        for z in self.get_res_sets("zone"):  z.action("stop")
-        for ip in self.get_res_sets("ip"):   ip.action("stop")
+        for r in self.get_res_sets("app"):   r.action("start")
+        for r in self.get_res_sets("mount"): r.action("stop")
+        for r in self.get_res_sets("vg"):    r.action("stop")
+        for r in self.get_res_sets("zone"):  r.action("stop")
+        for r in self.get_res_sets("ip"):    r.action("stop")
 
 if __name__ == "__main__":
     for c in (SvcZone,) :

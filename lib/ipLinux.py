@@ -72,8 +72,8 @@ class IpConflict(Exception):
 		return repr(self.value)
 
 class Ip(ip.Ip):
-	def is_alive(self):
-		log = logging.getLogger('Ip.is_alive')
+	def check_ping(self):
+		log = logging.getLogger('Ip.check_ping')
 		count=1
 		timeout=5
 		cmd = ['ping', '-c', repr(count), '-W', repr(timeout), self.addr]
@@ -87,9 +87,9 @@ class Ip(ip.Ip):
 		log = logging.getLogger('Ip.is_up')
 		ifconfig = rcIfconfig.ifconfig()
 		if ifconfig.has_param("ipaddr", self.addr) is not None:
-			log.debug("%s@%s is up" % (self.addr, self.dev))
+			log.debug("%s@%s is up" % (self.addr, self.ipDev))
 			return True
-		log.debug("%s@%s is down" % (self.addr, self.dev))
+		log.debug("%s@%s is down" % (self.addr, self.ipDev))
 		return False
 
 	def status(self, verbose=False):
@@ -98,19 +98,21 @@ class Ip(ip.Ip):
 		else:
 			status = rcStatus.DOWN
 		if verbose:
-			rcStatus.print_status("ip %s@%s" % (self.name, self.dev), status)
+			rcStatus.print_status("ip %s@%s" % (self.name,
+self.ipDev), status)
 		return status
 
 	def allow_start(self):
 		log = logging.getLogger('STARTIP')
 		ifconfig = rcIfconfig.ifconfig()
-		if not ifconfig.interface(self.dev).flag_up:
-			log.error("Interface %s is not up. Cannot stack over it." % self.dev)
-			raise IpDevDown(self.dev)
+		if not ifconfig.interface(self.ipDev).flag_up:
+			log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
+			raise IpDevDown(self.ipDev)
 		if self.is_up() is True:
-			log.info("%s is already up on %s" % (self.addr, self.dev))
+			log.info("%s is already up on %s" % (self.addr,
+self.ipDev))
 			return False
-		if self.is_alive():
+		if self.check_ping():
 			log.error("%s is already up on another host" % (self.addr))
 			raise IpConflict(self.addr)
 		return True
@@ -125,14 +127,15 @@ class Ip(ip.Ip):
 		log.debug('pre-checks passed')
 
 		ifconfig = rcIfconfig.ifconfig()
-		self.mask = ifconfig.interface(self.dev).mask
+		self.mask = ifconfig.interface(self.ipDev).mask
 		if self.mask == '':
-			log.error("No netmask set on parent interface %s" % self.dev)
+			log.error("No netmask set on parent interface %s" %
+self.ipDev)
 			return None
 		if self.mask == '':
 			log.error("No netmask found. Abort")
 			return 1
-		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
+		stacked_dev = get_stacked_dev(self.ipDev, self.addr, log)
 		cmd = ['ifconfig', stacked_dev, self.addr, 'netmask', self.mask, 'up']
 		log.info(' '.join(cmd))
 		(ret, out) = process_call_argv(cmd)
@@ -144,9 +147,10 @@ class Ip(ip.Ip):
 	def stop(self):
 		log = logging.getLogger('STOPIP')
 		if self.is_up() is False:
-			log.info("%s is already down on %s" % (self.addr, self.dev))
+			log.info("%s is already down on %s" % (self.addr,
+self.ipDev))
 			return 0
-		stacked_dev = get_stacked_dev(self.dev, self.addr, log)
+		stacked_dev = get_stacked_dev(self.ipDev, self.addr, log)
 		cmd = ['ifconfig', stacked_dev, 'down']
 		log.info(' '.join(cmd))
 		(ret, out) = process_call_argv(cmd)
@@ -155,12 +159,10 @@ class Ip(ip.Ip):
 			return 1
 		return 0
 
-	def __init__(self, name, dev):
-		self.name = name
-		self.dev = dev
-		self.addr = socket.gethostbyname(name)
+	def __init__(self, ipDev, ipName):
+		self.addr = socket.gethostbyname(ipName)
 		log = logging.getLogger('INIT')
-                ip.Ip.__init__(self)
+                ip.Ip.__init__(self, ipDev, ipName)
 
 if __name__ == "__main__":
     for c in (Ip,) :
