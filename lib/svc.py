@@ -73,13 +73,6 @@ class Svc(Res.Resource):
         for r in self.resSets:  output+= "  [%s]" % (r.__str__())
         return output
 
-    def action(self, action=None):
-        print "Calling action %s on %s" % (action,self.__class__.__name__)
-        if action == "status" : self.status()
-        else:
-            for r in self.resSets:
-                r.action(action)
-
     def status(self):
         """status a service:
         status mounts

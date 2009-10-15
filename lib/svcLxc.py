@@ -29,11 +29,6 @@ class svcLxc(svc.Svc):
         svc.Svc.__init__(self, svcname, optional, disabled)
         self += lxc.Lxc(svcname)
 
-    def action(self,action=None):
-        print "Calling action %s on %s" % (action,self.__class__.__name__)
-        if action == "start" : self.start()
-        if action == "stop" : self.start()
-
     def start(self):
         """start a Lxc
         check ping

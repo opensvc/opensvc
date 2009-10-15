@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import action as exc
+import logging
 
 class Resource(object):
     """Define basic resource
@@ -27,10 +28,11 @@ class Resource(object):
     a Resource should provide do_action(action):
     with action into (start/stop/status)
     """
-    def __init__(self,type=None,optional=False,disabled=False):
-        self.type=type
-        self.optional=optional
-        self.disabled=disabled
+    def __init__(self, type=None, optional=False, disabled=False):
+        self.type = type
+        self.optional = optional
+        self.disabled = disabled
+        self.log = logging.getLogger(type)
 
     def __str__(self):
         output="object=%s type=%s" %   (self.__class__.__name__,self.type)
@@ -47,24 +49,24 @@ class Resource(object):
     def disable(self): self.disabled=True
     def enable(self):  self.disabled=False
 
-    def do_action(self,action):
+    def do_action(self, action):
         "Every resource should define basic doAction: start() stop() status()"
-        print "call do_action on %s" % self.__class__.__name__
+        self.log.debug("call do_action on %s" % self.__class__.__name__)
         if hasattr(self, action):
             return getattr(self, action)()
         if action in ("start","stop","status") :
             raise exc.excUndefined(action,self.__class__.__name__,\
                                     "Resource.do_action")
-    def action(self,action=None):
+    def action(self, action=None):
         """ action try to call do_action() on selft
         pass if action is not None or if self is disabled
         return status vary on optional property
         is do_action success then return True
         else return False if self selft not optional
         """
-        if action==None : pass
+        if action == None : pass
         if self.is_disabled : pass
-        print "Action %s on %s" % (action,self.__str__())
+        #print "Action %s on %s" % (action,self.__str__())
         try :
             self.do_action(action)
         except exc.excUndefined , ex :
@@ -102,7 +104,7 @@ class ResourceSet(Resource):
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet"""
-        print "Calling action %s on %s" % (action,self.__class__.__name__)
+        #print "Calling action %s on %s" % (action,self.__class__.__name__)
         for r in self.resources:
             r.action(action)
 

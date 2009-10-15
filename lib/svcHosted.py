@@ -28,11 +28,6 @@ class svcHosted(svc.Svc):
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"Hosted",optional, disabled)
 
-    def action(self,action=None):
-        print "Calling action %s on %s" % (action,self.__class__.__name__)
-        if action == "start" : self.start()
-        if action == "stop" : self.start()
-
     def start(self):
         """start a hosted service:
         check ping
