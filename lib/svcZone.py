@@ -67,6 +67,38 @@ class SvcZone(svc.Svc):
         self.subSetAction("zone", "stop")
         self.subSetAction("ip", "stop")
 
+    def startapp(self):
+        self.subSetAction("app", "start")
+
+    def stopapp(self):
+        self.subSetAction("app", "stop")
+
+    def startip(self):
+        self.subSetAction("ip", "check_ping")
+        self.subSetAction("ip", "start")
+
+    def stopip(self):
+        self.subSetAction("ip", "stop")
+
+    def startloop(self):
+        self.subSetAction("loop", "start")
+
+    def stoploop(self):
+        self.subSetAction("loop", "stop")
+
+    def startvg(self):
+        self.subSetAction("vg", "start")
+
+    def stopvg(self):
+        self.subSetAction("vg", "stop")
+
+    def mount(self):
+        self.subSetAction("mount", "start")
+
+    def umount(self):
+        self.subSetAction("mount", "stop")
+
+
 if __name__ == "__main__":
     for c in (SvcZone,) :
         help(c)

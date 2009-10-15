@@ -57,6 +57,10 @@ class Svc(Res.Resource):
     def get_res_sets(self, type):
          return [ r for r in self.resSets if r.type == type ]
 
+    def has_res_set(self, type):
+        if len(get_res_sets(type)) > 0: return True
+        else: return False
+
     def subSetAction(self, type=None, action=None):
         """Call action on each member of the subset of specified type"""
         for r in self.get_res_sets(type):

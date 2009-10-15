@@ -37,6 +37,7 @@ class svcHosted(svc.Svc):
         """start a hosted service:
         check ping
         start ips
+        start loops
         start VGs
         start mounts
         start apps
@@ -62,6 +63,61 @@ class svcHosted(svc.Svc):
         self.subSetAction("vg", "stop")
         self.subSetAction("loop", "stop")
         self.subSetAction("ip", "stop")
+
+    def diskstart(self):
+        """start a hosted service:
+        start loops
+        start VGs
+        start mounts
+        """
+        print "starting %s" % self.__class__.__name__
+        self.subSetAction("loop", "start")
+        self.subSetAction("vg", "start")
+        self.subSetAction("mount", "start")
+
+    def diskstop(self):
+        """stop a hosted service:
+        stop apps
+        stop mounts
+        stop VGs
+        stop ips
+        """
+        print "stopping %s" % self.__class__.__name__
+        self.subSetAction("mount", "stop")
+        self.subSetAction("vg", "stop")
+        self.subSetAction("loop", "stop")
+
+    def startapp(self):
+        self.subSetAction("app", "start")
+
+    def stopapp(self):
+        self.subSetAction("app", "stop")
+
+    def startip(self):
+        self.subSetAction("ip", "check_ping")
+        self.subSetAction("ip", "start")
+
+    def stopip(self):
+        self.subSetAction("ip", "stop")
+
+    def startloop(self):
+        self.subSetAction("loop", "start")
+
+    def stoploop(self):
+        self.subSetAction("loop", "stop")
+
+    def startvg(self):
+        self.subSetAction("vg", "start")
+
+    def stopvg(self):
+        self.subSetAction("vg", "stop")
+
+    def mount(self):
+        self.subSetAction("mount", "start")
+
+    def umount(self):
+        self.subSetAction("mount", "stop")
+
 
 if __name__ == "__main__":
     for c in (SvcHosted,) :
