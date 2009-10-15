@@ -86,6 +86,7 @@ class ResourceSet(Resource):
     def __init__(self,type=None,resources=[],optional=False,disabled=False):
         self.resources=resources
         Resource.__init__(self,type,optional,disabled)
+
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
         Example 2 : iadd a single Resource : R+=ip1
@@ -101,7 +102,6 @@ class ResourceSet(Resource):
         for r in self.resources:
             output+= " (%s)" % (r.__str__())
         return "%s]" % (output)
-
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet"""

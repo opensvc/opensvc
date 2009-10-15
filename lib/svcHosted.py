@@ -42,12 +42,12 @@ class svcHosted(svc.Svc):
         start apps
         """
         print "starting %s" % self.__class__.__name__
-        for r in self.get_res_sets("ip"):    r.action("check_ping")
-        for r in self.get_res_sets("ip"):    r.action("start")
-        for r in self.get_res_sets("loop"):  r.action("start")
-        for r in self.get_res_sets("vg"):    r.action("start")
-        for r in self.get_res_sets("mount"): r.action("start")
-        for r in self.get_res_sets("app"):   r.action("start")
+        self.subSetAction("ip", "check_ping")
+        self.subSetAction("ip", "start")
+        self.subSetAction("loop", "start")
+        self.subSetAction("vg", "start")
+        self.subSetAction("mount", "start")
+        self.subSetAction("app", "start")
 
     def stop(self):
         """stop a hosted service:
@@ -57,11 +57,11 @@ class svcHosted(svc.Svc):
         stop ips
         """
         print "stopping %s" % self.__class__.__name__
-        for r in self.get_res_sets("app"):   r.action("stop")
-        for r in self.get_res_sets("mount"): r.action("stop")
-        for r in self.get_res_sets("vg"):    r.action("stop")
-        for r in self.get_res_sets("loop"):  r.action("stop")
-        for r in self.get_res_sets("ip"):    r.action("stop")
+        self.subSetAction("app", "stop")
+        self.subSetAction("mount", "stop")
+        self.subSetAction("vg", "stop")
+        self.subSetAction("loop", "stop")
+        self.subSetAction("ip", "stop")
 
 if __name__ == "__main__":
     for c in (SvcHosted,) :

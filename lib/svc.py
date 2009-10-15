@@ -41,7 +41,7 @@ class Svc(Res.Resource):
         """
         if r.type in self.type2resSets :
             self.type2resSets[r.type]+=r
-        
+
         elif isinstance(r,Res.ResourceSet) :
             self.resSets.append(r)
             self.type2resSets[r.type]=r
@@ -49,7 +49,7 @@ class Svc(Res.Resource):
         elif isinstance(r,Res.Resource) :
             R=Res.ResourceSet(r.type,[r])
             self.__iadd__(R)
-            
+
         else :
             # Error
             pass
@@ -58,6 +58,11 @@ class Svc(Res.Resource):
 
     def get_res_sets(self,type):
          return [ r for r in self.resSets if r.type == type ]
+
+    def subSetAction(self, type=None, action=None):
+        """Call action on each member of the subset of specified type"""
+        for r in self.get_res_sets(type):
+            r.action(action)
 
     def __str__(self):
         output="Service %s available resources:" % (Res.Resource.__str__(self))
@@ -103,6 +108,6 @@ if __name__ == "__main__" :
     print """s1+=Res.Resource("mount")"""
     s1+=Res.Resource("mount")
     print "s1=",s1
-    
+
     print """s1.action("status")"""
     s1.action("status")
