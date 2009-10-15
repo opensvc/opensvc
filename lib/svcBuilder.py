@@ -234,8 +234,7 @@ def build(name):
     log.debug('service mode = ' + svcmode)
     mod = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
-    svc = getattr(svcMod, mod)()
-    svc.svcname = name
+    svc = getattr(svcMod, mod)(name)
 
     #
     # Setup service properties from config file content

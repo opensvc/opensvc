@@ -24,9 +24,9 @@ import resources as Res
 class Vg(Res.Resource):
     """ basic vg resource
     """
-    def __init__(self,vgName=None,optional=False,disabled=False):
-        self.vgName=vgName
-        Res.Resource.__init__(self,"vg",optional,disabled)
+    def __init__(self, vgName=None, optional=False, disabled=False):
+        self.vgName = vgName
+        Res.Resource.__init__(self, "vg", optional, disabled)
 
     def __str__(self):
         return "%s vgname=%s" % (Res.Resource.__str__(self),\

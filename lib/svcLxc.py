@@ -19,68 +19,67 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-__author__="cgaliber"
-__date__ ="$11 oct. 2009 21:56:59$"
-
 import svc
+import lxc
 
-class SvcZone(svc.Svc):
-    """ Define Zone services"""
-    def __init__(self,optional=False,disabled=False):
-        svc.Svc.__init__(self,"Zone",optional, disabled)
+class svcLxc(svc.Svc):
+    """ Define Lxc services"""
+
+    def __init__(self, svcname, optional=False, disabled=False):
+        svc.Svc.__init__(self, svcname, optional, disabled)
+        self += lxc.Lxc(svcname)
+
     def action(self,action=None):
         print "Calling action %s on %s" % (action,self.__class__.__name__)
         if action == "start" : self.start()
         if action == "stop" : self.start()
 
     def start(self):
-        """start a zone
+        """start a Lxc
         check ping
-        zone ready
-        start ips
-        start zone
+        start loops
         start VGs
         start mounts
+        start lxc
         start apps
         """
         print "starting %s" % self.__class__.__name__
         self.subSetAction("ip", "check_ping")
-        self.subSetAction("zone", "ready")
-        self.subSetAction("ip", "start")
-        self.subSetAction("zone", "boot")
+        self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
         self.subSetAction("mount", "start")
+        self.subSetAction("lxc", "start")
         self.subSetAction("app", "start")
 
     def stop(self):
         """stop a zone:
         stop apps
+        stop lxc
         stop mounts
         stop VGs
-        stop zone
-        stop ips
+        stop loops
         """
         print "stopping %s" % self.__class__.__name__
         self.subSetAction("app", "stop")
+        self.subSetAction("lxc", "stop")
         self.subSetAction("mount", "stop")
         self.subSetAction("vg", "stop")
-        self.subSetAction("zone", "stop")
-        self.subSetAction("ip", "stop")
+        self.subSetAction("loop", "stop")
 
 if __name__ == "__main__":
-    for c in (SvcZone,) :
+    for c in (svcLxc,) :
         help(c)
-    import mountSunOS as mount
-    import ipSunOS as ip
+    import mountLinux as mount
+    import ipLinux as ip
     print """
-    Z=SvcZone()
+    Z=svcLxc()
     Z+=mount.Mount("/mnt1","/dev/sda")
     Z+=mount.Mount("/mnt2","/dev/sdb")
     Z+=ip.Ip("eth0","192.168.0.173")
     Z+=ip.Ip("eth0","192.168.0.174")
     """
 
-    Z=SvcZone()
+    Z=svcLxc()
     Z+=mount.Mount("/mnt1","/dev/sda")
     Z+=mount.Mount("/mnt2","/dev/sdb")
     Z+=ip.Ip("eth0","192.168.0.173")
