@@ -72,11 +72,14 @@ class Loop(loop.Loop):
         (ret, out) = process_call_argv(cmd)
         return ret
 
-    def status(self, verbose=False):
+    def status(self, verbose=True):
         if self.is_up():
             return rcStatus.UP
         else:
             return rcStatus.DOWN
+        if verbose:
+            rcStatus.print_status("loop %s" % self.fileName, status)
+
 
     def __init__(self, loopFile):
         loop.Loop.__init__(self, loopFile)

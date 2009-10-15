@@ -92,14 +92,13 @@ class Ip(ip.Ip):
 		log.debug("%s@%s is down" % (self.addr, self.ipDev))
 		return False
 
-	def status(self, verbose=False):
+	def status(self, verbose=True):
 		if self.is_up() is True:
 			status = rcStatus.UP
 		else:
 			status = rcStatus.DOWN
 		if verbose:
-			rcStatus.print_status("ip %s@%s" % (self.name,
-self.ipDev), status)
+			rcStatus.print_status("ip %s@%s" % (self.ipName, self.ipDev), status)
 		return status
 
 	def allow_start(self):

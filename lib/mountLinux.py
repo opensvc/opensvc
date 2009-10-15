@@ -38,7 +38,7 @@ class Mount(mount.Mount):
             return False
         return True
 
-    def status(self, verbose=False):
+    def status(self, verbose=True):
         if self.is_up() is True:
             status = rcStatus.UP
         else:

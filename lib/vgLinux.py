@@ -64,7 +64,7 @@ class Vg(vg.Vg):
 		(ret, out) = process_call_argv(cmd)
 		return ret
 
-	def status(self, verbose=False):
+	def status(self, verbose=True):
 		if self.is_up():
 			status = rcStatus.UP
 		else:

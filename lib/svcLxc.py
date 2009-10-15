@@ -66,6 +66,15 @@ class svcLxc(svc.Svc):
         self.subSetAction("vg", "stop")
         self.subSetAction("loop", "stop")
 
+    def status(self):
+        """status of the resources of a Lxc service"""
+        self.subSetAction("ip", "status")
+        self.subSetAction("loop", "status")
+        self.subSetAction("vg", "status")
+        self.subSetAction("mount", "status")
+        self.subSetAction("lxc", "status")
+        self.subSetAction("app", "status")
+
     def startlxc(self):
         self.subSetAction("lxc", "start")
 

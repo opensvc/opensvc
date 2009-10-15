@@ -19,9 +19,6 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-__author__="cgaliber"
-__date__ ="$10 oct. 2009 09:38:20$"
-
 import action as exc
 
 class Resource(object):
@@ -40,10 +37,10 @@ class Resource(object):
         if self.optional : output+=" opt="+str(self.optional)
         if self.disabled : output+=" disa="+str(self.disabled)
         return output
-    
+
     def is_optional(self): return self.optional
     def is_disabled(self): return self.Disabled
-    
+
     def set_optional(self): self.optional=True
     def unset_optional(self): self.optional=False
 
@@ -76,7 +73,7 @@ class Resource(object):
         except exc.excError :
             if self.is_optional() :  return True
             else :                  return False
- 
+
 class ResourceSet(Resource):
     """ Define Set of same type resources
     Example 1: ResourceSet("mount",[m1,m2])
@@ -96,7 +93,7 @@ class ResourceSet(Resource):
         elif isinstance(r,Resource) :
             self.resources.append(r)
         return (self)
-    
+
     def __str__(self):
         output="resSet %s [" % ( Resource.__str__(self) )
         for r in self.resources:

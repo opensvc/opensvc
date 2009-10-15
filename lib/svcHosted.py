@@ -64,6 +64,14 @@ class svcHosted(svc.Svc):
         self.subSetAction("loop", "stop")
         self.subSetAction("ip", "stop")
 
+    def status(self):
+        """check resources status of a hosted service"""
+        self.subSetAction("ip", "status")
+        self.subSetAction("loop", "status")
+        self.subSetAction("vg", "status")
+        self.subSetAction("mount", "status")
+        self.subSetAction("app", "status")
+
     def diskstart(self):
         """start a hosted service:
         start loops

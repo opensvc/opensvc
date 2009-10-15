@@ -132,7 +132,7 @@ class Lxc(Res.Resource):
             return True
         return False
 
-    def status(self, verbose=False):
+    def status(self, verbose=True):
         if self.is_up():
             status = rcStatus.UP
         else:
