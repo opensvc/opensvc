@@ -29,7 +29,7 @@ pathetc = os.path.join(pathsvc, 'etc')
 rcService = os.path.join(pathsvc, 'bin', 'rcService')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
-import rcSvc
+import svcBuilder
 import rcStatus
 import rcOptParser
 from rcUtilities import banner, check_privs
@@ -48,8 +48,8 @@ def get_services(status):
 	__svcs = []
 	for name in os.listdir(pathetc):
 		if is_service(os.path.join(pathetc, name)):
-			svc = rcSvc.svc(name)
-			if status == 'ANY' or svc.status(svc) == status:
+			svc = svcBuilder.build(name)
+			if status == 'ANY' or svc.status() == status:
 				__svcs.append(name)
 	return __svcs
 
@@ -81,8 +81,6 @@ if hasattr(options, "parm_svcs"):
 		if is_service(f):
 			svcs.append(options.parm_svcs)
 
-#print svcs
-
 if len(args) > 1:
 	parser.error("More than one action")
 if len(args) is 0:
@@ -91,10 +89,8 @@ action = args[0]
 if not action in rcOptParser.action_desc.keys():
 	parser.error("unsupported action")
 
-
 for s in svcs:
 	print banner(s)
-	svc = rcSvc.svc(s)
-	getattr(svc, action)(svc)
-
+	svc = svcBuilder.build(s)
+	getattr(svc, action)()
 
