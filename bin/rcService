@@ -33,4 +33,4 @@ check_privs()
 
 svc = svcBuilder.build(os.path.basename(__file__))
 parser = rcOptParser.svcOptionParser(svc)
-getattr(svc, parser.action)()
+sys.exit(getattr(svc, parser.action)())

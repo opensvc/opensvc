@@ -19,21 +19,26 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
 import app
+from resources import Resource, ResourceSet
+from freezer import Freezer
 
-class Svc(Res.Resource):
+class Svc(Resource, Freezer):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
     """
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
+        if self.frozen():
+            #undef(self.startip)
+            pass
         self.svcname = svcname
         self.resSets = []
         self.type2resSets = {}
         self += app.Apps(svcname)
-        Res.Resource.__init__(self, type, optional, disabled)
+        Resource.__init__(self, type, optional, disabled)
+        Freezer.__init__(self, svcname)
 
     def __iadd__(self, r):
         """svc+=aResourceSet
@@ -42,12 +47,12 @@ class Svc(Res.Resource):
         if r.type in self.type2resSets:
             self.type2resSets[r.type] += r
 
-        elif isinstance(r, Res.ResourceSet):
+        elif isinstance(r, ResourceSet):
             self.resSets.append(r)
             self.type2resSets[r.type] = r
 
-        elif isinstance(r, Res.Resource):
-            R = Res.ResourceSet(r.type, [r])
+        elif isinstance(r, Resource):
+            R = ResourceSet(r.type, [r])
             self.__iadd__(R)
 
         else:
@@ -69,7 +74,7 @@ class Svc(Res.Resource):
             r.action(action)
 
     def __str__(self):
-        output="Service %s available resources:" % (Res.Resource.__str__(self))
+        output="Service %s available resources:" % (Resource.__str__(self))
         for k in self.type2resSets.keys() : output += " %s" % k
         output+="\n"
         for r in self.resSets:  output+= "  [%s]" % (r.__str__())
@@ -101,15 +106,15 @@ if __name__ == "__main__" :
     print """s2=Svc("basic")"""
     s2=Svc("basic")
     print "s2=",s2
-    print """s1+=Res.Resource("ip")"""
-    s1+=Res.Resource("ip")
+    print """s1+=Resource("ip")"""
+    s1+=Resource("ip")
     print "s1=",s1
-    print """s1+=Res.Resource("ip")"""
-    s1+=Res.Resource("ip")
-    print """s1+=Res.Resource("mount")"""
-    s1+=Res.Resource("mount")
-    print """s1+=Res.Resource("mount")"""
-    s1+=Res.Resource("mount")
+    print """s1+=Resource("ip")"""
+    s1+=Resource("ip")
+    print """s1+=Resource("mount")"""
+    s1+=Resource("mount")
+    print """s1+=Resource("mount")"""
+    s1+=Resource("mount")
     print "s1=",s1
 
     print """s1.action("status")"""
