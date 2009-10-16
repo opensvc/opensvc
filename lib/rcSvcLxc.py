@@ -21,7 +21,7 @@ from datetime import datetime
 from subprocess import *
 
 from rcGlobalEnv import *
-from rcFreeze import Freezer
+from freezer import Freezer
 import ResIp
 import ResFilesystem
 import rcSvcHosted

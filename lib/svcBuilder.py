@@ -24,7 +24,7 @@ import glob
 import re
 
 from rcGlobalEnv import *
-from rcFreeze import Freezer
+from freezer import Freezer
 from rcNode import discover_node
 import rcOptParser
 import rcLogger

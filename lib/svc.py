@@ -31,8 +31,10 @@ class Svc(Resource, Freezer):
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
         if self.frozen():
-            #undef(self.startip)
-            pass
+            delattr(self.startip)
+            delattr(self.stopip)
+            delattr(self.mount)
+            delattr(self.umount)
         self.svcname = svcname
         self.resSets = []
         self.type2resSets = {}
