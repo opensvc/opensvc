@@ -27,7 +27,6 @@ from rcGlobalEnv import *
 from rcFreeze import Freezer
 from rcNode import discover_node
 import rcOptParser
-import rcApp
 import rcLogger
 import rcAddService
 import ResRsync
@@ -254,6 +253,5 @@ def build(name):
     add_vgs(svc, conf)
     add_mounts(svc, conf)
     add_syncs(svc, conf)
-    svc.apps = rcApp.Apps(svc)
 
     return svc

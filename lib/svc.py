@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import resources as Res
+import app
 
 class Svc(Res.Resource):
     """Service class define a Service Resource
@@ -31,6 +32,7 @@ class Svc(Res.Resource):
         self.svcname = svcname
         self.resSets = []
         self.type2resSets = {}
+        self += app.Apps(svcname)
         Res.Resource.__init__(self, type, optional, disabled)
 
     def __iadd__(self, r):
@@ -82,6 +84,12 @@ class Svc(Res.Resource):
         print "status %s" % self.__class__.__name__
         for t in ("mount", "vg", "ip"):
             for r in self.get_res_sets(t): r.action("status")
+
+    def startapp(self):
+        self.subSetAction("app", "start")
+
+    def stopapp(self):
+        self.subSetAction("app", "stop")
 
 
 if __name__ == "__main__" :

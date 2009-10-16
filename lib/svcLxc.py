@@ -76,12 +76,6 @@ class svcLxc(svc.Svc):
     def stoplxc(self):
         self.subSetAction("lxc", "stop")
 
-    def startapp(self):
-        self.subSetAction("app", "start")
-
-    def stopapp(self):
-        self.subSetAction("app", "stop")
-
     def startip(self):
         self.subSetAction("ip", "check_ping")
         self.subSetAction("ip", "start")
