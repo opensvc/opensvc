@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import svc
+import rcStatus
 
 class svcHosted(svc.Svc):
     """Define hosted services
@@ -37,7 +38,6 @@ class svcHosted(svc.Svc):
         start mounts
         start apps
         """
-        print "starting %s" % self.__class__.__name__
         self.subSetAction("ip", "check_ping")
         self.subSetAction("ip", "start")
         self.subSetAction("loop", "start")
@@ -52,7 +52,6 @@ class svcHosted(svc.Svc):
         stop VGs
         stop ips
         """
-        print "stopping %s" % self.__class__.__name__
         self.subSetAction("app", "stop")
         self.subSetAction("mount", "stop")
         self.subSetAction("vg", "stop")
@@ -60,12 +59,8 @@ class svcHosted(svc.Svc):
         self.subSetAction("ip", "stop")
 
     def status(self):
-        """check resources status of a hosted service"""
-        self.subSetAction("ip", "status")
-        self.subSetAction("loop", "status")
-        self.subSetAction("vg", "status")
-        self.subSetAction("mount", "status")
-        self.subSetAction("app", "status")
+        """status of the resources of a Lxc service"""
+        return svc.Svc.status(self, ["loop", "mount", "vg", "ip"])
 
     def diskstart(self):
         """start a hosted service:
@@ -73,7 +68,6 @@ class svcHosted(svc.Svc):
         start VGs
         start mounts
         """
-        print "starting %s" % self.__class__.__name__
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
         self.subSetAction("mount", "start")
@@ -85,7 +79,6 @@ class svcHosted(svc.Svc):
         stop VGs
         stop ips
         """
-        print "stopping %s" % self.__class__.__name__
         self.subSetAction("mount", "stop")
         self.subSetAction("vg", "stop")
         self.subSetAction("loop", "stop")

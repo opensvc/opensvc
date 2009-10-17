@@ -38,14 +38,9 @@ class Mount(mount.Mount):
             return False
         return True
 
-    def status(self, verbose=True):
-        if self.is_up() is True:
-            status = rcStatus.UP
-        else:
-            status = rcStatus.DOWN
-        if verbose:
-            rcStatus.print_status("fs %s@%s" % (self.device, self.mountPoint), status)
-        return status
+    def status(self):
+        if self.is_up(): return rcStatus.UP
+        else: return rcStatus.DOWN
 
     def start(self):
         log = logging.getLogger('MOUNT')

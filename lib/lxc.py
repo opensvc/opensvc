@@ -132,18 +132,14 @@ class Lxc(Res.Resource):
             return True
         return False
 
-    def status(self, verbose=True):
-        if self.is_up():
-            status = rcStatus.UP
-        else:
-            status = rcStatus.DOWN
-        if verbose:
-            rcStatus.print_status("lxc", status)
-        return status
+    def status(self):
+        if self.is_up(): return rcStatus.UP
+        else: return rcStatus.DOWN
 
     def __init__(self, svcname, optional=False, disabled=False):
-        self.name = svcname
         Res.Resource.__init__(self, "lxc", optional, disabled)
+        self.name = svcname
+        self.id = "lxc"
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

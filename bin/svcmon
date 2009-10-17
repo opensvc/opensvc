@@ -44,4 +44,4 @@ for name in os.listdir(pathetc):
 	if is_service(os.path.join(pathetc, name)):
 		print banner(name)
 		svc = svcBuilder.build(name)
-		svc.status()
+		svc.print_status()

@@ -22,6 +22,7 @@
 import app
 from resources import Resource, ResourceSet
 from freezer import Freezer
+import rcStatus
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -82,15 +83,24 @@ class Svc(Resource, Freezer):
         for r in self.resSets:  output+= "  [%s]" % (r.__str__())
         return output
 
-    def status(self):
+    def status(self, type_list):
+        """aggregate status a service
+        """
+        s = rcStatus.Status()
+        for t in type_list:
+            for r in self.get_res_sets(t):
+                s.add(r.status())
+        return s.status
+
+    def print_status(self):
         """status a service:
         status mounts
         status VGs
         status ips
         """
-        print "status %s" % self.__class__.__name__
-        for t in ("mount", "vg", "ip"):
-            for r in self.get_res_sets(t): r.action("status")
+        for t in ("loop", "mount", "vg", "ip"):
+            for r in self.get_res_sets(t): r.action("print_status")
+        rcStatus.print_status("overall", self.status())
 
     def startapp(self):
         self.subSetAction("app", "start")

@@ -21,6 +21,7 @@
 
 import action as exc
 import logging
+import rcStatus
 
 class Resource(object):
     """Define basic resource
@@ -33,6 +34,7 @@ class Resource(object):
         self.optional = optional
         self.disabled = disabled
         self.log = logging.getLogger(type)
+        self.id = type
 
     def __str__(self):
         output="object=%s type=%s" %   (self.__class__.__name__,self.type)
@@ -66,7 +68,6 @@ class Resource(object):
         """
         if action == None : pass
         if self.is_disabled : pass
-        #print "Action %s on %s" % (action,self.__str__())
         try :
             self.do_action(action)
         except exc.excUndefined , ex :
@@ -75,6 +76,18 @@ class Resource(object):
         except exc.excError :
             if self.is_optional() :  return True
             else :                  return False
+
+    def status(self):
+        """aggregate status a ResourceSet
+        """
+        s = rcStatus.Status()
+        for r in self.resources:
+                s.add(r.status())
+        return s.status
+
+    def print_status(self):
+        return rcStatus.print_status(self.id, self.status())
+
 
 class ResourceSet(Resource):
     """ Define Set of same type resources
@@ -104,7 +117,6 @@ class ResourceSet(Resource):
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet"""
-        #print "Calling action %s on %s" % (action,self.__class__.__name__)
         for r in self.resources:
             r.action(action)
 

@@ -26,11 +26,12 @@ class Mount(res.Resource):
     """
     def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
                 disabled=False):
-        self.mountPoint=mountPoint
-        self.device=device
-        self.fsType=fsType
-        self.mntOpt=mntOpt
         res.Resource.__init__(self,"mount",optional,disabled)
+        self.mountPoint = mountPoint
+        self.device = device
+        self.fsType = fsType
+        self.mntOpt = mntOpt
+        self.id = 'fs ' + device + '@' + mountPoint
 
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\

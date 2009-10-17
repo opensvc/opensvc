@@ -25,8 +25,9 @@ class Loop(Res.Resource):
     """ basic loopback device resource
     """
     def __init__(self,loopFile=None,optional=False,disabled=False):
-        self.loopFile=loopFile
         Res.Resource.__init__(self,"loop",optional,disabled)
+        self.loopFile = loopFile
+        self.id = 'loop ' + loopFile
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\

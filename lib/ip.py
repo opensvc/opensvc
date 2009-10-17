@@ -19,18 +19,16 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-__author__="cgaliber"
-__date__ ="$10 oct. 2009 09:38:20$"
-
 import resources as Res
 
 class Ip(Res.Resource):
     """ basic ip resource
     """
     def __init__(self, ipDev=None, ipName=None, optional=False, disabled=False):
+        Res.Resource.__init__(self,"ip",optional,disabled)
         self.ipDev=ipDev
         self.ipName=ipName
-        Res.Resource.__init__(self,"ip",optional,disabled)
+        self.id = 'ip ' + ipName + '@' + ipDev
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\

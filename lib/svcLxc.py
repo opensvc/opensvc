@@ -21,6 +21,7 @@
 
 import svc
 import lxc
+import rcStatus
 
 class svcLxc(svc.Svc):
     """ Define Lxc services"""
@@ -38,7 +39,6 @@ class svcLxc(svc.Svc):
         start lxc
         start apps
         """
-        print "starting %s" % self.__class__.__name__
         self.subSetAction("ip", "check_ping")
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
@@ -54,7 +54,6 @@ class svcLxc(svc.Svc):
         stop VGs
         stop loops
         """
-        print "stopping %s" % self.__class__.__name__
         self.subSetAction("app", "stop")
         self.subSetAction("lxc", "stop")
         self.subSetAction("mount", "stop")
@@ -63,12 +62,7 @@ class svcLxc(svc.Svc):
 
     def status(self):
         """status of the resources of a Lxc service"""
-        self.subSetAction("ip", "status")
-        self.subSetAction("loop", "status")
-        self.subSetAction("vg", "status")
-        self.subSetAction("mount", "status")
-        self.subSetAction("lxc", "status")
-        self.subSetAction("app", "status")
+        return svc.Svc.status(self, ["lxc", "loop", "mount", "vg", "ip"])
 
     def startlxc(self):
         self.subSetAction("lxc", "start")
