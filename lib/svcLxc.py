@@ -64,6 +64,10 @@ class svcLxc(svc.Svc):
         """status of the resources of a Lxc service"""
         return svc.Svc.status(self, ["lxc", "loop", "mount", "vg", "ip"])
 
+    def print_status(self):
+        """status of the resources of a Lxc service"""
+        return svc.Svc.print_status(self, ["lxc", "loop", "mount", "vg", "ip"])
+
     def startlxc(self):
         self.subSetAction("lxc", "start")
 

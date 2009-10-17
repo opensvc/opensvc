@@ -92,13 +92,10 @@ class Svc(Resource, Freezer):
                 s.add(r.status())
         return s.status
 
-    def print_status(self):
-        """status a service:
-        status mounts
-        status VGs
-        status ips
+    def print_status(self, type_list):
+        """print each resource status for a service
         """
-        for t in ("loop", "mount", "vg", "ip"):
+        for t in type_list:
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
