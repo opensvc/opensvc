@@ -105,6 +105,12 @@ class Svc(Resource, Freezer):
     def stopapp(self):
         self.subSetAction("app", "stop")
 
+    def syncnodes(self):
+        self.subSetAction("rsync", "syncnodes")
+
+    def syncdrp(self):
+        self.subSetAction("rsync", "syncdrp")
+
 
 if __name__ == "__main__" :
     for c in (Svc,) :

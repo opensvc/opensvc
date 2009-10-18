@@ -24,14 +24,12 @@ from rcUtilities import process_call_argv, which
 import rcStatus
 import resources
 
-def sync(self, section, log):
-    if not self.svc.conf.has_option("default", section):
-        log.info('no %s setup for synchronization' % section)
+def sync(self, type, log):
+    if type not in self.target.keys():
+        log.debug('%s => %s sync not applicable to %s',
+                  (self.src, self.dst, type))
         return 0
-    if section not in self.target:
-        log.debug('%s => %s sync not applicable to %s', (self.src, self.dst, section))
-        return 0
-    for node in self.svc.conf.get("default", section).split(' '):
+    for node in self.target[type].split(' '):
         if node == rcEnv.nodename:
             continue
         dst = node + ':' + self.dst
@@ -40,11 +38,15 @@ def sync(self, section, log):
         log.info(' '.join(cmd))
         (ret, out) = process_call_argv(cmd)
         if ret != 0:
-            log.error("node %s synchronization failed (%s => %s)" % (node, self.src, self.dst))
+            log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
             return 1
     return 0
 
 class Rsync(resources.Resource):
+    """Defines a rsync job from local node to its remote nodes. Target nodes
+    can be restricted to production sibblings or to disaster recovery nodes,
+    or both.
+    """
     timeout = 3600
     options = [ '-HpogDtrlvx', '--stats', '--delete', '--force' ]
 
@@ -56,16 +58,15 @@ class Rsync(resources.Resource):
         log = logging.getLogger('SYNCDRP')
         return sync(self, "drpnode", log)
 
-    def __init__(self, svc, src, dst, exclude='', target=['nodes', 'drpnode'],
+    def __init__(self, src, dst, exclude='', target={},
                  optional=False, disabled=False):
-        self.svc = svc
         self.src = src
         self.dst = dst
         self.exclude = exclude
         self.target = target
         self.options.append('--timeout=' + str(self.timeout))
         self.cmd = ['rsync'] + self.options + [self.exclude, self.src]
-        resources.Resource.__init__(self,"rsync",optional,disabled)
+        resources.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\

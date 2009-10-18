@@ -29,7 +29,7 @@ from rcNode import discover_node
 import rcOptParser
 import rcLogger
 import rcAddService
-import ResRsync
+import rsync
 
 def svcmode_mod_name(svcmode=''):
     """Returns the name of the module implementing the class for
@@ -132,7 +132,12 @@ def add_syncs(svc, conf):
         else:
             target = ['nodes', 'drpnode']
 
-        r = ResRsync.Rsync(src, dst, exclude, target)
+        targethash = {}
+        for t in target:
+            if conf.has_option("default", t):
+                targethash[t] = conf.get("default", t)
+
+        r = rsync.Rsync(src, dst, exclude, targethash)
         if conf.has_option(s, 'optional') and \
            conf.getboolean(s, "optional") == True:
                 r.set_optional()
