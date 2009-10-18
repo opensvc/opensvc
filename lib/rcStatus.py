@@ -68,7 +68,7 @@ def print_status(resource, status):
 	import string
 	print '{0:70} {1}'.format(resource, status_str(status))
 
-class Status:
+class Status(object):
 	"""Class that wraps printing and calculation of resource status
 	"""
 	status = UNDEF
@@ -76,7 +76,8 @@ class Status:
 	def reset(self):
 		self.status = UNDEF
 
-	def add(self, s):
+	def __iadd__(self, s):
 		"""Merge a status with current global status
 		"""
 		self.status = _merge(self.status, s)
+                return self

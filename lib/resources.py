@@ -82,7 +82,7 @@ class Resource(object):
         """
         s = rcStatus.Status()
         for r in self.resources:
-                s.add(r.status())
+                s += r.status()
         return s.status
 
     def print_status(self):

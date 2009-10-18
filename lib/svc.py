@@ -89,7 +89,7 @@ class Svc(Resource, Freezer):
         s = rcStatus.Status()
         for t in type_list:
             for r in self.get_res_sets(t):
-                s.add(r.status())
+                s += r.status()
         return s.status
 
     def print_status(self, type_list):
