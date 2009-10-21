@@ -20,7 +20,7 @@ import os
 import logging
 
 from rcGlobalEnv import *
-from rcUtilities import process_call_argv, which
+from rcUtilities import which
 import rcStatus
 import resources
 
@@ -36,7 +36,7 @@ def sync(self, type, log):
         cmd = self.cmd
         cmd.append(dst)
         log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         if ret != 0:
             log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
             return 1

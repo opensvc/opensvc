@@ -20,8 +20,9 @@
 # and open the template in the editor.
 
 import action as exc
-import logging
 import rcStatus
+import logging
+import rcUtilities
 
 class Resource(object):
     """Define basic resource
@@ -33,8 +34,8 @@ class Resource(object):
         self.type = type
         self.optional = optional
         self.disabled = disabled
-        self.log = logging.getLogger(type)
         self.id = type
+        self.log = logging.getLogger(str(type).upper())
 
     def __str__(self):
         output="object=%s type=%s" %   (self.__class__.__name__,self.type)
@@ -53,7 +54,6 @@ class Resource(object):
 
     def do_action(self, action):
         "Every resource should define basic doAction: start() stop() status()"
-        self.log.debug("call do_action on %s" % self.__class__.__name__)
         if hasattr(self, action):
             return getattr(self, action)()
         if action in ("start","stop","status") :
@@ -88,6 +88,11 @@ class Resource(object):
     def print_status(self):
         return rcStatus.print_status(self.id, self.status())
 
+    def call(self, cmd):
+        return rcUtilities.call(cmd, self.log)
+
+    def vcall(self, cmd):
+        return rcUtilities.vcall(cmd, self.log)
 
 class ResourceSet(Resource):
     """ Define Set of same type resources

@@ -18,7 +18,6 @@
 #
 from subprocess import *
 import os
-import logging
 import loopLinux
 from rcGlobalEnv import *
 from rcUtilities import *
@@ -65,7 +64,7 @@ class Mounts:
 		return None
 
 	def __init__(self):
-		out = Popen(['mount'], stdout=PIPE).communicate()[0]
+                (ret, out) = call(['mount'])
 		for l in out.split('\n'):
 			if len(l.split()) != 6:
 				return

@@ -20,7 +20,6 @@ import os
 import logging
 import resources
 from rcGlobalEnv import *
-from rcUtilities import process_call_argv, which
 import rcStatus
 
 class Loop(resources.Resource):

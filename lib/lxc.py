@@ -16,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import logging
 import os
 from datetime import datetime
 from subprocess import *
@@ -28,38 +27,31 @@ import resources as Res
 def lxc(self, action):
     outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
     if action == 'start':
-        log = logging.getLogger('STARTLXC')
         cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
     elif action == 'stop':
-        log = logging.getLogger('STOPLXC')
         cmd = ['lxc-stop', '-n', self.name, '-o', outf]
     else:
-        log = logging.getLogger()
-        log.error("unsupported lxc action: %s" % action)
+        self.log.error("unsupported lxc action: %s" % action)
         return 1
 
-    log.info('call: %s' % ' '.join(cmd))
     t = datetime.now()
-    p = Popen(cmd, stdout=PIPE)
-    p.communicate()[0]
+    (ret, out) = self.vcall(cmd)
     len = datetime.now() - t
-    log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
-    return p.returncode
+    self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
+    return ret
 
 def lxc_rootfs_path(self):
     return os.path.realpath(os.path.join(self.pathlxc, self.name, 'rootfs','rootfs'))
 
 def lxc_is_created(self):
     cmd = [ 'lxc-info', '-n', self.name ]
-    p = Popen(cmd, stdout=PIPE)
-    p.communicate()[0]
-    return p.returncode
+    (ret, out) = self.call(cmd)
+    return ret
 
 def lxc_wait_for_startup(self):
     tmo = self.startup_timeout
     while --tmo > 0:
         if self.is_up(): return 0
-    log = logging.getLogger('STARTLXC')
     log.error("timeout out waiting for %s startup", self.name)
     return 1
 
@@ -67,7 +59,6 @@ def lxc_wait_for_shutdown(self):
     tmo = self.shutdown_timeout
     while --tmo > 0:
         if not self.is_up(): return 0
-    log = logging.getLogger('STOPLXC')
     log.error("timeout out waiting for %s shutdown", self.name)
     return 1
 
@@ -107,24 +98,21 @@ class Lxc(Res.Resource):
     startup_timeout = 60
 
     def start(self):
-        log = logging.getLogger('Lxc.stop')
         if self.is_up():
-            log.info("lxc container %s already started" % self.name)
+            self.log.info("lxc container %s already started" % self.name)
             return 0
         lxc(self, 'start')
         return lxc_wait_for_startup(self)
 
     def stop(self):
-        log = logging.getLogger('Lxc.stop')
         if not self.is_up():
-            log.info("lxc container %s already stopped" % self.name)
+            self.log.info("lxc container %s already stopped" % self.name)
             return 0
         lxc(self, 'stop')
         return lxc_wait_for_shutdown(self)
 
     def is_up(self):
-        log = logging.getLogger('Lxc.is_up')
-        log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
+        self.log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
         p1 = Popen(['lxc-ps', '--name', self.name], stdout=PIPE)
         p2 = Popen(["grep", self.name], stdin=p1.stdout, stdout=PIPE)
         p2.communicate()[0]

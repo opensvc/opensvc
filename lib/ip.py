@@ -25,7 +25,7 @@ class Ip(Res.Resource):
     """ basic ip resource
     """
     def __init__(self, ipDev=None, ipName=None, optional=False, disabled=False):
-        Res.Resource.__init__(self,"ip",optional,disabled)
+        Res.Resource.__init__(self, "ip", optional, disabled)
         self.ipDev=ipDev
         self.ipName=ipName
         self.id = 'ip ' + ipName + '@' + ipDev

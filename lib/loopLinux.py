@@ -18,10 +18,9 @@
 #
 import os
 import re
-import logging
 
 from rcGlobalEnv import *
-from rcUtilities import process_call_argv, which
+from rcUtilities import call, which
 import rcStatus
 import loop
 
@@ -35,7 +34,7 @@ def file_to_loop(f):
         return None
     if rcEnv.sysname != 'Linux':
         return None
-    (ret, out) = process_call_argv(['losetup', '-j', f])
+    (ret, out) = call(['losetup', '-j', f])
     if len(out) == 0:
         return None
     return out.split()[0].strip(':')
@@ -50,26 +49,22 @@ class Loop(loop.Loop):
         return True
 
     def start(self):
-        log = logging.getLogger('STARTLOOP')
         if self.is_up():
-            log.info("%s is already up" % self.loopFile)
+            self.log.info("%s is already up" % self.loopFile)
             return 0
         cmd = [ 'losetup', '-f', self.loopFile ]
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         if ret == 0:
             self.loop = file_to_loop(self.loopFile)
-        log.info("%s now loops to %s" % (self.loop, self.loopFile))
+        self.log.info("%s now loops to %s" % (self.loop, self.loopFile))
         return ret
 
     def stop(self):
-        log = logging.getLogger('STOPLOOP')
         if not self.is_up():
-            log.info("%s is already down" % self.loopFile)
+            self.log.info("%s is already down" % self.loopFile)
             return 0
         cmd = [ 'losetup', '-d', self.loop ]
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         return ret
 
     def status(self):

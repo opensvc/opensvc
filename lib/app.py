@@ -20,18 +20,12 @@ from subprocess import *
 from datetime import datetime
 import os
 import glob
-import logging
 
 from rcGlobalEnv import rcEnv
 import resources as Res
 
 def app(self, name, action):
-    if action == 'start':
-        log = logging.getLogger('STARTAPP')
-    else:
-        log = logging.getLogger('STOPAPP')
-
-    log.info('spawn: %s %s' % (name, action))
+    self.log.info('spawn: %s %s' % (name, action))
     outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
     f = open(outf, 'a')
     t = datetime.now()
@@ -39,7 +33,7 @@ def app(self, name, action):
     p = Popen([name, action], stdout=PIPE)
     f.write(p.communicate()[0])
     len = datetime.now() - t
-    log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
+    self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
     f.close()
     return p.returncode
 

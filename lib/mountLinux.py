@@ -19,13 +19,11 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import logging
 import os
 
 import rcStatus
 import rcMounts
 import mount
-from rcUtilities import process_call_argv
 
 class Mount(mount.Mount):
     """ define Linux mount/umount doAction """
@@ -43,30 +41,26 @@ class Mount(mount.Mount):
         else: return rcStatus.DOWN
 
     def start(self):
-        log = logging.getLogger('MOUNT')
         if self.is_up() is True:
-            log.info("fs(%s %s) is already mounted"%
+            self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
         if not os.path.exists(self.mountPoint):
             os.mkdir(self.mountPoint, 0755)
         cmd = ['mount', '-t', self.fsType, '-o', self.mntOpt, self.device,
 self.mountPoint]
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         return ret
 
     def stop(self):
-        log = logging.getLogger('UMOUNT')
         if self.is_up() is False:
-            log.info("fs(%s %s) is already umounted"%
+            self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return 0
         cmd = ['umount', self.mountPoint]
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         if ret != 0:
-            log.error("failed")
+            self.log.error("failed")
             return 1
         return 0
 

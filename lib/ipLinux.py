@@ -26,7 +26,6 @@ import os
 from subprocess import *
 
 from rcLogger import *
-from rcUtilities import process_call_argv
 import rcIfconfig
 import rcStatus
 
@@ -73,23 +72,20 @@ class IpConflict(Exception):
 
 class Ip(ip.Ip):
     def check_ping(self):
-        log = logging.getLogger('Ip.check_ping')
         count=1
         timeout=5
         cmd = ['ping', '-c', repr(count), '-W', repr(timeout), self.addr]
-        log.debug(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_up(self):
-        log = logging.getLogger('Ip.is_up')
         ifconfig = rcIfconfig.ifconfig()
         if ifconfig.has_param("ipaddr", self.addr) is not None:
-            log.debug("%s@%s is up" % (self.addr, self.ipDev))
+            self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
             return True
-        log.debug("%s@%s is down" % (self.addr, self.ipDev))
+        self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
         return False
 
     def status(self):
@@ -97,62 +93,57 @@ class Ip(ip.Ip):
         else: return rcStatus.DOWN
 
     def allow_start(self):
-        log = logging.getLogger('STARTIP')
         ifconfig = rcIfconfig.ifconfig()
         if not ifconfig.interface(self.ipDev).flag_up:
-            log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
+            self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
             raise IpDevDown(self.ipDev)
         if self.is_up() is True:
-            log.info("%s is already up on %s" % (self.addr, self.ipDev))
+            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
             return False
         if self.check_ping():
-            log.error("%s is already up on another host" % (self.addr))
+            self.log.error("%s is already up on another host" % (self.addr))
             raise IpConflict(self.addr)
         return True
 
     def start(self):
-        log = logging.getLogger('STARTIP')
         try:
             if not self.allow_start():
                 return 0
         except IpConflict, IpDevDown:
             return 1
-        log.debug('pre-checks passed')
+        self.log.debug('pre-checks passed')
 
         ifconfig = rcIfconfig.ifconfig()
         self.mask = ifconfig.interface(self.ipDev).mask
         if self.mask == '':
-            log.error("No netmask set on parent interface %s" % self.ipDev)
+            self.log.error("No netmask set on parent interface %s" % self.ipDev)
             return None
         if self.mask == '':
-            log.error("No netmask found. Abort")
+            self.log.error("No netmask found. Abort")
             return 1
-        stacked_dev = get_stacked_dev(self.ipDev, self.addr, log)
+        stacked_dev = get_stacked_dev(self.ipDev, self.addr, self.log)
         cmd = ['ifconfig', stacked_dev, self.addr, 'netmask', self.mask, 'up']
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        (ret, out) = self.vcall(cmd)
         if ret != 0:
-            log.error("failed")
+            self.log.error("failed")
             return 1
         return 0
 
     def stop(self):
-        log = logging.getLogger('STOPIP')
         if self.is_up() is False:
-            log.info("%s is already down on %s" % (self.addr, self.ipDev))
+            self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
             return 0
-        stacked_dev = get_stacked_dev(self.ipDev, self.addr, log)
+        stacked_dev = get_stacked_dev(self.ipDev, self.addr, self.log)
         cmd = ['ifconfig', stacked_dev, 'down']
-        log.info(' '.join(cmd))
-        (ret, out) = process_call_argv(cmd)
+        self.log.info(' '.join(cmd))
+        (ret, out) = self.vcall(cmd)
         if ret != 0:
-            log.error("failed")
+            self.log.error("failed")
             return 1
         return 0
 
     def __init__(self, ipDev, ipName):
         self.addr = socket.gethostbyname(ipName)
-        log = logging.getLogger('INIT')
         ip.Ip.__init__(self, ipDev, ipName)
 
 if __name__ == "__main__":

@@ -22,39 +22,48 @@ import logging
 from subprocess import *
 
 def check_privs():
-	if os.getuid() != 0:
-		print 'Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv)
-		sys.exit(1)
+    if os.getuid() != 0:
+        print 'Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv)
+        sys.exit(1)
 
 
 def banner(text, ch='=', length=78):
-	spaced_text = ' %s ' % text
-	banner = spaced_text.center(length, ch)
-	return banner
+    spaced_text = ' %s ' % text
+    banner = spaced_text.center(length, ch)
+    return banner
 
 def is_exe(fpath):
-	"""Returns True if file path is executable, False otherwize
-	"""
-	return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+    """Returns True if file path is executable, False otherwize
+    """
+    return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
 def which(program):
-	"""Returns True if program is in PATH and executable, False
-	otherwize
-	"""
-	fpath, fname = os.path.split(program)
-	if fpath and is_exe(program):
-		return program
-	for path in os.environ["PATH"].split(os.pathsep):
-		exe_file = os.path.join(path, program)
-		if is_exe(exe_file):
-			return exe_file
-	return None
+    """Returns True if program is in PATH and executable, False
+    otherwize
+    """
+    fpath, fname = os.path.split(program)
+    if fpath and is_exe(program):
+        return program
+    for path in os.environ["PATH"].split(os.pathsep):
+        exe_file = os.path.join(path, program)
+        if is_exe(exe_file):
+            return exe_file
+    return None
 
-def process_call_argv(argv):
-	log = logging.getLogger('CALL')
-	if not argv:
-		return (0, '')
-	log.debug(' '.join(argv))
-	process = Popen(argv, stdout=PIPE, close_fds=True)
-	output = process.communicate()[0]
-	return (process.returncode, output)
+def call(argv=['/bin/false'], log=None, info=False):
+    if log == None:
+        log = logging.getLogger('CALL')
+    if not argv:
+        return (0, '')
+    if info:
+        log.info(' '.join(argv))
+    else:
+        log.debug(' '.join(argv))
+    process = Popen(argv, stdout=PIPE, close_fds=True)
+    output = process.communicate()[0]
+    if len(output) > 0:
+        log.debug(output)
+    return (process.returncode, output)
+
+def vcall(argv=['/bin/false'], log=None):
+    return call(argv, log, True)

@@ -17,9 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import re
-import logging
 
-from rcUtilities import process_call_argv
 import rcStatus
 import vg
 
@@ -28,7 +26,7 @@ class Vg(vg.Vg):
 		"""Returns True if the volume is present
 		"""
 		cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
-		(ret, out) = process_call_argv(cmd)
+		(ret, out) = self.call(cmd)
 		if re.match('\s*'+self.vgName+'\s', out, re.MULTILINE) is None:
 			return False
 		return True
@@ -39,29 +37,25 @@ class Vg(vg.Vg):
 		if not self.has_vg():
 			return False
 		cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.vgName ]
-		(ret, out) = process_call_argv(cmd)
+		(ret, out) = self.call(cmd)
 		if re.match(' ....-[-o]', out, re.MULTILINE) is None:
 			return True
 		return False
 
 	def start(self):
-		log = logging.getLogger('STARTVG')
 		if self.is_up():
-			log.info("%s is already up" % self.vgName)
+			self.log.info("%s is already up" % self.vgName)
 			return 0
 		cmd = [ 'vgchange', '-a', 'y', self.vgName ]
-		log.info(' '.join(cmd))
-		(ret, out) = process_call_argv(cmd)
+		(ret, out) = self.vcall(cmd)
 		return ret
 
 	def stop(self):
-		log = logging.getLogger('STOPVG')
 		if not self.is_up():
-			log.info("%s is already down" % self.vgName)
+			self.log.info("%s is already down" % self.vgName)
 			return 0
 		cmd = [ 'vgchange', '-a', 'n', self.vgName ]
-		log.info(' '.join(cmd))
-		(ret, out) = process_call_argv(cmd)
+		(ret, out) = self.vcall(cmd)
 		return ret
 
 	def status(self):
