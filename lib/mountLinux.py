@@ -57,6 +57,14 @@ self.mountPoint]
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return 0
+        #
+        # best effort kill of all processes that might block
+        # the umount operation. The priority is given to mass
+        # action reliability, ie don't contest oprator's will
+        #
+        cmd = ['fuser', '-kv', self.mountPoint]
+        (ret, out) = self.vcall(cmd)
+
         cmd = ['umount', self.mountPoint]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
