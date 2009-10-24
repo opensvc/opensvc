@@ -67,3 +67,8 @@ def call(argv=['/bin/false'], log=None, info=False):
 
 def vcall(argv=['/bin/false'], log=None):
     return call(argv, log, True)
+
+if __name__ == "__main__":
+    print "call(('id','-a'))"
+    (r,output)=call(("/usr/bin/id","-a"))
+    print "status: ",r,"output:",output
