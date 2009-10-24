@@ -22,7 +22,7 @@
 import os
 
 import rcStatus
-import rcMounts
+import rcMountsLinux as rcMounts
 import mount
 
 class Mount(mount.Mount):
