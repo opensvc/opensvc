@@ -23,51 +23,51 @@ from rcGlobalEnv import *
 from rcUtilities import *
 
 class Mount:
-	def __init__(self, dev, mnt, type, mnt_opt):
-		self.dev = dev
-		self.mnt = mnt
-		self.type = type
-		self.mnt_opt = mnt_opt
+    def __init__(self, dev, mnt, type, mnt_opt):
+        self.dev = dev
+        self.mnt = mnt
+        self.type = type
+        self.mnt_opt = mnt_opt
 
 def match_mount(i, dev, mnt):
-	"""Given a line of 'mount' output, returns True if (dev, mnt) matches
-	this line. Returns False otherwize. Also care about weirdos like loops
-	and binds, ...
-	"""
-	if i.mnt != mnt:
-		return False
-	if i.dev == dev:
-		return True
-	if i.dev == loopLinux.file_to_loop(dev):
-		return True
-	return False
+    """Given a line of 'mount' output, returns True if (dev, mnt) matches
+    this line. Returns False otherwize. Also care about weirdos like loops
+    and binds, ...
+    """
+    if i.mnt != mnt:
+        return False
+    if i.dev == dev:
+        return True
+    if i.dev == loopLinux.file_to_loop(dev):
+        return True
+    return False
 
 class Mounts:
-	mounts = []
+    mounts = []
 
-	def mount(self, dev, mnt):
-		for i in self.mounts:
-			if match_mount(i, dev, mnt):
-				return i
-		return None
+    def mount(self, dev, mnt):
+        for i in self.mounts:
+            if match_mount(i, dev, mnt):
+                return i
+        return None
 
-	def has_mount(self, dev, mnt):
-		for i in self.mounts:
-			if match_mount(i, dev, mnt):
-				return 0
-		return 1
+    def has_mount(self, dev, mnt):
+        for i in self.mounts:
+            if match_mount(i, dev, mnt):
+                return 0
+        return 1
 
-	def has_param(self, param, value):
-		for i in self.mounts:
-			if getattr(i, param) == value:
-				return i
-		return None
+    def has_param(self, param, value):
+        for i in self.mounts:
+            if getattr(i, param) == value:
+                return i
+        return None
 
-	def __init__(self):
+    def __init__(self):
                 (ret, out) = call(['mount'])
-		for l in out.split('\n'):
-			if len(l.split()) != 6:
-				return
-			dev, null, mnt, null, type, mnt_opt = l.split()
-			m = Mount(dev, mnt, type, mnt_opt.strip('()'))
-			self.mounts.append(m)
+        for l in out.split('\n'):
+            if len(l.split()) != 6:
+                return
+            dev, null, mnt, null, type, mnt_opt = l.split()
+            m = Mount(dev, mnt, type, mnt_opt.strip('()'))
+            self.mounts.append(m)
