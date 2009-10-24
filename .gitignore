@@ -1,4 +1,5 @@
 *.pyc
+*.class
 *.swp
 etc/
 log/
