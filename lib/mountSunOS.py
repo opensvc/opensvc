@@ -20,21 +20,50 @@
 # and open the template in the editor.
 "Module implement SunOS specific mounts"
 
-__author__="cgaliber"
-__date__ ="$11 oct. 2009 14:38:00$"
+import os
 
-import mount    
+import rcStatus
+import rcMountsSunOS as rcMounts
+import mount
 
 class Mount(mount.Mount):
     """ define SunOS mount/umount doAction """
+    def __init__(self, mountPoint, device, fsType, mntOpt):
+        self.Mounts = rcMounts.Mounts()
+        mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+
+    def is_up(self):
+        if self.Mounts.has_mount(self.device, self.mountPoint) != 0:
+            return False
+        return True
+
+    def status(self):
+        if self.is_up(): return rcStatus.UP
+        else: return rcStatus.DOWN
 
     def start(self):
-        print "===== exec mount -F %s %s %s" % \
-              (self.fsType,self.device,self.mountPoint)
+        if self.is_up() is True:
+            self.log.info("fs(%s %s) is already mounted"%
+                (self.device, self.mountPoint))
+            return 0
+        if not os.path.exists(self.mountPoint):
+            os.mkdir(self.mountPoint, 0755)
+        cmd = ['mount', '-F', self.fsType, '-o', self.mntOpt, self.device, \
+            self.mountPoint]
+        (ret, out) = self.vcall(cmd)
+        return ret
 
     def stop(self):
-        print "====== exec fuser -ck %s" % (self.device)
-        print "====== exec umount %s" % (self.mountPoint)
+        if self.is_up() is False:
+            self.log.info("fs(%s %s) is already umounted"%
+                    (self.device, self.mountPoint))
+            return 0
+        cmd = ['umount', self.mountPoint]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            self.log.error("failed")
+            return 1
+        return 0
 
 if __name__ == "__main__":
     for c in (Mount,) :
