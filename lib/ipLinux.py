@@ -22,7 +22,6 @@
 
 import ip
 import socket
-import os
 from subprocess import *
 
 from rcLogger import *
@@ -109,7 +108,7 @@ class Ip(ip.Ip):
         try:
             if not self.allow_start():
                 return 0
-        except IpConflict, IpDevDown:
+        except (IpConflict, IpDevDown):
             return 1
         self.log.debug('pre-checks passed')
 
@@ -147,6 +146,6 @@ class Ip(ip.Ip):
         ip.Ip.__init__(self, ipDev, ipName)
 
 if __name__ == "__main__":
-    for c in (Ip,) :
+    for c in (next_stacked_dev,get_stacked_dev,IpDevDown,IpConflict,Ip,) :
         help(c)
 
