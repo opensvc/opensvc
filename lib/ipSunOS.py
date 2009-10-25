@@ -18,22 +18,32 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
-
-__author__="cgaliber"
-__date__ ="$11 oct. 2009 14:38:00$"
+"Module implement SunOS specific ip management"
 
 import ip
+from subprocess import *
 
 class Ip(ip.Ip):
     """ define ip SunOS start/stop doAction """
 
-    def start(self):
-            print "====== exec ifconfig %s plumb" % (self.ipDev)
+    def check_ping(self):
+        timeout=2
+        cmd = ['ping', self.addr, "%s" % timeout]
+        (ret, out) = self.call(cmd)
+        if ret == 0:
+            return True
+        return False
 
-    def stop(self):
-            print "====== exec ifconfig %s unplumb" % (self.ipDev)
-
+    def startip_cmd(self):
+        cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
+            'netmask', '+', 'broadcast', '+', 'up']
+        return self.vcall(cmd)
+        
+    def stopip_cmd(self):
+        cmd = ['ifconfig', self.stacked_dev, 'unplumb']
+        self.log.info(' '.join(cmd))
+        return self.vcall(cmd)
+        
 if __name__ == "__main__":
     for c in (Ip,) :
         help(c)
