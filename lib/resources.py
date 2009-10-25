@@ -89,10 +89,21 @@ class Resource(object):
         return rcStatus.print_status(self.id, self.status())
 
     def call(self, cmd):
+        """Use subprocess module functions to do a call
+        """
         return rcUtilities.call(cmd, self.log)
 
     def vcall(self, cmd):
+        """Use subprocess module functions to do a call and
+        log the command line using the resource logger
+        """
         return rcUtilities.vcall(cmd, self.log)
+
+    def disklist(self):
+        """List disks the resource holds. Some resource have none,
+        and can leave this function as is.
+        """
+        return []
 
 class ResourceSet(Resource):
     """ Define Set of same type resources

@@ -99,6 +99,18 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
+    def disklist(self):
+        """List all disks held by all resources of this service
+        """
+        disks = []
+        for rs in self.resSets:
+            for r in rs.resources:
+                disks += r.disklist()
+        # remove duplicate entries in disk list
+        disks = list(set(disks)) 
+        self.log.debug("found disks %s held by service" % disks)
+        return disks
+
     def startapp(self):
         self.subSetAction("app", "start")
 
