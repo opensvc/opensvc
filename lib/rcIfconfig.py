@@ -21,102 +21,144 @@ import logging
 from rcGlobalEnv import *
 
 class interface:
-	def show(self):
-		log = logging.getLogger('INIT')
-		log.debug('ifconfig:')
-		log.debug(self.name + ' link_encap = ' + self.link_encap)
-		log.debug(self.name + ' scope = ' + self.scope)
-		log.debug(self.name + ' bcast = ' + self.bcast)
-		log.debug(self.name + ' mask = ' + self.mask)
-		log.debug(self.name + ' mtu = ' + self.mtu)
-		log.debug(self.name + ' ipaddr = ' + self.ipaddr)
-		log.debug(self.name + ' ip6addr = ' + self.ip6addr)
-		log.debug(self.name + ' hwaddr = ' + self.hwaddr)
-		log.debug(self.name + ' flag_up = ' + str(self.flag_up))
-		log.debug(self.name + ' flag_broadcast = ' + str(self.flag_broadcast))
-		log.debug(self.name + ' flag_running = ' + str(self.flag_running))
-		log.debug(self.name + ' flag_multicast = ' + str(self.flag_multicast))
-		log.debug(self.name + ' flag_loopback = ' + str(self.flag_loopback))
+    def show(self):
+        log = logging.getLogger('INIT')
+        log.debug('ifconfig:')
+        log.debug(self.name + ' link_encap = ' + self.link_encap)
+        log.debug(self.name + ' scope = ' + self.scope)
+        log.debug(self.name + ' bcast = ' + self.bcast)
+        log.debug(self.name + ' mask = ' + self.mask)
+        log.debug(self.name + ' mtu = ' + self.mtu)
+        log.debug(self.name + ' ipaddr = ' + self.ipaddr)
+        log.debug(self.name + ' ip6addr = ' + self.ip6addr)
+        log.debug(self.name + ' hwaddr = ' + self.hwaddr)
+        log.debug(self.name + ' flag_up = ' + str(self.flag_up))
+        log.debug(self.name + ' flag_broadcast = ' + str(self.flag_broadcast))
+        log.debug(self.name + ' flag_running = ' + str(self.flag_running))
+        log.debug(self.name + ' flag_multicast = ' + str(self.flag_multicast))
+        log.debug(self.name + ' flag_loopback = ' + str(self.flag_loopback))
 
-	def __init__(self, name):
-		self.name = name
+    def __init__(self, name):
+        self.name = name
+        # defaults
+        self.link_encap = ''
+        self.scope = ''
+        self.bcast = ''
+        self.mask = ''
+        self.mtu = ''
+        self.ipaddr = ''
+        self.ip6addr = ''
+        self.hwaddr = ''
+        self.flag_up = False
+        self.flag_broadcast = False
+        self.flag_running = False
+        self.flag_multicast = False
+        self.flag_loopback = False
 
-class ifconfig:
-	intf = []
+class ifconfig(object):
+    intf = []
 
-	def add_interface(self, name):
-		i = interface(name)
-		self.intf.append(i)
+    def add_interface(self, name):
+        i = interface(name)
+        self.intf.append(i)
 
-	def interface(self, name):
-		for i in self.intf:
-			if i.name == name:
-				return i
-		return None
+    def interface(self, name):
+        for i in self.intf:
+            if i.name == name:
+                return i
+        return None
 
-	def has_interface(self, name):
-		for i in self.intf:
-			if i.name == name:
-				return 1
-		return 0
+    def has_interface(self, name):
+        for i in self.intf:
+            if i.name == name:
+                return 1
+        return 0
 
-	def has_param(self, param, value):
-		for i in self.intf:
-			if getattr(i, param) == value:
-				return i
-		return None
+    def has_param(self, param, value):
+        for i in self.intf:
+            if getattr(i, param) == value:
+                return i
+        return None
 
-	def __init__(self):
-		out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
-		prev = ''
-		prevprev = ''
-		for w in out.split():
-			if w == 'Link':
-				i = interface(prev)
-				self.intf.append(i)
+    def __init__(self):
+        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+        prev = ''
+        prevprev = ''
+        for w in out.split():
+            if w == 'Link':
+                i = interface(prev)
+                self.intf.append(i)
 
-				# defaults
-				i.link_encap = ''
-				i.scope = ''
-				i.bcast = ''
-				i.mask = ''
-				i.mtu = ''
-				i.ipaddr = ''
-				i.ip6addr = ''
-				i.hwaddr = ''
-				i.flag_up = False
-				i.flag_broadcast = False
-				i.flag_running = False
-				i.flag_multicast = False
-				i.flag_loopback = False
-			elif 'encap:' in w:
-				(null, i.link_encap) = w.split(':')
-			elif 'Scope:' in w:
-				(null, i.scope) = w.split(':')
-			elif 'Bcast:' in w:
-				(null, i.bcast) = w.split(':')
-			elif 'Mask:' in w:
-				(null, i.mask) = w.split(':')
-			elif 'MTU:' in w:
-				(null, i.mtu) = w.split(':')
+                # defaults
+                i.link_encap = ''
+                i.scope = ''
+                i.bcast = ''
+                i.mask = ''
+                i.mtu = ''
+                i.ipaddr = ''
+                i.ip6addr = ''
+                i.hwaddr = ''
+                i.flag_up = False
+                i.flag_broadcast = False
+                i.flag_running = False
+                i.flag_multicast = False
+                i.flag_loopback = False
+            elif 'encap:' in w:
+                (null, i.link_encap) = w.split(':')
+            elif 'Scope:' in w:
+                (null, i.scope) = w.split(':')
+            elif 'Bcast:' in w:
+                (null, i.bcast) = w.split(':')
+            elif 'Mask:' in w:
+                (null, i.mask) = w.split(':')
+            elif 'MTU:' in w:
+                (null, i.mtu) = w.split(':')
 
-			if 'inet' == prev and 'addr:' in w:
-				(null, i.ipaddr) = w.split(':')
-			if 'inet6' == prevprev and 'addr:' == prev:
-				i.ip6addr = w
-			if 'HWaddr' == prev:
-				i.hwaddr = w
-			if 'UP' == w:
-				i.flag_up = True
-			if 'BROADCAST' == w:
-				i.flag_broadcast = True
-			if 'RUNNING' == w:
-				i.flag_running = True
-			if 'MULTICAST' == w:
-				i.flag_multicast = True
-			if 'LOOPBACK' == w:
-				i.flag_loopback = True
-				
-			prevprev = prev
-			prev = w
-	
+            if 'inet' == prev and 'addr:' in w:
+                (null, i.ipaddr) = w.split(':')
+            if 'inet6' == prevprev and 'addr:' == prev:
+                i.ip6addr = w
+            if 'HWaddr' == prev:
+                i.hwaddr = w
+            if 'UP' == w:
+                i.flag_up = True
+            if 'BROADCAST' == w:
+                i.flag_broadcast = True
+            if 'RUNNING' == w:
+                i.flag_running = True
+            if 'MULTICAST' == w:
+                i.flag_multicast = True
+            if 'LOOPBACK' == w:
+                i.flag_loopback = True
+                
+            prevprev = prev
+            prev = w
+
+    def next_stacked_dev(self,dev):
+        """Return the first available interfaceX:Y on  interfaceX
+        """
+        i = 1
+        while True:
+            stacked_dev = dev+':'+str(i)
+            if not self.has_interface(stacked_dev):
+                return stacked_dev
+            i = i + 1
+
+    def get_stacked_dev(self, dev, addr, log):
+        """Upon start, a new interfaceX:Y will have to be assigned.
+        Upon stop, the currently assigned interfaceX:Y will have to be
+        found for ifconfig down
+        """
+        stacked_intf = self.has_param("ipaddr", addr)
+        if stacked_intf is not None:
+            if dev not in stacked_intf.name:
+                log.error("%s is plumbed but not on %s" % (addr, dev))
+                return
+            stacked_dev = stacked_intf.name
+            log.debug("found matching stacked device %s" % stacked_dev)
+        else:
+            stacked_dev = self.next_stacked_dev(dev)
+            log.debug("allocate new stacked device %s" % stacked_dev)
+        return stacked_dev
+
+
