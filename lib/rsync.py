@@ -22,7 +22,7 @@ import logging
 from rcGlobalEnv import *
 from rcUtilities import which
 import rcStatus
-import resources
+import resources as Res
 
 def sync(self, type, log):
     if type not in self.target.keys():
@@ -42,7 +42,7 @@ def sync(self, type, log):
             return 1
     return 0
 
-class Rsync(resources.Resource):
+class Rsync(Res.Resource):
     """Defines a rsync job from local node to its remote nodes. Target nodes
     can be restricted to production sibblings or to disaster recovery nodes,
     or both.
@@ -66,7 +66,7 @@ class Rsync(resources.Resource):
         self.target = target
         self.options.append('--timeout=' + str(self.timeout))
         self.cmd = ['rsync'] + self.options + [self.exclude, self.src]
-        resources.Resource.__init__(self, "rsync", optional, disabled)
+        Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\
