@@ -84,6 +84,9 @@ class Vg(vg.Vg):
         if ret != 0:
             raise Exception()
         for minor in out.split():
+            if minor == '-1':
+                # means the lv is inactive
+                continue
             syspath = '/sys/block/dm-'+minor+'/slaves'
             disks += get_blockdev_sd_slaves(syspath)
         # remove duplicate entries in disk list
