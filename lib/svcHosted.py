@@ -42,6 +42,7 @@ class svcHosted(svc.Svc):
         self.subSetAction("ip", "start")
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
+        self.subSetAction("scsireserv", "start")
         self.subSetAction("mount", "start")
         self.subSetAction("app", "start")
 
@@ -54,17 +55,18 @@ class svcHosted(svc.Svc):
         """
         self.subSetAction("app", "stop")
         self.subSetAction("mount", "stop")
+        self.subSetAction("scsireserv", "stop")
         self.subSetAction("vg", "stop")
         self.subSetAction("loop", "stop")
         self.subSetAction("ip", "stop")
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["loop", "mount", "vg", "ip"])
+        return svc.Svc.status(self, ["loop", "mount", "vg", "scsireserv", "ip"])
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["loop", "mount", "vg", "ip"])
+        return svc.Svc.print_status(self, ["loop", "mount", "vg", "scsireserv", "ip"])
 
     def diskstart(self):
         """start a hosted service:
@@ -74,6 +76,7 @@ class svcHosted(svc.Svc):
         """
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
+        self.subSetAction("scsireserv", "start")
         self.subSetAction("mount", "start")
 
     def diskstop(self):
@@ -84,6 +87,7 @@ class svcHosted(svc.Svc):
         stop ips
         """
         self.subSetAction("mount", "stop")
+        self.subSetAction("scsireserv", "stop")
         self.subSetAction("vg", "stop")
         self.subSetAction("loop", "stop")
 

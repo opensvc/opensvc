@@ -206,3 +206,12 @@ class ScsiReserv(scsiReserv.ScsiReserv):
 
     def scsicheckreserv(self):
         return checkreserv(self)
+
+    def status(self):
+        return self.scsicheckreserv()
+
+    def start(self):
+        return self.scsireserv()
+
+    def stop(self):
+        return self.scsirelease()
