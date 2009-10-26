@@ -19,6 +19,8 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+import re
+import time
 import scsiReserv
 import rcStatus
 from rcUtilities import call
@@ -28,20 +30,25 @@ def scsireserv_supported():
         return False
     return True
 
-def ack_unit_attention(self):
+def ack_unit_attention(self, d):
     i = self.preempt_timeout
+    while i>0:
+        i -= 1
+        cmd = [ 'sg_persist', '-n', '-r', '/dev/'+d ]
+        (ret, out) = self.call(cmd)
+        if "Unit Attention" in out or ret != 0:
+            self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
+            time.sleep(1)
+            continue
+        break
+    if i == 0:
+        self.log.error("timed out waiting for 'Unit Attention' to go away on disk %s" % d)
+        return 1
+    return 0
+
+def ack_all_unit_attention(self):
     for d in self.disks:
-        while i>0:
-            i -= 1
-            cmd = [ 'sg_persist', '-n', '-r', '/dev/'+d ]
-            (ret, out) = self.call(cmd)
-            if "Unit Attention" in out:
-                self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
-                time.sleep(1)
-                continue
-            break
-        if i == 0:
-            self.log.error("timed out waiting for 'Unit Attention' to go away on disk %s" % d)
+        if ack_unit_attention(self, d) != 0:
             return 1
     return 0
 
@@ -50,9 +57,9 @@ def disk_registered(self, disk):
     (ret, out) = self.call(cmd)
     if ret != 0:
         self.log.error("failed to read registrations for disk %s" % disk)
-    if re.match(self.hostid, out, re.I) is None:
-        return False
-    return True
+    if self.hostid in out:
+        return True
+    return False
 
 def disk_register(self, disk):
     cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, '/dev/'+disk ]
@@ -71,12 +78,16 @@ def disk_unregister(self, disk):
 def register(self):
     r = 0
     for d in self.disks:
+        r += ack_unit_attention(self, d)
         r += disk_register(self, d)
     return r
 
 def unregister(self):
     r = 0
     for d in self.disks:
+        r += ack_unit_attention(self, d)
+        if not disk_registered(self, d):
+            continue
         r += disk_unregister(self, d)
     return r
 
@@ -97,9 +108,9 @@ def disk_reserved(self, disk):
     (ret, out) = self.call(cmd)
     if ret != 0:
         self.log.error("failed to read reservation for disk %s" % disk)
-    if re.match(self.hostid, out, re.I) is None:
-        return False
-    return True
+    if self.hostid in out:
+        return True
+    return False
 
 def disk_release(self, disk):
     cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
@@ -136,6 +147,7 @@ def disk_wait_reservation(self, disk):
 def reserve(self):
     r = 0
     for d in self.disks:
+        r += ack_unit_attention(self, d)
         key = get_reservation_key(self, d)
         if key is None:
             r += disk_reserve(self, d)
@@ -149,11 +161,14 @@ def reserve(self):
 def release(self):
     r = 0
     for d in self.disks:
+        r += ack_unit_attention(self, d)
+        if not disk_reserved(self, d):
+            continue
         r += disk_release(self, d)
     return r
 
 def checkreserv(self):
-    if ack_unit_attention(self) != 0:
+    if ack_all_unit_attention(self) != 0:
         return rcStatus.WARN
     r = rcStatus.Status()
     for d in self.disks:
@@ -179,7 +194,6 @@ class ScsiReserv(scsiReserv.ScsiReserv):
 
     def scsireserv(self):
         r = 0
-        r += ack_unit_attention(self)
         r += register(self)
         r += reserve(self)
         return r
