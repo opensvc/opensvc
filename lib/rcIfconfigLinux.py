@@ -21,7 +21,7 @@ from subprocess import *
 
 import rcIfconfig
 
-class ifconfig(rcIfconfig):
+class ifconfig(rcIfconfig.ifconfig):
 
     def __init__(self):
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
