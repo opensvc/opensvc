@@ -39,9 +39,9 @@ class Vg(vg.Vg):
         """
         cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
         (ret, out) = self.call(cmd)
-        if re.match('\s*'+self.vgName+'\s', out, re.MULTILINE) is None:
-            return False
-        return True
+        if self.vgName in out.split():
+            return True
+        return False
 
     def is_up(self):
         """Returns True if the volume group is present and activated
