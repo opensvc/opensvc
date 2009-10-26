@@ -46,6 +46,7 @@ action_desc = {
 	'diskstop':	'combo action, chaining umount-stopvg',
 	'scsireserv':	'reserve scsi disks held by this service',
 	'scsirelease':	'release scsi disks held by this service',
+	'scsicheckreserv':	'report status of reservations on scsi disks held by this service',
 }
 
 def format_desc(svc=False):

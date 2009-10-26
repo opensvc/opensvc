@@ -131,6 +131,9 @@ class Svc(Resource, Freezer):
     def scsireserv(self):
         self.subSetAction("scsireserv", "scsireserv")
 
+    def scsicheckreserv(self):
+        self.subSetAction("scsireserv", "scsicheckreserv")
+
 
 
 if __name__ == "__main__" :

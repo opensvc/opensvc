@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import scsiReserv
+import rcStatus
 from rcUtilities import call
 
 def scsireserv_supported():
@@ -151,6 +152,23 @@ def release(self):
         r += disk_release(self, d)
     return r
 
+def checkreserv(self):
+    if ack_unit_attention(self) != 0:
+        return rcStatus.WARN
+    r = rcStatus.Status()
+    for d in self.disks:
+        key = get_reservation_key(self, d)
+        if key is None:
+            self.log.debug("disk %s is not reserved" % d)
+            r += rcStatus.WARN
+        elif key != self.hostid:
+            self.log.debug("disk %s is reserved by another host whose key is %s" % (d, key))
+            r += rcStatus.DOWN
+        else:
+            self.log.debug("disk %s is correctly reserved" % d)
+            r += rcStatus.UP
+    return r.status
+
 
 class ScsiReserv(scsiReserv.ScsiReserv):
     """Define method to acquire and release scsi SPC-3 persistent reservations
@@ -171,3 +189,6 @@ class ScsiReserv(scsiReserv.ScsiReserv):
         r += release(self)
         r += unregister(self)
         return r
+
+    def scsicheckreserv(self):
+        return checkreserv(self)
