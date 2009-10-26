@@ -143,6 +143,17 @@ def add_syncs(svc, conf):
                 r.set_optional()
         svc += r
 
+def add_scsireserv(svc, conf):
+    """Add scsi persistent reservation resource if enabled in the config file
+    """
+    if not conf.has_option('default', 'scsireserv'):
+        return
+    if conf.getboolean('default', 'scsireserv') != True:
+        return
+    scsiReserv = __import__('scsiReserv'+rcEnv.sysname) 
+    r = scsiReserv.ScsiReserv(rcEnv.hostid, svc.disklist())
+    svc += r
+
 def setup_logging():
 	"""Setup logging to stream + logfile, and logfile rotation
 	class Logger instance name: 'log'
@@ -258,5 +269,6 @@ def build(name):
     add_vgs(svc, conf)
     add_mounts(svc, conf)
     add_syncs(svc, conf)
+    add_scsireserv(svc, conf)
 
     return svc

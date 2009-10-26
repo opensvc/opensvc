@@ -44,6 +44,8 @@ action_desc = {
 	'stopvg':	'deactivate/deport volume group resources of this service',
 	'diskstart':	'combo action, chaining startvg-mount',
 	'diskstop':	'combo action, chaining umount-stopvg',
+	'scsireserv':	'reserve scsi disks held by this service',
+	'scsirelease':	'release scsi disks held by this service',
 }
 
 def format_desc(svc=False):

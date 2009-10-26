@@ -1,0 +1,173 @@
+#
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# To change this template, choose Tools | Templates
+# and open the template in the editor.
+
+import scsiReserv
+from rcUtilities import call
+
+def scsireserv_supported():
+    if which('sg_persist') is None:
+        return False
+    return True
+
+def ack_unit_attention(self):
+    i = self.preempt_timeout
+    for d in self.disks:
+        while i>0:
+            i -= 1
+            cmd = [ 'sg_persist', '-n', '-r', '/dev/'+d ]
+            (ret, out) = self.call(cmd)
+            if "Unit Attention" in out:
+                self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
+                time.sleep(1)
+                continue
+            break
+        if i == 0:
+            self.log.error("timed out waiting for 'Unit Attention' to go away on disk %s" % d)
+            return 1
+    return 0
+
+def disk_registered(self, disk):
+    cmd = [ 'sg_persist', '-n', '-k', '/dev/'+disk ]
+    (ret, out) = self.call(cmd)
+    if ret != 0:
+        self.log.error("failed to read registrations for disk %s" % disk)
+    if re.match(self.hostid, out, re.I) is None:
+        return False
+    return True
+
+def disk_register(self, disk):
+    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, '/dev/'+disk ]
+    (ret, out) = self.vcall(cmd)
+    if ret != 0:
+        self.log.error("failed to register key %s with disk %s" % (self.hostid, disk))
+    return ret
+
+def disk_unregister(self, disk):
+    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, '/dev/'+disk ]
+    (ret, out) = self.vcall(cmd)
+    if ret != 0:
+        self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
+    return ret
+
+def register(self):
+    r = 0
+    for d in self.disks:
+        r += disk_register(self, d)
+    return r
+
+def unregister(self):
+    r = 0
+    for d in self.disks:
+        r += disk_unregister(self, d)
+    return r
+
+def get_reservation_key(self, disk):
+    cmd = [ 'sg_persist', '-n', '-r', '/dev/'+disk ]
+    (ret, out) = self.call(cmd)
+    if ret != 0:
+        self.log.error("failed to list reservation for disk %s" % disk)
+    if 'Key=' not in out:
+        return None
+    for w in out.split():
+        if 'Key=' in w:
+            return w.split('=')[1]
+    raise Exception()
+
+def disk_reserved(self, disk):
+    cmd = [ 'sg_persist', '-n', '-r', '/dev/'+disk ]
+    (ret, out) = self.call(cmd)
+    if ret != 0:
+        self.log.error("failed to read reservation for disk %s" % disk)
+    if re.match(self.hostid, out, re.I) is None:
+        return False
+    return True
+
+def disk_release(self, disk):
+    cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    (ret, out) = self.vcall(cmd)
+    if ret != 0:
+        self.log.error("failed to release disk %s" % disk)
+    return ret
+
+def disk_reserve(self, disk):
+    cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    (ret, out) = self.vcall(cmd)
+    if ret != 0:
+        self.log.error("failed to reserve disk %s" % disk)
+    return ret
+
+def disk_preempt_reservation(self, disk, oldkey):
+    cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    (ret, out) = self.vcall(cmd)
+    if ret != 0:
+        self.log.error("failed to preempt reservation for disk %s" % disk)
+    return ret
+
+def disk_wait_reservation(self, disk):
+    i = 0
+    while i>0:
+        i -= 1
+        if disk_reserved(disk):
+            self.log.info("reservation acquired for disk %s" % disk)
+            return 0
+        time.sleep(1)
+    self.log.error("timed out waiting for reservation for disk %s" % disk)
+    return 1
+
+def reserve(self):
+    r = 0
+    for d in self.disks:
+        key = get_reservation_key(self, d)
+        if key is None:
+            r += disk_reserve(self, d)
+        elif key == self.hostid:
+            continue
+        else:
+            r += disk_preempt_reservation(self, d, key)
+            r += disk_wait_reservation(self, d)
+    return r
+
+def release(self):
+    r = 0
+    for d in self.disks:
+        r += disk_release(self, d)
+    return r
+
+
+class ScsiReserv(scsiReserv.ScsiReserv):
+    """Define method to acquire and release scsi SPC-3 persistent reservations
+    on disks held by a service
+    """
+    def __init__(self, hostid, disks):
+        scsiReserv.ScsiReserv.__init__(self, hostid, disks)
+
+    def scsireserv(self):
+        r = 0
+        r += ack_unit_attention(self)
+        r += register(self)
+        r += reserve(self)
+        return r
+
+    def scsirelease(self):
+        r = 0
+        r += release(self)
+        r += unregister(self)
+        return r

@@ -80,7 +80,7 @@ class Vg(vg.Vg):
         minors = []
         disks = []
         cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.vgName ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out) = self.call(cmd)
         if ret != 0:
             raise Exception()
         for minor in out.split():

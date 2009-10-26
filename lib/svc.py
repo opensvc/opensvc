@@ -23,6 +23,7 @@ import app
 from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
+from rcGlobalEnv import rcEnv
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -37,6 +38,7 @@ class Svc(Resource, Freezer):
             delattr(self.mount)
             delattr(self.umount)
         self.svcname = svcname
+        self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
         self += app.Apps(svcname)
@@ -122,6 +124,13 @@ class Svc(Resource, Freezer):
 
     def syncdrp(self):
         self.subSetAction("rsync", "syncdrp")
+
+    def scsirelease(self):
+        self.subSetAction("scsireserv", "scsirelease")
+
+    def scsireserv(self):
+        self.subSetAction("scsireserv", "scsireserv")
+
 
 
 if __name__ == "__main__" :
