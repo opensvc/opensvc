@@ -20,10 +20,12 @@
 # and open the template in the editor.
 
 import resources as Res
+from rcGlobalEnv import *
 
 from subprocess import Popen,PIPE
-rcIfconfig = __import__('rcIfconfig'+Popen(['uname'], stdout=PIPE).communicate()[0].strip())
+rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
+import rcStatus
 
 class MissImpl(Exception):
     def __init__(self, value):
@@ -52,7 +54,7 @@ class Ip(Res.Resource):
         self.ipName=ipName
         self.id = 'ip ' + ipName + '@' + ipDev
         self.addr = socket.gethostbyname(ipName)
-        
+
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
                                          self.ipDev, self.ipName)

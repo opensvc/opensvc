@@ -56,7 +56,8 @@ def node_get_hostmode(d):
 	sys.exit(1)
 
 def node_get_hostid():
-        return "0x123456789abc"
+        import uuid
+        return '0x'+str(uuid.getnode())
 
 def discover_node():
 	"""Fill rcEnv class with information from node discovery

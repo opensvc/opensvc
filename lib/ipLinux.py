@@ -36,12 +36,11 @@ class Ip(ip.Ip):
     def startip_cmd(self):
         cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
         return self.vcall(cmd)
-        
-    def stop(self):
-        cmd = ['ifconfig', stacked_dev, 'down']
-        self.log.info(' '.join(cmd))
+
+    def stopip_cmd(self):
+        cmd = ['ifconfig', self.stacked_dev, 'down']
         return self.vcall(cmd)
-        
+
 
 
 if __name__ == "__main__":

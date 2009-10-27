@@ -38,12 +38,11 @@ class Ip(ip.Ip):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up']
         return self.vcall(cmd)
-        
+
     def stopip_cmd(self):
         cmd = ['ifconfig', self.stacked_dev, 'unplumb']
-        self.log.info(' '.join(cmd))
         return self.vcall(cmd)
-        
+
 if __name__ == "__main__":
     for c in (Ip,) :
         help(c)

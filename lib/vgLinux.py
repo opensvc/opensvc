@@ -39,9 +39,9 @@ class Vg(vg.Vg):
         """
         cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
         (ret, out) = self.call(cmd)
-        if re.match('\s*'+self.vgName+'\s', out, re.MULTILINE) is None:
-            return False
-        return True
+        if self.vgName in out.split():
+            return True
+        return False
 
     def is_up(self):
         """Returns True if the volume group is present and activated
@@ -84,6 +84,9 @@ class Vg(vg.Vg):
         if ret != 0:
             raise Exception()
         for minor in out.split():
+            if minor == '-1':
+                # means the lv is inactive
+                continue
             syspath = '/sys/block/dm-'+minor+'/slaves'
             disks += get_blockdev_sd_slaves(syspath)
         # remove duplicate entries in disk list
