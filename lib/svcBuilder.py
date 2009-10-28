@@ -46,6 +46,20 @@ def svcmode_mod_name(svcmode=''):
         return 'svcHosted'
     return 1 # raise something instead ?
 
+def set_optional(resource, conf, section):
+    if conf.has_option(section, 'optional') and \
+       conf.getboolean(section, "optional") == True:
+            resource.set_optional()
+
+def set_disable(resource, conf, section):
+    if conf.has_option(section, 'disable') and \
+       conf.getboolean(section, "disable") == True:
+            resource.disable()
+
+def set_optional_and_disable(resource, conf, section):
+    set_optional(resource, conf, section)
+    set_disable(resource, conf, section)
+
 def add_ips(svc, conf):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
@@ -57,9 +71,7 @@ def add_ips(svc, conf):
         ipdev = conf.get(s, "ipdev")
         ip = __import__('ip'+rcEnv.sysname)
         r = ip.Ip(ipdev, ipname)
-        if conf.has_option(s, 'optional') and \
-           conf.getboolean(s, "optional") == True:
-                r.set_optional()
+        set_optional_and_disable(r, conf, s)
         svc += r
 
 def add_loops(svc, conf):
@@ -72,9 +84,7 @@ def add_loops(svc, conf):
         file = conf.get(s, "file")
         loop = __import__('loop'+rcEnv.sysname)
         r = loop.Loop(file)
-        if conf.has_option(s, 'optional') and \
-           conf.getboolean(s, "optional") == True:
-                r.set_optional()
+        set_optional_and_disable(r, conf, s)
         svc += r
 
 def add_vgs(svc, conf):
@@ -87,9 +97,7 @@ def add_vgs(svc, conf):
         name = conf.get(s, "vgname")
         vg = __import__('vg'+rcEnv.sysname)
         r = vg.Vg(name)
-        if conf.has_option(s, 'optional') and \
-           conf.getboolean(s, "optional") == True:
-                r.set_optional()
+        set_optional_and_disable(r, conf, s)
         svc += r
 
 def add_mounts(svc, conf):
@@ -105,9 +113,7 @@ def add_mounts(svc, conf):
         mnt_opt = conf.get(s, "mnt_opt")
         mount = __import__('mount'+rcEnv.sysname)
         r = mount.Mount(mnt, dev, type, mnt_opt)
-        if conf.has_option(s, 'optional') and \
-           conf.getboolean(s, "optional") == True:
-                r.set_optional()
+        set_optional_and_disable(r, conf, s)
         svc += r
 
 def add_syncs(svc, conf):
@@ -138,9 +144,7 @@ def add_syncs(svc, conf):
                 targethash[t] = conf.get("default", t)
 
         r = rsync.Rsync(src, dst, exclude, targethash)
-        if conf.has_option(s, 'optional') and \
-           conf.getboolean(s, "optional") == True:
-                r.set_optional()
+        set_optional_and_disable(r, conf, s)
         svc += r
 
 def add_scsireserv(svc, conf):
