@@ -25,6 +25,22 @@ import rcStatus
 import rcMountsLinux as rcMounts
 import mount
 
+def try_umount(self):
+    """best effort kill of all processes that might block
+    the umount operation. The priority is given to mass
+    action reliability, ie don't contest oprator's will
+    """
+    cmd = ['sync']
+    (ret, out) = self.vcall(cmd)
+
+    cmd = ['fuser', '-kv', self.mountPoint]
+    (ret, out) = self.vcall(cmd)
+
+    cmd = ['umount', self.mountPoint]
+    (ret, out) = self.vcall(cmd)
+    return ret
+
+
 class Mount(mount.Mount):
     """ define Linux mount/umount doAction """
     def __init__(self, mountPoint, device, fsType, mntOpt):
@@ -32,9 +48,7 @@ class Mount(mount.Mount):
         mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
 
     def is_up(self):
-        if self.Mounts.has_mount(self.device, self.mountPoint) != 0:
-            return False
-        return True
+        return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def status(self):
         if self.is_up(): return rcStatus.UP
@@ -47,8 +61,7 @@ class Mount(mount.Mount):
             return 0
         if not os.path.exists(self.mountPoint):
             os.mkdir(self.mountPoint, 0755)
-        cmd = ['mount', '-t', self.fsType, '-o', self.mntOpt, self.device,
-self.mountPoint]
+        cmd = ['mount', '-t', self.fsType, '-o', self.mntOpt, self.device, self.mountPoint]
         (ret, out) = self.vcall(cmd)
         return ret
 
@@ -57,20 +70,10 @@ self.mountPoint]
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return 0
-        #
-        # best effort kill of all processes that might block
-        # the umount operation. The priority is given to mass
-        # action reliability, ie don't contest oprator's will
-        #
-        cmd = ['fuser', '-kv', self.mountPoint]
-        (ret, out) = self.vcall(cmd)
-
-        cmd = ['umount', self.mountPoint]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            self.log.error("failed")
-            return 1
-        return 0
+        for i in range(3):
+            ret = try_umount(self)
+            if ret == 0: break
+        return ret
 
 if __name__ == "__main__":
     for c in (Mount,) :

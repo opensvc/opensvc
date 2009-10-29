@@ -43,6 +43,12 @@ class Resource(object):
         if self.disabled : output+=" disa="+str(self.disabled)
         return output
 
+    def __cmp__(self, other):
+        """resources needed to be started or stopped in a specific order
+        should redefine that. For now consider all resources of a set equals
+        """
+        return 0
+
     def is_optional(self): return self.optional
     def is_disabled(self): return self.disabled
 
@@ -137,6 +143,10 @@ class ResourceSet(Resource):
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet"""
+        if action in ["mount", "start"]:
+            self.resources.sort()
+        else:
+            self.resources.reverse()
         for r in self.resources:
             r.action(action)
 

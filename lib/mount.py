@@ -41,6 +41,11 @@ class Mount(res.Resource):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\
                 self.mountPoint, self.device, self.fsType, self.mntOpt)
 
+    def __cmp__(self, other):
+        """order so that deepest mountpoint can be umount first
+        """
+        return cmp(self.mountPoint, other.mountPoint)
+
 if __name__ == "__main__":
     for c in (Mount,) :
         help(c)
