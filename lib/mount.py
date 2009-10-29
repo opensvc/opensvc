@@ -25,13 +25,17 @@ class Mount(res.Resource):
     """Define a mount resource 
     """
     def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
-                disabled=False):
+                disabled=False, scsireserv=False):
         res.Resource.__init__(self,"mount",optional,disabled)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType
         self.mntOpt = mntOpt
+        self.scsiReservation = scsireserv
         self.id = 'fs ' + device + '@' + mountPoint
+
+    def set_scsireserv():
+        self.scsiReservation = scsireserv
 
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\

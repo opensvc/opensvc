@@ -34,7 +34,7 @@ class Mounts:
     def __init__(self):
         """ OS dependent """
         pass
-    
+
     def match_mount(self):
         """ OS dependent """
         pass

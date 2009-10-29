@@ -189,8 +189,8 @@ class ScsiReserv(scsiReserv.ScsiReserv):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on disks held by a service
     """
-    def __init__(self, hostid, disks):
-        scsiReserv.ScsiReserv.__init__(self, hostid, disks)
+    def __init__(self, disks):
+        scsiReserv.ScsiReserv.__init__(self, disks)
 
     def scsireserv(self):
         r = 0

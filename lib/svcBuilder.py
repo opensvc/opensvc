@@ -60,6 +60,17 @@ def set_optional_and_disable(resource, conf, section):
     set_optional(resource, conf, section)
     set_disable(resource, conf, section)
 
+def set_scsireserv(resource, conf, section):
+    """scsireserv = true can be set globally or in a specific
+    resource section
+    """
+    if conf.has_option('default', 'scsireserv') and \
+       conf.getboolean('default', 'scsireserv') == True:
+           resource.set_scsireserv()
+    if conf.has_option(section, 'scsireserv') and \
+       conf.getboolean(section, 'scsireserv') == True:
+           resource.set_scsireserv()
+
 def add_ips(svc, conf):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
@@ -98,6 +109,7 @@ def add_vgs(svc, conf):
         vg = __import__('vg'+rcEnv.sysname)
         r = vg.Vg(name)
         set_optional_and_disable(r, conf, s)
+        set_scsireserv(r, conf, s)
         svc += r
 
 def add_mounts(svc, conf):
@@ -114,6 +126,7 @@ def add_mounts(svc, conf):
         mount = __import__('mount'+rcEnv.sysname)
         r = mount.Mount(mnt, dev, type, mnt_opt)
         set_optional_and_disable(r, conf, s)
+        #set_scsireserv(r, conf, s)
         svc += r
 
 def add_syncs(svc, conf):
@@ -146,17 +159,6 @@ def add_syncs(svc, conf):
         r = rsync.Rsync(src, dst, exclude, targethash)
         set_optional_and_disable(r, conf, s)
         svc += r
-
-def add_scsireserv(svc, conf):
-    """Add scsi persistent reservation resource if enabled in the config file
-    """
-    if not conf.has_option('default', 'scsireserv'):
-        return
-    if conf.getboolean('default', 'scsireserv') != True:
-        return
-    scsiReserv = __import__('scsiReserv'+rcEnv.sysname) 
-    r = scsiReserv.ScsiReserv(rcEnv.hostid, svc.disklist())
-    svc += r
 
 def setup_logging():
 	"""Setup logging to stream + logfile, and logfile rotation
@@ -273,6 +275,5 @@ def build(name):
     add_vgs(svc, conf)
     add_mounts(svc, conf)
     add_syncs(svc, conf)
-    add_scsireserv(svc, conf)
 
     return svc
