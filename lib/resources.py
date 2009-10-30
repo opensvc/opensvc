@@ -43,8 +43,14 @@ class Resource(object):
         if self.disabled : output+=" disa="+str(self.disabled)
         return output
 
+    def __cmp__(self, other):
+        """resources needed to be started or stopped in a specific order
+        should redefine that. For now consider all resources of a set equals
+        """
+        return 0
+
     def is_optional(self): return self.optional
-    def is_disabled(self): return self.Disabled
+    def is_disabled(self): return self.disabled
 
     def set_optional(self): self.optional=True
     def unset_optional(self): self.optional=False
@@ -53,36 +59,40 @@ class Resource(object):
     def enable(self):  self.disabled=False
 
     def do_action(self, action):
-        "Every resource should define basic doAction: start() stop() status()"
         if hasattr(self, action):
             return getattr(self, action)()
+
+        """Every class inheriting resource should define start() stop() status()
+        Alert on these minimal implementation requirements
+        """
         if action in ("start","stop","status") :
             raise exc.excUndefined(action,self.__class__.__name__,\
                                     "Resource.do_action")
+
     def action(self, action=None):
-        """ action try to call do_action() on selft
-        pass if action is not None or if self is disabled
-        return status vary on optional property
-        is do_action success then return True
-        else return False if self selft not optional
+        """ action() try to call do_action() on self
+        return if action is not None or if self is disabled
+        return status depends on optional property value:
+        if self is optional then return True
+        else return do_action() return value
         """
-        if action == None : pass
-        if self.is_disabled : pass
+        if action == None: return True
+        if self.disabled: return True
         try :
             self.do_action(action)
-        except exc.excUndefined , ex :
+        except exc.excUndefined , ex:
             print ex
             return False
-        except exc.excError :
-            if self.is_optional() :  return True
-            else :                  return False
+        except exc.excError:
+            if self.optional: return True
+            else: return False
 
     def status(self):
         """aggregate status a ResourceSet
         """
         s = rcStatus.Status()
         for r in self.resources:
-                s += r.status()
+            s += r.status()
         return s.status
 
     def print_status(self):
@@ -133,6 +143,10 @@ class ResourceSet(Resource):
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet"""
+        if action in ["mount", "start"]:
+            self.resources.sort()
+        else:
+            self.resources.reverse()
         for r in self.resources:
             r.action(action)
 

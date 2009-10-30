@@ -62,7 +62,7 @@ def call(argv=['/bin/false'], log=None, info=False):
     process = Popen(argv, stdout=PIPE, close_fds=True)
     output = process.communicate()[0]
     if len(output) > 0:
-        log.debug(output)
+        log.debug('output:\n' + output)
     return (process.returncode, output)
 
 def vcall(argv=['/bin/false'], log=None):

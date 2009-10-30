@@ -34,7 +34,7 @@ class Mounts:
     def __init__(self):
         """ OS dependent """
         pass
-    
+
     def match_mount(self):
         """ OS dependent """
         pass
@@ -48,8 +48,8 @@ class Mounts:
     def has_mount(self, dev, mnt):
         for i in self.mounts:
             if self.match_mount(i, dev, mnt):
-                return 0
-        return 1
+                return True
+        return False
 
     def has_param(self, param, value):
         for i in self.mounts:

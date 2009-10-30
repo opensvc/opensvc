@@ -54,7 +54,7 @@ class Vg(vg.Vg):
             return True
         return False
 
-    def start(self):
+    def vgstart(self):
         if self.is_up():
             self.log.info("%s is already up" % self.vgName)
             return 0
@@ -62,7 +62,7 @@ class Vg(vg.Vg):
         (ret, out) = self.vcall(cmd)
         return ret
 
-    def stop(self):
+    def vgstop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.vgName)
             return 0

@@ -126,13 +126,13 @@ class Svc(Resource, Freezer):
         self.subSetAction("rsync", "syncdrp")
 
     def scsirelease(self):
-        self.subSetAction("scsireserv", "scsirelease")
+        self.subSetAction("vg", "scsirelease")
 
     def scsireserv(self):
-        self.subSetAction("scsireserv", "scsireserv")
+        self.subSetAction("vg", "scsireserv")
 
     def scsicheckreserv(self):
-        self.subSetAction("scsireserv", "scsicheckreserv")
+        self.subSetAction("vg", "scsicheckreserv")
 
 
 

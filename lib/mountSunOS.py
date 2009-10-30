@@ -33,9 +33,7 @@ class Mount(mount.Mount):
         mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
 
     def is_up(self):
-        if self.Mounts.has_mount(self.device, self.mountPoint) != 0:
-            return False
-        return True
+        return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def status(self):
         if self.is_up(): return rcStatus.UP

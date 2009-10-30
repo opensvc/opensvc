@@ -55,10 +55,6 @@ def node_get_hostmode(d):
 	print "Set DEV or EXP in " + __f
 	sys.exit(1)
 
-def node_get_hostid():
-        import uuid
-        return '0x'+str(uuid.getnode())
-
 def discover_node():
 	"""Fill rcEnv class with information from node discovery
 	"""
@@ -68,8 +64,6 @@ def discover_node():
 
 	rcEnv.host_mode = node_get_hostmode(rcEnv.pathvar)
 	log.debug('host mode = ' + rcEnv.host_mode)
-
-        rcEnv.hostid = node_get_hostid()
 
 	#
 	# node capabilities

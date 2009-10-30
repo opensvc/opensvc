@@ -20,13 +20,14 @@
 # and open the template in the editor.
 
 import resources as Res
+import uuid
 
 class ScsiReserv(Res.Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on disks held by a service
     """
-    def __init__(self, hostid, disks):
-        self.hostid = hostid
+    def __init__(self, disks):
+        self.hostid = '0x'+str(uuid.getnode())
         self.disks = disks
         self.preempt_timeout = 10
         self.prtype = '5'

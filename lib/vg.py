@@ -20,14 +20,52 @@
 # and open the template in the editor.
 
 import resources as Res
+from rcGlobalEnv import rcEnv
+ScsiReserv = __import__('scsiReserv' + rcEnv.sysname)
 
 class Vg(Res.Resource):
     """ basic vg resource
     """
-    def __init__(self, vgName=None, optional=False, disabled=False):
+    def __init__(self, vgName=None, optional=False, disabled=False, scsireserv=False):
         Res.Resource.__init__(self, "vg", optional, disabled)
         self.vgName = vgName
+        self.scsiReservation = scsireserv
         self.id = 'vg ' + vgName
+
+    def set_scsireserv(self):
+        self.scsiReservation = True
+
+    def scsirelease(self):
+        return ScsiReserv.ScsiReserv(self.disklist()).scsirelease()
+
+    def scsireserv(self):
+        return ScsiReserv.ScsiReserv(self.disklist()).scsireserv()
+
+    def scsicheckreserv(self):
+        return ScsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
+
+    def disklist(self):
+        return []
+
+    def vgstop(self):
+        pass
+
+    def vgstart(self):
+        pass
+
+    def stop(self):
+        if self.scsirelease() != 0:
+            return 1
+        if self.vgstop() != 0:
+            return 1
+        return 0
+
+    def start(self):
+        if self.vgstart() != 0:
+            return 1
+        if self.scsireserv() != 0:
+            return 1
+        return 0
 
     def __str__(self):
         return "%s vgname=%s" % (Res.Resource.__str__(self),\
