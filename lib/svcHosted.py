@@ -26,8 +26,8 @@ class svcHosted(svc.Svc):
     """Define hosted services
     """
 
-    def __init__(self,optional=False,disabled=False):
-        svc.Svc.__init__(self,"Hosted",optional, disabled)
+    def __init__(self, svcname, optional=False, disabled=False):
+        svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
 
     def start(self):
         """start a hosted service:

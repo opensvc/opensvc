@@ -30,6 +30,13 @@ class Svc(Resource, Freezer):
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
     """
+    service_type = ''
+    autostart_node = ''
+    drp_type = ''
+    comment = ''
+    app = ''
+    drnoaction = False
+
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
         if self.frozen():

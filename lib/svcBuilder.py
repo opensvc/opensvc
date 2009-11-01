@@ -26,10 +26,16 @@ import re
 from rcGlobalEnv import *
 from freezer import Freezer
 from rcNode import discover_node
+from rcUtilities import *
 import rcOptParser
 import rcLogger
 import rcAddService
 import rsync
+
+check_privs()
+
+pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathetc = os.path.join(pathsvc, 'etc')
 
 def svcmode_mod_name(svcmode=''):
     """Returns the name of the module implementing the class for
@@ -266,6 +272,18 @@ def build(name):
         svc.nodes = conf.get("default", "nodes").split()
     if conf.has_option("default", "drpnode"):
         svc.drpnode = conf.get("default", "drpnode").split()
+    if conf.has_option("default", "service_type"):
+        svc.service_type = conf.get("default", "service_type")
+    if conf.has_option("default", "autostart_node"):
+        svc.autostart_node = conf.get("default", "autostart_node")
+    if conf.has_option("default", "drp_type"):
+        svc.drp_type = conf.get("default", "drp_type")
+    if conf.has_option("default", "comment"):
+        svc.comment = conf.get("default", "comment")
+    if conf.has_option("default", "app"):
+        svc.app = conf.get("default", "app")
+    if conf.has_option("default", "drnoaction"):
+        svc.drnoaction = conf.get("default", "drnoaction")
 
     #
     # instanciate resources
@@ -277,3 +295,24 @@ def build(name):
     add_syncs(svc, conf)
 
     return svc
+
+def is_service(f):
+    rcService = os.path.join(pathsvc, 'bin', 'rcService')
+    if os.path.realpath(f) != os.path.realpath(rcService):
+        return False
+    if not os.path.exists(f + '.env'):
+        return False
+    return True
+
+def build_services(status=None):
+    """returns a list of all services of status matching the specified status.
+    If no status is specified, returns all services
+    """
+    services = []
+    for name in os.listdir(pathetc):
+        if is_service(os.path.join(pathetc, name)):
+            svc = build(name)
+            if status is None or svc.status() == status:
+                services.append(build(name))
+    return services
+

@@ -32,26 +32,8 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 import svcBuilder
 import rcStatus
 import rcOptParser
-from rcUtilities import banner, check_privs
+from rcUtilities import banner
 from rcGlobalEnv import *
-
-check_privs()
-
-def is_service(f):
-	if os.path.realpath(f) != os.path.realpath(rcService):
-		return False
-	if not os.path.exists(f + '.env'):
-		return False
-	return True
-
-def get_services(status):
-	__svcs = []
-	for name in os.listdir(pathetc):
-		if is_service(os.path.join(pathetc, name)):
-			svc = svcBuilder.build(name)
-			if status == 'ANY' or svc.status() == status:
-				__svcs.append(name)
-	return __svcs
 
 svcs = []
 __ver = rcEnv.prog + " version " + str(rcEnv.ver)
@@ -60,11 +42,11 @@ parser = optparse.OptionParser(version=__ver)
 status = None
 cmd = os.path.basename(__file__)
 if cmd == 'allservices':
-	svcs = get_services('ANY')
+	svcs = svcBuilder.build_services()
 elif cmd == 'allupservices':
-	svcs = get_services(rcStatus.UP)
+	svcs = svcBuilder.build_services(rcStatus.UP)
 elif cmd == 'alldownservices':
-	svcs = get_services(rcStatus.DOWN)
+	svcs = svcBuilder.build_services(rcStatus.DOWN)
 elif cmd == 'svcmgr':
 	parser.add_option("--service", default=None, action="store", dest="parm_svcs",
 			  help="comma-separated list of service to operate on")
@@ -74,11 +56,11 @@ if hasattr(options, "parm_svcs"):
 	if ',' in options.parm_svcs:
 		for name in options.parm_svcs.split(','):
 			f = os.path.join(pathsvc, 'etc', name)
-			if is_service(f):
+			if svcBuilder.is_service(f):
 				svcs.append(name)
 	else:
 		f = os.path.join(pathsvc, 'etc', options.parm_svcs)
-		if is_service(f):
+		if svcBuilder.is_service(f):
 			svcs.append(options.parm_svcs)
 
 if len(args) > 1:
