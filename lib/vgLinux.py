@@ -20,7 +20,7 @@ import re
 import os
 
 import rcStatus
-import vg
+import dg
 
 def get_blockdev_sd_slaves(syspath):
     slaves = []
@@ -33,53 +33,53 @@ def get_blockdev_sd_slaves(syspath):
             slaves += get_blockdev_sd_slaves(deeper)
     return slaves
 
-class Vg(vg.Vg):
-    def has_vg(self):
+class Vg(dg.Dg):
+    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+        self.id = 'vg' + name
+        resDg.Dg.__init__(self, name, 'vg', optional, disabled, scsireserv)
+
+    def has_it(self):
         """Returns True if the volume is present
         """
         cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
         (ret, out) = self.call(cmd)
-        if self.vgName in out.split():
+        if self.name in out.split():
             return True
         return False
 
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
-        if not self.has_vg():
+        if not self.has_it():
             return False
-        cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.vgName ]
+        cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
         (ret, out) = self.call(cmd)
         if re.match(' ....-[-o]', out, re.MULTILINE) is None:
             return True
         return False
 
-    def vgstart(self):
+    def do_start(self):
         if self.is_up():
-            self.log.info("%s is already up" % self.vgName)
+            self.log.info("%s is already up" % self.name)
             return 0
-        cmd = [ 'vgchange', '-a', 'y', self.vgName ]
+        cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out) = self.vcall(cmd)
         return ret
 
-    def vgstop(self):
+    def do_stop(self):
         if not self.is_up():
-            self.log.info("%s is already down" % self.vgName)
+            self.log.info("%s is already down" % self.name)
             return 0
-        cmd = [ 'vgchange', '-a', 'n', self.vgName ]
+        cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         return ret
-
-    def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
 
     def disklist(self):
-        if not self.has_vg():
+        if not self.has_it():
             return []
         minors = []
         disks = []
-        cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.vgName ]
+        cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise Exception()
@@ -91,8 +91,5 @@ class Vg(vg.Vg):
             disks += get_blockdev_sd_slaves(syspath)
         # remove duplicate entries in disk list
         disks = list(set(disks))
-        self.log.debug("found disks %s held by vg %s" % (disks, self.vgName))
+        self.log.debug("found disks %s held by vg %s" % (disks, self.name))
         return disks
-
-    def __init__(self, vgName):
-        vg.Vg.__init__(self, vgName)
