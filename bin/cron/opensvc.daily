@@ -19,19 +19,37 @@
 #
 import sys
 import os
+import xmlrpclib
+import uuid
 
-#
-# add project lib to path
-#
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
-pathetc = os.path.join(pathsvc, 'etc')
-sys.path.append(os.path.join(pathsvc, 'lib'))
+pathsvc = os.path.join(os.path.dirname(__file__), '..', '..')
+pathlib = os.path.join(pathsvc, 'lib')
+sys.path.append(pathlib)
+hostid = str(uuid.getnode())
 
 import svcBuilder
-from rcUtilities import *
+from rcGlobalEnv import rcEnv
 
-check_privs()
-
+proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+proxy.delete_services(hostid)
 for svc in svcBuilder.build_services():
-    print banner(svc.svcname)
-    svc.print_status()
+    proxy.update_service(
+	['svc_hostid',
+	 'svc_name',
+	 'svc_nodes',
+	 'svc_drpnode',
+	 'svc_comment',
+	 'svc_drptype',
+	 'svc_autostart',
+	 'svc_app',
+	 'svc_drnoaction'],
+	[repr(hostid),
+	 repr(svc.svcname),
+	 repr(' '.join(svc.nodes)),
+	 repr(' '.join(svc.drpnode)),
+	 repr(svc.comment),
+	 repr(svc.drp_type),
+	 repr(svc.autostart_node),
+	 repr(svc.app),
+	 repr(svc.drnoaction)]
+    )

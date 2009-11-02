@@ -23,27 +23,25 @@ class rcEnv:
     prog = "opensvc"
     ver = "20090924-1"
 
-    #
-    # EZ-HA defines
-    # EZ-HA does heartbeat, stonith, automatic service failover
-    #
+    """Database sink for node and service configurations and status collection.
+    """
+    dbopensvc = "http://dbopensvc:8000/"
+
+    """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
+
+    ez_last_chance == True:
+        check_up_script_gen.sh will try a ping + RSH other node before stonith
+    ez_startapp_bg == True:
+        startapp in background if EZ-HA take-over is succesful
+    """
     ez_path = "/usr/local/cluster"
     ez_path_services = ez_path + "/conf/services"
-
-    #
-    # True: check_up_script_gen.sh will try a ping + RSH other node before stonith
-    #
     ez_last_chance = True
-
-    #
-    # True: startapp in background if EZ-HA take-over is succesful
-    #
     ez_startapp_bg = True
 
-    #
-    # Directory on DRP node where to store the PRD nodes files necessary
-    # for takeover.
-    #
+    """Directory on DRP node where to store the PRD nodes files necessary
+    for takeover.
+    """
     drp_path = "/DR.svctools"
     drp_sync_excludes = [
         '--exclude "/spice"',
