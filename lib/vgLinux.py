@@ -19,8 +19,7 @@
 import re
 import os
 
-import rcStatus
-import dg
+import resDg
 
 def get_blockdev_sd_slaves(syspath):
     slaves = []
@@ -33,7 +32,7 @@ def get_blockdev_sd_slaves(syspath):
             slaves += get_blockdev_sd_slaves(deeper)
     return slaves
 
-class Vg(dg.Dg):
+class Vg(resDg.Dg):
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
         self.id = 'vg' + name
         resDg.Dg.__init__(self, name, 'vg', optional, disabled, scsireserv)
