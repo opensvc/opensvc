@@ -141,6 +141,11 @@ class Svc(Resource, Freezer):
     def scsicheckreserv(self):
         self.subSetAction("vg", "scsicheckreserv")
 
+    def restart(self):
+	""" stop then start service"""
+	# FIXME should test stop() status before start()
+        self.stop()
+        self.start()
 
 
 if __name__ == "__main__" :
