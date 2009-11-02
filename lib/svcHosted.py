@@ -35,6 +35,7 @@ class svcHosted(svc.Svc):
         start ips
         start loops
         start VGs
+        start Pools
         start mounts
         start apps
         """
@@ -42,6 +43,7 @@ class svcHosted(svc.Svc):
         self.subSetAction("ip", "start")
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
+        self.subSetAction("pool", "start")
         self.subSetAction("mount", "start")
         self.subSetAction("app", "start")
 
@@ -55,25 +57,28 @@ class svcHosted(svc.Svc):
         self.subSetAction("app", "stop")
         self.subSetAction("mount", "stop")
         self.subSetAction("vg", "stop")
+        self.subSetAction("pool", "stop")
         self.subSetAction("loop", "stop")
         self.subSetAction("ip", "stop")
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["loop", "mount", "vg", "ip"])
+        return svc.Svc.status(self, ["loop", "mount", "vg", "pool", "ip"])
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["loop", "mount", "vg", "ip"])
+        return svc.Svc.print_status(self, ["loop", "mount", "vg", "pool", "ip"])
 
     def diskstart(self):
         """start a hosted service:
         start loops
         start VGs
+        start Pools
         start mounts
         """
         self.subSetAction("loop", "start")
         self.subSetAction("vg", "start")
+        self.subSetAction("pool", "start")
         self.subSetAction("mount", "start")
 
     def diskstop(self):
@@ -81,10 +86,12 @@ class svcHosted(svc.Svc):
         stop apps
         stop mounts
         stop VGs
+        stop Pools
         stop ips
         """
         self.subSetAction("mount", "stop")
         self.subSetAction("vg", "stop")
+        self.subSetAction("pool", "stop")
         self.subSetAction("loop", "stop")
 
     def startip(self):
@@ -106,12 +113,17 @@ class svcHosted(svc.Svc):
     def stopvg(self):
         self.subSetAction("vg", "stop")
 
+    def startpool(self):
+        self.subSetAction("pool", "start")
+
+    def stoppool(self):
+        self.subSetAction("pool", "stop")
+
     def mount(self):
         self.subSetAction("mount", "start")
 
     def umount(self):
         self.subSetAction("mount", "stop")
-
 
 if __name__ == "__main__":
     for c in (SvcHosted,) :
