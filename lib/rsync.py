@@ -56,7 +56,7 @@ class Rsync(Res.Resource):
 
     def syncdrp(self):
         log = logging.getLogger('SYNCDRP')
-        return sync(self, "drpnode", log)
+        return sync(self, "drpnodes", log)
 
     def __init__(self, src, dst, exclude='', target={},
                  optional=False, disabled=False):

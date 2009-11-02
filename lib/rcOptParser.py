@@ -51,7 +51,7 @@ action_desc = {
 }
 
 def format_desc(svc=False):
-	desc = "Commands available to this service:\n"
+	desc = "Supported commands:\n"
 	for a in action_desc.keys():
 		if svc and not hasattr(svc, a):
 			continue
@@ -77,8 +77,3 @@ class svcOptionParser:
 		self.action = self.args[0]
 		if svc and not hasattr(svc, self.action):
 			parser.error("unsupported action")
-	def show(self):
-		print ":: option parser dump"
-		print "{0:15s}{1:15s}".format('debug', str(self.options.debug))
-		print "{0:15s}{1:15s}".format('force', str(self.options.force))
-		print "{0:15s}{1:15s}".format('action', self.action)

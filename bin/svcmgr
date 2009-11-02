@@ -37,7 +37,8 @@ from rcGlobalEnv import *
 
 svcs = []
 __ver = rcEnv.prog + " version " + str(rcEnv.ver)
-parser = optparse.OptionParser(version=__ver)
+__usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
+parser = optparse.OptionParser(version=__ver, usage=__usage)
 
 status = None
 cmd = os.path.basename(__file__)
@@ -52,7 +53,7 @@ elif cmd == 'svcmgr':
 			  help="comma-separated list of service to operate on")
 
 (options, args) = parser.parse_args()
-if hasattr(options, "parm_svcs"):
+if options.parm_svcs is not None:
 	if ',' in options.parm_svcs:
 		for name in options.parm_svcs.split(','):
 			f = os.path.join(pathsvc, 'etc', name)

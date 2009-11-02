@@ -84,8 +84,20 @@ def add_ips(svc, conf):
     for s in conf.sections():
         if re.match('ip#[0-9]', s, re.I) is None:
             continue
-        ipname = conf.get(s, "ipname")
-        ipdev = conf.get(s, "ipdev")
+        if conf.has_option(s, "ipname@"+rcEnv.nodename):
+            ipname = conf.get(s, "ipname@"+rcEnv.nodename)
+        elif conf.has_option(s, "ipname"):
+            ipname = conf.get(s, "ipname")
+        else:
+            ipname = None
+            raise
+        if conf.has_option(s, "ipdev@"+rcEnv.nodename):
+            ipdev = conf.get(s, "ipdev@"+rcEnv.nodename)
+        elif conf.has_option(s, "ipdev"):
+            ipdev = conf.get(s, "ipdev")
+        else:
+            ipdev = None
+            raise
         ip = __import__('ip'+rcEnv.sysname)
         r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
@@ -169,7 +181,7 @@ def add_syncs(svc, conf):
         if conf.has_option(s, 'target'):
             target = conf.get(s, 'target').split()
         else:
-            target = ['nodes', 'drpnode']
+            target = ['nodes', 'drpnodes']
 
         targethash = {}
         for t in target:
@@ -280,24 +292,51 @@ def build(name):
     #
     # Setup service properties from config file content
     #
-    svc.nodes = []
-    svc.drpnode = []
+
     if conf.has_option("default", "nodes"):
         svc.nodes = conf.get("default", "nodes").split()
+    else:
+        svc.nodes = []
+
     if conf.has_option("default", "drpnode"):
-        svc.drpnode = conf.get("default", "drpnode").split()
+        svc.drpnode = conf.get("default", "drpnode")
+    else:
+        svc.drpnode = ''
+
+    if conf.has_option("default", "drpnodes"):
+        svc.drpnodes = conf.get("default", "drpnodes").split()
+    else:
+        svc.drpnodes = []
+
     if conf.has_option("default", "service_type"):
         svc.service_type = conf.get("default", "service_type")
+    else:
+        svc.service_type = ''
+
     if conf.has_option("default", "autostart_node"):
         svc.autostart_node = conf.get("default", "autostart_node")
+    else:
+        svc.autostart_node = ''
+
     if conf.has_option("default", "drp_type"):
         svc.drp_type = conf.get("default", "drp_type")
+    else:
+        svc.drp_type = ''
+
     if conf.has_option("default", "comment"):
         svc.comment = conf.get("default", "comment")
+    else:
+        svc.comment = ''
+
     if conf.has_option("default", "app"):
         svc.app = conf.get("default", "app")
+    else:
+        svc.app = ''
+
     if conf.has_option("default", "drnoaction"):
         svc.drnoaction = conf.get("default", "drnoaction")
+    else:
+        svc.drnoaction = False
 
     #
     # instanciate resources
