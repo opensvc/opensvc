@@ -84,8 +84,20 @@ def add_ips(svc, conf):
     for s in conf.sections():
         if re.match('ip#[0-9]', s, re.I) is None:
             continue
-        ipname = conf.get(s, "ipname")
-        ipdev = conf.get(s, "ipdev")
+        if conf.has_option(s, "ipname@"+rcEnv.nodename):
+            ipname = conf.get(s, "ipname@"+rcEnv.nodename)
+        elif conf.has_option(s, "ipname"):
+            ipname = conf.get(s, "ipname")
+        else:
+            ipname = None
+            raise
+        if conf.has_option(s, "ipdev@"+rcEnv.nodename):
+            ipdev = conf.get(s, "ipdev@"+rcEnv.nodename)
+        elif conf.has_option(s, "ipdev"):
+            ipdev = conf.get(s, "ipdev")
+        else:
+            ipdev = None
+            raise
         ip = __import__('ip'+rcEnv.sysname)
         r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
