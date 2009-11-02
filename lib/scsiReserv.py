@@ -35,7 +35,7 @@ def ack_unit_attention(self, d):
     i = self.preempt_timeout
     while i>0:
         i -= 1
-        cmd = [ 'sg_persist', '-n', '-r', '/dev/'+d ]
+        cmd = [ 'sg_persist', '-n', '-r', d ]
         (ret, out) = self.call(cmd)
         if "Unit Attention" in out or ret != 0:
             self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
@@ -54,7 +54,7 @@ def ack_all_unit_attention(self):
     return 0
 
 def disk_registered(self, disk):
-    cmd = [ 'sg_persist', '-n', '-k', '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '-k', disk ]
     (ret, out) = self.call(cmd)
     if ret != 0:
         self.log.error("failed to read registrations for disk %s" % disk)
@@ -63,14 +63,14 @@ def disk_registered(self, disk):
     return False
 
 def disk_register(self, disk):
-    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, disk ]
     (ret, out) = self.vcall(cmd)
     if ret != 0:
         self.log.error("failed to register key %s with disk %s" % (self.hostid, disk))
     return ret
 
 def disk_unregister(self, disk):
-    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, disk ]
     (ret, out) = self.vcall(cmd)
     if ret != 0:
         self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
@@ -93,7 +93,7 @@ def unregister(self):
     return r
 
 def get_reservation_key(self, disk):
-    cmd = [ 'sg_persist', '-n', '-r', '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '-r', disk ]
     (ret, out) = self.call(cmd)
     if ret != 0:
         self.log.error("failed to list reservation for disk %s" % disk)
@@ -105,7 +105,7 @@ def get_reservation_key(self, disk):
     raise Exception()
 
 def disk_reserved(self, disk):
-    cmd = [ 'sg_persist', '-n', '-r', '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '-r', disk ]
     (ret, out) = self.call(cmd)
     if ret != 0:
         self.log.error("failed to read reservation for disk %s" % disk)
@@ -114,21 +114,21 @@ def disk_reserved(self, disk):
     return False
 
 def disk_release(self, disk):
-    cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
     (ret, out) = self.vcall(cmd)
     if ret != 0:
         self.log.error("failed to release disk %s" % disk)
     return ret
 
 def disk_reserve(self, disk):
-    cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
     (ret, out) = self.vcall(cmd)
     if ret != 0:
         self.log.error("failed to reserve disk %s" % disk)
     return ret
 
 def disk_preempt_reservation(self, disk, oldkey):
-    cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, '/dev/'+disk ]
+    cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
     (ret, out) = self.vcall(cmd)
     if ret != 0:
         self.log.error("failed to preempt reservation for disk %s" % disk)

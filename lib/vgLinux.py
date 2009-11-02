@@ -26,7 +26,7 @@ def get_blockdev_sd_slaves(syspath):
     slaves = []
     for s in os.listdir(syspath):
         if re.match('^sd[a-z]*', s) is not None:
-            slaves.append(s)
+            slaves.append('/dev/' + s)
             continue
         deeper = os.path.join(syspath, s, 'slaves')
         if os.path.isdir(deeper):
