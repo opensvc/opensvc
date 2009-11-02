@@ -21,7 +21,7 @@
 
 import resources as Res
 from rcGlobalEnv import rcEnv
-ScsiReserv = __import__('scsiReserv' + rcEnv.sysname)
+import scsiReserv as scsiReserv
 
 class Vg(Res.Resource):
     """ basic vg resource
@@ -36,13 +36,13 @@ class Vg(Res.Resource):
         self.scsiReservation = True
 
     def scsirelease(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsirelease()
+        return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
 
     def scsireserv(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsireserv()
+        return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
 
     def scsicheckreserv(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
+        return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
     def disklist(self):
         return []
