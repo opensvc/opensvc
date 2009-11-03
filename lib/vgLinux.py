@@ -76,7 +76,6 @@ class Vg(resDg.Dg):
     def disklist(self):
         if not self.has_it():
             return []
-        minors = []
         disks = []
         cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
         (ret, out) = self.call(cmd)
