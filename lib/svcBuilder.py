@@ -44,7 +44,7 @@ def svcmode_mod_name(svcmode=''):
     zone   => ( 'svcZone' , 'SvcZone' )
     hosted => ( 'svcHosted', 'SvcHosted' )
     """
-    if svcmode == 'lxc':        return ('svcLxc',       'svcLxc'    )
+    if svcmode == 'lxc':        return ('svcLxc',       'SvcLxc'    )
     elif svcmode == 'zone':     return ('svcZone',      'SvcZone'   )
     elif svcmode == 'hosted':   return ('svcHosted',    'SvcHosted' )
     return 1 # raise something instead ?

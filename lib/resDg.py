@@ -29,7 +29,7 @@ class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
-        Res.Resource.__init__(self, "pool", optional, disabled)
+        Res.Resource.__init__(self, type, optional, disabled)
         self.name = name
         self.scsiReservation = scsireserv
 
