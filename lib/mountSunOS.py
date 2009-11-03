@@ -56,12 +56,19 @@ class Mount(mount.Mount):
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return 0
-        cmd = ['umount', self.mountPoint]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            self.log.error("failed")
-            return 1
-        return 0
+
+        (ret, out) = self.vcall(['umount', self.mountPoint])
+        if ret == 0 :
+            return 0
+
+        if self.fsType != 'lofs' :
+            (ret, out) = self.vcall(['umount', '-f', self.mountPoint])
+            if ret == 0 :
+                return 0
+        
+        self.log.error("failed")
+        return 1
+        
 
 if __name__ == "__main__":
     for c in (Mount,) :
