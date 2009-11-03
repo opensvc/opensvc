@@ -22,12 +22,12 @@ import os
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, vcall
+from rcUtilities import is_exe
 import resources as Res
 
 def app(self, name, action):
     if not is_exe(name):
-        vcall(['chmod', '+x', name])
+        self.vcall(['chmod', '+x', name])
     self.log.info('spawn: %s %s' % (name, action))
     outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
     f = open(outf, 'a')

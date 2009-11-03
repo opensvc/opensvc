@@ -29,6 +29,41 @@ GREEN = 32
 RED = 31
 YELLOW = 33
 
+def colorize(color, text):
+    if os.isatty(1):
+        return '\033['+str(color)+'m'+text+'\033[m'
+    else:
+        return text
+
+_status_value = {
+    'up': UP,
+    'down': DOWN,
+    'warn': WARN,
+    'n/a': NA,
+    'na': NA,
+    'todo': TODO,
+    'undef': UNDEF
+}
+
+_status_str = {
+    UP: colorize(GREEN, 'up'),
+    DOWN: colorize(RED, 'down'),
+    WARN: colorize(YELLOW, 'warn'),
+    NA: 'n/a',
+    TODO: 'todo',
+    UNDEF: 'undef'
+}
+
+def status_value(str):
+    if str not in _status_value.keys():
+        return None
+    return _status_value[str.lower()]
+
+def status_str(val):
+    if val not in _status_str.keys():
+        return None
+    return _status_str[val]
+
 def _merge(s1, s2):
     """Merge too status: WARN and TODO taint UP and DOWN
     """
@@ -49,20 +84,6 @@ def _merge(s1, s2):
     if (s1, s2) == (NA, TODO): return WARN
     if (s1, s2) == (TODO, TODO): return TODO
     return _merge(s2, s1)
-
-def colorize(color, text):
-    if os.isatty(1):
-        return '\033['+str(color)+'m'+text+'\033[m'
-    else:
-        return text
-
-def status_str(s):
-    if s == UP: return colorize(GREEN, 'UP')
-    if s == DOWN: return colorize(RED, 'DOWN')
-    if s == WARN: return colorize(YELLOW, 'WARN')
-    if s == NA: return 'N/A'
-    if s == TODO: return 'TODO'
-    if s == UNDEF: return 'UNDEF'
 
 def print_status(resource, status):
     import string

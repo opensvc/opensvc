@@ -68,7 +68,7 @@ else:
     svcnames = []
 
 if hasattr(options, "parm_status") and options.parm_status is not None:
-    status = options.parm_status
+    status = rcStatus.status_value(options.parm_status)
 else:
     status = None
 
@@ -77,7 +77,7 @@ if hasattr(options, "parm_primary") and options.parm_primary is not None:
 else:
     onlyprimary = False
 
-svcBuilder.build_services(svcnames=svcnames, status=status, onlyprimary=onlyprimary)
+svcs = svcBuilder.build_services(svcnames=svcnames, status=status, onlyprimary=onlyprimary)
 
 if len(args) > 1:
     parser.error("More than one action")
