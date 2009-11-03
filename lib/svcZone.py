@@ -40,13 +40,13 @@ class SvcZone(svc.Svc):
         start apps
         """
         print "starting %s" % self.__class__.__name__
-        self.subSetAction("ip", "check_ping")
-        self.subSetAction("zone", "ready")
-        self.subSetAction("ip", "start")
-        self.subSetAction("zone", "boot")
-        self.subSetAction("vg", "start")
-        self.subSetAction("mount", "start")
-        self.subSetAction("app", "start")
+        self.sub_set_action("ip", "check_ping")
+        self.sub_set_action("zone", "ready")
+        self.sub_set_action("ip", "start")
+        self.sub_set_action("zone", "boot")
+        self.sub_set_action("vg", "start")
+        self.sub_set_action("mount", "start")
+        self.sub_set_action("app", "start")
 
     def stop(self):
         """stop a zone:
@@ -57,36 +57,36 @@ class SvcZone(svc.Svc):
         stop ips
         """
         print "stopping %s" % self.__class__.__name__
-        self.subSetAction("app", "stop")
-        self.subSetAction("mount", "stop")
-        self.subSetAction("vg", "stop")
-        self.subSetAction("zone", "stop")
-        self.subSetAction("ip", "stop")
+        self.sub_set_action("app", "stop")
+        self.sub_set_action("mount", "stop")
+        self.sub_set_action("vg", "stop")
+        self.sub_set_action("zone", "stop")
+        self.sub_set_action("ip", "stop")
 
     def startip(self):
-        self.subSetAction("ip", "check_ping")
-        self.subSetAction("ip", "start")
+        self.sub_set_action("ip", "check_ping")
+        self.sub_set_action("ip", "start")
 
     def stopip(self):
-        self.subSetAction("ip", "stop")
+        self.sub_set_action("ip", "stop")
 
     def startloop(self):
-        self.subSetAction("loop", "start")
+        self.sub_set_action("loop", "start")
 
     def stoploop(self):
-        self.subSetAction("loop", "stop")
+        self.sub_set_action("loop", "stop")
 
     def startvg(self):
-        self.subSetAction("vg", "start")
+        self.sub_set_action("vg", "start")
 
     def stopvg(self):
-        self.subSetAction("vg", "stop")
+        self.sub_set_action("vg", "stop")
 
     def mount(self):
-        self.subSetAction("mount", "start")
+        self.sub_set_action("mount", "start")
 
     def umount(self):
-        self.subSetAction("mount", "stop")
+        self.sub_set_action("mount", "stop")
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ class Svc(Resource, Freezer):
         if len(get_res_sets(type)) > 0: return True
         else: return False
 
-    def subSetAction(self, type=None, action=None):
+    def sub_set_action(self, type=None, action=None):
         """Call action on each member of the subset of specified type"""
         for r in self.get_res_sets(type):
             r.action(action)
@@ -115,25 +115,25 @@ class Svc(Resource, Freezer):
         return disks
 
     def startapp(self):
-        self.subSetAction("app", "start")
+        self.sub_set_action("app", "start")
 
     def stopapp(self):
-        self.subSetAction("app", "stop")
+        self.sub_set_action("app", "stop")
 
     def syncnodes(self):
-        self.subSetAction("rsync", "syncnodes")
+        self.sub_set_action("rsync", "syncnodes")
 
     def syncdrp(self):
-        self.subSetAction("rsync", "syncdrp")
+        self.sub_set_action("rsync", "syncdrp")
 
     def scsirelease(self):
-        self.subSetAction("vg", "scsirelease")
+        self.sub_set_action("vg", "scsirelease")
 
     def scsireserv(self):
-        self.subSetAction("vg", "scsireserv")
+        self.sub_set_action("vg", "scsireserv")
 
     def scsicheckreserv(self):
-        self.subSetAction("vg", "scsicheckreserv")
+        self.sub_set_action("vg", "scsicheckreserv")
 
     def action(self, action):
         import xmlrpcClient
