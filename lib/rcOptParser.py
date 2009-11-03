@@ -47,6 +47,7 @@ action_desc = {
 	'scsireserv':	'reserve scsi disks held by this service',
 	'scsirelease':	'release scsi disks held by this service',
 	'scsicheckreserv':	'report status of reservations on scsi disks held by this service',
+	'restart':	'stop then start',
 }
 
 def format_desc(svc=False):

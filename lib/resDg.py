@@ -18,66 +18,72 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
+"""Module providing Generic device group resources
+"""
 
 import resources as Res
-from rcGlobalEnv import rcEnv
-ScsiReserv = __import__('scsiReserv' + rcEnv.sysname)
+import scsiReserv as scsiReserv
+import rcStatus
 
-class Vg(Res.Resource):
-    """ basic vg resource
+class Dg(Res.Resource):
+    """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
-    def __init__(self, vgName=None, optional=False, disabled=False, scsireserv=False):
-        Res.Resource.__init__(self, "vg", optional, disabled)
-        self.vgName = vgName
+    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+        Res.Resource.__init__(self, "pool", optional, disabled)
+        self.name = name
         self.scsiReservation = scsireserv
-        self.id = 'vg ' + vgName
+
+    def __str__(self):
+        return "%s name=%s" % (Res.Resource.__str__(self),\
+                                    self.name)
 
     def set_scsireserv(self):
         self.scsiReservation = True
 
     def scsirelease(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsirelease()
+        return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
 
     def scsireserv(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsireserv()
+        return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
 
     def scsicheckreserv(self):
-        return ScsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
+        return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
-    def disklist(self):
-        return []
-
-    def vgstop(self):
-        pass
-
-    def vgstart(self):
-        pass
+    def disklist(self): return []
+    def has_it(self): return False
+    def is_up(self): return False
+    def do_start(self): return False
+    def do_stop(self): return False
 
     def stop(self):
         if self.scsirelease() != 0:
             return 1
-        if self.vgstop() != 0:
+        if self.do_stop() != 0:
             return 1
         return 0
 
     def start(self):
-        if self.vgstart() != 0:
+        if self.do_start() != 0:
             return 1
         if self.scsireserv() != 0:
             return 1
         return 0
 
-    def __str__(self):
-        return "%s vgname=%s" % (Res.Resource.__str__(self),\
-                                 self.vgName)
+    def status(self):
+        if self.is_up(): return rcStatus.UP
+        else: return rcStatus.DOWN
+
+    def disklist(self):
+        return []
 
 if __name__ == "__main__":
-    for c in (Vg,) :
+    for c in (Dg,) :
         help(c)
 
-    print """v1=vg("myvg")"""
-    v=vg("myvg")
-    print "show v", v
-    print """v.do_action("start")"""
-    v.do_action("start")
-
+    print """d=Dg("aGenericDg")"""
+    d=Dg("aGenericDg")
+    print "show d", d
+    print """d.do_action("start")"""
+    d.do_action("start")
+    print """d.do_action("stop")"""
+    d.do_action("stop")

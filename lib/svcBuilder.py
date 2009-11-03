@@ -130,6 +130,20 @@ def add_vgs(svc, conf):
         set_scsireserv(r, conf, s)
         svc += r
 
+def add_pools(svc, conf):
+    """Parse the configuration file and add a pool object for each [pool#n]
+    section. Pools objects are stored in a list in the service object.
+    """
+    for s in conf.sections():
+        if re.match('pool#[0-9]', s, re.I) is None:
+            continue
+        name = conf.get(s, "poolname")
+        pool = __import__('resZfs')
+        r = pool.Pool(name)
+        set_optional_and_disable(r, conf, s)
+        set_scsireserv(r, conf, s)
+        svc += r
+
 def add_mounts(svc, conf):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
@@ -330,6 +344,7 @@ def build(name):
     add_ips(svc, conf)
     add_loops(svc, conf)
     add_vgs(svc, conf)
+    add_pools(svc, conf)
     add_mounts(svc, conf)
     add_syncs(svc, conf)
 

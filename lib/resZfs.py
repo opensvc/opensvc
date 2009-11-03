@@ -16,44 +16,40 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import re
-import os
+# To change this template, choose Tools | Templates
+# and open the template in the editor.
+"""Module providing ZFS resources
+"""
 
+from rcGlobalEnv import rcEnv
 import resDg
 
-def get_blockdev_sd_slaves(syspath):
-    slaves = []
-    for s in os.listdir(syspath):
-        if re.match('^sd[a-z]*', s) is not None:
-            slaves.append('/dev/' + s)
-            continue
-        deeper = os.path.join(syspath, s, 'slaves')
-        if os.path.isdir(deeper):
-            slaves += get_blockdev_sd_slaves(deeper)
-    return slaves
+import re
 
-class Vg(resDg.Dg):
+class Pool(resDg.Dg):
+    """ basic pool resource
+    """
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
-        self.id = 'vg' + name
-        resDg.Dg.__init__(self, name, 'vg', optional, disabled, scsireserv)
+        self.id = 'pool' + name
+        resDg.Dg.__init__(self, name, 'pool', optional, disabled, scsireserv)
 
     def has_it(self):
-        """Returns True if the volume is present
+        """Returns True if the pool is present
         """
-        cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
+        cmd = [ 'zpool', 'list', self.name ]
         (ret, out) = self.call(cmd)
-        if self.name in out.split():
+        if ret == 0 :
             return True
         return False
 
     def is_up(self):
-        """Returns True if the volume group is present and activated
+        """Returns True if the pool is present and activated
         """
         if not self.has_it():
             return False
-        cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
+        cmd = [ 'zpool', 'list', '-H', '-o', 'health', self.name ]
         (ret, out) = self.call(cmd)
-        if re.match(' ....-[-o]', out, re.MULTILINE) is None:
+        if out.strip() == "ONLINE" :
             return True
         return False
 
@@ -61,7 +57,7 @@ class Vg(resDg.Dg):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
-        cmd = [ 'vgchange', '-a', 'y', self.name ]
+        cmd = [ 'zpool', 'import', self.name ]
         (ret, out) = self.vcall(cmd)
         return ret
 
@@ -69,26 +65,36 @@ class Vg(resDg.Dg):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return 0
-        cmd = [ 'vgchange', '-a', 'n', self.name ]
+        cmd = [ 'zpool', 'export', self.name ]
         (ret, out) = self.vcall(cmd)
         return ret
 
     def disklist(self):
         if not self.has_it():
             return []
-        minors = []
         disks = []
-        cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
+        cmd = [ 'zpool', 'status', self.name ]
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise Exception()
-        for minor in out.split():
-            if minor == '-1':
-                # means the lv is inactive
-                continue
-            syspath = '/sys/block/dm-'+minor+'/slaves'
-            disks += get_blockdev_sd_slaves(syspath)
-        # remove duplicate entries in disk list
-        disks = list(set(disks))
-        self.log.debug("found disks %s held by vg %s" % (disks, self.name))
+        for line in out.split('\n'):
+            if re.match('^\t  ', line) is not None:
+                # vdev entry
+                #disk=line.split()[0]
+                #if re.match("s[]", disk) is not None :
+                disks.append("/dev/rdsk/" + line.split()[0] )
+        self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         return disks
+
+if __name__ == "__main__":
+    for c in (Pool,) :
+        help(c)
+
+    print """p=Pool("svczfs1")"""
+    p=Pool("svczfs1")
+    print "show p", p
+    print """p.do_action("start")"""
+    p.do_action("start")
+    print """p.do_action("stop")"""
+    p.do_action("stop")
+

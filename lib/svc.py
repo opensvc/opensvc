@@ -145,6 +145,12 @@ class Svc(Resource, Freezer):
         xmlrpcClient.end_action(self, action, begin, end, ret)
         return ret
 
+    def restart(self):
+	""" stop then start service"""
+	# FIXME should test stop() status before start()
+        self.stop()
+        self.start()
+
 
 if __name__ == "__main__" :
     for c in (Svc,) :
