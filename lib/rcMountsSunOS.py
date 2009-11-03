@@ -39,13 +39,16 @@ class Mounts(rcMounts.Mounts):
 
     def __init__(self):
         (ret, out) = call(['mount','-p'])
-        for l in out.split('\n'):
-            line=l.split()
-            if len(line) < 6 :
-                return
-            elif len(line) == 6 :
-                line.append('-')
-            dev, null, mnt, type, null, null, mnt_opt = line
+        for line in out.split('\n'):
+            words=line.split()
+            if len(words) < 6 :
+                continue
+            elif words[1]+words[4] != '--' :
+                # ignore mount line with space in mountpoint or dev
+                continue
+            elif len(words) == 6 :
+                words.append('-')
+            dev, null, mnt, type, null, null, mnt_opt = words
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
             self.mounts.append(m)
 
