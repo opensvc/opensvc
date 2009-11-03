@@ -73,9 +73,26 @@ class Vg(resDg.Dg):
         (ret, out) = self.vcall(cmd)
         return ret
 
+    def stop(self):
+        if self.scsirelease() != 0:
+            return 1
+        if self.do_stop() != 0:
+            return 1
+        return 0
+
+    def start(self):
+        if self.do_start() != 0:
+            return 1
+        if self.scsireserv() != 0:
+            return 1
+        return 0
+
     def disklist(self):
         if not self.has_it():
             return []
+        if self.disks != [] :
+            return self.disks
+
         disks = []
         cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
         (ret, out) = self.call(cmd)
@@ -90,4 +107,5 @@ class Vg(resDg.Dg):
         # remove duplicate entries in disk list
         disks = list(set(disks))
         self.log.debug("found disks %s held by vg %s" % (disks, self.name))
+        self.disks = disks
         return disks
