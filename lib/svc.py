@@ -128,12 +128,15 @@ class Svc(Resource, Freezer):
 
     def scsirelease(self):
         self.sub_set_action("vg", "scsirelease")
+        self.sub_set_action("pool", "scsirelease")
 
     def scsireserv(self):
         self.sub_set_action("vg", "scsireserv")
+        self.sub_set_action("pool", "scsireserv")
 
     def scsicheckreserv(self):
         self.sub_set_action("vg", "scsicheckreserv")
+        self.sub_set_action("pool", "scsicheckreserv")
 
     def action(self, action):
         rcEnv.logfile = self.logfile
