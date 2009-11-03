@@ -80,9 +80,9 @@ class Pool(resDg.Dg):
         for line in out.split('\n'):
             if re.match('^\t  ', line) is not None:
                 # vdev entry
-                #disk=line.split()[0]
-                #if re.match("s[]", disk) is not None :
-                disks.append("/dev/rdsk/" + line.split()[0] )
+                disk=line.split()[0]
+                if re.match("^c.*d", disk) is not None :
+                    disks.append("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         return disks
 
