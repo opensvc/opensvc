@@ -65,6 +65,14 @@ def call(argv=['/bin/false'], log=None, info=False):
         log.debug('output:\n' + output)
     return (process.returncode, output)
 
+def qcall(argv=['/bin/false']) :
+    """qcall Launch Popen it args disgarding output and stderr"""
+    if not argv:
+        return (0, '')
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
+    process.communicate()
+    return process.returncode
+
 def vcall(argv=['/bin/false'], log=None):
     return call(argv, log, True)
 
