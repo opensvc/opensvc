@@ -1,0 +1,23 @@
+#!/bin/sh -e
+
+### BEGIN INIT INFO
+# Provides:             opensvc
+# Required-Start:       $networking
+# Required-Stop:        
+# Default-Start:        3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    OpenSVC services startup script
+### END INIT INFO
+
+osvc_path=/service/bin
+allupservices=${osvc_path}/allupservices
+allprimaryservices=${osvc_path}/allprimaryservices
+
+case $1 in
+start)
+	${allprimaryservices} start
+	;;
+stop)
+	${allupservices} stop
+	;;
+esac

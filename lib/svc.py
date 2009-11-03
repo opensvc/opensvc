@@ -136,6 +136,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("vg", "scsicheckreserv")
 
     def action(self, action):
+        rcEnv.logfile = self.logfile
         import xmlrpcClient
         from datetime import datetime
         begin = datetime.now()

@@ -22,9 +22,12 @@ import os
 import glob
 
 from rcGlobalEnv import rcEnv
+from rcUtilities import is_exe, vcall
 import resources as Res
 
 def app(self, name, action):
+    if not is_exe(name):
+        vcall(['chmod', '+x', name])
     self.log.info('spawn: %s %s' % (name, action))
     outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
     f = open(outf, 'a')
@@ -42,7 +45,7 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
         don't stop on error.
         """
-        for name in glob.glob(os.path.join(rcEnv.svcinitd, 'S*')):
+        for name in glob.glob(os.path.join(self.svcinitd, 'S*')):
             app(self, name, 'start')
         return 0
 
@@ -50,7 +53,7 @@ class Apps(Res.Resource):
         """Execute each shutdown script (K* files). Log the return code but
         don't stop on error.
         """
-        for name in glob.glob(os.path.join(rcEnv.svcinitd, 'K*')):
+        for name in glob.glob(os.path.join(self.svcinitd, 'K*')):
             app(self, name, 'stop')
         return 0
 
@@ -59,4 +62,5 @@ class Apps(Res.Resource):
 
     def __init__(self, svcname, optional=False, disabled=False):
         self.svcname = svcname
+        self.svcinitd = os.path.join(rcEnv.pathetc, svcname) + '.d'
         Res.Resource.__init__(self, "app", optional, disabled) 

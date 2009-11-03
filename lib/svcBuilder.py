@@ -40,13 +40,16 @@ pathetc = os.path.join(pathsvc, 'etc')
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for
     a given service mode. For example:
-    lxc    => ( 'svcLxc' , 'SvcLxc' )
-    zone   => ( 'svcZone' , 'SvcZone' )
-    hosted => ( 'svcHosted', 'SvcHosted' )
+    lxc    => ('svcLxc', 'SvcLxc')
+    zone   => ('svcZone', 'SvcZone')
+    hosted => ('svcHosted', 'SvcHosted')
     """
-    if svcmode == 'lxc':        return ('svcLxc',       'SvcLxc'    )
-    elif svcmode == 'zone':     return ('svcZone',      'SvcZone'   )
-    elif svcmode == 'hosted':   return ('svcHosted',    'SvcHosted' )
+    if svcmode == 'lxc':
+        return ('svcLxc', 'SvcLxc')
+    elif svcmode == 'zone':
+        return ('svcZone', 'SvcZone')
+    elif svcmode == 'hosted':
+        return ('svcHosted', 'SvcHosted')
     return 1 # raise something instead ?
 
 def set_optional(resource, conf, section):
@@ -232,10 +235,11 @@ def build(name):
     rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
     rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
     rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
-    rcEnv.logfile = os.path.join(rcEnv.pathlog, name) + '.log'
-    rcEnv.svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
-    rcEnv.svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
     rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+
+    svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
+    logfile = os.path.join(rcEnv.pathlog, name) + '.log'
+    rcEnv.logfile = logfile
 
     setup_logging()
     if name == "rcService":
@@ -255,9 +259,8 @@ def build(name):
     log.debug('pathlog = ' + rcEnv.pathlog)
     log.debug('pathtmp = ' + rcEnv.pathtmp)
     log.debug('service name = ' + name)
-    log.debug('service config file = ' + rcEnv.svcconf)
-    log.debug('service log file = ' + rcEnv.logfile)
-    log.debug('service init dir = ' + rcEnv.svcinitd)
+    log.debug('service config file = ' + svcconf)
+    log.debug('service log file = ' + logfile)
 
     #
     # node discovery is hidden in a separate module to
@@ -271,9 +274,9 @@ def build(name):
     #
     svcmode = "hosted"
     conf = None
-    if os.path.isfile(rcEnv.svcconf):
+    if os.path.isfile(svcconf):
             conf = ConfigParser.RawConfigParser()
-            conf.read(rcEnv.svcconf)
+            conf.read(svcconf)
             if conf.has_option("default", "mode"):
                     svcmode = conf.get("default", "mode")
 
@@ -285,6 +288,12 @@ def build(name):
     mod , svcClass = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
     svc = getattr(svcMod, svcClass)(name)
+
+    #
+    # Store useful properties
+    #
+    svc.logfile = logfile
+    svc.conf = svcconf
 
     #
     # Setup service properties from config file content
@@ -355,15 +364,21 @@ def is_service(f):
         return False
     return True
 
-def build_services(status=None):
+def build_services(status=None, svcnames=[], onlyprimary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
     services = []
     for name in os.listdir(pathetc):
-        if is_service(os.path.join(pathetc, name)):
-            svc = build(name)
-            if status is None or svc.status() == status:
-                services.append(build(name))
+        if len(svcnames) > 0 and name not in svcnames:
+            continue
+        if not is_service(os.path.join(pathetc, name)):
+            continue
+        svc = build(name)
+        if status is not None and svc.status() != status:
+            continue
+        if onlyprimary and svc.autostart_node != rcEnv.nodename:
+            continue
+        services.append(build(name))
     return services
 
