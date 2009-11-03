@@ -30,8 +30,6 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 import svcBuilder
 from rcUtilities import *
 
-check_privs()
-
 for svc in svcBuilder.build_services():
     print banner(svc.svcname)
     svc.print_status()
