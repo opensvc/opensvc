@@ -23,7 +23,7 @@ import svc
 import lxc
 import rcStatus
 
-class svcLxc(svc.Svc):
+class SvcLxc(svc.Svc):
     """ Define Lxc services"""
 
     def __init__(self, svcname, optional=False, disabled=False):
@@ -101,19 +101,19 @@ class svcLxc(svc.Svc):
 
 
 if __name__ == "__main__":
-    for c in (svcLxc,) :
+    for c in (SvcLxc,) :
         help(c)
     import mountLinux as mount
     import ipLinux as ip
     print """
-    Z=svcLxc()
+    Z=SvcLxc()
     Z+=mount.Mount("/mnt1","/dev/sda")
     Z+=mount.Mount("/mnt2","/dev/sdb")
     Z+=ip.Ip("eth0","192.168.0.173")
     Z+=ip.Ip("eth0","192.168.0.174")
     """
 
-    Z=svcLxc()
+    Z=SvcLxc()
     Z+=mount.Mount("/mnt1","/dev/sda")
     Z+=mount.Mount("/mnt2","/dev/sdb")
     Z+=ip.Ip("eth0","192.168.0.173")

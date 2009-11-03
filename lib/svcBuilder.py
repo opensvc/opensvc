@@ -38,18 +38,15 @@ pathsvc = os.path.join(os.path.dirname(__file__), '..')
 pathetc = os.path.join(pathsvc, 'etc')
 
 def svcmode_mod_name(svcmode=''):
-    """Returns the name of the module implementing the class for
+    """Returns (moduleName, serviceClassName) implementing the class for
     a given service mode. For example:
-    lxc    => svcLxc
-    zone   => svcZone
-    hosted => svcHosted
+    lxc    => ( 'svcLxc' , 'SvcLxc' )
+    zone   => ( 'svcZone' , 'SvcZone' )
+    hosted => ( 'svcHosted', 'SvcHosted' )
     """
-    if svcmode == 'lxc':
-        return 'svcLxc'
-    elif svcmode == 'zone':
-        return 'svcZone'
-    elif svcmode == 'hosted':
-        return 'svcHosted'
+    if svcmode == 'lxc':        return ('svcLxc',       'svcLxc'    )
+    elif svcmode == 'zone':     return ('svcZone',      'SvcZone'   )
+    elif svcmode == 'hosted':   return ('svcHosted',    'SvcHosted' )
     return 1 # raise something instead ?
 
 def set_optional(resource, conf, section):
@@ -285,9 +282,9 @@ def build(name):
     # and instanciate a service
     #
     log.debug('service mode = ' + svcmode)
-    mod = svcmode_mod_name(svcmode)
+    mod , svcClass = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
-    svc = getattr(svcMod, mod)(name)
+    svc = getattr(svcMod, svcClass)(name)
 
     #
     # Setup service properties from config file content

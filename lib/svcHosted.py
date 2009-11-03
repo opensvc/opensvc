@@ -20,9 +20,8 @@
 # and open the template in the editor.
 
 import svc
-import rcStatus
 
-class svcHosted(svc.Svc):
+class SvcHosted(svc.Svc):
     """Define hosted services
     """
 
