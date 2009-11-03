@@ -42,6 +42,21 @@ def update_service(vars, vals):
     db.query(sql)
     return 0
 
+def begin_action(vars, vals):
+    sql="""insert delayed into SVCactions (%s) values (%s)""" % (','.join(vars), ','.join(vals))
+    log.info(sql)
+    db.query(sql)
+    return 0
+
+def end_action(vars, vals):
+    upd = []
+    for a, b in zip(vars, vals):
+        upd.append("%s=%s" % (a, b))
+    sql="""insert delayed into SVCactions (%s) values (%s) on duplicate key update %s""" % (','.join(vars), ','.join(vals), ','.join(upd))
+    log.info(sql)
+    db.query(sql)
+    return 0
+
 port = 8000
 host = "unxdevweb"
 
@@ -49,5 +64,7 @@ server = SimpleXMLRPCServer((host, port))
 log.info("Listening on %s:%d" % (host, port))
 server.register_function(delete_services, "delete_services")
 server.register_function(update_service, "update_service")
+server.register_function(begin_action, "begin_action")
+server.register_function(end_action, "end_action")
 server.serve_forever()
 

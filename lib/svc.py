@@ -135,6 +135,15 @@ class Svc(Resource, Freezer):
     def scsicheckreserv(self):
         self.subSetAction("vg", "scsicheckreserv")
 
+    def action(self, action):
+        import xmlrpcClient
+        from datetime import datetime
+        begin = datetime.now()
+        xmlrpcClient.begin_action(self, action, begin)
+        ret = getattr(self, action)()
+        end = datetime.now()
+        xmlrpcClient.end_action(self, action, begin, end, ret)
+        return ret
 
 
 if __name__ == "__main__" :

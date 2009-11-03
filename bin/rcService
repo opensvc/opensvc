@@ -30,4 +30,4 @@ import rcOptParser
 
 svc = svcBuilder.build(os.path.basename(__file__))
 parser = rcOptParser.svcOptionParser(svc)
-sys.exit(getattr(svc, parser.action)())
+sys.exit(svc.action(parser.action))

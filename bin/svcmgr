@@ -43,37 +43,36 @@ parser = optparse.OptionParser(version=__ver, usage=__usage)
 status = None
 cmd = os.path.basename(__file__)
 if cmd == 'allservices':
-	svcs = svcBuilder.build_services()
+    svcs = svcBuilder.build_services()
 elif cmd == 'allupservices':
-	svcs = svcBuilder.build_services(rcStatus.UP)
+    svcs = svcBuilder.build_services(rcStatus.UP)
 elif cmd == 'alldownservices':
-	svcs = svcBuilder.build_services(rcStatus.DOWN)
+    svcs = svcBuilder.build_services(rcStatus.DOWN)
 elif cmd == 'svcmgr':
-	parser.add_option("--service", default=None, action="store", dest="parm_svcs",
-			  help="comma-separated list of service to operate on")
+    parser.add_option("--service", default=None, action="store", dest="parm_svcs",
+              help="comma-separated list of service to operate on")
 
 (options, args) = parser.parse_args()
-if options.parm_svcs is not None:
-	if ',' in options.parm_svcs:
-		for name in options.parm_svcs.split(','):
-			f = os.path.join(pathsvc, 'etc', name)
-			if svcBuilder.is_service(f):
-				svcs.append(name)
-	else:
-		f = os.path.join(pathsvc, 'etc', options.parm_svcs)
-		if svcBuilder.is_service(f):
-			svcs.append(options.parm_svcs)
+if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+    if ',' in options.parm_svcs:
+        for name in options.parm_svcs.split(','):
+            f = os.path.join(pathsvc, 'etc', name)
+            if svcBuilder.is_service(f):
+                svcs.append(svcBuilder.build(name))
+    else:
+        f = os.path.join(pathsvc, 'etc', options.parm_svcs)
+        if svcBuilder.is_service(f):
+            svcs.append(svcBuilder.build(options.parm_svcs))
 
 if len(args) > 1:
-	parser.error("More than one action")
+    parser.error("More than one action")
 if len(args) is 0:
-	parser.error("Missing action")
+    parser.error("Missing action")
 action = args[0]
 if not action in rcOptParser.action_desc.keys():
-	parser.error("unsupported action")
+    parser.error("unsupported action")
 
 for s in svcs:
-	print banner(s)
-	svc = svcBuilder.build(s)
-	getattr(svc, action)()
+    print banner(s.svcname)
+    s.action(action)
 
