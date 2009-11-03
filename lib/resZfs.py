@@ -23,6 +23,7 @@
 
 from rcGlobalEnv import rcEnv
 import resDg
+from rcUtilities import qcall
 
 import re
 
@@ -36,8 +37,7 @@ class Pool(resDg.Dg):
     def has_it(self):
         """Returns True if the pool is present
         """
-        cmd = [ 'zpool', 'list', self.name ]
-        (ret, out) = self.call(cmd)
+        ret = qcall( [ 'zpool', 'list', self.name ] )
         if ret == 0 :
             return True
         return False
