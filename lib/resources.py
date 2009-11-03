@@ -94,6 +94,8 @@ class Resource(object):
         """
         s = rcStatus.Status()
         for r in self.resources:
+            if r.is_disabled():
+                continue
             s += r.status()
         return s.status
 
