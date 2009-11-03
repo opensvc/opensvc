@@ -30,7 +30,7 @@ class Pool(resDg.Dg):
     """ basic pool resource
     """
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
-        self.id = 'pool' + name
+        self.id = 'pool ' + name
         resDg.Dg.__init__(self, name, 'pool', optional, disabled, scsireserv)
 
     def has_it(self):

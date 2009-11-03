@@ -30,12 +30,14 @@ class Resource(object):
     a Resource should provide do_action(action):
     with action into (start/stop/status)
     """
+    id = None
+
     def __init__(self, type=None, optional=False, disabled=False):
         self.type = type
         self.optional = optional
         self.disabled = disabled
-        self.id = type
         self.log = logging.getLogger(str(type).upper())
+        if id is None: self.id = type
 
     def __str__(self):
         output="object=%s type=%s" %   (self.__class__.__name__,self.type)
