@@ -52,7 +52,7 @@ class Dg(Res.Resource):
 
     def disklist(self):
         return self.disks
-        
+
     def has_it(self): return False
     def is_up(self): return False
     def do_start(self): return False

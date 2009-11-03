@@ -115,7 +115,7 @@ class Pool(resDg.Dg):
                         disks.append("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         self.disks = disks
-        
+
         return disks
 
 if __name__ == "__main__":
@@ -129,4 +129,3 @@ if __name__ == "__main__":
     p.do_action("start")
     print """p.do_action("stop")"""
     p.do_action("stop")
-
