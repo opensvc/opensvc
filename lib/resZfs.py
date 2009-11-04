@@ -77,10 +77,10 @@ class Pool(resDg.Dg):
 
         disklist(self) update self.disks[]
         """
-        if self.disks != [] :
+        if len(self.disks) > 0 :
             return self.disks
 
-        disks = []
+        disks = set()
         cmd = [ 'zpool', 'status', self.name ]
         (ret, out) = self.call(cmd)
         if ret != 0 :
@@ -105,14 +105,14 @@ class Pool(resDg.Dg):
                     # only look for 'tab  c*d vdev entries
                     if re.match('^\t   *c', line) is not None:
                         disk = line.split()[0]
-                        disks.append("/dev/rdsk/" + disk )
+                        disks.add("/dev/rdsk/" + disk )
         else :
             for line in out.split('\n'):
                 if re.match('^\t  ', line) is not None:
                     # vdev entry
                     disk=line.split()[0]
                     if re.match("^c.*d", disk) is not None :
-                        disks.append("/dev/rdsk/" + disk )
+                        disks.add("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         self.disks = disks
 

@@ -32,7 +32,7 @@ class Dg(Res.Resource):
         Res.Resource.__init__(self, type, optional, disabled)
         self.name = name
         self.scsiReservation = scsireserv
-        self.disks = []
+        self.disks = set()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self),\

@@ -105,7 +105,7 @@ class Vg(resDg.Dg):
             syspath = '/sys/block/dm-'+minor+'/slaves'
             disks += get_blockdev_sd_slaves(syspath)
         # remove duplicate entries in disk list
-        disks = list(set(disks))
+        disks = set(disks)
         self.log.debug("found disks %s held by vg %s" % (disks, self.name))
         self.disks = disks
         return disks
