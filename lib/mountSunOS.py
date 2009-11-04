@@ -40,10 +40,20 @@ class Mount(mount.Mount):
         else: return rcStatus.DOWN
 
     def start(self):
+        self.Mounts = rcMounts.Mounts()
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
+        if self.fsType == 'zfs' :
+            ret, out = self.vcall(['zfs', 'set', \
+                                    'mountpoint='+self.mountPoint , \
+                                    self.device ])
+            if ret != 0 :
+                return ret
+            ret, out = self.vcall(['zfs', 'mount', self.device ])
+            return ret
+                
         if not os.path.exists(self.mountPoint):
             os.mkdir(self.mountPoint, 0755)
         cmd = ['mount', '-F', self.fsType, '-o', self.mntOpt, self.device, \
