@@ -47,7 +47,10 @@ class Node(Svc, Freezer):
         #
         for name in os.listdir(pathetc):
             if is_service(os.path.join(pathetc, name)):
-                self += svcBuilder.build(name)
+                s = svcBuilder.build(name)
+                if s is None :
+                    continue
+                self += s
 
         #
         # lookup drp_nodes

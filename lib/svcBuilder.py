@@ -89,15 +89,17 @@ def add_ips(svc, conf):
         elif conf.has_option(s, "ipname"):
             ipname = conf.get(s, "ipname")
         else:
+            svc.log.debug('add_ips ipname not found in ip section' + s)
             ipname = None
-            raise
+            continue
         if conf.has_option(s, "ipdev@"+rcEnv.nodename):
             ipdev = conf.get(s, "ipdev@"+rcEnv.nodename)
         elif conf.has_option(s, "ipdev"):
             ipdev = conf.get(s, "ipdev")
         else:
+            svc.log.debug('add_ips ipdev not found in ip section' + s)
             ipdev = None
-            raise
+            continue
         ip = __import__('ip'+rcEnv.sysname)
         r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
@@ -225,6 +227,10 @@ def syncdrp(self):
 		if s.syncdrp() != 0: return 1
 
 def build(name):
+    """build(name) is in charge of Svc creation
+    it return None if service Name is not managed by local node
+    else it return new Svc instance
+    """
     #
     # file tree abstraction
     #
@@ -314,6 +320,13 @@ def build(name):
     else:
         svc.drpnodes = []
 
+    # prune not managed service
+    if rcEnv.nodename not in set(svc.nodes) | set(svc.drpnode) | \
+                            set(svc.drpnodes) :
+        log.debug('service %s not managed here' % name)
+        del(svc)
+        return None
+
     if conf.has_option("default", "service_type"):
         svc.service_type = conf.get("default", "service_type")
     else:
@@ -375,10 +388,12 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
         if not is_service(os.path.join(pathetc, name)):
             continue
         svc = build(name)
+        if svc is None :
+            continue
         if status is not None and svc.status() != status:
             continue
         if onlyprimary and svc.autostart_node != rcEnv.nodename:
             continue
-        services.append(build(name))
+        services.append(svc)
     return services
 
