@@ -102,3 +102,6 @@ class Status(object):
         """
         self.status = _merge(self.status, s)
         return self
+
+    def __str__(self):
+        return status_str(self.status)
