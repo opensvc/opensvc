@@ -70,20 +70,52 @@ class Pool(resDg.Dg):
         return ret
 
     def disklist(self):
-        if not self.has_it():
-            return []
+        """disklist() search zpool vdevs from
+        output of : zpool status poolname if status cmd == 0
+        else
+        output of : zpool import output if status cmd == 0
+
+        disklist(self) update self.disks[]
+        """
+        if self.disks != [] :
+            return self.disks
+
         disks = []
         cmd = [ 'zpool', 'status', self.name ]
         (ret, out) = self.call(cmd)
-        if ret != 0:
-            raise Exception()
-        for line in out.split('\n'):
-            if re.match('^\t  ', line) is not None:
-                # vdev entry
-                disk=line.split()[0]
-                if re.match("^c.*d", disk) is not None :
-                    disks.append("/dev/rdsk/" + disk )
+        if ret != 0 :
+            matchedPool=False
+            cmd = [ 'zpool', 'import' ]
+            (ret, out) = self.call(cmd)
+            if ret != 0 :
+                return []
+            for line in out.split('\n'):
+                if re.match('^  pool: ', line) is not None:
+                    # This is pool: xxxx
+                    # set watchNext if it is serached pool
+                    # else disable watchNext
+                    if line == '  pool: ' + self.name :
+                        if matchedPool == True :
+                            raise Exception("duplicated pools available")
+                        matchedPool = True
+                        watchNext = True
+                    else :
+                        watchNext = False
+                elif watchNext == True :
+                    # only look for 'tab  c*d vdev entries
+                    if re.match('^\t   *c', line) is not None:
+                        disk = line.split()[0]
+                        disks.append("/dev/rdsk/" + disk )
+        else :
+            for line in out.split('\n'):
+                if re.match('^\t  ', line) is not None:
+                    # vdev entry
+                    disk=line.split()[0]
+                    if re.match("^c.*d", disk) is not None :
+                        disks.append("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
+        self.disks = disks
+
         return disks
 
 if __name__ == "__main__":
@@ -97,4 +129,3 @@ if __name__ == "__main__":
     p.do_action("start")
     print """p.do_action("stop")"""
     p.do_action("stop")
-

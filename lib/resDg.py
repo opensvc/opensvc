@@ -32,6 +32,7 @@ class Dg(Res.Resource):
         Res.Resource.__init__(self, type, optional, disabled)
         self.name = name
         self.scsiReservation = scsireserv
+        self.disks = []
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self),\
@@ -49,23 +50,27 @@ class Dg(Res.Resource):
     def scsicheckreserv(self):
         return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
-    def disklist(self): return []
+    def disklist(self):
+        return self.disks
+
     def has_it(self): return False
     def is_up(self): return False
     def do_start(self): return False
     def do_stop(self): return False
 
     def stop(self):
-        if self.scsirelease() != 0:
-            return 1
+        self.disks = self.disklist()
         if self.do_stop() != 0:
+            return 1
+        if self.scsirelease() != 0:
             return 1
         return 0
 
     def start(self):
-        if self.do_start() != 0:
-            return 1
+        self.disks = self.disklist()
         if self.scsireserv() != 0:
+            return 1
+        if self.do_start() != 0:
             return 1
         return 0
 
