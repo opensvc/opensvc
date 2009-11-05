@@ -23,6 +23,11 @@ class rcEnv:
     prog = "opensvc"
     ver = "20090924-1"
 
+    """program used to execute remote command on other nodes or virtual hosts
+    """
+    rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
+    rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
+
     """Database sink for node and service configurations and status collection.
     """
     dbopensvc = "http://dbopensvc:8000/"

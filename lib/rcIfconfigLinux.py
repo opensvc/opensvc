@@ -22,9 +22,7 @@ from subprocess import *
 import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
-
-    def __init__(self):
-        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+    def parse(self, out):
         prev = ''
         prevprev = ''
         for w in out.split():
@@ -73,7 +71,10 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_multicast = True
             if 'LOOPBACK' == w:
                 i.flag_loopback = True
-                
+
             prevprev = prev
             prev = w
 
+    def __init__(self):
+        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+        self.parse(out)

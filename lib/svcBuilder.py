@@ -100,8 +100,12 @@ def add_ips(svc, conf):
             svc.log.debug('add_ips ipdev not found in ip section' + s)
             ipdev = None
             continue
-        ip = __import__('ip'+rcEnv.sysname)
-        r = ip.Ip(ipdev, ipname)
+        if svc.svcmode  == 'lxc':
+            ip = __import__('ip'+rcEnv.sysname+'lxc')
+            r = ip.Ip(svc.svcname, ipdev, ipname)
+        else:
+            ip = __import__('ip'+rcEnv.sysname)
+            r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
         svc += r
 
@@ -281,19 +285,20 @@ def build(name):
     svcmode = "hosted"
     conf = None
     if os.path.isfile(svcconf):
-            conf = ConfigParser.RawConfigParser()
-            conf.read(svcconf)
-            if conf.has_option("default", "mode"):
-                    svcmode = conf.get("default", "mode")
+        conf = ConfigParser.RawConfigParser()
+        conf.read(svcconf)
+        if conf.has_option("default", "mode"):
+            svcmode = conf.get("default", "mode")
 
     #
     # dynamically import the module matching the service mode
     # and instanciate a service
     #
     log.debug('service mode = ' + svcmode)
-    mod , svcClass = svcmode_mod_name(svcmode)
+    mod , svc_class_name = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
-    svc = getattr(svcMod, svcClass)(name)
+    svc = getattr(svcMod, svc_class_name)(name)
+    svc.svcmode = svcmode
 
     #
     # Store useful properties
