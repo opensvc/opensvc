@@ -89,11 +89,11 @@ class Vg(resDg.Dg):
 
     def disklist(self):
         if not self.has_it():
-            return []
-        if self.disks != [] :
+            return set()
+        if self.disks != set() :
             return self.disks
 
-        disks = []
+        disks = set()
         cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
         (ret, out) = self.call(cmd)
         if ret != 0:
@@ -103,9 +103,7 @@ class Vg(resDg.Dg):
                 # means the lv is inactive
                 continue
             syspath = '/sys/block/dm-'+minor+'/slaves'
-            disks += get_blockdev_sd_slaves(syspath)
-        # remove duplicate entries in disk list
-        disks = set(disks)
+            disks.add(get_blockdev_sd_slaves(syspath))
         self.log.debug("found disks %s held by vg %s" % (disks, self.name))
         self.disks = disks
         return disks
