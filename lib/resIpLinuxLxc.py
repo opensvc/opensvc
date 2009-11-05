@@ -18,30 +18,33 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific ip management"
+"Module implement Linux/LXC specific ip management"
 
-import ip
+import resIpLinux as Res
+import rcIfconfigLinuxlxc as rcIfconfig
 from subprocess import *
 
-class Ip(ip.Ip):
-    """ define ip SunOS start/stop doAction """
-
-    def check_ping(self):
-        timeout=2
-        cmd = ['ping', self.addr, "%s" % timeout]
-        (ret, out) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
-
+class Ip(Res.Ip):
     def startip_cmd(self):
-        cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
-            'netmask', '+', 'broadcast', '+', 'up']
+        cmd = rcEnv.rsh.split(' ') + [self.lxcname, 'ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
         return self.vcall(cmd)
 
     def stopip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, 'unplumb']
+        cmd = rcEnv.rsh.split(' ') + [self.lxcname, 'ifconfig', self.stacked_dev, 'down']
         return self.vcall(cmd)
+
+    def is_up(self):
+        ifconfig = rcIfconfig.ifconfig(self.lxcname)
+        if ifconfig.has_param("ipaddr", self.addr) is not None:
+            self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
+            return True
+        self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
+        return False
+
+    def __init__(self, lxcname, ipdev, ipname):
+        Res.Ip.__init__(self, ipdev, ipname)
+        self.lxcname = lxcname
+
 
 if __name__ == "__main__":
     for c in (Ip,) :

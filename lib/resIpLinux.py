@@ -20,10 +20,9 @@
 # and open the template in the editor.
 "Module implement Linux specific ip management"
 
-import ip
-from subprocess import *
+import resIp as Res
 
-class Ip(ip.Ip):
+class Ip(Res.Ip):
     def check_ping(self):
         count=1
         timeout=5

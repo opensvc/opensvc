@@ -22,7 +22,7 @@
 import resources as Res
 from rcGlobalEnv import *
 
-from subprocess import Popen,PIPE
+from subprocess import Popen, PIPE
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
 import rcStatus
