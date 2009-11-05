@@ -24,13 +24,13 @@ import os
 
 import rcStatus
 import rcMountsSunOS as rcMounts
-import mount
+import resMount as Res
 
-class Mount(mount.Mount):
+class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
     def __init__(self, mountPoint, device, fsType, mntOpt):
         self.Mounts = rcMounts.Mounts()
-        mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+        Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)
@@ -53,7 +53,7 @@ class Mount(mount.Mount):
                 return ret
             ret, out = self.vcall(['zfs', 'mount', self.device ])
             return ret
-                
+
         if not os.path.exists(self.mountPoint):
             os.mkdir(self.mountPoint, 0755)
         cmd = ['mount', '-F', self.fsType, '-o', self.mntOpt, self.device, \

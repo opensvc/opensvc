@@ -23,7 +23,7 @@ import os
 
 import rcStatus
 import rcMountsLinux as rcMounts
-import mount
+import resMount as Res
 
 def try_umount(self):
     """best effort kill of all processes that might block
@@ -41,11 +41,11 @@ def try_umount(self):
     return ret
 
 
-class Mount(mount.Mount):
+class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
     def __init__(self, mountPoint, device, fsType, mntOpt):
         self.Mounts = rcMounts.Mounts()
-        mount.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+        Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)

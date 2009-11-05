@@ -161,7 +161,7 @@ def add_mounts(svc, conf):
         mnt = conf.get(s, "mnt")
         type = conf.get(s, "type")
         mnt_opt = conf.get(s, "mnt_opt")
-        mount = __import__('mount'+rcEnv.sysname)
+        mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(mnt, dev, type, mnt_opt)
         set_optional_and_disable(r, conf, s)
         #set_scsireserv(r, conf, s)

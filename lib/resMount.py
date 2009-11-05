@@ -19,14 +19,14 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as res
+import resources as Res
 
-class Mount(res.Resource):
+class Mount(Res.Resource):
     """Define a mount resource 
     """
     def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
                 disabled=False, scsireserv=False):
-        res.Resource.__init__(self,"mount",optional,disabled)
+        Res.Resource.__init__(self,"mount",optional,disabled)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType
@@ -38,7 +38,7 @@ class Mount(res.Resource):
         self.scsiReservation = scsireserv
 
     def __str__(self):
-        return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (res.Resource.__str__(self),\
+        return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
                 self.mountPoint, self.device, self.fsType, self.mntOpt)
 
     def __cmp__(self, other):
