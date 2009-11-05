@@ -40,9 +40,9 @@ class SvcLxc(svc.Svc):
         start apps
         """
         self.sub_set_action("ip", "check_ping")
-        self.sub_set_action("loop", "start")
-        self.sub_set_action("vg", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.mount", "start")
         self.sub_set_action("lxc", "start")
         self.sub_set_action("app", "start")
 
@@ -56,17 +56,17 @@ class SvcLxc(svc.Svc):
         """
         self.sub_set_action("app", "stop")
         self.sub_set_action("lxc", "stop")
-        self.sub_set_action("mount", "stop")
-        self.sub_set_action("vg", "stop")
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.loop", "stop")
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["lxc", "loop", "mount", "vg", "ip"])
+        return svc.Svc.status(self, ["lxc", "disk.loop", "disk.mount", "disk.vg", "ip"])
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["lxc", "loop", "mount", "vg", "ip"])
+        return svc.Svc.print_status(self, ["lxc", "disk.loop", "disk.mount", "disk.vg", "ip"])
 
     def startlxc(self):
         self.sub_set_action("lxc", "start")
@@ -82,22 +82,22 @@ class SvcLxc(svc.Svc):
         self.sub_set_action("ip", "stop")
 
     def startloop(self):
-        self.sub_set_action("loop", "start")
+        self.sub_set_action("disk.loop", "start")
 
     def stoploop(self):
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
-        self.sub_set_action("vg", "start")
+        self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
-        self.sub_set_action("vg", "stop")
+        self.sub_set_action("disk.vg", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.mount", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("disk.mount", "stop")
 
 
 if __name__ == "__main__":

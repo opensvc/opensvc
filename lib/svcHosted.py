@@ -40,10 +40,10 @@ class SvcHosted(svc.Svc):
         """
         self.sub_set_action("ip", "check_ping")
         self.sub_set_action("ip", "start")
-        self.sub_set_action("loop", "start")
-        self.sub_set_action("vg", "start")
-        self.sub_set_action("pool", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.pool", "start")
+        self.sub_set_action("disk.mount", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
@@ -54,19 +54,19 @@ class SvcHosted(svc.Svc):
         stop ips
         """
         self.sub_set_action("app", "stop")
-        self.sub_set_action("mount", "stop")
-        self.sub_set_action("vg", "stop")
-        self.sub_set_action("pool", "stop")
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.pool", "stop")
+        self.sub_set_action("disk.loop", "stop")
         self.sub_set_action("ip", "stop")
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["loop", "mount", "vg", "pool", "ip"])
+        return svc.Svc.status(self, ["disk.loop", "disk.mount", "disk.vg", "disk.pool", "ip"])
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["loop", "mount", "vg", "pool", "ip"])
+        return svc.Svc.print_status(self, ["disk.loop", "disk.mount", "disk.vg", "disk.pool", "ip"])
 
     def diskstart(self):
         """start a hosted service:
@@ -75,10 +75,10 @@ class SvcHosted(svc.Svc):
         start Pools
         start mounts
         """
-        self.sub_set_action("loop", "start")
-        self.sub_set_action("vg", "start")
-        self.sub_set_action("pool", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.pool", "start")
+        self.sub_set_action("disk.mount", "start")
 
     def diskstop(self):
         """stop a hosted service:
@@ -88,10 +88,10 @@ class SvcHosted(svc.Svc):
         stop Pools
         stop ips
         """
-        self.sub_set_action("mount", "stop")
-        self.sub_set_action("vg", "stop")
-        self.sub_set_action("pool", "stop")
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.pool", "stop")
+        self.sub_set_action("disk.loop", "stop")
 
     def startip(self):
         self.sub_set_action("ip", "check_ping")
@@ -101,28 +101,28 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("ip", "stop")
 
     def startloop(self):
-        self.sub_set_action("loop", "start")
+        self.sub_set_action("disk.loop", "start")
 
     def stoploop(self):
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
-        self.sub_set_action("vg", "start")
+        self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
-        self.sub_set_action("vg", "stop")
+        self.sub_set_action("disk.vg", "stop")
 
     def startpool(self):
-        self.sub_set_action("pool", "start")
+        self.sub_set_action("disk.pool", "start")
 
     def stoppool(self):
-        self.sub_set_action("pool", "stop")
+        self.sub_set_action("disk.pool", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.mount", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("disk.mount", "stop")
 
 if __name__ == "__main__":
     for c in (SvcHosted,) :

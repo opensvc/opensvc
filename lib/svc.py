@@ -170,10 +170,10 @@ if __name__ == "__main__" :
     print "s1=",s1
     print """s1+=Resource("ip")"""
     s1+=Resource("ip")
-    print """s1+=Resource("mount")"""
-    s1+=Resource("mount")
-    print """s1+=Resource("mount")"""
-    s1+=Resource("mount")
+    print """s1+=Resource("disk.mount")"""
+    s1+=Resource("disk.mount")
+    print """s1+=Resource("disk.mount")"""
+    s1+=Resource("disk.mount")
     print "s1=",s1
 
     print """s1.action("status")"""

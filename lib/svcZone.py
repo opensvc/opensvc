@@ -44,8 +44,8 @@ class SvcZone(svc.Svc):
         self.sub_set_action("zone", "ready")
         self.sub_set_action("ip", "start")
         self.sub_set_action("zone", "boot")
-        self.sub_set_action("vg", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.mount", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
@@ -58,8 +58,8 @@ class SvcZone(svc.Svc):
         """
         print "stopping %s" % self.__class__.__name__
         self.sub_set_action("app", "stop")
-        self.sub_set_action("mount", "stop")
-        self.sub_set_action("vg", "stop")
+        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("zone", "stop")
         self.sub_set_action("ip", "stop")
 
@@ -71,22 +71,22 @@ class SvcZone(svc.Svc):
         self.sub_set_action("ip", "stop")
 
     def startloop(self):
-        self.sub_set_action("loop", "start")
+        self.sub_set_action("disk.loop", "start")
 
     def stoploop(self):
-        self.sub_set_action("loop", "stop")
+        self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
-        self.sub_set_action("vg", "start")
+        self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
-        self.sub_set_action("vg", "stop")
+        self.sub_set_action("disk.vg", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("disk.mount", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("disk.mount", "stop")
 
 
 if __name__ == "__main__":

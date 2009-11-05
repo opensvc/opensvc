@@ -35,7 +35,7 @@ def get_blockdev_sd_slaves(syspath):
 class Vg(resDg.Dg):
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name, 'vg', optional, disabled, scsireserv)
+        resDg.Dg.__init__(self, name, 'disk.vg', optional, disabled, scsireserv)
 
     def has_it(self):
         """Returns True if the volume is present

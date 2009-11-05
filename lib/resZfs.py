@@ -32,7 +32,7 @@ class Pool(resDg.Dg):
     """
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
         self.id = 'pool ' + name
-        resDg.Dg.__init__(self, name, 'pool', optional, disabled, scsireserv)
+        resDg.Dg.__init__(self, name, 'disk.zpool', optional, disabled, scsireserv)
 
     def has_it(self):
         """Returns True if the pool is present
