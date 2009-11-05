@@ -101,10 +101,10 @@ def add_ips(svc, conf):
             ipdev = None
             continue
         if svc.svcmode  == 'lxc':
-            ip = __import__('ip'+rcEnv.sysname+'lxc')
+            ip = __import__('resIp'+rcEnv.sysname+'Lxc')
             r = ip.Ip(svc.svcname, ipdev, ipname)
         else:
-            ip = __import__('ip'+rcEnv.sysname)
+            ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
         svc += r
