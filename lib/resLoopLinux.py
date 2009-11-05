@@ -22,7 +22,7 @@ import re
 from rcGlobalEnv import *
 from rcUtilities import call, which
 import rcStatus
-import loop
+import resLoop as Res
 
 def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
@@ -39,7 +39,7 @@ def file_to_loop(f):
         return None
     return out.split()[0].strip(':')
 
-class Loop(loop.Loop):
+class Loop(Res.Loop):
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
@@ -72,4 +72,4 @@ class Loop(loop.Loop):
         else: return rcStatus.DOWN
 
     def __init__(self, loopFile):
-        loop.Loop.__init__(self, loopFile)
+        Res.Loop.__init__(self, loopFile)

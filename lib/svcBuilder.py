@@ -117,7 +117,7 @@ def add_loops(svc, conf):
         if re.match('loop#[0-9]', s, re.I) is None:
             continue
         file = conf.get(s, "file")
-        loop = __import__('loop'+rcEnv.sysname)
+        loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(file)
         set_optional_and_disable(r, conf, s)
         svc += r
