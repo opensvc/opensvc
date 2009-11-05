@@ -22,14 +22,14 @@ import os
 import resDg
 
 def get_blockdev_sd_slaves(syspath):
-    slaves = []
+    slaves = set()
     for s in os.listdir(syspath):
         if re.match('^sd[a-z]*', s) is not None:
-            slaves.append('/dev/' + s)
+            slaves.add('/dev/' + s)
             continue
         deeper = os.path.join(syspath, s, 'slaves')
         if os.path.isdir(deeper):
-            slaves += get_blockdev_sd_slaves(deeper)
+            slaves |= get_blockdev_sd_slaves(deeper)
     return slaves
 
 class Vg(resDg.Dg):
@@ -103,7 +103,7 @@ class Vg(resDg.Dg):
                 # means the lv is inactive
                 continue
             syspath = '/sys/block/dm-'+minor+'/slaves'
-            disks.add(get_blockdev_sd_slaves(syspath))
+            disks |= get_blockdev_sd_slaves(syspath)
         self.log.debug("found disks %s held by vg %s" % (disks, self.name))
         self.disks = disks
         return disks
