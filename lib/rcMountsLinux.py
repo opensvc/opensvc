@@ -18,7 +18,7 @@
 #
 
 import rcMounts
-import loopLinux
+import resLoopLinux as Res
 from rcUtilities import *
 
 
@@ -33,7 +33,7 @@ class Mounts(rcMounts.Mounts):
             return False
         if i.dev == dev:
             return True
-        if i.dev == loopLinux.file_to_loop(dev):
+        if i.dev == Res.file_to_loop(dev):
             return True
         return False
 
