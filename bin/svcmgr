@@ -39,6 +39,10 @@ svcs = []
 __ver = rcEnv.prog + " version " + str(rcEnv.ver)
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
+parser.add_option("--debug", default="False",
+		  action="store_true", dest="debug",
+                  help="debug mode")
+
 
 cmd = os.path.basename(__file__)
 if cmd == 'allservices':
