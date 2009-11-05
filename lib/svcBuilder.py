@@ -130,7 +130,7 @@ def add_vgs(svc, conf):
         if re.match('vg#[0-9]', s, re.I) is None:
             continue
         name = conf.get(s, "vgname")
-        vg = __import__('vg'+rcEnv.sysname)
+        vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
