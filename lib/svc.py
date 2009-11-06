@@ -102,6 +102,23 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
+    def group_status(self, type_list):
+        """print each resource status for a service
+        """
+        status = {}
+        groups = ["ip", "disk"]
+        moregroups = groups + ["other", "overall"]
+        for group in moregroups:
+            status[group] = rcStatus.Status(rcStatus.NA)
+        for t in type_list:
+            group = t.split('.')[0]
+            if group not in groups:
+                group = "other"
+            for r in self.get_res_sets(t):
+                status[group] += r.status()
+                status["overall"] += r.status()
+        return status
+
     def disklist(self):
         """List all disks held by all resources of this service
         """

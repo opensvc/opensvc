@@ -24,6 +24,7 @@ import svc
 class SvcHosted(svc.Svc):
     """Define hosted services
     """
+    status_types = ["disk.loop", "disk.mount", "disk.vg", "disk.pool", "ip"]
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
@@ -62,11 +63,15 @@ class SvcHosted(svc.Svc):
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["disk.loop", "disk.mount", "disk.vg", "disk.pool", "ip"])
+        return svc.Svc.status(self, self.status_types)
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["disk.loop", "disk.mount", "disk.vg", "disk.pool", "ip"])
+        return svc.Svc.print_status(self, self.status_types)
+
+    def group_status(self):
+        """status of the resources of a Lxc service"""
+        return svc.Svc.group_status(self, self.status_types)
 
     def diskstart(self):
         """start a hosted service:

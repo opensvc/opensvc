@@ -26,6 +26,8 @@ import svc
 
 class SvcZone(svc.Svc):
     """ Define Zone services"""
+    status_types = ["zone", "ip", "disk.vg", "disk.mount"]
+
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"Zone",optional, disabled)
 

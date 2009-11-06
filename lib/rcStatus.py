@@ -30,9 +30,9 @@ RED = 31
 YELLOW = 33
 
 def colorize(color, text):
-    if os.isatty(1):
-        return '\033['+str(color)+'m'+text+'\033[m'
-    else:
+    #if os.isatty(1):
+    #    return '\033['+str(color)+'m'+text+'\033[m'
+    #else:
         return text
 
 _status_value = {
@@ -92,8 +92,6 @@ def print_status(resource, status):
 class Status(object):
     """Class that wraps printing and calculation of resource status
     """
-    status = UNDEF
-
     def reset(self):
         self.status = UNDEF
 
@@ -105,3 +103,6 @@ class Status(object):
 
     def __str__(self):
         return status_str(self.status)
+
+    def __init__(self, initial_status=UNDEF):
+        self.status = initial_status

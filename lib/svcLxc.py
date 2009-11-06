@@ -25,6 +25,7 @@ import rcStatus
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
+    status_types = ["lxc", "disk.loop", "disk.mount", "disk.vg", "ip"]
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
@@ -62,11 +63,15 @@ class SvcLxc(svc.Svc):
 
     def status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.status(self, ["lxc", "disk.loop", "disk.mount", "disk.vg", "ip"])
+        return svc.Svc.status(self, self.status_types)
 
     def print_status(self):
         """status of the resources of a Lxc service"""
-        return svc.Svc.print_status(self, ["lxc", "disk.loop", "disk.mount", "disk.vg", "ip"])
+        return svc.Svc.print_status(self, self.status_types)
+
+    def group_status(self):
+        """status of the resources of a Lxc service"""
+        return svc.Svc.group_status(self, self.status_types)
 
     def startlxc(self):
         self.sub_set_action("lxc", "start")
