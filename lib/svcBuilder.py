@@ -333,9 +333,9 @@ def build(name):
         return None
 
     if conf.has_option("default", "service_type"):
-        svc.service_type = conf.get("default", "service_type")
+        svc.svctype = conf.get("default", "service_type")
     else:
-        svc.service_type = ''
+        svc.svctype = ''
 
     if conf.has_option("default", "autostart_node"):
         svc.autostart_node = conf.get("default", "autostart_node")
