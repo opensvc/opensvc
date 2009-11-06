@@ -95,6 +95,10 @@ class Status(object):
     def reset(self):
         self.status = UNDEF
 
+    def __add__(self, s):
+        self.status = _merge(self.status, s.status)
+        return self
+
     def __iadd__(self, s):
         """Merge a status with current global status
         """

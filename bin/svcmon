@@ -30,6 +30,7 @@ pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import svcBuilder
+import xmlrpcClient
 from rcUtilities import *
 from rcGlobalEnv import rcEnv
 
@@ -38,22 +39,24 @@ def svcmon_verbose(svcs):
         print banner(svc.svcname)
         svc.print_status()
 
-def svcmon_normal(svcs):
-    fmt = '%-14s %-9s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+def svcmon_normal(svcs, upddb=False):
+    fmt = '%-12s %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
     out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "mount ", "overall")
     out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status ")
     out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "-------")
     for svc in svcs:
-	status = svc.group_status()
-	out += fmt % (
-		svc.svcname,
-		svc.svctype,
-		svc.svcmode,
-		status["container"],
-		status["ip"],
-		status["disk"],
-		status["mount"],
-		status["overall"])
+       status = svc.group_status()
+       out += fmt % (
+              svc.svcname,
+              svc.svctype,
+              svc.svcmode,
+              status["container"],
+              status["ip"],
+              status["disk"],
+              status["mount"],
+              status["overall"])
+       if upddb:
+           xmlrpcClient.svcmon_update(svc, status)
     print out
 
 svcs = []
@@ -62,10 +65,17 @@ __usage = "%prog [options]\n\nDisplay services status"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--service", default=None, action="store", dest="parm_svcs",
                   help="comma-separated list of service to display status of")
+parser.add_option("--updatedb", default=None, action="store_true", dest="parm_upddb",
+                  help="update resource status in central database")
 parser.add_option("--verbose", default=None, action="store_true", dest="parm_verbose",
                   help="display per-resource status for each selected service")
 
 (options, args) = parser.parse_args()
+
+if hasattr(options, "parm_upddb") and options.parm_upddb is not None:
+    upddb = True
+else:
+    upddb = False
 
 if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
     svcs = svcBuilder.build_services(svcnames=options.parm_svcs.split(','))
@@ -75,4 +85,6 @@ else:
 if hasattr(options, "parm_verbose") and options.parm_verbose is not None:
     svcmon_verbose(svcs)
 else:
-    svcmon_normal(svcs)
+    svcmon_normal(svcs, upddb)
+
+

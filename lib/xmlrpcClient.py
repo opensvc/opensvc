@@ -64,3 +64,24 @@ def end_action(svc, action, begin, end, ret):
         )
     except:
         pass
+
+def svcmon_update(svc, status):
+    try:
+        vars = [\
+            "mon_svcname",
+            "mon_svctype",
+            "mon_nodname",
+            "mon_ipstatus",
+            "mon_fsstatus",
+            "mon_prinodes"]
+        vals = [\
+            repr(svc.svcname),
+            repr(svc.svctype),
+            repr(rcEnv.nodename),
+            repr(str(status["ip"])),
+            repr(str(status["disk"]+status["mount"])),
+            repr(' '.join(svc.nodes))]
+        proxy.svcmon_update(vars, vals)
+    except:
+        pass
+
