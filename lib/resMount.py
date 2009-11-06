@@ -26,7 +26,7 @@ class Mount(Res.Resource):
     """
     def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
                 disabled=False, scsireserv=False):
-        Res.Resource.__init__(self, "disk.mount", optional, disabled)
+        Res.Resource.__init__(self, "mount", optional, disabled)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType

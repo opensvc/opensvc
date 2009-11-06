@@ -121,8 +121,8 @@ class Resource(object):
 
 class ResourceSet(Resource):
     """ Define Set of same type resources
-    Example 1: ResourceSet("disk.mount",[m1,m2])
-    Example 2: r=ResourceSet("disk.mount",[ip1])
+    Example 1: ResourceSet("mount",[m1,m2])
+    Example 2: r=ResourceSet("mount",[ip1])
     It define the resource type
     """
     def __init__(self,type=None,resources=[],optional=False,disabled=False):

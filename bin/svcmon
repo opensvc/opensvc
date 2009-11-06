@@ -39,10 +39,20 @@ def svcmon_verbose(svcs):
         svc.print_status()
 
 def svcmon_normal(svcs):
-    out = '%-14s %-6s %-6s %-6s %-7s\n'%("svcname", "ip", "disk", "other", "overall")
+    fmt = '%-14s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+    out =  fmt % ("service", "container", "container", "ip    ", "disk  ", "mount ", "overall")
+    out += fmt % ("name   ", "type     ", "status   ", "status", "status", "status", "status ")
+    out += fmt % ("-------", "---------", "---------", "------", "------", "------", "-------")
     for svc in svcs:
 	status = svc.group_status()
-	out += '%-14s %-6s %-6s %-6s %-7s\n'%(svc.svcname, status["ip"], status["disk"], status["other"], status["overall"])
+	out += fmt % (
+		svc.svcname,
+		svc.svcmode,
+		status["container"],
+		status["ip"],
+		status["disk"],
+		status["mount"],
+		status["overall"])
     print out
 
 svcs = []

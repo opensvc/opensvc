@@ -106,14 +106,14 @@ class Svc(Resource, Freezer):
         """print each resource status for a service
         """
         status = {}
-        groups = ["ip", "disk"]
-        moregroups = groups + ["other", "overall"]
+        groups = ["container", "ip", "disk", "mount"]
+        moregroups = groups + ["overall"]
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
         for t in type_list:
             group = t.split('.')[0]
             if group not in groups:
-                group = "other"
+                raise
             for r in self.get_res_sets(t):
                 status[group] += r.status()
                 status["overall"] += r.status()
@@ -187,10 +187,10 @@ if __name__ == "__main__" :
     print "s1=",s1
     print """s1+=Resource("ip")"""
     s1+=Resource("ip")
-    print """s1+=Resource("disk.mount")"""
-    s1+=Resource("disk.mount")
-    print """s1+=Resource("disk.mount")"""
-    s1+=Resource("disk.mount")
+    print """s1+=Resource("mount")"""
+    s1+=Resource("mount")
+    print """s1+=Resource("mount")"""
+    s1+=Resource("mount")
     print "s1=",s1
 
     print """s1.action("status")"""

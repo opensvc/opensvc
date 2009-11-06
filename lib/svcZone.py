@@ -26,10 +26,10 @@ import svc
 
 class SvcZone(svc.Svc):
     """ Define Zone services"""
-    status_types = ["zone", "ip", "disk.vg", "disk.mount"]
+    status_types = ["container.zone", "ip", "disk.vg", "mount"]
 
     def __init__(self,optional=False,disabled=False):
-        svc.Svc.__init__(self,"Zone",optional, disabled)
+        svc.Svc.__init__(self,"container.zone",optional, disabled)
 
     def start(self):
         """start a zone
@@ -43,11 +43,11 @@ class SvcZone(svc.Svc):
         """
         print "starting %s" % self.__class__.__name__
         self.sub_set_action("ip", "check_ping")
-        self.sub_set_action("zone", "ready")
+        self.sub_set_action("container.zone", "ready")
         self.sub_set_action("ip", "start")
-        self.sub_set_action("zone", "boot")
+        self.sub_set_action("container.zone", "boot")
         self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("disk.mount", "start")
+        self.sub_set_action("mount", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
@@ -60,9 +60,9 @@ class SvcZone(svc.Svc):
         """
         print "stopping %s" % self.__class__.__name__
         self.sub_set_action("app", "stop")
-        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("mount", "stop")
         self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("zone", "stop")
+        self.sub_set_action("container.zone", "stop")
         self.sub_set_action("ip", "stop")
 
     def startip(self):
@@ -85,10 +85,10 @@ class SvcZone(svc.Svc):
         self.sub_set_action("disk.vg", "stop")
 
     def mount(self):
-        self.sub_set_action("disk.mount", "start")
+        self.sub_set_action("mount", "start")
 
     def umount(self):
-        self.sub_set_action("disk.mount", "stop")
+        self.sub_set_action("mount", "stop")
 
 
 if __name__ == "__main__":
