@@ -386,7 +386,7 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
-    services = []
+    services = {}
     for name in os.listdir(pathetc):
         if len(svcnames) > 0 and name not in svcnames:
             continue
@@ -399,6 +399,6 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
             continue
         if onlyprimary and svc.autostart_node != rcEnv.nodename:
             continue
-        services.append(svc)
-    return services
+        services[svc.svcname] = svc
+    return [ s for n ,s in sorted(services.items()) ]
 

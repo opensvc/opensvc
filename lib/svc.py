@@ -46,6 +46,11 @@ class Svc(Resource, Freezer):
         Resource.__init__(self, type, optional, disabled)
         Freezer.__init__(self, svcname)
 
+    def __cmp__(self, other):
+        """order by service name
+        """
+        return cmp(self.svcname, other.svcname)
+
     def __iadd__(self, r):
         """svc+=aResourceSet
         svc+=aResource
