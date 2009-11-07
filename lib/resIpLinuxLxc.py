@@ -22,18 +22,15 @@
 
 import resIpLinux as Res
 import rcIfconfigLinuxlxc as rcIfconfig
+import rcStatus
 from subprocess import *
 
 class Ip(Res.Ip):
-    def startip_cmd(self):
-        cmd = rcEnv.rsh.split(' ') + [self.lxcname, 'ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
-        return self.vcall(cmd)
-
-    def stopip_cmd(self):
-        cmd = rcEnv.rsh.split(' ') + [self.lxcname, 'ifconfig', self.stacked_dev, 'down']
-        return self.vcall(cmd)
-
     def is_up(self):
+        for lxc in self.svc.get_res_sets("container.lxc"):
+            pass
+        if lxc.status() == rcStatus.DOWN:
+            return False
         ifconfig = rcIfconfig.ifconfig(self.lxcname)
         if ifconfig.has_param("ipaddr", self.addr) is not None:
             self.log.debug("%s@%s is up" % (self.addr, self.ipDev))

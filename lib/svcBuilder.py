@@ -107,6 +107,7 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(ipdev, ipname)
         set_optional_and_disable(r, conf, s)
+        r.svc = svc
         svc += r
 
 def add_loops(svc, conf):
@@ -120,6 +121,7 @@ def add_loops(svc, conf):
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(file)
         set_optional_and_disable(r, conf, s)
+        r.svc = svc
         svc += r
 
 def add_vgs(svc, conf):
@@ -134,6 +136,7 @@ def add_vgs(svc, conf):
         r = vg.Vg(name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
+        r.svc = svc
         svc += r
 
 def add_pools(svc, conf):
@@ -148,6 +151,7 @@ def add_pools(svc, conf):
         r = pool.Pool(name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
+        r.svc = svc
         svc += r
 
 def add_mounts(svc, conf):
@@ -165,6 +169,7 @@ def add_mounts(svc, conf):
         r = mount.Mount(mnt, dev, type, mnt_opt)
         set_optional_and_disable(r, conf, s)
         #set_scsireserv(r, conf, s)
+        r.svc = svc
         svc += r
 
 def add_syncs(svc, conf):
@@ -196,6 +201,7 @@ def add_syncs(svc, conf):
 
         r = rsync.Rsync(src, dst, exclude, targethash)
         set_optional_and_disable(r, conf, s)
+        r.svc = svc
         svc += r
 
 def setup_logging():

@@ -26,7 +26,7 @@ class Ip(Res.Ip):
     def check_ping(self):
         count=1
         timeout=5
-        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), self.addr]
+        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.addr]
         (ret, out) = self.call(cmd)
         if ret == 0:
             return True
