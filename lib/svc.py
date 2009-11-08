@@ -127,12 +127,10 @@ class Svc(Resource, Freezer):
     def disklist(self):
         """List all disks held by all resources of this service
         """
-        disks = []
+        disks = set()
         for rs in self.resSets:
             for r in rs.resources:
-                disks += r.disklist()
-        # remove duplicate entries in disk list
-        disks = list(set(disks)) 
+                disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
@@ -149,16 +147,16 @@ class Svc(Resource, Freezer):
         self.sub_set_action("rsync", "syncdrp")
 
     def scsirelease(self):
-        self.sub_set_action("vg", "scsirelease")
-        self.sub_set_action("pool", "scsirelease")
+        self.sub_set_action("disk.vg", "scsirelease")
+        self.sub_set_action("disk.zpool", "scsirelease")
 
     def scsireserv(self):
-        self.sub_set_action("vg", "scsireserv")
-        self.sub_set_action("pool", "scsireserv")
+        self.sub_set_action("disk.vg", "scsireserv")
+        self.sub_set_action("disk.zpool", "scsireserv")
 
     def scsicheckreserv(self):
-        self.sub_set_action("vg", "scsicheckreserv")
-        self.sub_set_action("pool", "scsicheckreserv")
+        self.sub_set_action("disk.vg", "scsicheckreserv")
+        self.sub_set_action("disk.zpool", "scsicheckreserv")
 
     def action(self, action):
         rcEnv.logfile = self.logfile

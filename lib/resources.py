@@ -117,7 +117,7 @@ class Resource(object):
         """List disks the resource holds. Some resource have none,
         and can leave this function as is.
         """
-        return []
+        return set()
 
 class ResourceSet(Resource):
     """ Define Set of same type resources

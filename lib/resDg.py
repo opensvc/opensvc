@@ -78,9 +78,6 @@ class Dg(Res.Resource):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
-    def disklist(self):
-        return []
-
 if __name__ == "__main__":
     for c in (Dg,) :
         help(c)
