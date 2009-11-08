@@ -24,7 +24,7 @@ import svc
 class SvcHosted(svc.Svc):
     """Define hosted services
     """
-    status_types = ["disk.loop", "mount", "disk.vg", "disk.pool", "ip"]
+    status_types = ["disk.loop", "mount", "disk.vg", "disk.zpool", "ip"]
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
@@ -43,7 +43,7 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("ip", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("disk.pool", "start")
+        self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("mount", "start")
         self.sub_set_action("app", "start")
 
@@ -57,7 +57,7 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("app", "stop")
         self.sub_set_action("mount", "stop")
         self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.pool", "stop")
+        self.sub_set_action("disk.zpool", "stop")
         self.sub_set_action("disk.loop", "stop")
         self.sub_set_action("ip", "stop")
 
@@ -82,7 +82,7 @@ class SvcHosted(svc.Svc):
         """
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("disk.pool", "start")
+        self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("mount", "start")
 
     def diskstop(self):
@@ -95,7 +95,7 @@ class SvcHosted(svc.Svc):
         """
         self.sub_set_action("mount", "stop")
         self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.pool", "stop")
+        self.sub_set_action("disk.zpool", "stop")
         self.sub_set_action("disk.loop", "stop")
 
     def startip(self):
@@ -118,10 +118,10 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("disk.vg", "stop")
 
     def startpool(self):
-        self.sub_set_action("disk.pool", "start")
+        self.sub_set_action("disk.zpool", "start")
 
     def stoppool(self):
-        self.sub_set_action("disk.pool", "stop")
+        self.sub_set_action("disk.zpool", "stop")
 
     def mount(self):
         self.sub_set_action("mount", "start")
