@@ -32,6 +32,20 @@ def get_blockdev_sd_slaves(syspath):
             slaves |= get_blockdev_sd_slaves(deeper)
     return slaves
 
+def dm_major():
+    path = os.path.join(os.path.sep, 'proc', 'devices')
+    try:
+        f = open(path)
+    except:
+        raise
+    for line in f.readlines():
+        words = line.split()
+        if len(words) == 2 and words[1] == 'device-mapper':
+            f.close()
+            return int(words[0])
+    f.close()
+    raise
+
 class Vg(resDg.Dg):
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
         self.id = 'vg ' + name
@@ -73,20 +87,6 @@ class Vg(resDg.Dg):
         (ret, out) = self.vcall(cmd)
         return ret
 
-    def stop(self):
-        if self.scsirelease() != 0:
-            return 1
-        if self.do_stop() != 0:
-            return 1
-        return 0
-
-    def start(self):
-        if self.do_start() != 0:
-            return 1
-        if self.scsireserv() != 0:
-            return 1
-        return 0
-
     def disklist(self):
         if not self.has_it():
             return set()
@@ -94,16 +94,40 @@ class Vg(resDg.Dg):
             return self.disks
 
         disks = set()
-        cmd = [ 'lvs', '-o', 'lv_kernel_minor', '--noheadings', self.name ]
-        (ret, out) = self.call(cmd)
-        if ret != 0:
-            raise Exception()
-        for minor in out.split():
-            if minor == '-1':
-                # means the lv is inactive
-                continue
-            syspath = '/sys/block/dm-'+minor+'/slaves'
-            disks |= get_blockdev_sd_slaves(syspath)
+
+        """Get volume group's PV from the clear text metadata backup file
+        """
+        config = os.path.join(os.path.sep, 'etc', 'lvm', 'backup', self.name)
+        if not os.path.exists(config):
+            return disks
+        try:
+            f = open(config)
+        except:
+            self.log.error("can not open %s" % config)
+            raise
+        pvs = set()
+        for line in f.readlines():
+            words = line.split()
+            if len(words) > 3 and words[0] == 'device':
+                pvs.add(words[2].strip('"'))
+
+        """If PV is a device map, replace by its sysfs name (dm-*)
+        If device map has slaves, replace by its slaves
+        """
+        major = dm_major()
+        for pv in pvs:
+            try:
+                statinfo = os.stat(pv)
+            except:
+                self.log.error("can not stat %s" % pv)
+                raise
+            if os.major(statinfo.st_rdev) == major:
+                dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+                syspath = '/sys/block/' + dm + '/slaves'
+                disks |= get_blockdev_sd_slaves(syspath)
+            else:
+                disks.add(pv)
+
         self.log.debug("found disks %s held by vg %s" % (disks, self.name))
         self.disks = disks
         return disks
