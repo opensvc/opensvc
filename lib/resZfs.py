@@ -103,15 +103,23 @@ class Pool(resDg.Dg):
                         watchNext = False
                 elif watchNext == True :
                     # only look for 'tab  c*d vdev entries
-                    if re.match('^\t   *c', line) is not None:
+                    if re.match('^\t  ', line) is not None:
+                        if re.match('^\t  mirror', line) is not None:
+                            continue
+                        if re.match('^\t  raid', line) is not None:
+                            continue
                         disk = line.split()[0]
                         disks.add("/dev/rdsk/" + disk )
         else :
             for line in out.split('\n'):
                 if re.match('^\t  ', line) is not None:
+                    if re.match('^\t  mirror', line) is not None:
+                        continue
+                    if re.match('^\t  raid', line) is not None:
+                        continue
                     # vdev entry
                     disk=line.split()[0]
-                    if re.match("^c.*d", disk) is not None :
+                    if re.match("^.*", disk) is not None :
                         disks.add("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         self.disks = disks
