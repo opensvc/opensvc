@@ -18,13 +18,28 @@ log.addHandler(filehandler)
 log.addHandler(streamhandler)
 #log.setLevel(rcEnv.loglevel)
 
-db = _mysql.connect(
-    host='localhost',
-    user='opensvc',
-    passwd='opensvc',
-    unix_socket='/tmp/mysql.sock.unxweb',
-    db='opensvc'
-)
+class osvcdb:
+    db = None
+
+    def connect(self):
+        self.db = _mysql.connect(
+            host='localhost',
+            user='opensvc',
+            passwd='opensvc',
+            unix_socket='/tmp/mysql.sock.unxweb',
+            db='opensvc'
+        )
+
+    def query(self, sql):
+        if self.db is None:
+            try: self.connect()
+            except:
+                log.error('can not open connection to database')
+                return
+        self.db.ping(True)
+        self.db.query(sql)
+
+db = osvcdb()
 
 def delete_services(hostid=None):
     if hostid is None:
