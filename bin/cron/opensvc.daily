@@ -43,6 +43,7 @@ for svc in svcBuilder.build_services():
 	 'svc_drptype',
 	 'svc_autostart',
 	 'svc_app',
+	 'svc_containertype',
 	 'svc_drnoaction'],
 	[repr(hostid),
 	 repr(svc.svcname),
@@ -53,5 +54,6 @@ for svc in svcBuilder.build_services():
 	 repr(svc.drp_type),
 	 repr(svc.autostart_node),
 	 repr(svc.app),
+	 repr(svc.svcmode),
 	 repr(svc.drnoaction)]
     )

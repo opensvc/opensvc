@@ -72,14 +72,20 @@ def svcmon_update(svc, status):
             "mon_svctype",
             "mon_nodname",
             "mon_ipstatus",
+            "mon_diskstatus",
+            "mon_containerstatus",
             "mon_fsstatus",
+            "mon_overallstatus",
             "mon_prinodes"]
         vals = [\
             repr(svc.svcname),
             repr(svc.svctype),
             repr(rcEnv.nodename),
             repr(str(status["ip"])),
-            repr(str(status["disk"]+status["mount"])),
+            repr(str(status["disk"])),
+            repr(str(status["container"])),
+            repr(str(status["mount"])),
+            repr(str(status["overall"])),
             repr(' '.join(svc.nodes))]
         proxy.svcmon_update(vars, vals)
     except:
