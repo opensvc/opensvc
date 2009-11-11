@@ -45,6 +45,12 @@ class IpConflict(Exception):
     def __str__(self):
         return repr(self.value)
 
+class IpUnknown(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 class Ip(Res.Resource):
     """ basic ip resource
     """
@@ -53,7 +59,11 @@ class Ip(Res.Resource):
         self.ipDev=ipDev
         self.ipName=ipName
         self.id = 'ip ' + ipName + '@' + ipDev
-        self.addr = socket.gethostbyname(ipName)
+        try:
+            self.addr = socket.gethostbyname(ipName)
+        except:
+            self.log.error("could not resolve %s to an ip address")
+            raise IpUnknown(self.ipName)
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
