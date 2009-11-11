@@ -42,13 +42,94 @@ def begin_action(svc, action, begin):
     except:
         pass
 
-def end_action(svc, action, begin, end, ret):
+def end_action(svc, action, begin, end, logfile):
+    err = 'ok'
+    dateprev = None
+    lines = open(logfile, 'r').read()
+    """Example logfile line:
+    2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
+    """
+    for line in lines.split(';EOL\n'):
+        if line.count(';') != 4:
+            continue
+        date = line.split(';')[0]
+
+        """Push to database the previous line, so that begin and end
+        date are available.
+        """
+        if dateprev is not None:
+            try:
+                proxy.end_action(
+                    ['svcname',
+                     'action',
+                     'hostname',
+                     'hostid',
+                     'pid',
+                     'begin',
+                     'end',
+                     'status_log',
+                     'status'],
+                    [repr(svc.svcname),
+                     repr(res.lower()+' '+action),
+                     repr(rcEnv.nodename),
+                     repr(hostid),
+                     repr(pid),
+                     repr(str(dateprev)),
+                     repr(str(date)),
+                     repr(str(msg)),
+                     repr(str(res_err))]
+                )
+            except:
+                pass
+
+        res_err = 'ok'
+        (date, res, lvl, msg, pid) = line.split(';')
+        if lvl is None or lvl == 'DEBUG':
+            continue
+        if lvl == 'ERROR':
+            err = 'err'
+            res_err = 'err'
+        if lvl == 'WARNING' and err != 'err':
+            err = 'warn'
+        if lvl == 'WARNING' and res_err != 'err':
+            res_err = 'warn'
+        dateprev = date
+
+    """Push the last log entry, using 'end' as end date
+    """
     try:
         proxy.end_action(
             ['svcname',
              'action',
              'hostname',
              'hostid',
+             'pid',
+             'begin',
+             'end',
+             'status_log',
+             'status'],
+            [repr(svc.svcname),
+             repr(res.lower()+' '+action),
+             repr(rcEnv.nodename),
+             repr(hostid),
+             repr(pid),
+             repr(str(dateprev)),
+             repr(str(end)),
+             repr(str(msg)),
+             repr(str(res_err))]
+        )
+    except:
+        pass
+
+    """Complete the wrap-up database entry
+    """
+    try:
+        proxy.end_action(
+            ['svcname',
+             'action',
+             'hostname',
+             'hostid',
+             'pid',
              'begin',
              'end',
              'time',
@@ -57,10 +138,11 @@ def end_action(svc, action, begin, end, ret):
              repr(action),
              repr(rcEnv.nodename),
              repr(hostid),
+             repr(pid),
              repr(str(begin)),
              repr(str(end)),
              repr(str(end-begin)),
-             repr(str(ret))]
+             repr(str(err))]
         )
     except:
         pass

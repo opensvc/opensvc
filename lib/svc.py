@@ -159,15 +159,38 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.zpool", "scsicheckreserv")
 
     def action(self, action):
-        rcEnv.logfile = self.logfile
-        import xmlrpcClient
         from datetime import datetime
+        import xmlrpcClient
+        import tempfile
+        import logging
+        from os import unlink
         begin = datetime.now()
+
+        """Provision a database entry to store action log later
+        """
         xmlrpcClient.begin_action(self, action, begin)
-        ret = getattr(self, action)()
+
+        """Per action logfile to push to database at the end of the action
+        """
+        f = tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp', prefix=self.svcname+'.'+action)
+        actionlogfile = f.name
+        f.close()
+        log = logging.getLogger()
+        actionlogformatter = logging.Formatter("%(asctime)s;%(name)s;%(levelname)s;%(message)s;%(process)d;EOL")
+        actionlogfilehandler = logging.FileHandler(actionlogfile)
+        actionlogfilehandler.setFormatter(actionlogformatter)
+        log.addHandler(actionlogfilehandler)
+
+        """Trigger action"""
+        getattr(self, action)()
+
+        """Push result and logs to database
+        """
+        actionlogfilehandler.close()
+        self.log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        xmlrpcClient.end_action(self, action, begin, end, ret)
-        return ret
+        xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+        unlink(actionlogfile)
 
     def restart(self):
 	""" stop then start service"""
