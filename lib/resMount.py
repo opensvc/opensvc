@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import resources as Res
+import os
 
 class Mount(Res.Resource):
     """Define a mount resource 
@@ -37,6 +38,15 @@ class Mount(Res.Resource):
     def set_scsireserv():
         self.scsiReservation = scsireserv
 
+    def start(self):
+        if not os.path.exists(self.mountPoint):
+            try:
+                os.mkdir(self.mountPoint)
+            except:
+                self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
+                raise
+            self.log.info("create missing mountpoint %s" % self.mountPoint)
+                
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
                 self.mountPoint, self.device, self.fsType, self.mntOpt)

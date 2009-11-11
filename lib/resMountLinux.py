@@ -55,6 +55,7 @@ class Mount(Res.Mount):
         else: return rcStatus.DOWN
 
     def start(self):
+        Res.Mount.start(self)
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
