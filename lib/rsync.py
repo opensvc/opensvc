@@ -29,13 +29,19 @@ def sync(self, type, log):
         log.debug('%s => %s sync not applicable to %s',
                   (self.src, self.dst, type))
         return 0
-    for node in self.target[type].split(' '):
-        if node == rcEnv.nodename:
-            continue
+    targets = self.target[type]
+
+    """Discard the local node from the set
+    """
+    targets -= set([rcEnv.nodename])
+
+    if len(targets) == 0:
+        log.info("no node to sync")
+        return 0
+    for node in targets:
         dst = node + ':' + self.dst
         cmd = self.cmd
         cmd.append(dst)
-        log.info(' '.join(cmd))
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
@@ -48,24 +54,21 @@ class Rsync(Res.Resource):
     or both.
     """
     timeout = 3600
-    options = [ '-HpogDtrlvx', '--stats', '--delete', '--force' ]
+    options = [ '-HpogDtrlvx', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
 
     def syncnodes(self):
-        log = logging.getLogger('SYNCNODES')
-        return sync(self, "nodes", log)
+        return sync(self, "nodes", self.log)
 
     def syncdrp(self):
-        log = logging.getLogger('SYNCDRP')
-        return sync(self, "drpnodes", log)
+        return sync(self, "drpnodes", self.log)
 
-    def __init__(self, src, dst, exclude='', target={},
+    def __init__(self, src, dst, exclude=[], target={},
                  optional=False, disabled=False):
         self.src = src
         self.dst = dst
         self.exclude = exclude
         self.target = target
-        self.options.append('--timeout=' + str(self.timeout))
-        self.cmd = ['rsync'] + self.options + [self.exclude, self.src]
+        self.cmd = ['rsync'] + self.options + self.exclude + self.src
         Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):

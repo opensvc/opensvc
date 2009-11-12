@@ -172,10 +172,24 @@ def add_mounts(svc, conf):
         r.svc = svc
         svc += r
 
+def add_mandatory_syncs(svc):
+    src = []
+    src.append(os.path.join(rcEnv.pathetc, svc.svcname))
+    src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
+    src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
+    dst = os.path.join(rcEnv.pathetc)
+    exclude = []
+    targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
+    r = rsync.Rsync(src, dst, exclude, targethash)
+    r.svc = svc
+    svc += r
+
 def add_syncs(svc, conf):
     """Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus
     the those described in the config file.
     """
+    add_mandatory_syncs(svc)
+
     for s in conf.sections():
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
@@ -183,21 +197,20 @@ def add_syncs(svc, conf):
            not conf.has_option(s, 'dst'):
             log.error("config file section %s must have src and dst set" % s)
             return 1
-        src = conf.get(s, "src")
+        src = conf.get(s, "src").split()
         dst = conf.get(s, "dst")
         if conf.has_option(s, 'exclude'):
-            exclude = conf.get(s, 'exclude')
+            exclude = conf.get(s, 'exclude').split()
         else:
-            exclude = ''
+            exclude = []
         if conf.has_option(s, 'target'):
             target = conf.get(s, 'target').split()
         else:
             target = ['nodes', 'drpnodes']
 
         targethash = {}
-        for t in target:
-            if conf.has_option("default", t):
-                targethash[t] = conf.get("default", t)
+        if 'nodes' in target: targethash['nodes'] = svc.nodes
+        if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
         r = rsync.Rsync(src, dst, exclude, targethash)
         set_optional_and_disable(r, conf, s)
@@ -317,23 +330,23 @@ def build(name):
     #
 
     if conf.has_option("default", "nodes"):
-        svc.nodes = conf.get("default", "nodes").split()
+        svc.nodes = set(conf.get("default", "nodes").split())
     else:
-        svc.nodes = []
+        svc.nodes = set([])
+
+    if conf.has_option("default", "drpnodes"):
+        svc.drpnodes = set(conf.get("default", "drpnodes").split())
+    else:
+        svc.drpnodes = set([])
 
     if conf.has_option("default", "drpnode"):
         svc.drpnode = conf.get("default", "drpnode")
+        svc.drpnodes |= set([svc.drpnode])
     else:
         svc.drpnode = ''
 
-    if conf.has_option("default", "drpnodes"):
-        svc.drpnodes = conf.get("default", "drpnodes").split()
-    else:
-        svc.drpnodes = []
-
     # prune not managed service
-    if rcEnv.nodename not in set(svc.nodes) | set(svc.drpnode) | \
-                            set(svc.drpnodes) :
+    if rcEnv.nodename not in svc.nodes | svc.drpnodes:
         log.debug('service %s not managed here' % name)
         del(svc)
         return None
