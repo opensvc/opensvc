@@ -38,6 +38,10 @@ def sync(self, type, log):
     if len(targets) == 0:
         log.info("no node to sync")
         return 0
+    if len(self.src) == 0:
+        log.debug("no files to sync")
+        return 0
+
     for node in targets:
         dst = node + ':' + self.dst
         cmd = self.cmd

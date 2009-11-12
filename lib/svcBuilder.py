@@ -173,6 +173,13 @@ def add_mounts(svc, conf):
         svc += r
 
 def add_mandatory_syncs(svc):
+    """Mandatory files to sync:
+    1/ to all nodes: service definition
+    2/ to drpnodes: system files to replace on the drpnode in case of startdrp
+    """
+
+    """1
+    """
     src = []
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
@@ -183,6 +190,20 @@ def add_mandatory_syncs(svc):
     r = rsync.Rsync(src, dst, exclude, targethash)
     r.svc = svc
     svc += r
+
+    """2
+    """
+    targethash = {'drpnodes': svc.drpnodes}
+    """Reparent all PRD backed-up file in /DR.opensvc/node on the drpnode
+    """
+    dst = os.path.join(rcEnv.drp_path, rcEnv.nodename)
+    for src, exclude in rcEnv.drp_sync_files:
+        """'-R' triggers rsync relative mode
+        """
+        src = [ s for s in src if os.path.exists(s) ]
+        r = rsync.Rsync(src, dst, ['-R']+exclude, targethash)
+        r.svc = svc
+        svc += r
 
 def add_syncs(svc, conf):
     """Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus

@@ -47,7 +47,7 @@ class rcEnv:
     """Directory on DRP node where to store the PRD nodes files necessary
     for takeover.
     """
-    drp_path = "/DR.svctools"
+    drp_path = "/DR.opensvc/"
     drp_sync_excludes = [
         '--exclude "/spice"',
         '--exclude "/dbadm"',
@@ -112,16 +112,17 @@ class rcEnv:
         "/etc/krb5*",
         "/etc/sudoers",
     ]
+    drp_sync_misc = [
+        "/var/centrifydc",
+        "/var/opt/oracle",
+        "/var/spool/cron",
+        "/var/spool/cron/crontabs",
+        "/var/yp/binding",
+        "/usr/local/oraenv", "/usr/local/coraenv", "/usr/local/dbhome",
+        "/usr/local/etc/sudoers",
+    ]
     drp_sync_files = [
-        [[drp_sync_etc_solaris, drp_sync_etc_linux, drp_sync_etc_common], "/etc", []],
-        [["/var/centrifydc"], "/var", []],
-        [["/var/opt/oracle"], "/var/opt", []],
-        [["/var/spool/cron"], "/var/spool", []],
-        [["/var/spool/cron/crontabs"], "/var/spool/cron", []],
-        [["/var/yp/binding"], "/var/yp", []],
-        [["/usr/local/oraenv", "/usr/local/coraenv", "/usr/local/dbhome"], "/usr/local", []],
-        [["/usr/local/etc/sudoers"], "/usr/local/etc", []],
-        [["/home/oracle", "/home/sybase"], "/home", drp_sync_excludes],
-        [["/opt/oracle", "/opt/sybase"], "/opt", drp_sync_excludes],
+        [drp_sync_etc_solaris + drp_sync_etc_linux + drp_sync_etc_common + drp_sync_misc, []],
+        [["/home/oracle", "/home/sybase", "/opt/oracle", "/opt/sybase"], drp_sync_excludes],
     ]
 
