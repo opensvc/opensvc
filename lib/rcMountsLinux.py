@@ -20,7 +20,16 @@
 import rcMounts
 import resLoopLinux as Res
 from rcUtilities import *
+from subprocess import Popen
 
+def get_src_dir_dev(dev):
+    """Given a directory path, return its hosting device
+    """
+    process = Popen(['df', '-l', dev], stdout=PIPE, stderr=STDOUT, close_fds=True)
+    buff = process.communicate()
+    out = buff[0]
+    i = out.index('/')
+    return out[i:].split()[0]
 
 class Mounts(rcMounts.Mounts):
 
@@ -29,11 +38,19 @@ class Mounts(rcMounts.Mounts):
         this line. Returns False otherwize. Also care about weirdos like loops
         and binds, ...
         """
+        if os.path.isdir(dev):
+            is_bind = True
+            src_dir_dev = get_src_dir_dev(dev)
+        else:
+            is_bind = False
+
         if i.mnt != mnt:
             return False
         if i.dev == dev:
             return True
         if i.dev == Res.file_to_loop(dev):
+            return True
+        if is_bind and i.dev == src_dir_dev:
             return True
         return False
 
