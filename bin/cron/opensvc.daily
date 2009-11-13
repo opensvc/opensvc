@@ -42,6 +42,7 @@ for svc in svcBuilder.build_services():
     proxy.update_service(
 	['svc_hostid',
 	 'svc_name',
+	 'svc_type',
 	 'svc_nodes',
 	 'svc_drpnode',
 	 'svc_drpnodes',
@@ -53,6 +54,7 @@ for svc in svcBuilder.build_services():
 	 'svc_drnoaction'],
 	[repr(hostid),
 	 repr(svc.svcname),
+	 repr(svc.svctype),
 	 repr(' '.join(svc.nodes)),
 	 repr(svc.drpnode),
 	 repr(' '.join(svc.drpnodes)),
