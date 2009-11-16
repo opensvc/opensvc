@@ -30,7 +30,7 @@ class rcEnv:
 
     """Database sink for node and service configurations and status collection.
     """
-    dbopensvc = "http://dbopensvc:8000/"
+    dbopensvc = "http://dbopensvc:80/opensvc/default/call/xmlrpc"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
