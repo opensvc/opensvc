@@ -19,14 +19,31 @@
 import os
 import logging
 
-from rcGlobalEnv import *
+from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import rcStatus
 import resources as Res
 
-def sync(self, type, log):
+def remote_node_type(self, node, type):
+    if type == 'drpnodes':
+        type = 'DEV'
+    elif type == 'nodes':
+        type = 'PRD'
+    else:
+        self.log.error('expected remote node type is bogus: %s'%type)
+        raise
+    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
+    cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
+    (ret, out) = self.call(cmd)
+    if out.split()[0] == type:
+        return True
+    self.log.error("node %s type is not '%s'. Check %s:%s"%\
+                   (node, type, node, host_mode_f))
+    return False
+
+def sync(self, type):
     if type not in self.target.keys():
-        log.debug('%s => %s sync not applicable to %s',
+        self.log.debug('%s => %s sync not applicable to %s',
                   (self.src, self.dst, type))
         return 0
     targets = self.target[type]
@@ -36,19 +53,21 @@ def sync(self, type, log):
     targets -= set([rcEnv.nodename])
 
     if len(targets) == 0:
-        log.info("no node to sync")
+        self.log.info("no node to sync")
         return 0
     if len(self.src) == 0:
-        log.debug("no files to sync")
+        self.log.debug("no files to sync")
         return 0
 
     for node in targets:
+        if not remote_node_type(self, node, type):
+            return 1
         dst = node + ':' + self.dst
         cmd = self.cmd
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
-            log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
+            self.log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
             return 1
     return 0
 
@@ -61,10 +80,10 @@ class Rsync(Res.Resource):
     options = [ '-HpogDtrlvx', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
 
     def syncnodes(self):
-        return sync(self, "nodes", self.log)
+        return sync(self, "nodes")
 
     def syncdrp(self):
-        return sync(self, "drpnodes", self.log)
+        return sync(self, "drpnodes")
 
     def __init__(self, src, dst, exclude=[], target={},
                  optional=False, disabled=False):
