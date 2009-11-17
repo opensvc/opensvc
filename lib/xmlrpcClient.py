@@ -59,7 +59,7 @@ def end_action(svc, action, begin, end, logfile):
         """
         if dateprev is not None:
             try:
-                proxy.end_action(
+                proxy.res_action(
                     ['svcname',
                      'action',
                      'hostname',
@@ -98,7 +98,7 @@ def end_action(svc, action, begin, end, logfile):
     """Push the last log entry, using 'end' as end date
     """
     try:
-        proxy.end_action(
+        proxy.res_action(
             ['svcname',
              'action',
              'hostname',
