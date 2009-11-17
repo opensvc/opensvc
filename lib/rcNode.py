@@ -50,9 +50,9 @@ def node_get_hostmode(d):
 		with open(__f) as f:
 			for line in f:
 				w = line.split()[0]
-				if w == 'DEV' or w == 'EXP':
+				if w == 'DEV' or w == 'PRD':
 					return w
-	print "Set DEV or EXP in " + __f
+	print "Set DEV or PRD in " + __f
 	sys.exit(1)
 
 def discover_node():
