@@ -30,7 +30,7 @@ from rcUtilities import *
 import rcOptParser
 import rcLogger
 import rcAddService
-import rsync
+import resRsync
 
 check_privs()
 
@@ -187,7 +187,7 @@ def add_mandatory_syncs(svc):
     dst = os.path.join(rcEnv.pathetc)
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = rsync.Rsync(src, dst, exclude, targethash)
+    r = resRsync.Rsync(src, dst, exclude, targethash)
     r.svc = svc
     svc += r
 
@@ -201,7 +201,7 @@ def add_mandatory_syncs(svc):
         """'-R' triggers rsync relative mode
         """
         src = [ s for s in src if os.path.exists(s) ]
-        r = rsync.Rsync(src, dst, ['-R']+exclude, targethash)
+        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash)
         r.svc = svc
         svc += r
 
@@ -233,7 +233,7 @@ def add_syncs(svc, conf):
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
-        r = rsync.Rsync(src, dst, exclude, targethash)
+        r = resRsync.Rsync(src, dst, exclude, targethash)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
         svc += r
