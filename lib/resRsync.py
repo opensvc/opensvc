@@ -48,6 +48,12 @@ def sync(self, type):
         return 0
     targets = self.target[type]
 
+    """Accept to sync from here only if the service is up
+    """
+    if self.svc.status() != 0:
+        self.log.error("won't sync a service not up")
+        return 1
+
     """Discard the local node from the set
     """
     targets -= set([rcEnv.nodename])
