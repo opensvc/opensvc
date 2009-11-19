@@ -32,7 +32,7 @@ def get_blockdev_sd_slaves(syspath):
             slaves |= get_blockdev_sd_slaves(deeper)
     return slaves
 
-def dm_major():
+def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
     try:
         f = open(path)
@@ -40,7 +40,7 @@ def dm_major():
         raise
     for line in f.readlines():
         words = line.split()
-        if len(words) == 2 and words[1] == 'device-mapper':
+        if len(words) == 2 and words[1] == driver:
             f.close()
             return int(words[0])
     f.close()
@@ -114,17 +114,21 @@ class Vg(resDg.Dg):
         """If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
         """
-        major = dm_major()
+        dm_major = major('device-mapper')
+        lo_major = major('loop')
         for pv in pvs:
             try:
                 statinfo = os.stat(pv)
             except:
                 self.log.error("can not stat %s" % pv)
                 raise
-            if os.major(statinfo.st_rdev) == major:
+            if os.major(statinfo.st_rdev) == dm_major:
                 dm = 'dm-' + str(os.minor(statinfo.st_rdev))
                 syspath = '/sys/block/' + dm + '/slaves'
                 disks |= get_blockdev_sd_slaves(syspath)
+            elif os.major(statinfo.st_rdev) == lo_major:
+                self.log.debug("skip loop device %s from disklist"%pv)
+                pass
             else:
                 disks.add(pv)
 
