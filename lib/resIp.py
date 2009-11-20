@@ -62,7 +62,7 @@ class Ip(Res.Resource):
         try:
             self.addr = socket.gethostbyname(ipName)
         except:
-            self.log.error("could not resolve %s to an ip address")
+            self.log.error("could not resolve %s to an ip address"%self.ipName)
             raise IpUnknown(self.ipName)
 
     def __str__(self):
