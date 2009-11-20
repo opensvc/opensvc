@@ -36,6 +36,7 @@ check_privs()
 
 pathsvc = os.path.join(os.path.dirname(__file__), '..')
 pathetc = os.path.join(pathsvc, 'etc')
+os.environ['LANG'] = 'C'
 
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for
