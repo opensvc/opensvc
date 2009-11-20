@@ -89,7 +89,7 @@ def add_ips(svc, conf):
         elif conf.has_option(s, "ipname"):
             ipname = conf.get(s, "ipname")
         else:
-            svc.log.debug('add_ips ipname not found in ip section' + s)
+            svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
             ipname = None
             continue
         if conf.has_option(s, "ipdev@"+rcEnv.nodename):
