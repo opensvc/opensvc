@@ -25,11 +25,20 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe
 import resources as Res
 
+def checks(self):
+    if not os.path.exists(self.svc.initd):
+        self.log.error("%s is not present"%self.svc.initd)
+        return False
+    elif not os.path.islink(self.svc.initd):
+        self.log.error("%s is not a link"%self.svc.initd)
+        return False
+    return True
+
 def app(self, name, action):
     if not is_exe(name):
         self.vcall(['chmod', '+x', name])
     self.log.info('spawn: %s %s' % (name, action))
-    outf = '/var/tmp/svc_'+self.svcname+'_'+os.path.basename(name)+'.log'
+    outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
     f = open(outf, 'a')
     t = datetime.now()
     f.write(str(t))
@@ -45,7 +54,9 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
         don't stop on error.
         """
-        for name in glob.glob(os.path.join(self.svcinitd, 'S*')):
+        if not checks(self):
+            return 1
+        for name in glob.glob(os.path.join(self.svc.initd, 'S*')):
             app(self, name, 'start')
         return 0
 
@@ -53,14 +64,14 @@ class Apps(Res.Resource):
         """Execute each shutdown script (K* files). Log the return code but
         don't stop on error.
         """
-        for name in glob.glob(os.path.join(self.svcinitd, 'K*')):
+        if not checks(self):
+            return 1
+        for name in glob.glob(os.path.join(self.svc.initd, 'K*')):
             app(self, name, 'stop')
         return 0
 
     def status(self):
         pass
 
-    def __init__(self, svcname, optional=False, disabled=False):
-        self.svcname = svcname
-        self.svcinitd = os.path.join(rcEnv.pathetc, svcname) + '.d'
+    def __init__(self, optional=False, disabled=False):
         Res.Resource.__init__(self, "app", optional, disabled) 

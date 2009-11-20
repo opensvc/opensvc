@@ -31,12 +31,15 @@ import rcOptParser
 import rcLogger
 import rcAddService
 import resRsync
+import resApp
 
 check_privs()
 
 pathsvc = os.path.join(os.path.dirname(__file__), '..')
 pathetc = os.path.join(pathsvc, 'etc')
+
 os.environ['LANG'] = 'C'
+os.environ['PATH'] = '/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for
@@ -239,6 +242,11 @@ def add_syncs(svc, conf):
         r.svc = svc
         svc += r
 
+def add_apps(svc, conf):
+        r = resApp.Apps()
+        r.svc = svc
+        svc += r
+
 def setup_logging():
 	"""Setup logging to stream + logfile, and logfile rotation
 	class Logger instance name: 'log'
@@ -289,6 +297,7 @@ def build(name):
     rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
 
     svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
+    svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
 
@@ -346,6 +355,7 @@ def build(name):
     #
     svc.logfile = logfile
     svc.conf = svcconf
+    svc.initd = svcinitd
 
     #
     # Setup service properties from config file content
@@ -412,6 +422,7 @@ def build(name):
     add_pools(svc, conf)
     add_mounts(svc, conf)
     add_syncs(svc, conf)
+    add_apps(svc, conf)
 
     return svc
 

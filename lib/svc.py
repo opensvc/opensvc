@@ -19,7 +19,6 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import app
 from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
@@ -42,7 +41,6 @@ class Svc(Resource, Freezer):
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
-        self += app.Apps(svcname)
         Resource.__init__(self, type, optional, disabled)
         Freezer.__init__(self, svcname)
 
