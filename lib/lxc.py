@@ -49,15 +49,13 @@ def lxc_is_created(self):
     return ret
 
 def lxc_wait_for_startup(self):
-    tmo = self.startup_timeout
-    while --tmo > 0:
+    for t in range(self.startup_timeout):
         if self.is_up(): return 0
     log.error("timeout out waiting for %s startup", self.name)
     return 1
 
 def lxc_wait_for_shutdown(self):
-    tmo = self.shutdown_timeout
-    while --tmo > 0:
+    for t in range(self.startup_timeout):
         if not self.is_up(): return 0
     log.error("timeout out waiting for %s shutdown", self.name)
     return 1
