@@ -1,0 +1,58 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+
+VERSION=$(git log -1 --pretty=format:%at || exit 1)
+OSVC=$PATH_SCRIPT/../..
+CHROOT=$OSVC/tmp/BUILDROOT/opensvc-$VERSION-1.noarch
+SPEC=$OSVC/tmp/SPECS/opensvc.spec
+
+#
+# prepare skeleton
+#
+mkdir -p $OSVC/tmp/SOURCES
+mkdir -p $OSVC/tmp/SPECS
+mkdir -p $OSVC/tmp/BUILD
+mkdir -p $OSVC/tmp/RPMS
+
+[ "${CHROOT%%noarch}" != "$CHROOT" ] && rm -rf $CHROOT
+mkdir -p $CHROOT/usr/local/opensvc/etc || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
+mkdir -p $CHROOT/etc/cron.daily || exit 1
+
+# prepare a host_mode placeholder (flag as conf)
+echo >$CHROOT/usr/local/opensvc/var/host_mode || exit 1
+
+# install tracked files
+cd $OSVC || exit 1
+tar cf - --exclude=bin/pkg --exclude='*.pyc' bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
+
+# symbolic links
+cd $CHROOT || exit 1
+ln -s usr/local/opensvc service || exit 1
+cd $CHROOT/etc/cron.daily || exit 1
+ln -s ../../usr/local/opensvc/bin/cron/opensvc.daily opensvc.cron
+
+cat - <<-EOF >$SPEC
+Summary: OpenSVC node tools
+Name: opensvc
+Version: $VERSION
+Release: 1
+#Source0: %{name}-%{version}.tar.gz
+License: GPLv2
+Group: Administration/Tools
+%description
+These are the tools to drive OpenSVC maintained services
+%files
+%docdir /usr/local/opensvc/usr/share
+%config /usr/local/opensvc/var/host_mode
+%defattr(-,root,root)
+%attr(0755,root,root) /usr/local/opensvc/bin
+%attr(0644,root,root) /usr/local/opensvc/lib
+/
+EOF
+
+rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
