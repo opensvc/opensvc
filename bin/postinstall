@@ -1,40 +1,93 @@
 #!/usr/bin/python2.6
 
 import os
-import sys
+import shutil
+from subprocess import *
 
-cron_command = "[ -x /service/bin/svcmon ] && /service/bin/svcmon --updatedb"
-cron_minute = "0,10,20,30,40,50"
-cron_hour = "*"
-cron_day = "*"
-cron_month = "*"
-cron_dayofweek = "*"
-cron_entry = ' '.join([cron_minute,
-                       cron_hour,
-                       cron_day,
-                       cron_month,
-                       cron_dayofweek,
-                       cron_command])
+def install_cron():
+    """install opensvc cron jobs
+    """
+    cron_command = "[ -x /service/bin/svcmon ] && /service/bin/svcmon --updatedb"
+    cron_minute = "0,10,20,30,40,50"
+    cron_hour = "*"
+    cron_day = "*"
+    cron_month = "*"
+    cron_dayofweek = "*"
+    cron_entry = ' '.join([cron_minute,
+                           cron_hour,
+                           cron_day,
+                           cron_month,
+                           cron_dayofweek,
+                           cron_command])
 
-root_crontab = False
-root_crontab_locs = ['/var/spool/cron/crontabs/root',
-                     '/var/spool/cron/root']
-for loc in root_crontab_locs:
-    if os.path.exists(loc):
-        root_crontab = loc
-        break
-if not root_crontab:
-    print "no root crontab found in usual locations"
-    sys.exit(1)
+    root_crontab = False
+    root_crontab_locs = ['/var/spool/cron/crontabs/root',
+                         '/var/spool/cron/root']
+    for loc in root_crontab_locs:
+        if os.path.exists(loc):
+            root_crontab = loc
+            break
+    if not root_crontab:
+        print "no root crontab found in usual locations"
+        return False
 
-new = False
-with open(root_crontab, 'r') as f:
-    new = [line for line in f if '/service/bin/svcmon' not in line]
-    new.append(cron_entry+'\n')
-if not new:
-    print "problem preparing the new crontab"
-    sys.exit(1)
+    new = False
+    with open(root_crontab, 'r') as f:
+        new = [line for line in f if '/service/bin/svcmon' not in line]
+        new.append(cron_entry+'\n')
+    if not new:
+        print "problem preparing the new crontab"
+        return False
  
-with open(root_crontab, 'w') as f:
-    f.write(''.join(new))
- 
+    with open(root_crontab, 'w') as f:
+        f.write(''.join(new))
+
+def activate_redhat():
+    cmd = ['chkconfig', '--add', 'opensvc']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+    if process.returncode > 0:
+        print buff[1]
+        return False
+    return True
+
+def activate_debian():
+    cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+    if process.returncode > 0:
+        print buff[1]
+        return False
+    cmd = ['update-rc.d', 'opensvc', 'defaults']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+    if process.returncode > 0:
+        print buff[1]
+        return False
+    return True
+
+
+def install_rc():
+    """install startup script
+    """
+    rc = '/etc/init.d/opensvc'
+
+    if os.path.exists('/etc/debian_version'):
+        src = '/usr/local/opensvc/bin/opensvc.init.debian'
+        activate = activate_debian
+    elif os.path.exists('/etc/redhat-release'):
+        src = '/usr/local/opensvc/bin/opensvc.init.redhat'
+        activate = activate_redhat
+    else:
+        print "could not select an init script: unsupported operating system"
+        return False
+
+    if os.path.islink(rc):
+        os.unlink(rc)
+
+    shutil.copyfile(src, rc)
+    os.chmod(rc, 0755)
+    activate()
+
+install_cron()
+install_rc()

@@ -9,7 +9,7 @@
 # Short-Description:    OpenSVC services startup script
 ### END INIT INFO
 
-osvc_path=/service/bin
+osvc_path=/usr/local/opensvc/bin
 allupservices=${osvc_path}/allupservices
 allprimaryservices=${osvc_path}/allprimaryservices
 

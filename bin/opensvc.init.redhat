@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+#	/etc/rc.d/init.d/opensvc
+#
+# Starts the services driven by OpenSVC
+#
+# chkconfig: 345 99 01
+# description: Starts the services driven by OpenSVC whose
+#              autostart node is this node.
+# processname:
+
+# Source function library.
+. /etc/init.d/functions
+
+osvc_path=/usr/local/opensvc/bin
+allupservices=${osvc_path}/allupservices
+allprimaryservices=${osvc_path}/allprimaryservices
+
+case $1 in
+start)
+	${allprimaryservices} start
+	;;
+stop)
+	${allupservices} stop
+	;;
+esac
