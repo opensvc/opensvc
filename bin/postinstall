@@ -17,10 +17,10 @@ cron_entry = ' '.join([cron_minute,
                        cron_command])
 
 root_crontab = False
-root_crontab_locs = ['/var/spool/cron/crontabs/root']
+root_crontab_locs = ['/var/spool/cron/crontabs/root',
+                     '/var/spool/cron/root']
 for loc in root_crontab_locs:
     if os.path.exists(loc):
-        print "edit root crontab at %s"%loc
         root_crontab = loc
         break
 if not root_crontab:

@@ -25,9 +25,6 @@ mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
 mkdir -p $CHROOT/etc/cron.daily || exit 1
 
-# prepare a host_mode placeholder (flag as conf)
-echo >$CHROOT/usr/local/opensvc/var/host_mode || exit 1
-
 # install tracked files
 cd $OSVC || exit 1
 tar cf - --exclude=bin/pkg --exclude='*.pyc' bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
@@ -51,7 +48,6 @@ These are the tools to drive OpenSVC maintained services
 /service/bin/postinstall
 %files
 %docdir /usr/local/opensvc/usr/share
-%config /usr/local/opensvc/var/host_mode
 %defattr(-,root,root)
 %attr(0755,root,root) /usr/local/opensvc/bin
 %attr(0644,root,root) /usr/local/opensvc/lib
