@@ -23,7 +23,6 @@ mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
-mkdir -p $CHROOT/etc/cron.daily || exit 1
 
 # install tracked files
 cd $OSVC || exit 1
@@ -32,8 +31,6 @@ tar cf - --exclude=bin/pkg --exclude='*.pyc' bin lib usr | tar xf - -C $CHROOT/u
 # symbolic links
 cd $CHROOT || exit 1
 ln -s usr/local/opensvc service || exit 1
-cd $CHROOT/etc/cron.daily || exit 1
-ln -s ../../usr/local/opensvc/bin/cron/opensvc.daily opensvc.cron
 
 cat - <<-EOF >$SPEC
 Summary: OpenSVC node tools

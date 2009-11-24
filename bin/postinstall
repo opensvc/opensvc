@@ -7,18 +7,8 @@ from subprocess import *
 def install_cron():
     """install opensvc cron jobs
     """
-    cron_command = "[ -x /service/bin/svcmon ] && /service/bin/svcmon --updatedb"
-    cron_minute = "0,10,20,30,40,50"
-    cron_hour = "*"
-    cron_day = "*"
-    cron_month = "*"
-    cron_dayofweek = "*"
-    cron_entry = ' '.join([cron_minute,
-                           cron_hour,
-                           cron_day,
-                           cron_month,
-                           cron_dayofweek,
-                           cron_command])
+    cron_entry_1 = "0,10,20,30,40,50 * * * * [ -x /usr/local/opensvc/bin/svcmon ] && /usr/local/opensvc/bin/svcmon --updatedb >/dev/null 2>&1"
+    cron_entry_2 = "0 4 * * * [ -x /usr/local/opensvc/bin/cron/opensvc.daily ] && /usr/local/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
 
     root_crontab = False
     root_crontab_locs = ['/var/spool/cron/crontabs/root',
@@ -33,14 +23,19 @@ def install_cron():
 
     new = False
     with open(root_crontab, 'r') as f:
-        new = [line for line in f if '/service/bin/svcmon' not in line]
-        new.append(cron_entry+'\n')
+        new = [line for line in f if ' /service/bin/' not in line and ' /usr/local/opensvc/bin' not in line]
+        new.append(cron_entry_1+'\n')
+        new.append(cron_entry_2+'\n')
     if not new:
         print "problem preparing the new crontab"
         return False
  
     with open(root_crontab, 'w') as f:
         f.write(''.join(new))
+
+    for f in ['/etc/cron.daily/opensvc', '/etc/cron.daily/opensvc.daily']:
+        if os.path.exists(f):
+            os.unlink(f)
 
 def activate_redhat():
     cmd = ['chkconfig', '--add', 'opensvc']
