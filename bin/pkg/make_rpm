@@ -47,6 +47,8 @@ License: GPLv2
 Group: Administration/Tools
 %description
 These are the tools to drive OpenSVC maintained services
+%post
+/service/bin/postinstall
 %files
 %docdir /usr/local/opensvc/usr/share
 %config /usr/local/opensvc/var/host_mode

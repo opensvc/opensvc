@@ -1,0 +1,40 @@
+#!/usr/bin/python2.6
+
+import os
+import sys
+
+cron_command = "[ -x /service/bin/svcmon ] && /service/bin/svcmon --updatedb"
+cron_minute = "0,10,20,30,40,50"
+cron_hour = "*"
+cron_day = "*"
+cron_month = "*"
+cron_dayofweek = "*"
+cron_entry = ' '.join([cron_minute,
+                       cron_hour,
+                       cron_day,
+                       cron_month,
+                       cron_dayofweek,
+                       cron_command])
+
+root_crontab = False
+root_crontab_locs = ['/var/spool/cron/crontabs/root']
+for loc in root_crontab_locs:
+    if os.path.exists(loc):
+        print "edit root crontab at %s"%loc
+        root_crontab = loc
+        break
+if not root_crontab:
+    print "no root crontab found in usual locations"
+    sys.exit(1)
+
+new = False
+with open(root_crontab, 'r') as f:
+    new = [line for line in f if '/service/bin/svcmon' not in line]
+    new.append(cron_entry+'\n')
+if not new:
+    print "problem preparing the new crontab"
+    sys.exit(1)
+ 
+with open(root_crontab, 'w') as f:
+    f.write(''.join(new))
+ 
