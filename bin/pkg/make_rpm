@@ -2,9 +2,11 @@
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
-VERSION=$(git log -1 --pretty=format:%at || exit 1)
+HEAD=$(git log -1 --pretty=format:%aD || exit 1)
+VERSION=$(date -d "$HEAD" +%y%m)
+RELEASE=$(date -d "$HEAD" +%H%M)
 OSVC=$PATH_SCRIPT/../..
-CHROOT=$OSVC/tmp/BUILDROOT/opensvc-$VERSION-1.noarch
+CHROOT=$OSVC/tmp/BUILDROOT/opensvc-$VERSION-$RELEASE.noarch
 SPEC=$OSVC/tmp/SPECS/opensvc.spec
 
 #
@@ -40,8 +42,7 @@ cat - <<-EOF >$SPEC
 Summary: OpenSVC node tools
 Name: opensvc
 Version: $VERSION
-Release: 1
-#Source0: %{name}-%{version}.tar.gz
+Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
 %description
