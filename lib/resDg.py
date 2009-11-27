@@ -24,6 +24,15 @@
 import resources as Res
 import scsiReserv as scsiReserv
 import rcStatus
+import action as exc
+
+def allow_scsireserv(self): 
+    if not self.scsiReservation:
+        return False
+    if not scsiReserv.scsireserv_supported():
+        self.log.error("scsi reservation is enabled but not supported")
+        raise exc.excError
+    return True
 
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
@@ -42,13 +51,19 @@ class Dg(Res.Resource):
         self.scsiReservation = True
 
     def scsirelease(self):
-        return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
+        if not allow_scsireserv(self):
+            return 0
+	return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
 
     def scsireserv(self):
-        return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
+        if not allow_scsireserv(self):
+            return 0
+	return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
 
     def scsicheckreserv(self):
-        return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
+        if not allow_scsireserv(self):
+            return 0
+	return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
     def disklist(self):
         return self.disks
