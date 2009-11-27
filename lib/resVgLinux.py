@@ -115,7 +115,8 @@ class Vg(resDg.Dg):
         If device map has slaves, replace by its slaves
         """
         dm_major = major('device-mapper')
-        lo_major = major('loop')
+        try: lo_major = major('loop')
+        except: lo_major = 0
         for pv in pvs:
             try:
                 statinfo = os.stat(pv)
@@ -126,7 +127,7 @@ class Vg(resDg.Dg):
                 dm = 'dm-' + str(os.minor(statinfo.st_rdev))
                 syspath = '/sys/block/' + dm + '/slaves'
                 disks |= get_blockdev_sd_slaves(syspath)
-            elif os.major(statinfo.st_rdev) == lo_major:
+            elif lo_major != 0 and os.major(statinfo.st_rdev) == lo_major:
                 self.log.debug("skip loop device %s from disklist"%pv)
                 pass
             else:
