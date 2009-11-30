@@ -41,7 +41,7 @@ class Mount(Res.Resource):
     def start(self):
         if not os.path.exists(self.mountPoint):
             try:
-                os.mkdir(self.mountPoint)
+                os.makedirs(self.mountPoint)
             except:
                 self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
                 raise
