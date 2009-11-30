@@ -33,7 +33,7 @@ def try_umount(self):
     cmd = ['sync']
     (ret, out) = self.vcall(cmd)
 
-    cmd = ['fuser', '-kv', self.mountPoint]
+    cmd = ['fuser', '-kmv', self.mountPoint]
     (ret, out) = self.vcall(cmd)
 
     cmd = ['umount', self.mountPoint]
