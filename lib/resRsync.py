@@ -24,6 +24,22 @@ from rcUtilities import which
 import rcStatus
 import resources as Res
 
+def remote_fs_mounted(self, node):
+    """Verify the remote fs is mounted before we send data.
+    """
+    if self.dstfs is None:
+        """No check has been configured. Assume the admin knows better.
+        """
+        return True
+    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dst]
+    (ret, out) = self.call(cmd)
+    if ret != 0:
+        return False
+    if self.dstfs not in out.split():
+        self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
+        return False
+    return True
+
 def remote_node_type(self, node, type):
     if type == 'drpnodes':
         type = 'DEV'
@@ -48,6 +64,12 @@ def sync(self, type):
         return 0
     targets = self.target[type]
 
+    """Don't sync PRD services when running on !PRD node
+    """
+    if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+        self.log.error("won't sync a PRD service running on a !PRD node")
+        return 1
+
     """Accept to sync from here only if the service is up
     """
     if self.svc.status() != 0:
@@ -67,6 +89,8 @@ def sync(self, type):
 
     for node in targets:
         if not remote_node_type(self, node, type):
+            return 1
+        if not remote_fs_mounted(self, node):
             return 1
         dst = node + ':' + self.dst
         cmd = self.cmd
@@ -91,10 +115,11 @@ class Rsync(Res.Resource):
     def syncdrp(self):
         return sync(self, "drpnodes")
 
-    def __init__(self, src, dst, exclude=[], target={},
+    def __init__(self, src, dst, exclude=[], target={}, dstfs=None,
                  optional=False, disabled=False):
         self.src = src
         self.dst = dst
+        self.dstfs = dstfs
         self.exclude = exclude
         self.target = target
         self.cmd = ['rsync'] + self.options + self.exclude + self.src

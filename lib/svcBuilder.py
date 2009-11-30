@@ -224,6 +224,10 @@ def add_syncs(svc, conf):
             return 1
         src = conf.get(s, "src").split()
         dst = conf.get(s, "dst")
+        if conf.has_option(s, 'dstfs'):
+            dstfs = conf.get(s, 'dstfs')
+        else:
+            dstfs = None
         if conf.has_option(s, 'exclude'):
             exclude = conf.get(s, 'exclude').split()
         else:
@@ -237,7 +241,7 @@ def add_syncs(svc, conf):
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
-        r = resRsync.Rsync(src, dst, exclude, targethash)
+        r = resRsync.Rsync(src, dst, exclude, targethash, dstfs)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
         svc += r
