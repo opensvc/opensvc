@@ -218,20 +218,29 @@ def add_syncs(svc, conf):
     for s in conf.sections():
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
+
         if not conf.has_option(s, 'src') or \
            not conf.has_option(s, 'dst'):
             log.error("config file section %s must have src and dst set" % s)
             return 1
         src = conf.get(s, "src").split()
         dst = conf.get(s, "dst")
+
         if conf.has_option(s, 'dstfs'):
             dstfs = conf.get(s, 'dstfs')
         else:
             dstfs = None
+
         if conf.has_option(s, 'exclude'):
             exclude = conf.get(s, 'exclude').split()
         else:
             exclude = []
+
+        if conf.has_option(s, 'snap'):
+            snap = conf.getboolean(s, 'snap')
+        else:
+            snap = False
+
         if conf.has_option(s, 'target'):
             target = conf.get(s, 'target').split()
         else:
@@ -241,7 +250,12 @@ def add_syncs(svc, conf):
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
-        r = resRsync.Rsync(src, dst, exclude, targethash, dstfs)
+        r = resRsync.Rsync(src=src,
+                           dst=dst,
+                           exclude=exclude,
+                           target=targethash,
+                           dstfs=dstfs,
+                           snap=snap)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
         svc += r

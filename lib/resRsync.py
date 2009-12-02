@@ -21,6 +21,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
+import action as ex
 import rcStatus
 import resources as Res
 
@@ -82,10 +83,10 @@ def sync(self, type):
 
     if len(targets) == 0:
         self.log.info("no node to sync")
-        return 0
+        raise ex.syncNoNodesToSync
     if len(self.src) == 0:
         self.log.debug("no files to sync")
-        return 0
+        raise ex.syncNoFilesToSync
 
     for node in targets:
         if not remote_node_type(self, node, type):
@@ -93,7 +94,7 @@ def sync(self, type):
         if not remote_fs_mounted(self, node):
             return 1
         dst = node + ':' + self.dst
-        cmd = self.cmd
+        cmd = ['rsync'] + self.options + self.exclude + self.src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -109,20 +110,34 @@ class Rsync(Res.Resource):
     timeout = 3600
     options = [ '-HpogDtrlvx', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
 
+    def pre_action(self, rset, action):
+        """Actions to do before resourceSet iterates through the resources to
+           trigger action() on each one
+        """
+        import snapLvmLinux as snap
+        rset.snaps = snap.snap(self, rset)
+
+    def post_action(self, rset, action):
+        """Actions to do after resourceSet has iterated through the resources to
+           trigger action() on each one
+        """
+        import snapLvmLinux as snap
+        snap.snap_cleanup(self, rset)
+
     def syncnodes(self):
         return sync(self, "nodes")
 
     def syncdrp(self):
         return sync(self, "drpnodes")
 
-    def __init__(self, src, dst, exclude=[], target={}, dstfs=None,
+    def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  optional=False, disabled=False):
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
         self.exclude = exclude
+        self.snap = snap
         self.target = target
-        self.cmd = ['rsync'] + self.options + self.exclude + self.src
         Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):

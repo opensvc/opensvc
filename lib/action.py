@@ -19,14 +19,13 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-__author__="cgaliber"
-__date__ ="$10 oct. 2009 09:38:20$"
-
-class excError(Exception) :
-    """ Failed action """
+class excError(Exception):
+    """ Failed action
+    """
 
 class excUndefined(Exception):
-    """ Mandatory Undefined action exception """
+    """ Mandatory Undefined action exception
+    """
     def __init__(self,action=None,className=None,func=None):
         self.action=action
         self.className=className
@@ -35,4 +34,32 @@ class excUndefined(Exception):
         return "Undefined mandatory Action %s for className %s in function %s" % \
                 (self.action,self.className,self.func)
 
+class syncNoNodesToSync(Exception):
+    """ No nodes to sync => abort stacked syncs resource actions
+    """
+
+class syncNoFilesToSync(Exception):
+    """ No files to sync => move on to the next stacked syncs resource actions
+    """
+
+class syncConfigSyntaxError(Exception):
+    """ Bogus configuration syntax => abort all
+    """
+
+class syncNotSnapable(Exception):
+    """ A dir/file specified as source of a sync with snap is not included in a 
+        snapable resource mount => abort all
+    """
+
+class syncSnapExists(Exception):
+    """ The snapshot already exists
+    """
+
+class syncSnapCreateError(Exception):
+    """ Error in snapshot creation => clean up
+    """
+
+class syncSnapMountError(Exception):
+    """ Error mounting fs => clean up
+    """
 

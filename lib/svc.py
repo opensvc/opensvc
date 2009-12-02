@@ -23,6 +23,7 @@ from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
+import action as ex
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -78,9 +79,15 @@ class Svc(Resource, Freezer):
         else: return False
 
     def sub_set_action(self, type=None, action=None):
-        """Call action on each member of the subset of specified type"""
+        """Call action on each member of the subset of specified type
+        """
         for r in self.get_res_sets(type):
-            r.action(action)
+            try:
+                r.action(action)
+            except ex.excError:
+                break
+            except:
+                raise
 
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))
@@ -179,8 +186,16 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
 
-        """Trigger action"""
-        getattr(self, action)()
+        """Trigger action
+        """
+        err = None
+        try:
+            getattr(self, action)()
+        except:
+            """Save the error for deferred raising
+            """
+            import traceback
+            err = traceback.print_exc()
 
         """Push result and logs to database
         """
@@ -189,6 +204,10 @@ class Svc(Resource, Freezer):
         end = datetime.now()
         xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
         unlink(actionlogfile)
+
+        if err is not None:
+            print err
+            raise
 
     def restart(self):
 	""" stop then start service"""

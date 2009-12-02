@@ -136,7 +136,14 @@ class ResourceSet(Resource):
         if isinstance(r,ResourceSet) :
             self.resources.extend(r.resources)
         elif isinstance(r,Resource) :
+            """ Setup a back pointer to the resource set
+            """
+            r.rset = self
             self.resources.append(r)
+            if hasattr(r, 'pre_action'):
+                self.pre_action = r.pre_action
+            if hasattr(r, 'post_action'):
+                self.post_action = r.post_action
         return (self)
 
     def __str__(self):
@@ -145,14 +152,24 @@ class ResourceSet(Resource):
             output+= " (%s)" % (r.__str__())
         return "%s]" % (output)
 
+    def pre_action(self, rset=None, action=None):
+        pass
+
+    def post_action(self, rset=None, action=None):
+        pass
+
     def action(self,action=None):
-        """Call action on each resource of the ResourceSet"""
+        """Call action on each resource of the ResourceSet
+        """
         if action in ["mount", "start"]:
             self.resources.sort()
         else:
             self.resources.reverse()
+
+        self.pre_action(self, action)
         for r in self.resources:
             r.action(action)
+        self.post_action(self, action)
 
 
 if __name__ == "__main__":
