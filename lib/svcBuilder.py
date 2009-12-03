@@ -312,6 +312,7 @@ def build(name):
     rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
     rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
     rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
+    rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
     rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
 
     svcconf = os.path.join(rcEnv.pathetc, name) + '.env'

@@ -24,6 +24,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 import action as ex
+from lock import svclock
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -188,14 +189,18 @@ class Svc(Resource, Freezer):
 
         """Trigger action
         """
-        err = None
+        err = False
         try:
+            svclock(self)
             getattr(self, action)()
+        except ex.excError:
+            pass
         except:
             """Save the error for deferred raising
             """
             import traceback
-            err = traceback.print_exc()
+            traceback.print_exc()
+            err = True
 
         """Push result and logs to database
         """
@@ -205,8 +210,7 @@ class Svc(Resource, Freezer):
         xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
         unlink(actionlogfile)
 
-        if err is not None:
-            print err
+        if err:
             raise
 
     def restart(self):
