@@ -79,7 +79,22 @@ def qcall(argv=['/bin/false']) :
 def vcall(argv=['/bin/false'], log=None):
     return call(argv, log, True)
 
+def getmount(path):
+    path = os.path.abspath(path)
+    while path != os.path.sep:
+        if not os.path.islink(path) and os.path.ismount(path):
+            return path
+        path = os.path.abspath(os.path.join(path, os.pardir))
+    return path
+
+def protected_mount(path):
+    if getmount(path) in ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']:
+        return True
+    return False
+
+
 if __name__ == "__main__":
     print "call(('id','-a'))"
     (r,output)=call(("/usr/bin/id","-a"))
     print "status: ",r,"output:",output
+

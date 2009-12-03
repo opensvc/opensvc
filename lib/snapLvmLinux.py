@@ -19,7 +19,7 @@
 import os
     
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, qcall
+from rcUtilities import which, qcall, protected_mount
 import action as ex
 
 def find_mount(rs, dir):
@@ -124,6 +124,9 @@ def snap_cleanup(self, rset):
         return
     snaps = rset.snaps
     for s in snaps.keys():
+        if protected_mount(snaps[s]['snap_mnt']):
+            self.log.error("the snapshot is no longer mounted in %s. panic."%snaps[s]['snap_mnt'])
+            raise ex.excError
         cmd = ['fuser', '-kmv', snaps[s]['snap_mnt']]
         (ret, out) = self.vcall(cmd)
         cmd = ['umount', snaps[s]['snap_mnt']]
