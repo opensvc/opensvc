@@ -110,12 +110,13 @@ def snap(self, rset):
        existing snap
     """
     for i, r in enumerate(rset.resources):
-        for j, src in enumerate(r.src):
+        r.alt_src = list(r.src)
+        for j, src in enumerate(r.alt_src):
             if not mounts_h.has_key(src):
                 continue
             mnt = mounts_h[src].mountPoint
             snap_mnt = snaps[mnt]['snap_mnt']
-            rset.resources[i].src[j] = src.replace(os.path.join(mnt), os.path.join(snap_mnt), 1)
+            rset.resources[i].alt_src[j] = src.replace(os.path.join(mnt), os.path.join(snap_mnt), 1)
  
     return snaps
 
@@ -133,4 +134,8 @@ def snap_cleanup(self, rset):
         (ret, out) = self.vcall(cmd)
         cmd = ['lvremove', '-f', snaps[s]['snap_dev']]
         (ret, buff) = self.vcall(cmd)
+
+    for i, r in enumerate(rset.resources):
+        if hasattr(rset.resources[i], 'alt_src'):
+            delattr(rset.resources[i], 'alt_src')
 

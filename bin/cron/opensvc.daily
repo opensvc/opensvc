@@ -65,3 +65,13 @@ for svc in svcBuilder.build_services():
 	 repr(svc.svcmode),
 	 repr(svc.drnoaction)]
     )
+
+    try:
+        svc.action('syncnodes')
+    except:
+        pass
+
+    try:
+        svc.action('syncdrp')
+    except:
+        pass

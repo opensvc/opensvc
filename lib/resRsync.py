@@ -59,9 +59,17 @@ def remote_node_type(self, node, type):
     return False
 
 def sync(self, type):
+    if hasattr(self, "alt_src"):
+        """ The pre_action() has provided us with a better source
+            to sync from. Use that
+        """
+        src = self.alt_src
+    else:
+        src = self.src
+
     if type not in self.target.keys():
         self.log.debug('%s => %s sync not applicable to %s',
-                  (self.src, self.dst, type))
+                  (src, self.dst, type))
         return 0
     targets = self.target[type]
 
@@ -84,7 +92,7 @@ def sync(self, type):
     if len(targets) == 0:
         self.log.info("no node to sync")
         raise ex.syncNoNodesToSync
-    if len(self.src) == 0:
+    if len(src) == 0:
         self.log.debug("no files to sync")
         raise ex.syncNoFilesToSync
 
@@ -94,11 +102,11 @@ def sync(self, type):
         if not remote_fs_mounted(self, node):
             return 1
         dst = node + ':' + self.dst
-        cmd = ['rsync'] + self.options + self.exclude + self.src
+        cmd = ['rsync'] + self.options + self.exclude + src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
-            self.log.error("node %s synchronization failed (%s => %s)" % (node, self.src, dst))
+            self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
             return 1
     return 0
 
@@ -115,7 +123,12 @@ class Rsync(Res.Resource):
            trigger action() on each one
         """
         import snapLvmLinux as snap
-        rset.snaps = snap.snap(self, rset)
+        try:
+            rset.snaps = snap.snap(self, rset)
+        except ex.syncNotSnapable:
+            raise ex.excError
+        except:
+            raise
 
     def post_action(self, rset, action):
         """Actions to do after resourceSet has iterated through the resources to
@@ -125,10 +138,20 @@ class Rsync(Res.Resource):
         snap.snap_cleanup(self, rset)
 
     def syncnodes(self):
-        return sync(self, "nodes")
+        try:
+            sync(self, "nodes")
+        except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
+            pass
+        except:
+            raise
 
     def syncdrp(self):
-        return sync(self, "drpnodes")
+        try:
+            sync(self, "drpnodes")
+        except (syncNoNodesToSync, syncNoFilesToSync):
+            pass
+        except:
+            raise
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  optional=False, disabled=False):
