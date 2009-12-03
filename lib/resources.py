@@ -164,7 +164,7 @@ class ResourceSet(Resource):
         if action in ["mount", "start"]:
             self.resources.sort()
         else:
-            self.resources.reverse()
+            self.resources.sort(reverse=True)
 
         self.pre_action(self, action)
         for r in self.resources:

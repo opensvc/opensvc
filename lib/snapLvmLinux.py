@@ -26,7 +26,7 @@ def find_mount(rs, dir):
     """Sort mounts from deepest to shallowest and return the
        first mount whose 'mountPoint' is matching 'dir'
     """
-    for m in reversed(rs.resources):
+    for m in sorted(rs.resources, reverse=True):
         if m.mountPoint in dir:
             return m
     return None
