@@ -35,7 +35,7 @@ def remote_fs_mounted(self, node):
     cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dst]
     (ret, out) = self.call(cmd)
     if ret != 0:
-        return False
+        raise ex.excError
     if self.dstfs not in out.split():
         self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
         return False
@@ -52,6 +52,8 @@ def remote_node_type(self, node, type):
     host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
     cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
     (ret, out) = self.call(cmd)
+    if ret != 0:
+        raise ex.excError
     if out.split()[0] == type:
         return True
     self.log.error("node %s type is not '%s'. Check %s:%s"%\
