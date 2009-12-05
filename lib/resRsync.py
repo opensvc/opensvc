@@ -148,7 +148,7 @@ class Rsync(Res.Resource):
     def syncdrp(self):
         try:
             sync(self, "drpnodes")
-        except (syncNoNodesToSync, syncNoFilesToSync):
+        except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
             pass
         except:
             raise
