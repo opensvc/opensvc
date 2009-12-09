@@ -63,10 +63,11 @@ def remote_node_type(self, node, type):
 def nodes_to_sync(self, type=None):
     """Discard the local node from the set
     """
-    if type in ['nodes', 'drpnodes']:
+    print self.target
+    if type in self.target.keys():
         targets = self.target[type]
     else:
-        targets = self.target['nodes'] + self.target['drpnodes']
+        return set([])
 
     targets -= set([rcEnv.nodename])
 
