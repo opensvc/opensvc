@@ -50,7 +50,7 @@ def remote_node_type(self, node, type):
         self.log.error('expected remote node type is bogus: %s'%type)
         raise
     host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
-    cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
+    cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
     (ret, out) = self.call(cmd)
     if ret != 0:
         raise ex.excError
@@ -63,7 +63,6 @@ def remote_node_type(self, node, type):
 def nodes_to_sync(self, type=None):
     """Discard the local node from the set
     """
-    print self.target
     if type in self.target.keys():
         targets = self.target[type]
     else:
