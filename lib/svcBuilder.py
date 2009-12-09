@@ -382,17 +382,20 @@ def build(name):
 
     if conf.has_option("default", "nodes"):
         svc.nodes = set(conf.get("default", "nodes").split())
+        svc.nodes -= set([''])
     else:
         svc.nodes = set([])
 
     if conf.has_option("default", "drpnodes"):
         svc.drpnodes = set(conf.get("default", "drpnodes").split())
+        svc.drpnodes -= set([''])
     else:
         svc.drpnodes = set([])
 
     if conf.has_option("default", "drpnode"):
         svc.drpnode = conf.get("default", "drpnode")
         svc.drpnodes |= set([svc.drpnode])
+        svc.drpnodes -= set([''])
     else:
         svc.drpnode = ''
 
