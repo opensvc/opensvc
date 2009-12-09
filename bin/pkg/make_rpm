@@ -25,8 +25,16 @@ mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
 
 # install tracked files
+EXCL=
+EXCL="$EXCL --exclude=bin/pkg"
+EXCL="$EXCL --exclude='*.pyc'"
+EXCL="$EXCL --exclude='log/*'"
+EXCL="$EXCL --exclude='etc/*'"
+EXCL="$EXCL --exclude='tmp/*'"
+EXCL="$EXCL --exclude=var/host_mode"
+EXCL="$EXCL --exclude='var/lock/*'"
 cd $OSVC || exit 1
-tar cf - --exclude=bin/pkg --exclude='*.pyc' bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
+tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
 
 # symbolic links
 cd $CHROOT || exit 1
@@ -39,8 +47,10 @@ Version: $VERSION
 Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
+BuildRoot: $CHROOT
+
 %description
-These are the tools to drive OpenSVC maintained services
+These are the tools to drive OpenSVC services
 %post
 /service/bin/postinstall
 %files
@@ -52,6 +62,7 @@ These are the tools to drive OpenSVC maintained services
 /usr/local/opensvc/log
 /usr/local/opensvc/tmp
 /usr/local/opensvc/var
+/usr/local/opensvc/usr
 /service
 EOF
 
