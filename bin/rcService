@@ -29,5 +29,7 @@ import svcBuilder
 import rcOptParser
 
 svc = svcBuilder.build(os.path.basename(__file__))
+if svc is None:
+    sys.exit(1)
 parser = rcOptParser.svcOptionParser(svc)
 sys.exit(svc.action(parser.action))
