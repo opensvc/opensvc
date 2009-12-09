@@ -78,13 +78,13 @@ def sync(self, type):
     """Don't sync PRD services when running on !PRD node
     """
     if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
-        self.log.error("won't sync a PRD service running on a !PRD node")
+        self.log.warning("won't sync a PRD service running on a !PRD node")
         return 1
 
     """Accept to sync from here only if the service is up
     """
     if self.svc.status() != 0:
-        self.log.error("won't sync a service not up")
+        self.log.warning("won't sync a service not up")
         return 1
 
     """Discard the local node from the set
