@@ -168,7 +168,12 @@ class ResourceSet(Resource):
 
         self.pre_action(self, action)
         for r in self.resources:
-            r.action(action)
+            try:
+                r.action(action)
+            except exc.excAbortAction:
+                break
+            except:
+                raise
         self.post_action(self, action)
 
 

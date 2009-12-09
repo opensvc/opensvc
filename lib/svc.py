@@ -200,7 +200,6 @@ class Svc(Resource, Freezer):
             """
             import traceback
             traceback.print_exc()
-            err = True
 
         """Push result and logs to database
         """
@@ -209,9 +208,6 @@ class Svc(Resource, Freezer):
         end = datetime.now()
         xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
         unlink(actionlogfile)
-
-        if err:
-            raise
 
     def restart(self):
 	""" stop then start service"""

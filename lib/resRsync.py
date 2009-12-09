@@ -79,13 +79,13 @@ def sync(self, type):
     """
     if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
         self.log.warning("won't sync a PRD service running on a !PRD node")
-        return 1
+        raise ex.syncFromNotPrdNode
 
     """Accept to sync from here only if the service is up
     """
     if self.svc.status() != 0:
         self.log.warning("won't sync a service not up")
-        return 1
+        raise ex.syncNotUpService
 
     """Discard the local node from the set
     """
@@ -129,8 +129,6 @@ class Rsync(Res.Resource):
             rset.snaps = snap.snap(self, rset)
         except ex.syncNotSnapable:
             raise ex.excError
-        except:
-            raise
 
     def post_action(self, rset, action):
         """Actions to do after resourceSet has iterated through the resources to
@@ -144,16 +142,16 @@ class Rsync(Res.Resource):
             sync(self, "nodes")
         except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
             pass
-        except:
-            raise
+        except (ex.syncNotUpService, ex.syncFromNotPrdNode):
+            raise ex.excAbortAction
 
     def syncdrp(self):
         try:
             sync(self, "drpnodes")
         except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
             pass
-        except:
-            raise
+        except (ex.syncNotUpService, ex.syncFromNotPrdNode):
+            raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  optional=False, disabled=False):
