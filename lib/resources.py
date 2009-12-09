@@ -166,7 +166,11 @@ class ResourceSet(Resource):
         else:
             self.resources.sort(reverse=True)
 
-        self.pre_action(self, action)
+        try:
+            self.pre_action(self, action)
+        except exc.excAbortAction:
+            return
+
         for r in self.resources:
             try:
                 r.action(action)

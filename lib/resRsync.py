@@ -75,18 +75,6 @@ def sync(self, type):
         return 0
     targets = self.target[type]
 
-    """Don't sync PRD services when running on !PRD node
-    """
-    if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
-        self.log.warning("won't sync a PRD service running on a !PRD node")
-        raise ex.syncFromNotPrdNode
-
-    """Accept to sync from here only if the service is up
-    """
-    if self.svc.status() != 0:
-        self.log.warning("won't sync a service not up")
-        raise ex.syncNotUpService
-
     """Discard the local node from the set
     """
     targets -= set([rcEnv.nodename])
@@ -124,6 +112,19 @@ class Rsync(Res.Resource):
         """Actions to do before resourceSet iterates through the resources to
            trigger action() on each one
         """
+
+        """Don't sync PRD services when running on !PRD node
+        """
+        if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+            self.log.warning("won't sync a PRD service running on a !PRD node")
+            raise ex.excAbortAction
+
+        """Accept to sync from here only if the service is up
+        """
+        if self.svc.status() != 0:
+            self.log.warning("won't sync a service not up")
+            raise ex.excAbortAction
+
         import snapLvmLinux as snap
         try:
             rset.snaps = snap.snap(self, rset)
@@ -142,16 +143,12 @@ class Rsync(Res.Resource):
             sync(self, "nodes")
         except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
             pass
-        except (ex.syncNotUpService, ex.syncFromNotPrdNode):
-            raise ex.excAbortAction
 
     def syncdrp(self):
         try:
             sync(self, "drpnodes")
         except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
             pass
-        except (ex.syncNotUpService, ex.syncFromNotPrdNode):
-            raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  optional=False, disabled=False):

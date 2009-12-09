@@ -63,15 +63,6 @@ class syncSnapMountError(Exception):
     """ Error mounting fs => clean up
     """
 
-class syncNotUpService(Exception):
-    """ files sync for a service not in 'ok' status
-    """
-
-class syncFromNotPrdNode(Exception):
-    """ files sync from a node not flagged as PRD
-        in var/host_mode
-    """
-
 class excAbortAction(Exception):
     """ Abort multi-resource action
     """
