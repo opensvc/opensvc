@@ -26,6 +26,7 @@ from subprocess import Popen, PIPE
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
 import rcStatus
+import action as ex
 
 class MissImpl(Exception):
     def __init__(self, value):
@@ -45,12 +46,6 @@ class IpConflict(Exception):
     def __str__(self):
         return repr(self.value)
 
-class IpUnknown(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
 class Ip(Res.Resource):
     """ basic ip resource
     """
@@ -63,7 +58,7 @@ class Ip(Res.Resource):
             self.addr = socket.gethostbyname(ipName)
         except:
             self.log.error("could not resolve %s to an ip address"%self.ipName)
-            raise IpUnknown(self.ipName)
+            raise ex.excInitError
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\

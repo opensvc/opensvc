@@ -66,3 +66,8 @@ class syncSnapMountError(Exception):
 class excAbortAction(Exception):
     """ Abort multi-resource action
     """
+
+class excInitError(Exception):
+    """ Resource initialisation error
+    """
+

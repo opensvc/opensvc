@@ -32,6 +32,7 @@ import rcLogger
 import rcAddService
 import resRsync
 import resApp
+import action as ex
 
 check_privs()
 
@@ -438,13 +439,16 @@ def build(name):
     #
     # instanciate resources
     #
-    add_ips(svc, conf)
-    add_loops(svc, conf)
-    add_vgs(svc, conf)
-    add_pools(svc, conf)
-    add_mounts(svc, conf)
-    add_syncs(svc, conf)
-    add_apps(svc, conf)
+    try:
+        add_ips(svc, conf)
+        add_loops(svc, conf)
+        add_vgs(svc, conf)
+        add_pools(svc, conf)
+        add_mounts(svc, conf)
+        add_syncs(svc, conf)
+        add_apps(svc, conf)
+    except ex.excInitError:
+        return None
 
     return svc
 
