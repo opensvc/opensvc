@@ -204,7 +204,7 @@ class Svc(Resource, Freezer):
         """Push result and logs to database
         """
         actionlogfilehandler.close()
-        self.log.removeHandler(actionlogfilehandler)
+        log.removeHandler(actionlogfilehandler)
         end = datetime.now()
         xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
         unlink(actionlogfile)
