@@ -60,6 +60,27 @@ def remote_node_type(self, node, type):
                    (node, type, node, host_mode_f))
     return False
 
+def nodes_to_sync(self, type=None):
+    """Discard the local node from the set
+    """
+    if type in ['nodes', 'drpnodes']:
+        targets = self.target[type]
+    else:
+        targets = self.target['nodes'] + self.target['drpnodes']
+
+    targets -= set([rcEnv.nodename])
+
+    for node in targets.copy():
+        if not remote_node_type(self, node, type):
+            targets -= set([node])
+            continue
+
+    if len(targets) == 0:
+        self.log.info("no node to sync")
+        raise ex.syncNoNodesToSync
+
+    return targets
+
 def sync(self, type):
     if hasattr(self, "alt_src"):
         """ The pre_action() has provided us with a better source
@@ -73,32 +94,23 @@ def sync(self, type):
         self.log.debug('%s => %s sync not applicable to %s',
                   (src, self.dst, type))
         return 0
-    targets = self.target[type]
+    targets = nodes_to_sync(self, type)
 
-    """Discard the local node from the set
-    """
-    targets -= set([rcEnv.nodename])
-
-    if len(targets) == 0:
-        self.log.info("no node to sync")
-        raise ex.syncNoNodesToSync
     if len(src) == 0:
         self.log.debug("no files to sync")
         raise ex.syncNoFilesToSync
 
     for node in targets:
-        if not remote_node_type(self, node, type):
-            return 1
         if not remote_fs_mounted(self, node):
-            return 1
+            continue
         dst = node + ':' + self.dst
         cmd = ['rsync'] + self.options + self.exclude + src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
-            return 1
-    return 0
+            continue
+    return
 
 class Rsync(Res.Resource):
     """Defines a rsync job from local node to its remote nodes. Target nodes
@@ -123,6 +135,16 @@ class Rsync(Res.Resource):
         """
         if self.svc.status() != 0:
             self.log.warning("won't sync a service not up")
+            raise ex.excAbortAction
+
+        """ Is there at least one node to sync ?
+        """
+        try:
+            if action == "syncnodes":
+                targets = nodes_to_sync(self, 'nodes')
+            else:
+                targets = nodes_to_sync(self, 'drpnodes')
+        except ex.syncNoNodesToSync:
             raise ex.excAbortAction
 
         import snapLvmLinux as snap

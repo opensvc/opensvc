@@ -401,7 +401,7 @@ def build(name):
 
     # prune not managed service
     if rcEnv.nodename not in svc.nodes | svc.drpnodes:
-        log.debug('service %s not managed here' % name)
+        log.error('service %s not managed here' % name)
         del(svc)
         return None
 
