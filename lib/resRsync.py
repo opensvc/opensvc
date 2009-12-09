@@ -141,14 +141,18 @@ class Rsync(Res.Resource):
     def syncnodes(self):
         try:
             sync(self, "nodes")
-        except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
+        except ex.syncNoFilesToSync:
             pass
+        except ex.syncNoNodesToSync:
+            raise ex.excAbortAction
 
     def syncdrp(self):
         try:
             sync(self, "drpnodes")
-        except (ex.syncNoNodesToSync, ex.syncNoFilesToSync):
+        except ex.syncNoFilesToSync:
             pass
+        except ex.syncNoNodesToSync:
+            raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  optional=False, disabled=False):
