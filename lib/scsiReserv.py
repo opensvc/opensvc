@@ -24,7 +24,7 @@ import uuid
 import re
 import time
 import rcStatus
-from rcUtilities import call
+from rcUtilities import call, which
 
 def scsireserv_supported():
     if which('sg_persist') is None:
