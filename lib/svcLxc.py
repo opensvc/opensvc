@@ -40,7 +40,7 @@ class SvcLxc(svc.Svc):
         start lxc
         start apps
         """
-        self.sub_set_action("ip", "check_ping")
+        self.sub_set_action("ip", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("mount", "start")
@@ -80,7 +80,6 @@ class SvcLxc(svc.Svc):
         self.sub_set_action("container.lxc", "stop")
 
     def startip(self):
-        self.sub_set_action("ip", "check_ping")
         self.sub_set_action("ip", "start")
 
     def stopip(self):

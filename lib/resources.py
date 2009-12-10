@@ -62,7 +62,8 @@ class Resource(object):
 
     def do_action(self, action):
         if hasattr(self, action):
-            return getattr(self, action)()
+            getattr(self, action)()
+            return
 
         """Every class inheriting resource should define start() stop() status()
         Alert on these minimal implementation requirements
@@ -86,8 +87,10 @@ class Resource(object):
             print ex
             return False
         except exc.excError:
-            if self.optional: return True
-            else: return False
+            if self.optional:
+                pass
+            else:
+                raise exc.excError
 
     def status(self):
         """aggregate status a ResourceSet
@@ -176,8 +179,6 @@ class ResourceSet(Resource):
                 r.action(action)
             except exc.excAbortAction:
                 break
-            except:
-                raise
         self.post_action(self, action)
 
 

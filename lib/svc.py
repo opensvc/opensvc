@@ -85,10 +85,8 @@ class Svc(Resource, Freezer):
         for r in self.get_res_sets(type):
             try:
                 r.action(action)
-            except ex.excError:
+            except ex.excAbortAction:
                 break
-            except:
-                raise
 
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))

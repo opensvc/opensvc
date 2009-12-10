@@ -20,7 +20,9 @@
 # and open the template in the editor.
 "Module implement Linux/LXC specific ip management"
 
+import action as ex
 import resIpLinux as Res
+import resIp
 import rcIfconfigLinuxlxc as rcIfconfig
 import rcStatus
 from subprocess import *
@@ -37,6 +39,13 @@ class Ip(Res.Ip):
             return True
         self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
         return False
+
+    def start(self):
+        try:
+            self.allow_start()
+        except (resIp.IpConflict, resIp.IpDevDown):
+            raise ex.excError
+        self.log.debug('pre-checks passed')
 
     def __init__(self, lxcname, ipdev, ipname):
         Res.Ip.__init__(self, ipdev, ipname)
