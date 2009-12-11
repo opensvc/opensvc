@@ -67,3 +67,5 @@ These are the tools to drive OpenSVC services
 EOF
 
 rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
+
+[ -x $PATH_SCRIPT/release ] && $PATH_SCRIPT/release $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
