@@ -35,6 +35,7 @@ EXCL="$EXCL --exclude=var/host_mode"
 EXCL="$EXCL --exclude='var/lock/*'"
 cd $OSVC || exit 1
 tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
+touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
 
 # symbolic links
 cd $CHROOT || exit 1
@@ -55,6 +56,7 @@ These are the tools to drive OpenSVC services
 /service/bin/postinstall
 %files
 %docdir /usr/local/opensvc/usr/share
+%config(noreplace) /usr/local/opensvc/var/host_mode
 %defattr(-,root,root)
 %attr(0755,root,root) /usr/local/opensvc/bin
 %attr(0644,root,root) /usr/local/opensvc/lib
