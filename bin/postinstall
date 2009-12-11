@@ -84,5 +84,13 @@ def install_rc():
     os.chmod(rc, 0755)
     activate()
 
+def gen_keys():
+    if os.path.exists("/root/.ssh/id_dsa.pub") or os.path.exists("/root/.ssh/id_dsa"):
+        return
+    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '', '-f', '/root/.ssh/id_dsa']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+
 install_cron()
 install_rc()
+gen_keys()
