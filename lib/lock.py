@@ -18,7 +18,7 @@ def svclock(svc):
             pass
 
     try:
-        svc.lockfd = os.open(lock, os.O_RDWR|os.O_SYNC|os.O_CREAT, 0644)
+        svc.lockfd = os.open(lock, os.O_RDWR|os.O_SYNC|os.O_CREAT|os.O_TRUNC, 0644)
     except:
         svc.log.error("can not create lock file %s"%lock)
         raise
