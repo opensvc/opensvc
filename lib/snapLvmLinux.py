@@ -57,7 +57,7 @@ def lv_info(self, device):
     lv_size = float(info[2].split('M')[0])
     return (info[0], info[1], lv_size)
 
-def snap(self, rset):
+def snap(self, rset, action):
     mounts_h = {}
     for r in rset.resources:
         if r.snap is not True and r.snap is not False:
@@ -65,6 +65,10 @@ def snap(self, rset):
             raise ex.syncConfigSyntaxError
 
         if not r.snap:
+            continue
+
+        if (action == "syncnodes" and not 'nodes' in r.target) or \
+           (action == "syncdrp" and not 'drpnodes' in r.target):
             continue
 
         mounts_h = find_mounts(r, mounts_h)

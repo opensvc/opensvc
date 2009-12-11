@@ -139,17 +139,21 @@ class Rsync(Res.Resource):
 
         """ Is there at least one node to sync ?
         """
-        try:
-            if action == "syncnodes":
-                targets = nodes_to_sync(self, 'nodes')
-            else:
-                targets = nodes_to_sync(self, 'drpnodes')
-        except ex.syncNoNodesToSync:
+        targets = set([])
+        for r in rset.resources:
+            try:
+                if action == "syncnodes":
+                    targets |= nodes_to_sync(r, 'nodes')
+                else:
+                    targets |= nodes_to_sync(r, 'drpnodes')
+            except ex.syncNoNodesToSync:
+                pass
+        if len(targets) == 0:
             raise ex.excAbortAction
 
         import snapLvmLinux as snap
         try:
-            rset.snaps = snap.snap(self, rset)
+            rset.snaps = snap.snap(self, rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
 
