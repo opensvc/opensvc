@@ -76,7 +76,6 @@ def nodes_to_sync(self, type=None):
             continue
 
     if len(targets) == 0:
-        self.log.info("no node to sync")
         raise ex.syncNoNodesToSync
 
     return targets
@@ -149,6 +148,7 @@ class Rsync(Res.Resource):
             except ex.syncNoNodesToSync:
                 pass
         if len(targets) == 0:
+            self.log.info("no node to sync")
             raise ex.excAbortAction
 
         import snapLvmLinux as snap
@@ -170,6 +170,7 @@ class Rsync(Res.Resource):
         except ex.syncNoFilesToSync:
             pass
         except ex.syncNoNodesToSync:
+            self.log.info("no node to sync")
             raise ex.excAbortAction
 
     def syncdrp(self):
@@ -178,6 +179,7 @@ class Rsync(Res.Resource):
         except ex.syncNoFilesToSync:
             pass
         except ex.syncNoNodesToSync:
+            self.log.info("no node to sync")
             raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
