@@ -31,7 +31,6 @@ class SvcHosted(svc.Svc):
 
     def start(self):
         """start a hosted service:
-        check ping
         start ips
         start loops
         start VGs
@@ -39,7 +38,6 @@ class SvcHosted(svc.Svc):
         start mounts
         start apps
         """
-        self.sub_set_action("ip", "check_ping")
         self.sub_set_action("ip", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
@@ -99,7 +97,6 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("disk.loop", "stop")
 
     def startip(self):
-        self.sub_set_action("ip", "check_ping")
         self.sub_set_action("ip", "start")
 
     def stopip(self):
