@@ -99,10 +99,9 @@ class Ip(Res.Resource):
 
     def start(self):
         try:
-            if not self.allow_start():
-                return 0
+            self.allow_start()
         except (IpConflict, IpDevDown):
-            return 1
+            raise ex.excError
         self.log.debug('pre-checks passed')
 
         ifconfig = rcIfconfig.ifconfig()
