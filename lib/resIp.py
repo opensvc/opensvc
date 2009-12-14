@@ -86,16 +86,17 @@ class Ip(Res.Resource):
 
     def allow_start(self):
         ifconfig = rcIfconfig.ifconfig()
-        if not ifconfig.interface(self.ipDev).flag_up:
+        intf = ifconfig.interface(self.ipDev)
+        if intf is None or not intf.flag_up:
             self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
             raise IpDevDown(self.ipDev)
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
-            return False
+            return
         if self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise IpConflict(self.addr)
-        return True
+        return
 
     def start(self):
         try:
