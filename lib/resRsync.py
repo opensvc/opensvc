@@ -170,7 +170,7 @@ class Rsync(Res.Resource):
         except ex.syncNoFilesToSync:
             pass
         except ex.syncNoNodesToSync:
-            self.log.info("no node to sync")
+            self.log.debug("no node to sync")
             raise ex.excAbortAction
 
     def syncdrp(self):
