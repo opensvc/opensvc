@@ -127,13 +127,13 @@ class Rsync(Res.Resource):
         """Don't sync PRD services when running on !PRD node
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
-            self.log.warning("won't sync a PRD service running on a !PRD node")
+            self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
         """Accept to sync from here only if the service is up
         """
         if self.svc.status() != 0:
-            self.log.warning("won't sync a service not up")
+            self.log.debug("won't sync a service not up")
             raise ex.excAbortAction
 
         """ Is there at least one node to sync ?
@@ -148,7 +148,7 @@ class Rsync(Res.Resource):
             except ex.syncNoNodesToSync:
                 pass
         if len(targets) == 0:
-            self.log.info("no node to sync")
+            self.log.debug("no node to sync")
             raise ex.excAbortAction
 
         import snapLvmLinux as snap
@@ -179,7 +179,7 @@ class Rsync(Res.Resource):
         except ex.syncNoFilesToSync:
             pass
         except ex.syncNoNodesToSync:
-            self.log.info("no node to sync")
+            self.log.debug("no node to sync")
             raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
