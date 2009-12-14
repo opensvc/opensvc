@@ -20,6 +20,7 @@
 from datetime import datetime
 import xmlrpclib
 import uuid
+import os
 from rcGlobalEnv import rcEnv
 
 hostid = str(uuid.getnode())
@@ -46,6 +47,11 @@ def end_action(svc, action, begin, end, logfile):
     err = 'ok'
     dateprev = None
     lines = open(logfile, 'r').read()
+
+    """ If logfile is empty, default to current process pid
+    """
+    pid = os.getpid()
+
     """Example logfile line:
     2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
     """
