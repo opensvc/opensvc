@@ -187,15 +187,17 @@ class Svc(Resource, Freezer):
 
         """Trigger action
         """
-        err = False
+        err = 0
         try:
             svclock(self)
             getattr(self, action)()
         except ex.excError:
+            err = 1
             pass
         except:
             """Save the error for deferred raising
             """
+            err = 1
             import traceback
             traceback.print_exc()
 
@@ -206,6 +208,7 @@ class Svc(Resource, Freezer):
         end = datetime.now()
         xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
         unlink(actionlogfile)
+        return err
 
     def restart(self):
 	""" stop then start service"""
