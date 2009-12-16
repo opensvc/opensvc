@@ -24,6 +24,7 @@ import os
 import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
+from rcUtilities import qcall
 
 def try_umount(self):
     """best effort kill of all processes that might block
@@ -33,11 +34,15 @@ def try_umount(self):
     cmd = ['sync']
     (ret, out) = self.vcall(cmd)
 
-    cmd = ['fuser', '-kmv', self.mountPoint]
-    (ret, out) = self.vcall(cmd)
+    for i in range(4):
+        cmd = ['fuser', '-kmv', self.mountPoint]
+        (ret, out) = self.vcall(cmd)
+        self.log.info('umount %s'%self.mountPoint)
+        cmd = ['umount', self.mountPoint]
+        ret = qcall(cmd)
+        if ret == 0:
+            break
 
-    cmd = ['umount', self.mountPoint]
-    (ret, out) = self.vcall(cmd)
     return ret
 
 
@@ -74,6 +79,8 @@ class Mount(Res.Mount):
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
+        if ret != 0:
+            self.log.error('failed to umount %s'%self.mountPoint)
         return ret
 
 if __name__ == "__main__":
