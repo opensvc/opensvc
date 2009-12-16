@@ -39,13 +39,12 @@ def app(self, name, action):
         self.vcall(['chmod', '+x', name])
     self.log.info('spawn: %s %s' % (name, action))
     outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
-    f = open(outf, 'a')
+    f = open(outf, 'w')
     t = datetime.now()
-    f.write(str(t))
-    p = Popen([name, action], stdout=PIPE)
-    f.write(p.communicate()[0])
+    p = Popen([name, action], stdin=None, stdout=f.fileno(), stderr=f.fileno())
+    p.communicate()
     len = datetime.now() - t
-    self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, p.returncode, outf))
+    self.log.info('%s done in %s - ret %d - logs in %s' % (action, len, p.returncode, outf))
     f.close()
     return p.returncode
 
