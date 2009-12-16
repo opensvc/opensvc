@@ -56,7 +56,7 @@ class Apps(Res.Resource):
         """
         if not checks(self):
             return 1
-        for name in glob.glob(os.path.join(self.svc.initd, 'S*')):
+        for name in sorted(glob.glob(os.path.join(self.svc.initd, 'S*'))):
             app(self, name, 'start')
         return 0
 
@@ -66,7 +66,7 @@ class Apps(Res.Resource):
         """
         if not checks(self):
             return 1
-        for name in glob.glob(os.path.join(self.svc.initd, 'K*')):
+        for name in sorted(glob.glob(os.path.join(self.svc.initd, 'K*'))):
             app(self, name, 'stop')
         return 0
 
