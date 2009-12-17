@@ -25,6 +25,7 @@ import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall
+import action as ex
 
 def try_umount(self):
     """best effort kill of all processes that might block
@@ -69,7 +70,8 @@ class Mount(Res.Mount):
             os.makedirs(self.mountPoint, 0755)
         cmd = ['mount', '-t', self.fsType, '-o', self.mntOpt, self.device, self.mountPoint]
         (ret, out) = self.vcall(cmd)
-        return ret
+        if ret != 0:
+            raise ex.excError
 
     def stop(self):
         if self.is_up() is False:
@@ -81,7 +83,7 @@ class Mount(Res.Mount):
             if ret == 0: break
         if ret != 0:
             self.log.error('failed to umount %s'%self.mountPoint)
-        return ret
+            raise ex.excError
 
 if __name__ == "__main__":
     for c in (Mount,) :

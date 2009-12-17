@@ -25,6 +25,7 @@ import os
 import rcStatus
 import rcMountsSunOS as rcMounts
 import resMount as Res
+import action as ex
 
 class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
@@ -42,44 +43,50 @@ class Mount(Res.Mount):
     def start(self):
         Res.Mount.start(self)
         self.Mounts = rcMounts.Mounts()
+
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
-            return 0
+            return
+
         if self.fsType == 'zfs' :
             ret, out = self.vcall(['zfs', 'set', \
                                     'mountpoint='+self.mountPoint , \
                                     self.device ])
             if ret != 0 :
-                return ret
+                raise ex.excError
+
             ret, out = self.vcall(['zfs', 'mount', self.device ])
-            return ret
+            if ret != 0:
+                raise ex.excError
+            return
 
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
         cmd = ['mount', '-F', self.fsType, '-o', self.mntOpt, self.device, \
             self.mountPoint]
         (ret, out) = self.vcall(cmd)
-        return ret
+        if ret != 0:
+            raise ex.excError
 
     def stop(self):
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
-            return 0
+            return
 
         (ret, out) = self.vcall(['umount', self.mountPoint])
         if ret == 0 :
-            return 0
+            return
 
         if self.fsType != 'lofs' :
             (ret, out) = self.vcall(['umount', '-f', self.mountPoint])
             if ret == 0 :
-                return 0
-        
+                return
+
         self.log.error("failed")
-        return 1
-        
+        raise ex.excError
+
 
 if __name__ == "__main__":
     for c in (Mount,) :
