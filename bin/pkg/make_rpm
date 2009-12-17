@@ -35,7 +35,7 @@ mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
 # install tracked files
 EXCL=
 EXCL="$EXCL --exclude=bin/pkg"
-EXCL="$EXCL --exclude='*.pyc'"
+EXCL="$EXCL --exclude=*.pyc"
 EXCL="$EXCL --exclude='log/*'"
 EXCL="$EXCL --exclude='etc/*'"
 EXCL="$EXCL --exclude='tmp/*'"
