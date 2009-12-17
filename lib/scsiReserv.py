@@ -25,7 +25,7 @@ import re
 import time
 import rcStatus
 import rcExceptions as ex
-from rcUtilities import call, which
+from rcUtilities import which
 
 def scsireserv_supported():
     if which('sg_persist') is None:
@@ -37,7 +37,7 @@ def ack_unit_attention(self, d):
     while i>0:
         i -= 1
         cmd = [ 'sg_persist', '-n', '-r', d ]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, errlog=False)
         if "Unit Attention" in out or ret != 0:
             self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
             time.sleep(1)

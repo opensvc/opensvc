@@ -50,7 +50,7 @@ def which(program):
             return exe_file
     return None
 
-def call(argv=['/bin/false'], log=None, info=False):
+def call(argv=['/bin/false'], log=None, info=False, errlog=True):
     if log == None:
         log = logging.getLogger('CALL')
     if not argv:
@@ -61,7 +61,7 @@ def call(argv=['/bin/false'], log=None, info=False):
         log.debug(' '.join(argv))
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
-    if len(buff[1]) > 0:
+    if errlog and len(buff[1]) > 0:
         log.error('error:\n' + buff[1])
     if len(buff[0]) > 0:
         log.debug('output:\n' + buff[0])

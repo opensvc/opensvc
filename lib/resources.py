@@ -105,10 +105,10 @@ class Resource(object):
     def print_status(self):
         return rcStatus.print_status(self.id, self.status())
 
-    def call(self, cmd):
+    def call(self, cmd=['/bin/false'], info=False, errlog=True):
         """Use subprocess module functions to do a call
         """
-        return rcUtilities.call(cmd, self.log)
+        return rcUtilities.call(cmd, self.log, info, errlog)
 
     def vcall(self, cmd):
         """Use subprocess module functions to do a call and
