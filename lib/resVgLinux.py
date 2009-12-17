@@ -18,7 +18,7 @@
 #
 import re
 import os
-import exceptions as ex
+import rcExceptions as ex
 import resDg
 
 def get_blockdev_sd_slaves(syspath):

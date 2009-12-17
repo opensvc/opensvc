@@ -26,7 +26,7 @@ from subprocess import Popen, PIPE
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
 import rcStatus
-import exceptions as ex
+import rcExceptions as ex
 
 class MissImpl(Exception):
     def __init__(self, value):

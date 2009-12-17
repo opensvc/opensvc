@@ -25,7 +25,7 @@ import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall
-import exceptions as ex
+import rcExceptions as ex
 
 def try_umount(self):
     """best effort kill of all processes that might block

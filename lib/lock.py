@@ -1,6 +1,6 @@
 import fcntl
 import os
-import exceptions as ex
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 def svclock(svc):

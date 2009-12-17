@@ -20,7 +20,7 @@ import os
     
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, qcall, protected_mount
-import exceptions as ex
+import rcExceptions as ex
 
 def find_mount(rs, dir):
     """Sort mounts from deepest to shallowest and return the

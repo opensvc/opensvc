@@ -21,7 +21,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-import exceptions as ex
+import rcExceptions as ex
 import rcStatus
 import resources as Res
 

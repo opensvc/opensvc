@@ -23,7 +23,7 @@ from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
-import exceptions as ex
+import rcExceptions as ex
 from lock import svclock
 
 class Svc(Resource, Freezer):

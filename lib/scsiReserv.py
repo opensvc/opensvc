@@ -24,7 +24,7 @@ import uuid
 import re
 import time
 import rcStatus
-import exceptions as ex
+import rcExceptions as ex
 from rcUtilities import call, which
 
 def scsireserv_supported():
@@ -221,5 +221,5 @@ class ScsiReserv(Res.Resource):
             raise ex.excError
 
     def stop(self):
-        if self.scsirelease() != 0
+        if self.scsirelease() != 0:
             raise ex.excError
