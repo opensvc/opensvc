@@ -124,8 +124,8 @@ class Resource(object):
 
 class ResourceSet(Resource):
     """ Define Set of same type resources
-    Example 1: ResourceSet("mount",[m1,m2])
-    Example 2: r=ResourceSet("mount",[ip1])
+    Example 1: ResourceSet("fs",[m1,m2])
+    Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
     def __init__(self,type=None,resources=[],optional=False,disabled=False):
@@ -164,7 +164,7 @@ class ResourceSet(Resource):
     def action(self,action=None):
         """Call action on each resource of the ResourceSet
         """
-        if action in ["mount", "start"]:
+        if action in ["fs", "start"]:
             self.resources.sort()
         else:
             self.resources.sort(reverse=True)

@@ -41,7 +41,7 @@ def svcmon_verbose(svcs):
 
 def svcmon_normal(svcs, upddb=False):
     fmt = '%-12s %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
-    out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "mount ", "overall")
+    out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "overall")
     out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status ")
     out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "-------")
     for svc in svcs:
@@ -53,7 +53,7 @@ def svcmon_normal(svcs, upddb=False):
               status["container"],
               status["ip"],
               status["disk"],
-              status["mount"],
+              status["fs"],
               status["overall"])
        if upddb:
            xmlrpcClient.svcmon_update(svc, status)

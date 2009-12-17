@@ -32,14 +32,14 @@ def find_mount(rs, dir):
     return None
 
 def find_mounts(self, mounts_h):
-    rs = self.svc.get_res_sets("mount")[0]
+    rs = self.svc.get_res_sets("fs")[0]
     if rs is None:
-        self.log.error("can not find mount resources encapsulating %s to snap"%r.src)
+        self.log.error("can not find fs resources encapsulating %s to snap"%r.src)
         raise ex.syncNotSnapable
     for src in self.src:
         m = find_mount(rs, src)
         if m is None:
-            self.log.error("can not find mount resources encapsulating %s to snap"%self.src)
+            self.log.error("can not find fs resources encapsulating %s to snap"%self.src)
             raise ex.syncNotSnapable
         mounts_h[src] = m
     return mounts_h

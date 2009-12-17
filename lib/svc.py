@@ -25,6 +25,36 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from lock import svclock
+import xmlrpcClient
+
+def fork_dblogger(self, action, begin, end, actionlogfile):
+    import os
+	
+    try:
+        if os.fork() > 0:
+            """ return to parent execution
+            """
+            return
+    except:
+        """ no dblogging will be done. too bad.
+        """
+        return
+
+    """ separate the son from the father
+    """
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            os._exit(0)
+    except:
+        os._exit(1)
+
+    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    os.unlink(actionlogfile)
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -115,7 +145,7 @@ class Svc(Resource, Freezer):
         """print each resource status for a service
         """
         status = {}
-        groups = ["container", "ip", "disk", "mount"]
+        groups = ["container", "ip", "disk", "fs"]
         moregroups = groups + ["overall"]
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
@@ -164,10 +194,8 @@ class Svc(Resource, Freezer):
 
     def action(self, action):
         from datetime import datetime
-        import xmlrpcClient
         import tempfile
         import logging
-        from os import unlink
         begin = datetime.now()
 
         """Provision a database entry to store action log later
@@ -206,8 +234,8 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
-        unlink(actionlogfile)
+        self.log.info("action finished with status [%d]. pushing logs to collector."%err)
+        fork_dblogger(self, action, begin, end, actionlogfile)
         return err
 
     def restart(self):
@@ -231,10 +259,10 @@ if __name__ == "__main__" :
     print "s1=",s1
     print """s1+=Resource("ip")"""
     s1+=Resource("ip")
-    print """s1+=Resource("mount")"""
-    s1+=Resource("mount")
-    print """s1+=Resource("mount")"""
-    s1+=Resource("mount")
+    print """s1+=Resource("fs")"""
+    s1+=Resource("fs")
+    print """s1+=Resource("fs")"""
+    s1+=Resource("fs")
     print "s1=",s1
 
     print """s1.action("status")"""

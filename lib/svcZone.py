@@ -26,7 +26,7 @@ import svc
 
 class SvcZone(svc.Svc):
     """ Define Zone services"""
-    status_types = ["container.zone", "ip", "disk.vg", "mount"]
+    status_types = ["container.zone", "ip", "disk.vg", "fs"]
 
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"container.zone",optional, disabled)
@@ -38,7 +38,7 @@ class SvcZone(svc.Svc):
         start ips
         start zone
         start VGs
-        start mounts
+        start fs
         start apps
         """
         print "starting %s" % self.__class__.__name__
@@ -47,20 +47,20 @@ class SvcZone(svc.Svc):
         self.sub_set_action("ip", "start")
         self.sub_set_action("container.zone", "boot")
         self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
         """stop a zone:
         stop apps
-        stop mounts
+        stop fs
         stop VGs
         stop zone
         stop ips
         """
         print "stopping %s" % self.__class__.__name__
         self.sub_set_action("app", "stop")
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("container.zone", "stop")
         self.sub_set_action("ip", "stop")
@@ -85,10 +85,10 @@ class SvcZone(svc.Svc):
         self.sub_set_action("disk.vg", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
 
 
 if __name__ == "__main__":

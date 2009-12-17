@@ -177,7 +177,7 @@ def svcmon_update(svc, status):
             repr(str(status["ip"])),
             repr(str(status["disk"])),
             repr(str(status["container"])),
-            repr(str(status["mount"])),
+            repr(str(status["fs"])),
             repr(str(status["overall"])),
             repr(str(datetime.now())),
             repr(' '.join(svc.nodes))]

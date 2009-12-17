@@ -159,7 +159,7 @@ def add_pools(svc, conf):
         r.svc = svc
         svc += r
 
-def add_mounts(svc, conf):
+def add_filesystems(svc, conf):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
     """
@@ -444,7 +444,7 @@ def build(name):
         add_loops(svc, conf)
         add_vgs(svc, conf)
         add_pools(svc, conf)
-        add_mounts(svc, conf)
+        add_filesystems(svc, conf)
         add_syncs(svc, conf)
         add_apps(svc, conf)
     except ex.excInitError:

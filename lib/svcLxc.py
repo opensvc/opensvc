@@ -25,7 +25,7 @@ import rcStatus
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
-    status_types = ["container.lxc", "disk.loop", "mount", "disk.vg", "ip"]
+    status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip"]
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
@@ -36,14 +36,14 @@ class SvcLxc(svc.Svc):
         check ping
         start loops
         start VGs
-        start mounts
+        start fs
         start lxc
         start apps
         """
         self.sub_set_action("ip", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
         self.sub_set_action("container.lxc", "start")
         self.sub_set_action("app", "start")
 
@@ -51,13 +51,13 @@ class SvcLxc(svc.Svc):
         """stop a zone:
         stop apps
         stop lxc
-        stop mounts
+        stop fs
         stop VGs
         stop loops
         """
         self.sub_set_action("app", "stop")
         self.sub_set_action("container.lxc", "stop")
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.loop", "stop")
 
@@ -98,10 +98,10 @@ class SvcLxc(svc.Svc):
         self.sub_set_action("disk.vg", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
 
 
 if __name__ == "__main__":

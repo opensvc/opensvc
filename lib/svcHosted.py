@@ -24,7 +24,7 @@ import svc
 class SvcHosted(svc.Svc):
     """Define hosted services
     """
-    status_types = ["disk.loop", "mount", "disk.vg", "disk.zpool", "ip"]
+    status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip"]
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
@@ -35,25 +35,25 @@ class SvcHosted(svc.Svc):
         start loops
         start VGs
         start Pools
-        start mounts
+        start fs
         start apps
         """
         self.sub_set_action("ip", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
         """stop a hosted service:
         stop apps
-        stop mounts
+        stop fs
         stop VGs
         stop ips
         """
         self.sub_set_action("app", "stop")
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
         self.sub_set_action("disk.loop", "stop")
@@ -76,22 +76,22 @@ class SvcHosted(svc.Svc):
         start loops
         start VGs
         start Pools
-        start mounts
+        start fs
         """
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
 
     def diskstop(self):
         """stop a hosted service:
         stop apps
-        stop mounts
+        stop fs
         stop VGs
         stop Pools
         stop ips
         """
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
         self.sub_set_action("disk.loop", "stop")
@@ -121,10 +121,10 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("disk.zpool", "stop")
 
     def mount(self):
-        self.sub_set_action("mount", "start")
+        self.sub_set_action("fs", "start")
 
     def umount(self):
-        self.sub_set_action("mount", "stop")
+        self.sub_set_action("fs", "stop")
 
 if __name__ == "__main__":
     for c in (SvcHosted,) :
