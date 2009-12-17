@@ -52,17 +52,17 @@ class Dg(Res.Resource):
 
     def scsirelease(self):
         if not allow_scsireserv(self):
-            return 0
+            return
 	return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
 
     def scsireserv(self):
         if not allow_scsireserv(self):
-            return 0
+            return
 	return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
 
     def scsicheckreserv(self):
         if not allow_scsireserv(self):
-            return 0
+            return
 	return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
     def disklist(self):
@@ -75,19 +75,13 @@ class Dg(Res.Resource):
 
     def stop(self):
         self.disks = self.disklist()
-        if self.do_stop() != 0:
-            return 1
-        if self.scsirelease() != 0:
-            return 1
-        return 0
+        self.do_stop()
+        self.scsirelease()
 
     def start(self):
         self.disks = self.disklist()
-        if self.scsireserv() != 0:
-            return 1
-        if self.do_start() != 0:
-            return 1
-        return 0
+        self.scsireserv()
+        self.do_start()
 
     def status(self):
         if self.is_up(): return rcStatus.UP

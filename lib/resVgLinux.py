@@ -18,7 +18,7 @@
 #
 import re
 import os
-
+import exceptions as ex
 import resDg
 
 def get_blockdev_sd_slaves(syspath):
@@ -77,7 +77,8 @@ class Vg(resDg.Dg):
             return 0
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out) = self.vcall(cmd)
-        return ret
+        if ret != 0:
+            raise ex.excError
 
     def do_stop(self):
         if not self.is_up():
@@ -85,7 +86,8 @@ class Vg(resDg.Dg):
             return 0
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
-        return ret
+        if ret != 0:
+            raise ex.excError
 
     def disklist(self):
         if not self.has_it():
