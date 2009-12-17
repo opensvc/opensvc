@@ -32,7 +32,7 @@ import rcLogger
 import rcAddService
 import resRsync
 import resApp
-import action as ex
+import exceptions as ex
 
 check_privs()
 

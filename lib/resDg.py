@@ -24,7 +24,7 @@
 import resources as Res
 import scsiReserv as scsiReserv
 import rcStatus
-import action as exc
+import exceptions as exc
 
 def allow_scsireserv(self): 
     if not self.scsiReservation:

@@ -20,7 +20,7 @@
 # and open the template in the editor.
 "Module implement Linux/LXC specific ip management"
 
-import action as ex
+import exceptions as ex
 import resIpLinux as Res
 import resIp
 import rcIfconfigLinuxlxc as rcIfconfig

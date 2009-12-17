@@ -25,7 +25,7 @@ import os
 import rcStatus
 import rcMountsSunOS as rcMounts
 import resMount as Res
-import action as ex
+import exceptions as ex
 
 class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
