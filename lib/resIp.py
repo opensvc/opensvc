@@ -46,6 +46,13 @@ class IpConflict(Exception):
     def __str__(self):
         return repr(self.value)
 
+class IpAlreadyUp(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
 class Ip(Res.Resource):
     """ basic ip resource
     """
@@ -92,7 +99,7 @@ class Ip(Res.Resource):
             raise IpDevDown(self.ipDev)
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
-            return
+            raise IpAlreadyUp(self.addr)
         if self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise IpConflict(self.addr)
@@ -103,37 +110,38 @@ class Ip(Res.Resource):
             self.allow_start()
         except (IpConflict, IpDevDown):
             raise ex.excError
+        except IpAlreadyUp:
+            return
         self.log.debug('pre-checks passed')
 
         ifconfig = rcIfconfig.ifconfig()
         self.mask = ifconfig.interface(self.ipDev).mask
         if self.mask == '':
             self.log.error("No netmask set on parent interface %s" % self.ipDev)
-            return None
+            raise ex.excError
         if self.mask == '':
             self.log.error("No netmask found. Abort")
-            return 1
+            raise ex.excError
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
-                                                    self.addr, self.log)
+                                                    self.addr,\
+                                                    self.log)
         (ret, out) = self.startip_cmd()
         if ret != 0:
             self.log.error("failed")
-            return 1
-        return 0
+            raise ex.excError
 
     def stop(self):
         if self.is_up() is False:
             self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
-            return 0
+            return
         ifconfig = rcIfconfig.ifconfig()
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
-                                                                self.addr,\
-                                                                self.log)
+                                                    self.addr,\
+                                                    self.log)
         (ret, out) = self.stopip_cmd()
         if ret != 0:
             self.log.error("failed")
-            return 1
-        return 0
+            raise ex.excError
 
 if __name__ == "__main__":
     for c in (Ip,) :
