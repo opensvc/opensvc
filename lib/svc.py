@@ -24,7 +24,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-from lock import svclock
+from lock import svclock, svcunlock
 import xmlrpcClient
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
@@ -235,6 +235,7 @@ class Svc(Resource, Freezer):
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
         self.log.info("action finished with status [%d]. pushing logs to collector."%err)
+        svcunlock(self)
         fork_dblogger(self, action, begin, end, actionlogfile)
         return err
 

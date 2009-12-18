@@ -50,3 +50,5 @@ def svclock(svc):
     except:
         raise
 
+def svcunlock(svc):
+    os.close(svc.lockfd)
