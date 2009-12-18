@@ -56,6 +56,7 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
+    os._exit(0)
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -235,7 +236,6 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        self.log.info("action finished with status [%d]. pushing logs to collector."%err)
         svcunlock(self)
         fork_dblogger(self, action, begin, end, actionlogfile)
         return err
