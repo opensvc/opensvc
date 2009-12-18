@@ -54,6 +54,7 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
         os._exit(1)
 
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
 
 class Svc(Resource, Freezer):
