@@ -105,12 +105,16 @@ def add_ips(svc, conf):
             svc.log.debug('add_ips ipdev not found in ip section' + s)
             ipdev = None
             continue
+        if conf.has_option(s, "netmask"):
+            netmask = conf.get(s, "netmask")
+        else:
+            netmask = None
         if svc.svcmode  == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
             r = ip.Ip(svc.svcname, ipdev, ipname)
         else:
             ip = __import__('resIp'+rcEnv.sysname)
-            r = ip.Ip(ipdev, ipname)
+            r = ip.Ip(ipdev, ipname, netmask)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
         svc += r

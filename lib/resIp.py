@@ -56,10 +56,11 @@ class IpAlreadyUp(Exception):
 class Ip(Res.Resource):
     """ basic ip resource
     """
-    def __init__(self, ipDev=None, ipName=None, optional=False, disabled=False):
+    def __init__(self, ipDev=None, ipName=None, mask=None, optional=False, disabled=False):
         Res.Resource.__init__(self, "ip", optional, disabled)
         self.ipDev=ipDev
         self.ipName=ipName
+        self.mask=mask
         self.id = 'ip ' + ipName + '@' + ipDev
         try:
             self.addr = socket.gethostbyname(ipName)
@@ -115,12 +116,10 @@ class Ip(Res.Resource):
         self.log.debug('pre-checks passed')
 
         ifconfig = rcIfconfig.ifconfig()
-        self.mask = ifconfig.interface(self.ipDev).mask
+        if self.mask is None:
+            self.mask = ifconfig.interface(self.ipDev).mask
         if self.mask == '':
             self.log.error("No netmask set on parent interface %s" % self.ipDev)
-            raise ex.excError
-        if self.mask == '':
-            self.log.error("No netmask found. Abort")
             raise ex.excError
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                     self.addr,\
