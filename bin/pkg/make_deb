@@ -51,7 +51,7 @@ ln -s usr/local/opensvc service || exit 1
 mkdir -p $CHROOT/DEBIAN || exit 1
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
-#/bin/sh
+#!/bin/sh
 /service/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
