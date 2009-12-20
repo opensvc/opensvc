@@ -50,6 +50,10 @@ ln -s usr/local/opensvc service || exit 1
 # prepare control.tar.gz
 mkdir -p $CHROOT/DEBIAN || exit 1
 
+cat - <<-EOF >$CHROOT/DEBIAN/conffiles
+/usr/local/opensvc/var/host_mode
+EOF
+
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh
 /service/bin/postinstall
