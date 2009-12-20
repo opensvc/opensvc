@@ -37,34 +37,47 @@ import svcBuilder
 from rcGlobalEnv import rcEnv
 
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
-proxy.delete_services(hostid)
+
+""" Purge current service configurations from database
+    for this host
+"""
+try:
+    proxy.delete_services(hostid)
+except:
+    pass
+
 for svc in svcBuilder.build_services():
-    proxy.update_service(
-	['svc_hostid',
-	 'svc_name',
-	 'svc_type',
-	 'svc_nodes',
-	 'svc_drpnode',
-	 'svc_drpnodes',
-	 'svc_comment',
-	 'svc_drptype',
-	 'svc_autostart',
-	 'svc_app',
-	 'svc_containertype',
-	 'svc_drnoaction'],
-	[repr(hostid),
-	 repr(svc.svcname),
-	 repr(svc.svctype),
-	 repr(' '.join(svc.nodes)),
-	 repr(svc.drpnode),
-	 repr(' '.join(svc.drpnodes)),
-	 repr(svc.comment),
-	 repr(svc.drp_type),
-	 repr(svc.autostart_node),
-	 repr(svc.app),
-	 repr(svc.svcmode),
-	 repr(svc.drnoaction)]
-    )
+    """ Load service configuration in database
+    """
+    try:
+        proxy.update_service(
+            ['svc_hostid',
+             'svc_name',
+             'svc_type',
+             'svc_nodes',
+             'svc_drpnode',
+             'svc_drpnodes',
+             'svc_comment',
+             'svc_drptype',
+             'svc_autostart',
+             'svc_app',
+             'svc_containertype',
+             'svc_drnoaction'],
+            [repr(hostid),
+             repr(svc.svcname),
+             repr(svc.svctype),
+             repr(' '.join(svc.nodes)),
+             repr(svc.drpnode),
+             repr(' '.join(svc.drpnodes)),
+             repr(svc.comment),
+             repr(svc.drp_type),
+             repr(svc.autostart_node),
+             repr(svc.app),
+             repr(svc.svcmode),
+             repr(svc.drnoaction)]
+        )
+    except:
+        pass
 
     try:
         svc.action('syncnodes')
