@@ -23,9 +23,18 @@ def install_cron():
 
     new = False
     with open(root_crontab, 'r') as f:
-        new = [line for line in f if ' /service/bin/' not in line and ' /usr/local/opensvc/bin' not in line]
-        new.append(cron_entry_1+'\n')
-        new.append(cron_entry_2+'\n')
+        svcmon_present = False
+        dailycron_present = False
+        new = f.readlines()
+        for line in new:
+            if 'opensvc.daily' in line:
+                dailycron_present = True
+            if 'svcmon --updatedb' in line:
+                svcmon_present = True
+        if not svcmon_present:
+            new.append(cron_entry_1+'\n')
+        if not dailycron_present:
+            new.append(cron_entry_2+'\n')
     if not new:
         print "problem preparing the new crontab"
         return False
@@ -33,6 +42,8 @@ def install_cron():
     with open(root_crontab, 'w') as f:
         f.write(''.join(new))
 
+    """ Clean up old standard file locations
+    """
     for f in ['/etc/cron.daily/opensvc', '/etc/cron.daily/opensvc.daily']:
         if os.path.exists(f):
             os.unlink(f)
