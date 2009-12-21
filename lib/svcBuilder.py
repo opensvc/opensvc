@@ -203,7 +203,7 @@ def add_mandatory_syncs(svc):
     """2
     """
     targethash = {'drpnodes': svc.drpnodes}
-    """Reparent all PRD backed-up file in /DR.opensvc/node on the drpnode
+    """ Reparent all PRD backed-up file in drp_path/node on the drpnode
     """
     dst = os.path.join(rcEnv.drp_path, rcEnv.nodename)
     for src, exclude in rcEnv.drp_sync_files:

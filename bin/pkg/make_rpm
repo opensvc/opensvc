@@ -30,7 +30,7 @@ mkdir -p $CHROOT/usr/local/opensvc/etc || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
 mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/var/cache || exit 1
 
 # install tracked files
 EXCL=
@@ -41,6 +41,7 @@ EXCL="$EXCL --exclude='etc/*'"
 EXCL="$EXCL --exclude='tmp/*'"
 EXCL="$EXCL --exclude=var/host_mode"
 EXCL="$EXCL --exclude='var/lock/*'"
+EXCL="$EXCL --exclude='var/cache/*'"
 cd $OSVC || exit 1
 tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
 touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
