@@ -99,11 +99,18 @@ def sync(self, type):
         self.log.debug("no files to sync")
         raise ex.syncNoFilesToSync
 
+    if self.bwlimit is not None:
+        bwlimit = [ '--bwlimit='+self.bwlimit ]
+    elif self.svc.bwlimit is not None:
+        bwlimit = [ '--bwlimit='+self.svc.bwlimit ]
+    else:
+        bwlimit = []
+
     for node in targets:
         if not remote_fs_mounted(self, node):
             continue
         dst = node + ':' + self.dst
-        cmd = ['rsync'] + self.options + self.exclude + src
+        cmd = ['rsync'] + self.options + bwlimit + self.exclude + src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -183,13 +190,14 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
-                 optional=False, disabled=False):
+                 bwlimit=None, optional=False, disabled=False):
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
         self.exclude = exclude
         self.snap = snap
         self.target = target
+        self.bwlimit = bwlimit
         Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):

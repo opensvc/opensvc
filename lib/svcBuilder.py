@@ -251,6 +251,11 @@ def add_syncs(svc, conf):
         else:
             target = ['nodes', 'drpnodes']
 
+        if conf.has_option(s, 'bwlimit'):
+            bwlimit = conf.get(s, 'bwlimit')
+        else:
+            bwlimit = None
+
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
@@ -260,6 +265,7 @@ def add_syncs(svc, conf):
                            exclude=exclude,
                            target=targethash,
                            dstfs=dstfs,
+                           bwlimit=bwlimit,
                            snap=snap)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
@@ -439,6 +445,11 @@ def build(name):
         svc.drnoaction = conf.get("default", "drnoaction")
     else:
         svc.drnoaction = False
+
+    if conf.has_option("default", "bwlimit"):
+        svc.bwlimit = conf.get("default", "bwlimit")
+    else:
+        svc.bwlimit = None
 
     #
     # instanciate resources
