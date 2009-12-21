@@ -24,6 +24,7 @@ from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
 import resources as Res
+import datetime
 
 def remote_fs_mounted(self, node):
     """Verify the remote fs is mounted before we send data.
@@ -41,6 +42,8 @@ def remote_fs_mounted(self, node):
         return False
     return True
 
+cache_remote_node_type = {}
+
 def remote_node_type(self, node, type):
     if type == 'drpnodes':
         type = 'DEV'
@@ -49,12 +52,16 @@ def remote_node_type(self, node, type):
     else:
         self.log.error('expected remote node type is bogus: %s'%type)
         raise
-    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
-    cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
-    (ret, out) = self.call(cmd)
-    if ret != 0:
-        raise ex.excError
-    if out.split()[0] == type:
+
+    if node not in cache_remote_node_type:
+        host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
+        cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        cache_remote_node_type[node] = out.split()[0]
+
+    if cache_remote_node_type[node] == type:
         return True
     self.log.error("node %s type is not '%s'. Check %s:%s"%\
                    (node, type, node, host_mode_f))
@@ -79,6 +86,35 @@ def nodes_to_sync(self, type=None):
         raise ex.syncNoNodesToSync
 
     return targets
+
+def get_timestamp_filename(self, node):
+    sync_timestamp_d = os.path.join(rcEnv.pathvar, 'sync', node)
+    sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.dst.replace('/', '_'))
+    return sync_timestamp_f
+
+def sync_timestamp(self, node):
+    sync_timestamp_f = get_timestamp_filename(self, node)
+    sync_timestamp_d = os.path.dirname(sync_timestamp_f)
+    if not os.path.isdir(sync_timestamp_d):
+        os.makedirs(sync_timestamp_d ,0755)
+    with open(sync_timestamp_f, 'w') as f:
+        f.write(str(datetime.datetime.now())+'\n')
+        f.close()
+
+def need_sync(self, node):
+    sync_timestamp_f = get_timestamp_filename(self, node)
+    if not os.path.exists(sync_timestamp_f):
+        return True
+    try:
+        with open(sync_timestamp_f, 'r') as f:
+            d = f.read()
+            if datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(hours=1):
+                return False
+            f.close()
+    except:
+        log.info("failed to determine last sync date for %s to %s"%(self.src, node))
+        return True
+    return True
 
 def sync(self, type):
     if hasattr(self, "alt_src"):
@@ -107,6 +143,9 @@ def sync(self, type):
         bwlimit = []
 
     for node in targets:
+        if not need_sync(self, node):
+            self.log.debug("skip sync of %s to %s because last sync too close"%(self.src, node))
+            continue
         if not remote_fs_mounted(self, node):
             continue
         dst = node + ':' + self.dst
@@ -116,6 +155,7 @@ def sync(self, type):
         if ret != 0:
             self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
             continue
+        sync_timestamp(self, node)
     return
 
 class Rsync(Res.Resource):
@@ -146,17 +186,31 @@ class Rsync(Res.Resource):
         """ Is there at least one node to sync ?
         """
         targets = set([])
-        for r in rset.resources:
+        rtargets = {0: set([])}
+        need_snap = False
+        for i, r in enumerate(rset.resources):
+            rtargets[i] = set([])
             try:
                 if action == "syncnodes":
-                    targets |= nodes_to_sync(r, 'nodes')
+                    rtargets[i] |= nodes_to_sync(r, 'nodes')
                 else:
-                    targets |= nodes_to_sync(r, 'drpnodes')
+                    rtargets[i] |= nodes_to_sync(r, 'drpnodes')
             except ex.syncNoNodesToSync:
                 pass
+            for node in rtargets[i].copy():
+                if not need_sync(r, node):
+                    rtargets[i] -= set([node])
+                elif r.snap:
+                    need_snap = True
+        for i in rtargets:
+            targets |= rtargets[i]
+
         if len(targets) == 0:
             self.log.debug("no node to sync")
             raise ex.excAbortAction
+
+        if not need_snap:
+            return
 
         import snapLvmLinux as snap
         try:
