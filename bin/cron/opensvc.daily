@@ -52,14 +52,16 @@ def disk_id(dev):
     cmd = [scsi_id, '-g', '-u', '-d', dev]
     (ret, out) = call(cmd)
     if ret == 0:
-        disk_ids[dev] = out.split('\n')[0]
-        return out.split('\n')[0]
+        id = out.split('\n')[0][1:]
+        disk_ids[dev] = id
+        return id
     sdev = dev.replace("/dev/", "/block/")
     cmd = [scsi_id, '-g', '-u', '-s', sdev]
     (ret, out) = call(cmd)
     if ret == 0:
-        disk_ids[dev] = out.split('\n')[0]
-        return out.split('\n')[0]
+        id = out.split('\n')[0][1:]
+        disk_ids[dev] = id
+        return id
     return
 
 def disk_vendor(dev):
