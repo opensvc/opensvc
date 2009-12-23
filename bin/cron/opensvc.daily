@@ -43,19 +43,20 @@ disk_ids = {}
 def disk_id(dev):
     if dev in disk_ids:
         return disk_ids[dev]
-    if which('udev'):
-        udev = 'udev'
+    if which('scsi_id'):
+        scsi_id = 'scsi_id'
     elif which('/lib/udev/scsi_id'):
-        udev = '/lib/udev/scsi_id'
+        scsi_id = '/lib/udev/scsi_id'
     else:
         return
-    cmd = [udev, '-g', '-u', '-d', dev]
+    cmd = [scsi_id, '-g', '-u', '-d', dev]
     (ret, out) = call(cmd)
     if ret == 0:
         disk_ids[dev] = out.split('\n')[0]
         return out.split('\n')[0]
     sdev = dev.replace("/dev/", "/block/")
-    cmd = [udev, '-g', '-u', '-s', sdev]
+    cmd = [scsi_id, '-g', '-u', '-s', sdev]
+    (ret, out) = call(cmd)
     if ret == 0:
         disk_ids[dev] = out.split('\n')[0]
         return out.split('\n')[0]
@@ -103,8 +104,7 @@ for svc in svcBuilder.build_services():
     """ Load service configuration in database
     """
     try:
-        #for d in svc.disks:
-        for d in [ '/dev/sda' ]:
+        for d in svc.disklist():
             proxy.register_disk(
                 ['disk_id',
                  'disk_svcname',
