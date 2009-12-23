@@ -29,7 +29,7 @@ import xmlrpcClient
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
     import os
-	
+
     try:
         if os.fork() > 0:
             """ return to parent execution
@@ -75,6 +75,7 @@ class Svc(Resource, Freezer):
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
+        self.disks = set([])
         Resource.__init__(self, type, optional, disabled)
         Freezer.__init__(self, svcname)
 

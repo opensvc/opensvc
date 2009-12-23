@@ -35,8 +35,61 @@ hostid = str(uuid.getnode())
 
 import svcBuilder
 from rcGlobalEnv import rcEnv
+from rcUtilities import call, which
 
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+
+disk_ids = {}
+def disk_id(dev):
+    if dev in disk_ids:
+        return disk_ids[dev]
+    if which('udev'):
+        udev = 'udev'
+    elif which('/lib/udev/scsi_id'):
+        udev = '/lib/udev/scsi_id'
+    else:
+        return
+    cmd = [udev, '-g', '-u', '-d', dev]
+    (ret, out) = call(cmd)
+    if ret == 0:
+        disk_ids[dev] = out.split('\n')[0]
+        return out.split('\n')[0]
+    sdev = dev.replace("/dev/", "/block/")
+    cmd = [udev, '-g', '-u', '-s', sdev]
+    if ret == 0:
+        disk_ids[dev] = out.split('\n')[0]
+        return out.split('\n')[0]
+    return
+
+def disk_vendor(dev):
+    s = ''
+    path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
+    if not os.path.exists(path):
+        return
+    with open(path, 'r') as f:
+        s = f.read()
+        f.close()
+    return s
+
+def disk_model(dev):
+    s = ''
+    path = dev.replace('/dev/', '/sys/block/')+'/device/model'
+    if not os.path.exists(path):
+        return
+    with open(path, 'r') as f:
+        s = f.read()
+        f.close()
+    return s
+
+def disk_size(dev):
+    size = 0
+    path = dev.replace('/dev/', '/sys/block/')+'/size'
+    if not os.path.exists(path):
+        return
+    with open(path, 'r') as f:
+        size = f.read()
+        f.close()
+    return int(size)/2097152
 
 """ Purge current service configurations from database
     for this host
@@ -49,6 +102,26 @@ except:
 for svc in svcBuilder.build_services():
     """ Load service configuration in database
     """
+    try:
+        #for d in svc.disks:
+        for d in [ '/dev/sda' ]:
+            proxy.register_disk(
+                ['disk_id',
+                 'disk_svcname',
+                 'disk_size',
+                 'disk_vendor',
+                 'disk_model',
+                 'disk_nodename'],
+                [repr(disk_id(d)),
+                 repr(svc.svcname),
+                 repr(disk_size(d)),
+                 repr(disk_vendor(d)),
+                 repr(disk_model(d)),
+                 repr(rcEnv.nodename)]
+            )
+    except:
+        pass
+
     try:
         proxy.update_service(
             ['svc_hostid',
