@@ -37,7 +37,7 @@ import svcBuilder
 from rcGlobalEnv import rcEnv
 from rcUtilities import call, which
 
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, allow_none=True)
 
 disk_ids = {}
 def disk_id(dev):
@@ -105,6 +105,37 @@ except:
 for svc in svcBuilder.build_services():
     """ Load service configuration in database
     """
+    try:
+        proxy.delete_syncs(svc.svcname)
+        for rset in svc.get_res_sets("rsync"):
+            for r in rset.resources:
+                if rcEnv.pathsvc in r.dst:
+                    continue
+                nodes = set([])
+                if "nodes" in r.target: nodes |= r.target['nodes']
+                if "nodes" in r.target: nodes |= r.target['drpnodes']
+                nodes = ' '.join(nodes)
+                proxy.register_sync(
+                    ['sync_svcname',
+                     'sync_src',
+                     'sync_dst',
+                     'sync_dstfs',
+                     'sync_exclude',
+                     'sync_snap',
+                     'sync_target',
+                     'sync_bwlimit'],
+                    [repr(svc.svcname),
+                     repr(' '.join(r.src)),
+                     repr(r.dst),
+                     repr(str(r.dstfs)),
+                     repr(str(' '.join(r.exclude))),
+                     repr(str(r.snap)),
+                     repr(nodes),
+                     repr(str(r.bwlimit))]
+                )
+    except:
+        pass
+
     try:
         for d in svc.disklist():
             proxy.register_disk(
