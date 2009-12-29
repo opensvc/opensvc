@@ -45,6 +45,8 @@ class Ip(Res.Ip):
             self.allow_start()
         except (resIp.IpConflict, resIp.IpDevDown):
             raise ex.excError
+        except resIp.IpAlreadyUp:
+            return
         self.log.debug('pre-checks passed')
 
     def __init__(self, lxcname, ipdev, ipname):
