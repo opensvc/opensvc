@@ -94,6 +94,16 @@ def disk_size(dev):
         f.close()
     return int(size)/2097152
 
+def disk_dg(dev):
+    if not which('pvs'):
+        return
+    cmd = ['pvs', '--noheadings', '-o', 'vg_name', dev]
+    (ret, out) = call(cmd)
+    if ret != 0 or len(out) == 0:
+        return
+    return out.strip()
+
+
 """ Purge current service configurations from database
     for this host
 """
@@ -142,12 +152,14 @@ for svc in svcBuilder.build_services():
                  'disk_size',
                  'disk_vendor',
                  'disk_model',
+                 'disk_dg',
                  'disk_nodename'],
                 [repr(disk_id(d)),
                  repr(svc.svcname),
                  repr(disk_size(d)),
                  repr(disk_vendor(d)),
                  repr(disk_model(d)),
+                 repr(disk_dg(d)),
                  repr(rcEnv.nodename)]
             )
     except:
