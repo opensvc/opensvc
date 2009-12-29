@@ -123,6 +123,16 @@ for svc in svcBuilder.build_services():
             for r in rset.resources:
                 if rcEnv.pathsvc in r.dst:
                     continue
+                if 'nodes' in r.target:
+                    nodes = ' '.join(r.target['nodes'])
+                else:
+                    nodes = ''
+                if 'drpnodes' in r.target:
+                    drpnodes = ' '.join(r.target['drpnodes'])
+                else:
+                    drpnodes = ''
+                if len(nodes) == 0 and len(drpnodes) == 0:
+                    continue
                 proxy.register_sync(
                     ['sync_svcname',
                      'sync_src',
@@ -139,8 +149,8 @@ for svc in svcBuilder.build_services():
                      repr(str(r.dstfs)),
                      repr(str(' '.join(r.exclude))),
                      repr(str(r.snap)),
-                     repr(' '.join(r.target['nodes'])),
-                     repr(' '.join(r.target['drpnodes'])),
+                     repr(nodes),
+                     repr(drpnodes),
                      repr(str(r.bwlimit))]
                 )
     except:
