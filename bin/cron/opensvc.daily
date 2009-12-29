@@ -94,14 +94,16 @@ def disk_size(dev):
         f.close()
     return int(size)/2097152
 
-def disk_dg(dev):
-    if not which('pvs'):
-        return
-    cmd = ['pvs', '--noheadings', '-o', 'vg_name', dev]
-    (ret, out) = call(cmd)
-    if ret != 0 or len(out) == 0:
-        return
-    return out.strip()
+disklist_cache = {}
+
+def disk_dg(dev, svc):
+    for rset in svc.get_res_sets("disk.vg"):
+        for vg in rset.resources:
+            if not vg.name in disklist_cache:
+                disklist_cache[vg.name] = vg.disklist()
+            if dev in disklist_cache[vg.name]:
+                return vg.name
+    return
 
 
 """ Purge current service configurations from database
@@ -159,10 +161,11 @@ for svc in svcBuilder.build_services():
                  repr(disk_size(d)),
                  repr(disk_vendor(d)),
                  repr(disk_model(d)),
-                 repr(disk_dg(d)),
+                 repr(str(disk_dg(d, svc))),
                  repr(rcEnv.nodename)]
             )
     except:
+        #raise
         pass
 
     try:
