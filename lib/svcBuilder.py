@@ -173,6 +173,11 @@ def add_filesystems(svc, conf):
             continue
         dev = conf.get(s, "dev")
         mnt = conf.get(s, "mnt")
+        if mnt[-1] == '/':
+            """ Remove trailing / to not risk losing rsync src trailing /
+                upon snap mountpoint substitution.
+            """
+            mnt = mnt[0:-1]
         try:
             type = conf.get(s, "type")
         except:
