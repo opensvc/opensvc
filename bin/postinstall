@@ -32,7 +32,7 @@ def install_cron():
         return False
 
     new = False
-    if os.path.exists(loc):
+    if os.path.exists(root_crontab):
         with open(root_crontab, 'r') as f:
             svcmon_present = False
             dailycron_present = False
