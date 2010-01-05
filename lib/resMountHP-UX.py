@@ -22,7 +22,8 @@
 import os
 
 import rcStatus
-import rcMountsLinux as rcMounts
+from rcGlobalEnv import rcEnv
+rcMounts = __import__('rcMounts'+rcEnv.sysname)
 import resMount as Res
 from rcUtilities import qcall
 import rcExceptions as ex
@@ -36,7 +37,7 @@ def try_umount(self):
     (ret, out) = self.vcall(cmd)
 
     for i in range(4):
-        cmd = ['fuser', '-kmv', self.mountPoint]
+        cmd = ['fuser', '-kcv', self.mountPoint]
         (ret, out) = self.vcall(cmd)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
@@ -48,7 +49,7 @@ def try_umount(self):
 
 
 class Mount(Res.Mount):
-    """ define Linux mount/umount doAction """
+    """ define HP-UX mount/umount doAction """
     def __init__(self, mountPoint, device, fsType, mntOpt):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
@@ -69,7 +70,7 @@ class Mount(Res.Mount):
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
         if self.fsType != "":
-            fstype = ['-t', self.fsType]
+            fstype = ['-F', self.fsType]
         else:
             fstype = []
         if self.mntOpt != "":

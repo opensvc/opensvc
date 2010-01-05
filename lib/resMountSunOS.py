@@ -61,9 +61,19 @@ class Mount(Res.Mount):
                 raise ex.excError
             return
 
+        if self.fsType != "":
+            fstype = ['-F', self.fsType]
+        else:
+            fstype = []
+
+        if self.mntOpt != "":
+            mntopt = ['-o', self.mntOpt]
+        else:
+            mntopt = []
+
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
-        cmd = ['mount', '-F', self.fsType, '-o', self.mntOpt, self.device, \
+        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
             self.mountPoint]
         (ret, out) = self.vcall(cmd)
         if ret != 0:

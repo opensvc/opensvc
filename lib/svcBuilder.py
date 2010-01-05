@@ -22,6 +22,7 @@ import ConfigParser
 import logging
 import glob
 import re
+import socket
 
 from rcGlobalEnv import *
 from freezer import Freezer
@@ -172,8 +173,14 @@ def add_filesystems(svc, conf):
             continue
         dev = conf.get(s, "dev")
         mnt = conf.get(s, "mnt")
-        type = conf.get(s, "type")
-        mnt_opt = conf.get(s, "mnt_opt")
+        try:
+            type = conf.get(s, "type")
+        except:
+            type = ""
+        try:
+            mnt_opt = conf.get(s, "mnt_opt")
+        except:
+            mnt_opt = ""
         mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(mnt, dev, type, mnt_opt)
         set_optional_and_disable(r, conf, s)
@@ -327,6 +334,7 @@ def build(name):
     rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
     rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
     rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+    rcEnv.nodename = socket.gethostname()
 
     svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
