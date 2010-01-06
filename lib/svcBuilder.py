@@ -37,7 +37,7 @@ import rcExceptions as ex
 
 check_privs()
 
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 
 os.environ['LANG'] = 'C'

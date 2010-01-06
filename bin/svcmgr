@@ -24,7 +24,7 @@ import optparse
 #
 # add project lib to path
 #
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 rcService = os.path.join(pathsvc, 'bin', 'rcService')
 sys.path.append(os.path.join(pathsvc, 'lib'))

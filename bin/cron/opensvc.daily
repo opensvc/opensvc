@@ -27,8 +27,7 @@ When installed in /etc/cron.daily/ this must be a symlink to the
 file in the opensvc distrib, wherever installed, so that we can compute
 relative paths to locate libs
 """
-pathfile = os.path.realpath(__file__)
-pathsvc = os.path.join(os.path.dirname(pathfile), '..', '..')
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
 hostid = str(uuid.getnode())
