@@ -28,9 +28,20 @@ from rcUtilities import qcall
 import rcExceptions as ex
 
 def try_umount(self):
-    """best effort kill of all processes that might block
-    the umount operation. The priority is given to mass
-    action reliability, ie don't contest oprator's will
+    cmd = ['umount', self.mountPoint]
+    (ret, out) = self.vcall(cmd)
+    if ret == 0:
+        return 0
+
+    """ don't try to kill process using the source of a 
+        protected bind mount
+    """
+    if protected_mount(dev):
+        return 1
+
+    """ best effort kill of all processes that might block
+        the umount operation. The priority is given to mass
+        action reliability, ie don't contest oprator's will
     """
     cmd = ['sync']
     (ret, out) = self.vcall(cmd)

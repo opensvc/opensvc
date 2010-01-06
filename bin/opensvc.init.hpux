@@ -1,0 +1,37 @@
+#!/bin/sh
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export PATH
+
+if [ -r /etc/rc.config.d/opensvc ] ; then 
+    . /etc/rc.config.d/opensvc
+fi
+
+osvc_path=/usr/local/opensvc/bin
+allupservices=${osvc_path}/allupservices
+allprimaryservices=${osvc_path}/allprimaryservices
+
+case $1 in
+start_msg)
+	if [ "$RUN_OPENSVC" -ne 0 ] ; then
+		echo "Starting opensvc services"
+	fi
+	;;
+start)
+	if [ "$RUN_OPENSVC" -ne 0 ] ; then
+		echo "Starting opensvc services"
+	fi
+	${allprimaryservices} start
+	;;
+stop_msg)
+	if [ "$RUN_OPENSVC" -ne 0 ] ; then
+		echo "Shutting down opensvc services"
+	fi
+	;;
+stop)
+	if [ "$RUN_OPENSVC" -ne 0 ] ; then
+		echo "Starting opensvc services"
+	fi
+	${allupservices} stop
+	;;
+esac

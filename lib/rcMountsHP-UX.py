@@ -54,9 +54,9 @@ class Mounts(rcMounts.Mounts):
     def __init__(self):
         (ret, out) = call(['mount', '-v'])
         for l in out.split('\n'):
-            if len(l.split()) != 6:
+            if len(l.split()) != 12:
                 return
-            mnt, null, dev, null, type, null, mnt_opt, null, null, null, null, null, null = l.split()
+            dev, null, mnt, null, type, mnt_opt, null, null, null, null, null, null = l.split()
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
             self.mounts.append(m)
 

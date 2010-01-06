@@ -44,6 +44,7 @@ action_desc = {
 	'stopvg':	'deactivate/deport volume group resources of this service',
 	'diskstart':	'combo action, chaining startvg-mount',
 	'diskstop':	'combo action, chaining umount-stopvg',
+	'diskupdate':	'update var files associated to disks',
 	'scsireserv':	'reserve scsi disks held by this service',
 	'scsirelease':	'release scsi disks held by this service',
 	'scsicheckreserv':	'report status of reservations on scsi disks held by this service',

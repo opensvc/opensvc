@@ -205,10 +205,11 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-    dst = os.path.join(rcEnv.pathetc)
+    src.append(os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map'))
+    dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, exclude, targethash)
+    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash)
     r.svc = svc
     svc += r
 
