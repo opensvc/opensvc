@@ -142,11 +142,16 @@ def add_vgs(svc, conf):
         if re.match('vg#[0-9]', s, re.I) is None:
             continue
         name = conf.get(s, "vgname")
+        if conf.has_option(s, "dsf"):
+            dsf = conf.getboolean(s, "dsf")
+        else:
+            dsf = true
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
         r.svc = svc
+        r.dsf = dsf
         svc += r
 
 def add_pools(svc, conf):
@@ -211,7 +216,7 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash)
+    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
     r.svc = svc
     svc += r
 
@@ -227,7 +232,7 @@ def add_mandatory_syncs(svc):
         src = [ s for s in src if os.path.exists(s) ]
         if len(src) == 0:
             continue
-        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash)
+        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
         r.svc = svc
         svc += r
 

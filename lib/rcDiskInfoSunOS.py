@@ -16,33 +16,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
-"Module implement Linux specific ip management"
 
-import resIp as Res
+class diskInfo(object):
+    def __init__(self):
+        pass
 
-class Ip(Res.Ip):
-    def check_ping(self):
-        count=1
-        timeout=5
-        cmd = ['ping', '-n', repr(count), '-m', repr(timeout), '-i', self.addr]
-        (ret, out) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
+    def disk_id(self, dev):
+        pass
 
-    def startip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
-        return self.vcall(cmd)
+    def disk_vendor(self, dev):
+        pass
 
-    def stopip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, "0.0.0.0"]
-        return self.vcall(cmd)
+    def disk_model(self, dev):
+        pass
 
-
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
+    def disk_size(self, dev):
+        pass
 

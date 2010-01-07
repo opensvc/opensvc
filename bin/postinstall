@@ -58,6 +58,12 @@ def install_cron():
     with open(root_crontab, 'w') as f:
         f.write(''.join(new))
 
+    """ Activate changes (actually only needed on HP-UX)
+    """
+    cmd = ['crontab', root_crontab]
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+
     for loc in purge:
         with open(loc, 'r') as f:
             new = [ line for line in f.readlines() if not 'opensvc.daily' in line and not  'svcmon --updatedb' in line ]

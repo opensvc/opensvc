@@ -244,7 +244,7 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, optional=False, disabled=False):
+                 bwlimit=None, optional=False, disabled=False, internal=False):
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
@@ -252,6 +252,7 @@ class Rsync(Res.Resource):
         self.snap = snap
         self.target = target
         self.bwlimit = bwlimit
+        self.internal = internal
         Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):
