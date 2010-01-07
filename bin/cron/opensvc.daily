@@ -123,8 +123,8 @@ for svc in svcBuilder.build_services():
                  repr(rcEnv.nodename)]
             )
     except:
-        raise
-        #pass
+        #raise
+        pass
 
     try:
         proxy.update_service(
