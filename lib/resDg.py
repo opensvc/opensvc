@@ -74,12 +74,10 @@ class Dg(Res.Resource):
     def do_stop(self): return False
 
     def stop(self):
-        self.disks = self.disklist()
         self.do_stop()
         self.scsirelease()
 
     def start(self):
-        self.disks = self.disklist()
         self.scsireserv()
         self.do_start()
 

@@ -33,16 +33,13 @@ class Vg(resDg.Dg):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
 
     def has_it(self):
-        """Returns True if the volume is present
+        """ returns True if the volume is present
         """
+        if self.is_active():
+            return True
         if not os.path.exists(self.mapfile_name()):
             return False
-        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', self.name ]
-        process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        buff = process.communicate()
-        if ret == 0:
-            return True
-        if "already exists" in buff[1]:
+        if self.is_imported():
             return True
         return False
 
@@ -65,7 +62,11 @@ class Vg(resDg.Dg):
     def is_imported(self):
         if not os.path.exists(self.mapfile_name()):
             return False
-        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-p', self.name ]
+        if self.dsf:
+            dsfflag = '-N'
+        else:
+            dsfflag = ''
+        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', '-p', dsfflag, self.name ]
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
         if not "already exists" in buff[1]:
@@ -85,7 +86,11 @@ class Vg(resDg.Dg):
         if self.is_imported():
             self.log.info("%s is already imported" % self.name)
             return
-        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', '-v', self.name ]
+        if self.dsf:
+            dsfflag = '-N'
+        else:
+            dsfflag = ''
+        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', dsfflag, self.name ]
         self.log.info(' '.join(cmd))
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
@@ -132,4 +137,32 @@ class Vg(resDg.Dg):
         self.do_export()
 
     def disklist(self):
-        pass
+        need_export = False
+        if not self.is_imported():
+            self.do_import()
+            need_export = True
+        cmd = ['strings', '/etc/lvmtab']
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+
+        tab = out.split('\n')
+        insection = False
+        self.disks = set([])
+        for e in tab:
+            """ move to the first disk of the vg
+            """
+            if e == '/dev/'+self.name:
+                 insection = True
+                 continue
+            if not insection:
+                 continue
+            if e == "_KDI":
+                 continue
+            if "/dev/dsk" not in e and "/dev/disk" not in e:
+                 break
+            self.disks |= set([e])
+
+        if need_export:
+            self.do_export()
+        return self.disks

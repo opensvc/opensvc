@@ -31,67 +31,16 @@ pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
 hostid = str(uuid.getnode())
+sysname, x, x, x, x = os.uname()
 
 import svcBuilder
 from rcGlobalEnv import rcEnv
 from rcUtilities import call, which
 
+di = __import__('rcDiskInfo'+sysname)
+disks = di.diskInfo()
+
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, allow_none=True)
-
-disk_ids = {}
-def disk_id(dev):
-    if dev in disk_ids:
-        return disk_ids[dev]
-    if which('scsi_id'):
-        scsi_id = 'scsi_id'
-    elif which('/lib/udev/scsi_id'):
-        scsi_id = '/lib/udev/scsi_id'
-    else:
-        return
-    cmd = [scsi_id, '-g', '-u', '-d', dev]
-    (ret, out) = call(cmd)
-    if ret == 0:
-        id = out.split('\n')[0][1:]
-        disk_ids[dev] = id
-        return id
-    sdev = dev.replace("/dev/", "/block/")
-    cmd = [scsi_id, '-g', '-u', '-s', sdev]
-    (ret, out) = call(cmd)
-    if ret == 0:
-        id = out.split('\n')[0][1:]
-        disk_ids[dev] = id
-        return id
-    return
-
-def disk_vendor(dev):
-    s = ''
-    path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
-    if not os.path.exists(path):
-        return
-    with open(path, 'r') as f:
-        s = f.read()
-        f.close()
-    return s
-
-def disk_model(dev):
-    s = ''
-    path = dev.replace('/dev/', '/sys/block/')+'/device/model'
-    if not os.path.exists(path):
-        return
-    with open(path, 'r') as f:
-        s = f.read()
-        f.close()
-    return s
-
-def disk_size(dev):
-    size = 0
-    path = dev.replace('/dev/', '/sys/block/')+'/size'
-    if not os.path.exists(path):
-        return
-    with open(path, 'r') as f:
-        size = f.read()
-        f.close()
-    return int(size)/2097152
 
 disklist_cache = {}
 
@@ -120,7 +69,7 @@ for svc in svcBuilder.build_services():
         proxy.delete_syncs(svc.svcname)
         for rset in svc.get_res_sets("rsync"):
             for r in rset.resources:
-                if rcEnv.pathsvc in r.dst:
+                if r.internal:
                     continue
                 if 'nodes' in r.target:
                     nodes = ' '.join(r.target['nodes'])
@@ -165,17 +114,17 @@ for svc in svcBuilder.build_services():
                  'disk_model',
                  'disk_dg',
                  'disk_nodename'],
-                [repr(disk_id(d)),
+                [repr(disks.disk_id(d)),
                  repr(svc.svcname),
-                 repr(disk_size(d)),
-                 repr(disk_vendor(d)),
-                 repr(disk_model(d)),
+                 repr(disks.disk_size(d)),
+                 repr(disks.disk_vendor(d)),
+                 repr(disks.disk_model(d)),
                  repr(str(disk_dg(d, svc))),
                  repr(rcEnv.nodename)]
             )
     except:
-        #raise
-        pass
+        raise
+        #pass
 
     try:
         proxy.update_service(
@@ -204,6 +153,11 @@ for svc in svcBuilder.build_services():
              repr(svc.svcmode),
              repr(svc.drnoaction)]
         )
+    except:
+        pass
+
+    try:
+        svc.action('diskupdate')
     except:
         pass
 
