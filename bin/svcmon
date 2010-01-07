@@ -25,7 +25,7 @@ import string
 #
 # add project lib to path
 #
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 

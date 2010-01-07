@@ -195,6 +195,9 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.vg", "scsicheckreserv")
         self.sub_set_action("disk.zpool", "scsicheckreserv")
 
+    def diskupdate(self):
+        self.sub_set_action("disk.vg", "diskupdate")
+
     def action(self, action):
         from datetime import datetime
         import tempfile

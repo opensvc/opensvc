@@ -22,6 +22,7 @@ import ConfigParser
 import logging
 import glob
 import re
+import socket
 
 from rcGlobalEnv import *
 from freezer import Freezer
@@ -36,7 +37,7 @@ import rcExceptions as ex
 
 check_privs()
 
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 
 os.environ['LANG'] = 'C'
@@ -172,8 +173,19 @@ def add_filesystems(svc, conf):
             continue
         dev = conf.get(s, "dev")
         mnt = conf.get(s, "mnt")
-        type = conf.get(s, "type")
-        mnt_opt = conf.get(s, "mnt_opt")
+        if mnt[-1] == '/':
+            """ Remove trailing / to not risk losing rsync src trailing /
+                upon snap mountpoint substitution.
+            """
+            mnt = mnt[0:-1]
+        try:
+            type = conf.get(s, "type")
+        except:
+            type = ""
+        try:
+            mnt_opt = conf.get(s, "mnt_opt")
+        except:
+            mnt_opt = ""
         mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(mnt, dev, type, mnt_opt)
         set_optional_and_disable(r, conf, s)
@@ -193,10 +205,13 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-    dst = os.path.join(rcEnv.pathetc)
+    mapfiles = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
+    if len(glob.glob(mapfiles)) > 0:
+        src.append(mapfiles)
+    dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, exclude, targethash)
+    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash)
     r.svc = svc
     svc += r
 
@@ -327,6 +342,7 @@ def build(name):
     rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
     rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
     rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+    rcEnv.nodename = socket.gethostname()
 
     svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'

@@ -18,17 +18,49 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
 
 import os
 
 import rcStatus
-import rcMountsSunOS as rcMounts
+from rcGlobalEnv import rcEnv
+rcMounts = __import__('rcMounts'+rcEnv.sysname)
 import resMount as Res
+from rcUtilities import qcall, protected_mount
 import rcExceptions as ex
 
+def try_umount(self):
+    cmd = ['umount', self.mountPoint]
+    (ret, out) = self.vcall(cmd)
+    if ret == 0:
+        return 0
+
+    """ don't try to kill process using the source of a
+        protected bind mount
+    """
+    if protected_mount(dev):
+        return 1
+
+    """ best effort kill of all processes that might block
+        the umount operation. The priority is given to mass
+        action reliability, ie don't contest oprator's will
+    """
+    cmd = ['sync']
+    (ret, out) = self.vcall(cmd)
+
+    for i in range(4):
+        cmd = ['fuser', '-kc', self.mountPoint]
+        (ret, out) = self.vcall(cmd)
+        self.log.info('umount %s'%self.mountPoint)
+        cmd = ['umount', self.mountPoint]
+        ret = qcall(cmd)
+        if ret == 0:
+            break
+
+    return ret
+
+
 class Mount(Res.Mount):
-    """ define SunOS mount/umount doAction """
+    """ define HP-UX mount/umount doAction """
     def __init__(self, mountPoint, device, fsType, mntOpt):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
@@ -42,37 +74,20 @@ class Mount(Res.Mount):
 
     def start(self):
         Res.Mount.start(self)
-        self.Mounts = rcMounts.Mounts()
-
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
-            return
-
-        if self.fsType == 'zfs' :
-            ret, out = self.vcall(['zfs', 'set', \
-                                    'mountpoint='+self.mountPoint , \
-                                    self.device ])
-            if ret != 0 :
-                raise ex.excError
-
-            ret, out = self.vcall(['zfs', 'mount', self.device ])
-            if ret != 0:
-                raise ex.excError
-            return
-
+            return 0
+        if not os.path.exists(self.mountPoint):
+            os.makedirs(self.mountPoint, 0755)
         if self.fsType != "":
             fstype = ['-F', self.fsType]
         else:
             fstype = []
-
         if self.mntOpt != "":
             mntopt = ['-o', self.mntOpt]
         else:
             mntopt = []
-
-        if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0755)
         cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -82,20 +97,13 @@ class Mount(Res.Mount):
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
-            return
-
-        (ret, out) = self.vcall(['umount', self.mountPoint])
-        if ret == 0 :
-            return
-
-        if self.fsType != 'lofs' :
-            (ret, out) = self.vcall(['umount', '-f', self.mountPoint])
-            if ret == 0 :
-                return
-
-        self.log.error("failed")
-        raise ex.excError
-
+            return 0
+        for i in range(3):
+            ret = try_umount(self)
+            if ret == 0: break
+        if ret != 0:
+            self.log.error('failed to umount %s'%self.mountPoint)
+            raise ex.excError
 
 if __name__ == "__main__":
     for c in (Mount,) :

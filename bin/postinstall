@@ -32,7 +32,7 @@ def install_cron():
         return False
 
     new = False
-    if os.path.exists(loc):
+    if os.path.exists(root_crontab):
         with open(root_crontab, 'r') as f:
             svcmon_present = False
             dailycron_present = False
@@ -94,18 +94,36 @@ def activate_debian():
         return False
     return True
 
+def activate_hpux():
+    rc = "/sbin/init.d/opensvc"
+    links = ["/sbin/rc1.d/K010opensvc", "/sbin/rc2.d/S990opensvc"]
+    for l in links:
+        if not os.path.islink(l):
+            if os.path.exists(l):
+                os.unlink(l)
+            os.symlink(rc, l)
+    with open("/etc/rc.config.d/opensvc", "w") as f:
+        f.write("RUN_OPENSVC=1\n")
+        f.close()
+    return True
 
 def install_rc():
     """install startup script
     """
-    rc = '/etc/init.d/opensvc'
+    sysname, nodename, x, x, machine = os.uname()
 
     if os.path.exists('/etc/debian_version'):
+        rc = '/etc/init.d/opensvc'
         src = '/usr/local/opensvc/bin/opensvc.init.debian'
         activate = activate_debian
     elif os.path.exists('/etc/redhat-release'):
+        rc = '/etc/init.d/opensvc'
         src = '/usr/local/opensvc/bin/opensvc.init.redhat'
         activate = activate_redhat
+    elif sysname == "HP-UX":
+        rc = '/sbin/init.d/opensvc'
+        src = '/usr/local/opensvc/bin/opensvc.init.hpux'
+        activate = activate_hpux
     else:
         print "could not select an init script: unsupported operating system"
         return False
@@ -118,9 +136,12 @@ def install_rc():
     activate()
 
 def gen_keys():
-    if os.path.exists("/root/.ssh/id_dsa.pub") or os.path.exists("/root/.ssh/id_dsa"):
+    home = os.environ['HOME']
+    priv = os.path.join(home, ".ssh", "id_dsa")
+    pub = os.path.join(home, ".ssh", "id_dsa.pub")
+    if os.path.exists(pub) or os.path.exists(priv):
         return
-    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '', '-f', '/root/.ssh/id_dsa']
+    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '', '-f', priv]
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
 
