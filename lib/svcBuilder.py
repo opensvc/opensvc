@@ -145,7 +145,7 @@ def add_vgs(svc, conf):
         if conf.has_option(s, "dsf"):
             dsf = conf.getboolean(s, "dsf")
         else:
-            dsf = true
+            dsf = True
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(name)
         set_optional_and_disable(r, conf, s)
