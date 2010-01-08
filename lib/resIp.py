@@ -23,6 +23,7 @@ import resources as Res
 from rcGlobalEnv import *
 
 from subprocess import Popen, PIPE
+from rcUtilities import qcall, which
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
 import rcStatus
@@ -74,6 +75,14 @@ class Ip(Res.Resource):
     def status(self):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
+
+    def arp_announce(self):
+        if not which("arping"):
+            self.log.warning("arp annouce skipped. install 'arping'")
+            return
+        cmd = ["arping", "-U", "-c", "1", "-I", self.ipDev, "-s", self.addr, "0.0.0.0"]
+        self.log.info(' '.join(cmd))
+        qcall(cmd)
 
     def check_ping(self):
         raise MissImpl('check_ping')
@@ -128,6 +137,8 @@ class Ip(Res.Resource):
         if ret != 0:
             self.log.error("failed")
             raise ex.excError
+
+        self.arp_announce()
 
     def stop(self):
         if self.is_up() is False:
