@@ -108,11 +108,11 @@ def need_sync(self, node):
     try:
         with open(sync_timestamp_f, 'r') as f:
             d = f.read()
-            if datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(hours=1):
+            if datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=self.sync_min_delay):
                 return False
             f.close()
     except:
-        log.info("failed to determine last sync date for %s to %s"%(self.src, node))
+        self.log.info("failed to determine last sync date for %s to %s"%(self.src, node))
         return True
     return True
 
@@ -244,7 +244,7 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, optional=False, disabled=False, internal=False):
+                 bwlimit=None, sync_min_delay=30, optional=False, disabled=False, internal=False):
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
@@ -253,6 +253,7 @@ class Rsync(Res.Resource):
         self.target = target
         self.bwlimit = bwlimit
         self.internal = internal
+        self.sync_min_delay = sync_min_delay
         Res.Resource.__init__(self, "rsync", optional, disabled)
 
     def __str__(self):
