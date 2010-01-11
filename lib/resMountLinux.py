@@ -24,7 +24,7 @@ import os
 import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
-from rcUtilities import qcall
+from rcUtilities import qcall, protected_mount
 import rcExceptions as ex
 
 def try_umount(self):
