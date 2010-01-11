@@ -1,0 +1,99 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+
+function date_to_release {
+	date -d "$*" +%y%m%d.%H%M
+}
+
+HEAD=$(git log -1 --pretty=format:%aD || exit 1)
+VERSION=1.0
+RELEASE=$(date_to_release $HEAD)
+OSVC=$PATH_SCRIPT/../..
+CHROOT_BN=opensvc-$VERSION-$RELEASE.noarch
+CHROOT=$OSVC/tmp/BUILDROOT/$CHROOT_BN
+PSF=opensvc.psf
+DEPOTDIR=$OSVC/tmp/DEB
+DEPOT=opensvc-$VERSION-$RELEASE.depot
+REMOTEHOST=${1:-hp81}
+
+#
+# prepare skeleton (data.tar.gz)
+#
+[ "${CHROOT%%noarch}" != "$CHROOT" ] && rm -rf $CHROOT
+mkdir -p $CHROOT/usr/local/opensvc/etc || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
+mkdir -p $CHROOT/usr/local/opensvc/var/cache || exit 1
+
+# install tracked files
+EXCL=
+EXCL="$EXCL --exclude=bin/pkg"
+EXCL="$EXCL --exclude=*.pyc"
+EXCL="$EXCL --exclude='log/*'"
+EXCL="$EXCL --exclude='etc/*'"
+EXCL="$EXCL --exclude='tmp/*'"
+EXCL="$EXCL --exclude=var/host_mode"
+EXCL="$EXCL --exclude='var/lock/*'"
+EXCL="$EXCL --exclude='var/cache/*'"
+cd $OSVC || exit 1
+tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
+touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
+
+# symbolic links
+cd $CHROOT || exit 1
+ln -s usr/local/opensvc service || exit 1
+
+
+cat - <<-EOF >$CHROOT/../$PSF
+vendor
+  tag           opensvc
+  title         Opensvc SARL
+  description   opensvc nodeware
+end
+product
+  tag            opensvc
+  title          opensvc
+  revision       $RELEASE
+  number         $VERSION
+  category       system_management
+  description    tools to drive OpenSVC services
+  copyright      Opensvc SARL
+  architecture   HP-UX_10.20_700/800
+  machine_type   *
+  os_name        HP-UX
+  os_release     *
+  directory      /
+  is_locatable   false
+  fileset
+    tag          commands
+    title        Commands (management utilities)
+    revision     1.0
+    postinstall  /tmp/$CHROOT_BN/usr/local/opensvc/bin/postinstall
+    directory    /tmp/$CHROOT_BN
+    file         /service
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/bin=/usr/local/opensvc/bin
+    file         *
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/lib=/usr/local/opensvc/lib
+    file         *
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/usr=/usr/local/opensvc/usr
+    file         *
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/etc=/usr/local/opensvc/etc
+    file         .
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/tmp=/usr/local/opensvc/tmp
+    file         .
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/var=/usr/local/opensvc/var
+    file         .
+    directory    /tmp/$CHROOT_BN/usr/local/opensvc/log=/usr/local/opensvc/log
+    file         .
+  end
+end
+EOF
+
+cd $CHROOT/.. || exit 1
+tar cf - $CHROOT_BN $PSF | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
+ssh root@$REMOTEHOST "cd /tmp && swpackage -vv -s opensvc.psf -x target_type=tape @/tmp/$DEPOT"
+scp root@$REMOTEHOST:/tmp/$DEPOT /service/tmp/ || exit 1
+
+[ -x $PATH_SCRIPT/release_depot ] && $PATH_SCRIPT/release_depot /service/tmp/$DEPOT
