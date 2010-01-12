@@ -22,9 +22,10 @@
 """
 
 import resources as Res
-import scsiReserv as scsiReserv
 import rcStatus
 import rcExceptions as exc
+from rcGlobalEnv import rcEnv
+scsiReserv = __import__("scsiReserv"+rcEnv.sysname)
 
 def allow_scsireserv(self): 
     if not self.scsiReservation:

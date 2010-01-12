@@ -44,7 +44,7 @@ touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
 # symbolic links
 cd $CHROOT || exit 1
 ln -s usr/local/opensvc service || exit 1
-
+chown -R root:root $CHROOT || exit 1
 
 cat - <<-EOF >$CHROOT/../$PSF
 vendor
