@@ -212,9 +212,10 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-    mapfiles = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
-    if len(glob.glob(mapfiles)) > 0:
-        src.append(mapfiles)
+    mapfiles_pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
+    mapfiles = glob.glob(mapfiles_pattern)
+    if len(mapfiles) > 0:
+        src += mapfiles
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
