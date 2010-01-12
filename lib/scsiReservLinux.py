@@ -52,6 +52,7 @@ class ScsiReserv(Res.Resource):
             cmd = [ 'sg_persist', '-n', '-r', d ]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
             out = p.communicate()
+            ret = p.returncode
             if "unsupported service action" in out[1]:
                 self.log.error("disk %s does not support persistent reservation" % d)
                 raise ex.excScsiPrNotsupported
