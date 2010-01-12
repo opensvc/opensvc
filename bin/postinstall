@@ -7,8 +7,15 @@ from subprocess import *
 def install_cron():
     """install opensvc cron jobs
     """
-    cron_entry_1 = "0,10,20,30,40,50 * * * * [ -x /usr/local/opensvc/bin/svcmon ] && /usr/local/opensvc/bin/svcmon --updatedb >/dev/null 2>&1"
-    cron_entry_2 = "0 4 * * * [ -x /usr/local/opensvc/bin/cron/opensvc.daily ] && /usr/local/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
+    ce = [{
+           'sched': "0,10,20,30,40,50 * * * *",
+           'user': "",
+           'cmd': "[ -x /usr/local/opensvc/bin/svcmon ] && /usr/local/opensvc/bin/svcmon --updatedb >/dev/null 2>&1"
+    },{
+           'sched': "0 4 * * *",
+           'user': "",
+           'cmd': "[ -x /usr/local/opensvc/bin/cron/opensvc.daily ] && /usr/local/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
+    }]
 
     purge = []
     root_crontab = False
@@ -24,12 +31,18 @@ def install_cron():
         if os.path.exists(os.path.dirname(loc)):
             if not root_crontab:
                 root_crontab = loc
+                if root_crontab == '/etc/cron.d/opensvc':
+                    ce[0]['user'] = "root"
+                    ce[1]['user'] = "root"
             elif os.path.exists(loc):
                 purge.append(loc)
 
     if not root_crontab:
         print "no root crontab found in usual locations %s"%str(root_crontab_locs)
         return False
+
+    cron_entry_1 = ' '.join([ce[0]['sched'], ce[0]['user'], ce[0]['cmd']])
+    cron_entry_2 = ' '.join([ce[1]['sched'], ce[1]['user'], ce[1]['cmd']])
 
     new = False
     if os.path.exists(root_crontab):
