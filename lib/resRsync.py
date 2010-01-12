@@ -26,6 +26,14 @@ import rcStatus
 import resources as Res
 import datetime
 
+def lookup_snap_mod():
+    if rcEnv.sysname == 'Linux':
+        return __import__('snapLvmLinux')
+    elif rcEnv.sysname == 'HP-UX':
+        return __import__('snapVxfsHP-UX')
+    else:
+        raise ex.excError
+
 def remote_fs_mounted(self, node):
     """Verify the remote fs is mounted before we send data.
     """
@@ -80,7 +88,8 @@ def nodes_to_sync(self, type=None):
     for node in targets.copy():
         if not remote_node_type(self, node, type):
             targets -= set([node])
-            continue
+        if not need_sync(self, node):
+            targets -= set([node])
 
     if len(targets) == 0:
         raise ex.syncNoNodesToSync
@@ -189,6 +198,8 @@ class Rsync(Res.Resource):
         rtargets = {0: set([])}
         need_snap = False
         for i, r in enumerate(rset.resources):
+            if r.is_disabled():
+                continue
             rtargets[i] = set([])
             try:
                 if action == "syncnodes":
@@ -212,7 +223,7 @@ class Rsync(Res.Resource):
         if not need_snap:
             return
 
-        import snapLvmLinux as snap
+        snap = lookup_snap_mod()
         try:
             rset.snaps = snap.snap(self, rset, action)
         except ex.syncNotSnapable:
@@ -222,7 +233,7 @@ class Rsync(Res.Resource):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
-        import snapLvmLinux as snap
+        snap = lookup_snap_mod()
         snap.snap_cleanup(self, rset)
 
     def syncnodes(self):
