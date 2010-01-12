@@ -46,9 +46,9 @@ cache_remote_node_type = {}
 
 def remote_node_type(self, node, type):
     if type == 'drpnodes':
-        type = 'DEV'
+        expected_type = 'DEV'
     elif type == 'nodes':
-        type = 'PRD'
+        expected_type = self.svc.svctype
     else:
         self.log.error('expected remote node type is bogus: %s'%type)
         raise
@@ -61,10 +61,10 @@ def remote_node_type(self, node, type):
             raise ex.excError
         cache_remote_node_type[node] = out.split()[0]
 
-    if cache_remote_node_type[node] == type:
+    if cache_remote_node_type[node] == expected_type:
         return True
     self.log.error("node %s type is not '%s'. Check %s:%s"%\
-                   (node, type, node, host_mode_f))
+                   (node, expected_type, node, host_mode_f))
     return False
 
 def nodes_to_sync(self, type=None):
