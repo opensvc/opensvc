@@ -71,3 +71,7 @@ class excInitError(Exception):
     """ Resource initialisation error
     """
 
+class excScsiPrNotsupported(Exception):
+    """ Scsi persistent reservation is not supported
+    """
+
