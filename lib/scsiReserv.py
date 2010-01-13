@@ -27,6 +27,8 @@ import rcStatus
 import rcExceptions as ex
 from rcUtilities import which
 from subprocess import *
+from rcGlobalEnv import rcEnv
+hostId = __import__('hostid'+rcEnv.sysname)
 
 
 class ScsiReserv(Res.Resource):
@@ -34,7 +36,7 @@ class ScsiReserv(Res.Resource):
     on disks held by a service
     """
     def __init__(self, disks):
-        self.hostid = '0x'+str(uuid.getnode())
+        self.hostid = '0x'+hostId.hostid()
         self.disks = disks
         self.preempt_timeout = 10
         self.prtype = '5'

@@ -19,11 +19,11 @@
 #
 from datetime import datetime
 import xmlrpclib
-import uuid
 import os
 from rcGlobalEnv import rcEnv
+hostId = __import__('hostid'+rcEnv.sysname)
 
-hostid = str(uuid.getnode())
+hostid = hostId.hostid()
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 
 def begin_action(svc, action, begin):
