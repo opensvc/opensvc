@@ -444,7 +444,8 @@ def build(name):
     else:
         svc.drpnode = ''
 
-    # prune not managed service
+    """ prune not managed service
+    """
     if rcEnv.nodename not in svc.nodes | svc.drpnodes:
         log.error('service %s not managed here' % name)
         del(svc)
@@ -454,6 +455,19 @@ def build(name):
         svc.svctype = conf.get("default", "service_type")
     else:
         svc.svctype = ''
+
+    allowed_svctype = ['PRD', 'DEV', 'TMP', 'TST']
+    if svc.svctype not in allowed_svctype:
+        log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(allowed_svctype)))
+        del(svc)
+        return None
+
+    """ prune service whose service type does not match host mode
+    """
+    if svc.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
+        log.error('service %s type %s is not allowed to run on this node (host mode %s)' % (svc.svcname, svc.svctype, rcEnv.host_mode))
+        del(svc)
+        return None
 
     if conf.has_option("default", "autostart_node"):
         svc.autostart_node = conf.get("default", "autostart_node")
