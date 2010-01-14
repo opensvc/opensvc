@@ -22,6 +22,13 @@ import os
 import optparse
 import string
 
+try:
+   import curses
+   curses.setupterm()
+   columns = curses.tigetnum('cols')
+except:
+   columns = 80
+
 #
 # add project lib to path
 #
@@ -39,8 +46,18 @@ def svcmon_verbose(svcs):
         print banner(svc.svcname)
         svc.print_status()
 
+def svcname_max_len(svcs):
+    _len = 0
+    for svc in svcs:
+        if _len < len(svc.svcname):
+            _len = len(svc.svcname)
+    return _len
+
 def svcmon_normal(svcs, upddb=False):
-    fmt = '%-12s %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+    if columns < 80:
+        fmt = '%-12s %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+    else:
+        fmt = '%-' + str(svcname_max_len(svcs)) + 's %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
     out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "overall")
     out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status ")
     out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "-------")
