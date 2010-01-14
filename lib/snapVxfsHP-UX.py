@@ -27,6 +27,8 @@ def find_mount(rs, dir):
        first mount whose 'mountPoint' is matching 'dir'
     """
     for m in sorted(rs.resources, reverse=True):
+        if m.is_disabled():
+            return None
         if m.mountPoint in dir:
             return m
     return None
@@ -68,6 +70,9 @@ def lv_info(self, device):
 def snap(self, rset, action):
     mounts_h = {}
     for r in rset.resources:
+        if r.is_disabled():
+            continue
+
         if r.snap is not True and r.snap is not False:
             r.log.error("service configuration error: 'snap' must be 'true' or 'false'. default is 'false'")
             raise ex.syncConfigSyntaxError
