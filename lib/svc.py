@@ -177,6 +177,8 @@ class Svc(Resource, Freezer):
         disks = set()
         for rs in self.resSets:
             for r in rs.resources:
+                if r.is_disabled():
+                    continue
                 disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
