@@ -26,10 +26,10 @@ import svc
 
 class SvcZone(svc.Svc):
     """ Define Zone services"""
-    status_types = ["container.zone", "ip", "disk.vg", "fs"]
 
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"container.zone",optional, disabled)
+        self.status_types = ["container.zone", "ip", "disk.vg", "fs"]
 
     def start(self):
         """start a zone

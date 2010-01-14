@@ -82,9 +82,9 @@ class ifconfig(rcIfconfig.ifconfig):
             if len(line) == 0:
                 continue
             intf = line.split()[0]
-            if intf[len(intf)-1] == ':':
-                intf = intf[0:len(intf)-1]
             out = Popen(['ifconfig', intf], stdout=PIPE, stderr=PIPE).communicate()
             if "no such interface" in out[1]:
                 continue
+            elif p.returncode != 0:
+                raise ex.excError
             self.parse(out[0])

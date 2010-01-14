@@ -40,7 +40,7 @@ def mpath_to_path(disks):
         if "/dev/dsk" in disk:
             l.append(disk.replace("/dev/dsk", "/dev/rdsk"))
             continue
-        if "/dev/disk" not in disk:
+        if "/dev/disk" not in disk and "/dev/rdisk" not in disk:
             continue
         cmd = ['ioscan', '-F', '-m', 'dsf', disk]
         p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)

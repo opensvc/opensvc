@@ -20,64 +20,46 @@
 # and open the template in the editor.
 
 import svc
-import lxc
+import resHpVm
 import rcStatus
+import rcExceptions as ex
 
-class SvcLxc(svc.Svc):
-    """ Define Lxc services"""
+class SvcHpVm(svc.Svc):
+    """ Define hpvm services"""
 
-    def __init__(self, svcname, optional=False, disabled=False):
+    def __init__(self, svcname=None, vmname=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
-        self += lxc.Lxc(svcname)
-        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip"]
+        if vmname is None:
+            vmname = svcname
+        self.vmname = vmname
+        self += resHpVm.HpVm(vmname)
+        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip"]
 
     def start(self):
-        """start a Lxc
-        check ping
-        start loops
-        start VGs
-        start fs
-        start lxc
-        start apps
-        """
         self.sub_set_action("ip", "start")
-        self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
-        self.sub_set_action("container.lxc", "start")
+        self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("app", "start")
 
     def stop(self):
-        """stop a zone:
-        stop apps
-        stop lxc
-        stop fs
-        stop VGs
-        stop loops
-        """
         self.sub_set_action("app", "stop")
-        self.sub_set_action("container.lxc", "stop")
+        self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.loop", "stop")
 
-    def startlxc(self):
-        self.sub_set_action("container.lxc", "start")
+    def startcontainer(self):
+        self.sub_set_action("container.hpvm", "start")
 
-    def stoplxc(self):
-        self.sub_set_action("container.lxc", "stop")
+    def stopcontainer(self):
+        self.sub_set_action("container.hpvm", "stop")
 
     def startip(self):
         self.sub_set_action("ip", "start")
 
     def stopip(self):
         self.sub_set_action("ip", "stop")
-
-    def startloop(self):
-        self.sub_set_action("disk.loop", "start")
-
-    def stoploop(self):
-        self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
         self.sub_set_action("disk.vg", "start")
@@ -91,30 +73,11 @@ class SvcLxc(svc.Svc):
     def umount(self):
         self.sub_set_action("fs", "stop")
 
+    def diskstart(self):
+        self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("fs", "start")
 
-if __name__ == "__main__":
-    for c in (SvcLxc,) :
-        help(c)
-    import mountLinux as mount
-    import ipLinux as ip
-    print """
-    Z=SvcLxc()
-    Z+=mount.Mount("/mnt1","/dev/sda")
-    Z+=mount.Mount("/mnt2","/dev/sdb")
-    Z+=ip.Ip("eth0","192.168.0.173")
-    Z+=ip.Ip("eth0","192.168.0.174")
-    """
-
-    Z=SvcLxc()
-    Z+=mount.Mount("/mnt1","/dev/sda")
-    Z+=mount.Mount("/mnt2","/dev/sdb")
-    Z+=ip.Ip("eth0","192.168.0.173")
-    Z+=ip.Ip("eth0","192.168.0.174")
-
-    print "Show Z: ", Z
-    print "start Z:"
-    Z.start()
-
-    print "stop Z:"
-    Z.stop()
+    def diskstop(self):
+        self.sub_set_action("fs", "stop")
+        self.sub_set_action("disk.vg", "stop")
 

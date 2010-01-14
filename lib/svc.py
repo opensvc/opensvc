@@ -64,6 +64,10 @@ class Svc(Resource, Freezer):
     type
     """
 
+    """ override in child class to add/remove supported resource types
+    """
+    status_types = ["disk.loop", "fs", "disk.vg", "ip"]
+
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
         if self.frozen():
@@ -118,8 +122,14 @@ class Svc(Resource, Freezer):
         for r in self.get_res_sets(type):
             try:
                 r.action(action)
+            except ex.excError:
+                if r.is_optional():
+                    pass
             except ex.excAbortAction:
-                break
+                if r.is_optional():
+                    pass
+                else:
+                    break
 
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))
@@ -128,23 +138,23 @@ class Svc(Resource, Freezer):
         for r in self.resSets:  output+= "  [%s]" % (r.__str__())
         return output
 
-    def status(self, type_list):
+    def status(self):
         """aggregate status a service
         """
         s = rcStatus.Status()
-        for t in type_list:
+        for t in self.status_types:
             for r in self.get_res_sets(t):
                 s += r.status()
         return s.status
 
-    def print_status(self, type_list):
+    def print_status(self):
         """print each resource status for a service
         """
-        for t in type_list:
+        for t in self.status_types:
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
-    def group_status(self, type_list):
+    def group_status(self):
         """print each resource status for a service
         """
         status = {}
@@ -152,7 +162,7 @@ class Svc(Resource, Freezer):
         moregroups = groups + ["overall"]
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
-        for t in type_list:
+        for t in self.status_types:
             group = t.split('.')[0]
             if group not in groups:
                 raise

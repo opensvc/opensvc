@@ -56,7 +56,9 @@ def svcmode_mod_name(svcmode=''):
         return ('svcZone', 'SvcZone')
     elif svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
-    return 1 # raise something instead ?
+    elif svcmode == 'hpvm':
+        return ('svcHpVm', 'SvcHpVm')
+    raise
 
 def set_optional(resource, conf, section):
     if conf.has_option(section, 'optional') and \
@@ -113,6 +115,9 @@ def add_ips(svc, conf):
         if svc.svcmode  == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
             r = ip.Ip(svc.svcname, ipdev, ipname)
+        elif svc.svcmode  == 'hpvm':
+            ip = __import__('resIp'+'HpVm')
+            r = ip.Ip(svc.vmname, ipdev, ipname)
         else:
             ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(ipdev, ipname, netmask)
@@ -153,6 +158,19 @@ def add_vgs(svc, conf):
         r.svc = svc
         r.dsf = dsf
         svc += r
+
+def add_vmdg(svc, conf):
+    if not conf.has_section('vmdg'):
+        return
+    if svc.svcmode == 'hpvm':
+        vg = __import__('resVgHpVm')
+    else:
+        return
+    r = vg.Vg('vmdg')
+    set_optional_and_disable(r, conf, 'vmdg')
+    set_scsireserv(r, conf, 'vmdg')
+    r.svc = svc
+    svc += r
 
 def add_pools(svc, conf):
     """Parse the configuration file and add a pool object for each [pool#n]
@@ -398,11 +416,15 @@ def build(name):
     #
     svcmode = "hosted"
     conf = None
+    kwargs = {'svcname': name}
     if os.path.isfile(svcconf):
         conf = ConfigParser.RawConfigParser()
         conf.read(svcconf)
         if conf.has_option("default", "mode"):
             svcmode = conf.get("default", "mode")
+        if conf.has_option("default", "vm_name"):
+            vmname = conf.get("default", "vm_name")
+            kwargs['vmname'] = vmname
 
     #
     # dynamically import the module matching the service mode
@@ -411,7 +433,7 @@ def build(name):
     log.debug('service mode = ' + svcmode)
     mod , svc_class_name = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
-    svc = getattr(svcMod, svc_class_name)(name)
+    svc = getattr(svcMod, svc_class_name)(**kwargs)
     svc.svcmode = svcmode
 
     #
@@ -506,6 +528,7 @@ def build(name):
         add_ips(svc, conf)
         add_loops(svc, conf)
         add_vgs(svc, conf)
+        add_vmdg(svc, conf)
         add_pools(svc, conf)
         add_filesystems(svc, conf)
         add_syncs(svc, conf)

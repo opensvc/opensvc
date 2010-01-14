@@ -44,7 +44,10 @@ from rcGlobalEnv import rcEnv
 def svcmon_verbose(svcs):
     for svc in svcs:
         print banner(svc.svcname)
-        svc.print_status()
+        try:
+            svc.print_status()
+        except:
+            pass
 
 def svcname_max_len(svcs):
     _len = 0
