@@ -21,8 +21,9 @@ from datetime import datetime
 import xmlrpclib
 import os
 from rcGlobalEnv import rcEnv
-hostId = __import__('hostid'+rcEnv.sysname)
 
+sysname, nodename, x, x, machine = os.uname()
+hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 
