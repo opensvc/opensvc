@@ -44,7 +44,6 @@ touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
 # symbolic links
 cd $CHROOT || exit 1
 ln -s usr/local/opensvc service || exit 1
-chown -R root:root $CHROOT || exit 1
 
 cat - <<-EOF >$CHROOT/../$PSF
 vendor
@@ -71,6 +70,7 @@ product
     title        Commands (management utilities)
     revision     1.0
     postinstall  /tmp/$CHROOT_BN/usr/local/opensvc/bin/postinstall
+    file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN
     file         /service
     directory    /tmp/$CHROOT_BN/usr/local/opensvc/bin=/usr/local/opensvc/bin
