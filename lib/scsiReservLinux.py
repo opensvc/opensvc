@@ -48,7 +48,7 @@ class ScsiReserv(scsiReserv.ScsiReserv):
                 self.log.error("disk %s does not support persistent reservation" % d)
                 raise ex.excScsiPrNotsupported
             if "Unit Attention" in out[0] or ret != 0:
-                self.log.info("disk %s reports 'Unit Attention' ... waiting" % d)
+                self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
                 time.sleep(1)
                 continue
             break
