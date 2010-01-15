@@ -26,10 +26,11 @@ from rcUtilities import is_exe
 import resources as Res
 
 class Apps(Res.Resource):
-    prefix = []
-
-    def __init__(self, optional=False, disabled=False):
+    def __init__(self, hostname=None, optional=False, disabled=False):
         Res.Resource.__init__(self, "app", optional, disabled) 
+        if hostname is not None:
+            self.prefix = rcEnv.rsh.split() + [hostname]
+            self.hostname = hostname
 
     def checks(self):
         if not os.path.exists(self.svc.initd):
@@ -41,16 +42,19 @@ class Apps(Res.Resource):
         return True
 
     def app(self, name, action):
+        if len(name) == 0:
+            return 0
         if not is_exe(name):
             self.vcall(self.prefix+['chmod', '+x', name])
-        self.log.info('spawn: %s %s' % (name, action))
+        cmd = self.prefix+[name, action]
+        self.log.info('spawn: %s' % ' '.join(cmd))
         outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
         f = open(outf, 'w')
         t = datetime.now()
-        p = Popen(self.prefix+[name, action], stdin=None, stdout=f.fileno(), stderr=f.fileno())
+        p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
         p.communicate()
-        len = datetime.now() - t
-        self.log.info('%s done in %s - ret %d - logs in %s' % (action, len, p.returncode, outf))
+        _len = datetime.now() - t
+        self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
         f.close()
         return p.returncode
 

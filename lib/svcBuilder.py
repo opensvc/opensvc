@@ -32,7 +32,6 @@ import rcOptParser
 import rcLogger
 import rcAddService
 import resRsync
-import resApp
 import rcExceptions as ex
 
 check_privs()
@@ -323,7 +322,12 @@ def add_syncs(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        r = resApp.Apps()
+        if svc.svcmode in ['hpvm']:
+            resApp = __import__('resAppVm')
+            r = resApp.Apps(hostname=svc.vmname)
+        else:
+            resApp = __import__('resApp')
+            r = resApp.Apps()
         r.svc = svc
         svc += r
 
