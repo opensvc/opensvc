@@ -63,7 +63,7 @@ class Dg(Res.Resource):
 
     def scsicheckreserv(self):
         if not allow_scsireserv(self):
-            return
+            return rcStatus.NA
 	return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
     def disklist(self):
@@ -82,9 +82,21 @@ class Dg(Res.Resource):
         self.scsireserv()
         self.do_start()
 
+    def print_status(self):
+        s = rcStatus.Status()
+        s += rcStatus.print_status(self.id, self.dgstatus())
+        s += rcStatus.print_status(self.id+' scsireserv', self.scsicheckreserv())
+
     def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        s = rcStatus.Status()
+        s += self.dgstatus()
+        s += self.scsicheckreserv()
+        return s
+
+    def dgstatus(self):
+        if self.is_up():
+            return rcStatus.UP
+        return rcStatus.DOWN
 
 if __name__ == "__main__":
     for c in (Dg,) :
