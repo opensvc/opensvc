@@ -149,7 +149,7 @@ class ScsiReserv(Res.Resource):
                 key = self.get_reservation_key(d)
                 if key is None:
                     self.log.debug("disk %s is not reserved" % d)
-                    r += rcStatus.WARN
+                    r += rcStatus.DOWN
                 elif key != self.hostid:
                     self.log.debug("disk %s is reserved by another host whose key is %s" % (d, key))
                     r += rcStatus.DOWN
