@@ -18,11 +18,15 @@
 #
 import rcStatus
 import resources as Res
-
+import time
+import rcExceptions as ex
+from rcUtilities import qcall
 
 class HpVm(Res.Resource):
+    """ HP-UX can have very long boot time
+    """
+    startup_timeout = 600
     shutdown_timeout = 60
-    startup_timeout = 60
 
     def __init__(self, name, optional=False, disabled=False):
         Res.Resource.__init__(self, "container.hpvm", optional, disabled)
@@ -32,13 +36,36 @@ class HpVm(Res.Resource):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def ping(self):
+        count=1
+        timeout=1
+        cmd = ['ping', '-n', repr(count), '-m', repr(timeout), self.name]
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
+
+    def operational(self):
+        timeout=1
+        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'PasswordAuthentication=no', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
+
     def wait_for_startup(self):
-        self.log.warn("implement wait_for_startup")
-        pass
+        for tick in range(self.startup_timeout):
+            if self.is_up() and self.ping() and self.operational():
+                return
+            time.sleep(1)
+        raise ex.excError("Waited too long for startup")
 
     def wait_for_shutdown(self):
-        self.log.warn("implement wait_for_shutdown")
-        pass
+        for tick in range(self.shutdown_timeout):
+            if not self.is_up():
+                return
+            time.sleep(1)
+        raise ex.excError("Waited too long for shutdown")
 
     def hpvm_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
@@ -53,14 +80,14 @@ class HpVm(Res.Resource):
             self.log.info("hpvm container %s already started" % self.name)
             return 0
         self.hpvm_start()
-        return self.wait_for_startup()
+        self.wait_for_startup()
 
     def stop(self):
         if not self.is_up():
             self.log.info("hpvm container %s already stopped" % self.name)
             return 0
         self.hpvm_stop()
-        return self.wait_for_shutdown()
+        self.wait_for_shutdown()
 
     def is_up(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]

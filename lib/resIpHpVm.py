@@ -33,7 +33,11 @@ class Ip(Res.Ip):
         if vm.status() == rcStatus.DOWN:
             self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
             return False
-        ifconfig = rcIfconfig.ifconfig(self.vmname)
+        try:
+            ifconfig = rcIfconfig.ifconfig(self.vmname)
+        except:
+            self.log.error("failed to fetch interface configuration")
+            return False
         if ifconfig.has_param("ipaddr", self.addr) is not None:
             self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
             return True
