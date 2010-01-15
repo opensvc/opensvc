@@ -71,8 +71,11 @@ class ScsiReserv(Res.Resource):
 
     def ack_all_unit_attention(self):
         for d in self.disks:
-            if self.ack_unit_attention(d) != 0:
-                return 1
+            try:
+                if self.ack_unit_attention(d) != 0:
+                    return 1
+            except ex.excScsiPrNotsupported:
+                continue
         return 0
 
     def register(self):

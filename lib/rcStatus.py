@@ -67,6 +67,11 @@ def status_str(val):
 def _merge(s1, s2):
     """Merge too status: WARN and TODO taint UP and DOWN
     """
+    if s1 not in _status_str:
+        raise Exception("left member has unsupported value: %s"%str(s1))
+    if s2 not in _status_str:
+        raise Exception("right member has unsupported value: %s"%str(s2))
+
     if s1 == UNDEF: return s2
     if (s1, s2) == (UP, UP): return UP
     if (s1, s2) == (UP, DOWN): return WARN

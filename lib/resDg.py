@@ -83,15 +83,14 @@ class Dg(Res.Resource):
         self.do_start()
 
     def print_status(self):
-        s = rcStatus.Status()
-        s += rcStatus.print_status(self.id, self.dgstatus())
-        s += rcStatus.print_status(self.id+' scsireserv', self.scsicheckreserv())
+        rcStatus.print_status(self.id, self.dgstatus())
+        rcStatus.print_status(self.id+' scsireserv', self.scsicheckreserv())
 
     def status(self):
         s = rcStatus.Status()
         s += self.dgstatus()
         s += self.scsicheckreserv()
-        return s
+        return s.status
 
     def dgstatus(self):
         if self.is_up():
