@@ -26,6 +26,8 @@ from rcUtilities import is_exe
 import resources as Res
 
 class Apps(Res.Resource):
+    prefix = []
+
     def __init__(self, hostname=None, optional=False, disabled=False):
         Res.Resource.__init__(self, "app", optional, disabled) 
         if hostname is not None:
