@@ -29,7 +29,7 @@ class diskInfo(object):
         pass
 
     def disk_id(self, dev):
-        if dev in disk_ids:
+        if dev in self.disk_ids:
             return self.disk_ids[dev]
         if which('scsi_id'):
             scsi_id = 'scsi_id'
