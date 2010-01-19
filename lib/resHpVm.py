@@ -78,7 +78,7 @@ class HpVm(Res.Resource):
     def start(self):
         if self.is_up():
             self.log.info("hpvm container %s already started" % self.name)
-            return 0
+            return
         self.hpvm_start()
         self.wait_for_startup()
 

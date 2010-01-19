@@ -22,7 +22,6 @@
 
 import rcExceptions as ex
 import resIpLinux as Res
-import resIp
 import rcIfconfigLinuxlxc as rcIfconfig
 import rcStatus
 from subprocess import *
@@ -43,9 +42,9 @@ class Ip(Res.Ip):
     def start(self):
         try:
             self.allow_start()
-        except (resIp.IpConflict, resIp.IpDevDown):
+        except (ex.IpConflict, ex.IpDevDown):
             raise ex.excError
-        except resIp.IpAlreadyUp:
+        except ex.IpAlreadyUp:
             return
         self.log.debug('pre-checks passed')
 
