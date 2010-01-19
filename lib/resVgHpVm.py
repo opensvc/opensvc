@@ -19,6 +19,7 @@
 import re
 import os
 import rcExceptions as ex
+import rcStatus
 resVg = __import__("resVgHP-UX")
 from subprocess import *
 from rcUtilities import qcall
@@ -35,6 +36,9 @@ class Vg(resVg.Vg):
 
     def is_up(self):
         return True
+
+    def dgstatus(self):
+        return rcStatus.NA
 
     def do_start(self):
         self.do_mksf()

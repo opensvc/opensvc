@@ -39,7 +39,7 @@ class HpVm(Res.Resource):
     def ping(self):
         count=1
         timeout=1
-        cmd = ['ping', '-n', repr(count), '-m', repr(timeout), self.name]
+        cmd = ['ping', self.name, '-n', repr(count), '-m', repr(timeout)]
         ret = qcall(cmd)
         if ret == 0:
             return True
