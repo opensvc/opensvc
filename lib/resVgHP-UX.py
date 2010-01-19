@@ -32,6 +32,9 @@ class Vg(resDg.Dg):
     def mapfile_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
 
+    def mkfsfile_name(self):
+        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.mksf')
+
     def has_it(self):
         """ returns True if the volume is present
         """
@@ -43,6 +46,64 @@ class Vg(resDg.Dg):
             return True
         return False
 
+    def dsf_name(self, dev):
+        cmd = ['scsimgr', 'get_attr', '-D', dev, '-a', 'device_file', '-p']
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        return out.split()[0]
+
+    def write_mksf(self):
+        cmd = ['ioscan', '-F', '-m', 'dsf']
+        (ret, buff) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        if len(buff) == 0:
+            return
+        mksf = {}
+        if len(self.disks) == 0:
+            self.disks = self.disklist()
+        dsf_names = map(dsf_name, self.disks)
+        with open(self.mkfsfile_name(), 'w') as f:
+            for line in buff.split('\n'):
+                if len(line) == 0:
+                    return
+                a = line.split(':')[0]
+                if '/dev/pt/' not in a and '/dev/rdisk/disk' not in a and self.dsf_name(a) in dsf_names:
+                    cmd = ['scsimgr', 'get_attr', '-D', a, '-a', 'wwid', '-p']
+                    (ret, out) = self.call(cmd)
+                    if ret != 0:
+                        raise ex.excError
+                    f.write(":".join([a, out.split()[0].replace('0x', '')])+'\n')
+
+    def do_mksf(self):
+        if not os.path.exists(self.mkfsfile_name()):
+            return
+
+        instance = {}
+        cmd = ['scsimgr', 'get_attr', 'all_lun', '-a', 'wwid', '-a', 'instance', '-p']
+        (ret, buff) = self.call(cmd)
+        for line in buff.split('\n'):
+            l = line.split(':')
+            if len(l) != 2:
+                continue
+            instance[l[0].replace('0x', '')] = l[1]
+
+        with open(self.mkfsfile_name(), 'r') as f:
+            for line in f.readlines():
+               a = line.replace('\n', '').split(':')
+               if len(a) == 0:
+                   continue
+               if os.path.exists(a[0]):
+                   continue
+               if a[1] not in instance.keys():
+                   self.log.error("expected lun %s not present on this node"%a[1])
+                   raise ex.excError
+               cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
+               (ret, buff) = self.vcall(cmd)
+               if ret != 0:
+                   raise ex.excError
+
     def diskupdate(self):
         """ this one is exported as a service command line arg
         """
@@ -50,6 +111,7 @@ class Vg(resDg.Dg):
         ret = qcall(cmd)
         if ret != 0:
             raise ex.excError
+        self.write_mksf()
 
     def is_active(self):
         cmd = [ 'vgdisplay', self.name ]
@@ -129,6 +191,7 @@ class Vg(resDg.Dg):
             raise ex.excError
 
     def do_start(self):
+        self.do_mksf()
         self.do_import()
         self.do_activate()
 

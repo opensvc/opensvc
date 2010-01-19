@@ -97,13 +97,20 @@ class Resource(object):
         """
         s = rcStatus.Status()
         for r in self.resources:
-            if r.is_disabled():
-                continue
-            s += r.status()
+                if r.is_disabled():
+                    continue
+                try:
+                    s += r.status()
+                except:
+                    s += rcStatus.NA
         return s.status
 
     def print_status(self):
-        return rcStatus.print_status(self.id, self.status())
+        try:
+            r = rcStatus.print_status(self.id, self.status())
+        except:
+            r = rcStatus.print_status(self.id, self.status())
+        return r
 
     def call(self, cmd=['/bin/false'], info=False, errlog=True):
         """Use subprocess module functions to do a call
