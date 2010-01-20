@@ -191,13 +191,17 @@ class Vg(resDg.Dg):
             raise ex.excError
 
     def do_start(self):
-        self.do_mksf()
         self.do_import()
         self.do_activate()
 
     def do_stop(self):
         self.do_deactivate()
         self.do_export()
+
+    def start(self):
+        self.do_mksf()
+        self.scsireserv()
+        self.do_start()
 
     def disklist(self):
         need_export = False
