@@ -29,30 +29,6 @@ import socket
 import rcStatus
 import rcExceptions as ex
 
-class MissImpl(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class IpDevDown(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class IpConflict(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class IpAlreadyUp(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
 
 class Ip(Res.Resource):
     """ basic ip resource
@@ -85,13 +61,13 @@ class Ip(Res.Resource):
         qcall(cmd)
 
     def check_ping(self):
-        raise MissImpl('check_ping')
+        raise ex.MissImpl('check_ping')
 
     def startip_cmd(self):
-        raise MissImpl('startip_cmd')
+        raise ex.MissImpl('startip_cmd')
 
     def stopip_cmd(self):
-        raise MissImpl('stopip_cmd')
+        raise ex.MissImpl('stopip_cmd')
 
     def is_up(self):
         ifconfig = rcIfconfig.ifconfig()
@@ -106,21 +82,21 @@ class Ip(Res.Resource):
         intf = ifconfig.interface(self.ipDev)
         if intf is None or not intf.flag_up:
             self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
-            raise IpDevDown(self.ipDev)
+            raise ex.IpDevDown(self.ipDev)
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
-            raise IpAlreadyUp(self.addr)
+            raise ex.IpAlreadyUp(self.addr)
         if self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
-            raise IpConflict(self.addr)
+            raise ex.IpConflict(self.addr)
         return
 
     def start(self):
         try:
             self.allow_start()
-        except (IpConflict, IpDevDown):
+        except (ex.IpConflict, ex.IpDevDown):
             raise ex.excError
-        except IpAlreadyUp:
+        except ex.IpAlreadyUp:
             return
         self.log.debug('pre-checks passed')
 

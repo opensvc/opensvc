@@ -23,10 +23,20 @@
 import rcExceptions as ex
 import rcStatus
 from subprocess import *
+from rcUtilities import qcall
 Res = __import__("resIpHP-UX")
 rcIfconfig = __import__("rcIfconfigHpVm")
 
 class Ip(Res.Ip):
+    def check_ping(self):
+        count=1
+        timeout=5
+        cmd = ['ping', self.addr, '-n', repr(count), '-m', repr(timeout)]
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
+
     def is_up(self):
         for vm in self.svc.get_res_sets("container.hpvm"):
             pass
@@ -44,8 +54,19 @@ class Ip(Res.Ip):
         self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
         return False
 
+    def allow_start(self):
+        for vm in self.svc.get_res_sets("container.hpvm"):
+            pass
+        if self.check_ping() and vm.status() == rcStatus.DOWN:
+            self.log.error("%s is already up on another host" % (self.addr))
+            raise ex.IpConflict(self.addr)
+        return
+
     def start(self):
-        pass
+        try:
+            self.allow_start()
+        except ex.IpConflict:
+            raise ex.excError
 
     def stop(self):
         pass

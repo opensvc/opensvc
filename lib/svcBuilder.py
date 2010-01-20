@@ -216,6 +216,32 @@ def add_filesystems(svc, conf):
         svc += r
 
 def add_mandatory_syncs(svc):
+    def list_mapfiles():
+        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
+        files = glob.glob(pattern)
+        if len(files) > 0:
+            return files
+        return []
+
+    def list_mksffiles():
+        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.mksf')
+        files = glob.glob(pattern)
+        if len(files) > 0:
+            return files
+        return []
+
+    def list_hpvmconffiles():
+        a = []
+        if svc.svcmode != 'hpvm':
+            return a
+        guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', svc.vmname)
+        uuid = os.path.realpath(guest)
+        if os.path.exists(guest):
+            a.append(guest)
+        if os.path.exists(uuid):
+            a.append(uuid)
+        return a
+
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -229,10 +255,9 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-    mapfiles_pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
-    mapfiles = glob.glob(mapfiles_pattern)
-    if len(mapfiles) > 0:
-        src += mapfiles
+    src += list_mapfiles()
+    src += list_mksffiles()
+    src += list_hpvmconffiles()
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}

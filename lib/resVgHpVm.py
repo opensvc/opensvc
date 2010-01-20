@@ -19,15 +19,17 @@
 import re
 import os
 import rcExceptions as ex
-import resDg
+import rcStatus
+resVg = __import__("resVgHP-UX")
 from subprocess import *
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
+from subprocess import *
 
-class Vg(resDg.Dg):
+class Vg(resVg.Vg):
     def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
         self.id = 'vm dg ' + name
-        resDg.Dg.__init__(self, name, 'disk.vg', optional, disabled, scsireserv)
+        resVg.Vg.__init__(self, name, 'disk.vg', optional, disabled, scsireserv)
 
     def has_it(self):
         return True
@@ -35,19 +37,26 @@ class Vg(resDg.Dg):
     def is_up(self):
         return True
 
+    def dgstatus(self):
+        return rcStatus.NA
+
     def do_start(self):
-        pass
+        self.do_mksf()
 
     def do_stop(self):
         pass
 
+    def diskupdate(self):
+        self.write_mksf()
+
     def disklist(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.svc.vmname]
-        (ret, out) = self.call(cmd)
-        if ret != 0:
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        buff = p.communicate()
+        if p.returncode != 0:
             raise ex.excError
 
-        for line in out.split('\n'):
+        for line in buff[0].split('\n'):
             l = line.split(':')
             if len(l) < 5:
                 continue
