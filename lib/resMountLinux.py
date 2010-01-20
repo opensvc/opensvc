@@ -36,7 +36,7 @@ def try_umount(self):
     """ don't try to kill process using the source of a 
         protected bind mount
     """
-    if protected_mount(dev):
+    if protected_mount(self.mountPoint):
         return 1
 
     """ best effort kill of all processes that might block
