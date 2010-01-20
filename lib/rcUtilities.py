@@ -62,7 +62,10 @@ def call(argv=['/bin/false'], log=None, info=False, errlog=True):
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
     if errlog and len(buff[1]) > 0:
-        log.error('error:\n' + buff[1])
+        if process.returncode != 0:
+            log.error('stderr:\n' + buff[1])
+        else:
+            log.warning('command succesful but stderr:\n' + buff[1])
     if len(buff[0]) > 0:
         log.debug('output:\n' + buff[0])
 
