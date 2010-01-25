@@ -63,7 +63,7 @@ class Vg(resDg.Dg):
         mksf = {}
         if len(self.disks) == 0:
             self.disks = self.disklist()
-        dsf_names = map(dsf_name, self.disks)
+        dsf_names = map(self.dsf_name, self.disks)
         with open(self.mkfsfile_name(), 'w') as f:
             for line in buff.split('\n'):
                 if len(line) == 0:
