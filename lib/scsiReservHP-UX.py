@@ -22,6 +22,7 @@
 import resources as Res
 import uuid
 import re
+import os
 import time
 import rcStatus
 import rcExceptions as ex
@@ -41,6 +42,8 @@ def mpath_to_path(disks):
             l.append(disk.replace("/dev/dsk", "/dev/rdsk"))
             continue
         if "/dev/disk" not in disk and "/dev/rdisk" not in disk:
+            continue
+        if not os.path.exists(disk):
             continue
         cmd = ['ioscan', '-F', '-m', 'dsf', disk]
         p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)

@@ -42,19 +42,33 @@ class diskInfo(object):
         dev = dev.replace("/dev/dsk/", "")
         return dev
 
-    def disk_id(self, dev):
+    def scan(self, dev):
+        cmd = ["scsimgr", "-p", "get_attr", "-D", dev, "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
+        (ret, out) = call(cmd)
+        (wwid, foo, vid, pid, size) = out.split(':')
         dev = self.devkey(dev)
-        return self.h[dev]['wwid']
+        wwid = wwid.replace('0x', '')
+        if len(size) != 0:
+            size = int(size)/2097152
+        vid = vid.strip('" ')
+        pid = pid.strip('" ')
+        self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
+
+    def get(self, dev, type):
+        if dev not in self.h:
+            self.scan(dev)
+        dev = self.devkey(dev)
+        return self.h[dev][type]
+
+    def disk_id(self, dev):
+        return self.get(dev, 'wwid')
 
     def disk_vendor(self, dev):
-        dev = self.devkey(dev)
-        return self.h[dev]['vid']
+        return self.get(dev, 'vid')
 
     def disk_model(self, dev):
-        dev = self.devkey(dev)
-        return self.h[dev]['pid']
+        return self.get(dev, 'pid')
 
     def disk_size(self, dev):
-        dev = self.devkey(dev)
-        return self.h[dev]['size']
+        return self.get(dev, 'size')
 

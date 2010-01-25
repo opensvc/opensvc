@@ -47,7 +47,10 @@ class Vg(resVg.Vg):
         pass
 
     def diskupdate(self):
-        self.write_mksf()
+        if self.svc.status() != 0:
+            self.do_mksf()
+        else:
+            self.write_mksf()
 
     def disklist(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.svc.vmname]

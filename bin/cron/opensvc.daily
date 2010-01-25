@@ -47,6 +47,8 @@ disklist_cache = {}
 def disk_dg(dev, svc):
     for rset in svc.get_res_sets("disk.vg"):
         for vg in rset.resources:
+            if vg.is_disabled():
+                continue
             if not vg.name in disklist_cache:
                 disklist_cache[vg.name] = vg.disklist()
             if dev in disklist_cache[vg.name]:
@@ -104,8 +106,8 @@ for svc in svcBuilder.build_services():
     except:
         pass
 
-    try:
-        for d in svc.disklist():
+    for d in svc.disklist():
+        try:
             proxy.register_disk(
                 ['disk_id',
                  'disk_svcname',
@@ -122,9 +124,9 @@ for svc in svcBuilder.build_services():
                  repr(str(disk_dg(d, svc))),
                  repr(rcEnv.nodename)]
             )
-    except:
-        #raise
-        pass
+        except:
+            #raise
+            pass
 
     try:
         proxy.update_service(
