@@ -21,6 +21,7 @@ from rcGlobalEnv import *
 
 action_desc = {
 	'start':	'start a service, chaining startip-diskstart-startapp',
+	'startstandby':	'start service resources marked always_on',
 	'startip':	'configure service ip addresses',
 	'mount':	'prepare devices, logical volumes, mount service filesystems, bootstrap containers',
 	'startapp':	'execute service application startup script',

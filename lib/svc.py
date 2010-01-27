@@ -143,8 +143,8 @@ class Svc(Resource, Freezer):
         """
         s = rcStatus.Status()
         for t in self.status_types:
-            for r in self.get_res_sets(t):
-                s += r.status()
+            for rs in self.get_res_sets(t):
+                s += rs.status()
         return s.status
 
     def print_status(self):
@@ -206,6 +206,11 @@ class Svc(Resource, Freezer):
     def scsicheckreserv(self):
         self.sub_set_action("disk.vg", "scsicheckreserv")
         self.sub_set_action("disk.zpool", "scsicheckreserv")
+
+    def startstandby(self):
+        self.sub_set_action("disk.vg", "startstandby")
+        self.sub_set_action("disk.zpool", "startstandby")
+        self.sub_set_action("fs", "startstandby")
 
     def diskupdate(self):
         self.sub_set_action("disk.vg", "diskupdate")

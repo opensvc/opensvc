@@ -38,9 +38,11 @@ def allow_scsireserv(self):
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
-    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+    def __init__(self, name=None, type=None, always_on=set([]), optional=False,
+                 disabled=False, scsireserv=False):
         Res.Resource.__init__(self, type, optional, disabled)
         self.name = name
+        self.always_on = always_on
         self.scsiReservation = scsireserv
         self.disks = set()
 
@@ -81,6 +83,10 @@ class Dg(Res.Resource):
     def start(self):
         self.scsireserv()
         self.do_start()
+
+    def startstandby(self):
+        if rcEnv.nodename in self.always_on:
+             self.start()
 
     def print_status(self):
         rcStatus.print_status(self.id, self.dgstatus())

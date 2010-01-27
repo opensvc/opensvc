@@ -84,6 +84,18 @@ def set_scsireserv(resource, conf, section):
        conf.getboolean(section, 'scsireserv') == True:
            resource.set_scsireserv()
 
+def always_on_nodes_set(svc, conf, section):
+    try:
+        always_on_opt = conf.get(section, "always_on").split()
+    except:
+        always_on_opt = []
+    always_on = set([])
+    if 'nodes' in always_on_opt:
+        always_on |= svc.nodes
+    if 'drpnodes' in always_on_opt:
+        always_on |= svc.drpnodes
+    return always_on
+
 def add_ips(svc, conf):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
@@ -150,8 +162,9 @@ def add_vgs(svc, conf):
             dsf = conf.getboolean(s, "dsf")
         else:
             dsf = True
+        always_on = always_on_nodes_set(svc, conf, s)
         vg = __import__('resVg'+rcEnv.sysname)
-        r = vg.Vg(name)
+        r = vg.Vg(name, always_on)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
         r.svc = svc
@@ -208,8 +221,9 @@ def add_filesystems(svc, conf):
             mnt_opt = conf.get(s, "mnt_opt")
         except:
             mnt_opt = ""
+        always_on = always_on_nodes_set(svc, conf, s)
         mount = __import__('resMount'+rcEnv.sysname)
-        r = mount.Mount(mnt, dev, type, mnt_opt)
+        r = mount.Mount(mnt, dev, type, mnt_opt, always_on)
         set_optional_and_disable(r, conf, s)
         #set_scsireserv(r, conf, s)
         r.svc = svc

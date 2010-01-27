@@ -23,6 +23,7 @@ import rcExceptions as exc
 import rcStatus
 import logging
 import rcUtilities
+from rcGlobalEnv import rcEnv
 
 class Resource(object):
     """Define basic resource
@@ -100,9 +101,17 @@ class Resource(object):
                 if r.is_disabled():
                     continue
                 try:
-                    s += r.status()
+                    status = r.status()
                 except:
-                    s += rcStatus.NA
+                    status = rcStatus.NA
+
+                if hasattr(r , 'always_on') and rcEnv.nodename in r.always_on:
+                    if status != rcStatus.UP:
+                        s += rcStatus.WARN
+                    else:
+                        s += rcStatus.NA
+                else:
+                    s += status
         return s.status
 
     def print_status(self):

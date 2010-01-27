@@ -47,9 +47,10 @@ def major(driver):
     raise
 
 class Vg(resDg.Dg):
-    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+    def __init__(self, name=None, type=None, optional=False, always_on=set([]),
+                 disabled=False, scsireserv=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name, 'disk.vg', optional, disabled, scsireserv)
+        resDg.Dg.__init__(self, name, 'disk.vg', always_on, optional, disabled, scsireserv)
 
     def has_it(self):
         """Returns True if the volume is present
@@ -83,7 +84,7 @@ class Vg(resDg.Dg):
     def do_stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
-            return 0
+            return
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:

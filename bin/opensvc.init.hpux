@@ -8,7 +8,7 @@ if [ -r /etc/rc.config.d/opensvc ] ; then
 fi
 
 osvc_path=/usr/local/opensvc/bin
-allupservices=${osvc_path}/allupservices
+allservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
 case $1 in
@@ -22,6 +22,7 @@ start)
 		echo "Starting opensvc services"
 	fi
 	${allprimaryservices} start
+	${allservices} startstandby
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
@@ -32,6 +33,6 @@ stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
 	fi
-	${allupservices} stop
+	${allservices} stop
 	;;
 esac

@@ -60,9 +60,9 @@ def try_umount(self):
 
 class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
-    def __init__(self, mountPoint, device, fsType, mntOpt):
+    def __init__(self, mountPoint, device, fsType, mntOpt, always_on=set([])):
         self.Mounts = rcMounts.Mounts()
-        Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+        Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt, always_on)
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)
@@ -96,7 +96,7 @@ class Mount(Res.Mount):
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
-            return 0
+            return
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break

@@ -21,18 +21,21 @@
 
 import resources as Res
 import os
+from rcGlobalEnv import rcEnv
 
 class Mount(Res.Resource):
     """Define a mount resource 
     """
-    def __init__(self,mountPoint=None,device=None,fsType=None,mntOpt=None,optional=False,\
-                disabled=False, scsireserv=False):
+    def __init__(self, mountPoint=None, device=None, fsType=None,
+                 mntOpt=None, always_on=set([]), optional=False,
+                 disabled=False, scsireserv=False):
         Res.Resource.__init__(self, "fs", optional, disabled)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType
         self.mntOpt = mntOpt
         self.scsiReservation = scsireserv
+        self.always_on = always_on
         self.id = 'fs ' + device + '@' + mountPoint
 
     def set_scsireserv():
@@ -46,7 +49,11 @@ class Mount(Res.Resource):
                 self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
                 raise
             self.log.info("create missing mountpoint %s" % self.mountPoint)
-                
+
+    def startstandby(self):
+        if rcEnv.nodename in self.always_on:
+             self.start()
+
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
                 self.mountPoint, self.device, self.fsType, self.mntOpt)

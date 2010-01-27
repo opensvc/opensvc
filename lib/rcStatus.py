@@ -33,7 +33,7 @@ def colorize(color, text):
     #if os.isatty(1):
     #    return '\033['+str(color)+'m'+text+'\033[m'
     #else:
-        return text
+    return text
 
 _status_value = {
     'up': UP,
