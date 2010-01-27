@@ -125,6 +125,8 @@ class Svc(Resource, Freezer):
             except ex.excError:
                 if r.is_optional():
                     pass
+                else:
+                    raise ex.excError
             except ex.excAbortAction:
                 if r.is_optional():
                     pass
