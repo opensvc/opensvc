@@ -24,12 +24,13 @@ import rcIfconfig
 class ifconfig(rcIfconfig.ifconfig):
 
   def __init__(self):
+     self.intf = []
      out=Popen(['ifconfig','-a'],stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
      for l in out.split("\n"):
 	if l == '' : break
 	if l[0]!='\t' :
 		(ifname,ifstatus)=l.split(': ')
-		
+
 		i=rcIfconfig.interface(ifname)
 		self.intf.append(i)
 
@@ -67,7 +68,7 @@ class ifconfig(rcIfconfig.ifconfig):
 			elif p == 'broadcast' : i.bcast=v
 			n+=2
 
-   
+
 if __name__ == "__main__":
     for c in (ifconfig,) :
         help(c)

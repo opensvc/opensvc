@@ -77,6 +77,7 @@ class ifconfig(rcIfconfig.ifconfig):
             prev = w
 
     def __init__(self):
+        self.intf = []
         intf_list = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
         for line in intf_list.split('\n'):
             if len(line) == 0:

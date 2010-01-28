@@ -56,8 +56,6 @@ class interface:
         self.flag_loopback = False
 
 class ifconfig(object):
-    intf = []
-
     def add_interface(self, name):
         i = interface(name)
         self.intf.append(i)
@@ -81,6 +79,7 @@ class ifconfig(object):
         return None
 
     def __init__(self):
+        self.intf = []
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
         prev = ''
         prevprev = ''
