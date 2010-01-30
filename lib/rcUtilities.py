@@ -50,7 +50,8 @@ def which(program):
             return exe_file
     return None
 
-def call(argv=['/bin/false'], log=None, info=False, errlog=True):
+def call(argv=['/bin/false'], log=None,
+         info=False, errlog=True, err_to_warn=False):
     if log == None:
         log = logging.getLogger('CALL')
     if not argv:
@@ -61,11 +62,14 @@ def call(argv=['/bin/false'], log=None, info=False, errlog=True):
         log.debug(' '.join(argv))
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
-    if errlog and len(buff[1]) > 0:
-        if process.returncode != 0:
-            log.error('stderr:\n' + buff[1])
-        else:
-            log.warning('command succesful but stderr:\n' + buff[1])
+    if len(buff[1]) > 0:
+        if err_to_warn:
+            log.warning('stderr:\n' + buff[1])
+        elif errlog:
+            if process.returncode != 0:
+                log.error('stderr:\n' + buff[1])
+            else:
+                log.warning('command succesful but stderr:\n' + buff[1])
     if len(buff[0]) > 0:
         log.debug('output:\n' + buff[0])
 
@@ -79,8 +83,8 @@ def qcall(argv=['/bin/false']) :
     process.communicate()
     return process.returncode
 
-def vcall(argv=['/bin/false'], log=None):
-    return call(argv, log, True)
+def vcall(argv=['/bin/false'], log=None, err_to_warn=False):
+    return call(argv, log, info=True, err_to_warn=err_to_warn)
 
 def getmount(path):
     path = os.path.abspath(path)

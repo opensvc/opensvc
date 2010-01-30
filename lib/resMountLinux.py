@@ -29,7 +29,7 @@ import rcExceptions as ex
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
-    (ret, out) = self.vcall(cmd)
+    (ret, out) = self.vcall(cmd, err_to_warn=True)
     if ret == 0:
         return 0
 
@@ -48,7 +48,7 @@ def try_umount(self):
 
     for i in range(4):
         cmd = ['fuser', '-kmv', self.mountPoint]
-        (ret, out) = self.vcall(cmd)
+        (ret, out) = self.vcall(cmd, err_to_warn=True)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
         ret = qcall(cmd)
