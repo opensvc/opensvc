@@ -123,7 +123,25 @@ for svc in svcBuilder.build_services():
                      repr(str(r.mask))]
                 )
     except:
-        raise
+        pass
+
+    try:
+        proxy.delete_fss(svc.svcname)
+        for rset in svc.get_res_sets("fs"):
+            for r in rset.resources:
+                proxy.register_fs(
+                    ['fs_svcname',
+                     'fs_dev',
+                     'fs_mnt',
+                     'fs_mntopt',
+                     'fs_type'],
+                    [repr(svc.svcname),
+                     repr(r.device),
+                     repr(r.mountPoint),
+                     repr(r.mntOpt),
+                     repr(r.fsType)]
+                )
+    except:
         pass
 
     for d in svc.disklist():
