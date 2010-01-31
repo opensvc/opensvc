@@ -106,6 +106,26 @@ for svc in svcBuilder.build_services():
     except:
         pass
 
+    try:
+        proxy.delete_ips(svc.svcname, rcEnv.nodename)
+        for rset in svc.get_res_sets("ip"):
+            for r in rset.resources:
+                proxy.register_ip(
+                    ['ip_svcname',
+                     'ip_dev',
+                     'ip_name',
+                     'ip_node',
+                     'ip_netmask'],
+                    [repr(svc.svcname),
+                     repr(r.ipDev),
+                     repr(r.ipName),
+                     repr(rcEnv.nodename),
+                     repr(str(r.mask))]
+                )
+    except:
+        raise
+        pass
+
     for d in svc.disklist():
         try:
             proxy.register_disk(
