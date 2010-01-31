@@ -49,18 +49,20 @@ def svcmon_verbose(svcs):
         except:
             pass
 
-def svcname_max_len(svcs):
+def max_len(svcs, attr):
     _len = 0
     for svc in svcs:
-        if _len < len(svc.svcname):
-            _len = len(svc.svcname)
+        if _len < len(getattr(svc, attr)):
+            _len = len(getattr(svc, attr))
     return _len
 
 def svcmon_normal(svcs, upddb=False):
     if columns < 80:
-        fmt = '%-12s %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+        fmt = '%-12s %-7s %-9s %-9s %-9s %-10s %-10s %-10s\n'
     else:
-        fmt = '%-' + str(svcname_max_len(svcs)) + 's %-8s %-9s %-9s %-9s %-9s %-9s %-9s\n'
+        fmt = '%-' + str(max_len(svcs, "svcname")) + 's'
+        fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s\n'
+
     out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "overall")
     out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status ")
     out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "-------")
