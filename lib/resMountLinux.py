@@ -25,6 +25,7 @@ import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount
+from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 def try_umount(self):
@@ -68,8 +69,12 @@ class Mount(Res.Mount):
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if rcEnv.nodename in self.always_on:
+            if self.is_up(): return rcStatus.STDBY_UP
+            else: return rcStatus.STDBY_DOWN
+        else:
+            if self.is_up(): return rcStatus.UP
+            else: return rcStatus.DOWN
 
     def start(self):
         Res.Mount.start(self)

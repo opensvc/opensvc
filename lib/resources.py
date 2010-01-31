@@ -105,13 +105,7 @@ class Resource(object):
                 except:
                     status = rcStatus.NA
 
-                if hasattr(r , 'always_on') and rcEnv.nodename in r.always_on:
-                    if status != rcStatus.UP:
-                        s += rcStatus.WARN
-                    else:
-                        s += rcStatus.NA
-                else:
-                    s += status
+                s += status
         return s.status
 
     def print_status(self):

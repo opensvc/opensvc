@@ -99,9 +99,12 @@ class Dg(Res.Resource):
         return s.status
 
     def dgstatus(self):
-        if self.is_up():
-            return rcStatus.UP
-        return rcStatus.DOWN
+        if rcEnv.nodename in self.always_on:
+            if self.is_up(): return rcStatus.STDBY_UP
+            else: return rcStatus.STDBY_DOWN
+        else:
+            if self.is_up(): return rcStatus.UP
+            else: return rcStatus.DOWN
 
 if __name__ == "__main__":
     for c in (Dg,) :

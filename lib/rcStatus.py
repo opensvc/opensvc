@@ -24,6 +24,8 @@ WARN = 2
 NA = 3
 TODO = 4
 UNDEF = 5
+STDBY_UP = 6
+STDBY_DOWN = 7
 
 GREEN = 32
 RED = 31
@@ -42,7 +44,9 @@ _status_value = {
     'n/a': NA,
     'na': NA,
     'todo': TODO,
-    'undef': UNDEF
+    'undef': UNDEF,
+    'stdby up': STDBY_UP,
+    'stdby down': STDBY_DOWN,
 }
 
 _status_str = {
@@ -51,7 +55,9 @@ _status_str = {
     WARN: colorize(YELLOW, 'warn'),
     NA: 'n/a',
     TODO: 'todo',
-    UNDEF: 'undef'
+    UNDEF: 'undef',
+    STDBY_UP: 'stdby up',
+    STDBY_DOWN: 'stdby down',
 }
 
 def status_value(str):
@@ -78,16 +84,29 @@ def _merge(s1, s2):
     if (s1, s2) == (UP, WARN): return WARN
     if (s1, s2) == (UP, NA): return UP
     if (s1, s2) == (UP, TODO): return WARN
+    if (s1, s2) == (UP, STDBY_UP): return UP
+    if (s1, s2) == (UP, STDBY_DOWN): return WARN
     if (s1, s2) == (DOWN, DOWN): return DOWN
     if (s1, s2) == (DOWN, WARN): return WARN
     if (s1, s2) == (DOWN, NA): return DOWN
     if (s1, s2) == (DOWN, TODO): return WARN
+    if (s1, s2) == (DOWN, STDBY_UP): return STDBY_UP
+    if (s1, s2) == (DOWN, STDBY_DOWN): return WARN
     if (s1, s2) == (WARN, WARN): return WARN
     if (s1, s2) == (WARN, NA): return WARN
     if (s1, s2) == (WARN, TODO): return WARN
+    if (s1, s2) == (WARN, STDBY_UP): return WARN
+    if (s1, s2) == (WARN, STDBY_DOWN): return WARN
     if (s1, s2) == (NA, NA): return NA
     if (s1, s2) == (NA, TODO): return WARN
+    if (s1, s2) == (NA, STDBY_UP): return STDBY_UP
+    if (s1, s2) == (NA, STDBY_DOWN): return STDBY_DOWN
     if (s1, s2) == (TODO, TODO): return TODO
+    if (s1, s2) == (TODO, STDBY_UP): return TODO
+    if (s1, s2) == (TODO, STDBY_DOWN): return TODO
+    if (s1, s2) == (STDBY_UP, STDBY_UP): return STDBY_UP
+    if (s1, s2) == (STDBY_UP, STDBY_DOWN): return WARN
+    if (s1, s2) == (STDBY_DOWN, STDBY_DOWN): return WARN
     return _merge(s2, s1)
 
 def print_status(resource, status):
