@@ -21,7 +21,7 @@ import logging
 from rcGlobalEnv import *
 
 class interface:
-    def show(self):
+    def __str__(self):
         log = logging.getLogger('INIT')
         log.debug('ifconfig:')
         log.debug(self.name + ' link_encap = ' + self.link_encap)
@@ -77,6 +77,10 @@ class ifconfig(object):
             if getattr(i, param) == value:
                 return i
         return None
+
+    def __str__(self):
+        for intf in self.intf:
+            print intf
 
     def __init__(self):
         self.intf = []

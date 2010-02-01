@@ -57,6 +57,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcHosted', 'SvcHosted')
     elif svcmode == 'hpvm':
         return ('svcHpVm', 'SvcHpVm')
+    elif svcmode == 'kvm':
+        return ('svcKvm', 'SvcKvm')
     raise
 
 def set_optional(resource, conf, section):
@@ -123,9 +125,12 @@ def add_ips(svc, conf):
             netmask = conf.get(s, "netmask")
         else:
             netmask = None
-        if svc.svcmode  == 'lxc':
+        if svc.svcmode == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
             r = ip.Ip(svc.svcname, ipdev, ipname)
+        elif svc.svcmode  == 'kvm':
+            ip = __import__('resIp'+'Kvm')
+            r = ip.Ip(svc.vmname, ipdev, ipname)
         elif svc.svcmode  == 'hpvm':
             ip = __import__('resIp'+'HpVm')
             r = ip.Ip(svc.vmname, ipdev, ipname)
@@ -244,6 +249,14 @@ def add_mandatory_syncs(svc):
             return files
         return []
 
+    def list_kvmconffiles():
+        if not hasattr(svc, "vmname"):
+            return []
+        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', svc.vmname+'.xml')
+        if os.path.exists(cf):
+            return [cf]
+        return []
+
     def list_hpvmconffiles():
         a = []
         if svc.svcmode != 'hpvm':
@@ -271,6 +284,7 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
     src += list_mapfiles()
     src += list_mksffiles()
+    src += list_kvmconffiles()
     src += list_hpvmconffiles()
     dst = os.path.join("/")
     exclude = []
@@ -361,7 +375,7 @@ def add_syncs(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        if svc.svcmode in ['hpvm']:
+        if svc.svcmode in ['hpvm', 'kvm']:
             resApp = __import__('resAppVm')
             r = resApp.Apps(hostname=svc.vmname)
         else:

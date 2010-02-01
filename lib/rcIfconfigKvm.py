@@ -20,26 +20,15 @@
 import rcExceptions as ex
 from subprocess import *
 
-rcIfconfig = __import__("rcIfconfigHP-UX")
+rcIfconfig = __import__("rcIfconfigLinux")
 from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
     def __init__(self, hostname):
-        cmd = rcEnv.rsh.split(' ') + [hostname, 'netstat', '-win']
+        self.intf = []
+        cmd = rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', '-a']
         p = Popen(cmd, stdout=PIPE)
         buff = p.communicate()[0]
         if p.returncode != 0:
             raise ex.excError
-        intf_list = buff
-        for line in intf_list.split('\n'):
-            if len(line) == 0:
-                continue
-            intf = line.split()[0]
-            cmd = rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', intf]
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out = p.communicate()
-            if "no such interface" in out[1]:
-                continue
-            elif p.returncode != 0:
-                raise ex.excError
-            self.parse(out[0])
+        self.parse(buff)
