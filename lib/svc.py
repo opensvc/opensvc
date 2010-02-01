@@ -218,6 +218,30 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.vg", "diskupdate")
 
     def action(self, action):
+        if action in ["print_status", "status", "group_status", "scsicheckreserv"]:
+            self.do_action(action)
+        else:
+            self.do_logged_action(action)
+
+    def do_action(self, action):
+        """Trigger action
+        """
+        err = 0
+        try:
+            svclock(self)
+            getattr(self, action)()
+        except ex.excError:
+            err = 1
+            pass
+        except:
+            """Save the error for deferred raising
+            """
+            err = 1
+            import traceback
+            traceback.print_exc()
+        return err
+
+    def do_logged_action(self, action):
         from datetime import datetime
         import tempfile
         import logging
@@ -238,21 +262,7 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
 
-        """Trigger action
-        """
-        err = 0
-        try:
-            svclock(self)
-            getattr(self, action)()
-        except ex.excError:
-            err = 1
-            pass
-        except:
-            """Save the error for deferred raising
-            """
-            err = 1
-            import traceback
-            traceback.print_exc()
+        err = self.do_action(action)
 
         """Push result and logs to database
         """
