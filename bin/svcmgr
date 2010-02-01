@@ -35,7 +35,7 @@ import rcOptParser
 from rcUtilities import banner
 from rcGlobalEnv import *
 
-svcs = []
+svcs = None
 __ver = rcEnv.prog + " version " + str(rcEnv.ver)
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
@@ -62,26 +62,28 @@ elif cmd == 'svcmgr':
     parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
               help="operate only on service flagged for autostart on this node")
 
-parm_primary = False
-parm_status = None
 (options, args) = parser.parse_args()
 
-if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-    svcnames = options.parm_svcs.split(',')
-else:
-    svcnames = []
+if svcs is None:
+    parm_primary = False
+    parm_status = None
 
-if hasattr(options, "parm_status") and options.parm_status is not None:
-    status = rcStatus.status_value(options.parm_status)
-else:
-    status = None
+    if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+        svcnames = options.parm_svcs.split(',')
+    else:
+        svcnames = []
 
-if hasattr(options, "parm_primary") and options.parm_primary is not None:
-    onlyprimary = options.parm_primary
-else:
-    onlyprimary = False
+    if hasattr(options, "parm_status") and options.parm_status is not None:
+        status = rcStatus.status_value(options.parm_status)
+    else:
+        status = None
 
-svcs = svcBuilder.build_services(svcnames=svcnames, status=status, onlyprimary=onlyprimary)
+    if hasattr(options, "parm_primary") and options.parm_primary is not None:
+        onlyprimary = options.parm_primary
+    else:
+        onlyprimary = False
+
+    svcs = svcBuilder.build_services(svcnames=svcnames, status=status, onlyprimary=onlyprimary)
 
 if len(args) > 1:
     parser.error("More than one action")
