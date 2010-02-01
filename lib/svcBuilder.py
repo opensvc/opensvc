@@ -164,7 +164,7 @@ def add_vgs(svc, conf):
             dsf = True
         always_on = always_on_nodes_set(svc, conf, s)
         vg = __import__('resVg'+rcEnv.sysname)
-        r = vg.Vg(name, always_on)
+        r = vg.Vg(name, always_on=always_on)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
         r.svc = svc

@@ -28,8 +28,12 @@ class Vg(resDg.Dg):
     def __init__(self, name=None, type=None, optional=False, always_on=set([]),
                  disabled=False, scsireserv=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name, 'disk.vg', optional, always_on, disabled,
-                          scsireserv)
+        resDg.Dg.__init__(self, name=name,
+                          type='disk.vg',
+                          always_on=always_on,
+                          optional=optional,
+                          disabled=disabled,
+                          scsireserv=scsireserv)
 
     def mapfile_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')

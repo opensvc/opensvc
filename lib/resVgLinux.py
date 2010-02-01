@@ -50,7 +50,12 @@ class Vg(resDg.Dg):
     def __init__(self, name=None, type=None, optional=False, always_on=set([]),
                  disabled=False, scsireserv=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name, 'disk.vg', always_on, optional, disabled, scsireserv)
+        resDg.Dg.__init__(self, name=name,
+                          type='disk.vg',
+                          always_on=always_on,
+                          optional=optional,
+                          disabled=disabled,
+                          scsireserv=scsireserv)
 
     def has_it(self):
         """Returns True if the volume is present
