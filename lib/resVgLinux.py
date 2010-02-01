@@ -98,26 +98,16 @@ class Vg(resDg.Dg):
     def disklist(self):
         if not self.has_it():
             return set()
-        if self.disks != set() :
+        if self.disks != set():
             return self.disks
 
         disks = set()
 
-        """Get volume group's PV from the clear text metadata backup file
-        """
-        config = os.path.join(os.path.sep, 'etc', 'lvm', 'backup', self.name)
-        if not os.path.exists(config):
+        cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
             return disks
-        try:
-            f = open(config)
-        except:
-            self.log.error("can not open %s" % config)
-            raise
-        pvs = set()
-        for line in f.readlines():
-            words = line.split()
-            if len(words) > 3 and words[0] == 'device':
-                pvs.add(words[2].strip('"'))
+	pvs = set(out.split())
 
         """If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
