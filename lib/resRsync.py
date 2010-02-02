@@ -79,7 +79,7 @@ def nodes_to_sync(self, type=None):
     """Discard the local node from the set
     """
     if type in self.target.keys():
-        targets = self.target[type]
+        targets = self.target[type].copy()
     else:
         return set([])
 
@@ -188,7 +188,8 @@ class Rsync(Res.Resource):
 
         """Accept to sync from here only if the service is up
         """
-        if self.svc.status() != 0:
+        status = self.svc.group_status(excluded_groups=set(["sync"]))
+        if status['overall'].status != rcStatus.UP:
             self.log.debug("won't sync a service not up")
             raise ex.excAbortAction
 
@@ -254,8 +255,38 @@ class Rsync(Res.Resource):
             self.log.debug("no node to sync")
             raise ex.excAbortAction
 
+    def status(self):
+        nodes = 0
+        if 'nodes' in self.target:
+            nodes += len(self.target['nodes'])
+        if 'drpnodes' in self.target:
+            nodes += len(self.target['drpnodes'])
+        if nodes == 0:
+            return rcStatus.NA
+
+        nodes = 0
+        try:
+            nodes += len(nodes_to_sync(self, 'nodes'))
+        except ex.syncNoNodesToSync:
+            pass
+        try:
+            nodes += len(nodes_to_sync(self, 'drpnodes'))
+        except ex.syncNoNodesToSync:
+            pass
+        if nodes == 0:
+            return rcStatus.UP
+
+        return rcStatus.DOWN
+
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
                  bwlimit=None, sync_min_delay=30, optional=False, disabled=False, internal=False):
+        if internal:
+            if rcEnv.drp_path in dst:
+                self.id = "sync system files to ['drpnodes']"
+            else:
+                self.id = "sync svc config to %s"%target.keys()
+        else:
+            self.id = "sync %s to %s"%(', '.join(src), target.keys())
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
@@ -265,7 +296,7 @@ class Rsync(Res.Resource):
         self.bwlimit = bwlimit
         self.internal = internal
         self.sync_min_delay = sync_min_delay
-        Res.Resource.__init__(self, "rsync", optional, disabled)
+        Res.Resource.__init__(self, "sync.rsync", optional, disabled)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\

@@ -66,7 +66,7 @@ class Svc(Resource, Freezer):
 
     """ override in child class to add/remove supported resource types
     """
-    status_types = ["disk.loop", "fs", "disk.vg", "ip"]
+    status_types = ["disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
@@ -156,18 +156,20 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
-    def group_status(self):
+    def group_status(self,
+                     groups=set(["container", "ip", "disk", "fs", "sync"]),
+                     excluded_groups=set([])):
         """print each resource status for a service
         """
         status = {}
-        groups = ["container", "ip", "disk", "fs"]
-        moregroups = groups + ["overall"]
+        groups -= excluded_groups
+        moregroups = groups | set(["overall"])
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
         for t in self.status_types:
             group = t.split('.')[0]
             if group not in groups:
-                raise
+                continue
             for r in self.get_res_sets(t):
                 status[group] += r.status()
                 status["overall"] += r.status()
@@ -192,10 +194,10 @@ class Svc(Resource, Freezer):
         self.sub_set_action("app", "stop")
 
     def syncnodes(self):
-        self.sub_set_action("rsync", "syncnodes")
+        self.sub_set_action("sync.rsync", "syncnodes")
 
     def syncdrp(self):
-        self.sub_set_action("rsync", "syncdrp")
+        self.sub_set_action("sync.rsync", "syncdrp")
 
     def scsirelease(self):
         self.sub_set_action("disk.vg", "scsirelease")

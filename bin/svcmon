@@ -58,14 +58,14 @@ def max_len(svcs, attr):
 
 def svcmon_normal(svcs, upddb=False):
     if columns < 80:
-        fmt = '%-12s %-7s %-9s %-9s %-9s %-10s %-10s %-10s\n'
+        fmt = '%-12s %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s\n'
     else:
         fmt = '%-' + str(max_len(svcs, "svcname")) + 's'
-        fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s\n'
+        fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s\n'
 
-    out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "overall")
-    out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status ")
-    out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "-------")
+    out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "sync  ", "overall")
+    out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status ")
+    out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "-------")
     for svc in svcs:
        status = svc.group_status()
        out += fmt % (
@@ -76,6 +76,7 @@ def svcmon_normal(svcs, upddb=False):
               status["ip"],
               status["disk"],
               status["fs"],
+              status["sync"],
               status["overall"])
        if upddb:
            xmlrpcClient.svcmon_update(svc, status)

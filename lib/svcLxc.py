@@ -29,7 +29,7 @@ class SvcLxc(svc.Svc):
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         self += lxc.Lxc(svcname)
-        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip"]
+        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
 
     def start(self):
         """start a Lxc

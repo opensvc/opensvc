@@ -181,17 +181,20 @@ class ResourceSet(Resource):
         else:
             self.resources.sort(reverse=True)
 
-        try:
-            self.pre_action(self, action)
-        except exc.excAbortAction:
-            return
+        if action not in ["status", "print_status", "group_status"]:
+            try:
+                self.pre_action(self, action)
+            except exc.excAbortAction:
+                return
 
         for r in self.resources:
             try:
                 r.action(action)
             except exc.excAbortAction:
                 break
-        self.post_action(self, action)
+
+        if action != "status":
+            self.post_action(self, action)
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ class SvcZone(svc.Svc):
 
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"container.zone",optional, disabled)
-        self.status_types = ["container.zone", "ip", "disk.vg", "fs"]
+        self.status_types = ["container.zone", "ip", "disk.vg", "fs", "sync.rsync"]
 
     def start(self):
         """start a zone

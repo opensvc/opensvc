@@ -33,7 +33,7 @@ class SvcHpVm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self += resHpVm.HpVm(vmname)
-        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip"]
+        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
 
     def start(self):
         self.sub_set_action("ip", "start")

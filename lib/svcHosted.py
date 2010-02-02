@@ -27,7 +27,7 @@ class SvcHosted(svc.Svc):
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
-        self.status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip"]
+        self.status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip", "sync.rsync"]
 
     def start(self):
         """start a hosted service:
