@@ -212,7 +212,14 @@ def add_filesystems(svc, conf):
     for s in conf.sections():
         if re.match('fs#[0-9]', s, re.I) is None:
             continue
-        dev = conf.get(s, "dev")
+        if conf.has_option(s, "dev@"+rcEnv.nodename):
+            dev = conf.get(s, "dev@"+rcEnv.nodename)
+        elif conf.has_option(s, "dev"):
+            dev = conf.get(s, "dev")
+        else:
+            svc.log.error("nor dev and dev@%s defined in config file section %s"%(rcEnv.nodename, s))
+            dev = None
+            continue
         mnt = conf.get(s, "mnt")
         if mnt[-1] == '/':
             """ Remove trailing / to not risk losing rsync src trailing /
