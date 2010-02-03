@@ -406,9 +406,9 @@ def add_syncs_rsync(svc, conf):
             bwlimit = None
 
         if conf.has_option(s, 'sync_min_delay'):
-            sync_min_delay = conf.get(s, 'sync_min_delay')
+            sync_min_delay = conf.getint(s, 'sync_min_delay')
         elif conf.has_option('default', 'sync_min_delay'):
-            sync_min_delay = conf.get('default', 'sync_min_delay')
+            sync_min_delay = conf.getint('default', 'sync_min_delay')
         else:
             sync_min_delay = 30
 
