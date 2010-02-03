@@ -66,7 +66,7 @@ class Svc(Resource, Freezer):
 
     """ override in child class to add/remove supported resource types
     """
-    status_types = ["disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
+    status_types = ["disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
@@ -218,6 +218,15 @@ class Svc(Resource, Freezer):
 
     def diskupdate(self):
         self.sub_set_action("disk.vg", "diskupdate")
+
+    def syncquiesce(self):
+        self.sub_set_action("sync.netapp", "syncquiesce")
+
+    def syncresync(self):
+        self.sub_set_action("sync.netapp", "syncresync")
+
+    def syncbreak(self):
+        self.sub_set_action("sync.netapp", "syncbreak")
 
     def action(self, action):
         if action in ["print_status", "status", "group_status", "scsicheckreserv"]:

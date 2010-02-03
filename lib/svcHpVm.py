@@ -33,10 +33,11 @@ class SvcHpVm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self += resHpVm.HpVm(vmname)
-        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
+        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         self.sub_set_action("ip", "start")
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
         self.sub_set_action("container.hpvm", "start")
@@ -74,6 +75,7 @@ class SvcHpVm(svc.Svc):
         self.sub_set_action("fs", "stop")
 
     def diskstart(self):
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
 

@@ -282,11 +282,11 @@ class Rsync(Res.Resource):
                  bwlimit=None, sync_min_delay=30, optional=False, disabled=False, internal=False):
         if internal:
             if rcEnv.drp_path in dst:
-                self.id = "sync system files to ['drpnodes']"
+                self.id = "sync rsync system files to ['drpnodes']"
             else:
-                self.id = "sync svc config to %s"%target.keys()
+                self.id = "sync rsync svc config to %s"%target.keys()
         else:
-            self.id = "sync %s to %s"%(', '.join(src), target.keys())
+            self.id = "sync rsync %s to %s"%(', '.join(src), target.keys())
         self.src = src
         self.dst = dst
         self.dstfs = dstfs

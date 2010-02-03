@@ -46,6 +46,7 @@ class SvcZone(svc.Svc):
         self.sub_set_action("container.zone", "ready")
         self.sub_set_action("ip", "start")
         self.sub_set_action("container.zone", "boot")
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
         self.sub_set_action("app", "start")

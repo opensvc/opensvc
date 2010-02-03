@@ -27,7 +27,7 @@ class SvcHosted(svc.Svc):
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
-        self.status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip", "sync.rsync"]
+        self.status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         """start a hosted service:
@@ -39,6 +39,7 @@ class SvcHosted(svc.Svc):
         start apps
         """
         self.sub_set_action("ip", "start")
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")
@@ -66,6 +67,7 @@ class SvcHosted(svc.Svc):
         start Pools
         start fs
         """
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")

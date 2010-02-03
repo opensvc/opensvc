@@ -50,6 +50,9 @@ action_desc = {
 	'scsirelease':	'release scsi disks held by this service',
 	'scsicheckreserv':	'report status of reservations on scsi disks held by this service',
 	'restart':	'stop then start',
+	'syncquiesce':	'trigger a storage hardware-assisted disk synchronization',
+	'syncbreak':	'split a storage hardware-assisted disk synchronization',
+	'syncresync':	're-establish a broken storage hardware-assisted synchronization',
 }
 
 def format_desc(svc=False):

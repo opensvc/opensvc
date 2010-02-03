@@ -32,6 +32,7 @@ import rcOptParser
 import rcLogger
 import rcAddService
 import resRsync
+import resSyncNetapp
 import rcExceptions as ex
 
 check_privs()
@@ -310,6 +311,48 @@ def add_mandatory_syncs(svc):
         svc += r
 
 def add_syncs(svc, conf):
+    add_syncs_rsync(svc, conf)
+    add_syncs_netapp(svc, conf)
+
+def add_syncs_netapp(svc, conf):
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'netapp':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        if not conf.has_option(s, 'path'):
+            log.error("config file section %s must have path set" % s)
+            return
+        if not conf.has_option(s, 'user'):
+            log.error("config file section %s must have user set" % s)
+            return
+
+        filers = {}
+        for o in conf.options(s):
+            if 'filer@' not in o:
+                continue
+            (filer, node) = o.split('@')
+            filers[node] = conf.get(s, o)
+        if rcEnv.nodename not in filers:
+            log.error("config file section %s must have filer@%s set" %(s, rcEnv.nodename))
+
+        path = conf.get(s, 'path')
+        user = conf.get(s, 'user')
+
+        r = resSyncNetapp.syncNetapp(filers=filers,
+                                     path=path,
+                                     user=user)
+        set_optional_and_disable(r, conf, s)
+        r.svc = svc
+        svc += r
+
+def add_syncs_rsync(svc, conf):
     """Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus
     the those described in the config file.
     """
@@ -317,6 +360,10 @@ def add_syncs(svc, conf):
 
     for s in conf.sections():
         if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'rsync':
             continue
 
         if not conf.has_option(s, 'src') or \

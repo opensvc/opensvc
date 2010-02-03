@@ -33,10 +33,11 @@ class SvcKvm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self += resKvm.Kvm(vmname)
-        self.status_types = ["container.kvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
+        self.status_types = ["container.kvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         self.sub_set_action("ip", "start")
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
         self.sub_set_action("container.kvm", "start")
@@ -74,6 +75,7 @@ class SvcKvm(svc.Svc):
         self.sub_set_action("fs", "stop")
 
     def diskstart(self):
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
 

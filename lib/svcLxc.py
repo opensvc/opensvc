@@ -29,7 +29,7 @@ class SvcLxc(svc.Svc):
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         self += lxc.Lxc(svcname)
-        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync"]
+        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         """start a Lxc
@@ -41,6 +41,7 @@ class SvcLxc(svc.Svc):
         start apps
         """
         self.sub_set_action("ip", "start")
+        self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
