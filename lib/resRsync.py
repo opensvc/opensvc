@@ -264,6 +264,15 @@ class Rsync(Res.Resource):
         if nodes == 0:
             return rcStatus.NA
 
+        status = self.svc.group_status(excluded_groups=set(["sync"]))
+        if status['overall'].status != rcStatus.UP:
+            if self.internal and "cache" in self.dst:
+                return rcStatus.NA
+            if need_sync(self, rcEnv.nodename):
+                return rcStatus.WARN
+            else:
+                return rcStatus.UP
+
         nodes = 0
         try:
             nodes += len(nodes_to_sync(self, 'nodes'))

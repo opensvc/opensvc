@@ -177,8 +177,11 @@ class Svc(Resource, Freezer):
                 else:
                     """ sync are expected to be up
                     """
-                    if r.status() == rcStatus.UP:
+                    s = r.status()
+                    if s == rcStatus.UP:
                         status["overall"] += rcStatus.UNDEF
+                    elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                        status["overall"] += s
                     else:
                         status["overall"] += rcStatus.WARN
         return status
