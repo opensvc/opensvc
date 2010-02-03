@@ -109,6 +109,8 @@ def sync_timestamp(self, node):
     with open(sync_timestamp_f, 'w') as f:
         f.write(str(datetime.datetime.now())+'\n')
         f.close()
+    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, node+':/']
+    self.vcall(cmd)
 
 def need_sync(self, node):
     sync_timestamp_f = get_timestamp_filename(self, node)
@@ -124,6 +126,15 @@ def need_sync(self, node):
         self.log.info("failed to determine last sync date for %s to %s"%(self.src, node))
         return True
     return True
+
+def bwlimit_option(self):
+    if self.bwlimit is not None:
+        bwlimit = [ '--bwlimit='+self.bwlimit ]
+    elif self.svc.bwlimit is not None:
+        bwlimit = [ '--bwlimit='+self.svc.bwlimit ]
+    else:
+        bwlimit = []
+    return bwlimit
 
 def sync(self, type):
     if hasattr(self, "alt_src"):
@@ -144,12 +155,7 @@ def sync(self, type):
         self.log.debug("no files to sync")
         raise ex.syncNoFilesToSync
 
-    if self.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+self.bwlimit ]
-    elif self.svc.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+self.svc.bwlimit ]
-    else:
-        bwlimit = []
+    bwlimit = bwlimit_option(self)
 
     for node in targets:
         if not need_sync(self, node):
