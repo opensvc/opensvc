@@ -172,7 +172,15 @@ class Svc(Resource, Freezer):
                 continue
             for r in self.get_res_sets(t):
                 status[group] += r.status()
-                status["overall"] += r.status()
+                if group != "sync":
+                    status["overall"] += r.status()
+                else:
+                    """ sync are expected to be up
+                    """
+                    if r.status() == rcStatus.UP:
+                        status["overall"] += rcStatus.UNDEF
+                    else:
+                        status["overall"] += rcStatus.WARN
         return status
 
     def disklist(self):
