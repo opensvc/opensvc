@@ -116,7 +116,7 @@ class syncNetapp(Res.Resource):
     def cmd_status(self, filer):
         (ret, buff) = self._cmd(['snapmirror', 'status'], filer)
         if ret != 0:
-            return rcStatus.UNDEF
+            return dict(state=None, lag=None, status=None)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) < 4:
@@ -146,11 +146,15 @@ class syncNetapp(Res.Resource):
         pass
 
     def status(self):
-        s = self.cmd_status(self.slave())
+        try:
+            s = self.cmd_status(self.slave())
+        except:
+            return rcStatus.UNDEF
         if s['state'] == "Snapmirrored":
             if "Transferring" in s['status']:
                 self.log.debug("snapmirror transfer in progress")
                 return rcStatus.WARN
+                """ TODO: check lag """
             else:
                 return rcStatus.UP
         return rcStatus.DOWN
