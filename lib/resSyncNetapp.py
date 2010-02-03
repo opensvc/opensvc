@@ -77,6 +77,13 @@ class syncNetapp(Res.Resource):
             raise ex.excError
 
     def syncquiesce(self):
+        (ret, buff) = self._cmd(['snapmirror', 'status'], self.slave())
+        if s['state'] == "Quiesced":
+            self.log.info("already quiesced")
+            return
+        elif s['state'] != "Snapmirrored":
+            self.log.error("Can not quiesced volume not in Snapmirrored state")
+            raise ex.excError
         (ret, buff) = self.cmd_slave(['snapmirror', 'quiesce', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
@@ -100,7 +107,7 @@ class syncNetapp(Res.Resource):
         timeout = 20
         for i in range(timeout):
             s = self.cmd_status(self.slave())
-            if s['state'] == "Broken-off" and s['status'] == "Pending":
+            if s['state'] == "Broken-off" and s['status'] == "Idle":
                 return
             time.sleep(5)
         self.log.error("timed out waiting for break to finish")
