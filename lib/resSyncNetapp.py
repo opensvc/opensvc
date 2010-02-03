@@ -77,7 +77,7 @@ class syncNetapp(Res.Resource):
             raise ex.excError
 
     def syncquiesce(self):
-        (ret, buff) = self._cmd(['snapmirror', 'status'], self.slave())
+        s = self.cmd_status(self.slave())
         if s['state'] == "Quiesced":
             self.log.info("already quiesced")
             return
@@ -135,9 +135,11 @@ class syncNetapp(Res.Resource):
         if self.local() == self.master():
             self.log.info("%s is already replication master"%self.local())
             return
-        self.syncquiesce()
-        self.wait_quiesce()
-        self.syncbreak()
+        s = self.cmd_status(self.slave())
+        if s['state'] != "Broken-off":
+            self.syncquiesce()
+            self.wait_quiesce()
+            self.syncbreak()
         self.wait_break()
 
     def stop(self):
