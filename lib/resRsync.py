@@ -253,7 +253,7 @@ class Rsync(Res.Resource):
             pass
         except ex.syncNoNodesToSync:
             self.log.debug("no node to sync")
-            raise ex.excAbortAction
+            pass
 
     def status(self):
         nodes = 0
