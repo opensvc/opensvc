@@ -143,11 +143,22 @@ class Svc(Resource, Freezer):
     def status(self):
         """aggregate status a service
         """
-        s = rcStatus.Status()
+        ss = rcStatus.Status()
         for t in self.status_types:
-            for rs in self.get_res_sets(t):
-                s += rs.status()
-        return s.status
+            for r in self.get_res_sets(t):
+                if "sync." not in r.type:
+                     ss += r.status()
+                else:
+                    """ sync are expected to be up
+                    """
+                    s = r.status()
+                    if s == rcStatus.UP:
+                        ss += rcStatus.UNDEF
+                    elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                        ss += s
+                    else:
+                        ss += rcStatus.WARN
+        return ss.status
 
     def print_status(self):
         """print each resource status for a service
@@ -162,7 +173,7 @@ class Svc(Resource, Freezer):
         """print each resource status for a service
         """
         status = {}
-        groups -= excluded_groups
+        groups = groups.copy() - excluded_groups
         moregroups = groups | set(["overall"])
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
