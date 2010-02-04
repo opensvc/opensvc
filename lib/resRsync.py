@@ -113,6 +113,8 @@ def sync_timestamp(self, node):
     self.vcall(cmd)
 
 def need_sync(self, node):
+    if self.svc.force:
+        return True
     sync_timestamp_f = get_timestamp_filename(self, node)
     if not os.path.exists(sync_timestamp_f):
         return True

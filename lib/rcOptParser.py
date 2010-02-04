@@ -71,7 +71,7 @@ class svcOptionParser:
 		parser.add_option("--debug", default="False",
 				  action="store_true", dest="debug",
 				  help="debug mode")
-		parser.add_option("-f", "--force", default="False",
+		parser.add_option("-f", "--force", default=False,
 				  action="store_true", dest="force",
 				  help="force action, ignore sanity check warnings")
 		(self.options, self.args) = parser.parse_args()
@@ -82,3 +82,5 @@ class svcOptionParser:
 		self.action = self.args[0]
 		if svc and not hasattr(svc, self.action):
 			parser.error("unsupported action")
+                if svc:
+			svc.force = self.options.force

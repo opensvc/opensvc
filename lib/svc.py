@@ -80,6 +80,7 @@ class Svc(Resource, Freezer):
         self.resSets = []
         self.type2resSets = {}
         self.disks = set([])
+        self.force = False
         Resource.__init__(self, type, optional, disabled)
         Freezer.__init__(self, svcname)
 

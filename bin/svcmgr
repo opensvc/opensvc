@@ -61,6 +61,8 @@ elif cmd == 'svcmgr':
               help="operate only on service in the specified status (up/down/warn)")
     parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
               help="operate only on service flagged for autostart on this node")
+    parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
+              help="force action, ignore sanity check warnings")
 
 (options, args) = parser.parse_args()
 
@@ -95,5 +97,6 @@ if not action in rcOptParser.action_desc.keys():
 
 for s in svcs:
     print banner(s.svcname)
+    s.force = options.force
     s.action(action)
 
