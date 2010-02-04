@@ -297,7 +297,7 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
+    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True, sync_min_delay=1430)
     r.svc = svc
     svc += r
 
