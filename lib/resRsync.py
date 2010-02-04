@@ -264,9 +264,9 @@ class Rsync(Res.Resource):
     def status(self):
         nodes = 0
         if 'nodes' in self.target:
-            nodes += len(self.target['nodes'])
+            nodes += len(self.target['nodes']-set([rcEnv.nodename]))
         if 'drpnodes' in self.target:
-            nodes += len(self.target['drpnodes'])
+            nodes += len(self.target['drpnodes']-set([rcEnv.nodename]))
         if nodes == 0:
             return rcStatus.NA
 
