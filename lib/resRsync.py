@@ -75,7 +75,7 @@ def remote_node_type(self, node, type):
                    (node, expected_type, node, host_mode_f))
     return False
 
-def nodes_to_sync(self, type=None):
+def nodes_to_sync(self, type=None, state="syncable"):
     """Discard the local node from the set
     """
     if type in self.target.keys():
@@ -88,7 +88,9 @@ def nodes_to_sync(self, type=None):
     for node in targets.copy():
         if not remote_node_type(self, node, type):
             targets -= set([node])
-        if not need_sync(self, node):
+        if state == "syncable" and not can_sync(self, node):
+            targets -= set([node])
+        elif state == "late" and not need_sync(self, node):
             targets -= set([node])
 
     if len(targets) == 0:
@@ -112,7 +114,7 @@ def sync_timestamp(self, node):
     cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, node+':/']
     self.vcall(cmd)
 
-def need_sync(self, node):
+def check_timestamp(self, node, comp="less", delay=0):
     if self.svc.force:
         return True
     sync_timestamp_f = get_timestamp_filename(self, node)
@@ -121,13 +123,23 @@ def need_sync(self, node):
     try:
         with open(sync_timestamp_f, 'r') as f:
             d = f.read()
-            if datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=self.sync_min_delay):
+            if comp == "more" and datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=delay):
                 return False
+            elif comp == "less" and datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=delay):
+                return False
+            else:
+                return True
             f.close()
     except:
         self.log.info("failed to determine last sync date for %s to %s"%(self.src, node))
         return True
     return True
+
+def can_sync(self, node):
+    return check_timestamp(self, node, comp="less", delay=self.sync_min_delay)
+
+def need_sync(self, node):
+    return check_timestamp(self, node, comp="more", delay=self.sync_max_delay)
 
 def bwlimit_option(self):
     if self.bwlimit is not None:
@@ -160,7 +172,7 @@ def sync(self, type):
     bwlimit = bwlimit_option(self)
 
     for node in targets:
-        if not need_sync(self, node):
+        if not can_sync(self, node):
             self.log.debug("skip sync of %s to %s because last sync too close"%(self.src, node))
             continue
         if not remote_fs_mounted(self, node):
@@ -218,7 +230,7 @@ class Rsync(Res.Resource):
             except ex.syncNoNodesToSync:
                 pass
             for node in rtargets[i].copy():
-                if not need_sync(r, node):
+                if not can_sync(r, node):
                     rtargets[i] -= set([node])
                 elif r.snap:
                     need_snap = True
@@ -283,11 +295,11 @@ class Rsync(Res.Resource):
 
         nodes = 0
         try:
-            nodes += len(nodes_to_sync(self, 'nodes'))
+            nodes += len(nodes_to_sync(self, 'nodes', state="late"))
         except ex.syncNoNodesToSync:
             pass
         try:
-            nodes += len(nodes_to_sync(self, 'drpnodes'))
+            nodes += len(nodes_to_sync(self, 'drpnodes', state="late"))
         except ex.syncNoNodesToSync:
             pass
         if nodes == 0:
@@ -296,7 +308,8 @@ class Rsync(Res.Resource):
         return rcStatus.DOWN
 
     def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, sync_min_delay=30, optional=False, disabled=False, internal=False):
+                 bwlimit=None, sync_min_delay=30, sync_max_delay=1440,
+                 optional=False, disabled=False, internal=False):
         if internal:
             if rcEnv.drp_path in dst:
                 self.id = "sync rsync system files to ['drpnodes']"
@@ -313,6 +326,7 @@ class Rsync(Res.Resource):
         self.bwlimit = bwlimit
         self.internal = internal
         self.sync_min_delay = sync_min_delay
+        self.sync_max_delay = sync_max_delay
         Res.Resource.__init__(self, "sync.rsync", optional, disabled)
 
     def __str__(self):
