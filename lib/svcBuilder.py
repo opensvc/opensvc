@@ -280,8 +280,6 @@ def add_mandatory_syncs(svc):
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
-
-    Set sync_min_delay to 24h for system's files sync to DR nodes
     """
 
     """1
@@ -297,7 +295,7 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True, sync_min_delay=1430)
+    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
     r.svc = svc
     svc += r
 
@@ -313,7 +311,7 @@ def add_mandatory_syncs(svc):
         src = [ s for s in src if os.path.exists(s) ]
         if len(src) == 0:
             continue
-        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True, sync_min_delay=1430)
+        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
         r.svc = svc
         svc += r
 
@@ -412,6 +410,13 @@ def add_syncs_rsync(svc, conf):
         else:
             sync_min_delay = 30
 
+        if conf.has_option(s, 'sync_max_delay'):
+            sync_max_delay = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            sync_max_delay = conf.getint('default', 'sync_max_delay')
+        else:
+            sync_max_delay = 30
+
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
@@ -423,6 +428,7 @@ def add_syncs_rsync(svc, conf):
                            dstfs=dstfs,
                            bwlimit=bwlimit,
                            sync_min_delay=sync_min_delay,
+                           sync_max_delay=sync_max_delay,
                            snap=snap)
         set_optional_and_disable(r, conf, s)
         r.svc = svc
