@@ -153,6 +153,11 @@ for svc in svcBuilder.build_services():
     except:
         pass
 
+    try:
+        proxy.delete_disks(svc.svcname, rcEnv.nodename)
+    except:
+        pass
+
     for d in svc.disklist():
         try:
             proxy.register_disk(
