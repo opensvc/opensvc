@@ -73,9 +73,10 @@ def install_cron():
 
     """ Activate changes (actually only needed on HP-UX)
     """
-    cmd = ['crontab', root_crontab]
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
+    if '/var/spool/' in root_crontab:
+        cmd = ['crontab', root_crontab]
+        process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        buff = process.communicate()
 
     for loc in purge:
         with open(loc, 'r') as f:
