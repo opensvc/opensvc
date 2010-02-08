@@ -415,7 +415,7 @@ def add_syncs_rsync(svc, conf):
         elif conf.has_option('default', 'sync_max_delay'):
             sync_max_delay = conf.getint('default', 'sync_max_delay')
         else:
-            sync_max_delay = 30
+            sync_max_delay = 1440
 
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
