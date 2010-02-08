@@ -27,20 +27,12 @@ import time
 
 class syncNetapp(Res.Resource):
     def master(self):
-        for filer in set(self.filers.values()):
-            s = self.cmd_status(filer)
-            if s['state'] == "Source":
-                return filer
-        self.log.error("unable to find replication master between %s"%self.filers.values())
-        raise ex.excError
+        s = self.local_snapmirror_status()
+        return s['master']
 
     def slave(self):
-        for filer in set(self.filers.values()):
-            s = self.cmd_status(filer)
-            if s['state'] in ["Snapmirrored", "Quiesced", "Broken-off"]:
-                return filer
-        self.log.error("unable to find replication slave between %s"%self.filers.values())
-        raise ex.excError
+        s = self.local_snapmirror_status()
+        return s['slave']
 
     def local(self):
         if rcEnv.nodename in self.filers:
@@ -77,16 +69,22 @@ class syncNetapp(Res.Resource):
             raise ex.excError
 
     def syncquiesce(self):
-        s = self.cmd_status(self.slave())
+        try:
+            s = self.snapmirror_status(self.master())
+        except:
+            self.log.error("can not quiesce volume.")
+            raise ex.excError
+        s = self.snapmirror_status(self.slave())
         if s['state'] == "Quiesced":
             self.log.info("already quiesced")
             return
         elif s['state'] != "Snapmirrored":
-            self.log.error("Can not quiesced volume not in Snapmirrored state")
+            self.log.error("Can not quiesce volume not in Snapmirrored state")
             raise ex.excError
         (ret, buff) = self.cmd_slave(['snapmirror', 'quiesce', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
+        self.wait_quiesce()
 
     def syncbreak(self):
         (ret, buff) = self.cmd_slave(['snapmirror', 'break', self.slave()+':'+self.path_short], info=True)
@@ -96,7 +94,7 @@ class syncNetapp(Res.Resource):
     def wait_quiesce(self):
         timeout = 20
         for i in range(timeout):
-            s = self.cmd_status(self.slave())
+            s = self.snapmirror_status(self.slave())
             if s['state'] == "Quiesced" and s['status'] == "Idle":
                 return
             time.sleep(5)
@@ -106,39 +104,52 @@ class syncNetapp(Res.Resource):
     def wait_break(self):
         timeout = 20
         for i in range(timeout):
-            s = self.cmd_status(self.slave())
+            s = self.snapmirror_status(self.slave())
             if s['state'] == "Broken-off" and s['status'] == "Idle":
                 return
             time.sleep(5)
         self.log.error("timed out waiting for break to finish")
         raise ex.excError
 
-    def cmd_status(self, filer):
+    def snapmirror_status(self, filer):
         (ret, buff) = self._cmd(['snapmirror', 'status'], filer)
         if ret != 0:
-            return dict(state=None, lag=None, status=None)
+	    self.log.error("can get snapmirror status from %s"%filer)
+            raise ex.excError
+        key = ':'.join([filer, self.path_short])
+        found = False
         for line in buff.split('\n'):
             l = line.split()
-            if len(l) < 4:
+            if len(l) < 5:
                 continue
-            w = l[1].split(':')
-            if len(w) < 2:
-                continue
-            path = w[1]
-            if path != self.path_short:
-                continue
-            return dict(state=l[2], lag=l[3], status=l[4])
-	self.log.error("%s not found in snapmirror status"%self.path_short)
-	raise ex.excError
+            if l[0] == key or l[1] == key:
+                found = True
+                break
+        if not found:
+	    self.log.error("%s not found in snapmirror status"%self.path_short)
+            raise ex.excError
+        master = l[0].split(':')[0]
+        slave = l[1].split(':')[0]
+        return dict(master=master, slave=slave, state=l[2], lag=l[3], status=l[4])
+
+    def local_snapmirror_status(self):
+        return self.snapmirror_status(self.local())
 
     def start(self):
         if self.local() == self.master():
             self.log.info("%s is already replication master"%self.local())
             return
-        s = self.cmd_status(self.slave())
+        s = self.snapmirror_status(self.slave())
         if s['state'] != "Broken-off":
-            self.syncquiesce()
-            self.wait_quiesce()
+            try:
+                self.syncquiesce()
+            except:
+                if self.svc.force:
+                    self.log.warn("force mode is on. bypass failed quiesce.")
+                    pass
+                else:
+                    self.log.error("set force mode to bypass")
+                    raise ex.excError
             self.syncbreak()
         self.wait_break()
 
@@ -147,7 +158,7 @@ class syncNetapp(Res.Resource):
 
     def status(self):
         try:
-            s = self.cmd_status(self.slave())
+            s = self.snapmirror_status(self.slave())
         except:
             return rcStatus.UNDEF
         if s['state'] == "Snapmirrored":
