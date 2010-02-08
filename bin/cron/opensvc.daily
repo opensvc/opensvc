@@ -44,6 +44,15 @@ proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, allow_none=True)
 
 disklist_cache = {}
 
+def envfile(svc):
+    envfile = os.path.join(pathsvc, 'etc', svc+'.env')
+    if not os.path.exists(envfile):
+        return
+    with open(envfile, 'r') as f:
+        buff = f.read()
+        return buff
+    return
+
 def disk_dg(dev, svc):
     for rset in svc.get_res_sets("disk.vg"):
         for vg in rset.resources:
@@ -179,6 +188,7 @@ for svc in svcBuilder.build_services():
              'svc_autostart',
              'svc_app',
              'svc_containertype',
+             'svc_envfile',
              'svc_drnoaction'],
             [repr(hostid),
              repr(svc.svcname),
@@ -191,6 +201,7 @@ for svc in svcBuilder.build_services():
              repr(svc.autostart_node),
              repr(svc.app),
              repr(svc.svcmode),
+             repr(envfile(svc.svcname)),
              repr(svc.drnoaction)]
         )
     except:
