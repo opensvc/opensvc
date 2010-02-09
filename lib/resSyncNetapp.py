@@ -97,7 +97,7 @@ class syncNetapp(Res.Resource):
         if ret != 0:
             raise ex.excError
         snap = ""
-        for line in buff.readlines():
+        for line in buff.split('\n'):
             l = line.split()
             if len(l) < 2:
                 continue
