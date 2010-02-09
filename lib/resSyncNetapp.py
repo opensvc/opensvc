@@ -67,13 +67,47 @@ class syncNetapp(Res.Resource):
         l = lag.split(":")
         if len(l) != 3:
             self.log.error("unexpected lag format")
-            raise exc.exError
+            raise ex.excError
         if int(l[0]) * 60 + int(l[1]) > self.sync_max_delay:
             return True
         return False
 
     def syncresync(self):
         (ret, buff) = self.cmd_slave(['snapmirror', 'resync', '-f', self.slave()+':'+self.path_short], info=True)
+        if ret != 0:
+            raise ex.excError
+
+    def syncswap(self):
+        master = self.master()
+        slave = self.slave()
+        s = self.snapmirror_status(self.local())
+        if s['state'] != "Broken-off":
+            self.log.error("can not swap: snapmirror is not in state Broken-off")
+            raise ex.excError
+        src = slave+':'+self.path_short
+        dst = master+':'+self.path_short
+
+        (ret, buff) = self._cmd(['snapmirror', 'resync', '-f', '-S', src, dst], master, info=True)
+        if ret != 0:
+            raise ex.excError
+        (ret, buff) = self._cmd(['snapmirror', 'release', self.path_short, src], master, info=True)
+        if ret != 0:
+            raise ex.excError
+        (ret, buff) = self._cmd(['snapmirror', 'status', '-l', dst], slave, info=False)
+        if ret != 0:
+            raise ex.excError
+        snap = ""
+        for line in buff.readlines():
+            l = line.split()
+            if len(l) < 2:
+                continue
+            if l[0] == "Base Snapshot:":
+                snap = l[1]
+                break
+        if len(snap) == 0:
+            self.log.error("can not determine base snapshot name to remove on %s"%slave)
+            raise ex.excError
+        (ret, buff) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
         if ret != 0:
             raise ex.excError
 
@@ -97,6 +131,7 @@ class syncNetapp(Res.Resource):
         (ret, buff) = self.cmd_slave(['snapmirror', 'break', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
+        self.wait_break()
 
     def wait_quiesce(self):
         timeout = 60
@@ -125,20 +160,26 @@ class syncNetapp(Res.Resource):
 	    self.log.error("can get snapmirror status from %s"%filer)
             raise ex.excError
         key = ':'.join([filer, self.path_short])
-        found = False
+        list = []
         for line in buff.split('\n'):
             l = line.split()
             if len(l) < 5:
                 continue
+            if l[2] == "Uninitialized":
+                continue
             if l[0] == key or l[1] == key:
-                found = True
-                break
-        if not found:
+                list.append(l)
+        if len(list) == 0:
 	    self.log.error("%s not found in snapmirror status"%self.path_short)
             raise ex.excError
-        master = l[0].split(':')[0]
-        slave = l[1].split(':')[0]
-        return dict(master=master, slave=slave, state=l[2], lag=l[3], status=l[4])
+        elif len(list) == 1:
+            l = list[0]
+            master = l[0].split(':')[0]
+            slave = l[1].split(':')[0]
+            return dict(master=master, slave=slave, state=l[2], lag=l[3], status=l[4])
+        else:
+            self.log.error("%s is in an unsupported state. Please repair manually."%filer)
+            raise ex.excError
 
     def local_snapmirror_status(self):
         return self.snapmirror_status(self.local())
@@ -159,7 +200,8 @@ class syncNetapp(Res.Resource):
                     self.log.error("set force mode to bypass")
                     raise ex.excError
             self.syncbreak()
-        self.wait_break()
+        if rcEnv.host_mode == "PRD":
+            self.syncswap()
 
     def stop(self):
         pass

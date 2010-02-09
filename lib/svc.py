@@ -242,6 +242,9 @@ class Svc(Resource, Freezer):
     def diskupdate(self):
         self.sub_set_action("disk.vg", "diskupdate")
 
+    def syncswap(self):
+        self.sub_set_action("sync.netapp", "syncswap")
+
     def syncquiesce(self):
         self.sub_set_action("sync.netapp", "syncquiesce")
 
