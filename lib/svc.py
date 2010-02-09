@@ -245,6 +245,9 @@ class Svc(Resource, Freezer):
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
 
+    def syncresume(self):
+        self.sub_set_action("sync.netapp", "syncresume")
+
     def syncquiesce(self):
         self.sub_set_action("sync.netapp", "syncquiesce")
 
@@ -253,6 +256,9 @@ class Svc(Resource, Freezer):
 
     def syncbreak(self):
         self.sub_set_action("sync.netapp", "syncbreak")
+
+    def syncupdate(self):
+        self.sub_set_action("sync.netapp", "syncupdate")
 
     def action(self, action):
         if action in ["print_status", "status", "group_status", "scsicheckreserv"]:

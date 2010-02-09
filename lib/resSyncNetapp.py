@@ -118,6 +118,30 @@ class syncNetapp(Res.Resource):
         if ret != 0:
             raise ex.excError
 
+    def syncupdate(self):
+        s = self.snapmirror_status(self.slave())
+        if s['state'] == "Quiesced":
+            self.log.error("update not applicable: quiesced")
+            return
+        if s['state'] == "Snapmirrored" and s['status'] == "Transferring":
+            self.log.info("update not applicable: transfer in progress")
+            return
+        if s['state'] != "Snapmirrored" or s['status'] != "Idle":
+            self.log.error("update not applicable: not in snapmirror idle status")
+            return
+        (ret, buff) = self.cmd_slave(['snapmirror', 'update', self.slave()+':'+self.path_short], info=True)
+        if ret != 0:
+            raise ex.excError
+
+    def syncresume(self):
+        s = self.snapmirror_status(self.slave())
+        if s['state'] != "Quiesced":
+            self.log.info("resume not applicable: not quiesced")
+            return
+        (ret, buff) = self.cmd_slave(['snapmirror', 'resume', self.slave()+':'+self.path_short], info=True)
+        if ret != 0:
+            raise ex.excError
+
     def syncquiesce(self):
         s = self.snapmirror_status(self.slave())
         if s['state'] == "Quiesced":
@@ -142,7 +166,7 @@ class syncNetapp(Res.Resource):
 
     def wait_quiesce(self):
         timeout = 60
-        self.log.info("start waiting quiesce to finish (max %s seconds)"%timeout*5)
+        self.log.info("start waiting quiesce to finish (max %s seconds)"%(timeout*5))
         for i in range(timeout):
             s = self.snapmirror_status(self.slave())
             if s['state'] == "Quiesced" and s['status'] == "Idle":
