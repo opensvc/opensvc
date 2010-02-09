@@ -97,16 +97,23 @@ class syncNetapp(Res.Resource):
         if ret != 0:
             raise ex.excError
         snap = ""
+        state = ""
         for line in buff.split('\n'):
             l = line.split()
             if len(l) < 2:
                 continue
-            if l[0] == "Base Snapshot:":
-                snap = l[1]
+            if l[0] == "State:":
+                state = l[1]
+            if state != "Broken-off":
+                continue
+            if l[0] == "Base" and l[1] == "Snapshot:":
+                snap = l[-1]
                 break
         if len(snap) == 0:
             self.log.error("can not determine base snapshot name to remove on %s"%slave)
             raise ex.excError
+        import time
+        time.sleep(5)
         (ret, buff) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
         if ret != 0:
             raise ex.excError
