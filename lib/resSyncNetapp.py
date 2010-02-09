@@ -63,12 +63,14 @@ class syncNetapp(Res.Resource):
     def cmd_local(self, cmd, info=False):
         return self._cmd(cmd, "local", info=info)
 
-    def lagged(self, lag):
+    def lagged(self, lag, max=None):
+        if max is None:
+            max = self.sync_max_delay
         l = lag.split(":")
         if len(l) != 3:
             self.log.error("unexpected lag format")
             raise ex.excError
-        if int(l[0]) * 60 + int(l[1]) > self.sync_max_delay:
+        if int(l[0]) * 60 + int(l[1]) > max:
             return True
         return False
 
@@ -128,6 +130,9 @@ class syncNetapp(Res.Resource):
             return
         if s['state'] != "Snapmirrored" or s['status'] != "Idle":
             self.log.error("update not applicable: not in snapmirror idle status")
+            return
+        if not self.svc.force and not self.lagged(s['lag'], self.sync_min_delay):
+            self.log.debug("last sync too close")
             return
         (ret, buff) = self.cmd_slave(['snapmirror', 'update', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
@@ -253,13 +258,15 @@ class syncNetapp(Res.Resource):
                 return rcStatus.UP
         return rcStatus.DOWN
 
-    def __init__(self, filers={}, path=None, user=None, sync_max_delay=1440,
+    def __init__(self, filers={}, path=None, user=None,
+                 sync_max_delay=1440, sync_min_delay=30,
                  optional=False, disabled=False, internal=False):
         self.id = "sync netapp %s %s"%(path, filers.values())
         self.filers = filers
         self.path = path
         self.user = user
         self.sync_max_delay = sync_max_delay
+        self.sync_min_delay = sync_min_delay
         self.path_short = self.path.replace('/vol/','')
         Res.Resource.__init__(self, "sync.netapp", optional, disabled)
 

@@ -345,6 +345,13 @@ def add_syncs_netapp(svc, conf):
         else:
             sync_max_delay = 1440
 
+        if conf.has_option(s, 'sync_min_delay'):
+            sync_min_delay = conf.getint(s, 'sync_min_delay')
+        elif conf.has_option('default', 'sync_min_delay'):
+            sync_min_delay = conf.getint('default', 'sync_min_delay')
+        else:
+            sync_min_delay = 30
+
         filers = {}
         for o in conf.options(s):
             if 'filer@' not in o:
@@ -359,6 +366,7 @@ def add_syncs_netapp(svc, conf):
 
         r = resSyncNetapp.syncNetapp(filers=filers,
                                      path=path,
+                                     sync_min_delay=sync_min_delay,
                                      sync_max_delay=sync_max_delay,
                                      user=user)
         set_optional_and_disable(r, conf, s)

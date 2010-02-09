@@ -226,3 +226,8 @@ for svc in svcBuilder.build_services():
         svc.action('syncdrp')
     except:
         pass
+
+    try:
+        svc.action('syncupdate')
+    except:
+        pass
