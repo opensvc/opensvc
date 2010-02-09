@@ -338,6 +338,13 @@ def add_syncs_netapp(svc, conf):
             log.error("config file section %s must have user set" % s)
             return
 
+        if conf.has_option(s, 'sync_max_delay'):
+            sync_max_delay = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            sync_max_delay = conf.getint('default', 'sync_max_delay')
+        else:
+            sync_max_delay = 1440
+
         filers = {}
         for o in conf.options(s):
             if 'filer@' not in o:
@@ -352,6 +359,7 @@ def add_syncs_netapp(svc, conf):
 
         r = resSyncNetapp.syncNetapp(filers=filers,
                                      path=path,
+                                     sync_max_delay=sync_max_delay,
                                      user=user)
         set_optional_and_disable(r, conf, s)
         r.svc = svc

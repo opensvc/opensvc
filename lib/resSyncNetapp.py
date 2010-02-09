@@ -63,23 +63,30 @@ class syncNetapp(Res.Resource):
     def cmd_local(self, cmd, info=False):
         return self._cmd(cmd, "local", info=info)
 
+    def lagged(self, lag):
+        l = lag.split(":")
+        if len(l) != 3:
+            self.log.error("unexpected lag format")
+            raise exc.exError
+        if int(l[0]) * 60 + int(l[1]) > self.sync_max_delay:
+            return True
+        return False
+
     def syncresync(self):
         (ret, buff) = self.cmd_slave(['snapmirror', 'resync', '-f', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
 
     def syncquiesce(self):
-        try:
-            s = self.snapmirror_status(self.master())
-        except:
-            self.log.error("can not quiesce volume.")
-            raise ex.excError
         s = self.snapmirror_status(self.slave())
         if s['state'] == "Quiesced":
             self.log.info("already quiesced")
             return
         elif s['state'] != "Snapmirrored":
-            self.log.error("Can not quiesce volume not in Snapmirrored state")
+            self.log.error("Can not quiesce: volume not in Snapmirrored state")
+            raise ex.excError
+        if s['status'] == "Pending":
+            self.log.error("Can not quiesce: volume in snapmirror Pending status")
             raise ex.excError
         (ret, buff) = self.cmd_slave(['snapmirror', 'quiesce', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
@@ -92,7 +99,8 @@ class syncNetapp(Res.Resource):
             raise ex.excError
 
     def wait_quiesce(self):
-        timeout = 20
+        timeout = 60
+        self.log.info("start waiting quiesce to finish (max %s seconds)"%timeout*5)
         for i in range(timeout):
             s = self.snapmirror_status(self.slave())
             if s['state'] == "Quiesced" and s['status'] == "Idle":
@@ -165,17 +173,20 @@ class syncNetapp(Res.Resource):
             if "Transferring" in s['status']:
                 self.log.debug("snapmirror transfer in progress")
                 return rcStatus.WARN
-                """ TODO: check lag """
+            elif self.lagged(s['lag']):
+                self.log.debug("snapmirror lag beyond sync_max_delay")
+                return rcStatus.WARN
             else:
                 return rcStatus.UP
         return rcStatus.DOWN
 
-    def __init__(self, filers={}, path=None, user=None,
+    def __init__(self, filers={}, path=None, user=None, sync_max_delay=1440,
                  optional=False, disabled=False, internal=False):
         self.id = "sync netapp %s %s"%(path, filers.values())
         self.filers = filers
         self.path = path
         self.user = user
+        self.sync_max_delay = sync_max_delay
         self.path_short = self.path.replace('/vol/','')
         Res.Resource.__init__(self, "sync.netapp", optional, disabled)
 
