@@ -25,10 +25,11 @@ from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 
 class Vg(resDg.Dg):
-    def __init__(self, name=None, type=None, optional=False, always_on=set([]),
-                 disabled=False, scsireserv=False):
+    def __init__(self, rid=None, name=None, type=None,
+                 always_on=set([]), scsireserv=False,
+                 disabled=False, optional=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name=name,
+        resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,

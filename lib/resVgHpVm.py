@@ -27,9 +27,12 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Vg):
-    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+    def __init__(self, rid=None, name=None, type=None, scsireserv=False,
+                 optional=False, disabled=False):
         self.id = 'vm dg ' + name
-        resVg.Vg.__init__(self, name, 'disk.vg', optional, disabled, scsireserv)
+        resVg.Vg.__init__(self, rid=rid, name=name,
+                          type='disk.vg', scsireserv=scsireserv,
+                          optional=optional, disabled=disabled)
 
     def has_it(self):
         return True

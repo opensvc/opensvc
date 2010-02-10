@@ -128,16 +128,16 @@ def add_ips(svc, conf):
             netmask = None
         if svc.svcmode == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
-            r = ip.Ip(svc.svcname, ipdev, ipname)
+            r = ip.Ip(rid=s, lxcname=svc.svcname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'kvm':
             ip = __import__('resIp'+'Kvm')
-            r = ip.Ip(svc.vmname, ipdev, ipname)
+            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'hpvm':
             ip = __import__('resIp'+'HpVm')
-            r = ip.Ip(svc.vmname, ipdev, ipname)
+            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         else:
             ip = __import__('resIp'+rcEnv.sysname)
-            r = ip.Ip(ipdev, ipname, netmask)
+            r = ip.Ip(rid=s, ipDev=ipdev, ipName=ipname, mask=netmask)
         set_optional_and_disable(r, conf, s)
         svc += r
 
@@ -150,7 +150,7 @@ def add_loops(svc, conf):
             continue
         file = conf.get(s, "file")
         loop = __import__('resLoop'+rcEnv.sysname)
-        r = loop.Loop(file)
+        r = loop.Loop(rid=s, loopFile=file)
         set_optional_and_disable(r, conf, s)
         svc += r
 
@@ -168,7 +168,7 @@ def add_vgs(svc, conf):
             dsf = True
         always_on = always_on_nodes_set(svc, conf, s)
         vg = __import__('resVg'+rcEnv.sysname)
-        r = vg.Vg(name, always_on=always_on)
+        r = vg.Vg(rid=s, name=name, always_on=always_on)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
         r.dsf = dsf
@@ -181,7 +181,7 @@ def add_vmdg(svc, conf):
         vg = __import__('resVgHpVm')
     else:
         return
-    r = vg.Vg('vmdg')
+    r = vg.Vg(rid=s, name='vmdg')
     set_optional_and_disable(r, conf, 'vmdg')
     set_scsireserv(r, conf, 'vmdg')
     svc += r
@@ -195,7 +195,7 @@ def add_pools(svc, conf):
             continue
         name = conf.get(s, "poolname")
         pool = __import__('resZfs')
-        r = pool.Pool(name)
+        r = pool.Pool(rid=rid, name=name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
         svc += r
@@ -231,7 +231,7 @@ def add_filesystems(svc, conf):
             mnt_opt = ""
         always_on = always_on_nodes_set(svc, conf, s)
         mount = __import__('resMount'+rcEnv.sysname)
-        r = mount.Mount(mnt, dev, type, mnt_opt, always_on)
+        r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)
         set_optional_and_disable(r, conf, s)
         #set_scsireserv(r, conf, s)
         svc += r
@@ -289,7 +289,9 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
+    r = resRsync.Rsync(rid="sync#i0", src=src, dst=dst,
+                       exclude=['-R']+exclude, target=targethash,
+                       internal=True)
     svc += r
 
     """2
@@ -298,13 +300,17 @@ def add_mandatory_syncs(svc):
     """ Reparent all PRD backed-up file in drp_path/node on the drpnode
     """
     dst = os.path.join(rcEnv.drp_path, rcEnv.nodename)
+    i = 0
     for src, exclude in rcEnv.drp_sync_files:
         """'-R' triggers rsync relative mode
         """
         src = [ s for s in src if os.path.exists(s) ]
         if len(src) == 0:
             continue
-        r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
+        i += 1
+        r = resRsync.Rsync(rid="sync#i"+str(i), src=src, dst=dst,
+                           exclude=['-R']+exclude, target=targethash,
+                           internal=True)
         svc += r
 
 def add_syncs(svc, conf):
@@ -356,7 +362,8 @@ def add_syncs_netapp(svc, conf):
         path = conf.get(s, 'path')
         user = conf.get(s, 'user')
 
-        r = resSyncNetapp.syncNetapp(filers=filers,
+        r = resSyncNetapp.syncNetapp(rid=s,
+                                     filers=filers,
                                      path=path,
                                      sync_min_delay=sync_min_delay,
                                      sync_max_delay=sync_max_delay,
@@ -428,7 +435,8 @@ def add_syncs_rsync(svc, conf):
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
-        r = resRsync.Rsync(src=src,
+        r = resRsync.Rsync(rid=s,
+                           src=src,
                            dst=dst,
                            exclude=exclude,
                            target=targethash,

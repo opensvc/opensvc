@@ -123,7 +123,8 @@ class Lxc(Res.Resource):
         else: return rcStatus.DOWN
 
     def __init__(self, svcname, optional=False, disabled=False):
-        Res.Resource.__init__(self, "container.lxc", optional, disabled)
+        Res.Resource.__init__(self, rid="lxc", type="container.lxc",
+                              optional=optional, disabled=disabled)
         self.name = svcname
         self.id = "lxc"
 

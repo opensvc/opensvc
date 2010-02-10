@@ -61,9 +61,9 @@ def try_umount(self):
 
 class Mount(Res.Mount):
     """ define HP-UX mount/umount doAction """
-    def __init__(self, mountPoint, device, fsType, mntOpt):
+    def __init__(self, rid, mountPoint, device, fsType, mntOpt):
         self.Mounts = rcMounts.Mounts()
-        Res.Mount.__init__(self, mountPoint, device, fsType, mntOpt)
+        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt)
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)

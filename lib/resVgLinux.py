@@ -47,15 +47,16 @@ def major(driver):
     raise
 
 class Vg(resDg.Dg):
-    def __init__(self, name=None, type=None, optional=False, always_on=set([]),
-                 disabled=False, scsireserv=False):
+    def __init__(self, rid=None, name=None, type=None,
+                 optional=False, disabled=False,
+                 always_on=set([]), scsireserv=False):
         self.id = 'vg ' + name
-        resDg.Dg.__init__(self, name=name,
+        resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
+                          scsireserv=scsireserv,
                           optional=optional,
-                          disabled=disabled,
-                          scsireserv=scsireserv)
+                          disabled=disabled)
 
     def has_it(self):
         """Returns True if the volume is present

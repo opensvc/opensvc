@@ -30,9 +30,12 @@ import re
 class Pool(resDg.Dg):
     """ basic pool resource
     """
-    def __init__(self, name=None, type=None, optional=False, disabled=False, scsireserv=False):
+    def __init__(self, rid=rid, name=None, type=None, scsireserv=False,
+                 optional=False, disabled=False):
         self.id = 'pool ' + name
-        resDg.Dg.__init__(self, name, 'disk.zpool', optional, disabled, scsireserv)
+        resDg.Dg.__init__(self, rid=rid, name=name,
+                          type='disk.zpool', scsireserv=scsireserv,
+                          optional=optional, disabled=disabled)
 
     def has_it(self):
         """Returns True if the pool is present

@@ -33,8 +33,9 @@ import rcExceptions as ex
 class Ip(Res.Resource):
     """ basic ip resource
     """
-    def __init__(self, ipDev=None, ipName=None, mask=None, optional=False, disabled=False):
-        Res.Resource.__init__(self, "ip", optional, disabled)
+    def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
+                 optional=False, disabled=False):
+        Res.Resource.__init__(self, rid, "ip", optional, disabled)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask

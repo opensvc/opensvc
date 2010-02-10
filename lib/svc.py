@@ -81,7 +81,7 @@ class Svc(Resource, Freezer):
         self.type2resSets = {}
         self.disks = set([])
         self.force = False
-        Resource.__init__(self, type, optional, disabled)
+        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
         Freezer.__init__(self, svcname)
 
     def __cmp__(self, other):

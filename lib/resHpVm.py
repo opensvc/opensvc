@@ -29,7 +29,8 @@ class HpVm(Res.Resource):
     shutdown_timeout = 60
 
     def __init__(self, name, optional=False, disabled=False):
-        Res.Resource.__init__(self, "container.hpvm", optional, disabled)
+        Res.Resource.__init__(self, rid="hpvm", type="container.hpvm",
+                              optional=optional, disabled=disabled)
         self.name = name
         self.id = "hpvm"
 

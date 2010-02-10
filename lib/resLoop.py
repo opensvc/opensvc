@@ -24,8 +24,10 @@ import resources as Res
 class Loop(Res.Resource):
     """ basic loopback device resource
     """
-    def __init__(self,loopFile=None,optional=False,disabled=False):
-        Res.Resource.__init__(self,"disk.loop",optional,disabled)
+    def __init__(self, rid=None, loopFile=None,
+                 optional=False, disabled=False):
+        Res.Resource.__init__(self, rid, "disk.loop",
+                              optional, disabled)
         self.loopFile = loopFile
         self.id = 'loop ' + loopFile
 

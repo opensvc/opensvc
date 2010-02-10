@@ -29,7 +29,8 @@ class Apps(Res.Resource):
     prefix = []
 
     def __init__(self, hostname=None, optional=False, disabled=False):
-        Res.Resource.__init__(self, "app", optional, disabled) 
+        Res.Resource.__init__(self, rid="app", type="app",
+                              optional=optional, disabled=disabled) 
         if hostname is not None:
             self.prefix = rcEnv.rsh.split() + [hostname]
             self.hostname = hostname

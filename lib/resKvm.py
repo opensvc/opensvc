@@ -27,7 +27,8 @@ class Kvm(Res.Resource):
     shutdown_timeout = 60
 
     def __init__(self, name, optional=False, disabled=False):
-        Res.Resource.__init__(self, "container.kvm", optional, disabled)
+        Res.Resource.__init__(self, rid="kvm", type="container.kvm",
+                              optional=optional, disabled=disabled)
         self.name = name
         self.id = "kvm"
 

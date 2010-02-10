@@ -48,9 +48,9 @@ class Ip(Res.Ip):
             return
         self.log.debug('pre-checks passed')
 
-    def __init__(self, lxcname, ipdev, ipname):
-        Res.Ip.__init__(self, ipdev, ipname)
-        self.lxcname = lxcname
+    def __init__(self, rid, vmname, ipdev, ipname):
+        Res.Ip.__init__(self, rid, ipdev, ipname)
+        self.lxcname = vmname
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ class ScsiReserv(Res.Resource):
         self.disks = disks
         self.preempt_timeout = 10
         self.prtype = '5'
-        Res.Resource.__init__(self, "scsireserv")
+        Res.Resource.__init__(self, rid="scsireserv", type="scsireserv")
 
     def ack_unit_attention(self, d):
         raise ex.notImplemented

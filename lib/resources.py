@@ -33,7 +33,8 @@ class Resource(object):
     """
     id = None
 
-    def __init__(self, type=None, optional=False, disabled=False):
+    def __init__(self, rid=None, type=None, optional=False, disabled=False):
+        self.rid = rid
         self.type = type
         self.optional = optional
         self.disabled = disabled
@@ -41,7 +42,8 @@ class Resource(object):
         if id is None: self.id = type
 
     def __str__(self):
-        output="object=%s type=%s" %   (self.__class__.__name__,self.type)
+        output="object=%s rid=%s type=%s" % (self.__class__.__name__,
+                                             self.rid, self.type)
         if self.optional : output+=" opt="+str(self.optional)
         if self.disabled : output+=" disa="+str(self.disabled)
         return output
@@ -109,10 +111,11 @@ class Resource(object):
         return s.status
 
     def print_status(self):
+        label = "%-12s %s"%(self.rid, self.id)
         try:
-            r = rcStatus.print_status(self.id, self.status())
+            r = rcStatus.print_status(label, self.status())
         except:
-            r = rcStatus.print_status(self.id, self.status())
+            r = rcStatus.print_status(label, self.status())
         return r
 
     def call(self, cmd=['/bin/false'], info=False,
@@ -140,9 +143,9 @@ class ResourceSet(Resource):
     Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
-    def __init__(self,type=None,resources=[],optional=False,disabled=False):
+    def __init__(self, type=None, resources=[], optional=False, disabled=False):
         self.resources=resources
-        Resource.__init__(self,type,optional,disabled)
+        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
 
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]

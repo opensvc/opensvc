@@ -258,7 +258,7 @@ class syncNetapp(Res.Resource):
                 return rcStatus.UP
         return rcStatus.DOWN
 
-    def __init__(self, filers={}, path=None, user=None,
+    def __init__(self, rid=None, filers={}, path=None, user=None,
                  sync_max_delay=1440, sync_min_delay=30,
                  optional=False, disabled=False, internal=False):
         self.id = "sync netapp %s %s"%(path, filers.values())
@@ -268,7 +268,7 @@ class syncNetapp(Res.Resource):
         self.sync_max_delay = sync_max_delay
         self.sync_min_delay = sync_min_delay
         self.path_short = self.path.replace('/vol/','')
-        Res.Resource.__init__(self, "sync.netapp", optional, disabled)
+        Res.Resource.__init__(self, rid, "sync.netapp", optional, disabled)
 
     def __str__(self):
         return "%s filers=%s user=%s path=%s" % (Res.Resource.__str__(self),\

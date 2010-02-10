@@ -307,7 +307,7 @@ class Rsync(Res.Resource):
 
         return rcStatus.DOWN
 
-    def __init__(self, src, dst, exclude=[], target={}, dstfs=None, snap=False,
+    def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,
                  bwlimit=None, sync_min_delay=30, sync_max_delay=1440,
                  optional=False, disabled=False, internal=False):
         if internal:
@@ -327,7 +327,8 @@ class Rsync(Res.Resource):
         self.internal = internal
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
-        Res.Resource.__init__(self, "sync.rsync", optional, disabled)
+        Res.Resource.__init__(self, rid=rid, type="sync.rsync",
+                              optional=optional, disabled=disabled)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\
