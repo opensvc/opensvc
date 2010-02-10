@@ -15,7 +15,7 @@ CHROOT=$OSVC/tmp/BUILDROOT/$CHROOT_BN
 PSF=opensvc.psf
 DEPOTDIR=$OSVC/tmp/DEB
 DEPOT=opensvc-$VERSION-$RELEASE.depot
-REMOTEHOST=${1:-hp81}
+REMOTEHOST=${1:-s64lmwbicb6.dsit.sncf.fr}
 
 #
 # prepare skeleton (data.tar.gz)
@@ -71,22 +71,8 @@ product
     revision     1.0
     postinstall  /tmp/$CHROOT_BN/usr/local/opensvc/bin/postinstall
     file_permissions -o root -g sys
-    directory    /tmp/$CHROOT_BN
-    file         /service
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/bin=/usr/local/opensvc/bin
+    directory    /tmp/$CHROOT_BN=/
     file         *
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/lib=/usr/local/opensvc/lib
-    file         *
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/usr=/usr/local/opensvc/usr
-    file         *
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/etc=/usr/local/opensvc/etc
-    file         .
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/tmp=/usr/local/opensvc/tmp
-    file         .
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/var=/usr/local/opensvc/var
-    file         .
-    directory    /tmp/$CHROOT_BN/usr/local/opensvc/log=/usr/local/opensvc/log
-    file         .
   end
 end
 EOF
