@@ -108,6 +108,7 @@ class Svc(Resource, Freezer):
             # Error
             pass
 
+        r.svc = self
         return self
 
     def get_res_sets(self, type):

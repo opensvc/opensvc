@@ -139,7 +139,6 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(ipdev, ipname, netmask)
         set_optional_and_disable(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_loops(svc, conf):
@@ -153,7 +152,6 @@ def add_loops(svc, conf):
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(file)
         set_optional_and_disable(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_vgs(svc, conf):
@@ -173,7 +171,6 @@ def add_vgs(svc, conf):
         r = vg.Vg(name, always_on=always_on)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
-        r.svc = svc
         r.dsf = dsf
         svc += r
 
@@ -187,7 +184,6 @@ def add_vmdg(svc, conf):
     r = vg.Vg('vmdg')
     set_optional_and_disable(r, conf, 'vmdg')
     set_scsireserv(r, conf, 'vmdg')
-    r.svc = svc
     svc += r
 
 def add_pools(svc, conf):
@@ -202,7 +198,6 @@ def add_pools(svc, conf):
         r = pool.Pool(name)
         set_optional_and_disable(r, conf, s)
         set_scsireserv(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_filesystems(svc, conf):
@@ -239,7 +234,6 @@ def add_filesystems(svc, conf):
         r = mount.Mount(mnt, dev, type, mnt_opt, always_on)
         set_optional_and_disable(r, conf, s)
         #set_scsireserv(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_mandatory_syncs(svc):
@@ -296,7 +290,6 @@ def add_mandatory_syncs(svc):
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
     r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
-    r.svc = svc
     svc += r
 
     """2
@@ -312,7 +305,6 @@ def add_mandatory_syncs(svc):
         if len(src) == 0:
             continue
         r = resRsync.Rsync(src, dst, ['-R']+exclude, targethash, internal=True)
-        r.svc = svc
         svc += r
 
 def add_syncs(svc, conf):
@@ -370,7 +362,6 @@ def add_syncs_netapp(svc, conf):
                                      sync_max_delay=sync_max_delay,
                                      user=user)
         set_optional_and_disable(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_syncs_rsync(svc, conf):
@@ -447,7 +438,6 @@ def add_syncs_rsync(svc, conf):
                            sync_max_delay=sync_max_delay,
                            snap=snap)
         set_optional_and_disable(r, conf, s)
-        r.svc = svc
         svc += r
 
 def add_apps(svc, conf):
@@ -457,7 +447,6 @@ def add_apps(svc, conf):
         else:
             resApp = __import__('resApp')
             r = resApp.Apps()
-        r.svc = svc
         svc += r
 
 def setup_logging():
