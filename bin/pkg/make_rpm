@@ -45,6 +45,7 @@ EXCL="$EXCL --exclude='var/cache/*'"
 cd $OSVC || exit 1
 tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
 touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
+echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/usr/local/opensvc/lib/version.py || exit 1
 
 # symbolic links
 cd $CHROOT || exit 1

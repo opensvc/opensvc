@@ -5,3 +5,4 @@ etc/
 log/
 var/
 test/
+lib/version.py

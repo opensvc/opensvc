@@ -181,6 +181,12 @@ for svc in svcBuilder.build_services():
             pass
 
     try:
+        import version
+        version = version.version
+    except:
+        version = "0";
+
+    try:
         proxy.update_service(
             ['svc_hostid',
              'svc_name',
@@ -194,6 +200,7 @@ for svc in svcBuilder.build_services():
              'svc_app',
              'svc_containertype',
              'svc_envfile',
+             'svc_version',
              'svc_drnoaction'],
             [repr(hostid),
              repr(svc.svcname),
@@ -207,6 +214,7 @@ for svc in svcBuilder.build_services():
              repr(svc.app),
              repr(svc.svcmode),
              repr(envfile(svc.svcname)),
+             repr(version),
              repr(svc.drnoaction)]
         )
     except:

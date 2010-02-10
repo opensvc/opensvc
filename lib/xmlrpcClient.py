@@ -29,16 +29,24 @@ proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 
 def begin_action(svc, action, begin):
     try:
+        import version
+        version = version.version
+    except:
+        version = "0";
+
+    try:
         proxy.begin_action(
             ['svcname',
              'action',
              'hostname',
              'hostid',
+             'version',
              'begin',],
             [repr(svc.svcname),
              repr(action),
              repr(rcEnv.nodename),
              repr(hostid),
+             repr(version),
              repr(str(begin))]
         )
     except:
