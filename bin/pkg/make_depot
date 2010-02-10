@@ -16,6 +16,7 @@ PSF=opensvc.psf
 DEPOTDIR=$OSVC/tmp/DEB
 DEPOT=opensvc-$VERSION-$RELEASE.depot
 REMOTEHOST=${1:-s64lmwbicb6.dsit.sncf.fr}
+TAG=opensvc_${VERSION/./_}_${RELEASE/./_}
 
 #
 # prepare skeleton (data.tar.gz)
@@ -53,7 +54,7 @@ vendor
   description   opensvc nodeware
 end
 product
-  tag            opensvc
+  tag            $TAG
   title          opensvc
   revision       $RELEASE
   number         $VERSION
@@ -70,6 +71,7 @@ product
     tag          commands
     title        Commands (management utilities)
     revision     1.0
+    prerequisite Python.PYTHON-RUN
     postinstall  /tmp/$CHROOT_BN/usr/local/opensvc/bin/postinstall
     file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN=/
