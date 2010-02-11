@@ -39,7 +39,7 @@ class Ip(Res.Resource):
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask
-        self.id = ipName + '@' + ipDev
+        self.label = ipName + '@' + ipDev
         try:
             self.addr = socket.gethostbyname(ipName)
         except:

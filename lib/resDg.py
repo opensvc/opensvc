@@ -89,7 +89,7 @@ class Dg(Res.Resource):
              self.start()
 
     def print_status(self):
-        label = "%-8s %s"%(self.rid, self.id)
+        label = "%-8s %s"%(self.rid, self.label)
         rcStatus.print_status(label, self.dgstatus())
         rcStatus.print_status(label+' scsireserv', self.scsicheckreserv())
 

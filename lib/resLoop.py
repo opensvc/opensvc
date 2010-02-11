@@ -29,7 +29,7 @@ class Loop(Res.Resource):
         Res.Resource.__init__(self, rid, "disk.loop",
                               optional, disabled)
         self.loopFile = loopFile
-        self.id = loopFile
+        self.label = loopFile
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\

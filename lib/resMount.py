@@ -36,7 +36,7 @@ class Mount(Res.Resource):
         self.mntOpt = mntOpt
         self.scsiReservation = scsireserv
         self.always_on = always_on
-        self.id = device + '@' + mountPoint
+        self.label = device + '@' + mountPoint
 
     def set_scsireserv():
         self.scsiReservation = scsireserv

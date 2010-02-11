@@ -32,7 +32,7 @@ class Pool(resDg.Dg):
     """
     def __init__(self, rid=rid, name=None, type=None, scsireserv=False,
                  optional=False, disabled=False):
-        self.id = 'pool ' + name
+        self.label = 'pool ' + name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.zpool', scsireserv=scsireserv,
                           optional=optional, disabled=disabled)

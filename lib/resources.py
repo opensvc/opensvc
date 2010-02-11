@@ -31,7 +31,7 @@ class Resource(object):
     a Resource should provide do_action(action):
     with action into (start/stop/status)
     """
-    id = None
+    label = None
 
     def __init__(self, rid=None, type=None, optional=False, disabled=False):
         self.rid = rid
@@ -39,7 +39,7 @@ class Resource(object):
         self.optional = optional
         self.disabled = disabled
         self.log = logging.getLogger(str(type).upper())
-        if id is None: self.id = type
+        if self.label is None: self.label = type
 
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
@@ -111,7 +111,7 @@ class Resource(object):
         return s.status
 
     def print_status(self):
-        label = "%-8s %s"%(self.rid, self.id)
+        label = "%-8s %s"%(self.rid, self.label)
         try:
             r = rcStatus.print_status(label, self.status())
         except:

@@ -29,7 +29,7 @@ from subprocess import *
 class Vg(resVg.Vg):
     def __init__(self, rid=None, name=None, type=None, scsireserv=False,
                  optional=False, disabled=False):
-        self.id = name
+        self.label = name
         resVg.Vg.__init__(self, rid=rid, name=name,
                           type='disk.vg', scsireserv=scsireserv,
                           optional=optional, disabled=disabled)
