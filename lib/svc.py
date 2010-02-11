@@ -109,6 +109,9 @@ class Svc(Resource, Freezer):
             pass
 
         r.svc = self
+        import logging
+        r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
+
         return self
 
     def get_res_sets(self, type):

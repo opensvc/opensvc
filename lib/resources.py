@@ -38,7 +38,6 @@ class Resource(object):
         self.type = type
         self.optional = optional
         self.disabled = disabled
-        self.log = logging.getLogger(str(type).upper())
         if self.label is None: self.label = type
 
     def __str__(self):
