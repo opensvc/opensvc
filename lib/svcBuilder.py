@@ -128,7 +128,7 @@ def add_ips(svc, conf):
             netmask = None
         if svc.svcmode == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
-            r = ip.Ip(rid=s, lxcname=svc.svcname, ipDev=ipdev, ipName=ipname)
+            r = ip.Ip(rid=s, vmname=svc.svcname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'kvm':
             ip = __import__('resIp'+'Kvm')
             r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
