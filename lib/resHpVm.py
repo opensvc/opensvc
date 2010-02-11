@@ -71,10 +71,14 @@ class HpVm(Res.Resource):
     def hpvm_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def hpvm_stop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-F', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def start(self):
         if self.is_up():
