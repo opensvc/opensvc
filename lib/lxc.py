@@ -126,7 +126,7 @@ class Lxc(Res.Resource):
         Res.Resource.__init__(self, rid="lxc", type="container.lxc",
                               optional=optional, disabled=disabled)
         self.name = svcname
-        self.id = "lxc"
+        self.id = svcname
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

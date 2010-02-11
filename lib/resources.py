@@ -111,7 +111,7 @@ class Resource(object):
         return s.status
 
     def print_status(self):
-        label = "%-12s %s"%(self.rid, self.id)
+        label = "%-8s %s"%(self.rid, self.id)
         try:
             r = rcStatus.print_status(label, self.status())
         except:

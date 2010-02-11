@@ -32,7 +32,7 @@ class HpVm(Res.Resource):
         Res.Resource.__init__(self, rid="hpvm", type="container.hpvm",
                               optional=optional, disabled=disabled)
         self.name = name
-        self.id = "hpvm"
+        self.id = name
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

@@ -30,7 +30,7 @@ class Kvm(Res.Resource):
         Res.Resource.__init__(self, rid="kvm", type="container.kvm",
                               optional=optional, disabled=disabled)
         self.name = name
-        self.id = "kvm"
+        self.id = name
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

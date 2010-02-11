@@ -28,7 +28,7 @@ class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
                  always_on=set([]), scsireserv=False,
                  disabled=False, optional=False):
-        self.id = 'vg ' + name
+        self.id = name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,

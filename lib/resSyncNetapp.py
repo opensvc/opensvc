@@ -261,7 +261,7 @@ class syncNetapp(Res.Resource):
     def __init__(self, rid=None, filers={}, path=None, user=None,
                  sync_max_delay=1440, sync_min_delay=30,
                  optional=False, disabled=False, internal=False):
-        self.id = "sync netapp %s %s"%(path, filers.values())
+        self.id = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers
         self.path = path
         self.user = user
