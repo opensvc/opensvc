@@ -59,15 +59,20 @@ def remote_node_type(self, node, type):
         expected_type = self.svc.svctype
     else:
         self.log.error('expected remote node type is bogus: %s'%type)
-        raise
+        raise ex.excError
+
+    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
 
     if node not in cache_remote_node_type:
-        host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
         cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise ex.excError
-        cache_remote_node_type[node] = out.split()[0]
+        words = out.split()
+        if len(words) == 1:
+            cache_remote_node_type[node] = words[0]
+        else:
+            cache_remote_node_type[node] = out
 
     if cache_remote_node_type[node] == expected_type:
         return True
