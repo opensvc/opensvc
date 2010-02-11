@@ -53,6 +53,11 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
     except:
         os._exit(1)
 
+    import logging
+    for rs in self.resSets:
+        for r in rs.resources:
+            r.log.setLevel(logging.CRITICAL)
+
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
