@@ -25,6 +25,7 @@ from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
     def __init__(self, hostname):
+        self.intf = []
         cmd = rcEnv.rsh.split(' ') + [hostname, 'netstat', '-win']
         p = Popen(cmd, stdout=PIPE)
         buff = p.communicate()[0]
