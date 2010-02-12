@@ -71,8 +71,8 @@ class Ip(Res.Ip):
     def stop(self):
         pass
 
-    def __init__(self, rid, vmname, ipdev, ipname):
-        Res.Ip.__init__(self, rid, ipdev, ipname)
+    def __init__(self, rid, vmname, ipDev, ipName):
+        Res.Ip.__init__(self, rid, ipDev, ipName)
         self.vmname = vmname
 
 
