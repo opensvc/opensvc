@@ -35,12 +35,21 @@ class ScsiReserv(Res.Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on disks held by a service
     """
-    def __init__(self, disks):
+    def __init__(self, rid=None, disks=set([])):
         self.hostid = '0x'+hostId.hostid()
+        self.rid = rid+" scsireserv"
         self.disks = disks
+        if len(', '.join(disks)) > 40:
+            self.label = ', '.join(disks)[0:40]
+            self.label += " ..."
+        else:
+            self.label = ', '.join(disks)
         self.preempt_timeout = 10
         self.prtype = '5'
-        Res.Resource.__init__(self, rid="scsireserv", type="scsireserv")
+        Res.Resource.__init__(self, rid=rid, type="disk.scsireserv")
+
+    def scsireserv_supported(self):
+        return False
 
     def ack_unit_attention(self, d):
         raise ex.notImplemented
@@ -161,27 +170,41 @@ class ScsiReserv(Res.Resource):
         return r.status
 
     def scsireserv(self):
+        if not self.scsireserv_supported():
+            return
         r = 0
         r += self.register()
         r += self.reserve()
         return r
 
     def scsirelease(self):
+        if not self.scsireserv_supported():
+            return
         r = 0
         r += self.release()
         r += self.unregister()
         return r
 
     def scsicheckreserv(self):
+        if not self.scsireserv_supported():
+            return
         return self.checkreserv()
 
     def status(self):
+        if not self.scsireserv_supported():
+            return rcStatus.NA
         return self.scsicheckreserv()
 
     def start(self):
+        if not self.scsireserv_supported():
+            return
         if self.scsireserv() != 0:
             raise ex.excError
 
     def stop(self):
+        if not self.scsireserv_supported():
+            return
         if self.scsirelease() != 0:
             raise ex.excError
+
+

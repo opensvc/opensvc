@@ -232,18 +232,16 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.rsync", "syncdrp")
 
     def scsirelease(self):
-        self.sub_set_action("disk.vg", "scsirelease")
-        self.sub_set_action("disk.zpool", "scsirelease")
+        self.sub_set_action("disk.scsireserv", "scsirelease")
 
     def scsireserv(self):
-        self.sub_set_action("disk.vg", "scsireserv")
-        self.sub_set_action("disk.zpool", "scsireserv")
+        self.sub_set_action("disk.scsireserv", "scsireserv")
 
     def scsicheckreserv(self):
-        self.sub_set_action("disk.vg", "scsicheckreserv")
-        self.sub_set_action("disk.zpool", "scsicheckreserv")
+        self.sub_set_action("disk.scsireserv", "scsicheckreserv")
 
     def startstandby(self):
+        self.sub_set_action("disk.scsireserv", "startstandby")
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.zpool", "startstandby")
         self.sub_set_action("fs", "startstandby")
@@ -270,7 +268,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.netapp", "syncupdate")
 
     def action(self, action):
-        if action in ["print_status", "status", "group_status", "scsicheckreserv"]:
+        if action in ["print_status", "status", "group_status"]:
             self.do_action(action)
         else:
             self.do_logged_action(action)

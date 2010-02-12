@@ -25,48 +25,20 @@ import resources as Res
 import rcStatus
 import rcExceptions as exc
 from rcGlobalEnv import rcEnv
-scsiReserv = __import__("scsiReserv"+rcEnv.sysname)
-
-def allow_scsireserv(self): 
-    if not self.scsiReservation:
-        return False
-    if not scsiReserv.scsireserv_supported():
-        self.log.error("scsi reservation is enabled but not supported")
-        raise exc.excError
-    return True
 
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
     def __init__(self, rid=None, name=None, type=None, always_on=set([]), optional=False,
-                 disabled=False, scsireserv=False):
+                 disabled=False):
         Res.Resource.__init__(self, rid, type, optional, disabled)
         self.name = name
         self.always_on = always_on
-        self.scsiReservation = scsireserv
         self.disks = set()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self),\
                                     self.name)
-
-    def set_scsireserv(self):
-        self.scsiReservation = True
-
-    def scsirelease(self):
-        if not allow_scsireserv(self):
-            return
-	return scsiReserv.ScsiReserv(self.disklist()).scsirelease()
-
-    def scsireserv(self):
-        if not allow_scsireserv(self):
-            return
-	return scsiReserv.ScsiReserv(self.disklist()).scsireserv()
-
-    def scsicheckreserv(self):
-        if not allow_scsireserv(self):
-            return rcStatus.NA
-	return scsiReserv.ScsiReserv(self.disklist()).scsicheckreserv()
 
     def disklist(self):
         return self.disks
@@ -78,28 +50,15 @@ class Dg(Res.Resource):
 
     def stop(self):
         self.do_stop()
-        self.scsirelease()
 
     def start(self):
-        self.scsireserv()
         self.do_start()
 
     def startstandby(self):
         if rcEnv.nodename in self.always_on:
              self.start()
 
-    def print_status(self):
-        label = "%-8s %s"%(self.rid, self.label)
-        rcStatus.print_status(label, self.dgstatus())
-        rcStatus.print_status(label+' scsireserv', self.scsicheckreserv())
-
     def status(self):
-        s = rcStatus.Status()
-        s += self.dgstatus()
-        s += self.scsicheckreserv()
-        return s.status
-
-    def dgstatus(self):
         if rcEnv.nodename in self.always_on:
             if self.is_up(): return rcStatus.STDBY_UP
             else: return rcStatus.STDBY_DOWN

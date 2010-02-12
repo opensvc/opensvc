@@ -49,12 +49,11 @@ def major(driver):
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
                  optional=False, disabled=False,
-                 always_on=set([]), scsireserv=False):
+                 always_on=set([])):
         self.label = name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
-                          scsireserv=scsireserv,
                           optional=optional,
                           disabled=disabled)
 

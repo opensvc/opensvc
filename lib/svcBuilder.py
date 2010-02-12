@@ -76,16 +76,30 @@ def set_optional_and_disable(resource, conf, section):
     set_optional(resource, conf, section)
     set_disable(resource, conf, section)
 
-def set_scsireserv(resource, conf, section):
+def need_scsireserv(resource, conf, section):
     """scsireserv = true can be set globally or in a specific
     resource section
     """
-    if conf.has_option('default', 'scsireserv') and \
+    if conf.has_option(section, 'scsireserv'):
+       if conf.getboolean(section, 'scsireserv') == True:
+           return True
+       else:
+           return False
+    elif conf.has_option('default', 'scsireserv') and \
        conf.getboolean('default', 'scsireserv') == True:
-           resource.set_scsireserv()
-    if conf.has_option(section, 'scsireserv') and \
-       conf.getboolean(section, 'scsireserv') == True:
-           resource.set_scsireserv()
+           return True
+    return False
+
+def add_scsireserv(svc, resource, conf, section):
+    if not need_scsireserv(resource, conf, section):
+        return
+    try:
+        sr = __import__('resScsiReserv'+rcEnv.sysname)
+    except:
+        sr = __import__('resScsiReserv')
+    r = sr.ScsiReserv(rid=resource.rid, disks=resource.disklist())
+    set_optional_and_disable(r, conf, section)
+    svc += r
 
 def always_on_nodes_set(svc, conf, section):
     try:
@@ -170,9 +184,9 @@ def add_vgs(svc, conf):
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(rid=s, name=name, always_on=always_on)
         set_optional_and_disable(r, conf, s)
-        set_scsireserv(r, conf, s)
         r.dsf = dsf
         svc += r
+        add_scsireserv(svc, r, conf, s)
 
 def add_vmdg(svc, conf):
     if not conf.has_section('vmdg'):
@@ -181,10 +195,10 @@ def add_vmdg(svc, conf):
         vg = __import__('resVgHpVm')
     else:
         return
-    r = vg.Vg(rid=s, name='vmdg')
+    r = vg.Vg(rid='vmdg', name='vmdg')
     set_optional_and_disable(r, conf, 'vmdg')
-    set_scsireserv(r, conf, 'vmdg')
     svc += r
+    add_scsireserv(svc, r, conf, 'vmdg')
 
 def add_pools(svc, conf):
     """Parse the configuration file and add a pool object for each [pool#n]
@@ -197,8 +211,8 @@ def add_pools(svc, conf):
         pool = __import__('resZfs')
         r = pool.Pool(rid=rid, name=name)
         set_optional_and_disable(r, conf, s)
-        set_scsireserv(r, conf, s)
         svc += r
+        add_scsireserv(svc, r, conf, s)
 
 def add_filesystems(svc, conf):
     """Parse the configuration file and add a fs object for each [fs#n]
@@ -233,8 +247,8 @@ def add_filesystems(svc, conf):
         mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)
         set_optional_and_disable(r, conf, s)
-        #set_scsireserv(r, conf, s)
         svc += r
+        #add_scsireserv(svc, r, conf, s)
 
 def add_mandatory_syncs(svc):
     def list_mapfiles():

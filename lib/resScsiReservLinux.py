@@ -22,74 +22,43 @@
 import resources as Res
 import uuid
 import re
-import os
 import time
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import which
 from subprocess import *
-import scsiReserv
+import resScsiReserv
 
-def scsireserv_supported():
-    if which('scu') is None:
-        return False
-    return True
 
-def mpath_to_path(disks):
-    l = []
-    for disk in disks:
-        if "/dev/dsk" in disk:
-            l.append(disk.replace("/dev/dsk", "/dev/rdsk"))
-            continue
-        if "/dev/disk" not in disk and "/dev/rdisk" not in disk:
-            continue
-        if not os.path.exists(disk):
-            continue
-        cmd = ['ioscan', '-F', '-m', 'dsf', disk]
-        p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)
-        buff = p.communicate()
-        ret = p.returncode
-        if ret != 0:
-            continue
-        a = buff[0].split(':')
-        if len(a) != 2:
-            continue
-        b = a[1].split()
-        for d in b:
-            l.append(d.replace("/dev/dsk", "/dev/rdsk"))
-    return l
-    
-class ScsiReserv(scsiReserv.ScsiReserv):
-    def __init__(self, disks):
-        scsiReserv.ScsiReserv.__init__(self, disks)
-        self.prtype = 'wero'
-        self.disks = mpath_to_path(disks)
-        self.leg_mpath_disable()
-
-    def leg_mpath_disable(self):
-        cmd = ['scsimgr', 'get_attr', '-p', '-a', 'leg_mpath_enable']
-        p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)
-        buff = p.communicate()
-        ret = p.returncode
-        if ret != 0:
-            self.log.error("can not fetch 'leg_mpath_enable' value")
-            raise ex.excError
-        if 'false' in buff[0]:
-            return
-        cmd = ['scsimgr', 'save_attr', '-a', 'leg_mpath_enable=false']
-        self.log.info(' '.join(cmd))
-        p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)
-        buff = p.communicate()
-        ret = p.returncode
-        if ret != 0:
-            self.log.error("can not set 'leg_mpath_enable' value")
-            raise ex.excError
+class ScsiReserv(resScsiReserv.ScsiReserv):
+    def scsireserv_supported(self):
+        if which('sg_persist') is None:
+            return False
+        return True
 
     def ack_unit_attention(self, d):
+        i = self.preempt_timeout
+        while i>0:
+            i -= 1
+            cmd = [ 'sg_persist', '-n', '-r', d ]
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+            out = p.communicate()
+            ret = p.returncode
+            if "unsupported service action" in out[1]:
+                self.log.error("disk %s does not support persistent reservation" % d)
+                raise ex.excScsiPrNotsupported
+            if "Unit Attention" in out[0] or ret != 0:
+                self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
+                time.sleep(1)
+                continue
+            break
+        if i == 0:
+            self.log.error("timed out waiting for 'Unit Attention' to go away on disk %s" % d)
+            return 1
         return 0
 
     def disk_registered(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'keys' ]
+        cmd = [ 'sg_persist', '-n', '-k', disk ]
         (ret, out) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read registrations for disk %s" % disk)
@@ -98,33 +67,33 @@ class ScsiReserv(scsiReserv.ScsiReserv):
         return False
 
     def disk_register(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'register', 'skey', self.hostid ]
+        cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, disk ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to register key %s with disk %s" % (self.hostid, disk))
         return ret
 
     def disk_unregister(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'register', 'skey', '0', 'key', self.hostid ]
+        cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, disk ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
         return ret
 
     def get_reservation_key(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'reservation' ]
+        cmd = [ 'sg_persist', '-n', '-r', disk ]
         (ret, out) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to list reservation for disk %s" % disk)
-        if 'Reservation Key' not in out:
+        if 'Key=' not in out:
             return None
-        for line in out.split('\n'):
-            if 'Reservation Key' in line:
-                return line.split()[-1]
+        for w in out.split():
+            if 'Key=' in w:
+                return w.split('=')[1]
         raise Exception()
 
     def disk_reserved(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'reservation' ]
+        cmd = [ 'sg_persist', '-n', '-r', disk ]
         (ret, out) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read reservation for disk %s" % disk)
@@ -133,21 +102,21 @@ class ScsiReserv(scsiReserv.ScsiReserv):
         return False
 
     def disk_release(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'release', 'key', self.hostid, 'type', self.prtype ]
+        cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to release disk %s" % disk)
         return ret
 
     def disk_reserve(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'reserve', 'key', self.hostid, 'type', self.prtype ]
+        cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
     def disk_preempt_reservation(self, disk, oldkey):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'preempt', 'key', self.hostid, 'skey', oldkey, 'type', self.prtype ]
+        cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to preempt reservation for disk %s" % disk)

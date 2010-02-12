@@ -29,7 +29,7 @@ class SvcZone(svc.Svc):
 
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"container.zone",optional, disabled)
-        self.status_types = ["container.zone", "ip", "disk.vg", "fs", "sync.rsync"]
+        self.status_types = ["container.zone", "ip", "disk.scsireserv", "disk.vg", "fs", "sync.rsync"]
 
     def start(self):
         """start a zone
@@ -47,6 +47,7 @@ class SvcZone(svc.Svc):
         self.sub_set_action("ip", "start")
         self.sub_set_action("container.zone", "boot")
         self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
         self.sub_set_action("app", "start")
@@ -63,6 +64,7 @@ class SvcZone(svc.Svc):
         self.sub_set_action("app", "stop")
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("container.zone", "stop")
         self.sub_set_action("ip", "stop")
 
@@ -80,10 +82,12 @@ class SvcZone(svc.Svc):
         self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
 
     def mount(self):
         self.sub_set_action("fs", "start")

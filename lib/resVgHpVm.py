@@ -27,11 +27,11 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Vg):
-    def __init__(self, rid=None, name=None, type=None, scsireserv=False,
+    def __init__(self, rid=None, name=None, type=None,
                  optional=False, disabled=False):
         self.label = name
         resVg.Vg.__init__(self, rid=rid, name=name,
-                          type='disk.vg', scsireserv=scsireserv,
+                          type='disk.vg',
                           optional=optional, disabled=disabled)
 
     def has_it(self):
@@ -40,7 +40,7 @@ class Vg(resVg.Vg):
     def is_up(self):
         return True
 
-    def dgstatus(self):
+    def status(self):
         return rcStatus.NA
 
     def do_start(self):

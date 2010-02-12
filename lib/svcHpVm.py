@@ -33,11 +33,12 @@ class SvcHpVm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self += resHpVm.HpVm(vmname)
-        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
+        self.status_types = ["container.hpvm", "disk.loop", "fs", "disk.scsireserv", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         self.sub_set_action("ip", "start")
         self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
         self.sub_set_action("container.hpvm", "start")
@@ -48,6 +49,7 @@ class SvcHpVm(svc.Svc):
         self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
 
     def startcontainer(self):
@@ -63,10 +65,12 @@ class SvcHpVm(svc.Svc):
         self.sub_set_action("ip", "stop")
 
     def startvg(self):
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
 
     def mount(self):
         self.sub_set_action("fs", "start")
@@ -76,10 +80,12 @@ class SvcHpVm(svc.Svc):
 
     def diskstart(self):
         self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("fs", "start")
 
     def diskstop(self):
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "start")
 

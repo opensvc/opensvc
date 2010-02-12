@@ -26,15 +26,14 @@ from rcGlobalEnv import rcEnv
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]), scsireserv=False,
+                 always_on=set([]),
                  disabled=False, optional=False):
         self.label = name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled,
-                          scsireserv=scsireserv)
+                          disabled=disabled)
 
     def mapfile_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
@@ -207,7 +206,6 @@ class Vg(resDg.Dg):
 
     def start(self):
         self.do_mksf()
-        self.scsireserv()
         self.do_start()
 
     def disklist(self):

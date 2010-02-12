@@ -27,7 +27,7 @@ class SvcHosted(svc.Svc):
 
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, "Hosted", optional, disabled)
-        self.status_types = ["disk.loop", "fs", "disk.vg", "disk.zpool", "ip", "sync.rsync", "sync.netapp"]
+        self.status_types = ["disk.loop", "fs", "disk.scsireserv", "disk.vg", "disk.zpool", "ip", "sync.rsync", "sync.netapp"]
 
     def start(self):
         """start a hosted service:
@@ -41,6 +41,7 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("ip", "start")
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("fs", "start")
@@ -57,6 +58,7 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
         self.sub_set_action("ip", "stop")
 
@@ -69,6 +71,7 @@ class SvcHosted(svc.Svc):
         """
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("fs", "start")
@@ -84,6 +87,7 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("fs", "stop")
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
 
     def startip(self):
@@ -99,16 +103,20 @@ class SvcHosted(svc.Svc):
         self.sub_set_action("disk.loop", "stop")
 
     def startvg(self):
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
 
     def stopvg(self):
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
 
     def startpool(self):
+        self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.zpool", "start")
 
     def stoppool(self):
         self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
 
     def mount(self):
         self.sub_set_action("fs", "start")
