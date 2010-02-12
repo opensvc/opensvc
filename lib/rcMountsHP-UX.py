@@ -52,6 +52,7 @@ class Mounts(rcMounts.Mounts):
         return False
 
     def __init__(self):
+        self.mounts = []
         (ret, out) = call(['mount', '-v'])
         for l in out.split('\n'):
             if len(l.split()) != 12:

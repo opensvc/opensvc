@@ -29,11 +29,9 @@ class Mount:
             (self.dev,self.mnt,self.type,self.mnt_opt)
 
 class Mounts:
-    mounts = []
-
     def __init__(self):
         """ OS dependent """
-        pass
+        self.mounts = []
 
     def match_mount(self):
         """ OS dependent """

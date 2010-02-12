@@ -35,6 +35,7 @@ class Mounts(rcMounts.Mounts):
         return False
 
     def __init__(self):
+        self.mounts = []
         (ret, out) = call(['mount','-p'])
         for line in out.split('\n'):
             words=line.split()
