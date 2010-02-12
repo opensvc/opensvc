@@ -670,7 +670,9 @@ def build(name):
 
 def is_service(f):
     rcService = os.path.join(pathsvc, 'bin', 'rcService')
-    if os.path.realpath(f) != os.path.realpath(rcService):
+    svcmgr = os.path.join(pathsvc, 'bin', 'svcmgr')
+    if os.path.realpath(f) != os.path.realpath(rcService) and \
+       os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
     if not os.path.exists(f + '.env'):
         return False
