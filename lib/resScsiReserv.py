@@ -37,16 +37,15 @@ class ScsiReserv(Res.Resource):
     """
     def __init__(self, rid=None, disks=set([])):
         self.hostid = '0x'+hostId.hostid()
-        self.rid = rid+" scsireserv"
         self.disks = disks
-        if len(', '.join(disks)) > 40:
-            self.label = ', '.join(disks)[0:40]
+        if len(', '.join(disks)) > 48:
+            self.label = 'preserv '+', '.join(disks)[0:48]
             self.label += " ..."
         else:
             self.label = ', '.join(disks)
         self.preempt_timeout = 10
         self.prtype = '5'
-        Res.Resource.__init__(self, rid=rid, type="disk.scsireserv")
+        Res.Resource.__init__(self, rid=rid+"pr", type="disk.scsireserv")
 
     def scsireserv_supported(self):
         return False
