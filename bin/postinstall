@@ -165,6 +165,21 @@ def gen_keys():
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
 
+def convert_svclinks():
+    pathetc = os.path.join(os.sep, 'service', 'etc')
+    svcmgr = os.path.join('..', 'bin', 'svcmgr')
+    rcService = os.path.realpath(os.path.join(os.sep, 'service', 'bin', 'rcService'))
+    for fname in os.listdir(pathetc):
+        fpath = os.path.join(pathetc, fname)
+        if not os.path.islink(fpath):
+            continue
+        rpath = os.path.realpath(fpath)
+        if rpath != rcService:
+            continue
+        os.unlink(fpath)
+        os.symlink(svcmgr, fpath)
+        
+convert_svclinks()
 install_cron()
 install_rc()
 gen_keys()
