@@ -73,6 +73,8 @@ def end_action(svc, action, begin, end, logfile):
         date are available.
         """
         if dateprev is not None:
+            res = res.lower()
+            res = res.replace(svc.svcname+'.','')
             try:
                 proxy.res_action(
                     ['svcname',
@@ -85,7 +87,7 @@ def end_action(svc, action, begin, end, logfile):
                      'status_log',
                      'status'],
                     [repr(svc.svcname),
-                     repr(res.lower()+' '+action),
+                     repr(res+' '+action),
                      repr(rcEnv.nodename),
                      repr(hostid),
                      repr(pid),
@@ -113,6 +115,8 @@ def end_action(svc, action, begin, end, logfile):
     """Push the last log entry, using 'end' as end date
     """
     try:
+        res = res.lower()
+        res = res.replace(svc.svcname+'.','')
         proxy.res_action(
             ['svcname',
              'action',
@@ -124,7 +128,7 @@ def end_action(svc, action, begin, end, logfile):
              'status_log',
              'status'],
             [repr(svc.svcname),
-             repr(res.lower()+' '+action),
+             repr(res+' '+action),
              repr(rcEnv.nodename),
              repr(hostid),
              repr(pid),
