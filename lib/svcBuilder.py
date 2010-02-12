@@ -514,9 +514,6 @@ def build(name):
     rcEnv.logfile = logfile
 
     setup_logging()
-    if name == "rcService":
-            log.error("do not execute rcService directly")
-            return None
 
     #
     # print stuff we determined so far
@@ -669,10 +666,8 @@ def build(name):
     return svc
 
 def is_service(f):
-    rcService = os.path.join(pathsvc, 'bin', 'rcService')
     svcmgr = os.path.join(pathsvc, 'bin', 'svcmgr')
-    if os.path.realpath(f) != os.path.realpath(rcService) and \
-       os.path.realpath(f) != os.path.realpath(svcmgr):
+    if os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
     if not os.path.exists(f + '.env'):
         return False

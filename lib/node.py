@@ -27,7 +27,7 @@ import os
 pathetc = os.path.join(pathsvc, 'etc')
 
 def is_service(f):
-    if os.path.realpath(f) != os.path.realpath(rcService):
+    if os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
     if not os.path.exists(f + '.env'):
         return False
