@@ -130,6 +130,18 @@ class Ip(Res.Resource):
             self.log.error("failed")
             raise ex.excError
 
+        import time
+        tmo = 10
+        for i in range(tmo):
+            if not self.check_ping():
+                break
+            time.sleep(1)
+
+        if i == tmo-1:
+            self.log.error("%s refuse to go down"%self.addr)
+            raise ex.excError
+
+
 if __name__ == "__main__":
     for c in (Ip,) :
         help(c)
