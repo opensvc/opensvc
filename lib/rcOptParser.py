@@ -58,10 +58,10 @@ action_desc = {
 
 def format_desc(svc=False):
 	desc = "Supported commands:\n"
-	for a in action_desc.keys():
+	for a in sorted(action_desc):
 		if svc and not hasattr(svc, a):
 			continue
-		desc += "  {0:13s}{1:65s}\n".format(a, action_desc[a])
+		desc += "  {0:16s}{1:65s}\n".format(a, action_desc[a])
 	return desc
 
 class svcOptionParser:
