@@ -16,7 +16,6 @@ PSF=opensvc.psf
 DEPOTDIR=$OSVC/tmp/DEB
 DEPOT=opensvc-$VERSION-$RELEASE.depot
 REMOTEHOST=${1:-s64lmwbicb6.dsit.sncf.fr}
-TAG=opensvc_${VERSION/./_}_${RELEASE/./_}
 
 #
 # prepare skeleton (data.tar.gz)
@@ -54,10 +53,9 @@ vendor
   description   opensvc nodeware
 end
 product
-  tag            $TAG
+  tag            opensvc
   title          opensvc
-  revision       $RELEASE
-  number         $VERSION
+  revision       $VERSION-$RELEASE
   category       system_management
   description    tools to drive OpenSVC services
   copyright      Opensvc SARL
