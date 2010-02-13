@@ -226,6 +226,7 @@ class Svc(Resource, Freezer):
         return disks
 
     def start(self):
+        self.startip()
         self.mount()
         self.startcontainer()
         self.startapp()
@@ -234,6 +235,7 @@ class Svc(Resource, Freezer):
         self.stopapp()
         self.stopcontainer()
         self.umount()
+        self.stopip()
 
     def startloop(self):
         self.sub_set_action("disk.loop", "start")
