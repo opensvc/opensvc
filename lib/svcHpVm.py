@@ -20,7 +20,7 @@
 # and open the template in the editor.
 
 import svc
-import resHpVm
+import resContainerHpVm as hpvm
 import rcStatus
 import rcExceptions as ex
 
@@ -32,6 +32,6 @@ class SvcHpVm(svc.Svc):
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
-        self += resHpVm.HpVm(vmname)
+        self += hpvm.HpVm(vmname)
         self.status_types += ["container.hpvm"]
 
