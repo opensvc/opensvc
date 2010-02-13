@@ -29,72 +29,7 @@ class SvcLxc(svc.Svc):
     def __init__(self, svcname, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         self += lxc.Lxc(svcname)
-        self.status_types = ["container.lxc", "disk.loop", "fs", "disk.scsireserv", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
-
-    def start(self):
-        """start a Lxc
-        check ping
-        start loops
-        start VGs
-        start fs
-        start lxc
-        start apps
-        """
-        self.sub_set_action("ip", "start")
-        self.sub_set_action("sync.netapp", "start")
-        self.sub_set_action("disk.loop", "start")
-        self.sub_set_action("disk.scsireserv", "start")
-        self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("fs", "start")
-        self.sub_set_action("container.lxc", "start")
-        self.sub_set_action("app", "start")
-
-    def stop(self):
-        """stop a zone:
-        stop apps
-        stop lxc
-        stop fs
-        stop VGs
-        stop loops
-        """
-        self.sub_set_action("app", "stop")
-        self.sub_set_action("container.lxc", "stop")
-        self.sub_set_action("fs", "stop")
-        self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.scsireserv", "stop")
-        self.sub_set_action("disk.loop", "stop")
-
-    def startlxc(self):
-        self.sub_set_action("container.lxc", "start")
-
-    def stoplxc(self):
-        self.sub_set_action("container.lxc", "stop")
-
-    def startip(self):
-        self.sub_set_action("ip", "start")
-
-    def stopip(self):
-        self.sub_set_action("ip", "stop")
-
-    def startloop(self):
-        self.sub_set_action("disk.loop", "start")
-
-    def stoploop(self):
-        self.sub_set_action("disk.loop", "stop")
-
-    def startvg(self):
-        self.sub_set_action("disk.scsireserv", "start")
-        self.sub_set_action("disk.vg", "start")
-
-    def stopvg(self):
-        self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.scsireserv", "stop")
-
-    def mount(self):
-        self.sub_set_action("fs", "start")
-
-    def umount(self):
-        self.sub_set_action("fs", "stop")
+        self.status_types += ["container.lxc"]
 
 
 if __name__ == "__main__":

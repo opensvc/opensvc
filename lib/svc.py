@@ -69,10 +69,6 @@ class Svc(Resource, Freezer):
     type
     """
 
-    """ override in child class to add/remove supported resource types
-    """
-    status_types = ["disk.loop", "fs", "disk.vg", "ip", "sync.rsync", "sync.netapp"]
-
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
         if self.frozen():
@@ -86,8 +82,18 @@ class Svc(Resource, Freezer):
         self.type2resSets = {}
         self.disks = set([])
         self.force = False
+        self.status_types = ["disk.loop",
+                             "disk.scsireserv",
+                             "disk.vg",
+                             "fs",
+                             "ip",
+                             "sync.rsync",
+                             "sync.netapp"]
         Resource.__init__(self, type=type, optional=optional, disabled=disabled)
         Freezer.__init__(self, svcname)
+        self.scsirelease = self.prstop
+        self.scsireserv = self.prstart
+        self.scsicheckreserv = self.prstatus
 
     def __cmp__(self, other):
         """order by service name
@@ -219,25 +225,84 @@ class Svc(Resource, Freezer):
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
+    def start(self):
+        self.mount()
+        self.startcontainer()
+        self.startapp()
+
+    def stop(self):
+        self.stopapp()
+        self.stopcontainer()
+        self.umount()
+
+    def startloop(self):
+        self.sub_set_action("disk.loop", "start")
+
+    def stoploop(self):
+        self.sub_set_action("disk.loop", "stop")
+
+    def startvg(self):
+        self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.vg", "start")
+
+    def startpool(self):
+        self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.zpool", "start")
+
+    def stoppool(self):
+        self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
+
+    def startdisk(self):
+        self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.zpool", "start")
+        self.sub_set_action("disk.vg", "start")
+
+    def stopdisk(self):
+        self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
+        self.sub_set_action("disk.loop", "stop")
+
+    def startip(self):
+        self.sub_set_action("ip", "start")
+
+    def stopip(self):
+        self.sub_set_action("ip", "stop")
+
+    def mount(self):
+        self.startdisk()
+        self.sub_set_action("fs", "start")
+
+    def umount(self):
+        self.sub_set_action("fs", "stop")
+        self.stopdisk()
+
+    def startcontainer(self):
+        self.sub_set_action("container.lxc", "start")
+        self.sub_set_action("container.kvm", "start")
+        self.sub_set_action("container.hpvm", "start")
+
+    def stopcontainer(self):
+        self.sub_set_action("container.hpvm", "stop")
+        self.sub_set_action("container.kvm", "stop")
+        self.sub_set_action("container.lxc", "stop")
+
     def startapp(self):
         self.sub_set_action("app", "start")
 
     def stopapp(self):
         self.sub_set_action("app", "stop")
 
-    def syncnodes(self):
-        self.sub_set_action("sync.rsync", "syncnodes")
-
-    def syncdrp(self):
-        self.sub_set_action("sync.rsync", "syncdrp")
-
-    def scsirelease(self):
+    def prstop(self):
         self.sub_set_action("disk.scsireserv", "scsirelease")
 
-    def scsireserv(self):
+    def prstart(self):
         self.sub_set_action("disk.scsireserv", "scsireserv")
 
-    def scsicheckreserv(self):
+    def prstatus(self):
         self.sub_set_action("disk.scsireserv", "scsicheckreserv")
 
     def startstandby(self):
@@ -248,6 +313,12 @@ class Svc(Resource, Freezer):
 
     def diskupdate(self):
         self.sub_set_action("disk.vg", "diskupdate")
+
+    def syncnodes(self):
+        self.sub_set_action("sync.rsync", "syncnodes")
+
+    def syncdrp(self):
+        self.sub_set_action("sync.rsync", "syncdrp")
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")

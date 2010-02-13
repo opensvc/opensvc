@@ -1,6 +1,8 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2010 Cyril Galibern <cyril.galibern@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +31,7 @@ class SvcZone(svc.Svc):
 
     def __init__(self,optional=False,disabled=False):
         svc.Svc.__init__(self,"container.zone",optional, disabled)
-        self.status_types = ["container.zone", "ip", "disk.scsireserv", "disk.vg", "fs", "sync.rsync"]
+        self.status_types += ["container.zone"]
 
     def start(self):
         """start a zone
@@ -71,29 +73,6 @@ class SvcZone(svc.Svc):
     def startip(self):
         self.sub_set_action("ip", "check_ping")
         self.sub_set_action("ip", "start")
-
-    def stopip(self):
-        self.sub_set_action("ip", "stop")
-
-    def startloop(self):
-        self.sub_set_action("disk.loop", "start")
-
-    def stoploop(self):
-        self.sub_set_action("disk.loop", "stop")
-
-    def startvg(self):
-        self.sub_set_action("disk.scsireserv", "start")
-        self.sub_set_action("disk.vg", "start")
-
-    def stopvg(self):
-        self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.scsireserv", "stop")
-
-    def mount(self):
-        self.sub_set_action("fs", "start")
-
-    def umount(self):
-        self.sub_set_action("fs", "stop")
 
 
 if __name__ == "__main__":
