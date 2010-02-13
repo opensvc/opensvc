@@ -23,49 +23,64 @@ from rcGlobalEnv import *
 from rcUtilities import call, which
 import rcStatus
 import resLoop as Res
+import rcExceptions as ex
 
 def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0
     """
     if which('losetup') is None:
-        return None
+        return []
     if not os.path.isfile(f):
-        return None
+        return []
     if rcEnv.sysname != 'Linux':
-        return None
+        return []
     (ret, out) = call(['losetup', '-j', f])
     if len(out) == 0:
-        return None
-    return out.split()[0].strip(':')
+        return []
+    """ It's possible multiple loopdev are associated with the same file
+    """
+    devs= []
+    for line in out.split('\n'):
+        l = line.split(':')
+        if len(l) == 0:
+            continue
+        if len(l[0]) == 0:
+            continue
+        if not os.path.exists(l[0]):
+            continue
+        devs.append(l[0])
+    return devs
 
 class Loop(Res.Loop):
     def is_up(self):
-        """Returns True if the volume group is present and activated
+        """Returns True if the loop group is present and activated
         """
         self.loop = file_to_loop(self.loopFile)
-        if self.loop is None:
+        if len(self.loop) == 0:
             return False
         return True
 
     def start(self):
         if self.is_up():
             self.log.info("%s is already up" % self.loopFile)
-            return 0
+            return
         cmd = [ 'losetup', '-f', self.loopFile ]
         (ret, out) = self.vcall(cmd)
-        if ret == 0:
-            self.loop = file_to_loop(self.loopFile)
-        self.log.info("%s now loops to %s" % (self.loop, self.loopFile))
-        return ret
+        if ret != 0:
+            raise ex.excError
+        self.loop = file_to_loop(self.loopFile)
+        self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
 
     def stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.loopFile)
             return 0
-        cmd = [ 'losetup', '-d', self.loop ]
-        (ret, out) = self.vcall(cmd)
-        return ret
+        for loop in self.loop:
+            cmd = [ 'losetup', '-d', loop ]
+            (ret, out) = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
 
     def status(self):
         if self.is_up(): return rcStatus.UP
