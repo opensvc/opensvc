@@ -20,7 +20,7 @@
 # and open the template in the editor.
 
 import svc
-import resKvm
+import resContainerKvm as kvm
 import rcStatus
 import rcExceptions as ex
 
@@ -32,6 +32,6 @@ class SvcKvm(svc.Svc):
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
-        self += resKvm.Kvm(vmname)
+        self += kvm.Kvm(vmname)
         self.status_types += ["container.kvm"]
 
