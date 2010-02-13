@@ -31,7 +31,7 @@ from rcUtilities import *
 import rcOptParser
 import rcLogger
 import rcAddService
-import resRsync
+import resSyncRsync
 import resSyncNetapp
 import rcExceptions as ex
 
@@ -303,7 +303,7 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = []
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resRsync.Rsync(rid="sync#i0", src=src, dst=dst,
+    r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
                        exclude=['-R']+exclude, target=targethash,
                        internal=True)
     svc += r
@@ -322,7 +322,7 @@ def add_mandatory_syncs(svc):
         if len(src) == 0:
             continue
         i += 1
-        r = resRsync.Rsync(rid="sync#i"+str(i), src=src, dst=dst,
+        r = resSyncRsync.Rsync(rid="sync#i"+str(i), src=src, dst=dst,
                            exclude=['-R']+exclude, target=targethash,
                            internal=True)
         svc += r
@@ -449,7 +449,7 @@ def add_syncs_rsync(svc, conf):
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
 
-        r = resRsync.Rsync(rid=s,
+        r = resSyncRsync.Rsync(rid=s,
                            src=src,
                            dst=dst,
                            exclude=exclude,
