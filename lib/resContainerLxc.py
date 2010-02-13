@@ -23,6 +23,7 @@ from subprocess import *
 
 import rcStatus
 import resources as Res
+import rcExceptions as ex
 from rcUtilities import qcall
 
 def lxc(self, action):
