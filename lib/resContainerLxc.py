@@ -17,12 +17,13 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
+import time
 from datetime import datetime
 from subprocess import *
 
-import rcLogger
 import rcStatus
 import resources as Res
+from rcUtilities import qcall
 
 def lxc(self, action):
     outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
@@ -50,14 +51,16 @@ def lxc_is_created(self):
 
 def lxc_wait_for_startup(self):
     for t in range(self.startup_timeout):
-        if self.is_up(): return 0
-    log.error("timeout out waiting for %s startup", self.name)
-    return 1
+        if self.is_up() and self.ping() and self.operational():
+            return
+        time.sleep(1)
+    self.log.error("timeout out waiting for %s startup", self.name)
+    raise ex.excError
 
 def lxc_wait_for_shutdown(self):
     for t in range(self.startup_timeout):
         if not self.is_up(): return 0
-    log.error("timeout out waiting for %s shutdown", self.name)
+    self.log.error("timeout out waiting for %s shutdown", self.name)
     return 1
 
 def lxc_exec(self, cmd):
@@ -108,6 +111,23 @@ class Lxc(Res.Resource):
             return 0
         lxc(self, 'stop')
         return lxc_wait_for_shutdown(self)
+
+    def ping(self):
+        count=1
+        timeout=1
+        cmd = ['ping', self.name, '-c', repr(count), '-W', repr(timeout)]
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
+
+    def operational(self):
+        timeout=1
+        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'PasswordAuthentication=no', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
 
     def is_up(self):
         self.log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
