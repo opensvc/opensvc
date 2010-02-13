@@ -20,7 +20,7 @@
 # and open the template in the editor.
 
 import svc
-import lxc
+import resContainerLxc as lxc
 import rcStatus
 
 class SvcLxc(svc.Svc):
