@@ -38,7 +38,9 @@ class ScsiReserv(Res.Resource):
     def __init__(self, rid=None, disks=set([])):
         self.hostid = '0x'+hostId.hostid()
         self.disks = disks
-        if len(', '.join(disks)) > 48:
+        if len(disks) == 0:
+            self.label = 'preserv 0 scsi disk'
+        elif len(', '.join(disks)) > 48:
             self.label = 'preserv '+', '.join(disks)[0:48]
             self.label += " ..."
         else:
