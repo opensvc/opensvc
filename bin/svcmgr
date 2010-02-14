@@ -43,6 +43,8 @@ parser.add_option("--debug", default="False",
                   help="debug mode")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
+parser.add_option("--rid", default=None, action="store", dest="parm_rid",
+                  help="comma-separated list of resource to limit action to")
 
 
 cmd = os.path.basename(__file__)
@@ -96,7 +98,12 @@ action = args[0]
 if not action in rcOptParser.action_desc.keys():
     parser.error("unsupported action")
 
+if hasattr(options, "parm_rid") and options.parm_rid is not None:
+   rid = options.parm_rid.split(',')
+else:
+   rid = []
+
 for s in svcs:
     s.force = options.force
-    s.action(action)
+    s.action(action, rid=rid)
 

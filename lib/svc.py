@@ -340,7 +340,17 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
 
-    def action(self, action):
+    def disable_resources(self, keep=None):
+        if keep is None or len(keep) == 0:
+            return
+        for rs in self.resSets:
+            for r in rs.resources:
+                if r.rid in keep:
+                    continue
+                r.disable()
+
+    def action(self, action, rid=None):
+        self.disable_resources(keep=rid)
         if action in ["print_status", "status", "group_status"]:
             self.do_action(action)
         else:

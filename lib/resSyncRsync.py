@@ -212,9 +212,11 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
         """Accept to sync from here only if the service is up
+           Also accept n/a status, because it's what the overall status
+           ends up to be when only sync#* are specified using --rid
         """
         status = self.svc.group_status(excluded_groups=set(["sync"]))
-        if status['overall'].status != rcStatus.UP:
+        if status['overall'].status not in [rcStatus.UP, rcStatus.NA]:
             self.log.debug("won't sync a service not up")
             raise ex.excAbortAction
 
