@@ -56,19 +56,9 @@ def max_len(svcs, attr):
             _len = len(getattr(svc, attr))
     return _len
 
-def svcmon_normal(svcs, upddb=False):
-    if columns < 80:
-        fmt = '%-12s %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s\n'
-    else:
-        fmt = '%-' + str(max_len(svcs, "svcname")) + 's'
-        fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s\n'
-
-    out =  fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "sync  ", "overall")
-    out += fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status ")
-    out += fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "-------")
-    for svc in svcs:
-       status = svc.group_status()
-       out += fmt % (
+def svcmon_normal1(svc, upddb=False, fmt=None):
+    status = svc.group_status()
+    print fmt % (
               svc.svcname,
               svc.svctype,
               svc.svcmode,
@@ -78,9 +68,27 @@ def svcmon_normal(svcs, upddb=False):
               status["fs"],
               status["sync"],
               status["overall"])
-       if upddb:
-           xmlrpcClient.svcmon_update(svc, status)
-    print out
+    if upddb:
+        xmlrpcClient.svcmon_update(svc, status)
+
+def svcmon_normal(svcs, upddb=False):
+    if columns < 80:
+        fmt = '%-12s %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s'
+    else:
+        fmt = '%-' + str(max_len(svcs, "svcname")) + 's'
+        fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s'
+
+    print fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "sync  ", "overall")
+    print fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status ")
+    print fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "-------")
+    from multiprocessing import Process
+    ps = []
+    for svc in svcs:
+        p = Process(target=svcmon_normal1, args=(svc, upddb, fmt))
+        p.start()
+        ps.append(p)
+    for p in ps:
+        p.join()
 
 svcs = []
 __ver = rcEnv.prog + " version " + str(rcEnv.ver)
