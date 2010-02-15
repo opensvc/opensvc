@@ -25,5 +25,5 @@ from rcGlobalEnv import rcEnv
 class ifconfig(rcIfconfigLinux.ifconfig):
     def __init__(self, hostname):
         self.intf = []
-        out = Popen(rcEnv.rsh.split(' ') + [hostname, 'ifconfig', '-a'], stdout=PIPE).communicate()[0]
+        out = Popen(rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', '-a'], stdout=PIPE).communicate()[0]
         self.parse(out)
