@@ -59,11 +59,15 @@ action_desc = {
 }
 
 def format_desc(svc=False):
+        from textwrap import TextWrapper
+        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
 	desc = "Supported commands:\n"
 	for a in sorted(action_desc):
 		if svc and not hasattr(svc, a):
 			continue
-		desc += "  {0:16s}{1:65s}\n".format(a, action_desc[a])
+		text = "  %-16s %s\n"%(a, action_desc[a])
+                desc += wrapper.fill(text)
+                desc += '\n'
 	return desc
 
 class svcOptionParser:
