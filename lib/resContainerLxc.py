@@ -143,11 +143,11 @@ class Lxc(Res.Resource):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
-    def __init__(self, svcname, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False):
         Res.Resource.__init__(self, rid="lxc", type="container.lxc",
                               optional=optional, disabled=disabled)
-        self.name = svcname
-        self.label = svcname
+        self.name = name
+        self.label = name
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

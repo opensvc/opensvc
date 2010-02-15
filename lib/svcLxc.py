@@ -26,9 +26,9 @@ import rcStatus
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
 
-    def __init__(self, svcname, optional=False, disabled=False):
+    def __init__(self, svcname, vmname=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
-        self += lxc.Lxc(svcname)
+        self += lxc.Lxc(vmname)
         self.status_types += ["container.lxc"]
 
 
