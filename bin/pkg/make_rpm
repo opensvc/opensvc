@@ -70,7 +70,7 @@ These are the tools to drive OpenSVC services
 %config(noreplace) /usr/local/opensvc/var/host_mode
 %defattr(-,root,root)
 %attr(0755,root,root) /usr/local/opensvc/bin
-%attr(0644,root,root) /usr/local/opensvc/lib
+/usr/local/opensvc/lib
 /usr/local/opensvc/etc
 /usr/local/opensvc/log
 /usr/local/opensvc/tmp
