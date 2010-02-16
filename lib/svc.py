@@ -340,6 +340,19 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
 
+    def syncall(self):
+        try: self.diskupdate()
+        except: pass
+        try: self.syncnodes()
+        except: pass
+        try: self.syncdrp()
+        except: pass
+        try: self.syncupdate()
+        except: pass
+
+    def push(self):
+        xmlrpcClient.push_all([self])
+
     def disable_resources(self, keep=None):
         if keep is None or len(keep) == 0:
             return

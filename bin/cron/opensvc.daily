@@ -19,8 +19,6 @@
 #
 import sys
 import os
-import xmlrpclib
-import uuid
 
 """
 When installed in /etc/cron.daily/ this must be a symlink to the
@@ -30,212 +28,15 @@ relative paths to locate libs
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
-hostid = str(uuid.getnode())
-sysname, x, x, x, x = os.uname()
 
 import svcBuilder
-from rcGlobalEnv import rcEnv
-from rcUtilities import call, which
+import xmlrpcClient
 
-di = __import__('rcDiskInfo'+sysname)
-disks = di.diskInfo()
+svcs = svcBuilder.build_services()
 
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, allow_none=True)
-
-disklist_cache = {}
-
-def envfile(svc):
-    envfile = os.path.join(pathsvc, 'etc', svc+'.env')
-    if not os.path.exists(envfile):
-        return
-    with open(envfile, 'r') as f:
-        buff = f.read()
-        return buff
-    return
-
-def disk_dg(dev, svc):
-    for rset in svc.get_res_sets("disk.vg"):
-        for vg in rset.resources:
-            if vg.is_disabled():
-                continue
-            if not vg.name in disklist_cache:
-                disklist_cache[vg.name] = vg.disklist()
-            if dev in disklist_cache[vg.name]:
-                return vg.name
-    return
-
-
-""" Purge current service configurations from database
-    for this host
-"""
-try:
-    proxy.delete_services(hostid)
-except:
-    pass
-
-for svc in svcBuilder.build_services():
-    """ Load service configuration in database
-    """
+for svc in svcs:
     try:
-        proxy.delete_syncs(svc.svcname)
-        for rset in svc.get_res_sets("rsync"):
-            for r in rset.resources:
-                if r.internal:
-                    continue
-                if 'nodes' in r.target:
-                    nodes = ' '.join(r.target['nodes'])
-                else:
-                    nodes = ''
-                if 'drpnodes' in r.target:
-                    drpnodes = ' '.join(r.target['drpnodes'])
-                else:
-                    drpnodes = ''
-                if len(nodes) == 0 and len(drpnodes) == 0:
-                    continue
-                proxy.register_sync(
-                    ['sync_svcname',
-                     'sync_src',
-                     'sync_dst',
-                     'sync_dstfs',
-                     'sync_exclude',
-                     'sync_snap',
-                     'sync_prdtarget',
-                     'sync_drptarget',
-                     'sync_bwlimit'],
-                    [repr(svc.svcname),
-                     repr(' '.join(r.src)),
-                     repr(r.dst),
-                     repr(str(r.dstfs)),
-                     repr(str(' '.join(r.exclude))),
-                     repr(str(r.snap)),
-                     repr(nodes),
-                     repr(drpnodes),
-                     repr(str(r.bwlimit))]
-                )
-    except:
-        pass
-
-    try:
-        proxy.delete_ips(svc.svcname, rcEnv.nodename)
-        for rset in svc.get_res_sets("ip"):
-            for r in rset.resources:
-                proxy.register_ip(
-                    ['ip_svcname',
-                     'ip_dev',
-                     'ip_name',
-                     'ip_node',
-                     'ip_netmask'],
-                    [repr(svc.svcname),
-                     repr(r.ipDev),
-                     repr(r.ipName),
-                     repr(rcEnv.nodename),
-                     repr(str(r.mask))]
-                )
-    except:
-        pass
-
-    try:
-        proxy.delete_fss(svc.svcname)
-        for rset in svc.get_res_sets("fs"):
-            for r in rset.resources:
-                proxy.register_fs(
-                    ['fs_svcname',
-                     'fs_dev',
-                     'fs_mnt',
-                     'fs_mntopt',
-                     'fs_type'],
-                    [repr(svc.svcname),
-                     repr(r.device),
-                     repr(r.mountPoint),
-                     repr(r.mntOpt),
-                     repr(r.fsType)]
-                )
-    except:
-        pass
-
-    try:
-        proxy.delete_disks(svc.svcname, rcEnv.nodename)
-    except:
-        pass
-
-    for d in svc.disklist():
-        try:
-            proxy.register_disk(
-                ['disk_id',
-                 'disk_svcname',
-                 'disk_size',
-                 'disk_vendor',
-                 'disk_model',
-                 'disk_dg',
-                 'disk_nodename'],
-                [repr(disks.disk_id(d)),
-                 repr(svc.svcname),
-                 repr(disks.disk_size(d)),
-                 repr(disks.disk_vendor(d)),
-                 repr(disks.disk_model(d)),
-                 repr(str(disk_dg(d, svc))),
-                 repr(rcEnv.nodename)]
-            )
-        except:
-            #raise
-            pass
-
-    try:
-        import version
-        version = version.version
-    except:
-        version = "0";
-
-    try:
-        proxy.update_service(
-            ['svc_hostid',
-             'svc_name',
-             'svc_type',
-             'svc_nodes',
-             'svc_drpnode',
-             'svc_drpnodes',
-             'svc_comment',
-             'svc_drptype',
-             'svc_autostart',
-             'svc_app',
-             'svc_containertype',
-             'svc_envfile',
-             'svc_version',
-             'svc_drnoaction'],
-            [repr(hostid),
-             repr(svc.svcname),
-             repr(svc.svctype),
-             repr(' '.join(svc.nodes)),
-             repr(svc.drpnode),
-             repr(' '.join(svc.drpnodes)),
-             repr(svc.comment),
-             repr(svc.drp_type),
-             repr(svc.autostart_node),
-             repr(svc.app),
-             repr(svc.svcmode),
-             repr(envfile(svc.svcname)),
-             repr(version),
-             repr(svc.drnoaction)]
-        )
-    except:
-        pass
-
-    try:
-        svc.action('diskupdate')
-    except:
-        pass
-
-    try:
-        svc.action('syncnodes')
-    except:
-        pass
-
-    try:
-        svc.action('syncdrp')
-    except:
-        pass
-
-    try:
-        svc.action('syncupdate')
+        svc.action('push')
+        svc.action('syncall')
     except:
         pass

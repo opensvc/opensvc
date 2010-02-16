@@ -200,3 +200,149 @@ def svcmon_update(svc, status):
     except:
         pass
 
+def push_ips(svc):
+    proxy.delete_ips(svc.svcname, rcEnv.nodename)
+    for rset in svc.get_res_sets("ip"):
+        for r in rset.resources:
+            proxy.register_ip(
+                ['ip_svcname',
+                 'ip_dev',
+                 'ip_name',
+                 'ip_node',
+                 'ip_netmask'],
+                [repr(svc.svcname),
+                 repr(r.ipDev),
+                 repr(r.ipName),
+                 repr(rcEnv.nodename),
+                 repr(str(r.mask))]
+            )
+
+def push_fss(svc):
+    proxy.delete_fss(svc.svcname)
+    for rset in svc.get_res_sets("fs"):
+        for r in rset.resources:
+            proxy.register_fs(
+                ['fs_svcname',
+                 'fs_dev',
+                 'fs_mnt',
+                 'fs_mntopt',
+                 'fs_type'],
+                [repr(svc.svcname),
+                 repr(r.device),
+                 repr(r.mountPoint),
+                 repr(r.mntOpt),
+                 repr(r.fsType)]
+            )
+
+def push_rsyncs(svc):
+    proxy.delete_fss(svc.svcname)
+    for rset in svc.get_res_sets("fs"):
+        for r in rset.resources:
+            proxy.register_fs(
+                ['fs_svcname',
+                 'fs_dev',
+                 'fs_mnt',
+                 'fs_mntopt',
+                 'fs_type'],
+                [repr(svc.svcname),
+                 repr(r.device),
+                 repr(r.mountPoint),
+                 repr(r.mntOpt),
+                 repr(r.fsType)]
+            )
+
+def push_service(svc):
+    def envfile(svc):
+        envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
+        if not os.path.exists(envfile):
+            return
+        with open(envfile, 'r') as f:
+            buff = f.read()
+            return buff
+        return
+
+    try:
+        import version
+        version = version.version
+    except:
+        version = "0";
+
+    proxy.update_service(
+        ['svc_hostid',
+         'svc_name',
+         'svc_type',
+         'svc_nodes',
+         'svc_drpnode',
+         'svc_drpnodes',
+         'svc_comment',
+         'svc_drptype',
+         'svc_autostart',
+         'svc_app',
+         'svc_containertype',
+         'svc_envfile',
+         'svc_version',
+         'svc_drnoaction'],
+        [repr(hostid),
+         repr(svc.svcname),
+         repr(svc.svctype),
+         repr(' '.join(svc.nodes)),
+         repr(svc.drpnode),
+         repr(' '.join(svc.drpnodes)),
+         repr(svc.comment),
+         repr(svc.drp_type),
+         repr(svc.autostart_node),
+         repr(svc.app),
+         repr(svc.svcmode),
+         repr(envfile(svc.svcname)),
+         repr(version),
+         repr(svc.drnoaction)]
+    )
+
+def delete_services():
+    proxy.delete_services(hostid)
+
+def push_disks(svc):
+    def disk_dg(dev, svc):
+        for rset in svc.get_res_sets("disk.vg"):
+            for vg in rset.resources:
+                if vg.is_disabled():
+                    continue
+                if not vg.name in disklist_cache:
+                    disklist_cache[vg.name] = vg.disklist()
+                if dev in disklist_cache[vg.name]:
+                    return vg.name
+        return
+
+    di = __import__('rcDiskInfo'+sysname)
+    disks = di.diskInfo()
+    disklist_cache = {}
+
+    proxy.delete_disks(svc.svcname, rcEnv.nodename)
+
+    for d in svc.disklist():
+        proxy.register_disk(
+            ['disk_id',
+             'disk_svcname',
+             'disk_size',
+             'disk_vendor',
+             'disk_model',
+             'disk_dg',
+             'disk_nodename'],
+            [repr(disks.disk_id(d)),
+             repr(svc.svcname),
+             repr(disks.disk_size(d)),
+             repr(disks.disk_vendor(d)),
+             repr(disks.disk_model(d)),
+             repr(str(disk_dg(d, svc))),
+             repr(rcEnv.nodename)]
+        )
+
+def push_all(svcs):
+    proxy.delete_service_list([svc.svcname for svc in svcs])
+    for svc in svcs:
+        push_rsyncs(svc)
+        push_ips(svc)
+        push_fss(svc)
+        push_disks(svc)
+        push_service(svc)
+

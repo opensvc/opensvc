@@ -56,6 +56,8 @@ action_desc = {
 	'syncquiesce':	'trigger a storage hardware-assisted disk synchronization',
 	'syncbreak':	'split a storage hardware-assisted disk synchronization',
 	'syncresync':	're-establish a broken storage hardware-assisted synchronization',
+	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
+	'push':         'push service configuration to database',
 }
 
 def format_desc(svc=False):
