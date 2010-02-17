@@ -18,6 +18,7 @@
 #
 
 from rcUtilities import call, which
+import rcExceptions as ex
 
 class diskInfo(object):
     def __init__(self):
@@ -45,6 +46,8 @@ class diskInfo(object):
     def scan(self, dev):
         cmd = ["scsimgr", "-p", "get_attr", "-D", dev, "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         (ret, out) = call(cmd)
+        if ret != 0:
+            raise ex.excError
         (wwid, foo, vid, pid, size) = out.split(':')
         dev = self.devkey(dev)
         wwid = wwid.replace('0x', '')
