@@ -30,7 +30,6 @@ pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
 
 import svcBuilder
-import xmlrpcClient
 
 svcs = svcBuilder.build_services()
 
