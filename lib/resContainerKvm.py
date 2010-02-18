@@ -19,6 +19,7 @@
 import rcStatus
 import resources as Res
 import time
+import os
 import rcExceptions as ex
 from rcUtilities import qcall
 
@@ -67,6 +68,14 @@ class Kvm(Res.Resource):
         raise ex.excError("Waited too long for shutdown")
 
     def kvm_start(self):
+        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')
+        if not os.path.exists(cf):
+            self.log.error("%s not found"%cf)
+            raise ex.excError
+        cmd = ['virsh', 'define', cf]
+        (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
         cmd = ['virsh', 'start', self.name]
         (ret, buff) = self.vcall(cmd)
 
@@ -90,7 +99,7 @@ class Kvm(Res.Resource):
 
     def is_up(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
         if "running" in out.split():
