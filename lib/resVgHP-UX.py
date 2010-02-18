@@ -96,19 +96,24 @@ class Vg(resDg.Dg):
             instance[l[0].replace('0x', '')] = l[1]
 
         with open(self.mkfsfile_name(), 'r') as f:
+            err = 0
             for line in f.readlines():
-               a = line.replace('\n', '').split(':')
-               if len(a) == 0:
-                   continue
-               if os.path.exists(a[0]):
-                   continue
-               if a[1] not in instance.keys():
-                   self.log.error("expected lun %s not present on this node"%a[1])
-                   raise ex.excError
-               cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
-               (ret, buff) = self.vcall(cmd)
-               if ret != 0:
-                   raise ex.excError
+                a = line.replace('\n', '').split(':')
+                if len(a) == 0:
+                    continue
+                if os.path.exists(a[0]):
+                    continue
+                if a[1] not in instance.keys():
+                    self.log.error("expected lun %s not present on node %s"%(a[1], rcEnv.nodename))
+                    err += 1
+                    continue
+                cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
+                (ret, buff) = self.vcall(cmd)
+                if ret != 0:
+                    err += 1
+                    continue
+        if err > 0:
+            raise ex.excError
 
     def diskupdate(self):
         """ this one is exported as a service command line arg
