@@ -44,12 +44,13 @@ class diskInfo(object):
         return dev
 
     def scan(self, dev):
+        dev = self.devkey(dev)
         cmd = ["scsimgr", "-p", "get_attr", "-D", dev, "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         (ret, out) = call(cmd)
         if ret != 0:
-            raise ex.excError
+            self.h[dev] = dict(wwid="", vid="", pid="", size="")
+            return
         (wwid, foo, vid, pid, size) = out.split(':')
-        dev = self.devkey(dev)
         wwid = wwid.replace('0x', '')
         if len(size) != 0:
             size = int(size)/2097152
