@@ -301,7 +301,7 @@ def add_mandatory_syncs(svc):
     src += list_kvmconffiles()
     src += list_hpvmconffiles()
     dst = os.path.join("/")
-    exclude = []
+    exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
     r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
                        exclude=['-R']+exclude, target=targethash,
