@@ -30,7 +30,7 @@ import re
 class Pool(resDg.Dg):
     """ basic pool resource
     """
-    def __init__(self, rid=rid, name=None, type=None,
+    def __init__(self, rid=None, name=None, type=None,
                  optional=False, disabled=False):
         self.label = 'pool ' + name
         resDg.Dg.__init__(self, rid=rid, name=name,

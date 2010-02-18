@@ -209,7 +209,7 @@ def add_pools(svc, conf):
             continue
         name = conf.get(s, "poolname")
         pool = __import__('resZfs')
-        r = pool.Pool(rid=rid, name=name)
+        r = pool.Pool(rid=s, name=name)
         set_optional_and_disable(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
