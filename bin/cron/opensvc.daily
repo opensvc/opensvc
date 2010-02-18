@@ -35,6 +35,7 @@ svcs = svcBuilder.build_services()
 
 for svc in svcs:
     try:
+        svc.action('diskupdate')
         svc.action('push')
         svc.action('syncall')
     except:
