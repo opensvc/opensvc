@@ -270,6 +270,7 @@ def push_service(svc):
     proxy.update_service(
         ['svc_hostid',
          'svc_name',
+         'svc_vmname',
          'svc_type',
          'svc_nodes',
          'svc_drpnode',
@@ -284,6 +285,7 @@ def push_service(svc):
          'svc_drnoaction'],
         [repr(hostid),
          repr(svc.svcname),
+         repr(svc.vmname),
          repr(svc.svctype),
          repr(' '.join(svc.nodes)),
          repr(svc.drpnode),

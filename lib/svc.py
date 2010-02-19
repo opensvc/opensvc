@@ -77,6 +77,7 @@ class Svc(Resource, Freezer):
             delattr(self.mount)
             delattr(self.umount)
         self.svcname = svcname
+        self.vmname = ""
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
