@@ -29,6 +29,7 @@ class SvcLxc(svc.Svc):
     def __init__(self, svcname, vmname=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         self += lxc.Lxc(vmname)
+        self.vmname = vmname
         self.status_types += ["container.lxc"]
 
 
