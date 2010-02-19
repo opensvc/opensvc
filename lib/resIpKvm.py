@@ -31,7 +31,7 @@ class Ip(Res.Ip):
     def check_ping(self):
         count=1
         timeout=5
-        cmd = ['ping', self.addr, '-n', repr(count), '-m', repr(timeout)]
+        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.addr]
         ret = qcall(cmd)
         if ret == 0:
             return True
