@@ -105,19 +105,24 @@ def nodes_to_sync(self, type=None, state="syncable"):
 
 def get_timestamp_filename(self, node):
     sync_timestamp_d = os.path.join(rcEnv.pathvar, 'sync', node)
-    sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.dst.replace('/', '_'))
+    sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.rid)
     return sync_timestamp_f
 
 def sync_timestamp(self, node):
     sync_timestamp_f = get_timestamp_filename(self, node)
     sync_timestamp_d = os.path.dirname(sync_timestamp_f)
+    sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
     if not os.path.isdir(sync_timestamp_d):
         os.makedirs(sync_timestamp_d ,0755)
+    if not os.path.isdir(sync_timestamp_d_src):
+        os.makedirs(sync_timestamp_d_src ,0755)
     with open(sync_timestamp_f, 'w') as f:
         f.write(str(datetime.datetime.now())+'\n')
         f.close()
     cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, node+':/']
     self.vcall(cmd)
+    import shutil
+    shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
 
 def check_timestamp(self, node, comp="less", delay=0):
     if self.svc.force:
