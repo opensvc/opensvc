@@ -365,6 +365,9 @@ def add_syncs_netapp(svc, conf):
             sync_min_delay = 30
 
         filers = {}
+        if 'filer' in conf.options(s):
+            for n in svc.nodes | svc.drpnodes:
+                filers[n] = conf.get(s, 'filer')
         for o in conf.options(s):
             if 'filer@' not in o:
                 continue
