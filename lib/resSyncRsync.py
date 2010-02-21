@@ -81,6 +81,25 @@ def remote_node_type(self, node, type):
     return False
 
 def nodes_to_sync(self, type=None, state="syncable"):
+    """ DRP nodes are not allowed to sync nodes nor drpnodes
+    """
+    if rcEnv.nodename in self.svc.drpnodes:
+        return set([])
+
+    """Accept to sync from here only if the service is up
+       Also accept n/a status, because it's what the overall status
+       ends up to be when only sync#* are specified using --rid
+
+       sync#i1 is an exception, because we want all prd nodes to
+       sync their system files to all drpnodes regardless of the service
+       state
+    """
+    self.get_svcstatus()
+    if self.svcstatus['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
+       self.rid != "sync#i1":
+        self.log.debug("won't sync this resource for a service not up")
+        return set([])
+
     """Discard the local node from the set
     """
     if type in self.target.keys():
@@ -112,6 +131,7 @@ def sync_timestamp(self, node):
     sync_timestamp_f = get_timestamp_filename(self, node)
     sync_timestamp_d = os.path.dirname(sync_timestamp_f)
     sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
+    sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
     if not os.path.isdir(sync_timestamp_d):
         os.makedirs(sync_timestamp_d ,0755)
     if not os.path.isdir(sync_timestamp_d_src):
@@ -123,6 +143,8 @@ def sync_timestamp(self, node):
     self.vcall(cmd)
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
+    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f_src, node+':/']
+    self.vcall(cmd)
 
 def check_timestamp(self, node, comp="less", delay=0):
     if self.svc.force:
@@ -173,6 +195,7 @@ def sync(self, type):
         self.log.debug('%s => %s sync not applicable to %s',
                   (src, self.dst, type))
         return 0
+
     targets = nodes_to_sync(self, type)
 
     if len(src) == 0:
@@ -214,15 +237,6 @@ class Rsync(Res.Resource):
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
             self.log.debug("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
-
-        """Accept to sync from here only if the service is up
-           Also accept n/a status, because it's what the overall status
-           ends up to be when only sync#* are specified using --rid
-        """
-        status = self.svc.group_status(excluded_groups=set(["sync"]))
-        if status['overall'].status not in [rcStatus.UP, rcStatus.NA]:
-            self.log.debug("won't sync a service not up")
             raise ex.excAbortAction
 
         """ Is there at least one node to sync ?
@@ -273,37 +287,32 @@ class Rsync(Res.Resource):
         try:
             sync(self, "nodes")
         except ex.syncNoFilesToSync:
+            self.log.debug("no file to sync")
             pass
         except ex.syncNoNodesToSync:
             self.log.debug("no node to sync")
-            raise ex.excAbortAction
+            pass
 
     def syncdrp(self):
         try:
             sync(self, "drpnodes")
         except ex.syncNoFilesToSync:
+            self.log.debug("no file to sync")
             pass
         except ex.syncNoNodesToSync:
             self.log.debug("no node to sync")
             pass
 
     def status(self):
-        nodes = 0
-        if 'nodes' in self.target:
-            nodes += len(self.target['nodes']-set([rcEnv.nodename]))
-        if 'drpnodes' in self.target:
-            nodes += len(self.target['drpnodes']-set([rcEnv.nodename]))
-        if nodes == 0:
-            return rcStatus.NA
-
-        status = self.svc.group_status(excluded_groups=set(["sync"]))
-        if status['overall'].status != rcStatus.UP:
-            if self.internal and "cache" in self.dst:
-                return rcStatus.NA
+        self.get_svcstatus()
+        if self.svcstatus['overall'].status != rcStatus.UP:
             if need_sync(self, rcEnv.nodename):
                 return rcStatus.WARN
             else:
                 return rcStatus.UP
+
+        if rcEnv.nodename in self.target['drpnodes']:
+            return rcStatus.NA
 
         nodes = 0
         try:
@@ -340,8 +349,16 @@ class Rsync(Res.Resource):
         self.internal = internal
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
+        self.svcstatus = {}
         Res.Resource.__init__(self, rid=rid, type="sync.rsync",
                               optional=optional, disabled=disabled)
+
+    def refresh_svcstatus(self):
+        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync"]))
+
+    def get_svcstatus(self):
+        if len(self.svcstatus) == 0:
+            self.refresh_svcstatus()
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\
