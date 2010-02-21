@@ -20,6 +20,7 @@ import re
 import os
 import rcExceptions as ex
 import resDg
+from rcGlobalEnv import rcEnv
 
 def get_blockdev_sd_slaves(syspath):
     slaves = set()
@@ -81,6 +82,10 @@ class Vg(resDg.Dg):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
+        cmd = [ 'vgchange', '--addtag', '@'+rcEnv.nodename, self.name ]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -90,6 +95,10 @@ class Vg(resDg.Dg):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return
+        cmd = [ 'vgchange', '--deltag', '@'+rcEnv.nodename, self.name ]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
