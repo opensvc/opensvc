@@ -61,7 +61,7 @@ def remote_node_type(self, node, type):
         self.log.error('expected remote node type is bogus: %s'%type)
         raise ex.excError
 
-    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode') 
+    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode')
 
     if node not in cache_remote_node_type:
         cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
@@ -80,7 +80,7 @@ def remote_node_type(self, node, type):
                    (node, expected_type, node, host_mode_f))
     return False
 
-def nodes_to_sync(self, type=None, state="syncable"):
+def nodes_to_sync(self, type=None, state="syncable", status=False):
     """ DRP nodes are not allowed to sync nodes nor drpnodes
     """
     if rcEnv.nodename in self.svc.drpnodes:
@@ -110,7 +110,9 @@ def nodes_to_sync(self, type=None, state="syncable"):
     targets -= set([rcEnv.nodename])
 
     for node in targets.copy():
-        if not remote_node_type(self, node, type):
+        if not status and not remote_node_type(self, node, type):
+            targets -= set([node])
+        if not status and not remote_fs_mounted(self, node):
             targets -= set([node])
         if state == "syncable" and not can_sync(self, node):
             targets -= set([node])
@@ -205,11 +207,6 @@ def sync(self, type):
     bwlimit = bwlimit_option(self)
 
     for node in targets:
-        if not can_sync(self, node):
-            self.log.debug("skip sync of %s to %s because last sync too close"%(self.src, node))
-            continue
-        if not remote_fs_mounted(self, node):
-            continue
         dst = node + ':' + self.dst
         cmd = ['rsync'] + self.options + bwlimit + self.exclude + src
         cmd.append(dst)
@@ -316,11 +313,11 @@ class Rsync(Res.Resource):
 
         nodes = 0
         try:
-            nodes += len(nodes_to_sync(self, 'nodes', state="late"))
+            nodes += len(nodes_to_sync(self, 'nodes', state="late", status=True))
         except ex.syncNoNodesToSync:
             pass
         try:
-            nodes += len(nodes_to_sync(self, 'drpnodes', state="late"))
+            nodes += len(nodes_to_sync(self, 'drpnodes', state="late", status=True))
         except ex.syncNoNodesToSync:
             pass
         if nodes == 0:
