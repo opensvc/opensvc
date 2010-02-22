@@ -141,11 +141,9 @@ def sync_timestamp(self, node):
     with open(sync_timestamp_f, 'w') as f:
         f.write(str(datetime.datetime.now())+'\n')
         f.close()
-    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, node+':/']
-    self.vcall(cmd)
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
-    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f_src, node+':/']
+    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, node+':/']
     self.vcall(cmd)
 
 def check_timestamp(self, node, comp="less", delay=0):
