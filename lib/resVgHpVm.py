@@ -52,8 +52,75 @@ class Vg(resVg.Vg):
     def diskupdate(self):
         if self.svc.status() != 0:
             self.do_mksf()
+            self.do_share()
         else:
             self.write_mksf()
+            self.write_share()
+
+    def sharefile_name(self):
+        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
+
+    def write_share(self):
+        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
+        (ret, buff) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        if len(buff) == 0:
+            return
+        disklist = self.disklist()
+        with open(self.sharefile_name(), 'w') as f:
+            for line in buff.split('\n'):
+                dev = line.split(':')[0]
+                if len(dev) == 0:
+                    continue
+                if dev not in disklist:
+                    continue
+                if 'SHARE=YES' in line:
+                    f.write(dev+':YES\n')
+                else:
+                    f.write(dev+':NO\n')
+
+    def do_share(self):
+        if not os.path.exists(self.sharefile_name()):
+            return
+        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
+        (ret, buff) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        devs = set([])
+        for line in buff.split('\n'):
+            l = line.split(':')
+            if len(l) == 0:
+                continue
+            if len(l[0]) == 0:
+                continue
+            devs |= set([l[0]])
+        with open(self.sharefile_name(), 'r') as f:
+            err = 0
+            for line in f.readlines():
+                l = line.split(':')
+                if len(l) != 2:
+                    continue
+                dev = l[0]
+                if len(dev) == 0:
+                    continue
+                if not os.path.exists(dev):
+                    continue
+                if dev not in devs:
+                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-a', 'gdev:'+dev]
+                    (ret, out) = self.vcall(cmd)
+                    if ret != 0:
+                        raise ex.excError
+                if 'YES' in l[1]:
+                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=YES']
+                else:
+                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=NO']
+                (ret, buff) = self.vcall(cmd)
+                if ret != 0:
+                    err += 1
+                    continue
+        if err > 0:
+            raise ex.excError
 
     def disklist(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.svc.vmname]

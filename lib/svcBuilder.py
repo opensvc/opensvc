@@ -279,10 +279,14 @@ def add_mandatory_syncs(svc):
             return a
         guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', svc.vmname)
         uuid = os.path.realpath(guest)
+        share = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.share')
         if os.path.exists(guest):
             a.append(guest)
         if os.path.exists(uuid):
             a.append(uuid)
+        files = glob.glob(share)
+        if len(files) > 0:
+            a += files
         return a
 
     """Mandatory files to sync:
