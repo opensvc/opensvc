@@ -45,10 +45,14 @@ class Mount(Res.Resource):
                 self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
                 raise
             self.log.info("create missing mountpoint %s" % self.mountPoint)
+        self.fsck()
 
     def startstandby(self):
         if rcEnv.nodename in self.always_on:
              self.start()
+
+    def fsck(self):
+        self.log.info("fsck is not implemented")
 
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\

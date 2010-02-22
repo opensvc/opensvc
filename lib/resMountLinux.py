@@ -24,7 +24,7 @@ import os
 import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
-from rcUtilities import qcall, protected_mount
+from rcUtilities import qcall, protected_mount, which
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
@@ -77,6 +77,24 @@ class Mount(Res.Mount):
         else:
             if self.is_up(): return rcStatus.UP
             else: return rcStatus.DOWN
+
+    def fsck(self):
+        bin_h = {
+            'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-C', '-1', '-p', self.device]},
+            'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-C', '-1', '-p', self.device]},
+            'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-C', '-1', '-p', self.device]},
+        }
+        if self.fsType not in bin_h:
+            self.log.info("fsck not implemented for %s"%self.fsType)
+            return
+        bin = bin_h[self.fsType]['bin']
+        cmd = bin_h[self.fsType]['cmd']
+        if which(bin) is None:
+            self.log.warn("%s not found. bypass."%self.fsType)
+            return
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def start(self):
         if self.Mounts is None:
