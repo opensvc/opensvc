@@ -91,6 +91,7 @@ class Mount(Res.Mount):
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
+        self.fsck()
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
         if self.fsType != "":

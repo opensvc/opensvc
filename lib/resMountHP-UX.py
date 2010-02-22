@@ -65,7 +65,7 @@ class Mount(Res.Mount):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on)
         self.fsck_h = {
-            'vxfs': {'bin': 'fsck', 'cmd': ['fsck.vxfs', '-y', self.device]},
+            'vxfs': {'bin': 'fsck', 'cmd': ['fsck', '-F', 'vxfs', '-y', self.device]},
         } 
 
     def is_up(self):
@@ -81,6 +81,7 @@ class Mount(Res.Mount):
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
+        self.fsck()
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
         if self.fsType != "":

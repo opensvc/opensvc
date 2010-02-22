@@ -53,6 +53,8 @@ class Vg(resDg.Dg):
         return False
 
     def dsf_name(self, dev):
+        dev = dev.replace("/dev/disk", "/dev/rdisk")
+        dev = dev.replace("/dev/dsk", "/dev/rdsk")
         cmd = ['scsimgr', 'get_attr', '-D', dev, '-a', 'device_file', '-p']
         (ret, out) = self.call(cmd)
         if ret != 0:
