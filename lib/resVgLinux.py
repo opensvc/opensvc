@@ -78,14 +78,36 @@ class Vg(resDg.Dg):
             return True
         return False
 
-    def do_start(self):
-        if self.is_up():
-            self.log.info("%s is already up" % self.name)
-            return 0
+    def remove_tag(self, tag):
+        cmd = [ 'vgchange', '--deltag', '@'+tag, self.name ]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+    def remove_tags(self):
+        cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        out = out.strip(' \n')
+        tags = out.split(',')
+        for tag in tags:
+            if len(tag) == 0:
+                continue
+            self.remove_tag(tag)
+
+    def add_tags(self):
         cmd = [ 'vgchange', '--addtag', '@'+rcEnv.nodename, self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def do_start(self):
+        if self.is_up():
+            self.log.info("%s is already up" % self.name)
+            return 0
+        self.remove_tags()
+        self.add_tags()
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -95,10 +117,7 @@ class Vg(resDg.Dg):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return
-        cmd = [ 'vgchange', '--deltag', '@'+rcEnv.nodename, self.name ]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
+        self.remove_tags()
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
