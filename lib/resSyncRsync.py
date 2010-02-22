@@ -303,6 +303,11 @@ class Rsync(Res.Resource):
     def status(self):
         self.get_svcstatus()
         if self.svcstatus['overall'].status != rcStatus.UP:
+            target = set([])
+            for i in self.target:
+                target |= self.target[i]
+            if rcEnv.nodename not in target:
+                return rcStatus.NA
             if need_sync(self, rcEnv.nodename):
                 return rcStatus.WARN
             else:
