@@ -64,6 +64,9 @@ class Mount(Res.Mount):
     def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([])):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on)
+        self.fsck_h = {
+            'vxfs': {'bin': 'fsck', 'cmd': ['fsck.vxfs', '-y', self.device]},
+        } 
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)

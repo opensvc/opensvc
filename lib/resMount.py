@@ -21,7 +21,9 @@
 
 import resources as Res
 import os
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import which
 
 class Mount(Res.Resource):
     """Define a mount resource 
@@ -36,6 +38,7 @@ class Mount(Res.Resource):
         self.mntOpt = mntOpt
         self.always_on = always_on
         self.label = device + '@' + mountPoint
+        self.fsck_h = {}
 
     def start(self):
         if not os.path.exists(self.mountPoint):
@@ -52,7 +55,17 @@ class Mount(Res.Resource):
              self.start()
 
     def fsck(self):
-        self.log.info("fsck is not implemented")
+        if self.fsType not in self.fsck_h:
+            self.log.info("fsck not implemented for %s"%self.fsType)
+            return
+        bin = self.fsck_h[self.fsType]['bin']
+        cmd = self.fsck_h[self.fsType]['cmd']
+        if which(bin) is None:
+            self.log.warn("%s not found. bypass."%self.fsType)
+            return
+        (ret, out) = self.vcall(cmd)
+        if ret != 0: 
+            raise ex.excError 
 
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
