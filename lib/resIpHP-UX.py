@@ -32,6 +32,10 @@ class Ip(Res.Ip):
             return True
         return False
 
+    def arp_announce(self):
+       """ arp_announce job is done by HP-UX ifconfig... """
+        return
+
     def startip_cmd(self):
         cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
         return self.vcall(cmd)
