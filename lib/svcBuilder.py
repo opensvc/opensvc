@@ -134,7 +134,7 @@ def add_ips(svc, conf):
         elif conf.has_option(s, "ipdev"):
             ipdev = conf.get(s, "ipdev")
         else:
-            svc.log.debug('add_ips ipdev not found in ip section' + s)
+            svc.log.debug('add_ips ipdev not found in ip section %s'%s)
             ipdev = None
             continue
         if conf.has_option(s, "netmask"):
@@ -163,7 +163,11 @@ def add_loops(svc, conf):
     for s in conf.sections():
         if re.match('loop#[0-9]', s, re.I) is None:
             continue
-        file = conf.get(s, "file")
+        if conf.has_option(s, "file"):
+            file = conf.get(s, "file")
+        else:
+            self.log.error("file must be set in section %s"%s)
+            return
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(rid=s, loopFile=file)
         set_optional_and_disable(r, conf, s)
@@ -174,18 +178,25 @@ def add_vgs(svc, conf):
     section. Vg objects are stored in a list in the service object.
     """
     for s in conf.sections():
+        kwargs = {}
         if re.match('vg#[0-9]', s, re.I) is None:
             continue
-        name = conf.get(s, "vgname")
-        if conf.has_option(s, "dsf"):
-            dsf = conf.getboolean(s, "dsf")
+
+        if not conf.has_option(s, "vgname"):
+            self.log.error("vgname must be set in section %s"%s)
+            return
         else:
-            dsf = True
-        always_on = always_on_nodes_set(svc, conf, s)
+            kwargs['name'] = conf.get(s, "vgname")
+
+        if conf.has_option(s, "dsf"):
+            kwargs['dsf'] = conf.getboolean(s, "dsf")
+
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['rid'] = s
+
         vg = __import__('resVg'+rcEnv.sysname)
-        r = vg.Vg(rid=s, name=name, always_on=always_on)
+        r = vg.Vg(**kwargs)
         set_optional_and_disable(r, conf, s)
-        r.dsf = dsf
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -389,6 +400,7 @@ def add_syncs_symclone(svc, conf):
 
 def add_syncs_netapp(svc, conf):
     for s in conf.sections():
+        kwargs = {}
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -407,18 +419,14 @@ def add_syncs_netapp(svc, conf):
             return
 
         if conf.has_option(s, 'sync_max_delay'):
-            sync_max_delay = conf.getint(s, 'sync_max_delay')
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
         elif conf.has_option('default', 'sync_max_delay'):
-            sync_max_delay = conf.getint('default', 'sync_max_delay')
-        else:
-            sync_max_delay = 1440
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
 
         if conf.has_option(s, 'sync_min_delay'):
-            sync_min_delay = conf.getint(s, 'sync_min_delay')
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
         elif conf.has_option('default', 'sync_min_delay'):
-            sync_min_delay = conf.getint('default', 'sync_min_delay')
-        else:
-            sync_min_delay = 30
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
 
         filers = {}
         if 'filer' in conf.options(s):
@@ -432,15 +440,12 @@ def add_syncs_netapp(svc, conf):
         if rcEnv.nodename not in filers:
             log.error("config file section %s must have filer@%s set" %(s, rcEnv.nodename))
 
-        path = conf.get(s, 'path')
-        user = conf.get(s, 'user')
+        kwargs['filers'] = filers
+        kwargs['path'] = conf.get(s, 'path')
+        kwargs['user'] = conf.get(s, 'user')
+        kwargs['rid'] = s
 
-        r = resSyncNetapp.syncNetapp(rid=s,
-                                     filers=filers,
-                                     path=path,
-                                     sync_min_delay=sync_min_delay,
-                                     sync_max_delay=sync_max_delay,
-                                     user=user)
+        r = resSyncNetapp.syncNetapp(**kwargs)
         set_optional_and_disable(r, conf, s)
         svc += r
 
@@ -451,6 +456,7 @@ def add_syncs_rsync(svc, conf):
     add_mandatory_syncs(svc)
 
     for s in conf.sections():
+        kwargs = {}
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -461,63 +467,45 @@ def add_syncs_rsync(svc, conf):
         if not conf.has_option(s, 'src') or \
            not conf.has_option(s, 'dst'):
             log.error("config file section %s must have src and dst set" % s)
-            return 1
-        src = conf.get(s, "src").split()
-        dst = conf.get(s, "dst")
+            return
+
+        kwargs['src'] = conf.get(s, "src").split()
+        kwargs['dst'] = conf.get(s, "dst")
 
         if conf.has_option(s, 'dstfs'):
-            dstfs = conf.get(s, 'dstfs')
-        else:
-            dstfs = None
+            kwargs['dstfs'] = conf.get(s, 'dstfs')
 
         if conf.has_option(s, 'exclude'):
-            exclude = conf.get(s, 'exclude').split()
-        else:
-            exclude = []
+            kwargs['exclude'] = conf.get(s, 'exclude').split()
 
         if conf.has_option(s, 'snap'):
-            snap = conf.getboolean(s, 'snap')
-        else:
-            snap = False
+            kwargs['snap'] = conf.getboolean(s, 'snap')
 
         if conf.has_option(s, 'target'):
             target = conf.get(s, 'target').split()
         else:
-            target = ['nodes', 'drpnodes']
+            target = []
 
         if conf.has_option(s, 'bwlimit'):
-            bwlimit = conf.get(s, 'bwlimit')
-        else:
-            bwlimit = None
+            kwargs['bwlimit'] = conf.get(s, 'bwlimit')
 
         if conf.has_option(s, 'sync_min_delay'):
-            sync_min_delay = conf.getint(s, 'sync_min_delay')
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
         elif conf.has_option('default', 'sync_min_delay'):
-            sync_min_delay = conf.getint('default', 'sync_min_delay')
-        else:
-            sync_min_delay = 30
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
 
         if conf.has_option(s, 'sync_max_delay'):
-            sync_max_delay = conf.getint(s, 'sync_max_delay')
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
         elif conf.has_option('default', 'sync_max_delay'):
-            sync_max_delay = conf.getint('default', 'sync_max_delay')
-        else:
-            sync_max_delay = 1440
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
 
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
+        kwargs['target'] = targethash
+        kwargs['rid'] = s
 
-        r = resSyncRsync.Rsync(rid=s,
-                           src=src,
-                           dst=dst,
-                           exclude=exclude,
-                           target=targethash,
-                           dstfs=dstfs,
-                           bwlimit=bwlimit,
-                           sync_min_delay=sync_min_delay,
-                           sync_max_delay=sync_max_delay,
-                           snap=snap)
+        r = resSyncRsync.Rsync(**kwargs)
         set_optional_and_disable(r, conf, s)
         svc += r
 

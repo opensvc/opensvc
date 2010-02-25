@@ -26,9 +26,10 @@ from rcGlobalEnv import rcEnv
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]),
+                 always_on=set([]), dsf=True,
                  disabled=False, optional=False):
         self.label = name
+        self.dsf = dsf
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
