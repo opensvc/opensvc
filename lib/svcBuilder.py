@@ -33,6 +33,7 @@ import rcLogger
 import rcAddService
 import resSyncRsync
 import resSyncNetapp
+import resSyncSymclone
 import rcExceptions as ex
 
 check_privs()
@@ -334,6 +335,57 @@ def add_mandatory_syncs(svc):
 def add_syncs(svc, conf):
     add_syncs_rsync(svc, conf)
     add_syncs_netapp(svc, conf)
+    add_syncs_symclone(svc, conf)
+
+def add_syncs_symclone(svc, conf):
+    for s in conf.sections():
+        symdevs = []
+        kwargs = {}
+
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'symclone':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        if not conf.has_option(s, 'symdg'):
+            log.error("config file section %s must have symdg set" % s)
+            return
+        else:
+            kwargs['symdg'] = conf.get(s, 'symdg')
+
+        if conf.has_option(s, 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+
+        if conf.has_option(s, 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
+        elif conf.has_option('default', 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+
+
+        if 'symdevs@'+rcEnv.nodename in conf.options(s):
+            symdevs = conf.get(s, 'symdevs@'+rcEnv.nodename).split()
+        if 'symdevs' in conf.options(s) and symdevs == []:
+            symdevs = conf.get(s, 'symdevs').split()
+        if len(symdevs) == 0:
+            log.error("config file section %s must have symdevs or symdevs@node set" % s)
+            return
+        else:
+            kwargs['symdevs'] = symdevs
+
+        if conf.has_option(s, 'precopy_timeout'):
+            kwargs['precopy_timeout'] = conf.getint(s, 'precopy_timeout')
+
+        kwargs['rid'] = s
+        r = resSyncSymclone.syncSymclone(**kwargs)
+        set_optional_and_disable(r, conf, s)
+        svc += r
 
 def add_syncs_netapp(svc, conf):
     for s in conf.sections():
