@@ -33,7 +33,7 @@ class Ip(Res.Ip):
         return False
 
     def arp_announce(self):
-       """ arp_announce job is done by HP-UX ifconfig... """
+        """ arp_announce job is done by HP-UX ifconfig... """
         return
 
     def startip_cmd(self):
