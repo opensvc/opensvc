@@ -38,8 +38,8 @@ class HpVm(Res.Resource):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def ping(self):
-        count=1
-        timeout=1
+        count = 1
+        timeout = 1
         cmd = ['ping', self.name, '-n', repr(count), '-m', repr(timeout)]
         ret = qcall(cmd)
         if ret == 0:
@@ -47,7 +47,7 @@ class HpVm(Res.Resource):
         return False
 
     def operational(self):
-        timeout=1
+        timeout = 1
         cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'PasswordAuthentication=no', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
         ret = qcall(cmd)
         if ret == 0:
@@ -55,17 +55,19 @@ class HpVm(Res.Resource):
         return False
 
     def wait_for_startup(self):
-        for tick in range(self.startup_timeout):
+        delay = 5
+        for tick in range(self.startup_timeout/delay):
             if self.is_up() and self.ping() and self.operational():
                 return
-            time.sleep(1)
+            time.sleep(delay)
         raise ex.excError("Waited too long for startup")
 
     def wait_for_shutdown(self):
-        for tick in range(self.shutdown_timeout):
+        delay = 5
+        for tick in range(self.shutdown_timeout/delay):
             if not self.is_up():
                 return
-            time.sleep(1)
+            time.sleep(delay)
         raise ex.excError("Waited too long for shutdown")
 
     def hpvm_start(self):
@@ -75,6 +77,12 @@ class HpVm(Res.Resource):
             raise ex.excError
 
     def hpvm_stop(self):
+        cmd = ['/opt/hpvm/bin/hpvmstop', '-g', '-F', '-P', self.name]
+        (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+    def hpvm_forcestop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-F', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
         if ret != 0:
@@ -90,8 +98,11 @@ class HpVm(Res.Resource):
     def stop(self):
         if not self.is_up():
             self.log.info("hpvm container %s already stopped" % self.name)
-            return 0
+            return
         self.hpvm_stop()
+        self.wait_for_shutdown()
+        if self.is_up():
+            self.hpvm_forcestop()
         self.wait_for_shutdown()
 
     def is_up(self):

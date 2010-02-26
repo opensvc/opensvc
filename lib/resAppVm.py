@@ -28,6 +28,10 @@ class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
     def checks(self):
+        cmd = self.prefix + ['pwd']
+        ret = qcall(cmd)
+        if ret != 0:
+            return False
         cmd = self.prefix + ['test', '-d', self.app_d]
         ret = qcall(cmd)
         if ret != 0:
