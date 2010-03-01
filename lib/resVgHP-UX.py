@@ -53,10 +53,13 @@ class Vg(resDg.Dg):
             return True
         return False
 
-    def dsf_name(self, dev):
+    def dev2char(self, dev):
         dev = dev.replace("/dev/disk", "/dev/rdisk")
         dev = dev.replace("/dev/dsk", "/dev/rdsk")
-        cmd = ['scsimgr', 'get_attr', '-D', dev, '-a', 'device_file', '-p']
+        return dev
+
+    def dsf_name(self, dev):
+        cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(dev), '-a', 'device_file', '-p']
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise ex.excError
@@ -79,7 +82,7 @@ class Vg(resDg.Dg):
                     return
                 a = line.split(':')[0]
                 if '/dev/pt/' not in a and '/dev/rdisk/disk' not in a and self.dsf_name(a) in dsf_names:
-                    cmd = ['scsimgr', 'get_attr', '-D', a, '-a', 'wwid', '-p']
+                    cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(a), '-a', 'wwid', '-p']
                     (ret, out) = self.call(cmd)
                     if ret != 0:
                         raise ex.excError

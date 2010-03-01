@@ -43,8 +43,13 @@ class diskInfo(object):
         dev = dev.replace("/dev/dsk/", "")
         return dev
 
+    def dev2char(self, dev):
+        dev = dev.replace("/dev/disk/", "/dev/rdisk/")
+        dev = dev.replace("/dev/dsk/", "/dev/rdsk/")
+        return dev
+
     def scan(self, dev):
-        cmd = ["scsimgr", "-p", "get_attr", "-D", dev, "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
+        cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         (ret, out) = call(cmd)
         dev = self.devkey(dev)
         if ret != 0:
