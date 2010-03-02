@@ -21,12 +21,10 @@
 import sys
 import os
 from rcUtilities import call, which
+import rcDiskInfo
 
-class diskInfo(object):
+class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
-
-    def __init__(self):
-        pass
 
     def disk_id(self, dev):
         if dev in self.disk_ids:

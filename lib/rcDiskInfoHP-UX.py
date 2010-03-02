@@ -18,8 +18,10 @@
 #
 
 from rcUtilities import call
+import rcDiskInfo
 
-class diskInfo(object):
+class diskInfo(rcDiskInfo.diskInfo):
+
     def __init__(self):
         self.h = {}
         cmd = ["scsimgr", "-p", "get_attr", "all_lun", "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]

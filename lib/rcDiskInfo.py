@@ -1,3 +1,4 @@
+#!/usr/bin/python2.6
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
@@ -17,7 +18,17 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-import rcDiskInfo
+class diskInfo(object):
+    """Parent class for diskInfo OS"""
 
-class diskInfo(rcDiskInfo.diskInfo):
-    pass
+    def disk_id(self, dev):
+        return "tbd"
+
+    def disk_vendor(self, dev):
+        return "tbd"
+
+    def disk_model(self, dev):
+        return "tbd"
+
+    def disk_size(self, dev):
+        return "tbd"
