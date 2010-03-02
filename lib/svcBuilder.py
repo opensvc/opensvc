@@ -25,12 +25,9 @@ import re
 import socket
 
 from rcGlobalEnv import *
-from freezer import Freezer
 from rcNode import discover_node
 from rcUtilities import *
-import rcOptParser
 import rcLogger
-import rcAddService
 import resSyncRsync
 import resSyncNetapp
 import resSyncSymclone
