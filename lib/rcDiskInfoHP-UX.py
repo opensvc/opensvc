@@ -17,8 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-from rcUtilities import call, which
-import rcExceptions as ex
+from rcUtilities import call
 
 class diskInfo(object):
     def __init__(self):

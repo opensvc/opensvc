@@ -22,7 +22,6 @@
 import resources as Res
 from rcGlobalEnv import *
 
-from subprocess import Popen, PIPE
 from rcUtilities import qcall, which
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
