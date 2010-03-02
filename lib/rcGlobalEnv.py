@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+import sys
+
 class rcEnv:
     """Class to store globals
     """
@@ -23,10 +25,16 @@ class rcEnv:
     prog = "opensvc"
     ver = "20090924-1"
 
+    platform = sys.platform
+
     """program used to execute remote command on other nodes or virtual hosts
     """
-    rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
-    rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
+    if platform == "sunos5" :
+        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no"
+        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no"
+    else :
+        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
+        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
 
     """Database sink for node and service configurations and status collection.
     """
@@ -125,4 +133,8 @@ class rcEnv:
         [drp_sync_etc_solaris + drp_sync_etc_linux + drp_sync_etc_common + drp_sync_misc, []],
         [["/home/oracle", "/home/sybase", "/opt/oracle", "/opt/sybase"], drp_sync_excludes],
     ]
+
+
+
+
 
