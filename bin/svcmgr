@@ -31,7 +31,6 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 import svcBuilder
 import rcStatus
 import rcOptParser
-from rcUtilities import banner
 from rcGlobalEnv import *
 
 svcs = None
