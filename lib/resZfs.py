@@ -85,7 +85,7 @@ class Pool(resDg.Dg):
 
         disks = set()
         cmd = [ 'zpool', 'status', self.name ]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, errlog=True)
         if ret != 0 :
             matchedPool=False
             cmd = [ 'zpool', 'import' ]
