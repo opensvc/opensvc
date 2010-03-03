@@ -147,6 +147,9 @@ def add_ips(svc, conf):
         elif svc.svcmode  == 'hpvm':
             ip = __import__('resIp'+'HpVm')
             r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
+        elif svc.svcmode  == 'zone':
+            ip = __import__('resIp'+'Zone')
+            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         else:
             ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(rid=s, ipDev=ipdev, ipName=ipname, mask=netmask)

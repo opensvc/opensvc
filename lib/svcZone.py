@@ -25,16 +25,18 @@ __author__="cgaliber"
 __date__ ="$11 oct. 2009 21:56:59$"
 
 import svc
+import resContainerZone as Zone
 
 class SvcZone(svc.Svc):
     """ Define Zone services"""
 
     def __init__(self, svcname, vmname=None, optional=False, disabled=False):
+        svc.Svc.__init__(self, svcname, type="container.zone",
+            optional=optional, disabled=disabled)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
-        svc.Svc.__init__(self, svcname, type="container.zone",
-            optional=optional, disabled=disabled)
+        self += Zone.Zone(vmname)
         self.status_types += ["container.zone"]
 
     def start(self):
