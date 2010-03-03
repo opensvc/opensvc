@@ -22,6 +22,7 @@ from datetime import datetime
 import rcStatus
 import resources as Res
 import time
+import os
 from rcUtilities import justcall, vcall
 
 
@@ -29,13 +30,22 @@ class Zone(Res.Resource):
     """
      container Zone status transition diagram :
     """
-    shutdown_timeout = 60
+    shutdown_timeout = 120
 
     def __init__(self, name, optional=False, disabled=False):
+        """define Zone object attribute :
+                name
+                label
+                state
+                zonepath
+        """
         Res.Resource.__init__(self, rid="zone", type="container.zone",
                               optional=optional, disabled=disabled)
         self.name = name
         self.label = name
+        self.state = None
+        self.zonepath = os.path.realpath(os.path.join( 'zones', self.name))
+        self.zone_refresh()
 
     def zoneadm(self, action):
         if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ] :
@@ -52,28 +62,28 @@ class Zone(Res.Resource):
         return ret
 
     def ready(self):
-        self.zoneRefreshStatus()
+        self.zone_refresh()
         if self.state == 'ready' or self.state == "runing" :
             self.log.info("zone container %s already ready" % self.name)
             return 0
         return self.zoneadm('ready')
 
     def boot(self):
-        self.zoneRefreshStatus()
+        self.zone_refresh()
         if self.state == "runing" :
             self.log.info("zone container %s already running" % self.name)
             return 0
         return self.zoneadm('boot')
 
     def stop(self):
-        self.zoneRefreshStatus()
+        self.zone_refresh()
         if self.state == 'installed' :
             self.log.info("zone container %s already stopped" % self.name)
             return 0
         if self.state == 'running':
             (ret, out) = self.vcall(['zlogin' , self.name , 'init' , '0'])
             for t in range(self.shutdown_timeout):
-                self.zoneRefreshStatus()
+                self.zone_refresh()
                 if self.state == 'installed':
                     return 0
                 time.sleep(1)
@@ -81,18 +91,21 @@ class Zone(Res.Resource):
         return self.zoneadm('halt')
 
     def status(self):
-        self.zoneRefreshStatus()
+        self.zone_refresh()
         if self.state == 'running' :
             return rcStatus.UP
         else:
             return rcStatus.Down
 
-    def zoneRefreshStatus(self):
-        """ refresh zonestatus from zoneadm -z zonename list -p
-        zoneid:zonename:state:zonepath:uuid:brand:ip-type """
+    def zone_refresh(self):
+        """ refresh Zone object attributes:
+                state
+                zonepath
+            from zoneadm -z zonename list -p
+            zoneid:zonename:state:zonepath:uuid:brand:ip-type
+        """
 
-        self.state = self.zonepath = None
-        (out,err,st) = justcall([ 'zoneadm' , '-z' , self.name , 'list' , '-p' ])
+        (out,err,st) = justcall([ 'zoneadm', '-z', self.name, 'list', '-p' ])
 
         if st == 0 :
             (zoneid,zonename,state,zonepath,uuid,brand,iptype)=out.split(':')
@@ -108,3 +121,7 @@ class Zone(Res.Resource):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+
+if __name__ == "__main__":
+    for c in (Zone,) :
+        help(c)

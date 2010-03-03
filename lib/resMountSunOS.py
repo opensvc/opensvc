@@ -78,24 +78,35 @@ class Mount(Res.Mount):
         if ret != 0:
             raise ex.excError
 
+    def try_umount(self):
+        (ret, out) = self.vcall(['umount', self.mountPoint], err_to_info=True)
+        if ret == 0 :
+            return 0
+        for i in range(4):
+            (ret, out) = self.vcall(['fuser', '-ck', self.mountPoint],
+                                    err_to_info=True)
+            (ret, out) = self.vcall(['umount', self.mountPoint],
+                                    err_to_info=True)
+            if ret == 0 :
+                return 0
+            if self.fsType != 'lofs' :
+                (ret, out) = self.vcall(['umount', '-f', self.mountPoint],
+                                        err_to_info=True)
+                if ret == 0 :
+                    return 0
+
     def stop(self):
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return
 
-        (ret, out) = self.vcall(['umount', self.mountPoint])
+        ret = self.try_umount()
         if ret == 0 :
             return
 
-        if self.fsType != 'lofs' :
-            (ret, out) = self.vcall(['umount', '-f', self.mountPoint])
-            if ret == 0 :
-                return
-
         self.log.error("failed")
         raise ex.excError
-
 
 if __name__ == "__main__":
     for c in (Mount,) :

@@ -78,6 +78,10 @@ class Apps(Res.Resource):
         """Execute each shutdown script (K* files). Log the return code but
            don't stop on error.
         """
+        if not os.path.exists(self.svc.initd):
+            self.log.info("%s is not present, perhaps already stopped"
+                            %self.svc.initd)
+            return 0
         if not self.checks():
             return 1
         for name in self.sorted_app_list('K*'):
@@ -87,3 +91,6 @@ class Apps(Res.Resource):
     def status(self):
         pass
 
+if __name__ == "__main__":
+    for c in (Apps,) :
+        help(c)
