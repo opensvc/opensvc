@@ -91,3 +91,6 @@ class Apps(Res.Resource):
     def status(self):
         pass
 
+if __name__ == "__main__":
+    for c in (Apps,) :
+        help(c)

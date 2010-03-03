@@ -47,3 +47,6 @@ class Apps(resApp.Apps):
             return []
         return buff[0].split('\n')
 
+if __name__ == "__main__":
+    for c in (Apps,) :
+        help(c)
