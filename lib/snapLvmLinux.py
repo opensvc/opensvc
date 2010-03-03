@@ -56,7 +56,13 @@ def lv_info(self, device):
     if ret != 0:
         return (None, None, None)
     info = buff.split()
-    lv_size = float(info[2].split('M')[0])
+    if 'M' in info[2]:
+        lv_size = float(info[2].split('M')[0])
+    elif 'm' in info[2]:
+        lv_size = float(info[2].split('m')[0])
+    else:
+        self.log.error("%s output does not have the expected unit (m or M)"%' '.join(cmd))
+        ex.excError
     return (info[0], info[1], lv_size)
 
 def snap(self, rset, action):
