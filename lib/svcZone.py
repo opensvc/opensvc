@@ -29,8 +29,12 @@ import svc
 class SvcZone(svc.Svc):
     """ Define Zone services"""
 
-    def __init__(self,optional=False,disabled=False):
-        svc.Svc.__init__(self,"container.zone",optional, disabled)
+    def __init__(self, svcname, vmname=None, optional=False, disabled=False):
+        if vmname is None:
+            vmname = svcname
+        self.vmname = vmname
+        svc.Svc.__init__(self, svcname, type="container.zone",
+            optional=optional, disabled=disabled)
         self.status_types += ["container.zone"]
 
     def start(self):
