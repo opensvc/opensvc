@@ -313,7 +313,7 @@ def push_disks(svc):
                     disklist_cache[vg.name] = vg.disklist()
                 if dev in disklist_cache[vg.name]:
                     return vg.name
-        return
+        return ""
 
     di = __import__('rcDiskInfo'+sysname)
     disks = di.diskInfo()
@@ -322,6 +322,10 @@ def push_disks(svc):
     proxy.delete_disks(svc.svcname, rcEnv.nodename)
 
     for d in svc.disklist():
+        if disks.disk_id(d) is None or disks.disk_id(d) == "":
+            """ no point pushing to db an empty entry
+            """
+            continue
         proxy.register_disk(
             ['disk_id',
              'disk_svcname',
@@ -335,7 +339,7 @@ def push_disks(svc):
              repr(disks.disk_size(d)),
              repr(disks.disk_vendor(d)),
              repr(disks.disk_model(d)),
-             repr(str(disk_dg(d, svc))),
+             repr(disk_dg(d, svc)),
              repr(rcEnv.nodename)]
         )
 

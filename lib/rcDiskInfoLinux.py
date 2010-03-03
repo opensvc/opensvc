@@ -34,7 +34,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         elif which('/lib/udev/scsi_id'):
             scsi_id = '/lib/udev/scsi_id'
         else:
-            return
+            return ""
         cmd = [scsi_id, '-g', '-u', '-d', dev]
         (ret, out) = call(cmd)
         if ret == 0:
@@ -43,18 +43,18 @@ class diskInfo(rcDiskInfo.diskInfo):
             return id
         sdev = dev.replace("/dev/", "/block/")
         cmd = [scsi_id, '-g', '-u', '-s', sdev]
-        (ret, out) = call(cmd)
+        (ret, out) = call(cmd, errlog=False)
         if ret == 0:
             id = out.split('\n')[0][1:]
             self.disk_ids[dev] = id
             return id
-        return
+        return ""
 
     def disk_vendor(self, dev):
         s = ''
         path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
         if not os.path.exists(path):
-            return
+            return ""
         with open(path, 'r') as f:
             s = f.read()
             f.close()
@@ -64,7 +64,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         s = ''
         path = dev.replace('/dev/', '/sys/block/')+'/device/model'
         if not os.path.exists(path):
-            return
+            return ""
         with open(path, 'r') as f:
             s = f.read()
             f.close()
@@ -72,9 +72,25 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def disk_size(self, dev):
         size = 0
-        path = dev.replace('/dev/', '/sys/block/')+'/size'
-        if not os.path.exists(path):
-            return
+        if '/dev/mapper/' in dev:
+            try:
+                statinfo = os.stat(dev)
+            except:
+                self.log.error("can not stat %s" % dev)
+                raise
+            dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+            path = '/sys/block/' + dm + '/size'
+            if not os.path.exists(path):
+                return 0
+        else:
+            path = dev.replace('/dev/', '/sys/block/')+'/size'
+            if not os.path.exists(path):
+                cmd = ['blockdev', '--getsize', dev]
+                (ret, out) = call(cmd)
+                if ret != 0:
+                    return 0
+                return int(out)/2097152
+
         with open(path, 'r') as f:
             size = f.read()
             f.close()
