@@ -36,7 +36,8 @@ class SvcZone(svc.Svc):
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
-        self += Zone.Zone(vmname)
+        self.zone = Zone.Zone(vmname)
+        self += self.zone
         self.status_types += ["container.zone"]
 
     def start(self):
