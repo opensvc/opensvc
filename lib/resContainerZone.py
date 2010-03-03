@@ -30,7 +30,7 @@ class Zone(Res.Resource):
     """
      container Zone status transition diagram :
     """
-    shutdown_timeout = 60
+    shutdown_timeout = 120
 
     def __init__(self, name, optional=False, disabled=False):
         """define Zone object attribute :
