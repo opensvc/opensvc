@@ -255,6 +255,13 @@ def add_filesystems(svc, conf):
             mnt_opt = conf.get(s, "mnt_opt")
         except:
             mnt_opt = ""
+        if svc.svcmode == 'zone':
+            try:
+                globalfs = conf.get(s, "globalfs")
+            except:
+                globalfs = False
+            if globalfs is False:
+                mnt = os.path.realpath(svc.zone.zonepath+'/root/'+mnt)
         always_on = always_on_nodes_set(svc, conf, s)
         mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)

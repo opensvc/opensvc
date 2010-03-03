@@ -45,7 +45,7 @@ class Zone(Res.Resource):
         self.label = name
         self.state = None
         self.zonepath = os.path.realpath(os.path.join( 'zones', self.name))
-        selt.zone_refresh()
+        self.zone_refresh()
 
     def zoneadm(self, action):
         if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ] :
