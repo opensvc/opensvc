@@ -119,17 +119,19 @@ class Resource(object):
         return r
 
     def call(self, cmd=['/bin/false'], info=False,
-             errlog=True, err_to_warn=False):
+             errlog=True, err_to_warn=False, err_to_info=False):
         """Use subprocess module functions to do a call
         """
         return rcUtilities.call(cmd, self.log, info, errlog,
-                                err_to_warn=err_to_warn)
+                                err_to_warn=err_to_warn,
+                                err_to_info=err_to_info)
 
-    def vcall(self, cmd, err_to_warn=False):
+    def vcall(self, cmd, err_to_warn=False, err_to_info=False):
         """Use subprocess module functions to do a call and
         log the command line using the resource logger
         """
-        return rcUtilities.vcall(cmd, self.log, err_to_warn=err_to_warn)
+        return rcUtilities.vcall(cmd, self.log, err_to_warn=err_to_warn,
+                                err_to_info=err_to_info)
 
     def disklist(self):
         """List disks the resource holds. Some resource have none,

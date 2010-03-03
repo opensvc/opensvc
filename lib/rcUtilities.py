@@ -58,7 +58,7 @@ def justcall(argv=['/bin/false']):
     return (stdout, stderr, process.returncode)
 
 def call(argv=['/bin/false'], log=None,
-         info=False, errlog=True, err_to_warn=False):
+         info=False, errlog=True, err_to_warn=False, err_to_info=False):
     if log == None:
         log = logging.getLogger('CALL')
     if not argv:
@@ -70,7 +70,9 @@ def call(argv=['/bin/false'], log=None,
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
     if len(buff[1]) > 0:
-        if err_to_warn:
+        if err_to_info:
+            log.info('stderr:\n' + buff[1])
+        elif err_to_warn:
             log.warning('stderr:\n' + buff[1])
         elif errlog:
             if process.returncode != 0:
@@ -90,8 +92,9 @@ def qcall(argv=['/bin/false']) :
     process.communicate()
     return process.returncode
 
-def vcall(argv=['/bin/false'], log=None, err_to_warn=False):
-    return call(argv, log, info=True, err_to_warn=err_to_warn)
+def vcall(argv=['/bin/false'], log=None, err_to_warn=False, err_to_info=False ):
+    return call(argv, log, info=True, err_to_warn=err_to_warn,
+                err_to_info=err_to_info)
 
 def getmount(path):
     path = os.path.abspath(path)
