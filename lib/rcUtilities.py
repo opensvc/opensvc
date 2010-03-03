@@ -50,6 +50,13 @@ def which(program):
             return exe_file
     return None
 
+def justcall(argv=['/bin/false']):
+    """subprosses call argv, return (stdout,stderr,returncode)
+    """
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
+    (stdout, stderr)=process.communicate(input=None)
+    return (stdout, stderr, process.returncode)
+
 def call(argv=['/bin/false'], log=None,
          info=False, errlog=True, err_to_warn=False):
     if log == None:
