@@ -517,7 +517,7 @@ def add_syncs_rsync(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        if svc.svcmode in ['hpvm', 'kvm', 'zone']:
+        if svc.svcmode in ['hpvm', 'kvm', 'zone', 'lxc']:
             resApp = __import__('resAppVm')
         else:
             resApp = __import__('resApp')
