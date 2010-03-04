@@ -308,6 +308,15 @@ def add_mandatory_syncs(svc):
             a += files
         return a
 
+    def list_lxcconffiles():
+        a = []
+        if svc.svcmode != 'lxc':
+            return a
+        guest = os.path.join(os.sep, 'var', 'lib', 'lxc', svc.vmname, 'config')
+        if os.path.exists(guest):
+            a.append(guest)
+        return a
+
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -322,6 +331,7 @@ def add_mandatory_syncs(svc):
     src += list_mapfiles()
     src += list_mksffiles()
     src += list_kvmconffiles()
+    src += list_lxcconffiles()
     src += list_hpvmconffiles()
     dst = os.path.join("/")
     exclude = ['--exclude=*.core']

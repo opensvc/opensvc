@@ -24,9 +24,11 @@ import os
 import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
-from rcUtilities import qcall, protected_mount
+from rcUtilities import qcall, protected_mount, getmount
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
+from stat import *
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
@@ -82,6 +84,41 @@ class Mount(Res.Mount):
         else:
             if self.is_up(): return rcStatus.UP
             else: return rcStatus.DOWN
+
+    def disklist(self):
+        try:
+            mode = os.stat(self.device)[ST_MODE]
+        except:
+            self.log.debug("can not stat %s" % self.device)
+            return set([])
+        if S_ISBLK(mode):
+            dev = self.device
+        else:
+            mnt = getmount(self.device)
+            if self.Mounts is None:
+                self.Mounts = rcMounts.Mounts()
+            m = self.Mounts.has_param("mnt", mnt)
+            if m is None:
+                self.log.error("can't find the hosting device of %(mnt)s (hosting %(dev)s) in mnttab"%dict(mnt=mnt, dev=dev))
+                raise ex.excError
+            dev = m.dev
+
+        try:
+            dm_major = major('device-mapper')
+        except:
+            return set([dev])
+
+        try:
+            statinfo = os.stat(dev)
+        except:
+            self.log.error("can not stat %s" % dev)
+            raise ex.excError
+        if os.major(statinfo.st_rdev) != dm_major:
+            return set([dev])
+        dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+        syspath = '/sys/block/' + dm + '/slaves'
+        devs = get_blockdev_sd_slaves(syspath)
+        return devs
 
     def start(self):
         if self.Mounts is None:
