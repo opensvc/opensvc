@@ -99,6 +99,16 @@ def add_scsireserv(svc, resource, conf, section):
     set_optional_and_disable(r, conf, section)
     svc += r
 
+def add_triggers(resource, conf, section):
+    if conf.has_option(section, 'pre_stop'):
+        resource.pre_stop = conf.get(section, 'pre_stop').split()
+    if conf.has_option(section, 'pre_start'):
+        resource.pre_start = conf.get(section, 'pre_start').split()
+    if conf.has_option(section, 'post_stop'):
+        resource.post_stop = conf.get(section, 'post_stop').split()
+    if conf.has_option(section, 'post_start'):
+        resource.post_start = conf.get(section, 'post_start').split()
+
 def always_on_nodes_set(svc, conf, section):
     try:
         always_on_opt = conf.get(section, "always_on").split()
@@ -154,6 +164,7 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+rcEnv.sysname)
             r = ip.Ip(rid=s, ipDev=ipdev, ipName=ipname, mask=netmask)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
 
 def add_loops(svc, conf):
@@ -171,6 +182,7 @@ def add_loops(svc, conf):
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(rid=s, loopFile=file)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
 
 def add_vgs(svc, conf):
@@ -197,6 +209,7 @@ def add_vgs(svc, conf):
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(**kwargs)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -209,6 +222,7 @@ def add_vmdg(svc, conf):
         return
     r = vg.Vg(rid='vmdg', name='vmdg')
     set_optional_and_disable(r, conf, 'vmdg')
+    add_triggers(r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, 'vmdg')
 
@@ -223,6 +237,7 @@ def add_pools(svc, conf):
         pool = __import__('resZfs')
         r = pool.Pool(rid=s, name=name)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -266,6 +281,7 @@ def add_filesystems(svc, conf):
         mount = __import__('resMount'+rcEnv.sysname)
         r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
         #add_scsireserv(svc, r, conf, s)
 
@@ -413,6 +429,7 @@ def add_syncs_symclone(svc, conf):
         kwargs['rid'] = s
         r = resSyncSymclone.syncSymclone(**kwargs)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
 
 def add_syncs_netapp(svc, conf):
@@ -464,6 +481,7 @@ def add_syncs_netapp(svc, conf):
 
         r = resSyncNetapp.syncNetapp(**kwargs)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
 
 def add_syncs_rsync(svc, conf):
@@ -524,6 +542,7 @@ def add_syncs_rsync(svc, conf):
 
         r = resSyncRsync.Rsync(**kwargs)
         set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
         svc += r
 
 def add_apps(svc, conf):

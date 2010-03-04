@@ -63,9 +63,16 @@ class Resource(object):
     def disable(self): self.disabled=True
     def enable(self):  self.disabled=False
 
+    def action_triggers(self, type, action):
+        attr = type+"_"+action
+        if hasattr(self, attr):
+            self.vcall(getattr(self, attr))
+
     def do_action(self, action):
         if hasattr(self, action):
+            self.action_triggers("pre", action)
             getattr(self, action)()
+            self.action_triggers("post", action)
             return
 
         """Every class inheriting resource should define start() stop() status()
