@@ -21,19 +21,16 @@ from datetime import datetime
 import os
 import glob
 
-from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe
 import resources as Res
 
 class Apps(Res.Resource):
     prefix = []
 
-    def __init__(self, hostname=None, optional=False, disabled=False):
+    def __init__(self, runmethod=[], optional=False, disabled=False):
         Res.Resource.__init__(self, rid="app", type="app",
                               optional=optional, disabled=disabled) 
-        if hostname is not None:
-            self.prefix = rcEnv.rsh.split() + [hostname]
-            self.hostname = hostname
+        self.prefix = runmethod
 
     def checks(self):
         if not os.path.exists(self.svc.initd):

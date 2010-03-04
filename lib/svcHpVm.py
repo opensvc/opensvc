@@ -23,6 +23,7 @@ import svc
 import resContainerHpVm as hpvm
 import rcStatus
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
 class SvcHpVm(svc.Svc):
     """ Define hpvm services"""
@@ -34,4 +35,5 @@ class SvcHpVm(svc.Svc):
         self.vmname = vmname
         self += hpvm.HpVm(vmname)
         self.status_types += ["container.hpvm"]
+        self.runmethod = rcEnv.rsh.split() + [vmname]
 

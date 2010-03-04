@@ -22,6 +22,7 @@
 import svc
 import resContainerLxc as lxc
 import rcStatus
+from rcGlobalEnv import rcEnv
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
@@ -33,6 +34,7 @@ class SvcLxc(svc.Svc):
         self.vmname = vmname
         self += lxc.Lxc(vmname)
         self.status_types += ["container.lxc"]
+        self.runmethod = rcEnv.rsh.split() + [vmname]
 
 
 if __name__ == "__main__":

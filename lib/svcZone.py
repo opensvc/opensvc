@@ -39,6 +39,7 @@ class SvcZone(svc.Svc):
         self.zone = Zone.Zone(vmname)
         self += self.zone
         self.status_types += ["container.zone"]
+        self.runmethod = [ '/usr/sbin/zlogin' , vmname ]
 
     def start(self):
         """start a zone
