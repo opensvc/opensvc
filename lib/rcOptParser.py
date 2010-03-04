@@ -20,6 +20,7 @@ import optparse
 from rcGlobalEnv import *
 
 action_desc = {
+	'printsvc':	'display service live configuration',
 	'start':	'start a service, chaining startip-diskstart-startapp',
 	'startstandby':	'start service resources marked always_on',
 	'startip':	'configure service ip addresses',

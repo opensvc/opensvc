@@ -345,6 +345,9 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
 
+    def printsvc(self):
+        print str(self)
+
     def syncall(self):
         try: self.diskupdate()
         except: pass
