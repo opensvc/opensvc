@@ -23,6 +23,7 @@ import svc
 import resContainerKvm as kvm
 import rcStatus
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
 class SvcKvm(svc.Svc):
     """ Define kvm services"""
@@ -34,4 +35,6 @@ class SvcKvm(svc.Svc):
         self.vmname = vmname
         self += kvm.Kvm(vmname)
         self.status_types += ["container.kvm"]
+        self.runmethod = rcEnv.rsh.split() + [vmname]
+
 

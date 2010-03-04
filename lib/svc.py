@@ -96,6 +96,7 @@ class Svc(Resource, Freezer):
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
+        self.runmethod = []
 
     def __cmp__(self, other):
         """order by service name
