@@ -35,7 +35,7 @@ class Apps(resApp.Apps):
         cmd = self.prefix + ['test', '-d', self.app_d]
         ret = qcall(cmd)
         if ret != 0:
-            self.log.error("%s is not present in vm %s"%(self.app_d, self.hostname))
+            self.log.error("%s is not present inside vm"%(self.app_d))
             return False
         return True
 
