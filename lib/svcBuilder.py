@@ -517,12 +517,12 @@ def add_syncs_rsync(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        if svc.svcmode in ['hpvm', 'kvm']:
+        if svc.svcmode in ['hpvm', 'kvm', 'zone']:
             resApp = __import__('resAppVm')
-            r = resApp.Apps(hostname=svc.vmname)
         else:
             resApp = __import__('resApp')
-            r = resApp.Apps()
+
+        r = resApp.Apps(runmethod=svc.runmethod)
         svc += r
 
 def setup_logging():
