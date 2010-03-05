@@ -344,6 +344,9 @@ def add_mandatory_syncs(svc):
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
+    localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
+    if os.path.exists(localrc):
+        src.append(localrc)
     src += list_mapfiles()
     src += list_mksffiles()
     src += list_kvmconffiles()
