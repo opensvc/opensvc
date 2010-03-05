@@ -84,7 +84,7 @@ class syncSymclone(Res.Resource):
         return False
 
     def is_activable(self):
-        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-precopy', '-cycled']+self.pairs
+        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-precopy']+self.pairs
         (ret, out) = self.call(cmd)
         if ret == 0:
             return True
@@ -101,24 +101,26 @@ class syncSymclone(Res.Resource):
                 raise ex.excError
             self.pairs += [srcld, 'sym', 'ld', tgtld]
 
-    def wait_for_copied(self):
+    def wait_for_active(self):
         delay = 20
         timeout = 300
-        self.log.info("waiting for copied state (max %i secs)"%timeout)
         for i in range(timeout/delay):
-            time.sleep(delay)
             if self.is_active():
                 return
+            if i == 0:
+                self.log.info("waiting for copied state (max %i secs)"%timeout)
+            time.sleep(delay)
         self.log.error("timed out waiting for copied state (%i secs)"%timeout)
         raise ex.excError
 
     def wait_for_precopied(self):
         delay = 30
-        self.log.info("waiting for precopied state (max %i secs)"%self.precopy_timeout)
         for i in range(self.precopy_timeout/delay):
-            time.sleep(delay)
             if self.is_activable():
                 return
+            if i == 0:
+                self.log.info("waiting for precopied state (max %i secs)"%self.precopy_timeout)
+            time.sleep(delay)
         self.log.error("timed out waiting for precopied state (%i secs)"%self.precopy_timeout)
         raise ex.excError
 
@@ -134,7 +136,7 @@ class syncSymclone(Res.Resource):
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        self.wait_for_copied()
+        self.wait_for_active()
 
     def recreate(self):
         self.get_syminfo()
@@ -143,7 +145,7 @@ class syncSymclone(Res.Resource):
             self.log.error("the service (sync excluded) is in '%s' state. Must be in 'down' state"%self.svcstatus['overall'])
             raise ex.excError
         if not self.is_active():
-            self.log.info("symclone dg %s is already in precopy state"%self.symdg)
+            self.log.info("symclone dg %s is not active"%self.symdg)
             return
         self.get_last()
         if self.last > datetime.datetime.now() - datetime.timedelta(minutes=self.sync_min_delay):
