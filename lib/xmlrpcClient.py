@@ -179,6 +179,7 @@ def svcmon_update(svc, status):
             "mon_syncstatus",
             "mon_containerstatus",
             "mon_fsstatus",
+            "mon_appstatus",
             "mon_overallstatus",
             "mon_updated",
             "mon_prinodes"]
@@ -193,6 +194,7 @@ def svcmon_update(svc, status):
             repr(str(status["sync"])),
             repr(str(status["container"])),
             repr(str(status["fs"])),
+            repr(str(status["app"])),
             repr(str(status["overall"])),
             repr(str(datetime.now())),
             repr(' '.join(svc.nodes))]

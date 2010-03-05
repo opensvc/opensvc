@@ -21,8 +21,9 @@ from datetime import datetime
 import os
 import glob
 
-from rcUtilities import is_exe
+from rcUtilities import is_exe, justcall
 import resources as Res
+import rcStatus
 
 class Apps(Res.Resource):
     prefix = []
@@ -31,8 +32,27 @@ class Apps(Res.Resource):
         Res.Resource.__init__(self, rid="app", type="app",
                               optional=optional, disabled=disabled) 
         self.prefix = runmethod
+        self.label = "app"
 
-    def checks(self):
+    def set_perms(self, rc):
+        s = os.stat(rc)
+        if s.st_uid != 0 or s.st_gid != 0:
+            self.log.info("set %s ownership to uid 0 gid 0"%rc)
+            os.chown(rc, 0, 0)
+        if not is_exe(rc):
+            self.vcall(self.prefix+['chmod', '+x', rc])
+
+    def stop_checks(self):
+        if not os.path.exists(self.svc.initd):
+            self.log.info("%s is not present, perhaps already stopped"
+                            %self.svc.initd)
+            return True
+        elif not os.path.islink(self.svc.initd):
+            self.log.error("%s is not a link"%self.svc.initd)
+            return False
+        return True
+
+    def start_checks(self):
         if not os.path.exists(self.svc.initd):
             self.log.error("%s is not present"%self.svc.initd)
             return False
@@ -41,52 +61,69 @@ class Apps(Res.Resource):
             return False
         return True
 
-    def app(self, name, action):
+    def app(self, name, action, dedicated_log=True):
         if len(name) == 0:
             return 0
-        if not is_exe(name):
-            self.vcall(self.prefix+['chmod', '+x', name])
+        self.set_perms(name)
         cmd = self.prefix+[name, action]
-        self.log.info('spawn: %s' % ' '.join(cmd))
-        outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
-        f = open(outf, 'w')
-        t = datetime.now()
-        p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
-        p.communicate()
-        _len = datetime.now() - t
-        self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
-        f.close()
-        return p.returncode
+        if dedicated_log:
+            self.log.info('spawn: %s' % ' '.join(cmd))
+            outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
+            f = open(outf, 'w')
+            t = datetime.now()
+            p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
+            p.communicate()
+            _len = datetime.now() - t
+            self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
+            f.close()
+            return p.returncode
+        else:
+            (out, err, ret) = justcall(cmd)
+            return ret
 
     def sorted_app_list(self, pattern):
         return sorted(glob.glob(os.path.join(self.svc.initd, pattern)))
+
+    def status(self):
+        """Execute each startup script (C* files). Log the return code but
+           don't stop on error. Count errors.
+        """
+        rets = {}
+        errs = 0
+        nb = 0
+        if not self.start_checks():
+            raise ex.excError
+        for name in self.sorted_app_list('C*'):
+            ret = self.app(name, 'status', dedicated_log=False)
+            nb += 1
+            errs += ret
+            rets[name] = ret
+        if nb == 0:
+            return rcStatus.NA
+        elif errs == 0:
+            return rcStatus.UP
+        elif 0 in rets.values():
+            return rcStatus.WARN
+        else:
+            return rcStatus.DOWN
 
     def start(self):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
-        if not self.checks():
-            return 1
+        if not self.start_checks():
+            raise ex.excError
         for name in self.sorted_app_list('S*'):
             self.app(name, 'start')
-        return 0
 
     def stop(self):
         """Execute each shutdown script (K* files). Log the return code but
            don't stop on error.
         """
-        if not os.path.exists(self.svc.initd):
-            self.log.info("%s is not present, perhaps already stopped"
-                            %self.svc.initd)
-            return 0
-        if not self.checks():
-            return 1
+        if not self.stop_checks():
+            raise ex.excError
         for name in self.sorted_app_list('K*'):
             self.app(name, 'stop')
-        return 0
-
-    def status(self):
-        pass
 
 if __name__ == "__main__":
     for c in (Apps,) :

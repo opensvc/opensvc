@@ -88,6 +88,7 @@ class Svc(Resource, Freezer):
                              "disk.vg",
                              "fs",
                              "ip",
+                             "app",
                              "sync.rsync",
                              "sync.symclone",
                              "sync.netapp"]
@@ -187,7 +188,7 @@ class Svc(Resource, Freezer):
         rcStatus.print_status("overall", self.status())
 
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "sync"]),
+                     groups=set(["container", "ip", "disk", "fs", "sync", "app"]),
                      excluded_groups=set([])):
         """print each resource status for a service
         """
