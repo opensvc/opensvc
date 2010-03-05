@@ -27,7 +27,7 @@ rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 import socket
 import rcStatus
 import rcExceptions as ex
-
+import os
 
 class Ip(Res.Resource):
     """ basic ip resource
@@ -48,6 +48,12 @@ class Ip(Res.Resource):
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
                                          self.ipDev, self.ipName)
+    def setup_environ(self):
+        os.environ['OPENSVC_IPDEV'] = str(self.ipDev)
+        os.environ['OPENSVC_IPNAME'] = str(self.ipName)
+        os.environ['OPENSVC_MASK'] = str(self.mask)
+        os.environ['OPENSVC_IPADDR'] = str(self.addr)
+
     def status(self):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN

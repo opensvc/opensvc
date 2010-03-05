@@ -26,10 +26,9 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from lock import svclock, svcunlock
 import xmlrpcClient
+import os
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
-    import os
-
     try:
         if os.fork() > 0:
             """ return to parent execution
@@ -373,6 +372,7 @@ class Svc(Resource, Freezer):
                 r.disable()
 
     def action(self, action, rid=None):
+        os.environ['OPENSVC_SVCNAME'] = self.svcname
         self.disable_resources(keep=rid)
         if action in ["print_status", "status", "group_status"]:
             self.do_action(action)

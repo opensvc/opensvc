@@ -54,6 +54,14 @@ class Resource(object):
         """
         return 0
 
+    def setup_environ(self):
+        """ setup environement variables for use by triggers and startup
+            scripts. This method needs defining in each class with their
+            class variable.
+            Env vars names should, by convention, be prefixed by OPENSVC_
+        """
+        pass
+
     def is_optional(self): return self.optional
     def is_disabled(self): return self.disabled
 
@@ -70,6 +78,7 @@ class Resource(object):
 
     def do_action(self, action):
         if hasattr(self, action):
+            self.setup_environ()
             self.action_triggers("pre", action)
             getattr(self, action)()
             self.action_triggers("post", action)
