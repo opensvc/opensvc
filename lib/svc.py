@@ -191,6 +191,7 @@ class Svc(Resource, Freezer):
                      excluded_groups=set([])):
         """print each resource status for a service
         """
+        self.setup_environ()
         status = {}
         groups = groups.copy() - excluded_groups
         moregroups = groups | set(["overall"])
@@ -371,8 +372,11 @@ class Svc(Resource, Freezer):
                     continue
                 r.disable()
 
-    def action(self, action, rid=None):
+    def setup_environ(self):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
+
+    def action(self, action, rid=None):
+        self.setup_environ()
         self.disable_resources(keep=rid)
         if action in ["print_status", "status", "group_status"]:
             self.do_action(action)
