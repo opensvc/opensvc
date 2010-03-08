@@ -222,7 +222,7 @@ def add_vmdg(svc, conf):
         return
     r = vg.Vg(rid='vmdg', name='vmdg')
     set_optional_and_disable(r, conf, 'vmdg')
-    add_triggers(r, conf, s)
+    add_triggers(r, conf, 'vmdg')
     svc += r
     add_scsireserv(svc, r, conf, 'vmdg')
 
