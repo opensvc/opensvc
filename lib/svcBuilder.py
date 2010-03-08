@@ -30,7 +30,6 @@ from rcUtilities import *
 import rcLogger
 import resSyncRsync
 import resSyncNetapp
-import resSyncSymclone
 import rcExceptions as ex
 
 check_privs()
@@ -385,6 +384,10 @@ def add_syncs(svc, conf):
     add_syncs_symclone(svc, conf)
 
 def add_syncs_symclone(svc, conf):
+    try:
+        sc = __import__('resSyncSymclone'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncSymclone')
     for s in conf.sections():
         symdevs = []
         kwargs = {}
@@ -430,7 +433,7 @@ def add_syncs_symclone(svc, conf):
             kwargs['precopy_timeout'] = conf.getint(s, 'precopy_timeout')
 
         kwargs['rid'] = s
-        r = resSyncSymclone.syncSymclone(**kwargs)
+        r = sc.syncSymclone(**kwargs)
         set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r

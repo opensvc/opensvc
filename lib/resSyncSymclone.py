@@ -27,6 +27,9 @@ import time
 import datetime
 
 class syncSymclone(Res.Resource):
+    def wait_for_devs_ready(self):
+        pass
+
     def get_symdevs(self):
         for symdev in self.symdevs:
             l = symdev.split(':')
@@ -53,6 +56,7 @@ class syncSymclone(Res.Resource):
                 if ld != {}:
                     self.symld[ld['symid'],ld['symdev']] = ld
                     ld = {}
+                ld['pdev'] = l[1].strip()
             elif "  Symmetrix ID" in l[0]:
                 ld['symid'] = l[1].strip()
             elif "  Device Symmetrix Name" in l[0]:
@@ -135,6 +139,7 @@ class syncSymclone(Res.Resource):
         if ret != 0:
             raise ex.excError
         self.wait_for_active()
+        self.wait_for_devs_ready()
 
     def recreate(self):
         self.get_syminfo()
@@ -208,6 +213,7 @@ class syncSymclone(Res.Resource):
         Res.Resource.__init__(self, rid, "sync.symclone", optional, disabled)
         self.disks = set([])
         self.symdev = {}
+        self.pdevs = {}
         self.svcstatus = {}
         self.symld = {}
         self.pairs = []
