@@ -97,6 +97,7 @@ class Svc(Resource, Freezer):
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
         self.runmethod = []
+        self.resources_by_id = {}
 
     def __cmp__(self, other):
         """order by service name
@@ -122,6 +123,7 @@ class Svc(Resource, Freezer):
             # Error
             pass
 
+        self.resources_by_id[r.rid] = r
         r.svc = self
         import logging
         r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
@@ -202,13 +204,13 @@ class Svc(Resource, Freezer):
             if group not in groups:
                 continue
             for r in self.get_res_sets(t):
-                status[group] += r.status()
+                s = r.status()
+                status[group] += s
                 if group != "sync":
-                    status["overall"] += r.status()
+                    status["overall"] += s
                 else:
                     """ sync are expected to be up
                     """
-                    s = r.status()
                     if s == rcStatus.UP:
                         status["overall"] += rcStatus.UNDEF
                     elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:

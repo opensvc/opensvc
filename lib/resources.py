@@ -39,6 +39,7 @@ class Resource(object):
         self.optional = optional
         self.disabled = disabled
         self.log = logging.getLogger(str(rid).upper())
+        self.rstatus = rcStatus.Status()
         if self.label is None: self.label = type
 
     def __str__(self):
@@ -116,14 +117,15 @@ class Resource(object):
         """
         s = rcStatus.Status()
         for r in self.resources:
-                if r.is_disabled():
-                    continue
-                try:
-                    status = r.status()
-                except:
-                    status = rcStatus.NA
+            if r.is_disabled():
+                continue
+            try:
+                status = r.status()
+            except:
+                status = rcStatus.NA
 
-                s += status
+            r.rstatus.status = status
+            s += status
         return s.status
 
     def print_status(self):

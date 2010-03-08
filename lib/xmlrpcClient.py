@@ -201,6 +201,32 @@ def svcmon_update(svc, status):
         proxy.svcmon_update(vars, vals)
     except:
         pass
+    resmon_update(svc, status)
+
+def resmon_update(svc, status):
+    vals = []
+    now = datetime.now()
+    for rs in svc.resSets:
+        for r in rs.resources:
+            vals.append([repr(svc.svcname),
+                         repr(rcEnv.nodename),
+                         repr(r.rid),
+                         repr(r.label),
+                         repr(str(r.rstatus)),
+                         repr(str(now))]
+            )
+    vars = [\
+        "svcname",
+        "nodename",
+        "rid",
+        "res_desc",
+        "res_status",
+        "updated"]
+    proxy.resmon_update(vars, vals)
+    try:
+        proxy.resmon_update(vars, vals)
+    except:
+        pass
 
 def push_ips(svc):
     proxy.delete_ips(svc.svcname, rcEnv.nodename)
