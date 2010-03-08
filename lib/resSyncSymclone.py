@@ -113,7 +113,7 @@ class syncSymclone(Res.Resource):
         self.log.error("timed out waiting for copied state (%i secs)"%timeout)
         raise ex.excError
 
-    def wait_for_precopied(self):
+    def wait_for_activable(self):
         delay = 30
         for i in range(self.precopy_timeout/delay):
             if self.is_activable():
@@ -129,9 +129,7 @@ class syncSymclone(Res.Resource):
         if self.is_active():
             self.log.info("symclone dg %s is already active"%self.symdg)
             return
-        if not self.is_activable():
-            self.log.info("symclone dg %s is not activable (not in precopied+cycle state)"%self.symdg)
-            self.wait_for_precopied()
+        self.wait_for_activable()
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'activate', '-i', '20', '-c', '30']+self.pairs
         (ret, out) = self.vcall(cmd)
         if ret != 0:
