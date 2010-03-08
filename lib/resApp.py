@@ -61,6 +61,11 @@ class Apps(Res.Resource):
             return False
         return True
 
+    def status_checks(self):
+        if not os.path.exists(self.svc.initd):
+            return False
+        return True
+
     def app(self, name, action, dedicated_log=True):
         if len(name) == 0:
             return 0
@@ -91,7 +96,7 @@ class Apps(Res.Resource):
         rets = {}
         errs = 0
         nb = 0
-        if not self.start_checks():
+        if not self.status_checks():
             raise ex.excError
         for name in self.sorted_app_list('C*'):
             ret = self.app(name, 'status', dedicated_log=False)
