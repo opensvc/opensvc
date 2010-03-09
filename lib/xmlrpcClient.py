@@ -64,6 +64,16 @@ def end_action(svc, action, begin, end, logfile):
     """Example logfile line:
     2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
     """
+    vars = ['svcname',
+            'action',
+            'hostname',
+            'hostid',
+            'pid',
+            'begin',
+            'end',
+            'status_log',
+            'status']
+    vals = []
     for line in lines.split(';EOL\n'):
         if line.count(';') != 4:
             continue
@@ -75,29 +85,15 @@ def end_action(svc, action, begin, end, logfile):
         if dateprev is not None:
             res = res.lower()
             res = res.replace(svc.svcname+'.','')
-            try:
-                proxy.res_action(
-                    ['svcname',
-                     'action',
-                     'hostname',
-                     'hostid',
-                     'pid',
-                     'begin',
-                     'end',
-                     'status_log',
-                     'status'],
-                    [repr(svc.svcname),
-                     repr(res+' '+action),
-                     repr(rcEnv.nodename),
-                     repr(hostid),
-                     repr(pid),
-                     repr(str(dateprev)),
-                     repr(str(date)),
-                     repr(str(msg)),
-                     repr(str(res_err))]
-                )
-            except:
-                pass
+            vals.append([svc.svcname,
+                         res+' '+action,
+                         rcEnv.nodename,
+                         hostid,
+                         pid,
+                         dateprev,
+                         date,
+                         msg,
+                         res_err])
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
@@ -114,31 +110,24 @@ def end_action(svc, action, begin, end, logfile):
 
     """Push the last log entry, using 'end' as end date
     """
-    try:
+    if dateprev is not None:
         res = res.lower()
         res = res.replace(svc.svcname+'.','')
-        proxy.res_action(
-            ['svcname',
-             'action',
-             'hostname',
-             'hostid',
-             'pid',
-             'begin',
-             'end',
-             'status_log',
-             'status'],
-            [repr(svc.svcname),
-             repr(res+' '+action),
-             repr(rcEnv.nodename),
-             repr(hostid),
-             repr(pid),
-             repr(str(dateprev)),
-             repr(str(end)),
-             repr(str(msg)),
-             repr(str(res_err))]
-        )
-    except:
-        pass
+        vals.append([svc.svcname,
+                     res+' '+action,
+                     rcEnv.nodename,
+                     hostid,
+                     pid,
+                     dateprev,
+                     date,
+                     msg,
+                     res_err])
+
+    if len(vals) > 0:
+        try:
+            proxy.res_action_batch(vars, vals)
+        except:
+            pass
 
     """Complete the wrap-up database entry
     """
@@ -184,20 +173,20 @@ def svcmon_update(svc, status):
             "mon_updated",
             "mon_prinodes"]
         vals = [\
-            repr(svc.svcname),
-            repr(svc.svctype),
-            repr(rcEnv.nodename),
-            repr(rcEnv.host_mode),
-            repr(hostid),
-            repr(str(status["ip"])),
-            repr(str(status["disk"])),
-            repr(str(status["sync"])),
-            repr(str(status["container"])),
-            repr(str(status["fs"])),
-            repr(str(status["app"])),
-            repr(str(status["overall"])),
-            repr(str(datetime.now())),
-            repr(' '.join(svc.nodes))]
+            svc.svcname,
+            svc.svctype,
+            rcEnv.nodename,
+            rcEnv.host_mode,
+            hostid,
+            str(status["ip"]),
+            str(status["disk"]),
+            str(status["sync"]),
+            str(status["container"]),
+            str(status["fs"]),
+            str(status["app"]),
+            str(status["overall"]),
+            str(datetime.now()),
+            ' '.join(svc.nodes)]
         proxy.svcmon_update(vars, vals)
     except:
         pass
@@ -230,54 +219,45 @@ def resmon_update(svc, status):
 
 def push_ips(svc):
     proxy.delete_ips(svc.svcname, rcEnv.nodename)
+    vars = ['ip_svcname',
+            'ip_dev',
+            'ip_name',
+            'ip_node',
+            'ip_netmask']
+    vals = []
     for rset in svc.get_res_sets("ip"):
         for r in rset.resources:
-            proxy.register_ip(
-                ['ip_svcname',
-                 'ip_dev',
-                 'ip_name',
-                 'ip_node',
-                 'ip_netmask'],
-                [repr(svc.svcname),
-                 repr(r.ipDev),
-                 repr(r.ipName),
-                 repr(rcEnv.nodename),
-                 repr(str(r.mask))]
+            vals.append(
+                [svc.svcname,
+                 r.ipDev,
+                 r.ipName,
+                 rcEnv.nodename,
+                 str(r.mask)]
             )
+    proxy.register_ip(vars, vals)
 
 def push_fss(svc):
     proxy.delete_fss(svc.svcname)
+    vars = ['fs_svcname',
+            'fs_dev',
+            'fs_mnt',
+            'fs_mntopt',
+            'fs_type']
+    vals = []
+
     for rset in svc.get_res_sets("fs"):
         for r in rset.resources:
-            proxy.register_fs(
-                ['fs_svcname',
-                 'fs_dev',
-                 'fs_mnt',
-                 'fs_mntopt',
-                 'fs_type'],
-                [repr(svc.svcname),
-                 repr(r.device),
-                 repr(r.mountPoint),
-                 repr(r.mntOpt),
-                 repr(r.fsType)]
+            vals.append(
+                [svc.svcname,
+                 r.device,
+                 r.mountPoint,
+                 r.mntOpt,
+                 r.fsType]
             )
+    proxy.register_fs(vars, vals)
 
 def push_rsyncs(svc):
-    proxy.delete_fss(svc.svcname)
-    for rset in svc.get_res_sets("fs"):
-        for r in rset.resources:
-            proxy.register_fs(
-                ['fs_svcname',
-                 'fs_dev',
-                 'fs_mnt',
-                 'fs_mntopt',
-                 'fs_type'],
-                [repr(svc.svcname),
-                 repr(r.device),
-                 repr(r.mountPoint),
-                 repr(r.mntOpt),
-                 repr(r.fsType)]
-            )
+    pass
 
 def push_service(svc):
     def envfile(svc):
