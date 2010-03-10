@@ -51,7 +51,7 @@ def try_umount(self):
 
     for i in range(4):
         cmd = ['fuser', '-kmv', self.mountPoint]
-        (ret, out) = self.vcall(cmd, err_to_warn=True)
+        (ret, out) = self.vcall(cmd, err_to_info=True)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
         ret = qcall(cmd)
