@@ -179,6 +179,10 @@ class Svc(Resource, Freezer):
                         ss += s
                     else:
                         ss += rcStatus.WARN
+        if ss.status == rcStatus.STDBY_UP_WITH_UP:
+            ss.status = rcStatus.UP
+        elif ss.status == rcStatus.STDBY_UP_WITH_DOWN:
+            ss.status = rcStatus.STDBY_UP
         return ss.status
 
     def print_status(self):
@@ -217,6 +221,10 @@ class Svc(Resource, Freezer):
                         status["overall"] += s
                     else:
                         status["overall"] += rcStatus.WARN
+        if status["overall"].status == rcStatus.STDBY_UP_WITH_UP:
+            status["overall"].status = rcStatus.UP
+        elif status["overall"].status == rcStatus.STDBY_UP_WITH_DOWN:
+            status["overall"].status = rcStatus.STDBY_UP
         return status
 
     def disklist(self):
