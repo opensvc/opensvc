@@ -26,6 +26,8 @@ TODO = 4
 UNDEF = 5
 STDBY_UP = 6
 STDBY_DOWN = 7
+STDBY_UP_WITH_UP = 8
+STDBY_UP_WITH_DOWN = 9
 
 GREEN = 32
 RED = 31
@@ -58,6 +60,8 @@ _status_str = {
     UNDEF: 'undef',
     STDBY_UP: 'stdby up',
     STDBY_DOWN: 'stdby down',
+    STDBY_UP_WITH_UP: 'up',
+    STDBY_UP_WITH_DOWN: 'stdby up',
 }
 
 def status_value(str):
@@ -84,29 +88,45 @@ def _merge(s1, s2):
     if (s1, s2) == (UP, WARN): return WARN
     if (s1, s2) == (UP, NA): return UP
     if (s1, s2) == (UP, TODO): return WARN
-    if (s1, s2) == (UP, STDBY_UP): return UP
+    if (s1, s2) == (UP, STDBY_UP): return STDBY_UP_WITH_UP
     if (s1, s2) == (UP, STDBY_DOWN): return WARN
+    if (s1, s2) == (UP, STDBY_UP_WITH_UP): return STDBY_UP_WITH_UP
+    if (s1, s2) == (UP, STDBY_UP_WITH_DOWN): return WARN
     if (s1, s2) == (DOWN, DOWN): return DOWN
     if (s1, s2) == (DOWN, WARN): return WARN
     if (s1, s2) == (DOWN, NA): return DOWN
     if (s1, s2) == (DOWN, TODO): return WARN
-    if (s1, s2) == (DOWN, STDBY_UP): return STDBY_UP
+    if (s1, s2) == (DOWN, STDBY_UP): return STDBY_UP_WITH_DOWN
     if (s1, s2) == (DOWN, STDBY_DOWN): return WARN
+    if (s1, s2) == (DOWN, STDBY_UP_WITH_UP): return WARN
+    if (s1, s2) == (DOWN, STDBY_UP_WITH_DOWN): return STDBY_UP_WITH_DOWN
     if (s1, s2) == (WARN, WARN): return WARN
     if (s1, s2) == (WARN, NA): return WARN
     if (s1, s2) == (WARN, TODO): return WARN
     if (s1, s2) == (WARN, STDBY_UP): return WARN
     if (s1, s2) == (WARN, STDBY_DOWN): return WARN
+    if (s1, s2) == (WARN, STDBY_UP_WITH_UP): return WARN
+    if (s1, s2) == (WARN, STDBY_UP_WITH_DOWN): return WARN
     if (s1, s2) == (NA, NA): return NA
     if (s1, s2) == (NA, TODO): return WARN
     if (s1, s2) == (NA, STDBY_UP): return STDBY_UP
     if (s1, s2) == (NA, STDBY_DOWN): return STDBY_DOWN
+    if (s1, s2) == (NA, STDBY_UP_WITH_UP): return STDBY_UP_WITH_UP
+    if (s1, s2) == (NA, STDBY_UP_WITH_DOWN): return STDBY_UP_WITH_DOWN
     if (s1, s2) == (TODO, TODO): return TODO
     if (s1, s2) == (TODO, STDBY_UP): return TODO
     if (s1, s2) == (TODO, STDBY_DOWN): return TODO
+    if (s1, s2) == (TODO, STDBY_UP_WITH_UP): return TODO
+    if (s1, s2) == (TODO, STDBY_UP_WITH_DOWN): return TODO
     if (s1, s2) == (STDBY_UP, STDBY_UP): return STDBY_UP
     if (s1, s2) == (STDBY_UP, STDBY_DOWN): return WARN
+    if (s1, s2) == (STDBY_UP, STDBY_UP_WITH_UP): return STDBY_UP_WITH_UP
+    if (s1, s2) == (STDBY_UP, STDBY_UP_WITH_DOWN): return STDBY_UP_WITH_DOWN
     if (s1, s2) == (STDBY_DOWN, STDBY_DOWN): return WARN
+    if (s1, s2) == (STDBY_DOWN, STDBY_DOWN): return WARN
+    if (s1, s2) == (STDBY_DOWN, STDBY_UP_WITH_UP): return WARN
+    if (s1, s2) == (STDBY_DOWN, STDBY_UP_WITH_DOWN): return WARN
+    if (s1, s2) == (STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN): return WARN
     return _merge(s2, s1)
 
 def print_status(resource, status):
