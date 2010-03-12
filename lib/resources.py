@@ -199,7 +199,7 @@ class ResourceSet(Resource):
     def action(self,action=None):
         """Call action on each resource of the ResourceSet
         """
-        if action in ["fs", "start"]:
+        if action in ["fs", "start", "startstandby"]:
             self.resources.sort()
         else:
             self.resources.sort(reverse=True)
