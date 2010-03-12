@@ -311,7 +311,7 @@ class Rsync(Res.Resource):
             else:
                 return rcStatus.UP
 
-        if rcEnv.nodename in self.target['drpnodes']:
+        if 'drpnodes' in self.target and rcEnv.nodename in self.target['drpnodes']:
             return rcStatus.NA
 
         nodes = 0
