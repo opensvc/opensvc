@@ -24,6 +24,7 @@ import glob
 from rcUtilities import is_exe, justcall
 import resources as Res
 import rcStatus
+import rcExceptions as ex
 
 class Apps(Res.Resource):
     prefix = []
