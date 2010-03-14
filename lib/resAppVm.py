@@ -27,6 +27,10 @@ import resApp
 class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
+    def set_perms(self, rc):
+        self.vcall(self.prefix+['chown', '0:0', rc])
+        self.vcall(self.prefix+['chmod', '+x', rc])
+
     def checks(self):
         cmd = self.prefix + ['pwd']
         ret = qcall(cmd)
