@@ -38,13 +38,14 @@ class Apps(resApp.Apps):
 
     def checks(self):
         container = self.svc.resources_by_id["container"]
-        if container.rstatus.status == rcStatus.UNDEF:
-           container.rstatus.status = container.status()
+        container.rstatus.status = container.status()
         if container.rstatus.status != rcStatus.UP:
+            self.log.debug("abort resApp action because container status is %s"%container.rstatus)
             return False
         cmd = self.prefix + ['pwd']
         ret = qcall(cmd)
         if ret != 0:
+            self.log.debug("abort resApp action because container is unreachable")
             return False
         cmd = self.prefix + ['test', '-d', self.app_d]
         ret = qcall(cmd)
