@@ -23,6 +23,7 @@ import glob
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, qcall
 import resApp
+import rcStatus
 
 class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
@@ -36,6 +37,11 @@ class Apps(resApp.Apps):
             self.vcall(self.prefix+['chmod', '+x', rc])
 
     def checks(self):
+        container = self.svc.resources_by_id["container"]
+        if container.rstatus.status == rcStatus.UNDEF:
+           container.rstatus.status = container.status()
+        if container.rstatus.status != rcStatus.UP:
+            return False
         cmd = self.prefix + ['pwd']
         ret = qcall(cmd)
         if ret != 0:
@@ -46,6 +52,15 @@ class Apps(resApp.Apps):
             self.log.error("%s is not present inside vm"%(self.app_d))
             return False
         return True
+
+    def stop_checks(self):
+        return self.checks()
+
+    def start_checks(self):
+        return self.checks()
+
+    def status_checks(self):
+        return self.checks()
 
     def sorted_app_list(self, pattern):
         cmd = self.prefix + ['ls', os.path.join(self.app_d, pattern)]

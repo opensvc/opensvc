@@ -113,20 +113,7 @@ class Resource(object):
                 raise exc.excError
 
     def status(self):
-        """aggregate status a ResourceSet
-        """
-        s = rcStatus.Status()
-        for r in self.resources:
-            if r.is_disabled():
-                continue
-            try:
-                status = r.status()
-            except:
-                status = rcStatus.NA
-
-            r.rstatus.status = status
-            s += status
-        return s.status
+        return rcStatus.UNDEF
 
     def print_status(self):
         label = "%-8s %s"%(self.rid, self.label)
@@ -195,6 +182,22 @@ class ResourceSet(Resource):
 
     def post_action(self, rset=None, action=None):
         pass
+
+    def status(self):
+        """aggregate status a ResourceSet
+        """
+        s = rcStatus.Status()
+        for r in self.resources:
+            if r.is_disabled():
+                continue
+            try:
+                status = r.status()
+            except:
+                status = rcStatus.NA
+
+            r.rstatus.status = status
+            s += status
+        return s.status
 
     def action(self,action=None):
         """Call action on each resource of the ResourceSet
