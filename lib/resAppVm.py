@@ -28,8 +28,12 @@ class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
     def set_perms(self, rc):
-        self.vcall(self.prefix+['chown', '0:0', rc])
-        self.vcall(self.prefix+['chmod', '+x', rc])
+        (ret, out) = self.call(self.prefix+['find', self.app_d, '-name', os.path.basename(rc), '-a', '-uid', '0', '-a', '-gid', '0'])
+        if len(out) == 0 or rc != out.split()[0]:
+            self.vcall(self.prefix+['chown', '0:0', rc])
+        (ret, out) = self.call(self.prefix+['test', '-x', rc])
+        if ret != 0:
+            self.vcall(self.prefix+['chmod', '+x', rc])
 
     def checks(self):
         cmd = self.prefix + ['pwd']
