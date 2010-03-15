@@ -329,7 +329,7 @@ class Rsync(Res.Resource):
         return rcStatus.DOWN
 
     def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, sync_min_delay=30, sync_max_delay=1440,
+                 bwlimit=None, sync_min_delay=30, sync_max_delay=1500,
                  optional=False, disabled=False, internal=False):
         if internal:
             if rcEnv.drp_path in dst:
