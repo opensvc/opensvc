@@ -176,7 +176,7 @@ def add_loops(svc, conf):
         if conf.has_option(s, "file"):
             file = conf.get(s, "file")
         else:
-            self.log.error("file must be set in section %s"%s)
+            svc.log.error("file must be set in section %s"%s)
             return
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(rid=s, loopFile=file)
@@ -194,7 +194,7 @@ def add_vgs(svc, conf):
             continue
 
         if not conf.has_option(s, "vgname"):
-            self.log.error("vgname must be set in section %s"%s)
+            svc.log.error("vgname must be set in section %s"%s)
             return
         else:
             kwargs['name'] = conf.get(s, "vgname")
