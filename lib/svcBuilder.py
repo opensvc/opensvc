@@ -217,6 +217,8 @@ def add_vmdg(svc, conf):
         return
     if svc.svcmode == 'hpvm':
         vg = __import__('resVgHpVm')
+    elif svc.svcmode in ['kvm', 'xen']:
+        vg = __import__('resVgLibvirtVm')
     else:
         return
     r = vg.Vg(rid='vmdg', name='vmdg')
@@ -560,13 +562,13 @@ def add_apps(svc, conf):
         r = resApp.Apps(runmethod=svc.runmethod)
         svc += r
 
-def setup_logging():
+def setup_logging(svcname):
 	"""Setup logging to stream + logfile, and logfile rotation
 	class Logger instance name: 'log'
 	"""
 	logging.setLoggerClass(rcLogger.Logger)
 	global log
-	log = logging.getLogger('INIT')
+	log = logging.getLogger(svcname.upper())
 	if '--debug' in sys.argv:
 		rcEnv.loglevel = logging.DEBUG
 		log.setLevel(logging.DEBUG)
@@ -616,7 +618,7 @@ def build(name):
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
 
-    setup_logging()
+    setup_logging(name)
 
     #
     # print stuff we determined so far

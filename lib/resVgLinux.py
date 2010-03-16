@@ -112,10 +112,15 @@ class Vg(resDg.Dg):
         if ret != 0:
             return disks
 	pvs = set(out.split())
+        self.disks = self.pvs_to_disks(pvs)
+        self.log.debug("found disks %s held by vg %s" % (disks, self.name))
+        return disks
 
+    def pvs_to_disks(self, pvs):
         """If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
         """
+        disks = set()
         dm_major = major('device-mapper')
         try: lo_major = major('loop')
         except: lo_major = 0
@@ -134,7 +139,5 @@ class Vg(resDg.Dg):
                 pass
             else:
                 disks.add(pv)
-
-        self.log.debug("found disks %s held by vg %s" % (disks, self.name))
-        self.disks = disks
         return disks
+

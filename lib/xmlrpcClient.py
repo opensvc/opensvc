@@ -189,7 +189,6 @@ def svcmon_update(svc, status):
             ' '.join(svc.nodes)]
         proxy.svcmon_update(vars, vals)
     except:
-        raise
         pass
     resmon_update(svc, status)
 
