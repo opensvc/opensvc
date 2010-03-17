@@ -49,8 +49,11 @@ class Apps(resApp.Apps):
             return False
         cmd = self.prefix + ['test', '-d', self.app_d]
         ret = qcall(cmd)
+        if ret == 0:
+            return True
+        cmd = self.prefix + ['mkdir', '-p', self.app_d]
+        ret = self.vcall(cmd)
         if ret != 0:
-            self.log.error("%s is not present inside vm"%(self.app_d))
             return False
         return True
 
