@@ -65,6 +65,10 @@ class Apps(Res.Resource):
     def status_checks(self):
         if not os.path.exists(self.svc.initd):
             return False
+        status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk"]))
+        if status["overall"] != rcStatus.UP:
+            self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
+            return False
         return True
 
     def app(self, name, action, dedicated_log=True):
