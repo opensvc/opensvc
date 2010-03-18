@@ -562,13 +562,13 @@ def add_apps(svc, conf):
         r = resApp.Apps(runmethod=svc.runmethod)
         svc += r
 
-def setup_logging(svcname):
+def setup_logging():
 	"""Setup logging to stream + logfile, and logfile rotation
 	class Logger instance name: 'log'
 	"""
 	logging.setLoggerClass(rcLogger.Logger)
 	global log
-	log = logging.getLogger(svcname.upper())
+	log = logging.getLogger('INIT')
 	if '--debug' in sys.argv:
 		rcEnv.loglevel = logging.DEBUG
 		log.setLevel(logging.DEBUG)
@@ -618,7 +618,7 @@ def build(name):
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
 
-    setup_logging(name)
+    setup_logging()
 
     #
     # print stuff we determined so far
