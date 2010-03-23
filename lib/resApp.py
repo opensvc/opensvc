@@ -102,7 +102,7 @@ class Apps(Res.Resource):
         errs = 0
         nb = 0
         if not self.status_checks():
-            raise ex.excError
+            return rcStatus.NA
         for name in self.sorted_app_list('C*'):
             ret = self.app(name, 'status', dedicated_log=False)
             nb += 1

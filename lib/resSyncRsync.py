@@ -299,11 +299,18 @@ class Rsync(Res.Resource):
             pass
 
     def status(self):
+        """ mono-node service should return n/a as a sync state
+        """
+        target = set([])
+        for i in self.target:
+            target |= self.target[i]
+        if len(target) <= 1:
+            return rcStatus.NA
+
+        """ sync state on nodes where the service is not UP
+        """
         self.get_svcstatus()
         if self.svcstatus['overall'].status != rcStatus.UP:
-            target = set([])
-            for i in self.target:
-                target |= self.target[i]
             if rcEnv.nodename not in target:
                 return rcStatus.NA
             if need_sync(self, rcEnv.nodename):
@@ -311,9 +318,13 @@ class Rsync(Res.Resource):
             else:
                 return rcStatus.UP
 
+        """ sync state on DRP nodes where the service is UP
+        """
         if 'drpnodes' in self.target and rcEnv.nodename in self.target['drpnodes']:
             return rcStatus.NA
 
+        """ sync state on nodes where the service is UP
+        """
         nodes = 0
         try:
             nodes += len(nodes_to_sync(self, 'nodes', state="late", status=True))
