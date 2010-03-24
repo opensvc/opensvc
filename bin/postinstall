@@ -180,9 +180,9 @@ def gen_keys():
     buff = process.communicate()
 
 def convert_svclinks():
-    pathetc = os.path.join(os.sep, 'service', 'etc')
+    pathetc = os.path.join(os.sep, 'usr', 'local', 'opensvc', 'etc')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
-    rcService = os.path.realpath(os.path.join(os.sep, 'service', 'bin', 'rcService'))
+    rcService = os.path.realpath(os.path.join(os.sep, 'usr', 'local', 'opensvc', 'bin', 'rcService'))
     for fname in os.listdir(pathetc):
         fpath = os.path.join(pathetc, fname)
         if not os.path.islink(fpath):
