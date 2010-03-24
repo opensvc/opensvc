@@ -127,6 +127,16 @@ def activate_hpux():
         f.close()
     return True
 
+def activate_SunOS():
+    rc = "/etc/init.d/opensvc"
+    links = ["/etc/rc0.d/K00opensvc", "/sbin/rc3.d/S99opensvc"]
+    for l in links:
+        if not os.path.islink(l):
+            if os.path.exists(l):
+                os.unlink(l)
+            os.symlink(rc, l)
+    return True
+
 def install_rc():
     """install startup script
     """
@@ -144,6 +154,10 @@ def install_rc():
         rc = '/sbin/init.d/opensvc'
         src = '/usr/local/opensvc/bin/opensvc.init.hpux'
         activate = activate_hpux
+    elif sysname == "SunOS":
+        rc = '/etc/init.d/opensvc'
+        src = '/usr/local/opensvc/bin/opensvc.init.SunOS'
+        activate = activate_SunOS
     else:
         print "could not select an init script: unsupported operating system"
         return False
