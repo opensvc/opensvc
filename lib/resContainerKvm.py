@@ -24,8 +24,8 @@ import rcExceptions as ex
 from rcUtilities import qcall
 
 class Kvm(Res.Resource):
-    startup_timeout = 100
-    shutdown_timeout = 60
+    startup_timeout = 180
+    shutdown_timeout = 120
 
     def __init__(self, name, optional=False, disabled=False):
         Res.Resource.__init__(self, rid="kvm", type="container.kvm",
@@ -58,14 +58,16 @@ class Kvm(Res.Resource):
             if self.is_up() and self.ping() and self.operational():
                 return
             time.sleep(1)
-        raise ex.excError("Waited too long for startup")
+        self.log.error("Waited too long for startup")
+        raise ex.excError
 
     def wait_for_shutdown(self):
         for tick in range(self.shutdown_timeout):
             if not self.is_up():
                 return
             time.sleep(1)
-        raise ex.excError("Waited too long for shutdown")
+        self.log.error("Waited too long for shutdown")
+        raise ex.excError
 
     def kvm_start(self):
         cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')
