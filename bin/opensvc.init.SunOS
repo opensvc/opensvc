@@ -8,7 +8,7 @@
 #              autostart node is this node.
 # processname:
 
-osvc_path=/usr/local/service/bin
+osvc_path=/usr/local/opensvc/bin
 allservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
