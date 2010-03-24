@@ -129,7 +129,7 @@ def activate_hpux():
 
 def activate_SunOS():
     rc = "/etc/init.d/opensvc"
-    links = ["/etc/rc0.d/K00opensvc", "/sbin/rc3.d/S99opensvc"]
+    links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
     for l in links:
         if not os.path.islink(l):
             if os.path.exists(l):
