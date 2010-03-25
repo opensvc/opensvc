@@ -22,11 +22,17 @@ def install_cron():
 
     """ order of preference
     """
-    root_crontab_locs = [
-        '/etc/cron.d/opensvc',
-        '/var/spool/cron/crontabs/root',
-        '/var/spool/cron/root',
-    ]
+    sysname, nodename, x, x, machine = os.uname()
+    if sysname == 'SunOS' :
+        root_crontab_locs = [
+            '/var/spool/cron/crontabs/root'
+        ]
+    else:
+        root_crontab_locs = [
+            '/etc/cron.d/opensvc',
+            '/var/spool/cron/crontabs/root',
+            '/var/spool/cron/root',
+        ]
     for loc in root_crontab_locs:
         if os.path.exists(os.path.dirname(loc)):
             if not root_crontab:
