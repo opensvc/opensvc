@@ -60,7 +60,8 @@ class HpVm(Res.Resource):
             if self.is_up() and self.ping() and self.operational():
                 return
             time.sleep(delay)
-        raise ex.excError("Waited too long for startup")
+        self.log.error("Waited too long for startup")
+        raise ex.excError
 
     def wait_for_shutdown(self):
         delay = 5
@@ -68,7 +69,8 @@ class HpVm(Res.Resource):
             if not self.is_up():
                 return
             time.sleep(delay)
-        raise ex.excError("Waited too long for shutdown")
+        self.log.error("Waited too long for shutdown")
+        raise ex.excError
 
     def hpvm_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]

@@ -62,7 +62,7 @@ def lxc_wait_for_shutdown(self):
     for t in range(self.startup_timeout):
         if not self.is_up(): return 0
     self.log.error("timeout out waiting for %s shutdown", self.name)
-    return 1
+    raise ex.excError
 
 def lxc_exec(self, cmd):
     pass
