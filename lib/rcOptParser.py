@@ -57,6 +57,8 @@ action_desc = {
 	'syncquiesce':	'trigger a storage hardware-assisted disk synchronization',
 	'syncbreak':	'split a storage hardware-assisted disk synchronization',
 	'syncresync':	're-establish a broken storage hardware-assisted synchronization',
+	'syncfullsync':	'trigger a full copy of the volume to its target',
+	'syncupdate':	'trigger a one-time resync of the volume to its target',
 	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
 }

@@ -90,6 +90,7 @@ class Svc(Resource, Freezer):
                              "app",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.dds",
                              "sync.netapp"]
         Resource.__init__(self, type=type, optional=optional, disabled=disabled)
         Freezer.__init__(self, svcname)
@@ -274,6 +275,7 @@ class Svc(Resource, Freezer):
     def startdisk(self):
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("sync.symclone", "start")
+        self.sub_set_action("sync.dds", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.zpool", "start")
@@ -351,6 +353,7 @@ class Svc(Resource, Freezer):
     def syncresync(self):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
+        self.sub_set_action("sync.dds", "syncresync")
 
     def syncbreak(self):
         self.sub_set_action("sync.netapp", "syncbreak")
@@ -358,6 +361,10 @@ class Svc(Resource, Freezer):
 
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
+        self.sub_set_action("sync.dds", "syncupdate")
+
+    def syncfullsync(self):
+        self.sub_set_action("sync.dds", "syncfullsync")
 
     def printsvc(self):
         print str(self)

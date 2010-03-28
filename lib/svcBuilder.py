@@ -384,6 +384,58 @@ def add_syncs(svc, conf):
     add_syncs_rsync(svc, conf)
     add_syncs_netapp(svc, conf)
     add_syncs_symclone(svc, conf)
+    add_syncs_dds(svc, conf)
+
+def add_syncs_dds(svc, conf):
+    dds = __import__('resSyncDds')
+    for s in conf.sections():
+        kwargs = {}
+
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'dds':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        if not conf.has_option(s, 'src'):
+            log.error("config file section %s must have src set" % s)
+            return
+        else:
+            kwargs['src'] = conf.get(s, 'src')
+
+        if not conf.has_option(s, 'dst'):
+            kwargs['dst'] = conf.get(s, 'src')
+        else:
+            kwargs['dst'] = conf.get(s, 'dst')
+
+        if not conf.has_option(s, 'target'):
+            log.error("config file section %s must have target set" % s)
+            return
+        else:
+            kwargs['target'] = conf.get(s, 'target').split()
+
+        if conf.has_option(s, 'snap_size'):
+            kwargs['snap_size'] = conf.getint(s, 'snap_size')
+
+        if conf.has_option(s, 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+
+        if conf.has_option(s, 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
+        elif conf.has_option('default', 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+
+        kwargs['rid'] = s
+        r = dds.syncDds(**kwargs)
+        set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
+        svc += r
 
 def add_syncs_symclone(svc, conf):
     try:
