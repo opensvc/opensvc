@@ -421,6 +421,9 @@ def add_syncs_dds(svc, conf):
         if conf.has_option(s, 'snap_size'):
             kwargs['snap_size'] = conf.getint(s, 'snap_size')
 
+        if conf.has_option(s, 'delta_store'):
+            kwargs['delta_store'] = conf.get(s, 'delta_store')
+
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
         elif conf.has_option('default', 'sync_max_delay'):

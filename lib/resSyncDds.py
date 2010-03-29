@@ -76,7 +76,7 @@ class syncDds(Res.Resource):
                                                 self.snap1_lv,
                                                 'cow'])
                                      )
-        self.deltafile = os.path.join(rcEnv.pathvar,
+        self.deltafile = os.path.join(self.delta_store,
                                       '-'.join([self.src_vg.replace('-', '--'),
                                                 self.src_lv.replace('-', '--')+'.delta'])
                                      )
@@ -158,6 +158,8 @@ class syncDds(Res.Resource):
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        cmd = rcEnv.rsh.split() + [node, 'rm', '-f', self.deltafile]
+        (ret, out) = self.vcall(cmd)
 
     def do_update(self, node):
         self.push_deltafile(node)
@@ -263,6 +265,7 @@ class syncDds(Res.Resource):
         return rcStatus.UP
 
     def __init__(self, rid=None, target=None, src=None, dst=None,
+                 delta_store=None,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
                  optional=False, disabled=False):
         self.label = "dds of %s to %s"%(src, target)
@@ -273,6 +276,10 @@ class syncDds(Res.Resource):
         self.sync_min_delay = sync_min_delay
         self.snap_size = snap_size
         self.statefile = os.path.join(rcEnv.pathvar, rid+'_dds_state')
+        if delta_store is None:
+            self.delta_store = rcEnv.pathvar
+        else:
+            self.delta_store = delta_store
         Res.Resource.__init__(self, rid, "sync.dds", optional, disabled)
 
     def __str__(self):
