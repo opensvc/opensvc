@@ -7,7 +7,7 @@ if [ -r /etc/rc.config.d/opensvc ] ; then
     . /etc/rc.config.d/opensvc
 fi
 
-osvc_path=/usr/local/opensvc/bin
+osvc_path=/opt/opensvc/bin
 allservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 

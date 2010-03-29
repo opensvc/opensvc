@@ -21,11 +21,11 @@ REMOTEHOST=${1:-s64lmwbicb6.dsit.sncf.fr}
 # prepare skeleton (data.tar.gz)
 #
 [ "${CHROOT%%noarch}" != "$CHROOT" ] && rm -rf $CHROOT
-mkdir -p $CHROOT/usr/local/opensvc/etc || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/var/cache || exit 1
+mkdir -p $CHROOT/opt/opensvc/etc || exit 1
+mkdir -p $CHROOT/opt/opensvc/var || exit 1
+mkdir -p $CHROOT/opt/opensvc/log || exit 1
+mkdir -p $CHROOT/opt/opensvc/tmp || exit 1
+mkdir -p $CHROOT/opt/opensvc/var/cache || exit 1
 
 # install tracked files
 EXCL=
@@ -38,13 +38,12 @@ EXCL="$EXCL --exclude=var/host_mode"
 EXCL="$EXCL --exclude='var/lock/*'"
 EXCL="$EXCL --exclude='var/cache/*'"
 cd $OSVC || exit 1
-tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
-#touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
-echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/usr/local/opensvc/lib/version.py || exit 1
+tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/opt/opensvc || exit 1
+#touch $CHROOT/opt/opensvc/var/host_mode || exit 1
+echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || exit 1
 
 # symbolic links
 cd $CHROOT || exit 1
-ln -s usr/local/opensvc service || exit 1
 
 cat - <<-EOF >$CHROOT/../$PSF
 vendor
@@ -70,7 +69,7 @@ product
     title        Commands (management utilities)
     revision     1.0
     prerequisite Python.PYTHON-RUN
-    postinstall  /tmp/$CHROOT_BN/usr/local/opensvc/bin/postinstall
+    postinstall  /tmp/$CHROOT_BN/opt/opensvc/bin/postinstall
     file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN=/
     file         *
@@ -81,6 +80,6 @@ EOF
 cd $CHROOT/.. || exit 1
 tar cf - $CHROOT_BN $PSF | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
 ssh root@$REMOTEHOST "cd /tmp && swpackage -vv -s opensvc.psf -x target_type=tape @/tmp/$DEPOT"
-scp root@$REMOTEHOST:/tmp/$DEPOT /service/tmp/ || exit 1
+scp root@$REMOTEHOST:/tmp/$DEPOT /opt/opensvc/tmp/ || exit 1
 
-[ -x $PATH_SCRIPT/release_depot ] && $PATH_SCRIPT/release_depot /service/tmp/$DEPOT
+[ -x $PATH_SCRIPT/release_depot ] && $PATH_SCRIPT/release_depot /opt/opensvc/tmp/$DEPOT

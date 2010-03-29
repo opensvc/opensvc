@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import glob
 from subprocess import *
 
 def install_cron():
@@ -10,11 +11,11 @@ def install_cron():
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
-           'cmd': "[ -x /usr/local/opensvc/bin/svcmon ] && /usr/local/opensvc/bin/svcmon --updatedb >/dev/null 2>&1"
+           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb >/dev/null 2>&1"
     },{
            'sched': "0 4 * * *",
            'user': "",
-           'cmd': "[ -x /usr/local/opensvc/bin/cron/opensvc.daily ] && /usr/local/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
+           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
     }]
 
     purge = []
@@ -56,11 +57,13 @@ def install_cron():
             svcmon_present = False
             dailycron_present = False
             new = f.readlines()
-            for line in new:
+            for i, line in enumerate(new):
                 if 'opensvc.daily' in line:
                     dailycron_present = True
                 if 'svcmon --updatedb' in line:
                     svcmon_present = True
+                if '/usr/local/opensvc' in line:
+                    new[i] = line.replace('/usr/local/opensvc', '/opt/opensvc')
             if not svcmon_present:
                 new.append(cron_entry_1+'\n')
             if not dailycron_present:
@@ -150,19 +153,19 @@ def install_rc():
 
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
-        src = '/usr/local/opensvc/bin/opensvc.init.debian'
+        src = '/opt/opensvc/bin/opensvc.init.debian'
         activate = activate_debian
     elif os.path.exists('/etc/redhat-release'):
         rc = '/etc/init.d/opensvc'
-        src = '/usr/local/opensvc/bin/opensvc.init.redhat'
+        src = '/opt/opensvc/bin/opensvc.init.redhat'
         activate = activate_redhat
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
-        src = '/usr/local/opensvc/bin/opensvc.init.hpux'
+        src = '/opt/opensvc/bin/opensvc.init.hpux'
         activate = activate_hpux
     elif sysname == "SunOS":
         rc = '/etc/init.d/opensvc'
-        src = '/usr/local/opensvc/bin/opensvc.init.SunOS'
+        src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
     else:
         print "could not select an init script: unsupported operating system"
@@ -186,9 +189,9 @@ def gen_keys():
     buff = process.communicate()
 
 def convert_svclinks():
-    pathetc = os.path.join(os.sep, 'usr', 'local', 'opensvc', 'etc')
+    pathetc = os.path.join(os.sep, 'opt', 'opensvc', 'etc')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
-    rcService = os.path.realpath(os.path.join(os.sep, 'usr', 'local', 'opensvc', 'bin', 'rcService'))
+    rcService = os.path.realpath(os.path.join(os.sep, 'opt', 'opensvc', 'bin', 'rcService'))
     for fname in os.listdir(pathetc):
         fpath = os.path.join(pathetc, fname)
         if not os.path.islink(fpath):
@@ -198,8 +201,48 @@ def convert_svclinks():
             continue
         os.unlink(fpath)
         os.symlink(svcmgr, fpath)
-        
+
+def move_usr_to_opt():
+    linksvc = os.path.join(os.sep, 'service')
+    pathsvc = os.path.join(os.sep, 'opt', 'opensvc')
+    pathvar = os.path.join(pathsvc, 'var')
+    pathetc = os.path.join(pathsvc, 'etc')
+    old_pathsvc = os.path.join(os.sep, 'usr', 'local', 'opensvc')
+    old_pathvar = os.path.join(old_pathsvc, 'var')
+    old_pathetc = os.path.join(old_pathsvc, 'etc')
+
+    if os.path.exists(old_pathvar):
+        for f in glob.glob(old_pathvar+'/*'):
+            dst = os.path.join(pathvar, os.path.basename(f))
+            if os.path.exists(dst):
+                continue
+            shutil.move(f, dst)
+
+    if os.path.exists(old_pathetc):
+        for f in glob.glob(old_pathetc+'/*'):
+            dst = os.path.join(pathetc, os.path.basename(f))
+            if os.path.exists(dst):
+                continue
+            shutil.move(f, dst)
+
+    if os.path.exists(old_pathsvc):
+        shutil.rmtree(old_pathsvc)
+
+    if os.path.islink(linksvc) and os.path.realpath(linksvc) == old_pathsvc:
+        os.unlink(linksvc)
+
+def install_profile():
+    prof_d = os.path.join(os.sep, 'etc', 'profile.d')
+    prof = os.path.join(prof_d, 'opensvc.sh')
+    buff = "export PATH=$PATH:/opt/opensvc/bin:/opt/opensvc/etc\n"
+    if not os.path.exists(prof_d):
+        return
+    with open(prof, 'w') as f:
+        f.write(buff)
+
+move_usr_to_opt()
 convert_svclinks()
 install_cron()
 install_rc()
 gen_keys()
+install_profile()

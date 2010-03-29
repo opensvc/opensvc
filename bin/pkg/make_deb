@@ -23,11 +23,11 @@ DEB=opensvc-$VERSION-$RELEASE.noarch.deb
 # prepare skeleton (data.tar.gz)
 #
 [ "${CHROOT%%noarch}" != "$CHROOT" ] && rm -rf $CHROOT
-mkdir -p $CHROOT/usr/local/opensvc/etc || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/var || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/log || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/tmp || exit 1
-mkdir -p $CHROOT/usr/local/opensvc/var/cache || exit 1
+mkdir -p $CHROOT/opt/opensvc/etc || exit 1
+mkdir -p $CHROOT/opt/opensvc/var || exit 1
+mkdir -p $CHROOT/opt/opensvc/log || exit 1
+mkdir -p $CHROOT/opt/opensvc/tmp || exit 1
+mkdir -p $CHROOT/opt/opensvc/var/cache || exit 1
 
 # install tracked files
 EXCL=
@@ -40,25 +40,20 @@ EXCL="$EXCL --exclude=var/host_mode"
 EXCL="$EXCL --exclude='var/lock/*'"
 EXCL="$EXCL --exclude='var/cache/*'"
 cd $OSVC || exit 1
-tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/usr/local/opensvc || exit 1
-touch $CHROOT/usr/local/opensvc/var/host_mode || exit 1
-echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/usr/local/opensvc/lib/version.py || exit 1
-
-# symbolic links
-cd $CHROOT || exit 1
-ln -s usr/local/opensvc service || exit 1
-
+tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/opt/opensvc || exit 1
+touch $CHROOT/opt/opensvc/var/host_mode || exit 1
+echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || exit 1
 
 # prepare control.tar.gz
 mkdir -p $CHROOT/DEBIAN || exit 1
 
 cat - <<-EOF >$CHROOT/DEBIAN/conffiles
-/usr/local/opensvc/var/host_mode
+/opt/opensvc/var/host_mode
 EOF
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh
-/service/bin/postinstall
+/opt/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
 

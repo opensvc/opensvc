@@ -12,7 +12,7 @@
 # Source function library.
 . /etc/init.d/functions
 
-osvc_path=/usr/local/opensvc/bin
+osvc_path=/opt/opensvc/bin
 allservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
