@@ -214,7 +214,7 @@ def move_usr_to_opt():
     if os.path.exists(old_pathvar):
         for f in glob.glob(old_pathvar+'/*'):
             dst = os.path.join(pathvar, os.path.basename(f))
-            if os.path.exists(dst):
+            if os.path.exists(dst) and 'host_mode' not in dst:
                 continue
             shutil.move(f, dst)
 
