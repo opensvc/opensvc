@@ -65,6 +65,9 @@ class syncDds(Res.Resource):
 
     def get_src_info(self):
         (self.src_vg, self.src_lv, self.src_size) = lv_info(self, self.src)
+        if self.src_lv is None:
+            self.log.error("unable to fetch source logical volume information")
+            raise ex.excError
         if self.snap_size == 0:
             self.snap_size = self.src_size//10
         self.snap1_lv = self.snap_name('snap1')
@@ -249,7 +252,6 @@ class syncDds(Res.Resource):
 
     def status(self):
         try:
-            self.get_info()
             ls = self.get_local_state()
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
