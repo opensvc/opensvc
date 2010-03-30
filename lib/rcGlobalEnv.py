@@ -55,7 +55,7 @@ class rcEnv:
     """Directory on DRP node where to store the PRD nodes files necessary
     for takeover.
     """
-    drp_path = "/usr/local/opensvc/var/cache/"
+    drp_path = "/opt/opensvc/var/cache/"
     drp_sync_excludes = [
         '--exclude="/spice"',
         '--exclude="/dbadm"',
