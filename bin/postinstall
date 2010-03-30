@@ -216,14 +216,26 @@ def move_usr_to_opt():
             dst = os.path.join(pathvar, os.path.basename(f))
             if os.path.exists(dst) and 'host_mode' not in dst:
                 continue
-            shutil.move(f, dst)
+            if os.path.isdir(f):
+                shutil.copytree(f, dst, symlinks=True)
+            elif os.path.islink(f):
+                linkto = os.readlink(f)
+                os.symlink(linkto, dst)
+            else:
+                shutil.copy2(f, dst)
 
     if os.path.exists(old_pathetc):
         for f in glob.glob(old_pathetc+'/*'):
             dst = os.path.join(pathetc, os.path.basename(f))
             if os.path.exists(dst):
                 continue
-            shutil.move(f, dst)
+            if os.path.isdir(f):
+                shutil.copytree(f, dst, symlinks=True)
+            elif os.path.islink(f):
+                linkto = os.readlink(f)
+                os.symlink(linkto, dst)
+            else:
+                shutil.copy2(f, dst)
 
     if os.path.exists(old_pathsvc):
         shutil.rmtree(old_pathsvc)
