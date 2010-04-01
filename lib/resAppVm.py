@@ -29,12 +29,16 @@ class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
     def set_perms(self, rc):
-        (ret, out) = self.call(self.prefix+['find', self.app_d, '-name', os.path.basename(rc), '-a', '-uid', '0', '-a', '-gid', '0'])
+        (ret, out) = self.call(self.prefix+['/usr/bin/find',
+                                            self.app_d,
+                                            '-name', os.path.basename(rc),
+                                            '-a', '-uid', '0',
+                                            '-a', '-gid', '0'])
         if len(out) == 0 or rc != out.split()[0]:
             self.vcall(self.prefix+['chown', '0:0', rc])
-        (ret, out) = self.call(self.prefix+['test', '-x', rc])
+        (ret, out) = self.call(self.prefix+['/usr/bin/test', '-x', rc])
         if ret != 0:
-            self.vcall(self.prefix+['chmod', '+x', rc])
+            self.vcall(self.prefix+['/usr/bin/chmod', '+x', rc])
 
     def checks(self):
         container = self.svc.resources_by_id["container"]
@@ -42,16 +46,16 @@ class Apps(resApp.Apps):
         if container.rstatus.status != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%container.rstatus)
             return False
-        cmd = self.prefix + ['pwd']
+        cmd = self.prefix + ['/bin/pwd']
         ret = qcall(cmd)
         if ret != 0:
             self.log.debug("abort resApp action because container is unreachable")
             return False
-        cmd = self.prefix + ['test', '-d', self.app_d]
+        cmd = self.prefix + ['/usr/bin/test', '-d', self.app_d]
         ret = qcall(cmd)
         if ret == 0:
             return True
-        cmd = self.prefix + ['mkdir', '-p', self.app_d]
+        cmd = self.prefix + ['/bin/mkdir', '-p', self.app_d]
         ret = self.vcall(cmd)
         if ret != 0:
             return False
@@ -67,7 +71,7 @@ class Apps(resApp.Apps):
         return self.checks()
 
     def sorted_app_list(self, pattern):
-        cmd = self.prefix + ['ls', os.path.join(self.app_d, pattern)]
+        cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:

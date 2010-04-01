@@ -23,6 +23,7 @@ import svc
 import resContainerLxc as lxc
 import rcStatus
 from rcGlobalEnv import rcEnv
+from rcUtilities import which
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
@@ -34,7 +35,11 @@ class SvcLxc(svc.Svc):
         self.vmname = vmname
         self += lxc.Lxc(vmname)
         self.status_types += ["container.lxc"]
-        self.runmethod = rcEnv.rsh.split() + [vmname]
+        if which('lxc-attach'):
+            self.runmethod = ['lxc-attach', '-n', vmname, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [vmname]
+
 
 
 if __name__ == "__main__":

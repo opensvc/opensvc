@@ -21,9 +21,19 @@ from subprocess import *
 
 import rcIfconfigLinux
 from rcGlobalEnv import rcEnv
+from rcUtilities import which
 
 class ifconfig(rcIfconfigLinux.ifconfig):
     def __init__(self, hostname):
         self.intf = []
-        out = Popen(rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', '-a'], stdout=PIPE).communicate()[0]
+
+        if which('lxc-attach'):
+            self.rsh = ['lxc-attach', '-n', hostname]
+            cmd = ['echo', '/sbin/ifconfig', '-a']
+            p1 = Popen(cmd, stdout=PIPE)
+            out = Popen(self.rsh, stdout=PIPE, stdin=p1.stdout).communicate()[0]
+        else:
+            self.rsh = rcEnv.rsh.split() + [hostname, '--', 'LANG=C']
+            cmd = self.rsh + ['/sbin/ifconfig', '-a']
+            out = Popen(cmd, stdout=PIPE).communicate()[0]
         self.parse(out)

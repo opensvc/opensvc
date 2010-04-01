@@ -53,6 +53,8 @@ def which(program):
 def justcall(argv=['/bin/false']):
     """subprosses call argv, return (stdout,stderr,returncode)
     """
+    if which(argv[0]) is None:
+        return ("", "", 1)
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     (stdout, stderr)=process.communicate(input=None)
     return (stdout, stderr, process.returncode)
@@ -61,8 +63,12 @@ def call(argv=['/bin/false'], log=None,
          info=False, errlog=True, err_to_warn=False, err_to_info=False):
     if log == None:
         log = logging.getLogger('CALL')
-    if not argv:
+    if not argv or len(argv) == 0:
         return (0, '')
+    if which(argv[0]) is None:
+        log.error("%s does not exist or not in path or is not executable"%
+                  argv[0])
+        return (1, '')
     if info:
         log.info(' '.join(argv))
     else:
