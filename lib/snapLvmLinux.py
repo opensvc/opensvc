@@ -101,7 +101,8 @@ def snap(self, rset, action):
             (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(lv_size//10)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
             if ret != 0:
                 raise ex.syncSnapCreateError
-            snap_mnt = '/service/tmp/osvc_sync_'+vg_name+'_'+lv_name
+            snap_mnt = os.path.join(rcEnv.pathtmp,
+                                    'osvc_sync_'+vg_name+'_'+lv_name)
             if not os.path.exists(snap_mnt):
                 os.makedirs(snap_mnt, 0755)
             snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
