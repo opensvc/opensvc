@@ -252,9 +252,26 @@ def install_profile():
     with open(prof, 'w') as f:
         f.write(buff)
 
+def install_user_linux():
+    cmd = ['useradd', '-m', 'opensvc', '-s', '/bin/bash']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+
+def install_user():
+    cmd = ['id', 'opensvc']
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+    if process.returncode == 0:
+        return
+
+    sysname, nodename, x, x, machine = os.uname()
+    if sysname == 'Linux':
+        install_user_linux()
+
 move_usr_to_opt()
 convert_svclinks()
 install_cron()
 install_rc()
 gen_keys()
 install_profile()
+install_user()
