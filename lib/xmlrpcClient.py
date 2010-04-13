@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-from datetime import datetime
+from datetime import datetime, timedelta
 import xmlrpclib
 import os
 from rcGlobalEnv import rcEnv
@@ -217,48 +217,6 @@ def resmon_update(svc, status):
     except:
         pass
 
-def push_ips(svc):
-    proxy.delete_ips(svc.svcname, rcEnv.nodename)
-    vars = ['ip_svcname',
-            'ip_dev',
-            'ip_name',
-            'ip_node',
-            'ip_netmask']
-    vals = []
-    for rset in svc.get_res_sets("ip"):
-        for r in rset.resources:
-            vals.append(
-                [svc.svcname,
-                 r.ipDev,
-                 r.ipName,
-                 rcEnv.nodename,
-                 str(r.mask)]
-            )
-    proxy.register_ip(vars, vals)
-
-def push_fss(svc):
-    proxy.delete_fss(svc.svcname)
-    vars = ['fs_svcname',
-            'fs_dev',
-            'fs_mnt',
-            'fs_mntopt',
-            'fs_type']
-    vals = []
-
-    for rset in svc.get_res_sets("fs"):
-        for r in rset.resources:
-            vals.append(
-                [svc.svcname,
-                 r.device,
-                 r.mountPoint,
-                 r.mntOpt,
-                 r.fsType]
-            )
-    proxy.register_fs(vars, vals)
-
-def push_rsyncs(svc):
-    pass
-
 def push_service(svc):
     def envfile(svc):
         envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
@@ -351,12 +309,157 @@ def push_disks(svc):
              repr(rcEnv.nodename)]
         )
 
+def push_stats_cpu():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_cpu(
+        ['date',
+         'cpu',
+         'usr',
+         'nice',
+         'sys',
+         'iowait',
+         'steal',
+         'irq',
+         'soft',
+         'guest',
+         'idle',
+         'nodename'],
+         s.stats_cpu()
+    )
+
+def push_stats_mem_u():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_mem_u(
+        ['date',
+         'kbmemfree',
+         'kbmemused',
+         'pct_memused',
+         'kbbuffers',
+         'kbcached',
+         'kbcommit',
+         'pct_commit',
+         'nodename'],
+         s.stats_mem_u()
+    )
+
+def push_stats_proc():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_proc(
+        ['date',
+         'runq_sz',
+         'plist_sz',
+         'ldavg_1',
+         'ldavg_5',
+         'ldavg_15',
+         'nodename'],
+         s.stats_proc()
+    )
+
+def push_stats_swap():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_swap(
+        ['date',
+         'kbswpfree',
+         'kbswpused',
+         'pct_swpused',
+         'kbswpcad',
+         'pct_swpcad',
+         'nodename'],
+         s.stats_swap()
+    )
+
+def push_stats_block():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_block(
+        ['date',
+         'tps',
+         'rtps',
+         'wtps',
+         'rbps',
+         'wbps',
+         'nodename'],
+         s.stats_block()
+    )
+
+def push_stats_blockdev():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_blockdev(
+        ['date',
+         'dev',
+         'tps',
+         'rsecps',
+         'wsecps',
+         'avgrq_sz',
+         'avgqu_sz',
+         'await',
+         'svctm',
+         'pct_util',
+         'nodename'],
+         s.stats_blockdev()
+    )
+
+def check_stats_timestamp(sync_timestamp_f, comp='more', delay=10):
+    if not os.path.exists(sync_timestamp_f):
+        return True
+    try:
+        with open(sync_timestamp_f, 'r') as f:
+            d = f.read()
+            last = datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
+            limit = last + timedelta(minutes=delay)
+            if comp == "more" and datetime.now() < limit:
+                return False
+            elif comp == "less" and datetime.now() < limit:
+                return False
+            else:
+                return True
+            f.close()
+    except:
+        return True
+    return True
+
+def stats_timestamp():
+    sync_timestamp_f = os.path.join(rcEnv.pathvar, 'last_stats_push')
+    if not check_stats_timestamp(sync_timestamp_f, 'more', 10):
+        return False
+    sync_timestamp_d = os.path.dirname(sync_timestamp_f)
+    if not os.path.isdir(sync_timestamp_d):
+        os.makedirs(sync_timestamp_d ,0755)
+    with open(sync_timestamp_f, 'w') as f:
+        f.write(str(datetime.now())+'\n')
+        f.close()
+    return True
+
+def push_stats():
+    if not stats_timestamp():
+        return
+    push_stats_cpu()
+    push_stats_mem_u()
+    push_stats_proc()
+    push_stats_swap()
+    push_stats_block()
+    push_stats_blockdev()
+
 def push_all(svcs):
     proxy.delete_service_list([svc.svcname for svc in svcs])
+    push_stats()
     for svc in svcs:
-        push_rsyncs(svc)
-        push_ips(svc)
-        push_fss(svc)
         push_disks(svc)
         push_service(svc)
-
