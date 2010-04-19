@@ -22,6 +22,15 @@ import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
+def sarfile(day):
+    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
+    if os.path.exists(f):
+        return f
+    f = os.path.join(os.sep, 'var', 'log', 'sa', 'sa'+day)
+    if os.path.exists(f):
+        return f
+    return None
+
 def stats_cpu():
     if which('sar') is None:
         return []
@@ -34,23 +43,30 @@ def stats_cpu():
 def stats_cpu_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-u', 'ALL', '-P', 'ALL', '-f', f]
-    (ret, buff) = call(cmd)
+    (ret, buff) = call(cmd, errlog=False)
+    if ret != 0:
+        cmd = ['sar', '-t', '-u', '-P', 'ALL', '-f', f]
+        (ret, buff) = call(cmd)
     lines = []
     for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 11:
-           continue
-       if l[1] == 'CPU':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
+        l = line.split()
+        if len(l) == 8:
+            """ redhat 5
+            """
+            l = l[0:7] + ['0', '0', '0', l[7]]
+        if len(l) != 11:
+            continue
+        if l[1] == 'CPU':
+            continue
+        if l[0] == 'Average:':
+            continue
+        l.append(rcEnv.nodename)
+        l[0] = '%s %s'%(d, l[0])
+        lines.append(l)
     return lines
 
 def stats_mem_u():
@@ -65,14 +81,18 @@ def stats_mem_u():
 def stats_mem_u_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-r', '-f', f]
     (ret, buff) = call(cmd)
     lines = []
     for line in buff.split('\n'):
        l = line.split()
+       if len(l) == 10:
+           """ redhat 5
+           """
+           l = l[0:6] + ['0', '0']
        if len(l) != 8:
            continue
        if l[1] == 'kbmemfree':
@@ -96,8 +116,8 @@ def stats_proc():
 def stats_proc_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-q', '-f', f]
     (ret, buff) = call(cmd)
@@ -127,14 +147,23 @@ def stats_swap():
 def stats_swap_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-S', '-f', f]
-    (ret, buff) = call(cmd)
+    (ret, buff) = call(cmd, errlog=False)
+    if ret != 0:
+        """ redhat 5
+        """
+        cmd = ['sar', '-t', '-r', '-f', f]
+        (ret, buff) = call(cmd)
     lines = []
     for line in buff.split('\n'):
        l = line.split()
+       if len(l) == 10:
+           """ redhat 5
+           """
+           l = l[6:] + ['0']
        if len(l) != 6:
            continue
        if l[1] == 'kbswpcad':
@@ -158,8 +187,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -189,8 +218,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -220,8 +249,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -251,8 +280,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -282,8 +311,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -313,8 +342,8 @@ def stats_block():
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
@@ -345,11 +374,11 @@ def stats_blockdev():
 def stats_blockdev_day(t):
     d = t.strftime("%Y-%m-%d")
     day = t.strftime("%d")
-    f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-    if not os.path.exists(f):
+    f = sarfile(day)
+    if f is None:
         return []
     cmd = ['sar', '-t', '-d', '-p', '-f', f]
-    (ret, buff) = call(cmd)
+    (ret, buff) = call(cmd, errlog=False)
     lines = []
     for line in buff.split('\n'):
        l = line.split()
