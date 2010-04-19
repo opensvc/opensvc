@@ -27,6 +27,21 @@ hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 
+def xmlrpc_decorator(fn):
+    def new(*args):
+        import socket
+        try:
+            return fn(*args)
+        except socket.error:
+            pass
+        except:
+            import sys
+            import traceback
+            e = sys.exc_info()
+            print e[0], e[1], traceback.print_tb(e[2])
+    return new
+
+@xmlrpc_decorator
 def begin_action(svc, action, begin):
     try:
         import version
@@ -34,24 +49,22 @@ def begin_action(svc, action, begin):
     except:
         version = "0";
 
-    try:
-        proxy.begin_action(
-            ['svcname',
-             'action',
-             'hostname',
-             'hostid',
-             'version',
-             'begin',],
-            [repr(svc.svcname),
-             repr(action),
-             repr(rcEnv.nodename),
-             repr(hostid),
-             repr(version),
-             repr(str(begin))]
-        )
-    except:
-        pass
+    proxy.begin_action(
+        ['svcname',
+         'action',
+         'hostname',
+         'hostid',
+         'version',
+         'begin',],
+        [repr(svc.svcname),
+         repr(action),
+         repr(rcEnv.nodename),
+         repr(hostid),
+         repr(version),
+         repr(str(begin))]
+    )
 
+@xmlrpc_decorator
 def end_action(svc, action, begin, end, logfile):
     err = 'ok'
     dateprev = None
@@ -124,74 +137,67 @@ def end_action(svc, action, begin, end, logfile):
                      res_err])
 
     if len(vals) > 0:
-        try:
-            proxy.res_action_batch(vars, vals)
-        except:
-            pass
+        proxy.res_action_batch(vars, vals)
 
     """Complete the wrap-up database entry
     """
-    try:
-        proxy.end_action(
-            ['svcname',
-             'action',
-             'hostname',
-             'hostid',
-             'pid',
-             'begin',
-             'end',
-             'time',
-             'status'],
-            [repr(svc.svcname),
-             repr(action),
-             repr(rcEnv.nodename),
-             repr(hostid),
-             repr(pid),
-             repr(str(begin)),
-             repr(str(end)),
-             repr(str(end-begin)),
-             repr(str(err))]
-        )
-    except:
-        pass
+    proxy.end_action(
+        ['svcname',
+         'action',
+         'hostname',
+         'hostid',
+         'pid',
+         'begin',
+         'end',
+         'time',
+         'status'],
+        [repr(svc.svcname),
+         repr(action),
+         repr(rcEnv.nodename),
+         repr(hostid),
+         repr(pid),
+         repr(str(begin)),
+         repr(str(end)),
+         repr(str(end-begin)),
+         repr(str(err))]
+    )
 
+@xmlrpc_decorator
 def svcmon_update(svc, status):
-    try:
-        vars = [\
-            "mon_svcname",
-            "mon_svctype",
-            "mon_nodname",
-            "mon_nodtype",
-            "mon_hostid",
-            "mon_ipstatus",
-            "mon_diskstatus",
-            "mon_syncstatus",
-            "mon_containerstatus",
-            "mon_fsstatus",
-            "mon_appstatus",
-            "mon_overallstatus",
-            "mon_updated",
-            "mon_prinodes"]
-        vals = [\
-            svc.svcname,
-            svc.svctype,
-            rcEnv.nodename,
-            rcEnv.host_mode,
-            hostid,
-            str(status["ip"]),
-            str(status["disk"]),
-            str(status["sync"]),
-            str(status["container"]),
-            str(status["fs"]),
-            str(status["app"]),
-            str(status["overall"]),
-            str(datetime.now()),
-            ' '.join(svc.nodes)]
-        proxy.svcmon_update(vars, vals)
-    except:
-        pass
+    vars = [\
+        "mon_svcname",
+        "mon_svctype",
+        "mon_nodname",
+        "mon_nodtype",
+        "mon_hostid",
+        "mon_ipstatus",
+        "mon_diskstatus",
+        "mon_syncstatus",
+        "mon_containerstatus",
+        "mon_fsstatus",
+        "mon_appstatus",
+        "mon_overallstatus",
+        "mon_updated",
+        "mon_prinodes"]
+    vals = [\
+        svc.svcname,
+        svc.svctype,
+        rcEnv.nodename,
+        rcEnv.host_mode,
+        hostid,
+        str(status["ip"]),
+        str(status["disk"]),
+        str(status["sync"]),
+        str(status["container"]),
+        str(status["fs"]),
+        str(status["app"]),
+        str(status["overall"]),
+        str(datetime.now()),
+        ' '.join(svc.nodes)]
+    proxy.svcmon_update(vars, vals)
     resmon_update(svc, status)
 
+@xmlrpc_decorator
 def resmon_update(svc, status):
     vals = []
     now = datetime.now()
@@ -212,10 +218,6 @@ def resmon_update(svc, status):
         "res_status",
         "updated"]
     proxy.resmon_update(vars, vals)
-    try:
-        proxy.resmon_update(vars, vals)
-    except:
-        pass
 
 def push_service(svc):
     def envfile(svc):
@@ -457,6 +459,7 @@ def push_stats():
     push_stats_block()
     push_stats_blockdev()
 
+@xmlrpc_decorator
 def push_all(svcs):
     proxy.delete_service_list([svc.svcname for svc in svcs])
     push_stats()
