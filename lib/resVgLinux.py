@@ -105,16 +105,16 @@ class Vg(resDg.Dg):
         if self.disks != set():
             return self.disks
 
-        disks = set()
+        self.disks = set()
 
         cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
         (ret, out) = self.call(cmd)
         if ret != 0:
-            return disks
+            return self.disks
 	pvs = set(out.split())
         self.disks = self.pvs_to_disks(pvs)
-        self.log.debug("found disks %s held by vg %s" % (disks, self.name))
-        return disks
+        self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
+        return self.disks
 
     def pvs_to_disks(self, pvs):
         """If PV is a device map, replace by its sysfs name (dm-*)

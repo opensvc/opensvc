@@ -70,11 +70,6 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
         """usage : aSvc=Svc(type)"""
-        if self.frozen():
-            delattr(self.startip)
-            delattr(self.stopip)
-            delattr(self.mount)
-            delattr(self.umount)
         self.svcname = svcname
         self.vmname = ""
         self.hostid = rcEnv.nodename
@@ -395,6 +390,9 @@ class Svc(Resource, Freezer):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
 
     def action(self, action, rid=None):
+        if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
+            self.log.info("Abort action on frozen service")
+            return
         self.setup_environ()
         self.disable_resources(keep=rid)
         if action in ["print_status", "status", "group_status"]:
