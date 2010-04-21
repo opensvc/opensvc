@@ -192,8 +192,7 @@ def sync(self, type):
         src = self.src
 
     if type not in self.target.keys():
-        self.log.debug('%s => %s sync not applicable to %s',
-                  (src, self.dst, type))
+        self.log.debug('%s => %s sync not applicable to %s'%(src, self.dst, type))
         return 0
 
     targets = nodes_to_sync(self, type)
