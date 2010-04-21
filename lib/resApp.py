@@ -104,6 +104,8 @@ class Apps(Res.Resource):
         if not self.status_checks():
             return rcStatus.NA
         for name in self.sorted_app_list('C*'):
+            if len(name) == 0:
+                continue
             ret = self.app(name, 'status', dedicated_log=False)
             nb += 1
             errs += ret
