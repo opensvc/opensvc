@@ -64,7 +64,7 @@ def remote_node_type(self, node, type):
     host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode')
 
     if node not in cache_remote_node_type:
-        cmd = rcEnv.rsh.split(' ')+[node, '--', 'LANG=C', 'cat', host_mode_f]
+        cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise ex.excError
