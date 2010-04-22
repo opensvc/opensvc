@@ -148,7 +148,7 @@ def snap_cleanup(self, rset):
             self.log.error("the snapshot is no longer mounted in %s. panic."%snaps[s]['snap_mnt'])
             raise ex.excError
         cmd = ['fuser', '-kmv', snaps[s]['snap_mnt']]
-        (ret, out) = self.vcall(cmd)
+        (ret, out) = self.vcall(cmd, err_to_info=True)
         cmd = ['umount', snaps[s]['snap_mnt']]
         (ret, out) = self.vcall(cmd)
         cmd = ['lvremove', '-f', snaps[s]['snap_dev']]
