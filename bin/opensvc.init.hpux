@@ -23,7 +23,7 @@ start)
 		echo "Starting opensvc services"
 	fi
 	if [ -x $agt ] ; then
-		$agt
+		nohup $agt >/dev/null </dev/null &
 	fi
 	${allprimaryservices} start
 	${allservices} startstandby

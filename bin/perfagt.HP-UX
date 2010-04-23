@@ -2,7 +2,7 @@
 
 [ ! -x /opt/perf/bin/glance ] && exit
 
-ps -ef | grep $(basename $0) && exit
+ps -ef | grep -v $$ | grep $(basename $0) && exit
 
 day=$(/usr/bin/date +%d)
 syn=/opt/opensvc/tmp/glance.syntax
