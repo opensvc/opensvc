@@ -2,13 +2,14 @@
 
 [ ! -x /opt/perf/bin/glance ] && exit
 
-ps -ef | grep -v $$ | grep $(basename $0) && exit
-
 day=$(/usr/bin/date +%d)
 syn=/opt/opensvc/tmp/glance.syntax
 hour=$(/usr/bin/date +%H)
 min=$(/usr/bin/date +%M)
 iterations=$(((23-$hour)*6+(60-$min)/10))
+cmd="/opt/perf/bin/glance -aos $syn -j 600 -iterations $iterations"
+
+ps -ef | grep -v $$ | grep "$cmd" && exit
 
 cat - <<EOF > $syn || exit 1
 print GBL_STATTIME,
@@ -55,4 +56,4 @@ print GBL_STATTIME,
       GBL_DISK_PHYS_WRITE_BYTE_RATE
 EOF
 
-/opt/perf/bin/glance -aos $syn -j 600 -iterations $iterations >/opt/opensvc/var/glance$day
+nohup $cmd >/opt/opensvc/var/glance$day &
