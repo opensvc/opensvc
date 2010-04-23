@@ -99,6 +99,11 @@ def stats_mem_u_day(t):
            continue
        if l[0] == 'Average:':
            continue
+
+       """ Linux has no kbmemsys
+       """
+       l.append('0')
+
        l.append(rcEnv.nodename)
        l[0] = '%s %s'%(d, l[0])
        lines.append(l)

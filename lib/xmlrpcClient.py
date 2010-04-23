@@ -346,6 +346,7 @@ def push_stats_mem_u():
          'kbcached',
          'kbcommit',
          'pct_commit',
+         'kbmemsys',
          'nodename'],
          s.stats_mem_u()
     )
@@ -461,8 +462,8 @@ def push_stats():
 
 @xmlrpc_decorator
 def push_all(svcs):
-    proxy.delete_service_list([svc.svcname for svc in svcs])
     push_stats()
+    proxy.delete_service_list([svc.svcname for svc in svcs])
     for svc in svcs:
         push_disks(svc)
         push_service(svc)
