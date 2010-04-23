@@ -10,6 +10,7 @@ fi
 osvc_path=/opt/opensvc/bin
 allservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
+agt=${osvc_path}/perfagt.`uname -s`
 
 case $1 in
 start_msg)
@@ -20,6 +21,9 @@ start_msg)
 start)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
+	fi
+	if [ -x $agt ] ; then
+		$agt
 	fi
 	${allprimaryservices} start
 	${allservices} startstandby

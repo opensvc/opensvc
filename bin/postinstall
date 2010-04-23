@@ -5,9 +5,12 @@ import shutil
 import glob
 from subprocess import *
 
+sysname, nodename, x, x, machine = os.uname()
+
 def install_cron():
     """install opensvc cron jobs
     """
+    agt = '/opt/opensvc/bin/perfagt.'+sysname
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
@@ -16,6 +19,10 @@ def install_cron():
            'sched': "0 4 * * *",
            'user': "",
            'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
+    },{
+           'sched': "0 0 * * *",
+           'user': "",
+           'cmd': "[ -x %(agt)s ] && %(agt)s >/dev/null 2>&1"%dict(agt=agt)
     }]
 
     purge = []
@@ -23,7 +30,6 @@ def install_cron():
 
     """ order of preference
     """
-    sysname, nodename, x, x, machine = os.uname()
     if sysname == 'SunOS' :
         root_crontab_locs = [
             '/var/spool/cron/crontabs/root'
@@ -51,27 +57,39 @@ def install_cron():
     cron_entry_1 = ' '.join([ce[0]['sched'], ce[0]['user'], ce[0]['cmd']])
     cron_entry_2 = ' '.join([ce[1]['sched'], ce[1]['user'], ce[1]['cmd']])
 
+    if os.path.exists(agt):
+        cron_entry_3 = ' '.join([ce[2]['sched'], ce[2]['user'], ce[2]['cmd']])
+    else:
+        cron_entry_3 = None
+
     new = False
     if os.path.exists(root_crontab):
         with open(root_crontab, 'r') as f:
             svcmon_present = False
             dailycron_present = False
+            agt_present = False
             new = f.readlines()
             for i, line in enumerate(new):
                 if 'opensvc.daily' in line:
                     dailycron_present = True
                 if 'svcmon --updatedb' in line:
                     svcmon_present = True
+                if agt in line:
+                    agt_present = True
                 if '/usr/local/opensvc' in line:
                     new[i] = line.replace('/usr/local/opensvc', '/opt/opensvc')
             if not svcmon_present:
                 new.append(cron_entry_1+'\n')
             if not dailycron_present:
                 new.append(cron_entry_2+'\n')
+            if cron_entry_3 is not None and not agt_present:
+                new.append(cron_entry_3+'\n')
     else:
         new = []
         new.append(cron_entry_1+'\n')
         new.append(cron_entry_2+'\n')
+        if cron_entry_3 is not None:
+            new.append(cron_entry_3+'\n')
 
     if not new:
         print "problem preparing the new crontab"
@@ -149,7 +167,6 @@ def activate_SunOS():
 def install_rc():
     """install startup script
     """
-    sysname, nodename, x, x, machine = os.uname()
 
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
@@ -264,7 +281,6 @@ def install_user():
     if process.returncode == 0:
         return
 
-    sysname, nodename, x, x, machine = os.uname()
     if sysname == 'Linux':
         install_user_linux()
 

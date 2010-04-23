@@ -1,0 +1,58 @@
+#!/bin/ksh
+
+[ ! -x /opt/perf/bin/glance ] && exit
+
+ps -ef | grep $(basename $0) && exit
+
+day=$(/usr/bin/date +%d)
+syn=/opt/opensvc/tmp/glance.syntax
+hour=$(/usr/bin/date +%H)
+min=$(/usr/bin/date +%M)
+iterations=$(((23-$hour)*6+(60-$min)/10))
+
+cat - <<EOF > $syn || exit 1
+print GBL_STATTIME,
+      // usr
+      0.00+GBL_CPU_NORMAL_UTIL+GBL_CPU_REALTIME_UTIL,
+      // nice
+      0.00+GBL_CPU_NICE_UTIL+GBL_CPU_NNICE_UTIL,
+      // sys
+      0.00+GBL_CPU_SYSCALL_UTIL+GBL_CPU_CSWITCH_UTIL+GBL_CPU_TRAP_UTIL+GBL_CPU_VFAULT_UTIL,
+      // irq
+      0.00+GBL_CPU_INTERRUPT_UTIL,
+      // wait
+      0.00+GBL_CPU_WAIT_UTIL,
+      // idle
+      0.00+GBL_CPU_IDLE_UTIL-GBL_CPU_WAIT_UTIL,
+
+      // mem
+      0+GBL_MEM_PHYS,
+      0+GBL_MEM_FREE,
+      0+GBL_MEM_CACHE,
+      0+GBL_MEM_FILE_PAGE_CACHE,
+      0+GBL_MEM_SYS,
+      0+GBL_MEM_USER,
+
+      // swap
+      0+GBL_MEM_SWAP,
+      0+GBL_SWAP_SPACE_AVAIL-GBL_MEM_PHYS,
+
+      // load
+      GBL_LOADAVG,
+      GBL_LOADAVG5,
+      GBL_LOADAVG15,
+      GBL_CPU_QUEUE,
+
+      // process list
+      TBL_PROC_TABLE_USED,
+
+      // disk io
+      GBL_DISK_PHYS_READ_RATE,
+      GBL_DISK_PHYS_WRITE_RATE,
+
+      // disk kB/s
+      GBL_DISK_PHYS_READ_BYTE_RATE,
+      GBL_DISK_PHYS_WRITE_BYTE_RATE
+EOF
+
+/opt/perf/bin/glance -aos $syn -j 600 -iterations $iterations >/opt/opensvc/var/glance$day
