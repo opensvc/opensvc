@@ -168,12 +168,13 @@ def stats_swap_day(t):
             """
             swapused = int(l[13])
             swap = int(l[14])
+            swapfree = swap - swapused
 
             ts = '%s %s'%(d, l[0])
             ts = ts.replace('\0','')
             x = [ts,
+                 str(swapfree),
                  l[13],
-                 l[14],
                  str(100 * swapused / swap),
                  '0',
                  '0',
