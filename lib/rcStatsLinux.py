@@ -168,7 +168,7 @@ def stats_swap_day(t):
        if len(l) == 10:
            """ redhat 5
            """
-           l = l[6:] + ['0']
+           l = [l[0]] + l[6:] + ['0']
        if len(l) != 6:
            continue
        if l[1] == 'kbswpcad':
