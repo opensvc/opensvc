@@ -30,11 +30,11 @@ class rcEnv:
     """program used to execute remote command on other nodes or virtual hosts
     """
     if platform == "sunos5" :
-        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no"
-        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no"
+        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
+        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
     else :
-        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
-        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o PasswordAuthentication=no -o ConnectTimeout=10"
+        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
 
     """Database sink for node and service configurations and status collection.
     """

@@ -124,7 +124,7 @@ class Lxc(Res.Resource):
 
     def operational(self):
         timeout=1
-        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'PasswordAuthentication=no', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
+        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'Batchmode=yes', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
         ret = qcall(cmd)
         if ret == 0:
             return True
