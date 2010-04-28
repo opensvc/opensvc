@@ -39,27 +39,32 @@ class Kvm(Res.Resource):
     def ping(self):
         count=1
         timeout=1
-        cmd = ['ping', self.name, '-n', repr(count), '-m', repr(timeout)]
-        ret = qcall(cmd)
+        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.name]
+        (ret, out) = self.call(cmd, errlog=False)
         if ret == 0:
             return True
         return False
 
     def operational(self):
         timeout=1
-        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
-        ret = qcall(cmd)
+        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'PasswordAuthentication=no', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
+        (ret, out) = self.call(cmd, errlog=False)
         if ret == 0:
             return True
         return False
 
-    def wait_for_startup(self):
-        for tick in range(self.startup_timeout):
-            if self.is_up() and self.ping() and self.operational():
+    def wait_for_fn(self, fn, tmo, delay):
+        for tick in range(tmo//2):
+            if fn():
                 return
-            time.sleep(1)
+            time.sleep(delay)
         self.log.error("Waited too long for startup")
         raise ex.excError
+
+    def wait_for_startup(self):
+        self.wait_for_fn(self.is_up, self.startup_timeout, 2)
+        self.wait_for_fn(self.ping, self.startup_timeout, 2)
+        self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
     def wait_for_shutdown(self):
         for tick in range(self.shutdown_timeout):
