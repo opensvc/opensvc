@@ -62,7 +62,7 @@ class Mount(Res.Resource):
         bin = self.fsck_h[self.fsType]['bin']
         cmd = self.fsck_h[self.fsType]['cmd']
         if which(bin) is None:
-            self.log.warn("%s not found. bypass."%self.fsType)
+            self.log.warning("%s not found. bypass."%self.fsType)
             return
         (ret, out) = self.vcall(cmd)
         if ret != 0: 

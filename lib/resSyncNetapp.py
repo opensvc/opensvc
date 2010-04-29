@@ -230,7 +230,7 @@ class syncNetapp(Res.Resource):
                 self.syncquiesce()
             except:
                 if self.svc.force:
-                    self.log.warn("force mode is on. bypass failed quiesce.")
+                    self.log.warning("force mode is on. bypass failed quiesce.")
                     pass
                 else:
                     self.log.error("set force mode to bypass")

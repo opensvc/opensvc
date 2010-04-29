@@ -117,8 +117,8 @@ class Mount(Res.Mount):
             try:
                 statinfo = os.stat(dev)
             except:
-                self.log.error("can not stat %s" % dev)
-                raise ex.excError
+                self.log.warning("can not stat %s" % dev)
+                continue
 
             if self.is_multipath(statinfo):
                 mps |= set([dev])
