@@ -21,7 +21,6 @@
 
 import os
 
-import rcStatus
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
@@ -76,14 +75,6 @@ class Mount(Res.Mount):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
-
-    def status(self):
-        if rcEnv.nodename in self.always_on:
-            if self.is_up(): return rcStatus.STDBY_UP
-            else: return rcStatus.STDBY_DOWN
-        else:
-            if self.is_up(): return rcStatus.UP
-            else: return rcStatus.DOWN
 
     def disklist(self):
         try:

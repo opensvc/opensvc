@@ -22,6 +22,7 @@
 import resources as Res
 import os
 import rcExceptions as ex
+import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
 
@@ -39,6 +40,7 @@ class Mount(Res.Resource):
         self.always_on = always_on
         self.label = device + '@' + mountPoint
         self.fsck_h = {}
+        self.testfile = os.path.join(mountPoint, '.opensvc')
 
     def start(self):
         if not os.path.exists(self.mountPoint):
@@ -65,6 +67,38 @@ class Mount(Res.Resource):
         (ret, out) = self.vcall(cmd)
         if ret != 0: 
             raise ex.excError 
+
+    def need_check_writable(self):
+        if 'ro' in self.mntOpt.split(','):
+            return False
+        if 'nfs' in self.fsType:
+            return False
+        return True
+
+    def check_writable(self):
+        try:
+            f = open(self.testfile, 'w')
+            f.write(' ')
+            f.close()
+        except:
+            return False
+        return True
+
+    def status(self):
+        if rcEnv.nodename in self.always_on:
+            if self.is_up():
+                if self.need_check_writable() and not self.check_writable():
+                    return rcStatus.WARN
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.STDBY_DOWN
+        else:
+            if self.is_up():
+                if self.need_check_writable() and not self.check_writable():
+                    return rcStatus.WARN
+                return rcStatus.UP
+            else:
+                return rcStatus.DOWN
 
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\

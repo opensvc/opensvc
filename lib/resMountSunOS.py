@@ -36,10 +36,6 @@ class Mount(Res.Mount):
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
-    def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
-
     def start(self):
         Res.Mount.start(self)
         self.Mounts = rcMounts.Mounts()
