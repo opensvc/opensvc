@@ -94,6 +94,7 @@ class Svc(Resource, Freezer):
         self.scsicheckreserv = self.prstatus
         self.runmethod = []
         self.resources_by_id = {}
+        self.rset_status_cache = None
 
     def __cmp__(self, other):
         """order by service name
@@ -190,12 +191,22 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t): r.action("print_status")
         rcStatus.print_status("overall", self.status())
 
+    def get_rset_status(self):
+        if self.rset_status_cache is not None:
+            return self.rset_status_cache
+        self.setup_environ()
+        self.rset_status_cache = {}
+        for t in self.status_types:
+            for r in self.get_res_sets(t):
+                self.rset_status_cache[r.type] = r.status()
+        return self.rset_status_cache
+
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app"]),
                      excluded_groups=set([])):
         """print each resource status for a service
         """
-        self.setup_environ()
+        rset_status = self.get_rset_status()
         status = {}
         groups = groups.copy() - excluded_groups
         moregroups = groups | set(["overall"])
@@ -206,7 +217,7 @@ class Svc(Resource, Freezer):
             if group not in groups:
                 continue
             for r in self.get_res_sets(t):
-                s = r.status()
+                s = rset_status[r.type]
                 status[group] += s
                 if group != "sync":
                     status["overall"] += s
@@ -223,6 +234,7 @@ class Svc(Resource, Freezer):
             status["overall"].status = rcStatus.UP
         elif status["overall"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["overall"].status = rcStatus.STDBY_UP
+        self.group_status_cache = status
         return status
 
     def disklist(self):
