@@ -103,10 +103,18 @@ def add_triggers(resource, conf, section):
         resource.pre_stop = conf.get(section, 'pre_stop').split()
     if conf.has_option(section, 'pre_start'):
         resource.pre_start = conf.get(section, 'pre_start').split()
+    if conf.has_option(section, 'pre_syncnodes'):
+        resource.pre_syncnodes = conf.get(section, 'pre_syncnodes').split()
+    if conf.has_option(section, 'pre_syncdrp'):
+        resource.pre_syncdrp = conf.get(section, 'pre_syncdrp').split()
     if conf.has_option(section, 'post_stop'):
         resource.post_stop = conf.get(section, 'post_stop').split()
     if conf.has_option(section, 'post_start'):
         resource.post_start = conf.get(section, 'post_start').split()
+    if conf.has_option(section, 'post_syncnodes'):
+        resource.post_syncnodes = conf.get(section, 'post_syncnodes').split()
+    if conf.has_option(section, 'post_syncdrp'):
+        resource.post_syncdrp = conf.get(section, 'post_syncdrp').split()
 
 def always_on_nodes_set(svc, conf, section):
     try:
