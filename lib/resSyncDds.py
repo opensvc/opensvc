@@ -84,6 +84,12 @@ class syncDds(Res.Resource):
                                                 self.src_lv.replace('-', '--')+'.delta'])
                                      )
 
+    def get_peersenders(self):
+        self.peersenders = set([])
+        if 'nodes' == self.sender:
+            self.peersenders |= self.svc.nodes
+            self.peersenders -= set([rcEnv.nodename])
+
     def get_targets(self):
         self.targets = set()
         if 'nodes' in self.target:
@@ -130,11 +136,17 @@ class syncDds(Res.Resource):
         with open(self.statefile, 'w') as f:
              f.write(str(datetime.datetime.now())+';'+self.snap1_uuid+'\n')
 
-    def push_statefile(self, node):
+    def _push_statefile(self, node):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def push_statefile(self, node):
+        self._push_statefile(node)
+        self.get_peersenders()
+        for s in self.peersenders:
+            self._push_statefile(s)
 
     def push_deltafile(self, node):
         cmd = rcEnv.rcp.split() + [self.deltafile, node+':'+self.deltafile]
@@ -256,6 +268,8 @@ class syncDds(Res.Resource):
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
             delay = datetime.timedelta(minutes=self.sync_max_delay)
+        except IOerror:
+            return rcStatus.WARN
         except:
             import sys
             import traceback
@@ -267,11 +281,12 @@ class syncDds(Res.Resource):
         return rcStatus.UP
 
     def __init__(self, rid=None, target=None, src=None, dst=None,
-                 delta_store=None,
+                 delta_store=None, sender=None,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
                  optional=False, disabled=False):
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
+        self.sender = sender
         self.src = src
         self.dst = dst
         self.sync_max_delay = sync_max_delay

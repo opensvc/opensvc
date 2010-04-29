@@ -426,6 +426,9 @@ def add_syncs_dds(svc, conf):
         else:
             kwargs['target'] = conf.get(s, 'target').split()
 
+        if conf.has_option(s, 'sender'):
+            kwargs['sender'] = conf.get(s, 'sender')
+
         if conf.has_option(s, 'snap_size'):
             kwargs['snap_size'] = conf.getint(s, 'snap_size')
 
