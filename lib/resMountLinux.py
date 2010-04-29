@@ -76,12 +76,12 @@ class Mount(Res.Mount):
             self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
-    def disklist(self):
+    def realdev(self):
         try:
             mode = os.stat(self.device)[ST_MODE]
         except:
             self.log.debug("can not stat %s" % self.device)
-            return set([])
+            return None
         if S_ISBLK(mode):
             dev = self.device
         else:
@@ -94,8 +94,80 @@ class Mount(Res.Mount):
                 raise ex.excError
             dev = m.dev
 
+        return dev
+
+    def mplist(self):
+        dev = self.realdev()
+        if dev is None:
+            return set([])
+
         try:
-            dm_major = major('device-mapper')
+            self.dm_major = major('device-mapper')
+        except:
+            return set([])
+
+        return self._mplist([dev])
+
+    def devname_to_dev(self, x):
+        return '/dev/'+x
+
+    def _mplist(self, devs):
+        mps = set([])
+        for dev in devs:
+            try:
+                statinfo = os.stat(dev)
+            except:
+                self.log.error("can not stat %s" % dev)
+                raise ex.excError
+
+            if self.is_multipath(statinfo):
+                mps |= set([dev])
+            elif self.is_devmap(statinfo):
+                dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+                syspath = '/sys/block/' + dm + '/slaves'
+                slaves = os.listdir(syspath)
+                mps |= self._mplist(map(self.devname_to_dev, slaves))
+        return mps
+
+    def is_multipath(self, statinfo):
+        cmd = ['dmsetup', '-j', str(self.dm_major),
+                          '-m', str(os.minor(statinfo.st_rdev)),
+                          'table'
+              ]
+        (ret, buff) = self.call(cmd, errlog=False)
+        if ret != 0:
+            return False
+        l = buff.split()
+        if len(l) < 3:
+            return False
+        if l[2] != 'multipath':
+            return False
+        if 'queue_if_no_path' not in l:
+            return False
+        cmd = ['dmsetup', '-j', str(self.dm_major),
+                          '-m', str(os.minor(statinfo.st_rdev)),
+                          'status'
+              ]
+        (ret, buff) = self.call(cmd, errlog=False)
+        if ret != 0:
+            return False
+        l = buff.split()
+        if l.count('A') > 1:
+            return False
+        return True
+
+    def is_devmap(self, statinfo):
+        if os.major(statinfo.st_rdev) == self.dm_major:
+            return True
+        return False
+
+    def disklist(self):
+        dev = self.realdev()
+        if dev is None:
+            return set([])
+
+        try:
+            self.dm_major = major('device-mapper')
         except:
             return set([dev])
 
@@ -104,12 +176,19 @@ class Mount(Res.Mount):
         except:
             self.log.error("can not stat %s" % dev)
             raise ex.excError
-        if os.major(statinfo.st_rdev) != dm_major:
+
+        if not self.is_devmap(statinfo):
             return set([dev])
         dm = 'dm-' + str(os.minor(statinfo.st_rdev))
         syspath = '/sys/block/' + dm + '/slaves'
         devs = get_blockdev_sd_slaves(syspath)
         return devs
+
+    def can_check_writable(self):
+        if len(self.mplist()) > 0:
+            self.log.debug("a multipath under fs has queueing enabled and no active path")
+            return False
+        return True
 
     def start(self):
         if self.Mounts is None:

@@ -75,7 +75,16 @@ class Mount(Res.Resource):
             return False
         return True
 
+    def can_check_writable(self):
+        """ orverload in child classes to check os-specific conditions
+            when a write test might hang (solaris lockfs, linux multipath
+            with queueing on and no active path)
+        """
+        return True
+
     def check_writable(self):
+        if not self.can_check_writable():
+            return False
         try:
             f = open(self.testfile, 'w')
             f.write(' ')
