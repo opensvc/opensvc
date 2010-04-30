@@ -107,6 +107,16 @@ class HpVm(Res.Resource):
             self.hpvm_forcestop()
         self.wait_for_shutdown()
 
+    def check_manual_boot(self):
+        cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            return False
+        if out.split(":")[11] == "Manual":
+            return True
+        self.log.info("Auto boot should be turned off")
+        return False
+
     def is_up(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
         (ret, out) = self.call(cmd)
@@ -117,6 +127,10 @@ class HpVm(Res.Resource):
         return False
 
     def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if not self.check_manual_boot():
+            return rcStatus.WARN
+        if self.is_up():
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
