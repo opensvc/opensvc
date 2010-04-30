@@ -152,7 +152,7 @@ def add_ips(svc, conf):
             svc.log.debug('add_ips ipdev not found in ip section %s'%s)
             continue
         if conf.has_option(s, "netmask"):
-            kwargs['netmask'] = conf.get(s, "netmask")
+            kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
             kwargs['vmname'] = svc.svcname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
