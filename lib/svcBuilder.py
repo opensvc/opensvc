@@ -154,16 +154,16 @@ def add_ips(svc, conf):
         if conf.has_option(s, "netmask"):
             kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
-            kwargs['vmname'] = svc.svcname
+            kwargs['vmname'] = svc.vmname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
         elif svc.svcmode  == 'kvm':
-            kwargs['vmname'] = svc.svcname
+            kwargs['vmname'] = svc.vmname
             ip = __import__('resIp'+'Kvm')
         elif svc.svcmode  == 'hpvm':
-            kwargs['vmname'] = svc.svcname
+            kwargs['vmname'] = svc.vmname
             ip = __import__('resIp'+'HpVm')
         elif svc.svcmode  == 'zone':
-            kwargs['vmname'] = svc.svcname
+            kwargs['vmname'] = svc.vmname
             ip = __import__('resIp'+'Zone')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
