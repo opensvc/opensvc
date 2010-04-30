@@ -135,41 +135,40 @@ def add_ips(svc, conf):
     for s in conf.sections():
         if re.match('ip#[0-9]', s, re.I) is None:
             continue
+        kwargs = {}
         if conf.has_option(s, "ipname@"+rcEnv.nodename):
-            ipname = conf.get(s, "ipname@"+rcEnv.nodename)
+            kwargs['ipName'] = conf.get(s, "ipname@"+rcEnv.nodename)
         elif conf.has_option(s, "ipname"):
-            ipname = conf.get(s, "ipname")
+            kwargs['ipName'] = conf.get(s, "ipname")
         else:
             svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
-            ipname = None
             continue
         if conf.has_option(s, "ipdev@"+rcEnv.nodename):
-            ipdev = conf.get(s, "ipdev@"+rcEnv.nodename)
+            kwargs['ipDev'] = conf.get(s, "ipdev@"+rcEnv.nodename)
         elif conf.has_option(s, "ipdev"):
-            ipdev = conf.get(s, "ipdev")
+            kwargs['ipDev'] = conf.get(s, "ipdev")
         else:
             svc.log.debug('add_ips ipdev not found in ip section %s'%s)
-            ipdev = None
             continue
         if conf.has_option(s, "netmask"):
-            netmask = conf.get(s, "netmask")
-        else:
-            netmask = None
+            kwargs['netmask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
+            kwargs['vmname'] = svc.svcname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
-            r = ip.Ip(rid=s, vmname=svc.svcname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'kvm':
+            kwargs['vmname'] = svc.svcname
             ip = __import__('resIp'+'Kvm')
-            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'hpvm':
+            kwargs['vmname'] = svc.svcname
             ip = __import__('resIp'+'HpVm')
-            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         elif svc.svcmode  == 'zone':
+            kwargs['vmname'] = svc.svcname
             ip = __import__('resIp'+'Zone')
-            r = ip.Ip(rid=s, vmname=svc.vmname, ipDev=ipdev, ipName=ipname)
         else:
             ip = __import__('resIp'+rcEnv.sysname)
-            r = ip.Ip(rid=s, ipDev=ipdev, ipName=ipname, mask=netmask)
+        kwargs['rid'] = s
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        r = ip.Ip(**kwargs)
         set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
@@ -181,13 +180,18 @@ def add_loops(svc, conf):
     for s in conf.sections():
         if re.match('loop#[0-9]', s, re.I) is None:
             continue
+
+        kwargs = {}
+
         if conf.has_option(s, "file"):
-            file = conf.get(s, "file")
+            kwargs['loopFile'] = conf.get(s, "file")
         else:
             svc.log.error("file must be set in section %s"%s)
             return
+
+        kwargs['rid'] = s
         loop = __import__('resLoop'+rcEnv.sysname)
-        r = loop.Loop(rid=s, loopFile=file)
+        r = loop.Loop(**kwargs)
         set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
@@ -197,9 +201,10 @@ def add_vgs(svc, conf):
     section. Vg objects are stored in a list in the service object.
     """
     for s in conf.sections():
-        kwargs = {}
         if re.match('vg#[0-9]', s, re.I) is None:
             continue
+
+        kwargs = {}
 
         if not conf.has_option(s, "vgname"):
             svc.log.error("vgname must be set in section %s"%s)
@@ -397,8 +402,6 @@ def add_syncs(svc, conf):
 def add_syncs_dds(svc, conf):
     dds = __import__('resSyncDds')
     for s in conf.sections():
-        kwargs = {}
-
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -408,6 +411,8 @@ def add_syncs_dds(svc, conf):
 
         if not conf.has_option(s, 'type'):
             continue
+
+        kwargs = {}
 
         if not conf.has_option(s, 'src'):
             log.error("config file section %s must have src set" % s)
@@ -457,9 +462,6 @@ def add_syncs_symclone(svc, conf):
     except:
         sc = __import__('resSyncSymclone')
     for s in conf.sections():
-        symdevs = []
-        kwargs = {}
-
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -469,6 +471,9 @@ def add_syncs_symclone(svc, conf):
 
         if not conf.has_option(s, 'type'):
             continue
+
+        symdevs = []
+        kwargs = {}
 
         if not conf.has_option(s, 'symdg'):
             log.error("config file section %s must have symdg set" % s)
@@ -508,7 +513,6 @@ def add_syncs_symclone(svc, conf):
 
 def add_syncs_netapp(svc, conf):
     for s in conf.sections():
-        kwargs = {}
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -526,6 +530,7 @@ def add_syncs_netapp(svc, conf):
             log.error("config file section %s must have user set" % s)
             return
 
+        kwargs = {}
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
         elif conf.has_option('default', 'sync_max_delay'):
@@ -565,7 +570,6 @@ def add_syncs_rsync(svc, conf):
     add_mandatory_syncs(svc)
 
     for s in conf.sections():
-        kwargs = {}
         if re.match('sync#[0-9]', s, re.I) is None:
             continue
 
@@ -578,6 +582,7 @@ def add_syncs_rsync(svc, conf):
             log.error("config file section %s must have src and dst set" % s)
             return
 
+        kwargs = {}
         kwargs['src'] = conf.get(s, "src").split()
         kwargs['dst'] = conf.get(s, "dst")
 

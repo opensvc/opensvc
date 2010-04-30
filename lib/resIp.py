@@ -33,12 +33,13 @@ class Ip(Res.Resource):
     """ basic ip resource
     """
     def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, always_on=set([])):
         Res.Resource.__init__(self, rid, "ip", optional, disabled)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask
         self.label = ipName + '@' + ipDev
+        self.always_on = always_on
         try:
             self.addr = socket.gethostbyname(ipName)
         except:
@@ -55,8 +56,16 @@ class Ip(Res.Resource):
         os.environ['OPENSVC_IPADDR'] = str(self.addr)
 
     def status(self):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if rcEnv.nodename in self.always_on:
+            if self.is_up():
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.STDBY_DOWN
+        else:
+            if self.is_up():
+                return rcStatus.UP
+            else:
+                return rcStatus.DOWN
 
     def arp_announce(self):
         if not which("arping"):
@@ -96,6 +105,10 @@ class Ip(Res.Resource):
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
         return
+
+    def startstandby(self):
+        if rcEnv.nodename in self.always_on:
+             self.start()
 
     def start(self):
         try:
