@@ -126,6 +126,7 @@ def always_on_nodes_set(svc, conf, section):
         always_on |= svc.nodes
     if 'drpnodes' in always_on_opt:
         always_on |= svc.drpnodes
+    always_on |= set(always_on_opt) - set(['nodes', 'drpnodes'])
     return always_on
 
 def add_ips(svc, conf):
