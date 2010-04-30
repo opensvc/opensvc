@@ -94,8 +94,8 @@ def nodes_to_sync(self, type=None, state="syncable", status=False):
        sync their system files to all drpnodes regardless of the service
        state
     """
-    self.get_svcstatus()
-    if self.svcstatus['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
+    s = self.svc.group_status(excluded_groups=set(["sync"]))
+    if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
        self.rid != "sync#i1":
         self.log.debug("won't sync this resource for a service not up")
         return set([])
@@ -308,8 +308,8 @@ class Rsync(Res.Resource):
 
         """ sync state on nodes where the service is not UP
         """
-        self.get_svcstatus()
-        if self.svcstatus['overall'].status != rcStatus.UP:
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
             if rcEnv.nodename not in target:
                 return rcStatus.NA
             if need_sync(self, rcEnv.nodename):
@@ -359,16 +359,8 @@ class Rsync(Res.Resource):
         self.internal = internal
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
-        self.svcstatus = {}
         Res.Resource.__init__(self, rid=rid, type="sync.rsync",
                               optional=optional, disabled=disabled)
-
-    def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync"]))
-
-    def get_svcstatus(self):
-        if len(self.svcstatus) == 0:
-            self.refresh_svcstatus()
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\

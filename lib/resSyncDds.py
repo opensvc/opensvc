@@ -103,6 +103,10 @@ class syncDds(Res.Resource):
         self.get_src_info()
 
     def syncfullsync(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
+            self.log.debug("won't sync this resource for a service not up")
+            return
         self.get_info()
         if self.snap_exists(self.snap2):
             self.log.error('%s should not exist'%self.snap2)
@@ -242,6 +246,10 @@ class syncDds(Res.Resource):
         return dict(date=fields[0], uuid=fields[1])
 
     def syncupdate(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
+            self.log.debug("won't sync this resource for a service not up")
+            return
         self.get_info()
         self.get_snap1_uuid()
         for n in self.targets:
