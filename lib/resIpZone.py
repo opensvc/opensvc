@@ -24,8 +24,10 @@ import resIpSunOS as Res
 from subprocess import *
 
 class Ip(Res.Ip):
-    def __init__(self, rid, vmname, ipDev, ipName):
-        Res.Ip.__init__(self, rid, ipDev, ipName)
+    def __init__(self, rid=None, vmname=None, ipDev=None, ipName=None,
+                 always_on=set([])):
+        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
+                        always_on=always_on)
         self.vmname = vmname
         
     def startip_cmd(self):
