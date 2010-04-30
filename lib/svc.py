@@ -334,10 +334,12 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.scsireserv", "scsicheckreserv")
 
     def startstandby(self):
+        self.sub_set_action("ip", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.zpool", "startstandby")
         self.sub_set_action("fs", "startstandby")
+        self.sub_set_action("app", "startstandby")
 
     def diskupdate(self):
         self.sub_set_action("disk.vg", "diskupdate")

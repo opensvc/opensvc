@@ -119,6 +119,15 @@ class Apps(Res.Resource):
         else:
             return rcStatus.DOWN
 
+    def startstandby(self):
+        """Execute each startup script (SS* files). Log the return code but
+           don't stop on error.
+        """
+        if not self.start_checks():
+            raise ex.excError
+        for name in self.sorted_app_list('S*.standby@'+rcEnv.nodename):
+            self.app(name, 'start')
+
     def start(self):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
