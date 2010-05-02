@@ -95,7 +95,7 @@ class Zone(Res.Resource):
         if self.state == 'running' :
             return rcStatus.UP
         else:
-            return rcStatus.Down
+            return rcStatus.DOWN
 
     def zone_refresh(self):
         """ refresh Zone object attributes:
