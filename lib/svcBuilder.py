@@ -156,7 +156,7 @@ def add_ips(svc, conf):
         else:
             vmname = svc.svcname
         if conf.has_option(s, "netmask"):
-            kwargs['netmask'] = conf.get(s, "netmask")
+            kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
             kwargs['vmname'] = vmname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
