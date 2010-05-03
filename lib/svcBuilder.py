@@ -151,19 +151,23 @@ def add_ips(svc, conf):
         else:
             svc.log.debug('add_ips ipdev not found in ip section %s'%s)
             continue
+        if hasattr(svc, "vmname"):
+            vmname = svc.vmname
+        else:
+            vmname = svc.svcname
         if conf.has_option(s, "netmask"):
             kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
-            kwargs['vmname'] = svc.vmname
+            kwargs['vmname'] = vmname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
         elif svc.svcmode  == 'kvm':
-            kwargs['vmname'] = svc.vmname
+            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'Kvm')
         elif svc.svcmode  == 'hpvm':
-            kwargs['vmname'] = svc.vmname
+            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'HpVm')
         elif svc.svcmode  == 'zone':
-            kwargs['vmname'] = svc.vmname
+            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'Zone')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
