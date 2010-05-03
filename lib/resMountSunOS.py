@@ -54,7 +54,9 @@ class Mount(Res.Mount):
 
             ret, out = self.vcall(['zfs', 'mount', self.device ])
             if ret != 0:
-                raise ex.excError
+                ret, out = self.vcall(['zfs', 'mount', '-O', self.device ])
+                if ret != 0:
+                    raise ex.excError
             return
 
         if self.fsType != "":
