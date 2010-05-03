@@ -164,6 +164,11 @@ def end_action(svc, action, begin, end, logfile):
 
 @xmlrpc_decorator
 def svcmon_update(svc, status):
+    if svc.frozen():
+        frozen = "1"
+    else:
+        frozen = "0"
+
     vars = [\
         "mon_svcname",
         "mon_svctype",
@@ -178,7 +183,8 @@ def svcmon_update(svc, status):
         "mon_appstatus",
         "mon_overallstatus",
         "mon_updated",
-        "mon_prinodes"]
+        "mon_prinodes",
+        "mon_frozen"]
     vals = [\
         svc.svcname,
         svc.svctype,
@@ -193,7 +199,8 @@ def svcmon_update(svc, status):
         str(status["app"]),
         str(status["overall"]),
         str(datetime.now()),
-        ' '.join(svc.nodes)]
+        ' '.join(svc.nodes),
+        frozen]
     proxy.svcmon_update(vars, vals)
     resmon_update(svc, status)
 
