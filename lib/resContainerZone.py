@@ -81,7 +81,7 @@ class Zone(Res.Resource):
             self.log.info("zone container %s already stopped" % self.name)
             return 0
         if self.state == 'running':
-            (ret, out) = self.vcall(['zlogin' , self.name , 'init' , '0'])
+            (ret, out) = self.vcall(['zlogin' , self.name , '/sbin/init' , '0'])
             for t in range(self.shutdown_timeout):
                 self.zone_refresh()
                 if self.state == 'installed':
