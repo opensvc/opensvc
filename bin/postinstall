@@ -20,7 +20,7 @@ def install_cron():
            'user': "",
            'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1"
     },{
-           'sched': "0 0 * * *",
+           'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
            'cmd': "[ -x %(agt)s ] && %(agt)s >/dev/null 2>&1"%dict(agt=agt)
     }]
