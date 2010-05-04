@@ -32,10 +32,10 @@ class Apps(resApp.Apps):
         (ret, out) = self.call(self.prefix+['/usr/bin/find',
                                             self.app_d,
                                             '-name', os.path.basename(rc),
-                                            '-a', '-uid', '0',
-                                            '-a', '-gid', '0'])
+                                            '-a', '-user', 'root',
+                                            '-a', '-group', 'root'])
         if len(out) == 0 or rc != out.split()[0]:
-            self.vcall(self.prefix+['chown', '0:0', rc])
+            self.vcall(self.prefix+['chown', 'root:root', rc])
         (ret, out) = self.call(self.prefix+['/usr/bin/test', '-x', rc])
         if ret != 0:
             self.vcall(self.prefix+['/usr/bin/chmod', '+x', rc])
