@@ -98,6 +98,8 @@ def stats_mem_u_day(t):
             used = phys - free
             commit = used + swapused
             vm = phys + swap
+            if vm == 0 or phys == 0:
+                continue
             pct_commit = 100 * commit / vm
             pct_used = 100 * used / phys
 
