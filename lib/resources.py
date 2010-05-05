@@ -127,7 +127,8 @@ class Resource(object):
              errlog=True, err_to_warn=False, err_to_info=False):
         """Use subprocess module functions to do a call
         """
-        return rcUtilities.call(cmd, self.log, info, errlog,
+        return rcUtilities.call(cmd, log=self.log,
+                                info=info, errlog=errlog,
                                 err_to_warn=err_to_warn,
                                 err_to_info=err_to_info)
 
@@ -135,8 +136,9 @@ class Resource(object):
         """Use subprocess module functions to do a call and
         log the command line using the resource logger
         """
-        return rcUtilities.vcall(cmd, self.log, err_to_warn=err_to_warn,
-                                err_to_info=err_to_info)
+        return rcUtilities.vcall(cmd, log=self.log,
+                                 err_to_warn=err_to_warn,
+                                 err_to_info=err_to_info)
 
     def disklist(self):
         """List disks the resource holds. Some resource have none,

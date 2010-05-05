@@ -59,8 +59,21 @@ def justcall(argv=['/bin/false']):
     (stdout, stderr)=process.communicate(input=None)
     return (stdout, stderr, process.returncode)
 
-def call(argv=['/bin/false'], log=None,
-         info=False, errlog=True, err_to_warn=False, err_to_info=False):
+def call(argv=['/bin/false'],
+         log=None,         # callers should provide there own logger
+                           # or we'll have to allocate a generic one
+
+         info=False,       # False: log cmd as debug
+                           # True:  log cmd as info
+
+         outlog=False,     # False: discard stdout
+
+         errlog=True,      # False: discard stderr
+                           # True:  log stderr as err, warn or info
+                           #        depending on err_to_warn and
+                           #        err_to_info value
+         err_to_warn=False,
+         err_to_info=False):
     if log == None:
         log = logging.getLogger('CALL')
     if not argv or len(argv) == 0:
@@ -85,8 +98,16 @@ def call(argv=['/bin/false'], log=None,
                 log.error('stderr:\n' + buff[1])
             else:
                 log.warning('command succesful but stderr:\n' + buff[1])
+        else:
+            log.debug('stderr:\n' + buff[1])
     if len(buff[0]) > 0:
-        log.debug('output:\n' + buff[0])
+        if outlog:
+            if process.returncode == 0:
+                log.info('output:\n' + buff[0])
+            else:
+                log.error('command failed with stdout:\n' + buff[0])
+        else:
+            log.debug('output:\n' + buff[0])
 
     return (process.returncode, buff[0])
 
@@ -98,8 +119,15 @@ def qcall(argv=['/bin/false']) :
     process.communicate()
     return process.returncode
 
-def vcall(argv=['/bin/false'], log=None, err_to_warn=False, err_to_info=False ):
-    return call(argv, log, info=True, err_to_warn=err_to_warn,
+def vcall(argv=['/bin/false'],
+          log=None,
+          err_to_warn=False,
+          err_to_info=False ):
+    return call(argv,
+                log,
+                info=True,
+                outlog=True,
+                err_to_warn=err_to_warn,
                 err_to_info=err_to_info)
 
 def getmount(path):
