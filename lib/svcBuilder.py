@@ -34,8 +34,19 @@ import rcExceptions as ex
 
 check_privs()
 
-pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-pathetc = os.path.join(pathsvc, 'etc')
+#
+# file tree abstraction
+#
+rcEnv.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+rcEnv.pathbin = os.path.join(rcEnv.pathsvc, 'bin')
+rcEnv.pathetc = os.path.join(rcEnv.pathsvc, 'etc')
+rcEnv.pathlib = os.path.join(rcEnv.pathsvc, 'lib')
+rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
+rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
+rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
+rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
+rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+rcEnv.nodename = socket.gethostname()
 
 os.environ['LANG'] = 'C'
 os.environ['PATH'] = '/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
@@ -675,42 +686,12 @@ def build(name):
     it return None if service Name is not managed by local node
     else it return new Svc instance
     """
-    #
-    # file tree abstraction
-    #
-    rcEnv.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    rcEnv.pathbin = os.path.join(rcEnv.pathsvc, 'bin')
-    rcEnv.pathetc = os.path.join(rcEnv.pathsvc, 'etc')
-    rcEnv.pathlib = os.path.join(rcEnv.pathsvc, 'lib')
-    rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
-    rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
-    rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
-    rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
-    rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
-    rcEnv.nodename = socket.gethostname()
-
     svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
 
     setup_logging()
-
-    #
-    # print stuff we determined so far
-    #
-    log.debug('sysname = ' + rcEnv.sysname)
-    log.debug('nodename = ' + rcEnv.nodename)
-    log.debug('machine = ' + rcEnv.machine)
-    log.debug('pathsvc = ' + rcEnv.pathsvc)
-    log.debug('pathbin = ' + rcEnv.pathbin)
-    log.debug('pathetc = ' + rcEnv.pathetc)
-    log.debug('pathlib = ' + rcEnv.pathlib)
-    log.debug('pathlog = ' + rcEnv.pathlog)
-    log.debug('pathtmp = ' + rcEnv.pathtmp)
-    log.debug('service name = ' + name)
-    log.debug('service config file = ' + svcconf)
-    log.debug('service log file = ' + logfile)
 
     #
     # node discovery is hidden in a separate module to
@@ -847,7 +828,7 @@ def build(name):
     return svc
 
 def is_service(f):
-    svcmgr = os.path.join(pathsvc, 'bin', 'svcmgr')
+    svcmgr = os.path.join(rcEnv.pathsvc, 'bin', 'svcmgr')
     if os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
     if not os.path.exists(f + '.env'):
@@ -859,10 +840,10 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
     If no status is specified, returns all services
     """
     services = {}
-    for name in os.listdir(pathetc):
+    for name in os.listdir(rcEnv.pathetc):
         if len(svcnames) > 0 and name not in svcnames:
             continue
-        if not is_service(os.path.join(pathetc, name)):
+        if not is_service(os.path.join(rcEnv.pathetc, name)):
             continue
         svc = build(name)
         if svc is None :

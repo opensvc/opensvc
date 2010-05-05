@@ -40,3 +40,7 @@ for svc in svcs:
         svc.action('syncall')
     except:
         pass
+
+if len(svcs) == 0:
+    from xmlrpcClient import push_stats
+    push_stats()
