@@ -59,6 +59,12 @@ def justcall(argv=['/bin/false']):
     (stdout, stderr)=process.communicate(input=None)
     return (stdout, stderr, process.returncode)
 
+def empty_string(buff):
+    b = buff.strip(' ').strip('\n')
+    if len(b) == 0:
+        return True
+    return False
+
 def call(argv=['/bin/false'],
          log=None,         # callers should provide there own logger
                            # or we'll have to allocate a generic one
@@ -88,7 +94,7 @@ def call(argv=['/bin/false'],
         log.debug(' '.join(argv))
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
-    if len(buff[1]) > 0:
+    if not empty_string(buff[1]):
         if err_to_info:
             log.info('stderr:\n' + buff[1])
         elif err_to_warn:
@@ -100,7 +106,7 @@ def call(argv=['/bin/false'],
                 log.warning('command succesful but stderr:\n' + buff[1])
         else:
             log.debug('stderr:\n' + buff[1])
-    if len(buff[0]) > 0:
+    if not empty_string(buff[0]):
         if outlog:
             if process.returncode == 0:
                 log.info('output:\n' + buff[0])
