@@ -129,10 +129,6 @@ def _merge(s1, s2):
     if (s1, s2) == (STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN): return WARN
     return _merge(s2, s1)
 
-def print_status(resource, status):
-    import string
-    print '{0:70} {1}'.format(resource, status_str(status))
-
 class Status(object):
     """Class that wraps printing and calculation of resource status
     """
@@ -146,7 +142,10 @@ class Status(object):
     def __iadd__(self, s):
         """Merge a status with current global status
         """
-        self.status = _merge(self.status, s)
+        if isinstance(s, Status):
+            self.status = _merge(self.status, s.status)
+        else:
+            self.status = _merge(self.status, s)
         return self
 
     def __str__(self):

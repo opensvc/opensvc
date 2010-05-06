@@ -242,7 +242,7 @@ class syncNetapp(Res.Resource):
     def stop(self):
         pass
 
-    def status(self):
+    def status(self, verbose=False):
         try:
             s = self.snapmirror_status(self.slave())
         except:

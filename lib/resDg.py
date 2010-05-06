@@ -58,7 +58,7 @@ class Dg(Res.Resource):
         if rcEnv.nodename in self.always_on:
              self.start()
 
-    def status(self):
+    def status(self, verbose=False):
         if rcEnv.nodename in self.always_on:
             if self.is_up(): return rcStatus.STDBY_UP
             else: return rcStatus.STDBY_DOWN

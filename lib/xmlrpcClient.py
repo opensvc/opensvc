@@ -215,7 +215,8 @@ def resmon_update(svc, status):
                          repr(r.rid),
                          repr(r.label),
                          repr(str(r.rstatus)),
-                         repr(str(now))]
+                         repr(str(now)),
+                         r.status_log_str]
             )
     vars = [\
         "svcname",
@@ -223,7 +224,8 @@ def resmon_update(svc, status):
         "rid",
         "res_desc",
         "res_status",
-        "updated"]
+        "updated",
+        "res_log"]
     proxy.resmon_update(vars, vals)
 
 def push_service(svc):

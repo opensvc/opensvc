@@ -126,8 +126,9 @@ class HpVm(Res.Resource):
             return True
         return False
 
-    def status(self):
+    def status(self, verbose=False):
         if not self.check_manual_boot():
+            self.status_log("vm auto boot is on")
             return rcStatus.WARN
         if self.is_up():
             return rcStatus.UP

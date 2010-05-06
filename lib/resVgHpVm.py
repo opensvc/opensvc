@@ -40,7 +40,7 @@ class Vg(resVg.Vg):
     def is_up(self):
         return True
 
-    def status(self):
+    def status(self, verbose=False):
         return rcStatus.NA
 
     def do_start(self):

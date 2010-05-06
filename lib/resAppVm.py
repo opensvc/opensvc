@@ -40,16 +40,18 @@ class Apps(resApp.Apps):
         if ret != 0:
             self.vcall(self.prefix+['/usr/bin/chmod', '+x', rc])
 
-    def checks(self):
+    def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
         container.rstatus.status = container.status()
         if container.rstatus.status != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%container.rstatus)
+            self.status_log("container is %s"%container.rstatus)
             return False
         cmd = self.prefix + ['/bin/pwd']
         ret = qcall(cmd)
         if ret != 0:
             self.log.debug("abort resApp action because container is unreachable")
+            self.status_log("container is unreachable")
             return False
         cmd = self.prefix + ['/usr/bin/test', '-d', self.app_d]
         ret = qcall(cmd)
@@ -67,8 +69,8 @@ class Apps(resApp.Apps):
     def start_checks(self):
         return self.checks()
 
-    def status_checks(self):
-        return self.checks()
+    def status_checks(self, verbose=False):
+        return self.checks(verbose=verbose)
 
     def sorted_app_list(self, pattern):
         cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern]

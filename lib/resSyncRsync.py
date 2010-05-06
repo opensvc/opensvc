@@ -297,13 +297,14 @@ class Rsync(Res.Resource):
             self.log.debug("no node to sync")
             pass
 
-    def status(self):
+    def status(self, verbose=False):
         """ mono-node service should return n/a as a sync state
         """
         target = set([])
         for i in self.target:
             target |= self.target[i]
         if len(target) <= 1:
+            self.status_log("single node service")
             return rcStatus.NA
 
         """ sync state on nodes where the service is not UP
@@ -311,8 +312,10 @@ class Rsync(Res.Resource):
         s = self.svc.group_status(excluded_groups=set(["sync"]))
         if s['overall'].status != rcStatus.UP:
             if rcEnv.nodename not in target:
+                self.status_log("passive node not in sync destination nodes")
                 return rcStatus.NA
             if need_sync(self, rcEnv.nodename):
+                self.status_log("passive node needs update")
                 return rcStatus.WARN
             else:
                 return rcStatus.UP
@@ -320,6 +323,7 @@ class Rsync(Res.Resource):
         """ sync state on DRP nodes where the service is UP
         """
         if 'drpnodes' in self.target and rcEnv.nodename in self.target['drpnodes']:
+            self.status_log("service up on drp node, sync disabled")
             return rcStatus.NA
 
         """ sync state on nodes where the service is UP
@@ -336,6 +340,7 @@ class Rsync(Res.Resource):
         if nodes == 0:
             return rcStatus.UP
 
+        self.status_log("needs update")
         return rcStatus.DOWN
 
     def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,

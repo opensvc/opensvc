@@ -174,13 +174,14 @@ class syncSymclone(Res.Resource):
             if self.last is None or last > self.last:
                 self.last = last
 
-    def status(self):
+    def status(self, verbose=False):
         self.get_syminfo()
         self.get_last()
 
         if self.last is None:
             return rcStatus.DOWN
         elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            self.status_log("Last sync on %s older than %d minutes"%(self.last, self.sync_max_delay))
             return rcStatus.WARN
         else:
             return rcStatus.UP
@@ -220,6 +221,6 @@ class syncSymclone(Res.Resource):
         self.last = None
 
     def __str__(self):
-        return "%s symdg=%s dg=%s" % (Res.Resource.__str__(self),\
-                self.symdg, self.dg)
+        return "%s symdg=%s symdevs=%s" % (Res.Resource.__str__(self),\
+                self.symdg, self.symdevs)
 

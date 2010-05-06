@@ -55,7 +55,7 @@ class Ip(Res.Resource):
         os.environ['OPENSVC_MASK'] = str(self.mask)
         os.environ['OPENSVC_IPADDR'] = str(self.addr)
 
-    def status(self):
+    def status(self, verbose=False):
         if rcEnv.nodename in self.always_on:
             if self.is_up():
                 return rcStatus.STDBY_UP

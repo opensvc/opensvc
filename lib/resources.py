@@ -1,6 +1,8 @@
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2010 Cyril Galibern <cyril.galibern@free.fr>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +21,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+from textwrap import wrap
 import rcExceptions as exc
 import rcStatus
 import logging
@@ -41,6 +44,7 @@ class Resource(object):
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = rcStatus.Status()
         if self.label is None: self.label = type
+        self.status_log_str = ""
 
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
@@ -112,15 +116,26 @@ class Resource(object):
             else:
                 raise exc.excError
 
-    def status(self):
+    def status(self, verbose=False):
         return rcStatus.UNDEF
 
+    def status_log(self, text):
+        self.status_log_str += "# " + text
+
     def print_status(self):
-        label = "%-8s %s"%(self.rid, self.label)
-        try:
-            r = rcStatus.print_status(label, self.status())
-        except:
-            r = rcStatus.print_status(label, self.status())
+        self.status_log_str = ""
+        r = self.status(verbose=True)
+        print self.svc.print_status_fmt%(self.rid,
+                                         rcStatus.status_str(r),
+                                         self.label)
+        if len(self.status_log_str) > 0:
+            print '\n'.join(wrap(self.status_log_str,
+                        initial_indent =    '                  ',
+                        subsequent_indent = '                  ',
+                        width=78
+                       )
+                     )
+
         return r
 
     def call(self, cmd=['/bin/false'], info=False,
@@ -185,7 +200,7 @@ class ResourceSet(Resource):
     def post_action(self, rset=None, action=None):
         pass
 
-    def status(self):
+    def status(self, verbose=False):
         """aggregate status a ResourceSet
         """
         s = rcStatus.Status()

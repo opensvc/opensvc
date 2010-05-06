@@ -191,7 +191,7 @@ class ScsiReserv(Res.Resource):
             return
         return self.checkreserv()
 
-    def status(self):
+    def status(self, verbose=False):
         if not self.scsireserv_supported():
             return rcStatus.NA
         return self.scsicheckreserv()

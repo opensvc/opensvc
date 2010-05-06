@@ -63,12 +63,14 @@ class Apps(Res.Resource):
             return False
         return True
 
-    def status_checks(self):
+    def status_checks(self, verbose=False):
         if not os.path.exists(self.svc.initd):
+            if verbose: self.status_log("%s does not exist"%self.svc.initd)
             return False
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk"]))
         if status["overall"] != rcStatus.UP:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
+            if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
             return False
         return True
 
@@ -95,14 +97,14 @@ class Apps(Res.Resource):
     def sorted_app_list(self, pattern):
         return sorted(glob.glob(os.path.join(self.svc.initd, pattern)))
 
-    def status(self):
+    def status(self, verbose=False):
         """Execute each startup script (C* files). Log the return code but
            don't stop on error. Count errors.
         """
         rets = {}
         errs = 0
         nb = 0
-        if not self.status_checks():
+        if not self.status_checks(verbose=verbose):
             return rcStatus.NA
         for name in self.sorted_app_list('C*'):
             if len(name) == 0:
@@ -112,10 +114,13 @@ class Apps(Res.Resource):
             errs += ret
             rets[name] = ret
         if nb == 0:
+            self.status_log("no startup script")
             return rcStatus.NA
         elif errs == 0:
             return rcStatus.UP
         elif 0 in rets.values():
+            names = ', '.join([n for n in rets if rets[n] != 0 ])
+            self.status_log("%s returned errors"%(names))
             return rcStatus.WARN
         else:
             return rcStatus.DOWN

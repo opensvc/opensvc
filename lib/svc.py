@@ -99,6 +99,7 @@ class Svc(Resource, Freezer):
         self.runmethod = []
         self.resources_by_id = {}
         self.rset_status_cache = None
+        self.print_status_fmt = "%-8s %-8s %s"
 
     def __cmp__(self, other):
         """order by service name
@@ -191,9 +192,17 @@ class Svc(Resource, Freezer):
     def print_status(self):
         """print each resource status for a service
         """
+        print self.print_status_fmt%("rid", "status", "label")
+        print self.print_status_fmt%("---", "------", "-----")
+
+        s = rcStatus.Status(rcStatus.UNDEF)
         for t in self.status_types:
-            for r in self.get_res_sets(t): r.action("print_status")
-        rcStatus.print_status("overall", self.status())
+            for rs in self.get_res_sets(t):
+                for r in rs.resources:
+                    s += r.print_status()
+        print self.print_status_fmt%("overall",
+                                     str(s),
+                                     ""),
 
     def get_rset_status(self):
         if self.rset_status_cache is not None:
@@ -201,8 +210,8 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.rset_status_cache = {}
         for t in self.status_types:
-            for r in self.get_res_sets(t):
-                self.rset_status_cache[r.type] = r.status()
+            for rs in self.get_res_sets(t):
+                self.rset_status_cache[rs.type] = rs.status()
         return self.rset_status_cache
 
     def group_status(self,

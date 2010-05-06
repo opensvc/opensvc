@@ -270,13 +270,14 @@ class syncDds(Res.Resource):
     def stop(self):
         pass
 
-    def status(self):
+    def status(self, verbose=False):
         try:
             ls = self.get_local_state()
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
             delay = datetime.timedelta(minutes=self.sync_max_delay)
         except IOerror:
+            self.status_log("dds state file not found")
             return rcStatus.WARN
         except:
             import sys
@@ -285,6 +286,7 @@ class syncDds(Res.Resource):
             print e[0], e[1], traceback.print_tb(e[2])
             return rcStatus.WARN
         if last < now - delay:
+            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
             return rcStatus.WARN
         return rcStatus.UP
 
