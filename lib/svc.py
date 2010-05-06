@@ -77,7 +77,11 @@ class Svc(Resource, Freezer):
         self.type2resSets = {}
         self.disks = set([])
         self.force = False
-        self.status_types = ["disk.loop",
+        self.status_types = ["container.hpvm",
+                             "container.kvm",
+                             "container.lxc",
+                             "container.zone",
+                             "disk.loop",
                              "disk.scsireserv",
                              "disk.vg",
                              "fs",
