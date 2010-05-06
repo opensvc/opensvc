@@ -304,7 +304,7 @@ class Rsync(Res.Resource):
         for i in self.target:
             target |= self.target[i]
         if len(target) <= 1:
-            self.status_log("single node service")
+            self.status_log("no destination nodes")
             return rcStatus.NA
 
         """ sync state on nodes where the service is not UP
