@@ -21,18 +21,12 @@ import resources as Res
 import time
 import rcExceptions as ex
 from rcUtilities import qcall
+import resContainer
 
-class HpVm(Res.Resource):
-    """ HP-UX can have very long boot time
-    """
-    startup_timeout = 600
-    shutdown_timeout = 60
-
+class HpVm(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False):
-        Res.Resource.__init__(self, rid="hpvm", type="container.hpvm",
-                              optional=optional, disabled=disabled)
-        self.name = name
-        self.label = name
+        resContainer.Container.__init__(self, rid="hpvm", name=name, type="container.hpvm",
+                                        optional=optional, disabled=disabled)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -46,66 +40,23 @@ class HpVm(Res.Resource):
             return True
         return False
 
-    def operational(self):
-        timeout = 1
-        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
-
-    def wait_for_startup(self):
-        delay = 5
-        for tick in range(self.startup_timeout/delay):
-            if self.is_up() and self.ping() and self.operational():
-                return
-            time.sleep(delay)
-        self.log.error("Waited too long for startup")
-        raise ex.excError
-
-    def wait_for_shutdown(self):
-        delay = 5
-        for tick in range(self.shutdown_timeout/delay):
-            if not self.is_up():
-                return
-            time.sleep(delay)
-        self.log.error("Waited too long for shutdown")
-        raise ex.excError
-
-    def hpvm_start(self):
+    def container_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def hpvm_stop(self):
+    def container_stop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-g', '-F', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def hpvm_forcestop(self):
+    def container_forcestop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-F', '-P', self.name]
         (ret, buff) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-
-    def start(self):
-        if self.is_up():
-            self.log.info("hpvm container %s already started" % self.name)
-            return
-        self.hpvm_start()
-        self.wait_for_startup()
-
-    def stop(self):
-        if not self.is_up():
-            self.log.info("hpvm container %s already stopped" % self.name)
-            return
-        self.hpvm_stop()
-        self.wait_for_shutdown()
-        if self.is_up():
-            self.hpvm_forcestop()
-        self.wait_for_shutdown()
 
     def check_manual_boot(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
@@ -125,13 +76,4 @@ class HpVm(Res.Resource):
         if out.split(":")[10] == "On":
             return True
         return False
-
-    def _status(self, verbose=False):
-        if not self.check_manual_boot():
-            self.status_log("vm auto boot is on")
-            return rcStatus.WARN
-        if self.is_up():
-            return rcStatus.UP
-        else:
-            return rcStatus.DOWN
 
