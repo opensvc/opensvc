@@ -100,11 +100,11 @@ class Mount(Res.Mount):
             return
 
         ret = self.try_umount()
-        if ret == 0 :
-            return
 
-        self.log.error("failed")
-        raise ex.excError
+        if ret != 0 :
+            self.log.error("failed")
+            raise ex.excError
+
 
 if __name__ == "__main__":
     for c in (Mount,) :

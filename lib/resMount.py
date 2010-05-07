@@ -93,7 +93,7 @@ class Mount(Res.Resource):
             return False
         return True
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         if rcEnv.nodename in self.always_on:
             if self.is_up():
                 if self.need_check_writable() and not self.check_writable():

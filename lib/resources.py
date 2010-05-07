@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2010 Cyril Galibern <cyril.galibern@free.fr>'
 #
 # This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@ class Resource(object):
         self.optional = optional
         self.disabled = disabled
         self.log = logging.getLogger(str(rid).upper())
-        self.rstatus = rcStatus.Status()
+        self.rstatus = None
         if self.label is None: self.label = type
         self.status_log_str = ""
 
@@ -87,6 +87,10 @@ class Resource(object):
             self.action_triggers("pre", action)
             getattr(self, action)()
             self.action_triggers("post", action)
+            if action in ("start","stop") or "sync" in action:
+                """ refresh resource status cache after changing actions
+                """
+                self.status(refresh=True)
             return
 
         """Every class inheriting resource should define start() stop() status()
@@ -116,8 +120,16 @@ class Resource(object):
             else:
                 raise exc.excError
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         return rcStatus.UNDEF
+
+    def status(self, verbose=False, refresh=False):
+        if self.disabled:
+            self.status_log("disabled")
+            return rcStatus.NA
+        if self.rstatus is None or refresh:
+            self.rstatus = self._status(verbose)
+        return self.rstatus
 
     def status_log(self, text):
         self.status_log_str += "# " + text
@@ -210,9 +222,13 @@ class ResourceSet(Resource):
             try:
                 status = r.status()
             except:
+                import sys
+                import traceback
+                e = sys.exc_info()
+                print e[0], e[1], traceback.print_tb(e[2])
+
                 status = rcStatus.NA
 
-            r.rstatus.status = status
             s += status
         return s.status
 

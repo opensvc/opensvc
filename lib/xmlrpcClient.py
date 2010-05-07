@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 import xmlrpclib
 import os
 from rcGlobalEnv import rcEnv
+import rcStatus
 
 sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
@@ -214,7 +215,7 @@ def resmon_update(svc, status):
                          repr(rcEnv.nodename),
                          repr(r.rid),
                          repr(r.label),
-                         repr(str(r.rstatus)),
+                         repr(rcStatus.status_str(r.rstatus)),
                          repr(str(now)),
                          r.status_log_str]
             )

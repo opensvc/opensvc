@@ -43,7 +43,7 @@ def svcmon_verbose(svcs):
             pass
 
 def max_len(svcs, attr):
-    _len = 0
+    _len = 7
     for svc in svcs:
         if _len < len(getattr(svc, attr)):
             _len = len(getattr(svc, attr))

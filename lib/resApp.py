@@ -97,7 +97,7 @@ class Apps(Res.Resource):
     def sorted_app_list(self, pattern):
         return sorted(glob.glob(os.path.join(self.svc.initd, pattern)))
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         """Execute each startup script (C* files). Log the return code but
            don't stop on error. Count errors.
         """

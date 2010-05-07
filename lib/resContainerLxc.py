@@ -104,14 +104,14 @@ class Lxc(Res.Resource):
             self.log.info("lxc container %s already started" % self.name)
             return 0
         lxc(self, 'start')
-        return lxc_wait_for_startup(self)
+        lxc_wait_for_startup(self)
 
     def stop(self):
         if not self.is_up():
             self.log.info("lxc container %s already stopped" % self.name)
             return 0
         lxc(self, 'stop')
-        return lxc_wait_for_shutdown(self)
+        lxc_wait_for_shutdown(self)
 
     def ping(self):
         count=1
@@ -139,7 +139,7 @@ class Lxc(Res.Resource):
             return True
         return False
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 

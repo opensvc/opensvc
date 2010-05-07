@@ -42,10 +42,9 @@ class Apps(resApp.Apps):
 
     def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
-        container.rstatus.status = container.status()
-        if container.rstatus.status != rcStatus.UP:
-            self.log.debug("abort resApp action because container status is %s"%container.rstatus)
-            self.status_log("container is %s"%container.rstatus)
+        if container.status() != rcStatus.UP:
+            self.log.debug("abort resApp action because container status is %s"%container.status())
+            self.status_log("container is %s"%container.status())
             return False
         cmd = self.prefix + ['/bin/pwd']
         ret = qcall(cmd)

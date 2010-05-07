@@ -113,7 +113,7 @@ class Kvm(Res.Resource):
             return True
         return False
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 

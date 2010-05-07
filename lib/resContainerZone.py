@@ -90,7 +90,7 @@ class Zone(Res.Resource):
             self.log.info("timeout out waiting for %s shutdown", self.name)
         return self.zoneadm('halt')
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         self.zone_refresh()
         if self.state == 'running' :
             return rcStatus.UP

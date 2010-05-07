@@ -82,7 +82,7 @@ class Loop(Res.Loop):
             if ret != 0:
                 raise ex.excError
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
