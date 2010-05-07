@@ -18,65 +18,19 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement Linux/LXC specific ip management"
 
-import rcExceptions as ex
-import rcStatus
-from subprocess import *
-from rcUtilities import qcall
-Res = __import__("resIpHP-UX")
-rcIfconfig = __import__("rcIfconfigHpVm")
+resIpHv = __import__("resIpHP-UX")
+import resIpVm
 
-class Ip(Res.Ip):
-    def check_ping(self):
-        count=1
-        timeout=5
-        cmd = ['ping', self.addr, '-n', repr(count), '-m', repr(timeout)]
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
-
-    def is_up(self):
-        for vm in self.svc.get_res_sets("container.hpvm"):
-            pass
-        if vm.status() == rcStatus.DOWN:
-            self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
-            return False
-        try:
-            ifconfig = rcIfconfig.ifconfig(self.vmname)
-        except:
-            self.log.error("failed to fetch interface configuration")
-            return False
-        if ifconfig.has_param("ipaddr", self.addr) is not None:
-            self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
-            return True
-        self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
-        return False
-
-    def allow_start(self):
-        for vm in self.svc.get_res_sets("container.hpvm"):
-            pass
-        if self.check_ping() and vm.status() == rcStatus.DOWN:
-            self.log.error("%s is already up on another host" % (self.addr))
-            raise ex.IpConflict(self.addr)
-        return
-
-    def start(self):
-        try:
-            self.allow_start()
-        except ex.IpConflict:
-            raise ex.excError
-
-    def stop(self):
-        pass
-
-    def __init__(self, rid=None, vmname=None, ipDev=None, ipName=None,
+class Ip(resIpVm.Ip, resIpHv.Ip):
+    def __init__(self, rid=None, ipDev=None, ipName=None,
                  always_on=set([])):
-        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        always_on=always_on)
-        self.vmname = vmname
+        resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
+                            always_on=always_on)
 
+    def check_ping(self):
+        help(self)
+        resIpHv.Ip.check_ping(self)
 
 if __name__ == "__main__":
     for c in (Ip,) :

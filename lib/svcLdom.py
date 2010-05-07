@@ -19,20 +19,22 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-resIpHv = __import__("resIpLinux")
-import resIpVm
+import svc
+import resContainerLdom as ldom
+import rcStatus
+import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
-class Ip(resIpVm.Ip, resIpHv.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
-                 always_on=set([])):
-        resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                            always_on=always_on)
+class SvcLdom(svc.Svc):
+    """ Define ldom services"""
 
-    def check_ping(self):
-        help(self)
-        resIpHv.Ip.check_ping(self)
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
+        svc.Svc.__init__(self, svcname, optional, disabled)
+        if vmname is None:
+            vmname = svcname
+        self.vmname = vmname
+        self.guestos = guestos
+        self += ldom.Ldom(vmname)
+        self.status_types += ["container.ldom"]
+        self.runmethod = rcEnv.rsh.split() + [vmname]
 

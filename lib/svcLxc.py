@@ -28,11 +28,12 @@ from rcUtilities import which
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
 
-    def __init__(self, svcname, vmname=None, optional=False, disabled=False):
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
+        self.guestos = guestos
         self += lxc.Lxc(vmname)
         self.status_types += ["container.lxc"]
         if which('lxc-attach'):

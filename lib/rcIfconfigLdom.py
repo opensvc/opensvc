@@ -16,23 +16,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
 
-resIpHv = __import__("resIpLinux")
-import resIpVm
+import rcExceptions as ex
+from subprocess import *
 
-class Ip(resIpVm.Ip, resIpHv.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
-                 always_on=set([])):
-        resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                            always_on=always_on)
+rcIfconfig = __import__("rcIfconfigSunOS")
+from rcGlobalEnv import rcEnv
 
-    def check_ping(self):
-        help(self)
-        resIpHv.Ip.check_ping(self)
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
-
+class ifconfig(rcIfconfig.ifconfig):
+    def __init__(self, hostname):
+        self.intf = []
+        cmd = rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', '-a']
+        p = Popen(cmd, stdout=PIPE)
+        buff = p.communicate()[0]
+        if p.returncode != 0:
+            raise ex.excError
+        self.parse(buff)

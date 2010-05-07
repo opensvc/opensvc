@@ -30,12 +30,13 @@ import resContainerZone as Zone
 class SvcZone(svc.Svc):
     """ Define Zone services"""
 
-    def __init__(self, svcname, vmname=None, optional=False, disabled=False):
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, type="container.zone",
             optional=optional, disabled=disabled)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
+        self.guestos = guestos
         self.zone = Zone.Zone(vmname)
         self += self.zone
         self.status_types += ["container.zone"]

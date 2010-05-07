@@ -18,41 +18,19 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement Linux/LXC specific ip management"
 
-import rcExceptions as ex
-import resIpLinux as Res
-import rcIfconfigLinuxlxc as rcIfconfig
-import rcStatus
-from subprocess import *
+resIpHv = __import__("resIpLinux")
+import resIpVm
 
-class Ip(Res.Ip):
-    def is_up(self):
-        for lxc in self.svc.get_res_sets("container.lxc"):
-            pass
-        if lxc.status() == rcStatus.DOWN:
-            return False
-        ifconfig = rcIfconfig.ifconfig(self.lxcname)
-        if ifconfig.has_param("ipaddr", self.addr) is not None:
-            self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
-            return True
-        self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
-        return False
-
-    def start(self):
-        try:
-            self.allow_start()
-        except (ex.IpConflict, ex.IpDevDown):
-            raise ex.excError
-        except ex.IpAlreadyUp:
-            return
-        self.log.debug('pre-checks passed')
-
-    def __init__(self, rid=None, vmname=None, ipDev=None, ipName=None,
+class Ip(resIpVm.Ip, resIpHv.Ip):
+    def __init__(self, rid=None, ipDev=None, ipName=None,
                  always_on=set([])):
-        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        always_on=always_on)
-        self.lxcname = vmname
+        resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
+                            always_on=always_on)
+
+    def check_ping(self):
+        help(self)
+        resIpHv.Ip.check_ping(self)
 
 
 if __name__ == "__main__":

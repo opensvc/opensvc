@@ -19,7 +19,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-resIpHv = __import__("resIpLinux")
+resIpHv = __import__("resIpSunOS")
 import resIpVm
 
 class Ip(resIpVm.Ip, resIpHv.Ip):
@@ -31,6 +31,7 @@ class Ip(resIpVm.Ip, resIpHv.Ip):
     def check_ping(self):
         help(self)
         resIpHv.Ip.check_ping(self)
+
 
 if __name__ == "__main__":
     for c in (Ip,) :

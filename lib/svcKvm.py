@@ -28,11 +28,12 @@ from rcGlobalEnv import rcEnv
 class SvcKvm(svc.Svc):
     """ Define kvm services"""
 
-    def __init__(self, svcname=None, vmname=None, optional=False, disabled=False):
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
         svc.Svc.__init__(self, svcname, optional, disabled)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
+        self.guestos = guestos
         self += kvm.Kvm(vmname)
         self.status_types += ["container.kvm"]
         self.runmethod = rcEnv.rsh.split() + [vmname]

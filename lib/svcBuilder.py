@@ -66,6 +66,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcHosted', 'SvcHosted')
     elif svcmode == 'hpvm':
         return ('svcHpVm', 'SvcHpVm')
+    elif svcmode == 'ldom':
+        return ('svcLdom', 'SvcLdom')
     elif svcmode == 'kvm':
         return ('svcKvm', 'SvcKvm')
     raise
@@ -169,16 +171,14 @@ def add_ips(svc, conf):
         if conf.has_option(s, "netmask"):
             kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
-            kwargs['vmname'] = vmname
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
         elif svc.svcmode  == 'kvm':
-            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'Kvm')
         elif svc.svcmode  == 'hpvm':
-            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'HpVm')
+        elif svc.svcmode  == 'ldom':
+            ip = __import__('resIp'+'Ldom')
         elif svc.svcmode  == 'zone':
-            kwargs['vmname'] = vmname
             ip = __import__('resIp'+'Zone')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
@@ -246,6 +246,8 @@ def add_vmdg(svc, conf):
         return
     if svc.svcmode == 'hpvm':
         vg = __import__('resVgHpVm')
+    if svc.svcmode == 'ldom':
+        vg = __import__('resVgLdom')
     elif svc.svcmode in ['kvm', 'xen']:
         vg = __import__('resVgLibvirtVm')
     else:
@@ -354,6 +356,16 @@ def add_mandatory_syncs(svc):
             a += files
         return a
 
+    def list_ldomconffiles():
+        a = []
+        if svc.svcmode != 'ldom':
+            return a
+        ldomf = os.path.join(rcEnv.pathvar, 'ldom_'+svc.svcname+'.*')
+        files = glob.glob(ldomf)
+        if len(files) > 0:
+            a += files
+        return a
+
     def list_lxcconffiles():
         a = []
         if svc.svcmode != 'lxc':
@@ -382,6 +394,7 @@ def add_mandatory_syncs(svc):
     src += list_kvmconffiles()
     src += list_lxcconffiles()
     src += list_hpvmconffiles()
+    src += list_ldomconffiles()
     dst = os.path.join("/")
     exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
@@ -641,7 +654,7 @@ def add_syncs_rsync(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        if svc.svcmode in ['hpvm', 'kvm', 'zone', 'lxc']:
+        if svc.svcmode in ['ldom', 'hpvm', 'kvm', 'zone', 'lxc']:
             resApp = __import__('resAppVm')
         else:
             resApp = __import__('resApp')
@@ -714,6 +727,12 @@ def build(name):
         if conf.has_option("default", "vm_name"):
             vmname = conf.get("default", "vm_name")
             kwargs['vmname'] = vmname
+        if conf.has_option("default", "guest_os"):
+            guestos = conf.get("default", "guest_os")
+            kwargs['guestos'] = guestos
+        elif svcmode != "hosted":
+            guestos = rcEnv.sysname
+            kwargs['guestos'] = guestos
 
     #
     # dynamically import the module matching the service mode
