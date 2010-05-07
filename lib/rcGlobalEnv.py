@@ -134,6 +134,10 @@ class rcEnv:
         [["/home/oracle", "/home/sybase", "/opt/oracle", "/opt/sybase"], drp_sync_excludes],
     ]
 
+    vt_libvirt = ['kvm', 'lxc', 'xen']
+    vt_vm = ['ldom', 'hpvm', 'kvm', 'xen']
+    vt_container = ['zone', 'lxc']
+    vt_supported = vt_vm + vt_container
 
 
 

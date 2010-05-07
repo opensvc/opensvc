@@ -126,7 +126,7 @@ class Svc(Resource, Freezer):
             pass
 
         self.resources_by_id[r.rid] = r
-        if r.rid in ["lxc", "zone", "hpvm", "xen", "kvm", "ldom"]:
+        if r.rid in rcEnv.vt_supported:
             self.resources_by_id["container"] = r
         r.svc = self
         import logging

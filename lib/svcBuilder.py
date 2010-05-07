@@ -248,7 +248,7 @@ def add_vmdg(svc, conf):
         vg = __import__('resVgHpVm')
     if svc.svcmode == 'ldom':
         vg = __import__('resVgLdom')
-    elif svc.svcmode in ['kvm', 'xen']:
+    elif svc.svcmode in rcEnv.vt_libvirt:
         vg = __import__('resVgLibvirtVm')
     else:
         return
@@ -654,7 +654,7 @@ def add_syncs_rsync(svc, conf):
         svc += r
 
 def add_apps(svc, conf):
-        if svc.svcmode in ['ldom', 'hpvm', 'kvm', 'zone', 'lxc']:
+        if svc.svcmode in rcEnv.vt_supported:
             resApp = __import__('resAppVm')
         else:
             resApp = __import__('resApp')
@@ -725,12 +725,18 @@ def build(name):
         if conf.has_option("default", "mode"):
             svcmode = conf.get("default", "mode")
         if conf.has_option("default", "vm_name"):
+            if svcmode not in rcEnv.vt_supported:
+                log.error("can not set 'vm_name' with '%s' mode in %s env"%(svcmode, name))
+                return None
             vmname = conf.get("default", "vm_name")
             kwargs['vmname'] = vmname
         if conf.has_option("default", "guest_os"):
+            if svcmode not in rcEnv.vt_supported:
+                log.error("can not set 'guest_os' with '%s' mode in %s env"%(svcmode, name))
+                return None
             guestos = conf.get("default", "guest_os")
             kwargs['guestos'] = guestos
-        elif svcmode != "hosted":
+        elif svcmode in rcEnv.vt_supported:
             guestos = rcEnv.sysname
             kwargs['guestos'] = guestos
 
