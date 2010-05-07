@@ -23,16 +23,19 @@ import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
 
-  def __init__(self):
-     self.intf = []
-     out=Popen(['ifconfig','-a'],stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
-     for l in out.split("\n"):
-	if l == '' : break
-	if l[0]!='\t' :
-		(ifname,ifstatus)=l.split(': ')
+    def __init__(self):
+        self.intf = []
+        out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+        self.parse(out)
 
-		i=rcIfconfig.interface(ifname)
-		self.intf.append(i)
+    def parse(self, out):
+        for l in out.split("\n"):
+            if l == '' : break
+            if l[0]!='\t' :
+                (ifname,ifstatus)=l.split(': ')
+
+                i=rcIfconfig.interface(ifname)
+                self.intf.append(i)
 
                 # defaults
                 i.link_encap = ''
@@ -51,22 +54,22 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_ipv6 = False
                 i.flag_loopback = False
 
-		if 'UP' in ifstatus : i.flag_up = True
-		elif 'BROADCAST' in ifstatus : i.flag_broadcast = True
-		elif 'RUNNING' in ifstatus   : i.flag_running = True
-		elif 'MULTICAST' in ifstatus : i.flag_multicast = True
-		elif 'IPv4' in ifstatus      : i.flag_ipv4 = True
-		elif 'IPv6' in ifstatus      : i.flag_ipv6 = True
-	else:
-		n=0
-		w=l.split()
-		while n < len(w) :
-			[p,v]=w[n:n+2]
-			if p == 'inet' : i.ipaddr=v
-			elif p == 'inet6' : i.ip6addr=v
-			elif p == 'netmask' : i.mask=v
-			elif p == 'broadcast' : i.bcast=v
-			n+=2
+                if 'UP' in ifstatus : i.flag_up = True
+                elif 'BROADCAST' in ifstatus : i.flag_broadcast = True
+                elif 'RUNNING' in ifstatus   : i.flag_running = True
+                elif 'MULTICAST' in ifstatus : i.flag_multicast = True
+                elif 'IPv4' in ifstatus      : i.flag_ipv4 = True
+                elif 'IPv6' in ifstatus      : i.flag_ipv6 = True
+            else:
+                n=0
+                w=l.split()
+                while n < len(w) :
+                        [p,v]=w[n:n+2]
+                        if p == 'inet' : i.ipaddr=v
+                        elif p == 'inet6' : i.ip6addr=v
+                        elif p == 'netmask' : i.mask=v
+                        elif p == 'broadcast' : i.bcast=v
+                        n+=2
 
 
 if __name__ == "__main__":
