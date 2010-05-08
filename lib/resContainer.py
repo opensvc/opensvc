@@ -90,7 +90,7 @@ class Container(Res.Resource):
         return False
 
     def is_up(self):
-        echo "TODO"
+        print "TODO"
         return False
 
     def _status(self, verbose=False):
