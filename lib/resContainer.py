@@ -86,7 +86,14 @@ class Container(Res.Resource):
             self.container_forcestop()
         self.wait_for_shutdown()
 
+    def container_start(self):
+        print "TODO"
+
+    def container_stop(self):
+        print "TODO"
+
     def check_manual_boot(self):
+        print "TODO"
         return False
 
     def is_up(self):

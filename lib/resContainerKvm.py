@@ -73,3 +73,17 @@ class Kvm(resContainer.Container):
             return True
         return False
 
+    def check_manual_boot(self):
+        cmd = ['virsh', 'dominfo', self.name]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        for line in out.split('\n'):
+            l = line.split(':')
+            if len(l) != 2:
+                continue
+            if l[0] != "Autostart":
+                continue
+            if "disable" in l[1]:
+                return True
+        return False
