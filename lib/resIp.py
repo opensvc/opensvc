@@ -41,11 +41,7 @@ class Ip(Res.Resource):
         self.label = ipName + '@' + ipDev
         self.always_on = always_on
         try:
-            a = socket.getaddrinfo(ipName, None,
-                                                 socket.AF_INET,
-                                                 socket.SOCK_DGRAM,
-                                                 socket.IPPROTO_IP,
-                                                 socket.AI_CANONNAME)
+            a = socket.getaddrinfo(ipName, None)
             if len(a) == 0:
                 raise Exception
             self.addr = a[0][4][0]
