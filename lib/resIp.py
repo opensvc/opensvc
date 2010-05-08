@@ -41,7 +41,14 @@ class Ip(Res.Resource):
         self.label = ipName + '@' + ipDev
         self.always_on = always_on
         try:
-            self.addr = socket.gethostbyname(ipName)
+            a = socket.getaddrinfo(ipName, None,
+                                                 socket.AF_INET,
+                                                 socket.SOCK_DGRAM,
+                                                 socket.IPPROTO_IP,
+                                                 socket.AI_CANONNAME)
+            if len(a) == 0:
+                raise Exception
+            self.addr = a[0][4][0]
         except:
             self.log.error("could not resolve %s to an ip address"%self.ipName)
             raise ex.excInitError
