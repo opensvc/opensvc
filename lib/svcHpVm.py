@@ -29,7 +29,7 @@ class SvcHpVm(svc.Svc):
     """ Define hpvm services"""
 
     def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
-        svc.Svc.__init__(self, optional, disabled)
+        svc.Svc.__init__(self, svcname, optional, disabled)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
