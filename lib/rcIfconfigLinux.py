@@ -37,7 +37,8 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.mask = ''
                 i.mtu = ''
                 i.ipaddr = ''
-                i.ip6addr = ''
+                i.ip6addr = []
+                i.ip6mask = []
                 i.hwaddr = ''
                 i.flag_up = False
                 i.flag_broadcast = False
@@ -58,7 +59,9 @@ class ifconfig(rcIfconfig.ifconfig):
             if 'inet' == prev and 'addr:' in w:
                 (null, i.ipaddr) = w.split(':')
             if 'inet6' == prevprev and 'addr:' == prev:
-                i.ip6addr = w
+                (ip6addr, ip6mask) = w.split('/')
+                i.ip6addr += [ip6addr]
+                i.ip6mask += [ip6mask]
             if 'HWaddr' == prev:
                 i.hwaddr = w
             if 'UP' == w:

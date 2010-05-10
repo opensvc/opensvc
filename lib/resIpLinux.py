@@ -21,23 +21,37 @@
 "Module implement Linux specific ip management"
 
 import resIp as Res
+import rcExceptions as ex
 
 class Ip(Res.Ip):
     def check_ping(self):
         count=1
         timeout=5
-        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.addr]
+        if ':' in self.addr:
+            ping = 'ping6'
+        else:
+            ping = 'ping'
+        cmd = [ping, '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.addr]
         (ret, out) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def startip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
+        if ':' in self.addr:
+            if '.' in self.mask:
+                self.log.error("netmask parameter is mandatory for ipv6 adresses")
+                raise ex.excError
+            cmd = ['ifconfig', self.ipDev, 'inet6', 'add', '/'.join([self.addr, self.mask])]
+        else:
+            cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
         return self.vcall(cmd)
 
     def stopip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, 'down']
+        if ':' in self.addr:
+            cmd = ['ifconfig', self.ipDev, 'inet6', 'del', self.addr]
+        else:
+            cmd = ['ifconfig', self.stacked_dev, 'down']
         return self.vcall(cmd)
 
 

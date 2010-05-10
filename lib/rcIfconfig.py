@@ -74,8 +74,12 @@ class ifconfig(object):
 
     def has_param(self, param, value):
         for i in self.intf:
-            if getattr(i, param) == value:
-                return i
+            if isinstance(getattr(i, param), list):
+                if value in getattr(i, param):
+                    return i
+            else:
+                if getattr(i, param) == value:
+                    return i
         return None
 
     def __str__(self):
@@ -133,7 +137,7 @@ class ifconfig(object):
                 i.flag_multicast = True
             if 'LOOPBACK' == w:
                 i.flag_loopback = True
-                
+
             prevprev = prev
             prev = w
 

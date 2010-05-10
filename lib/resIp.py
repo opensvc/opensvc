@@ -71,6 +71,8 @@ class Ip(Res.Resource):
                 return rcStatus.DOWN
 
     def arp_announce(self):
+        if ':' in self.addr:
+            return
         if not which("arping"):
             self.log.warning("arp annouce skipped. install 'arping'")
             return
@@ -89,7 +91,8 @@ class Ip(Res.Resource):
 
     def is_up(self):
         ifconfig = rcIfconfig.ifconfig()
-        if ifconfig.has_param("ipaddr", self.addr) is not None:
+        if ifconfig.has_param("ipaddr", self.addr) is not None or \
+           ifconfig.has_param("ip6addr", self.addr) is not None:
             self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
             return True
         self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
