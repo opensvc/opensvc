@@ -23,13 +23,12 @@ resIpHv = __import__("resIpLinux")
 import resIpVm
 
 class Ip(resIpVm.Ip, resIpHv.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
+    def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
                  always_on=set([])):
         resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                            always_on=always_on)
+                            mask=mask, always_on=always_on)
 
     def check_ping(self):
-        help(self)
         resIpHv.Ip.check_ping(self)
 
 if __name__ == "__main__":

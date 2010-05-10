@@ -31,7 +31,8 @@ class Ip(Res.Ip):
         for vm in self.svc.get_res_sets("container."+self.svc.svcmode):
             pass
         if vm.status() == rcStatus.DOWN:
-            self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
+            self.log.debug("container is down")
+            self.status_log("container is down")
             return False
         rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
         try:
@@ -39,7 +40,8 @@ class Ip(Res.Ip):
         except:
             self.log.error("failed to fetch interface configuration")
             return False
-        if ifconfig.has_param("ipaddr", self.addr) is not None:
+        if ifconfig.has_param("ipaddr", self.addr) is not None or \
+           ifconfig.has_param("ip6addr", self.addr) is not None:
             self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
             return True
         self.log.debug("%s@%s is down" % (self.addr, self.ipDev))
@@ -63,9 +65,9 @@ class Ip(Res.Ip):
         pass
 
     def __init__(self, rid=None, ipDev=None, ipName=None,
-                 always_on=set([])):
+                 mask=None, always_on=set([])):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        always_on=always_on)
+                        mask=mask, always_on=always_on)
 
 
 if __name__ == "__main__":

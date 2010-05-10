@@ -25,9 +25,9 @@ from subprocess import *
 
 class Ip(Res.Ip):
     def __init__(self, rid=None, ipDev=None, ipName=None,
-                 always_on=set([])):
+                 mask=None, always_on=set([])):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        always_on=always_on)
+                        mask=mask, always_on=always_on)
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \

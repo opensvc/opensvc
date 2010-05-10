@@ -44,7 +44,8 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.mask = ''
                 i.mtu = ''
                 i.ipaddr = ''
-                i.ip6addr = ''
+                i.ip6addr = []
+                i.ip6mask = []
                 i.hwaddr = ''
                 i.flag_up = False
                 i.flag_broadcast = False
@@ -64,12 +65,15 @@ class ifconfig(rcIfconfig.ifconfig):
                 n=0
                 w=l.split()
                 while n < len(w) :
-                        [p,v]=w[n:n+2]
-                        if p == 'inet' : i.ipaddr=v
-                        elif p == 'inet6' : i.ip6addr=v
-                        elif p == 'netmask' : i.mask=v
-                        elif p == 'broadcast' : i.bcast=v
-                        n+=2
+                    [p,v]=w[n:n+2]
+                    if p == 'inet' : i.ipaddr=v
+                    elif p == 'netmask' : i.mask=v
+                    elif p == 'broadcast' : i.bcast=v
+                    elif p == 'inet6' :
+                        (a, m) = v.split('/')
+                        i.ip6addr += [a]
+                        i.ip6mask += [m]
+                    n+=2
 
 
 if __name__ == "__main__":
