@@ -270,7 +270,7 @@ class syncDds(Res.Resource):
     def stop(self):
         pass
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         try:
             ls = self.get_local_state()
             now = datetime.datetime.now()

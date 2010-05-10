@@ -58,6 +58,7 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
             r.log.setLevel(logging.CRITICAL)
 
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    gs = self.group_status()
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
     os._exit(0)
@@ -86,11 +87,11 @@ class Svc(Resource, Freezer):
                              "disk.vg",
                              "fs",
                              "ip",
-                             "app",
                              "sync.rsync",
                              "sync.symclone",
                              "sync.dds",
-                             "sync.netapp"]
+                             "sync.netapp",
+                             "app"]
         Resource.__init__(self, type=type, optional=optional, disabled=disabled)
         Freezer.__init__(self, svcname)
         self.scsirelease = self.prstop
@@ -204,24 +205,25 @@ class Svc(Resource, Freezer):
                                      str(s),
                                      ""),
 
-    def get_rset_status(self):
-        if self.rset_status_cache is not None:
-            return self.rset_status_cache
+    def get_rset_status(self, groups):
         self.setup_environ()
-        self.rset_status_cache = {}
+        rset_status = {}
         for t in self.status_types:
+            g = t.split('.')[0]
+            if g not in groups:
+                continue
             for rs in self.get_res_sets(t):
-                self.rset_status_cache[rs.type] = rs.status()
-        return self.rset_status_cache
+                rset_status[rs.type] = rs.status()
+        return rset_status
 
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app"]),
                      excluded_groups=set([])):
         """print each resource status for a service
         """
-        rset_status = self.get_rset_status()
         status = {}
         groups = groups.copy() - excluded_groups
+        rset_status = self.get_rset_status(groups)
         moregroups = groups | set(["overall"])
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)

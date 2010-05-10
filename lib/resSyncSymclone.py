@@ -174,7 +174,7 @@ class syncSymclone(Res.Resource):
             if self.last is None or last > self.last:
                 self.last = last
 
-    def status(self, verbose=False):
+    def _status(self, verbose=False):
         self.get_syminfo()
         self.get_last()
 

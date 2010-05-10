@@ -87,7 +87,7 @@ class Resource(object):
             self.action_triggers("pre", action)
             getattr(self, action)()
             self.action_triggers("post", action)
-            if action in ("start","stop") or "sync" in action:
+            if action in ["start", "stop"] or "sync" in action:
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True)
