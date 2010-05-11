@@ -60,13 +60,25 @@ class HpVm(resContainer.Container):
 
     def check_manual_boot(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
             return False
         if out.split(":")[11] == "Manual":
             return True
         self.log.info("Auto boot should be turned off")
         return False
+
+    def get_container_info(self):
+        cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
+        (ret, out) = self.call(cmd, cache=True)
+        self.info = {'vcpus': 0, 'vmem': 0}
+        if ret != 0:
+            return self.info
+        self.info['vcpus'] = out.split(':')[19].split(';')[0]
+        self.info['vmem'] = out.split(':')[20].split(';')[0]
+        if 'GB' in self.info['vmem']:
+            self.info['vmem'] = str(1024*1024*int(self.info['vmem'].replace('GB','')))
+        return self.info
 
     def is_up(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
