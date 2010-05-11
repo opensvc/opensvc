@@ -20,6 +20,7 @@
 from subprocess import *
 
 import rcIfconfig
+import rcExceptions as ex
 
 class ifconfig(rcIfconfig.ifconfig):
     def parse(self, out):
@@ -39,7 +40,8 @@ class ifconfig(rcIfconfig.ifconfig):
         i.mask = ''
         i.mtu = ''
         i.ipaddr = ''
-        i.ip6addr = ''
+        i.ip6addr = []
+        i.ip6mask = []
         i.hwaddr = ''
         i.flag_up = False
         i.flag_broadcast = False
@@ -58,10 +60,12 @@ class ifconfig(rcIfconfig.ifconfig):
                     int(w[4:6], 16),
                     int(w[6:8], 16)
                 )
-            elif 'inet' in prev:
+            elif 'inet' == prev:
                 i.ipaddr = w
-            elif 'inet6' in prev:
-                i.ip6addr = w
+            elif 'inet6' == prev:
+                i.ip6addr += [w]
+            elif 'prefix' == prev:
+                i.ip6mask += [w]
 
             if 'UP' in w:
                 i.flag_up = True
@@ -78,11 +82,15 @@ class ifconfig(rcIfconfig.ifconfig):
 
     def __init__(self):
         self.intf = []
-        intf_list = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
-        for line in intf_list.split('\n'):
+        intf_list = []
+        out = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
+        for line in out.split('\n'):
             if len(line) == 0:
                 continue
-            intf = line.split()[0]
+            if 'IPv4:' in line or 'IPv6' in line:
+                continue
+            intf_list += [line.split()[0]]
+        for intf in intf_list:
             p = Popen(['ifconfig', intf], stdout=PIPE, stderr=PIPE)
             out = p.communicate()
             if "no such interface" in out[1]:
