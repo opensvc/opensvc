@@ -42,7 +42,7 @@ def remote_fs_mounted(self, node):
         """
         return True
     cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dst]
-    (ret, out) = self.call(cmd)
+    (ret, out) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
     if self.dstfs not in out.split():
@@ -65,7 +65,7 @@ def remote_node_type(self, node, type):
 
     if node not in cache_remote_node_type:
         cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
             raise ex.excError
         words = out.split()

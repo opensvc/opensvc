@@ -134,7 +134,7 @@ class Mount(Res.Mount):
                           '-m', str(os.minor(statinfo.st_rdev)),
                           'table'
               ]
-        (ret, buff) = self.call(cmd, errlog=False)
+        (ret, buff) = self.call(cmd, errlog=False, cache=True)
         if ret != 0:
             return False
         l = buff.split()
@@ -148,7 +148,7 @@ class Mount(Res.Mount):
                           '-m', str(os.minor(statinfo.st_rdev)),
                           'status'
               ]
-        (ret, buff) = self.call(cmd, errlog=False)
+        (ret, buff) = self.call(cmd, errlog=False, cache=True)
         if ret != 0:
             return False
         l = buff.split()

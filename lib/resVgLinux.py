@@ -38,7 +38,7 @@ class Vg(resDg.Dg):
         """Returns True if the volume is present
         """
         cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, cache=True)
         if self.name in out.split():
             return True
         return False
@@ -108,7 +108,7 @@ class Vg(resDg.Dg):
         self.disks = set()
 
         cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
             return self.disks
 	pvs = set(out.split())
