@@ -245,38 +245,45 @@ def push_service(svc):
     except:
         version = "0";
 
-    proxy.update_service(
-        ['svc_hostid',
-         'svc_name',
-         'svc_vmname',
-         'svc_type',
-         'svc_nodes',
-         'svc_drpnode',
-         'svc_drpnodes',
-         'svc_comment',
-         'svc_drptype',
-         'svc_autostart',
-         'svc_app',
-         'svc_containertype',
-         'svc_envfile',
-         'svc_version',
-         'svc_drnoaction'],
-        [repr(hostid),
-         repr(svc.svcname),
-         repr(svc.vmname),
-         repr(svc.svctype),
-         repr(' '.join(svc.nodes)),
-         repr(svc.drpnode),
-         repr(' '.join(svc.drpnodes)),
-         repr(svc.comment),
-         repr(svc.drp_type),
-         repr(svc.autostart_node),
-         repr(svc.app),
-         repr(svc.svcmode),
-         repr(envfile(svc.svcname)),
-         repr(version),
-         repr(svc.drnoaction)]
-    )
+    vars = ['svc_hostid',
+            'svc_name',
+            'svc_vmname',
+            'svc_type',
+            'svc_nodes',
+            'svc_drpnode',
+            'svc_drpnodes',
+            'svc_comment',
+            'svc_drptype',
+            'svc_autostart',
+            'svc_app',
+            'svc_containertype',
+            'svc_envfile',
+            'svc_version',
+            'svc_drnoaction']
+
+    vals = [repr(hostid),
+            repr(svc.svcname),
+            repr(svc.vmname),
+            repr(svc.svctype),
+            repr(' '.join(svc.nodes)),
+            repr(svc.drpnode),
+            repr(' '.join(svc.drpnodes)),
+            repr(svc.comment),
+            repr(svc.drp_type),
+            repr(svc.autostart_node),
+            repr(svc.app),
+            repr(svc.svcmode),
+            repr(envfile(svc.svcname)),
+            repr(version),
+            repr(svc.drnoaction)]
+
+    if 'container' in svc.resources_by_id:
+        container_info = svc.resources_by_id['container'].get_container_info()
+        vars += ['svc_vcpus', 'svc_vmem']
+        vals += [container_info['vcpus'],
+                 container_info['vmem']]
+
+    proxy.update_service(vars, vals)
 
 def delete_services():
     proxy.delete_services(hostid)

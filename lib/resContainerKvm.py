@@ -73,9 +73,20 @@ class Kvm(resContainer.Container):
             return True
         return False
 
+    def get_container_info(self):
+        cmd = ['virsh', 'dominfo', self.name]
+        (ret, out) = self.call(cmd, cache=True)
+        self.info = {'vcpus': 0, 'vmem': 0}
+        if ret != 0:
+            return self.info
+        for line in out.split('\n'):
+            if "CPU(s):" in line: self.info['vcpus'] = line.split(':')[1].strip()
+            if "Max memory" in line: self.info['vmem'] = line.split(':')[1].strip()
+        return self.info           
+
     def check_manual_boot(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
             raise ex.excError
         for line in out.split('\n'):

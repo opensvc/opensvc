@@ -20,6 +20,7 @@ import os, sys
 import select
 import logging
 from subprocess import *
+from rcGlobalEnv import rcEnv
 
 def check_privs():
     if os.getuid() != 0:
@@ -66,6 +67,7 @@ def empty_string(buff):
     return False
 
 def call(argv=['/bin/false'],
+         cache=False,      # serve/don't serve cmd output from cache
          log=None,         # callers should provide there own logger
                            # or we'll have to allocate a generic one
 
@@ -88,19 +90,40 @@ def call(argv=['/bin/false'],
         log.error("%s does not exist or not in path or is not executable"%
                   argv[0])
         return (1, '')
+    cmd = ' '.join(argv)
     if info:
-        log.info(' '.join(argv))
+        log.info(cmd)
     else:
-        log.debug(' '.join(argv))
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
+        log.debug(cmd)
+    if not hasattr(rcEnv, "call_cache"):
+        rcEnv.call_cache = {}
+    if not cache or cmd not in rcEnv.call_cache:
+        if not cache:
+            log.debug("caching for '%s' explicitely disabled"%cmd)
+        elif cmd not in rcEnv.call_cache:
+            log.debug("cache miss for '%s'"%cmd)
+        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
+        buff = process.communicate()
+        ret = process.returncode
+        if ret == 0:
+            log.debug("store '%s' output in cache"%cmd)
+            rcEnv.call_cache[cmd] = buff
+        elif cmd in rcEnv.call_cache:
+            log.debug("discard '%s' output from cache because ret!=0"%cmd)
+            del rcEnv.call_cache[cmd]
+        else:
+            log.debug("skip store '%s' output in cache because ret!=0"%cmd)
+    else:
+        log.debug("serve '%s' output from cache"%cmd)
+        buff = rcEnv.call_cache[cmd]
+        ret = 0
     if not empty_string(buff[1]):
         if err_to_info:
             log.info('stderr:\n' + buff[1])
         elif err_to_warn:
             log.warning('stderr:\n' + buff[1])
         elif errlog:
-            if process.returncode != 0:
+            if ret != 0:
                 log.error('stderr:\n' + buff[1])
             else:
                 log.warning('command succesful but stderr:\n' + buff[1])
@@ -108,14 +131,14 @@ def call(argv=['/bin/false'],
             log.debug('stderr:\n' + buff[1])
     if not empty_string(buff[0]):
         if outlog:
-            if process.returncode == 0:
+            if ret == 0:
                 log.info('output:\n' + buff[0])
             else:
                 log.error('command failed with stdout:\n' + buff[0])
         else:
             log.debug('output:\n' + buff[0])
 
-    return (process.returncode, buff[0])
+    return (ret, buff[0])
 
 def qcall(argv=['/bin/false']) :
     """qcall Launch Popen it args disgarding output and stderr"""

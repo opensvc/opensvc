@@ -87,17 +87,17 @@ class Container(Res.Resource):
         self.wait_for_shutdown()
 
     def container_start(self):
-        print "TODO"
+        print "TODO: container_start(self)"
 
     def container_stop(self):
-        print "TODO"
+        print "TODO: container_stop(self)"
 
     def check_manual_boot(self):
-        print "TODO"
+        print "TODO: check_manual_boot(self)"
         return False
 
     def is_up(self):
-        print "TODO"
+        print "TODO: is_up(self)"
         return False
 
     def _status(self, verbose=False):
@@ -109,3 +109,6 @@ class Container(Res.Resource):
         else:
             return rcStatus.DOWN
 
+    def get_container_info(self):
+        print "TODO: get_container_info(self)"
+        return {'vcpus': 0, 'vmem': 0}
