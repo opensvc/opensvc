@@ -106,7 +106,10 @@ class ifconfig(object):
         Upon stop, the currently assigned interfaceX:Y will have to be
         found for ifconfig down
         """
-        stacked_intf = self.has_param("ipaddr", addr)
+        if ':' in addr:
+            stacked_intf = self.has_param("ip6addr", addr)
+        else:
+            stacked_intf = self.has_param("ipaddr", addr)
         if stacked_intf is not None:
             if dev not in stacked_intf.name:
                 log.error("%s is plumbed but not on %s" % (addr, dev))

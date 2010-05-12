@@ -86,6 +86,10 @@ class Container(Res.Resource):
             self.container_forcestop()
         self.wait_for_shutdown()
 
+    def check_capabilities(self):
+        #print "TODO: check_capabilities(self)"
+        pass
+
     def container_start(self):
         print "TODO: container_start(self)"
 
@@ -101,6 +105,8 @@ class Container(Res.Resource):
         return False
 
     def _status(self, verbose=False):
+        if not self.check_capabilities():
+            return rcStatus.WARN
         if not self.check_manual_boot():
             self.status_log("container auto boot is on")
             return rcStatus.WARN
@@ -111,4 +117,4 @@ class Container(Res.Resource):
 
     def get_container_info(self):
         print "TODO: get_container_info(self)"
-        return {'vcpus': 0, 'vmem': 0}
+        return {'vcpus': '0', 'vmem': '0'}
