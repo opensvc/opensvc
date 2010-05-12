@@ -37,11 +37,21 @@ class Ip(Res.Ip):
         return
 
     def startip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
+        if ':' in self.addr:
+            cmd = ['ifconfig', self.ipDev, 'inet6', 'up']
+            (ret, out) = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
+            cmd = ['ifconfig', self.stacked_dev, 'inet6', self.addr+'/'+self.mask, 'up']
+        else:
+            cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
         return self.vcall(cmd)
 
     def stopip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, "0.0.0.0"]
+        if ':' in self.addr:
+            cmd = ['ifconfig', self.stacked_dev, "inet6", "::"]
+        else:
+            cmd = ['ifconfig', self.stacked_dev, "0.0.0.0"]
         return self.vcall(cmd)
 
 
