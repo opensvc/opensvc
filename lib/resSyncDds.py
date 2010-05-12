@@ -53,6 +53,10 @@ class syncDds(Res.Resource):
         if ret != 0:
             raise ex.excError
 
+    def set_statefile(self):
+        self.statefile = os.path.join(rcEnv.pathvar,
+                                      self.svc.svcname+'_'+self.rid+'_dds_state')
+
     def create_snap1(self):
         self.create_snap(self.snap1, self.snap1_lv)
         self.write_statefile()
@@ -78,10 +82,6 @@ class syncDds(Res.Resource):
                                       '-'.join([self.src_vg.replace('-', '--'),
                                                 self.snap1_lv,
                                                 'cow'])
-                                     )
-        self.deltafile = os.path.join(self.delta_store,
-                                      '-'.join([self.src_vg.replace('-', '--'),
-                                                self.src_lv.replace('-', '--')+'.delta'])
                                      )
 
     def get_peersenders(self):
@@ -135,6 +135,7 @@ class syncDds(Res.Resource):
         self.snap1_uuid = out.strip()
 
     def write_statefile(self):
+        self.set_statefile()
         self.get_snap1_uuid()
         self.log.info("update state file with snap uuid %s"%self.snap1_uuid)
         with open(self.statefile, 'w') as f:
@@ -147,43 +148,31 @@ class syncDds(Res.Resource):
             raise ex.excError
 
     def push_statefile(self, node):
+        self.set_statefile()
         self._push_statefile(node)
         self.get_peersenders()
         for s in self.peersenders:
             self._push_statefile(s)
 
-    def push_deltafile(self, node):
-        cmd = rcEnv.rcp.split() + [self.deltafile, node+':'+self.deltafile]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
+    def apply_delta(self, node):
+        extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
+                       self.snap2]
+        merge_cmd = ['dds', '--merge', '--dest', self.dst, '-v']
+        merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
+        self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
+        p1 = Popen(extract_cmd, stdout=PIPE)
+        p2 = Popen(merge_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("sync update failed")
             raise ex.excError
-
-    def do_deltafile(self):
-        if not self.snap_exists(self.snap1):
-            self.log.error('%s should exist'%self.snap1)
-            raise ex.excError
-        if not self.snap_exists(self.snap2):
-            self.log.error('%s should exist'%self.snap2)
-            raise ex.excError
-        cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
-               self.snap2, '-v', '--dest', self.deltafile]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
-
-    def apply_deltafile(self, node):
-        merge_cmd = ['dds', '-v', '--merge', '--cow', self.deltafile, '--dest', self.dst]
-        cmd = rcEnv.rsh.split() + [node] + merge_cmd
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
-        cmd = rcEnv.rsh.split() + [node, 'rm', '-f', self.deltafile]
-        (ret, out) = self.vcall(cmd)
+        if len(buff[0]) > 0:
+            self.log.info(buff[0])
 
     def do_update(self, node):
-        self.push_deltafile(node)
-        self.apply_deltafile(node)
-        self.push_statefile(node)
+        self.apply_delta(node)
 
     def remove_snap1(self):
         if not self.snap_exists(self.snap1):
@@ -209,9 +198,6 @@ class syncDds(Res.Resource):
         self.remove_snap1()
         self.rename_snap2()
 
-    def remove_deltafile(self):
-        os.unlink(self.deltafile)
-
     def check_remote(self, node):
         rs = self.get_remote_state(node)
         if self.snap1_uuid != rs['uuid']:
@@ -219,7 +205,8 @@ class syncDds(Res.Resource):
             raise ex.excError
 
     def get_remote_state(self, node):
-        cmd1 = ['cat', self.statefile]
+        self.set_statefile()
+        cmd1 = ['LANG=C', 'cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
         (ret, out) = self.call(cmd)
         if ret != 0:
@@ -228,11 +215,13 @@ class syncDds(Res.Resource):
         return self.parse_statefile(out, node=node)
 
     def get_local_state(self):
+        self.set_statefile()
         with open(self.statefile, 'r') as f:
             out = f.read()
         return self.parse_statefile(out)
 
     def parse_statefile(self, out, node=None):
+        self.set_statefile()
         if node is None:
             node = rcEnv.nodename
         lines = out.strip().split('\n')
@@ -255,14 +244,12 @@ class syncDds(Res.Resource):
         for n in self.targets:
             self.check_remote(n)
         self.create_snap2()
-        self.do_deltafile()
         for n in self.targets:
             self.do_update(n)
         self.rotate_snaps()
         self.write_statefile()
         for n in self.targets:
             self.push_statefile(n)
-        self.remove_deltafile()
 
     def start(self):
         pass
@@ -276,7 +263,7 @@ class syncDds(Res.Resource):
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
             delay = datetime.timedelta(minutes=self.sync_max_delay)
-        except IOerror:
+        except IOError:
             self.status_log("dds state file not found")
             return rcStatus.WARN
         except:
@@ -302,7 +289,6 @@ class syncDds(Res.Resource):
         self.sync_max_delay = sync_max_delay
         self.sync_min_delay = sync_min_delay
         self.snap_size = snap_size
-        self.statefile = os.path.join(rcEnv.pathvar, rid+'_dds_state')
         if delta_store is None:
             self.delta_store = rcEnv.pathvar
         else:
