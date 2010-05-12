@@ -35,6 +35,17 @@ class Kvm(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def check_capabilities(self):
+        cmd = ['virsh', 'capabilities']
+        (ret, out) = self.call(cmd, errlog=False)
+        if ret != 0:
+            self.status_log("can not fetch capabilities")
+            return False
+        if 'hvm' not in out:
+            self.status_log("hvm not supported by host")
+            return False
+        return True
+
     def ping(self):
         count=1
         timeout=1
@@ -75,8 +86,8 @@ class Kvm(resContainer.Container):
 
     def get_container_info(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, cache=True)
-        self.info = {'vcpus': 0, 'vmem': 0}
+        (ret, out) = self.call(cmd, errlog=False, cache=True)
+        self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
             return self.info
         for line in out.split('\n'):
@@ -85,16 +96,7 @@ class Kvm(resContainer.Container):
         return self.info           
 
     def check_manual_boot(self):
-        cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, cache=True)
-        if ret != 0:
-            raise ex.excError
-        for line in out.split('\n'):
-            l = line.split(':')
-            if len(l) != 2:
-                continue
-            if l[0] != "Autostart":
-                continue
-            if "disable" in l[1]:
-                return True
-        return False
+        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', 'autostart', self.name+'.xml')
+        if os.path.exists(cf):
+            return False
+        return True

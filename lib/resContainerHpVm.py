@@ -71,7 +71,7 @@ class HpVm(resContainer.Container):
     def get_container_info(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
         (ret, out) = self.call(cmd, cache=True)
-        self.info = {'vcpus': 0, 'vmem': 0}
+        self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
             return self.info
         self.info['vcpus'] = out.split(':')[19].split(';')[0]
