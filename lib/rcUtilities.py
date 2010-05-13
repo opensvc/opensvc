@@ -82,7 +82,7 @@ def call(argv=['/bin/false'],
                            #        err_to_info value
          err_to_warn=False,
          err_to_info=False):
-    if log == None:
+    if log is None:
         log = logging.getLogger('CALL')
     if not argv or len(argv) == 0:
         return (0, '')
@@ -153,7 +153,7 @@ def vcall(argv=['/bin/false'],
           err_to_warn=False,
           err_to_info=False ):
     return call(argv,
-                log,
+                log=log,
                 info=True,
                 outlog=True,
                 err_to_warn=err_to_warn,
