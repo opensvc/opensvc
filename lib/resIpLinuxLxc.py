@@ -29,7 +29,6 @@ class Ip(resIpVm.Ip, resIpHv.Ip):
                             mask=mask, always_on=always_on)
 
     def check_ping(self):
-        help(self)
         resIpHv.Ip.check_ping(self)
 
 
