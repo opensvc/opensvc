@@ -25,22 +25,17 @@ When installed in /etc/cron.daily/ this must be a symlink to the
 file in the opensvc distrib, wherever installed, so that we can compute
 relative paths to locate libs
 """
+
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
 
-import svcBuilder
+import node
+n = node.Node()
 
-svcs = svcBuilder.build_services()
+n.action("pushstats")
+n.action("pushpkg")
+n.action("updateservices")
+n.action("pushservices")
+n.action("syncservices")
 
-for svc in svcs:
-    try:
-        svc.action('diskupdate')
-        svc.action('push')
-        svc.action('syncall')
-    except:
-        pass
-
-if len(svcs) == 0:
-    from xmlrpcClient import push_stats
-    push_stats()

@@ -139,6 +139,10 @@ class Lxc(Res.Resource):
             return True
         return False
 
+    def get_container_info(self):
+        print "TODO: get_container_info()"
+        return {'vcpus': '0', 'vmem': '0'}
+
     def _status(self, verbose=False):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN

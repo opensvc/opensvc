@@ -21,52 +21,35 @@
 
 from svc import Svc
 from freezer import Freezer
-import rcStatus
-import os
-
-pathetc = os.path.join(pathsvc, 'etc')
-
-def is_service(f):
-    if os.path.realpath(f) != os.path.realpath(svcmgr):
-        return False
-    if not os.path.exists(f + '.env'):
-        return False
-    return True
-
-
+import svcBuilder
+import xmlrpcClient
 
 class Node(Svc, Freezer):
-    """Defines a cluster node.  It contain list of Svc.
+    """ Defines a cluster node.  It contain list of Svc.
+        Implements node-level actions and checks.
     """
     def __init__(self):
-        self.svcs = []
-        Svc.__init__(self, None, None, optional, disabled)
+        self.svcs = svcBuilder.build_services()
         Freezer.__init__(self, '')
-        #
-        # add services
-        #
-        for name in os.listdir(pathetc):
-            if is_service(os.path.join(pathetc, name)):
-                s = svcBuilder.build(name)
-                if s is None :
-                    continue
-                self += s
+        self.action_desc = {
+          'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
+          'updateservices': 'refresh var files associated with services',
+          'pushservices':   'push service configuration to collector',
+          'pushstats':      'push performance metrics to collector',
+          'pushpkg':        'push package/version list to collector',
+        }
 
-        #
-        # lookup drp_nodes
-        #
-        drp_nodes = []
-        for s in self.svcs:
-            if s.drpnode not in drp_nodes:
-                drp_nodes.append(s.drpnode)
-
-        #
-        # add node file synchronization resources to drp
-        #
-        for drp_node in drp_nodes:
-            for src, dst, excl in rcEnv.drp_syncs:
-                dst = drp_node+":"+rcEnv.drp_dir+"/"+dst
-                self += Rsync(src.join(' '), dst, excl.join(' '))
+    def format_desc(self):
+        from textwrap import TextWrapper
+        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
+        desc = "Supported commands:\n"
+        for a in sorted(self.action_desc):
+            if not hasattr(self, a):
+                continue
+            text = "  %-16s %s\n"%(a, self.action_desc[a])
+            desc += wrapper.fill(text)
+            desc += '\n'
+        return desc
 
     def __iadd__(self, s):
         if not isinstance(s, Svc):
@@ -74,26 +57,36 @@ class Node(Svc, Freezer):
         self.svcs.append(s)
         return self
 
-    def syncnodes(self):
-        for s in self.svcs:
-            s.syncnodes()
+    def action(self, a):
+        return getattr(self, a)()
 
-    def syncdrp(self):
-        Svc.syncdrp(self)
-        for s in self.svcs:
-            s.syncnodes()
+    def pushstats(self):
+        xmlrpcClient.push_stats()
 
-    def get_svcs_on(self, status):
-        return [ s for s in self.svcs if s.status == status ]
+    def pushpkg(self):
+        xmlrpcClient.push_pkg()
 
-    def allupservice(self):
-        return get_svcs_on(rcStatus.UP)
+    def syncservices(self):
+        for svc in self.svcs:
+            try:
+                svc.action('syncall')
+            except:
+                pass
 
-    def alldownservice(self):
-        return get_svcs_on(rcStatus.UP)
+    def updateservices(self):
+        for svc in self.svcs:
+            try:
+                svc.action('diskupdate')
+            except:
+                pass
 
-    def allservices:
-        return self.svcs
+    def pushservices(self):
+        for svc in self.svcs:
+            try:
+                svc.action('push')
+            except:
+                pass
+
 
 if __name__ == "__main__" :
     for n in (Node,) :

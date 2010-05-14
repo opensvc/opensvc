@@ -467,6 +467,15 @@ def stats_timestamp():
         f.close()
     return True
 
+def push_pkg():
+    p = __import__('rcPkg'+sysname)
+    vars = ['pkg_nodename',
+            'pkg_name',
+            'pkg_version',
+            'pkg_arch']
+    vals = p.listpkg()
+    proxy.insert_pkg(vars, vals)
+
 def push_stats():
     if not stats_timestamp():
         return
@@ -479,7 +488,6 @@ def push_stats():
 
 @xmlrpc_decorator
 def push_all(svcs):
-    push_stats()
     proxy.delete_service_list([svc.svcname for svc in svcs])
     for svc in svcs:
         push_disks(svc)
