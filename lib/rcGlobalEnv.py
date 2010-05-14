@@ -22,9 +22,6 @@ class rcEnv:
     """Class to store globals
     """
 
-    prog = "opensvc"
-    ver = "20090924-1"
-
     platform = sys.platform
 
     """program used to execute remote command on other nodes or virtual hosts

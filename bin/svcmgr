@@ -27,14 +27,15 @@ import optparse
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
+prog = os.path.basename(__file__)
 
 import svcBuilder
 import rcStatus
 import rcOptParser
-from rcGlobalEnv import *
+from version import version
 
 svcs = None
-__ver = rcEnv.prog + " version " + str(rcEnv.ver)
+__ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--debug", default="False",

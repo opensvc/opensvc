@@ -28,11 +28,12 @@ import string
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
+prog = os.path.basename(__file__)
 
 import svcBuilder
 import xmlrpcClient
 from rcUtilities import *
-from rcGlobalEnv import rcEnv
+from version import version
 
 def svcmon_verbose(svcs):
     for svc in svcs:
@@ -83,7 +84,7 @@ def svcmon_normal(svcs, upddb=False):
         p.join()
 
 svcs = []
-__ver = rcEnv.prog + " version " + str(rcEnv.ver)
+__ver = prog + " version " + version
 __usage = "%prog [options]\n\nDisplay services status"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--service", default=None, action="store", dest="parm_svcs",
