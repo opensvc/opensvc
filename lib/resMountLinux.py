@@ -90,8 +90,8 @@ class Mount(Res.Mount):
                 self.Mounts = rcMounts.Mounts()
             m = self.Mounts.has_param("mnt", mnt)
             if m is None:
-                self.log.error("can't find the hosting device of %(mnt)s (hosting %(dev)s) in mnttab"%dict(mnt=mnt, dev=dev))
-                raise ex.excError
+                self.log.debug("can't find dev %(dev)s mounted in %(mnt)s in mnttab"%dict(mnt=mnt, dev=self.device))
+                return None
             dev = m.dev
 
         return dev
