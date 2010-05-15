@@ -30,11 +30,9 @@ def listpkg_rpm():
     lines = []
     for line in out.split('\n'):
         l = line.split()
-        if len(l) < 4:
+        if len(l) != 3:
             continue
-        if l[0] != "ii":
-            continue
-        x = [rcEnv.nodename] + l[1:3]
+        x = [rcEnv.nodename] + l
         lines.append(x)
     return lines
 
@@ -56,7 +54,7 @@ if which('dpkg') is not None:
     cmd = ['dpkg', '-l']
     listpkg = listpkg_deb
 elif which('rpm') is not None:
-    cmd = ['rpm', '-q', '--queryformat="%{n} %{v} %{arch}\n"']
+    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v} %{arch}\n']
     listpkg = listpkg_rpm
 else:
     cmd = ['true']

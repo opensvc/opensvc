@@ -474,6 +474,7 @@ def push_pkg():
             'pkg_version',
             'pkg_arch']
     vals = p.listpkg()
+    proxy.delete_pkg(rcEnv.nodename)
     proxy.insert_pkg(vars, vals)
 
 def push_stats():
