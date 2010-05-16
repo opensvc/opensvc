@@ -390,6 +390,9 @@ class Svc(Resource, Freezer):
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
 
+    def syncverify(self):
+        self.sub_set_action("sync.dds", "syncverify")
+
     def printsvc(self):
         print str(self)
 

@@ -59,6 +59,7 @@ action_desc = {
 	'syncresync':	're-establish a broken storage hardware-assisted synchronization',
 	'syncfullsync':	'trigger a full copy of the volume to its target',
 	'syncupdate':	'trigger a one-time resync of the volume to its target',
+	'syncverify':	'trigger a one-time checksum-based verify of the volume and its target',
 	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
 }

@@ -251,6 +251,48 @@ class syncDds(Res.Resource):
         for n in self.targets:
             self.push_statefile(n)
 
+    def checksum(self, node, bdev, q=None):
+        cmd = ['md5sum', bdev]
+        if node != rcEnv.nodename:
+            cmd = rcEnv.rsh.split() + [node] + cmd
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            return ""
+        o = out.split()
+        if q is not None:
+            q.put(o[0])
+        else:
+            self.checksums[node] = o[0]
+
+    def syncverify(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
+            self.log.debug("won't verify this resource for a service not up")
+            return
+        self.get_info()
+        from multiprocessing import Process, Queue
+        self.checksums = {}
+        queues = {}
+        ps = []
+        for n in self.targets:
+            queues[n] = Queue()
+            p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
+            p.start()
+            ps.append(p)
+        self.checksum(rcEnv.nodename, self.snap1)
+        self.log.info("checksum threads started. please be patient.")
+        for p in ps:
+            p.join()
+        for n in self.targets:
+            self.checksums[n] = queues[n].get()
+        if len(self.checksums) < 2:
+            self.log.error("not enough checksums collected")
+            raise ex.excError
+        for n in self.targets:
+            if self.checksums[rcEnv.nodename] != self.checksums[n]:
+                self.log.error("src/dst checksums differ for %s/%s"%(rcEnv.nodename, n))
+        self.log.info("src/dst checksums verified")
+
     def start(self):
         pass
 
