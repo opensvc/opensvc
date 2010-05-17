@@ -109,6 +109,7 @@ class Container(Res.Resource):
 
     def _status(self, verbose=False):
         if not self.check_capabilities():
+            self.status_log("check_capabilities return False")
             return rcStatus.WARN
         if not self.check_manual_boot():
             self.status_log("container auto boot is on")
