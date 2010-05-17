@@ -63,7 +63,7 @@ class Container(Res.Resource):
 
     def wait_for_shutdown(self):
         for tick in range(self.shutdown_timeout):
-            if not self.is_up():
+            if self.is_down():
                 return
             time.sleep(1)
         self.log.error("Waited too long for shutdown")
@@ -77,14 +77,15 @@ class Container(Res.Resource):
         self.wait_for_startup()
 
     def stop(self):
-        if not self.is_up():
+        if self.is_down():
             self.log.info("container %s already stopped" % self.name)
             return
         self.container_stop()
-        self.wait_for_shutdown()
-        if self.is_up():
+        try:
+            self.wait_for_shutdown()
+        except ex.excError:
             self.container_forcestop()
-        self.wait_for_shutdown()
+            self.wait_for_shutdown()
 
     def check_capabilities(self):
         #print "TODO: check_capabilities(self)"
@@ -103,6 +104,9 @@ class Container(Res.Resource):
     def is_up(self):
         print "TODO: is_up(self)"
         return False
+
+    def is_down(self):
+        return not self.is_up()
 
     def _status(self, verbose=False):
         if not self.check_capabilities():
