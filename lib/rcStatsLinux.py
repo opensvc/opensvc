@@ -232,7 +232,7 @@ def stats_netdev_day(t):
        l = line.split()
        if len(l) != 9:
            continue
-       if l[1] == 'IFACE':
+       if l[1] in ['IFACE', 'lo', 'pan0', 'sit0'] :
            continue
        if l[0] == 'Average:':
            continue
@@ -259,7 +259,7 @@ def stats_netdev_err_day(t):
        l = line.split()
        if len(l) != 11:
            continue
-       if l[1] == 'IFACE':
+       if l[1] in ['IFACE', 'lo', 'pan0', 'sit0'] :
            continue
        if l[0] == 'Average:':
            continue
