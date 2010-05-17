@@ -232,7 +232,10 @@ def stats_netdev_day(t):
        l = line.split()
        if len(l) != 9:
            continue
-       if l[1] in ['IFACE', 'lo', 'pan0', 'sit0'] :
+       if l[1] in ['IFACE', 'lo'] :
+           continue
+       if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
+          'pan'   in l[1] or 'sit'  in l[1]:
            continue
        if l[0] == 'Average:':
            continue
@@ -259,7 +262,10 @@ def stats_netdev_err_day(t):
        l = line.split()
        if len(l) != 11:
            continue
-       if l[1] in ['IFACE', 'lo', 'pan0', 'sit0'] :
+       if l[1] in ['IFACE', 'lo'] :
+           continue
+       if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
+          'pan'   in l[1] or 'sit'  in l[1]:
            continue
        if l[0] == 'Average:':
            continue
