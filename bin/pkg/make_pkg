@@ -136,11 +136,12 @@ fi
 echo "----- git archive current to $TMPARCHIVE ..."
 mkdir $TMPARCHIVE
 cd $BASE && git archive --format=tar HEAD | (
-	cd $TMPARCHIVE && tar xf - \
-	&& rm $TMPARCHIVE/.gitignore \
-	&& mv $TMPARCHIVE/usr/share $TMPARCHIVE/share \
+	cd $TMPARCHIVE && tar xf - 			\
+	&& rm $TMPARCHIVE/.gitignore			\
+	&& mv $TMPARCHIVE/usr/share $TMPARCHIVE/share	\
 	&& rmdir $TMPARCHIVE/usr			\
-	&& chmod -R og-w $TMPARCHIVE			\
+	&& chown -R root:root $TMPARCHIVE		\
+	&& chmod -R og-w $TMPARCHIVE
 	)
 cd $REPODIR 
 
