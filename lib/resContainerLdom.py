@@ -29,6 +29,13 @@ class Ldom(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def check_capabilities(self):
+        cmd = ['/usr/sbin/ldm', 'list' ]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            return False
+        return True
+
     def state(self):
         """ ldm state : None/inactive/bound/active
             ldm list -p domainname outputs:
@@ -107,7 +114,7 @@ class Ldom(resContainer.Container):
             self.container_forcestop()
 
     def check_manual_boot(self):
-        cmd = ['/usr/sbin/ldm', 'list-variables', 'auto-boot?', self.name]
+        cmd = ['/usr/sbin/ldm', 'list-variable', 'auto-boot?', self.name]
         (ret, out) = self.call(cmd)
         if ret != 0:
             return False
