@@ -85,10 +85,10 @@ class Ldom(resContainer.Container):
             ldm stop domain
         """
         try:
-            self.container_action('unbind')
+            self.container_action('stop')
         except ex.excError:
             pass
-        self.container_action('stop')
+        self.container_action('unbind')
 
     def container_stop(self):
         """ launch init 5 into container

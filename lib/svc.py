@@ -82,6 +82,7 @@ class Svc(Resource, Freezer):
                              "container.kvm",
                              "container.lxc",
                              "container.zone",
+                             "container.ldom",
                              "disk.loop",
                              "disk.scsireserv",
                              "disk.vg",
@@ -327,8 +328,10 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.lxc", "start")
         self.sub_set_action("container.kvm", "start")
         self.sub_set_action("container.hpvm", "start")
+        self.sub_set_action("container.ldom", "start")
 
     def stopcontainer(self):
+        self.sub_set_action("container.ldom", "stop")
         self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("container.kvm", "stop")
         self.sub_set_action("container.lxc", "stop")
