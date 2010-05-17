@@ -215,4 +215,15 @@ def stats_blockdev_day(t):
         lines.append(x)
     return lines
 
+def stats_netdev():
+    return twodays(stats_netdev_day)
+
+def stats_netdev_day(t):
+    return []
+
+def stats_netdev_err():
+    return twodays(stats_netdev_err_day)
+
+def stats_netdev_err_day(t):
+    return []
 

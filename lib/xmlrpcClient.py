@@ -436,6 +436,39 @@ def push_stats_blockdev():
          s.stats_blockdev()
     )
 
+def push_stats_netdev_err():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_netdev_err(
+        ['date',
+         'dev',
+         'rxerrps',
+         'txerrps',
+         'collps',
+         'rxdropps',
+         'txdropps',
+         'nodename'],
+         s.stats_netdev_err()
+    )
+
+def push_stats_netdev():
+    try:
+        s = __import__('rcStats'+sysname)
+    except:
+        return
+    proxy.insert_stats_netdev(
+        ['date',
+         'dev',
+         'rxpckps',
+         'txpckps',
+         'rxkBps',
+         'txkBps',
+         'nodename'],
+         s.stats_netdev()
+    )
+
 def check_stats_timestamp(sync_timestamp_f, comp='more', delay=10):
     if not os.path.exists(sync_timestamp_f):
         return True
@@ -486,6 +519,8 @@ def push_stats():
     push_stats_swap()
     push_stats_block()
     push_stats_blockdev()
+    push_stats_netdev_err()
+    push_stats_netdev()
 
 @xmlrpc_decorator
 def push_all(svcs):

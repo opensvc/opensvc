@@ -22,6 +22,9 @@ import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
+today = datetime.datetime.today()
+yesterday = today - datetime.timedelta(days=1)
+
 def sarfile(day):
     f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
     if os.path.exists(f):
@@ -31,14 +34,15 @@ def sarfile(day):
         return f
     return None
 
-def stats_cpu():
+def twodays(fn):
     if which('sar') is None:
         return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_cpu_day(t)
-    t = datetime.datetime.today()
-    lines += stats_cpu_day(t)
+    lines = fn(yesterday)
+    lines += fn(today)
     return lines
+
+def stats_cpu():
+    return twodays(stats_cpu_day)
 
 def stats_cpu_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -70,13 +74,7 @@ def stats_cpu_day(t):
     return lines
 
 def stats_mem_u():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_mem_u_day(t)
-    t = datetime.datetime.today()
-    lines += stats_mem_u_day(t)
-    return lines
+    return twodays(stats_mem_u_day)
 
 def stats_mem_u_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -110,13 +108,7 @@ def stats_mem_u_day(t):
     return lines
 
 def stats_proc():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_proc_day(t)
-    t = datetime.datetime.today()
-    lines += stats_proc_day(t)
-    return lines
+    return twodays(stats_proc_day)
 
 def stats_proc_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -141,13 +133,7 @@ def stats_proc_day(t):
     return lines
 
 def stats_swap():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_swap_day(t)
-    t = datetime.datetime.today()
-    lines += stats_swap_day(t)
-    return lines
+    return twodays(stats_swap_day)
 
 def stats_swap_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -181,13 +167,7 @@ def stats_swap_day(t):
     return lines
 
 def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
+    return twodays(stats_block_day)
 
 def stats_block_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -210,171 +190,9 @@ def stats_block_day(t):
        l[0] = '%s %s'%(d, l[0])
        lines.append(l)
     return lines
-
-def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
-
-def stats_block_day(t):
-    d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
-    cmd = ['sar', '-t', '-b', '-f', f]
-    (ret, buff) = call(cmd)
-    lines = []
-    for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 6:
-           continue
-       if l[1] == 'tps':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
-    return lines
-
-def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
-
-def stats_block_day(t):
-    d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
-    cmd = ['sar', '-t', '-b', '-f', f]
-    (ret, buff) = call(cmd)
-    lines = []
-    for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 6:
-           continue
-       if l[1] == 'tps':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
-    return lines
-
-def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
-
-def stats_block_day(t):
-    d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
-    cmd = ['sar', '-t', '-b', '-f', f]
-    (ret, buff) = call(cmd)
-    lines = []
-    for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 6:
-           continue
-       if l[1] == 'tps':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
-    return lines
-
-def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
-
-def stats_block_day(t):
-    d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
-    cmd = ['sar', '-t', '-b', '-f', f]
-    (ret, buff) = call(cmd)
-    lines = []
-    for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 6:
-           continue
-       if l[1] == 'tps':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
-    return lines
-
-def stats_block():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_block_day(t)
-    t = datetime.datetime.today()
-    lines += stats_block_day(t)
-    return lines
-
-def stats_block_day(t):
-    d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
-    cmd = ['sar', '-t', '-b', '-f', f]
-    (ret, buff) = call(cmd)
-    lines = []
-    for line in buff.split('\n'):
-       l = line.split()
-       if len(l) != 6:
-           continue
-       if l[1] == 'tps':
-           continue
-       if l[0] == 'Average:':
-           continue
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
-    return lines
-
 
 def stats_blockdev():
-    if which('sar') is None:
-        return []
-    t = datetime.datetime.today() - datetime.timedelta(days=1)
-    lines = stats_blockdev_day(t)
-    t = datetime.datetime.today()
-    lines += stats_blockdev_day(t)
-    return lines
+    return twodays(stats_blockdev_day)
 
 def stats_blockdev_day(t):
     d = t.strftime("%Y-%m-%d")
@@ -393,6 +211,59 @@ def stats_blockdev_day(t):
            continue
        if l[0] == 'Average:':
            continue
+       l.append(rcEnv.nodename)
+       l[0] = '%s %s'%(d, l[0])
+       lines.append(l)
+    return lines
+
+def stats_netdev():
+    return twodays(stats_netdev_day)
+
+def stats_netdev_day(t):
+    d = t.strftime("%Y-%m-%d")
+    day = t.strftime("%d")
+    f = sarfile(day)
+    if f is None:
+        return []
+    cmd = ['sar', '-t', '-n', 'DEV', '-f', f]
+    (ret, buff) = call(cmd, errlog=False)
+    lines = []
+    for line in buff.split('\n'):
+       l = line.split()
+       if len(l) != 9:
+           continue
+       if l[1] == 'IFACE':
+           continue
+       if l[0] == 'Average:':
+           continue
+       l = l[0:6]
+       l.append(rcEnv.nodename)
+       l[0] = '%s %s'%(d, l[0])
+       lines.append(l)
+    return lines
+
+
+def stats_netdev_err():
+    return twodays(stats_netdev_err_day)
+
+def stats_netdev_err_day(t):
+    d = t.strftime("%Y-%m-%d")
+    day = t.strftime("%d")
+    f = sarfile(day)
+    if f is None:
+        return []
+    cmd = ['sar', '-t', '-n', 'EDEV', '-f', f]
+    (ret, buff) = call(cmd, errlog=False)
+    lines = []
+    for line in buff.split('\n'):
+       l = line.split()
+       if len(l) != 11:
+           continue
+       if l[1] == 'IFACE':
+           continue
+       if l[0] == 'Average:':
+           continue
+       l = l[0:7]
        l.append(rcEnv.nodename)
        l[0] = '%s %s'%(d, l[0])
        lines.append(l)
