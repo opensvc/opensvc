@@ -22,6 +22,7 @@ import time
 import os
 import rcExceptions as ex
 from rcUtilities import qcall
+from rcUtilitiesLinux import check_ping
 import resContainer
 
 class Kvm(resContainer.Container):
@@ -47,13 +48,7 @@ class Kvm(resContainer.Container):
         return True
 
     def ping(self):
-        count=1
-        timeout=1
-        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.name]
-        (ret, out) = self.call(cmd, errlog=False)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')

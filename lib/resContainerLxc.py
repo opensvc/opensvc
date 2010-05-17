@@ -17,57 +17,15 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-import time
 from datetime import datetime
 from subprocess import *
 
 import rcStatus
 import resources as Res
-import rcExceptions as ex
-from rcUtilities import qcall
+from rcUtilitiesLinux import check_ping
+import resContainer
 
-def lxc(self, action):
-    outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
-    if action == 'start':
-        cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
-    elif action == 'stop':
-        cmd = ['lxc-stop', '-n', self.name, '-o', outf]
-    else:
-        self.log.error("unsupported lxc action: %s" % action)
-        return 1
-
-    t = datetime.now()
-    (ret, out) = self.vcall(cmd)
-    len = datetime.now() - t
-    self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
-    return ret
-
-def lxc_rootfs_path(self):
-    return os.path.realpath(os.path.join(self.pathlxc, self.name, 'rootfs','rootfs'))
-
-def lxc_is_created(self):
-    cmd = [ 'lxc-info', '-n', self.name ]
-    (ret, out) = self.call(cmd)
-    return ret
-
-def lxc_wait_for_startup(self):
-    for t in range(self.startup_timeout):
-        if self.is_up() and self.ping() and self.operational():
-            return
-        time.sleep(1)
-    self.log.error("timeout out waiting for %s startup", self.name)
-    raise ex.excError
-
-def lxc_wait_for_shutdown(self):
-    for t in range(self.startup_timeout):
-        if not self.is_up(): return 0
-    self.log.error("timeout out waiting for %s shutdown", self.name)
-    raise ex.excError
-
-def lxc_exec(self, cmd):
-    pass
-
-class Lxc(Res.Resource):
+class Lxc(resContainer.Container):
     """
      container status transition diagram :
        ---------
@@ -96,39 +54,31 @@ class Lxc(Res.Resource):
             ---------------------
     """
     pathlxc = os.path.join('usr', 'local', 'var', 'lib', 'lxc')
-    shutdown_timeout = 60
-    startup_timeout = 60
 
-    def start(self):
-        if self.is_up():
-            self.log.info("lxc container %s already started" % self.name)
-            return 0
-        lxc(self, 'start')
-        lxc_wait_for_startup(self)
+    def lxc(self, action):
+        outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
+        if action == 'start':
+            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
+        elif action == 'stop':
+            cmd = ['lxc-stop', '-n', self.name, '-o', outf]
+        else:
+            self.log.error("unsupported lxc action: %s" % action)
+            return 1
 
-    def stop(self):
-        if not self.is_up():
-            self.log.info("lxc container %s already stopped" % self.name)
-            return 0
-        lxc(self, 'stop')
-        lxc_wait_for_shutdown(self)
+        t = datetime.now()
+        (ret, out) = self.vcall(cmd)
+        len = datetime.now() - t
+        self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
+        return ret
+
+    def container_start(self):
+        self.lxc('start')
+
+    def container_stop(self):
+        self.lxc('stop')
 
     def ping(self):
-        count=1
-        timeout=1
-        cmd = ['ping', self.name, '-c', repr(count), '-W', repr(timeout)]
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
-
-    def operational(self):
-        timeout=1
-        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ForwardX11=no', '-o', 'Batchmode=yes', '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr, timeout=1)
 
     def is_up(self):
         self.log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
@@ -144,14 +94,14 @@ class Lxc(Res.Resource):
         return {'vcpus': '0', 'vmem': '0'}
 
     def _status(self, verbose=False):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if self.is_up():
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
     def __init__(self, name, optional=False, disabled=False):
-        Res.Resource.__init__(self, rid="lxc", type="container.lxc",
-                              optional=optional, disabled=disabled)
-        self.name = name
-        self.label = name
+        resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
+                                        optional=optional, disabled=disabled)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

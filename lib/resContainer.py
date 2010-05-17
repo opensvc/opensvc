@@ -21,6 +21,7 @@ import resources as Res
 import time
 import rcExceptions as ex
 from rcUtilities import qcall
+import socket
 
 class Container(Res.Resource):
     """ in seconds
@@ -33,6 +34,14 @@ class Container(Res.Resource):
                               optional=optional, disabled=disabled)
         self.name = name
         self.label = name
+        try:
+            a = socket.getaddrinfo(name, None)
+            if len(a) == 0:
+                raise Exception
+            self.addr = a[0][4][0]
+        except:
+            self.log.error("could not resolve %s to an ip address"%self.name)
+            raise ex.excInitError
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -96,6 +105,9 @@ class Container(Res.Resource):
 
     def container_stop(self):
         print "TODO: container_stop(self)"
+
+    def container_forcestop(self):
+        print "TODO: container_forcestop(self)"
 
     def check_manual_boot(self):
         print "TODO: check_manual_boot(self)"
