@@ -1,0 +1,177 @@
+#!/bin/ksh -p
+
+NAWK=nawk;
+PKGNAME=opensvc
+VERSION=1.0
+ARCH=${ARCH:-all}
+BASE=/opt/opensvc
+REV=$(date +%y%m%d.%H%M)
+P=${PKGNAME}-$VERSION-$REV.SunOS.pkg
+REPODIR=$(cd $(dirname $0);pwd)
+export REPODIR
+PATH=$PWD:$PATH:/opt/sfw/bin
+
+TMPARCHIVE=/var/tmp/tmparchive$$
+TMPROOT=$TMPARCHIVE
+
+LANG=C
+export LANG
+
+function date_to_release {
+        date -d "$*" +%y%m%d.%H%M
+}
+
+HEAD=$(git log -1 --pretty=format:%aD  || exit 1)
+RELEASE=$(date_to_release $HEAD)
+
+function my_log {
+	echo $@
+}
+
+function question {
+	# usage: question default_value Comment 
+	typeset DEFAULT=$1
+	typeset READ
+	shift
+	read READ?"$* [${SGRAS}$DEFAULT${EGRAS}]:"
+	echo ${READ:-$DEFAULT}
+}
+
+function create_pkg {
+	typeset SGRAS="[1m"
+	typeset EGRAS="[0m"
+
+	typeset POSTINSTALL=""
+	typeset PREINSTALL=""
+	typeset PRE_REMOVE=""
+	typeset POST_REMOVE=""
+
+	while getopts hp:P:r:R: ARGS
+	do
+	  case $ARGS in
+	  h) usage
+	     return 1
+	     ;;
+	  p) PREINSTALL="$OPTARG"
+	     ;;
+	  P) POSTINSTALL="$OPTARG"
+	     ;;
+	  r) PRE_REMOVE="$OPTARG"
+	     ;;
+	  R) POST_REMOVE="$OPTARG"
+	     ;;
+	  ?) usage
+	     ;;
+	  esac
+	done
+	shift `expr $OPTIND - 1`
+
+	set -- $*
+	[ $# -lt 2 ] && usage
+	PROTOTYPE=/tmp/prototype.$$
+	PKGINFO=/tmp/pkginfo.$$
+	PKG_FILE_NAME=$1
+	shift
+	FILES=$*
+	if [ "$FILES" = "" ] ; then
+		my_log "no file names..."
+		usage
+	fi
+
+	[ -f $PROTOTYPE ] && my_log "deleting $PROTOTYPE" && rm $PROTOTYPE
+
+
+	PKG=`question $PKG_FILE_NAME "The name you have chosen for the pkg directory"`
+	NAME=`question $PKG "The program name"`
+	ARCH=`question sparc "The operating systeme version"`
+	VERSION=`question "1" "The version number for your program"`
+	CATEGORY=`question application "The program is an application"`
+	VENDOR=`question "$LOGNAME@$(uname -n)" "whoever wrote the software"`
+	EMAIL=`question "$VENDOR" "An email contact"`
+	PSTAMP=`question "$VENDOR" "The person who did the port perhaps"`
+	RULES=`question "$FILES=$FILES" "rules for source->dest ex: /usrlocalbin=/usr/local/bin /optlocal=/opt/local "`
+	CLASSES=`question "none" "Classe"`
+
+	my_log "creating prototype in $PROTOTYPE"
+	> $PROTOTYPE
+	[ "$PKGINFO" != "" ] && echo "i pkginfo=$PKGINFO" >> $PROTOTYPE
+	[ "$POSTINSTALL" != "" ] && echo "i postinstall=$POSTINSTALL" >> $PROTOTYPE
+	[ "$PREINSTALL" != "" ] && echo "i preinstall=$PREINSTALL" >> $PROTOTYPE
+	[ "$PRE_REMOVE" != "" ] && echo "i preremove=$PRE_REMOVE" >> $PROTOTYPE
+	[ "$POST_REMOVE" != "" ] && echo "i postremove=$POST_REMOVE" >> $PROTOTYPE
+	[ ! -s $PROTOTYPE ] && my_log "warning $PROTOTYPE size null" && return 1
+
+	pkgproto $RULES >> $PROTOTYPE
+
+	my_log "creating pkginfo file : $PKGINFO"
+	echo "PKG=$PKG\nNAME=$NAME\nARCH=$ARCH\nVERSION=$VERSION\nCATEGORY=$CATEGORY" > $PKGINFO
+	echo "VENDOR=$VENDOR\nEMAIL=$EMAIL\nPSTAMP=$PSTAMP\nCLASSES=$CLASSES" >> $PKGINFO
+
+	my_log "running pkgmk to create /var/spool/pkg/$PKG : pkgmk -o -f $PROTOTYPE"
+	pkgmk -o -f $PROTOTYPE
+
+	my_log "running pkgtrans to create /tmp/$PKG_FILE_NAME : pkgtrans -s /var/spool/pkg /tmp/$PKG_FILE_NAME $PKG"
+	pkgtrans -s /var/spool/pkg /tmp/$PKG_FILE_NAME $PKG
+	STATUS=$?
+
+	if [ $STATUS -eq 0 ] ; then
+		echo "Cleaning temp files: $PROTOTYPE $PKGINFO" 
+		rm $PKGINFO $PROTOTYPE
+		echo
+		echo "Package $PKG created successfully"
+		pkginfo -d /tmp/$PKG_FILE_NAME -l
+	else
+		echo
+		echo "Warning some errors in create_pkg"
+	fi
+	return $STATUS
+}
+
+if [ -d $TMPARCHIVE ] ; then
+	echo "Error $TMPARCHIVE already exists"
+	echo "It should be removed first"       
+	exit 1
+fi
+
+echo "----- git archive current to $TMPARCHIVE ..."
+mkdir $TMPARCHIVE
+cd $BASE && git archive --format=tar HEAD | (
+	cd $TMPARCHIVE && tar xf - \
+	&& rm $TMPARCHIVE/.gitignore \
+	&& mv $TMPARCHIVE/usr/share $TMPARCHIVE/share \
+	&& rmdir $TMPARCHIVE/usr			\
+	&& chmod -R og-w $TMPARCHIVE			\
+	)
+cd $REPODIR 
+
+echo "version = \"$VERSION-$RELEASE\"" > $TMPARCHIVE/lib/version.py
+
+cat > $REPODIR/postinstall <<EOF
+#!/sbin/sh
+
+su - root -c $BASE/bin/postinstall
+EOF
+
+echo "----- Creating $PKGNAME build-$REV ..."
+create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
+
+opensvc Service Manager for logical servers v${VERSION}-$REV
+$ARCH
+$VERSION
+
+http://www.opensvc.com
+support@opensvc.com
+OPENSVC-${VERSION}-${REV}
+$TMPROOT=$BASE
+
+EOF
+
+echo "----- Cleaning /var/spool/pkg/$PKGNAME $TMPARCHIVE $REPODIR/postinstall"
+[ "$PKGNAME" != "" ] && [ -d /var/spool/pkg/$PKGNAME ] && rm -r /var/spool/pkg/$PKGNAME
+[ -d $TMPARCHIVE ] && rm -r $TMPARCHIVE
+rm $REPODIR/postinstall
+
+echo "----- New package available into /tmp/$P"
+cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
+
+[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg $P
