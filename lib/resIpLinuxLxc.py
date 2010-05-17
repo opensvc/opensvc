@@ -29,7 +29,7 @@ class Ip(resIpVm.Ip, resIpHv.Ip):
                             mask=mask, always_on=always_on)
 
     def check_ping(self):
-        resIpHv.Ip.check_ping(self)
+        return resIpHv.Ip.check_ping(self)
 
 
 if __name__ == "__main__":

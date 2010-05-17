@@ -120,3 +120,9 @@ class Ldom(resContainer.Container):
         if self.state() == 'inactive':
             return True
         return False
+
+    def is_up(self):
+        if self.state() == 'active':
+            return True
+        return False
+

@@ -102,7 +102,6 @@ class Container(Res.Resource):
         return False
 
     def is_up(self):
-        print "TODO: is_up(self)"
         return False
 
     def is_down(self):
@@ -116,8 +115,11 @@ class Container(Res.Resource):
             return rcStatus.WARN
         if self.is_up():
             return rcStatus.UP
-        else:
+        if self.is_down():
             return rcStatus.DOWN
+        else:
+            self.status_log("container status is neither up nor down")
+            return rcStatus.WARN
 
     def get_container_info(self):
         print "TODO: get_container_info(self)"
