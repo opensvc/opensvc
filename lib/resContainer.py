@@ -31,9 +31,9 @@ class Container(Res.Resource):
     def __init__(self, name, rid=None, type=None, optional=False, disabled=False):
         Res.Resource.__init__(self, rid=rid, type=type,
                               optional=optional, disabled=disabled)
+        self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
-        self.sshbin = '/usr/bin/ssh'
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
