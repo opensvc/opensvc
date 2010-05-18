@@ -473,7 +473,6 @@ class Svc(Resource, Freezer):
 
         for rs in self.resSets:
             for r in rs.resources:
-                print r.tags,'<=',keeptags
                 if ridfilter and r.rid in keeprid:
                     continue
                 if tagsfilter and self.tag_match(r.tags, keeptags):
