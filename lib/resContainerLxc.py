@@ -55,6 +55,13 @@ class Lxc(resContainer.Container):
     """
     pathlxc = os.path.join('usr', 'local', 'var', 'lib', 'lxc')
 
+    def files_to_sync(self):
+        a = []
+        guest = os.path.join(os.sep, 'var', 'lib', 'lxc', self.name, 'config')
+        if os.path.exists(guest):
+            a.append(guest)
+        return a
+
     def lxc(self, action):
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
         if action == 'start':

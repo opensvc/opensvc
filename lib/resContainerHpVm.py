@@ -19,6 +19,7 @@
 import rcStatus
 import resources as Res
 import time
+import os
 import rcExceptions as ex
 from rcUtilities import qcall
 import resContainer
@@ -31,6 +32,21 @@ class HpVm(resContainer.Container):
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+
+    def files_to_sync(self):
+        import glob
+        a = []
+        guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
+        uuid = os.path.realpath(guest)
+        share = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.share')
+        if os.path.exists(guest):
+            a.append(guest)
+        if os.path.exists(uuid):
+            a.append(uuid)
+        files = glob.glob(share)
+        if len(files) > 0:
+            a += files
+        return a
 
     def ping(self):
         return u.check_ping(self.addr, timeout=1, count=1)

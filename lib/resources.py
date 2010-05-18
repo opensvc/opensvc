@@ -174,6 +174,15 @@ class Resource(object):
         """
         return set()
 
+    def presync(self):
+        pass
+
+    def postsync(self):
+        pass
+
+    def files_to_sync(self):
+        return []
+
 class ResourceSet(Resource):
     """ Define Set of same type resources
     Example 1: ResourceSet("fs",[m1,m2])

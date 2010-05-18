@@ -102,6 +102,7 @@ class Svc(Resource, Freezer):
         self.resources_by_id = {}
         self.rset_status_cache = None
         self.print_status_fmt = "%-8s %-8s %s"
+        self.presync_done = False
 
     def __cmp__(self, other):
         """order by service name
@@ -143,10 +144,18 @@ class Svc(Resource, Freezer):
         if len(get_res_sets(type)) > 0: return True
         else: return False
 
+    def all_set_action(self, action=None):
+        """Call action on each member of the subset of specified type
+        """
+        self.set_action(self.resSets, action=action)
+
     def sub_set_action(self, type=None, action=None):
         """Call action on each member of the subset of specified type
         """
-        for r in self.get_res_sets(type):
+        self.set_action(self.get_res_sets(type), action=action)
+
+    def set_action(self, sets=[], action=None):
+        for r in sets:
             try:
                 r.action(action)
             except ex.excError:
@@ -359,13 +368,28 @@ class Svc(Resource, Freezer):
         self.sub_set_action("fs", "startstandby")
         self.sub_set_action("app", "startstandby")
 
-    def diskupdate(self):
-        self.sub_set_action("disk.vg", "diskupdate")
+    def postsync(self):
+        """ action triggered by a remote master node after
+            syncnodes and syncdrp. Typically make use of files
+            received in var/
+        """
+        self.all_set_action("postsync")
+
+    def presync(self):
+        """ prepare files to send to slave nodes in var/.
+            Each resource can prepare its own set of files.
+        """
+        if self.presync_done:
+            return
+        self.all_set_action("presync")
+        self.presync_done = True
 
     def syncnodes(self):
+        self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
 
     def syncdrp(self):
+        self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
 
     def syncswap(self):
@@ -400,8 +424,6 @@ class Svc(Resource, Freezer):
         print str(self)
 
     def syncall(self):
-        try: self.diskupdate()
-        except: pass
         try: self.syncnodes()
         except: pass
         try: self.syncdrp()

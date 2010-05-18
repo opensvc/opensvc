@@ -49,11 +49,16 @@ class Vg(resVg.Vg):
     def do_stop(self):
         pass
 
-    def diskupdate(self):
+    def files_to_sync(self):
+        return [self.sharefile_name(), self.mkfsfile_name()]
+
+    def presync(self):
         if self.svc.status() != 0:
             self.do_mksf()
             self.do_share()
-        else:
+
+    def postsync(self):
+        if self.svc.status() == 0:
             self.write_mksf()
             self.write_share()
 
