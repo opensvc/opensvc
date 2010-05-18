@@ -62,10 +62,10 @@ def try_umount(self):
 class Mount(Res.Mount):
     """ define HP-UX mount/umount doAction """
     def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([]),
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
-                           disabled=disabled, optional=optional)
+                           disabled=disabled, tags=tags, optional=optional)
         self.fsck_h = {
             'vxfs': {'bin': 'fsck', 'cmd': ['fsck', '-F', 'vxfs', '-y', self.device]},
         } 

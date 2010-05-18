@@ -63,10 +63,10 @@ def try_umount(self):
 class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
     def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([]),
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         self.Mounts = None
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
-                           disabled=disabled, optional=optional)
+                           disabled=disabled, tags=tags, optional=optional)
         self.fsck_h = {
             'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
             'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},

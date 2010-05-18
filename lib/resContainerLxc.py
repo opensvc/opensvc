@@ -112,9 +112,9 @@ class Lxc(resContainer.Container):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
-                                        optional=optional, disabled=disabled)
+                                        optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

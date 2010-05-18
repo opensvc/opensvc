@@ -27,14 +27,14 @@ from rcGlobalEnv import rcEnv
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
                  always_on=set([]), dsf=True,
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         self.label = name
         self.dsf = dsf
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled)
+                          disabled=disabled, tags=tags)
 
     def files_to_sync(self):
         return [self.mapfile_name(), self.mkfsfile_name()]

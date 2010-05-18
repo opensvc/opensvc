@@ -36,7 +36,7 @@ class ScsiReserv(Res.Resource):
     on disks held by a service
     """
     def __init__(self, rid=None, disks=set([]),
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         self.hostid = '0x'+hostId.hostid()
         self.disks = disks
         if len(disks) == 0:
@@ -49,7 +49,7 @@ class ScsiReserv(Res.Resource):
         self.preempt_timeout = 10
         self.prtype = '5'
         Res.Resource.__init__(self, rid=rid+"pr", type="disk.scsireserv",
-                              disabled=disabled, optional=optional)
+                              disabled=disabled, tags=tags, optional=optional)
 
     def scsireserv_supported(self):
         return False

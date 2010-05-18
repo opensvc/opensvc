@@ -29,9 +29,9 @@ class Kvm(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="kvm", name=name, type="container.kvm",
-                                        optional=optional, disabled=disabled)
+                                        optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

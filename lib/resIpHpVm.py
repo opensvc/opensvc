@@ -25,10 +25,10 @@ import resIpVm
 class Ip(resIpVm.Ip, resIpHv.Ip):
     def __init__(self, rid=None, ipDev=None, ipName=None,
                  mask=None, always_on=set([]),
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
                             mask=mask, always_on=always_on,
-                            disabled=disabled, optional=optional)
+                            disabled=disabled, tags=tags, optional=optional)
 
     def check_ping(self):
         return resIpHv.Ip.check_ping(self)

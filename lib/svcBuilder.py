@@ -72,6 +72,11 @@ def svcmode_mod_name(svcmode=''):
         return ('svcKvm', 'SvcKvm')
     raise
 
+def get_tags(conf, section):
+    if conf.has_option(section, 'tags'):
+       return set(conf.get(section, "tags").split())
+    return set([])
+
 def get_optional(conf, section):
     if conf.has_option(section, 'optional'):
        return conf.getboolean(section, "optional")
@@ -106,6 +111,7 @@ def add_scsireserv(svc, resource, conf, section):
 
     kwargs = {}
     kwargs['rid'] = resource.rid
+    kwargs['tags'] = resource.tags
     kwargs['disks'] = resource.disklist()
     kwargs['disabled'] = get_disabled(conf, s)
     kwargs['optional'] = get_optional(conf, s)
@@ -185,6 +191,7 @@ def add_ips(svc, conf):
         else:
             ip = __import__('resIp'+rcEnv.sysname)
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
@@ -209,6 +216,7 @@ def add_loops(svc, conf):
             return
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
         loop = __import__('resLoop'+rcEnv.sysname)
@@ -237,6 +245,7 @@ def add_vgs(svc, conf):
 
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 
@@ -260,6 +269,7 @@ def add_vmdg(svc, conf):
 
     kwargs = {}
     kwargs['rid'] = 'vmdg'
+    kwargs['tags'] = get_tags(conf, s)
     kwargs['name'] = 'vmdg'
     kwargs['disabled'] = get_disabled(conf, 'vmdg')
     kwargs['optional'] = get_optional(conf, 'vmdg')
@@ -281,6 +291,7 @@ def add_pools(svc, conf):
 
         kwargs = {}
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['name'] = name
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
@@ -330,6 +341,7 @@ def add_filesystems(svc, conf):
 
         kwargs = {}
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['mountPoint'] = mnt
         kwargs['device'] = dev
         kwargs['fsType'] = type
@@ -446,6 +458,7 @@ def add_syncs_dds(svc, conf):
             kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
         r = dds.syncDds(**kwargs)
@@ -502,6 +515,7 @@ def add_syncs_symclone(svc, conf):
             kwargs['precopy_timeout'] = conf.getint(s, 'precopy_timeout')
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
         r = sc.syncSymclone(**kwargs)
@@ -554,6 +568,7 @@ def add_syncs_netapp(svc, conf):
         kwargs['path'] = conf.get(s, 'path')
         kwargs['user'] = conf.get(s, 'user')
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 
@@ -616,6 +631,7 @@ def add_syncs_rsync(svc, conf):
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
         kwargs['target'] = targethash
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 

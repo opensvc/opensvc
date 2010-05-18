@@ -69,7 +69,7 @@ class Svc(Resource, Freezer):
     type
     """
 
-    def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
+    def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
         self.svcname = svcname
         self.vmname = ""
@@ -93,7 +93,7 @@ class Svc(Resource, Freezer):
                              "sync.dds",
                              "sync.netapp",
                              "app"]
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
+        Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
         Freezer.__init__(self, svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
@@ -144,20 +144,22 @@ class Svc(Resource, Freezer):
         if len(get_res_sets(type)) > 0: return True
         else: return False
 
-    def all_set_action(self, action=None):
+    def all_set_action(self, action=None, tags=set([])):
         """Call action on each member of the subset of specified type
         """
-        self.set_action(self.resSets, action=action)
+        self.set_action(self.resSets, action=action, tags=tags)
 
-    def sub_set_action(self, type=None, action=None):
+    def sub_set_action(self, type=None, action=None, tags=set([])):
         """Call action on each member of the subset of specified type
         """
-        self.set_action(self.get_res_sets(type), action=action)
+        self.set_action(self.get_res_sets(type), action=action, tags=tags)
 
-    def set_action(self, sets=[], action=None):
+    def set_action(self, sets=[], action=None, tags=set([])):
+        """ TODO: r.is_optional() not doing what's expected if r is a rset
+        """
         for r in sets:
             try:
-                r.action(action)
+                r.action(action, tags=tags)
             except ex.excError:
                 if r.is_optional():
                     pass
@@ -449,24 +451,44 @@ class Svc(Resource, Freezer):
     def push(self):
         xmlrpcClient.push_all([self])
 
-    def disable_resources(self, keep=None):
-        if keep is None or len(keep) == 0:
+    def tag_match(self, rtags, keeptags):
+        for tag in rtags:
+            if tag in keeptags:
+                return True
+        return False
+
+    def disable_resources(self, keeprid=[], keeptags=set([])):
+        if len(keeprid) > 0:
+            ridfilter = True
+        else:
+            ridfilter = False
+
+        if len(keeptags) > 0:
+            tagsfilter = True
+        else:
+            tagsfilter = False
+
+        if not tagsfilter and not ridfilter:
             return
+
         for rs in self.resSets:
             for r in rs.resources:
-                if r.rid in keep:
+                print r.tags,'<=',keeptags
+                if ridfilter and r.rid in keeprid:
+                    continue
+                if tagsfilter and self.tag_match(r.tags, keeptags):
                     continue
                 r.disable()
 
     def setup_environ(self):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
 
-    def action(self, action, rid=None):
+    def action(self, action, rid=[], tags=set([])):
         if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
             self.log.info("Abort action on frozen service")
             return
         self.setup_environ()
-        self.disable_resources(keep=rid)
+        self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
             self.do_action(action)
         else:

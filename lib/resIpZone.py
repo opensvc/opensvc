@@ -26,10 +26,10 @@ from subprocess import *
 class Ip(Res.Ip):
     def __init__(self, rid=None, ipDev=None, ipName=None,
                  mask=None, always_on=set([]),
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
                         mask=mask, always_on=always_on,
-                        disabled=disabled, optional=optional)
+                        disabled=disabled, tags=tags, optional=optional)
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \

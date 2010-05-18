@@ -31,8 +31,9 @@ class Mount(Res.Resource):
     """
     def __init__(self, rid=None, mountPoint=None, device=None, fsType=None,
                  mntOpt=None, always_on=set([]), optional=False,
-                 disabled=False):
-        Res.Resource.__init__(self, rid, "fs", optional, disabled)
+                 disabled=False, tags=set([])):
+        Res.Resource.__init__(self, rid=rid, type="fs",
+                              optional=optional, disabled=disabled, tags=tags)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType

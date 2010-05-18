@@ -32,7 +32,7 @@ class Zone(Res.Resource):
     """
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         """define Zone object attribute :
                 name
                 label
@@ -40,7 +40,7 @@ class Zone(Res.Resource):
                 zonepath
         """
         Res.Resource.__init__(self, rid="zone", type="container.zone",
-                              optional=optional, disabled=disabled)
+                              optional=optional, disabled=disabled, tags=tags)
         self.name = name
         self.label = name
         self.state = None

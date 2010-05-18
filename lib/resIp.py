@@ -33,8 +33,8 @@ class Ip(Res.Resource):
     """ basic ip resource
     """
     def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
-                 optional=False, disabled=False, always_on=set([])):
-        Res.Resource.__init__(self, rid, "ip", optional, disabled)
+                 optional=False, disabled=False, tags=set([]), always_on=set([])):
+        Res.Resource.__init__(self, rid, "ip", optional=optional, disabled=disabled, tags=tags)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask
