@@ -375,10 +375,23 @@ class Svc(Resource, Freezer):
         """
         self.all_set_action("postsync")
 
+    def remote_postsync(self):
+        """ action triggered by a remote master node after
+            syncnodes and syncdrp. Typically make use of files
+            received in var/
+        """
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname), 'postsync']
+        for n in self.need_postsync:
+            self.log.info("exec '%s' on node %s"%(' '.join(rcmd), n))
+            cmd = rcEnv.rsh.split() + [n] + rcmd
+            self.call(cmd)
+        self.need_postsync = set([])
+
     def presync(self):
         """ prepare files to send to slave nodes in var/.
             Each resource can prepare its own set of files.
         """
+        self.need_postsync = set([])
         if self.presync_done:
             return
         self.all_set_action("presync")
@@ -387,10 +400,12 @@ class Svc(Resource, Freezer):
     def syncnodes(self):
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
+        self.remote_postsync()
 
     def syncdrp(self):
         self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
+        self.remote_postsync()
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
