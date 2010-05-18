@@ -8,3 +8,5 @@ test/
 tmp/
 lib/version.py
 bin/pkg/release_*
+.hg/
+.hgignore
