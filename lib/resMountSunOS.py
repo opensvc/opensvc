@@ -29,9 +29,11 @@ import rcExceptions as ex
 
 class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
-    def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([])):
+    def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([]),
+                 disabled=False, optional=False):
         self.Mounts = rcMounts.Mounts()
-        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on)
+        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
+                           disabled=disabled, optional=optional)
 
     def is_up(self):
         return self.Mounts.has_mount(self.device, self.mountPoint)

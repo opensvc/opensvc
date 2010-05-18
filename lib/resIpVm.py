@@ -65,9 +65,11 @@ class Ip(Res.Ip):
         pass
 
     def __init__(self, rid=None, ipDev=None, ipName=None,
-                 mask=None, always_on=set([])):
+                 mask=None, always_on=set([]),
+                 disabled=False, optional=False):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        mask=mask, always_on=always_on)
+                        mask=mask, always_on=always_on,
+                        disabled=disabled, optional=optional)
 
 
 if __name__ == "__main__":

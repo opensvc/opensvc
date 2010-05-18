@@ -47,7 +47,8 @@ class Ip(Res.Resource):
             self.addr = a[0][4][0]
         except:
             self.log.error("could not resolve %s to an ip address"%self.ipName)
-            raise ex.excInitError
+            if not disabled:
+                raise ex.excInitError
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\

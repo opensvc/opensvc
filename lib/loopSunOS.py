@@ -38,6 +38,6 @@ class Loop(resources.Resource):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, file):
+    def __init__(self, file, disabled=False, optional=False):
         self.file = file
-        resources.Resource.__init__(self)
+        resources.Resource.__init__(self, disabled=disabled, optional=optional)

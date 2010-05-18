@@ -72,19 +72,15 @@ def svcmode_mod_name(svcmode=''):
         return ('svcKvm', 'SvcKvm')
     raise
 
-def set_optional(resource, conf, section):
-    if conf.has_option(section, 'optional') and \
-       conf.getboolean(section, "optional") == True:
-            resource.set_optional()
+def get_optional(conf, section):
+    if conf.has_option(section, 'optional'):
+       return conf.getboolean(section, "optional")
+    return False
 
-def set_disable(resource, conf, section):
-    if conf.has_option(section, 'disable') and \
-       conf.getboolean(section, "disable") == True:
-            resource.disable()
-
-def set_optional_and_disable(resource, conf, section):
-    set_optional(resource, conf, section)
-    set_disable(resource, conf, section)
+def get_disabled(conf, section):
+    if conf.has_option(section, 'disable'):
+       return conf.getboolean(section, "disable")
+    return False
 
 def need_scsireserv(resource, conf, section):
     """scsireserv = true can be set globally or in a specific
@@ -107,8 +103,14 @@ def add_scsireserv(svc, resource, conf, section):
         sr = __import__('resScsiReserv'+rcEnv.sysname)
     except:
         sr = __import__('resScsiReserv')
-    r = sr.ScsiReserv(rid=resource.rid, disks=resource.disklist())
-    set_optional_and_disable(r, conf, section)
+
+    kwargs = {}
+    kwargs['rid'] = resource.rid
+    kwargs['disks'] = resource.disklist()
+    kwargs['disabled'] = get_disabled(conf, s)
+    kwargs['optional'] = get_optional(conf, s)
+
+    r = sr.ScsiReserv(**kwargs)
     svc += r
 
 def add_triggers(resource, conf, section):
@@ -184,8 +186,9 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+rcEnv.sysname)
         kwargs['rid'] = s
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = ip.Ip(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -206,9 +209,10 @@ def add_loops(svc, conf):
             return
 
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -233,10 +237,11 @@ def add_vgs(svc, conf):
 
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
@@ -252,8 +257,14 @@ def add_vmdg(svc, conf):
         vg = __import__('resVgLibvirtVm')
     else:
         return
-    r = vg.Vg(rid='vmdg', name='vmdg')
-    set_optional_and_disable(r, conf, 'vmdg')
+
+    kwargs = {}
+    kwargs['rid'] = 'vmdg'
+    kwargs['name'] = 'vmdg'
+    kwargs['disabled'] = get_disabled(conf, 'vmdg')
+    kwargs['optional'] = get_optional(conf, 'vmdg')
+
+    r = vg.Vg(**kwargs)
     add_triggers(r, conf, 'vmdg')
     svc += r
     add_scsireserv(svc, r, conf, 'vmdg')
@@ -267,8 +278,14 @@ def add_pools(svc, conf):
             continue
         name = conf.get(s, "poolname")
         pool = __import__('resZfs')
-        r = pool.Pool(rid=s, name=name)
-        set_optional_and_disable(r, conf, s)
+
+        kwargs = {}
+        kwargs['rid'] = s
+        kwargs['name'] = name
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+
+        r = pool.Pool(**kwargs)
         add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
@@ -309,10 +326,19 @@ def add_filesystems(svc, conf):
                 globalfs = False
             if globalfs is False:
                 mnt = os.path.realpath(svc.zone.zonepath+'/root/'+mnt)
-        always_on = always_on_nodes_set(svc, conf, s)
         mount = __import__('resMount'+rcEnv.sysname)
-        r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)
-        set_optional_and_disable(r, conf, s)
+
+        kwargs = {}
+        kwargs['rid'] = s
+        kwargs['mountPoint'] = mnt
+        kwargs['device'] = dev
+        kwargs['fsType'] = type
+        kwargs['mntOpt'] = mnt_opt
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+
+        r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)
         svc += r
         #add_scsireserv(svc, r, conf, s)
@@ -420,8 +446,9 @@ def add_syncs_dds(svc, conf):
             kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
 
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = dds.syncDds(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -475,8 +502,9 @@ def add_syncs_symclone(svc, conf):
             kwargs['precopy_timeout'] = conf.getint(s, 'precopy_timeout')
 
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = sc.syncSymclone(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -526,9 +554,10 @@ def add_syncs_netapp(svc, conf):
         kwargs['path'] = conf.get(s, 'path')
         kwargs['user'] = conf.get(s, 'user')
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         r = resSyncNetapp.syncNetapp(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -587,9 +616,10 @@ def add_syncs_rsync(svc, conf):
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
         kwargs['target'] = targethash
         kwargs['rid'] = s
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         r = resSyncRsync.Rsync(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
