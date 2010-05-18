@@ -77,6 +77,12 @@ class Lxc(resContainer.Container):
     def container_stop(self):
         self.lxc('stop')
 
+    def container_forcestop(self):
+        """ no harder way to stop a lxc container, raise to signal our
+            helplessness
+        """
+        raise ex.excError
+
     def ping(self):
         return check_ping(self.addr, timeout=1)
 
