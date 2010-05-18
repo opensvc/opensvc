@@ -104,8 +104,11 @@ class Apps(Res.Resource):
         rets = {}
         errs = 0
         nb = 0
-        if not self.status_checks(verbose=verbose):
-            return rcStatus.NA
+        try:
+            if not self.status_checks(verbose=verbose):
+                return rcStatus.NA
+        except ex.excNotAvailable:
+                return rcStatus.NA
         for name in self.sorted_app_list('C*'):
             if len(name) == 0:
                 continue
@@ -147,8 +150,11 @@ class Apps(Res.Resource):
         """Execute each shutdown script (K* files). Log the return code but
            don't stop on error.
         """
-        if not self.stop_checks():
-            raise ex.excError
+        try:
+            if not self.stop_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('K*'):
             self.app(name, 'stop')
 

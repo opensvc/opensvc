@@ -24,6 +24,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, qcall
 import resApp
 import rcStatus
+import rcExceptions as ex
 
 class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
@@ -45,7 +46,7 @@ class Apps(resApp.Apps):
         if container.status() != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%rcStatus.status_str(container.status()))
             self.status_log("container is %s"%rcStatus.status_str(container.status()))
-            return False
+            raise ex.excNotAvailable
         cmd = self.prefix + ['/bin/pwd']
         ret = qcall(cmd)
         if ret != 0:

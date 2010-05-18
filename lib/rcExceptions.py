@@ -75,6 +75,10 @@ class excScsiPrNotsupported(Exception):
     """ Scsi persistent reservation is not supported
     """
 
+class excNotAvailable(Exception):
+    """ Not available
+    """
+
 class MissImpl(Exception):
     def __init__(self, value):
         self.value = value
