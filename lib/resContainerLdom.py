@@ -22,6 +22,7 @@ from rcUtilities import qcall
 from rcUtilitiesSunOS import check_ping
 import resContainer
 from rcGlobalEnv import rcEnv
+import os
 
 class Ldom(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False):

@@ -63,6 +63,7 @@ action_desc = {
 	'syncverify':	'trigger a one-time checksum-based verify of the volume and its target',
 	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
+        'disklist':     'construct disklist',
 }
 
 def format_desc(svc=False):
