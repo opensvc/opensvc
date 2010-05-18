@@ -20,11 +20,15 @@ import resources as Res
 import rcExceptions as ex
 from rcUtilities import qcall
 import resContainer
+from rcGlobalEnv import rcEnv
 
 class Ldom(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False):
         resContainer.Container.__init__(self, rid="ldom", name=name, type="container.ldom",
                                         optional=optional, disabled=disabled)
+        self.shutdown_timeout = 240
+        self.sshbin = '/usr/local/bin/ssh'
+
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -77,6 +81,7 @@ class Ldom(resContainer.Container):
             raise ex.excError
         if state == 'inactive':
             self.container_action('bind')
+            self.container_action('start')
         if state == 'bound' :
             self.container_action('start')
 
@@ -84,10 +89,11 @@ class Ldom(resContainer.Container):
         """ ldm unbind domain
             ldm stop domain
         """
-        try:
-            self.container_action('stop')
-        except ex.excError:
-            pass
+        if self.state == 'active':
+            try:
+                self.container_action('stop')
+            except ex.excError:
+                pass
         self.container_action('unbind')
 
     def container_stop(self):
@@ -104,11 +110,12 @@ class Ldom(resContainer.Container):
         if state == 'bound' :
             self.container_action('unbind')
         if state == 'active' :
-            cmd = self.runmethod + [ '/usr/sbin/init', '5' ]
+            cmd = rcEnv.rsh.split() + [ self.name, '/usr/sbin/init', '5' ]
             (ret, buff) = self.vcall(cmd)
             if ret == 0:
                 try:
-                    self.wait_for_shutdown()
+                    self.log.info("wait for container is_shutdown")
+                    self.wait_for_fn(self.is_shutdown, self.shutdown_timeout, 2)
                 except ex.excError:
                     pass
             self.container_forcestop()
@@ -121,6 +128,12 @@ class Ldom(resContainer.Container):
         if out != 'auto-boot?=False' :
             return True
         self.log.info("Auto boot should be turned off")
+        return False
+
+    def is_shutdown(self):
+        state = self.state()
+        if state == 'inactive' or state == 'bound':
+            return True
         return False
 
     def is_down(self):

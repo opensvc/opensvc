@@ -33,16 +33,19 @@ class Container(Res.Resource):
                               optional=optional, disabled=disabled)
         self.name = name
         self.label = name
+        self.sshbin = '/usr/bin/ssh'
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def operational(self):
         timeout = 1
-        cmd = ['/usr/bin/ssh', '-o', 'StrictHostKeyChecking=no',
-                               '-o', 'ForwardX11=no',
-                               '-o', 'BatchMode=yes',
-                               '-o', 'ConnectTimeout='+repr(timeout), self.name, 'pwd']
+        cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
+                                '-o', 'ForwardX11=no',
+                                '-o', 'BatchMode=yes',
+                                '-n',
+                                '-o', 'ConnectTimeout='+repr(timeout),
+                                self.name, 'pwd']
         ret = qcall(cmd)
         if ret == 0:
             return True
@@ -57,11 +60,15 @@ class Container(Res.Resource):
         raise ex.excError
 
     def wait_for_startup(self):
+        self.log.info("wait for container is_up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
+        self.log.info("wait for container ping")
         self.wait_for_fn(self.ping, self.startup_timeout, 2)
+        self.log.info("wait for container operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
     def wait_for_shutdown(self):
+        self.log.info("wait for container shutdown")
         for tick in range(self.shutdown_timeout):
             if self.is_down():
                 return
