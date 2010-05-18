@@ -19,6 +19,7 @@
 import resources as Res
 import rcExceptions as ex
 from rcUtilities import qcall
+from rcUtilitiesSunOS import check_ping
 import resContainer
 from rcGlobalEnv import rcEnv
 
@@ -58,12 +59,7 @@ class Ldom(resContainer.Container):
         return None
 
     def ping(self):
-        timeout = 1
-        cmd = ['ping', self.name, repr(timeout)]
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr, timeout=1)
 
     def container_action(self,action):
         cmd = ['/usr/sbin/ldm', action, self.name]

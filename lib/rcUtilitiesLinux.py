@@ -1,5 +1,6 @@
 import os
 import re
+from rcUtilities import call
 
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
@@ -26,4 +27,17 @@ def get_blockdev_sd_slaves(syspath):
             slaves |= get_blockdev_sd_slaves(deeper)
     return slaves
 
+def check_ping(addr, timeout=5, count=1):
+    if ':' in addr:
+        ping = 'ping6'
+    else:
+        ping = 'ping'
+    cmd = [ping, '-c', repr(count),
+                 '-W', repr(timeout),
+                 '-w', repr(timeout),
+                 addr]
+    (ret, out) = call(cmd)
+    if ret == 0:
+        return True
+    return False
 

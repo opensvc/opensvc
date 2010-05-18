@@ -22,6 +22,7 @@ import time
 import rcExceptions as ex
 from rcUtilities import qcall
 import resContainer
+u = __import__('rcUtilitiesHP-UX')
 
 class HpVm(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False):
@@ -32,13 +33,7 @@ class HpVm(resContainer.Container):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def ping(self):
-        count = 1
-        timeout = 1
-        cmd = ['ping', self.name, '-n', repr(count), '-m', repr(timeout)]
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
+        return u.check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
