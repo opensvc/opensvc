@@ -69,7 +69,7 @@ class Container(Res.Resource):
         raise ex.excError
 
     def wait_for_startup(self):
-        self.log.info("wait for container is_up status")
+        self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         self.log.info("wait for container ping")
         self.wait_for_fn(self.ping, self.startup_timeout, 2)
@@ -77,7 +77,7 @@ class Container(Res.Resource):
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
     def wait_for_shutdown(self):
-        self.log.info("wait for container shutdown")
+        self.log.info("wait for container down status")
         for tick in range(self.shutdown_timeout):
             if self.is_down():
                 return

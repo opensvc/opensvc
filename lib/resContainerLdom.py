@@ -110,7 +110,7 @@ class Ldom(resContainer.Container):
             (ret, buff) = self.vcall(cmd)
             if ret == 0:
                 try:
-                    self.log.info("wait for container is_shutdown")
+                    self.log.info("wait for container shutdown")
                     self.wait_for_fn(self.is_shutdown, self.shutdown_timeout, 2)
                 except ex.excError:
                     pass
