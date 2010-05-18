@@ -52,7 +52,6 @@ class SvcZone(svc.Svc):
         start fs
         start apps
         """
-        print "starting %s" % self.__class__.__name__
         self.sub_set_action("ip", "check_ping")
         self.sub_set_action("container.zone", "ready")
         self.sub_set_action("ip", "start")
@@ -74,7 +73,6 @@ class SvcZone(svc.Svc):
         stop zone
         stop ips
         """
-        print "stopping %s" % self.__class__.__name__
         self.sub_set_action("app", "stop")
         self.sub_set_action("fs", "stop", tags=set(['postboot']))
         self.sub_set_action("disk.vg", "stop", tags=set(['postboot']))

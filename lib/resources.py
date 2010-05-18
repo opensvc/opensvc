@@ -243,10 +243,18 @@ class ResourceSet(Resource):
             s += status
         return s.status
 
+    def tag_match(self, rtags, keeptags):
+        if len(keeptags) == 0:
+            return True
+        for tag in rtags:
+            if tag in keeptags:
+                return True
+        return False
+
     def action(self, action=None, tags=set([])):
         """Call action on each resource of the ResourceSet
         """
-        resources = [r for r in self.resources if r.tags < tags]
+        resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
         if action in ["fs", "start", "startstandby"]:
             resources.sort()
         else:
