@@ -25,9 +25,9 @@ class Loop(Res.Resource):
     """ basic loopback device resource
     """
     def __init__(self, rid=None, loopFile=None,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid, "disk.loop",
-                              optional, disabled)
+                              optional=optional, disabled=disabled, tags=tags)
         self.loopFile = loopFile
         self.label = loopFile
 

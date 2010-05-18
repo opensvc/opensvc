@@ -45,6 +45,8 @@ parser.add_option("-f", "--force", default=False, action="store_true", dest="for
                   help="force action, ignore sanity check warnings")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
+parser.add_option("--tags", default=None, action="store", dest="parm_tags",
+                  help="comma-separated list of resource tags to limit action to")
 
 
 cmd = os.path.basename(__file__)
@@ -103,7 +105,12 @@ if hasattr(options, "parm_rid") and options.parm_rid is not None:
 else:
    rid = []
 
+if hasattr(options, "parm_tags") and options.parm_tags is not None:
+   tags = set(options.parm_tags.split(','))
+else:
+   tags = set([])
+
 for s in svcs:
     s.force = options.force
-    s.action(action, rid=rid)
+    s.action(action, rid=rid, tags=tags)
 

@@ -346,7 +346,7 @@ class Rsync(Res.Resource):
 
     def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,
                  bwlimit=None, sync_min_delay=30, sync_max_delay=1500,
-                 optional=False, disabled=False, internal=False):
+                 optional=False, disabled=False, tags=set([]), internal=False):
         if internal:
             if rcEnv.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
@@ -366,7 +366,7 @@ class Rsync(Res.Resource):
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
         Res.Resource.__init__(self, rid=rid, type="sync.rsync",
-                              optional=optional, disabled=disabled)
+                              optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\

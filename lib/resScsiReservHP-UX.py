@@ -55,8 +55,10 @@ def mpath_to_path(disks):
     return l
     
 class ScsiReserv(resScsiReserv.ScsiReserv):
-    def __init__(self, rid=None, disks=set([])):
-        resScsiReserv.ScsiReserv.__init__(self, rid, disks)
+    def __init__(self, rid=None, disks=set([]),
+                 disabled=False, tags=set([]), optional=False):
+        resScsiReserv.ScsiReserv.__init__(self, rid=rid, disks=disks,
+                                          disabled=disabled, tags=tags, optional=optional)
         self.prtype = 'wero'
         self.disks = mpath_to_path(disks)
         self.leg_mpath_disable()

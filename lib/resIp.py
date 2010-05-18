@@ -33,8 +33,8 @@ class Ip(Res.Resource):
     """ basic ip resource
     """
     def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
-                 optional=False, disabled=False, always_on=set([])):
-        Res.Resource.__init__(self, rid, "ip", optional, disabled)
+                 optional=False, disabled=False, tags=set([]), always_on=set([])):
+        Res.Resource.__init__(self, rid, "ip", optional=optional, disabled=disabled, tags=tags)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask
@@ -47,7 +47,8 @@ class Ip(Res.Resource):
             self.addr = a[0][4][0]
         except:
             self.log.error("could not resolve %s to an ip address"%self.ipName)
-            raise ex.excInitError
+            if not disabled:
+                raise ex.excInitError
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\

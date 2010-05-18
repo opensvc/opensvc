@@ -30,8 +30,8 @@ class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
     def __init__(self, rid=None, name=None, type=None, always_on=set([]), optional=False,
-                 disabled=False):
-        Res.Resource.__init__(self, rid, type, optional, disabled)
+                 disabled=False, tags=set([])):
+        Res.Resource.__init__(self, rid, type, optional=optional, disabled=disabled, tags=tags)
         self.name = name
         self.always_on = always_on
         self.disks = set()

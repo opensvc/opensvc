@@ -322,7 +322,7 @@ class syncDds(Res.Resource):
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([])):
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
         self.sender = sender
@@ -335,7 +335,7 @@ class syncDds(Res.Resource):
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
-        Res.Resource.__init__(self, rid, "sync.dds", optional, disabled)
+        Res.Resource.__init__(self, rid, "sync.dds", optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s target=%s src=%s" % (Res.Resource.__str__(self),\

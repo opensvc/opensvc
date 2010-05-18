@@ -28,8 +28,8 @@ from rcGlobalEnv import rcEnv
 class SvcHpVm(svc.Svc):
     """ Define hpvm services"""
 
-    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
-        svc.Svc.__init__(self, svcname, optional, disabled)
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False, tags=set([])):
+        svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname

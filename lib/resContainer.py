@@ -29,9 +29,9 @@ class Container(Res.Resource):
     startup_timeout = 600
     shutdown_timeout = 60
 
-    def __init__(self, name, rid=None, type=None, optional=False, disabled=False):
+    def __init__(self, name, rid=None, type=None, optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid=rid, type=type,
-                              optional=optional, disabled=disabled)
+                              optional=optional, disabled=disabled, tags=tags)
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
@@ -42,7 +42,8 @@ class Container(Res.Resource):
             self.addr = a[0][4][0]
         except:
             self.log.error("could not resolve %s to an ip address"%self.name)
-            raise ex.excInitError
+            if not disabled:
+                raise ex.excInitError
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

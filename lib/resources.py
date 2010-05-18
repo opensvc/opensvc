@@ -30,14 +30,15 @@ from rcGlobalEnv import rcEnv
 
 class Resource(object):
     """Define basic resource
-    properties: type, optional, disabled
+    properties: type, optional=optional, disabled=disabled, tags=tags
     a Resource should provide do_action(action):
     with action into (start/stop/status)
     """
     label = None
 
-    def __init__(self, rid=None, type=None, optional=False, disabled=False):
+    def __init__(self, rid=None, type=None, optional=False, disabled=False, tags=set([])):
         self.rid = rid
+        self.tags = tags
         self.type = type
         self.optional = optional
         self.disabled = disabled
@@ -189,9 +190,9 @@ class ResourceSet(Resource):
     Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
-    def __init__(self, type=None, resources=[], optional=False, disabled=False):
+    def __init__(self, type=None, resources=[], optional=False, disabled=False, tags=set([])):
         self.resources=resources
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
+        Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
 
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
@@ -242,13 +243,22 @@ class ResourceSet(Resource):
             s += status
         return s.status
 
-    def action(self,action=None):
+    def tag_match(self, rtags, keeptags):
+        if len(keeptags) == 0:
+            return True
+        for tag in rtags:
+            if tag in keeptags:
+                return True
+        return False
+
+    def action(self, action=None, tags=set([])):
         """Call action on each resource of the ResourceSet
         """
+        resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
         if action in ["fs", "start", "startstandby"]:
-            self.resources.sort()
+            resources.sort()
         else:
-            self.resources.sort(reverse=True)
+            resources.sort(reverse=True)
 
         if action not in ["status", "print_status", "group_status"]:
             try:
@@ -256,7 +266,7 @@ class ResourceSet(Resource):
             except exc.excAbortAction:
                 return
 
-        for r in self.resources:
+        for r in resources:
             try:
                 r.action(action)
             except exc.excAbortAction:

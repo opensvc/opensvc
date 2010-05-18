@@ -30,9 +30,9 @@ import rcExceptions as ex
 class Apps(Res.Resource):
     prefix = []
 
-    def __init__(self, runmethod=[], optional=False, disabled=False):
+    def __init__(self, runmethod=[], optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid="app", type="app",
-                              optional=optional, disabled=disabled) 
+                              optional=optional, disabled=disabled, tags=tags) 
         self.prefix = runmethod
         self.label = "app"
 

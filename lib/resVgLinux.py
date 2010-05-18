@@ -25,14 +25,14 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False,
+                 optional=False, disabled=False, tags=set([]),
                  always_on=set([])):
         self.label = name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled)
+                          disabled=disabled, tags=tags)
 
     def has_it(self):
         """Returns True if the volume is present
