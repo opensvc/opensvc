@@ -212,6 +212,7 @@ def sync(self, type):
             self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
             continue
         sync_timestamp(self, node)
+        self.svc.need_postsync |= set([node])
     return
 
 class Rsync(Res.Resource):
