@@ -318,63 +318,6 @@ def add_filesystems(svc, conf):
         #add_scsireserv(svc, r, conf, s)
 
 def add_mandatory_syncs(svc):
-    def list_mapfiles():
-        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
-        files = glob.glob(pattern)
-        if len(files) > 0:
-            return files
-        return []
-
-    def list_mksffiles():
-        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.mksf')
-        files = glob.glob(pattern)
-        if len(files) > 0:
-            return files
-        return []
-
-    def list_kvmconffiles():
-        if not hasattr(svc, "vmname"):
-            return []
-        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', svc.vmname+'.xml')
-        if os.path.exists(cf):
-            return [cf]
-        return []
-
-    def list_hpvmconffiles():
-        a = []
-        if svc.svcmode != 'hpvm':
-            return a
-        guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', svc.vmname)
-        uuid = os.path.realpath(guest)
-        share = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.share')
-        if os.path.exists(guest):
-            a.append(guest)
-        if os.path.exists(uuid):
-            a.append(uuid)
-        files = glob.glob(share)
-        if len(files) > 0:
-            a += files
-        return a
-
-    def list_ldomconffiles():
-        a = []
-        if svc.svcmode != 'ldom':
-            return a
-        ldomf = os.path.join(rcEnv.pathvar, 'ldom_'+svc.svcname+'.*')
-        files = glob.glob(ldomf)
-        if len(files) > 0:
-            a += files
-        return a
-
-    def list_lxcconffiles():
-        a = []
-        if svc.svcmode != 'lxc':
-            return a
-        guest = os.path.join(os.sep, 'var', 'lib', 'lxc', svc.vmname, 'config')
-        if os.path.exists(guest):
-            a.append(guest)
-        return a
-
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -389,18 +332,15 @@ def add_mandatory_syncs(svc):
     localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
     if os.path.exists(localrc):
         src.append(localrc)
-    src += list_mapfiles()
-    src += list_mksffiles()
-    src += list_kvmconffiles()
-    src += list_lxcconffiles()
-    src += list_hpvmconffiles()
-    src += list_ldomconffiles()
+    for rs in svc.resSets:
+        for r in rs.resources:
+            src += r.files_to_sync()
     dst = os.path.join("/")
     exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
     r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
-                       exclude=['-R']+exclude, target=targethash,
-                       internal=True)
+                           exclude=['-R']+exclude, target=targethash,
+                           internal=True)
     svc += r
 
     """2
@@ -845,8 +785,8 @@ def build(name):
         add_vmdg(svc, conf)
         add_pools(svc, conf)
         add_filesystems(svc, conf)
-        add_syncs(svc, conf)
         add_apps(svc, conf)
+        add_syncs(svc, conf)
     except ex.excInitError:
         return None
 

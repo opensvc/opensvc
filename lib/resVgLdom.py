@@ -45,9 +45,6 @@ class Vg(resVg.Vg):
     def do_stop(self):
         pass
 
-    def diskupdate(self):
-        pass
-
     def disklist(self):
         print "TODO: %s:disklist()"%__file__
         return set([])

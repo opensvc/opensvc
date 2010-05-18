@@ -36,6 +36,15 @@ class Kvm(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def list_kvmconffiles(self):
+        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')
+        if os.path.exists(cf):
+            return [cf]
+        return []
+
+    def files_to_sync(self):
+        return self.list_kvmconffiles()
+
     def check_capabilities(self):
         cmd = ['virsh', 'capabilities']
         (ret, out) = self.call(cmd, errlog=False)
