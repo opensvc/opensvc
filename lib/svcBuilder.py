@@ -113,8 +113,8 @@ def add_scsireserv(svc, resource, conf, section):
     kwargs['rid'] = resource.rid
     kwargs['tags'] = resource.tags
     kwargs['disks'] = resource.disklist()
-    kwargs['disabled'] = get_disabled(conf, s)
-    kwargs['optional'] = get_optional(conf, s)
+    kwargs['disabled'] = resource.is_disabled()
+    kwargs['optional'] = resource.is_optional()
 
     r = sr.ScsiReserv(**kwargs)
     svc += r
