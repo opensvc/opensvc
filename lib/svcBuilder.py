@@ -260,7 +260,7 @@ def add_vmdg(svc, conf):
         return
     if svc.svcmode == 'hpvm':
         vg = __import__('resVgHpVm')
-    if svc.svcmode == 'ldom':
+    elif svc.svcmode == 'ldom':
         vg = __import__('resVgLdom')
     elif svc.svcmode in rcEnv.vt_libvirt:
         vg = __import__('resVgLibvirtVm')

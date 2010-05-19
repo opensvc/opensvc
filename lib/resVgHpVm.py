@@ -52,13 +52,15 @@ class Vg(resVg.Vg):
     def files_to_sync(self):
         return [self.sharefile_name(), self.mkfsfile_name()]
 
-    def presync(self):
-        if self.svc.status() != 0:
+    def postsync(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
             self.do_mksf()
             self.do_share()
 
-    def postsync(self):
-        if self.svc.status() == 0:
+    def presync(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status == rcStatus.UP:
             self.write_mksf()
             self.write_share()
 
