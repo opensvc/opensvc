@@ -22,6 +22,7 @@ import time
 import os
 import rcExceptions as ex
 from rcUtilities import qcall
+from rcGlobalEnv import rcEnv
 import resContainer
 u = __import__('rcUtilitiesHP-UX')
 
@@ -38,7 +39,7 @@ class HpVm(resContainer.Container):
         a = []
         guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
         uuid = os.path.realpath(guest)
-        share = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.share')
+        share = os.path.join(rcEnv.pathvar, 'vg_'+self.svc.svcname+'_*.share')
         if os.path.exists(guest):
             a.append(guest)
         if os.path.exists(uuid):
@@ -100,3 +101,7 @@ class HpVm(resContainer.Container):
             return True
         return False
 
+    def check_capabilities(self):
+        if os.path.exists('/opt/hpvm/bin/hpvmstatus'):
+            return True
+        return False
