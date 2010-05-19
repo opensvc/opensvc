@@ -212,7 +212,9 @@ class Svc(Resource, Freezer):
         for t in self.status_types:
             for rs in self.get_res_sets(t):
                 for r in rs.resources:
-                    s += r.print_status()
+                    r.print_status()
+        s = self.group_status()['overall']
+
         print self.print_status_fmt%("overall",
                                      str(s),
                                      ""),

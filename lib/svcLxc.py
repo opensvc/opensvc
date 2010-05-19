@@ -35,7 +35,6 @@ class SvcLxc(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += lxc.Lxc(vmname)
-        self.status_types += ["container.lxc"]
         if which('lxc-attach'):
             self.runmethod = ['lxc-attach', '-n', vmname, '--']
         else:

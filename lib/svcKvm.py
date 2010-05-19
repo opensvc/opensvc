@@ -35,7 +35,6 @@ class SvcKvm(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += kvm.Kvm(vmname)
-        self.status_types += ["container.kvm"]
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
 
