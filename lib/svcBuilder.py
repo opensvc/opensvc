@@ -269,7 +269,7 @@ def add_vmdg(svc, conf):
 
     kwargs = {}
     kwargs['rid'] = 'vmdg'
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(conf, 'vmdg')
     kwargs['name'] = 'vmdg'
     kwargs['disabled'] = get_disabled(conf, 'vmdg')
     kwargs['optional'] = get_optional(conf, 'vmdg')
