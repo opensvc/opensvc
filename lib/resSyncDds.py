@@ -274,24 +274,29 @@ class syncDds(Res.Resource):
         self.checksums = {}
         queues = {}
         ps = []
+        self.log.info("start checksum threads. please be patient.")
         for n in self.targets:
             queues[n] = Queue()
             p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
             p.start()
             ps.append(p)
         self.checksum(rcEnv.nodename, self.snap1)
-        self.log.info("checksum threads started. please be patient.")
+        self.log.info("md5 %s: %s"%(rcEnv.nodename, self.checksums[rcEnv.nodename]))
         for p in ps:
             p.join()
         for n in self.targets:
             self.checksums[n] = queues[n].get()
+            self.log.info("md5 %s: %s"%(n, self.checksums[n]))
         if len(self.checksums) < 2:
             self.log.error("not enough checksums collected")
             raise ex.excError
+        err = False
         for n in self.targets:
             if self.checksums[rcEnv.nodename] != self.checksums[n]:
                 self.log.error("src/dst checksums differ for %s/%s"%(rcEnv.nodename, n))
-        self.log.info("src/dst checksums verified")
+                err = True
+        if not err:
+            self.log.info("src/dst checksums verified")
 
     def start(self):
         pass
