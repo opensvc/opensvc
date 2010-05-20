@@ -24,6 +24,7 @@ import resources as Res
 import time
 import os
 from rcUtilities import justcall, vcall
+from stat import *
 
 
 class Zone(Res.Resource):
@@ -61,11 +62,24 @@ class Zone(Res.Resource):
                     % (action, len, ret, out))
         return ret
 
+    def set_zonepath_perms(self):
+        if not os.path.exists(self.zonepath):
+            os.makedirs(self.zonepath)
+        s = os.stat(self.zonepath)
+        if s.st_uid != 0 or s.st_gid != 0:
+            self.log.info("set %s ownership to uid 0 gid 0"%self.zonepath)
+            os.chown(self.zonepath, 0, 0)
+        mode = s[ST_MODE]
+        if (S_IWOTH&mode) or (S_IXOTH&mode) or (S_IROTH&mode) or \
+           (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
+            self.vcall(['chmod', '700', self.zonepath])
+
     def ready(self):
         self.zone_refresh()
         if self.state == 'ready' or self.state == "runing" :
             self.log.info("zone container %s already ready" % self.name)
             return 0
+        self.set_zonepath_perms()
         return self.zoneadm('ready')
 
     def boot(self):
