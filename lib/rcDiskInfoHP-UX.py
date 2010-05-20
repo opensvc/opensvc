@@ -51,7 +51,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def scan(self, dev):
         cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
-        (ret, out) = call(cmd)
+        (ret, out) = call(cmd, errlog=False)
         dev = self.devkey(dev)
         if ret != 0:
             self.h[dev] = dict(wwid="", vid="", pid="", size="")
