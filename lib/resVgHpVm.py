@@ -60,7 +60,7 @@ class Vg(resVg.Vg):
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status == rcStatus.UP:
+        if self.svc.force or s['overall'].status == rcStatus.UP:
             self.write_mksf()
             self.write_share()
 
