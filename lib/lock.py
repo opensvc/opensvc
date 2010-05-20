@@ -1,9 +1,20 @@
 import fcntl
 import os
+import time
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
-def svclock(svc):
+def svclock(svc, timeout=30, delay=5):
+    for i in range(timeout//delay):
+        try:
+            svclock_nowait(svc)
+            return
+        except ex.excError:
+            time.sleep(delay)
+    svc.log.error("timed out waiting for lock")
+    raise ex.excError
+    
+def svclock_nowait(svc):
     lock = os.path.join(rcEnv.pathlock, svc.svcname)
     pid = 0
 
@@ -45,7 +56,7 @@ def svclock(svc):
         os.write(svc.lockfd, str(os.getpid()))
         os.fsync(svc.lockfd)
     except IOError:
-        svc.log.error("another action is currently running (pid=%s)"%pid)
+        svc.log.warn("another action is currently running (pid=%s)"%pid)
         raise ex.excError
     except:
         raise
