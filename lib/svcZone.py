@@ -52,11 +52,11 @@ class SvcZone(svc.Svc):
         start apps
         """
         self.sub_set_action("ip", "check_ping")
-        self.sub_set_action("container.zone", "ready")
-        self.sub_set_action("ip", "start")
         self.sub_set_action("disk.scsireserv", "start", tags=set(['preboot']))
         self.sub_set_action("disk.vg", "start", tags=set(['preboot']))
         self.sub_set_action("fs", "start", tags=set(['preboot']))
+        self.sub_set_action("container.zone", "ready")
+        self.sub_set_action("ip", "start")
         self.sub_set_action("container.zone", "boot")
         self.sub_set_action("sync.netapp", "start", tags=set(['postboot']))
         self.sub_set_action("disk.scsireserv", "start", tags=set(['postboot']))

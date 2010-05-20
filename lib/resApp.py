@@ -132,8 +132,11 @@ class Apps(Res.Resource):
         """Execute each startup script (SS* files). Log the return code but
            don't stop on error.
         """
-        if not self.start_checks():
-            raise ex.excError
+        try:
+            if not self.start_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('S*.standby@'+rcEnv.nodename):
             self.app(name, 'start')
 
@@ -141,8 +144,11 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
-        if not self.start_checks():
-            raise ex.excError
+        try:
+            if not self.start_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('S*'):
             self.app(name, 'start')
 
