@@ -76,7 +76,7 @@ class Node(Svc, Freezer):
     def updateservices(self):
         for svc in self.svcs:
             try:
-                svc.action('diskupdate')
+                svc.action('presync')
             except:
                 pass
 

@@ -61,7 +61,7 @@ action_desc = {
 	'syncfullsync':	'trigger a full copy of the volume to its target',
 	'syncupdate':	'trigger a one-time resync of the volume to its target',
 	'syncverify':	'trigger a one-time checksum-based verify of the volume and its target',
-	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
+	'syncall':	'combo action, chaining syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
         'disklist':     'construct disklist',
 }
