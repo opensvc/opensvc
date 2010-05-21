@@ -77,6 +77,8 @@ class Apps(Res.Resource):
     def app(self, name, action, dedicated_log=True):
         if len(name) == 0:
             return 0
+        if not os.path.exists(name):
+            return 0
         self.set_perms(name)
         cmd = self.prefix+[name, action]
         if dedicated_log:
