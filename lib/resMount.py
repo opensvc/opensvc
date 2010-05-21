@@ -44,6 +44,8 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
 
     def start(self):
+        if self.fsType == "zfs" :
+	    return None
         if not os.path.exists(self.mountPoint):
             try:
                 os.makedirs(self.mountPoint)
