@@ -25,13 +25,9 @@ import time
 import os
 from rcUtilities import justcall, vcall
 from stat import *
+import resContainer
 
-
-class Zone(Res.Resource):
-    """
-     container Zone status transition diagram :
-    """
-    shutdown_timeout = 120
+class Zone(resContainer.Container):
 
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         """define Zone object attribute :
