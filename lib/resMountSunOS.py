@@ -36,11 +36,13 @@ class Mount(Res.Mount):
                            disabled=disabled, tags=tags, optional=optional)
 
     def is_up(self):
+        if self.Mounts is None:
+            self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def start(self):
+        self.Mounts = None
         Res.Mount.start(self)
-        self.Mounts = rcMounts.Mounts()
 
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
@@ -60,8 +62,7 @@ class Mount(Res.Mount):
                 if ret != 0:
                     raise ex.excError
             return
-
-        if self.fsType != "":
+        elif self.fsType != "":
             fstype = ['-F', self.fsType]
         else:
             fstype = []
@@ -76,37 +77,49 @@ class Mount(Res.Mount):
         cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
+            self.Mounts = None
             raise ex.excError
+        self.Mounts = None
 
     def try_umount(self):
+        if self.fsType == 'zfs' :
+            ret, out = self.vcall(['zfs', 'umount', self.device ])
+            if ret != 0 :
+                ret, out = self.vcall(['zfs', 'umount', '-f', self.device ])
+                if ret != 0 :
+                    raise ex.excError
+            return
         (ret, out) = self.vcall(['umount', self.mountPoint], err_to_info=True)
         if ret == 0 :
-            return 0
+            return
         for i in range(4):
             (ret, out) = self.vcall(['fuser', '-ck', self.mountPoint],
                                     err_to_info=True)
             (ret, out) = self.vcall(['umount', self.mountPoint],
                                     err_to_info=True)
             if ret == 0 :
-                return 0
+                return
             if self.fsType != 'lofs' :
                 (ret, out) = self.vcall(['umount', '-f', self.mountPoint],
                                         err_to_info=True)
                 if ret == 0 :
-                    return 0
+                    return
+        raise ex.excError
 
     def stop(self):
+        self.Mounts = None
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return
 
-        ret = self.try_umount()
-
-        if ret != 0 :
+        try: 
+            self.try_umount()
+        except:
+            self.Mounts = None
             self.log.error("failed")
             raise ex.excError
-
+        self.Mounts = None
 
 if __name__ == "__main__":
     for c in (Mount,) :
