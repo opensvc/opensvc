@@ -54,6 +54,7 @@ class SvcZone(svc.Svc):
         self.sub_set_action("ip", "check_ping")
         self.sub_set_action("disk.scsireserv", "start", tags=set(['preboot']))
         self.sub_set_action("disk.vg", "start", tags=set(['preboot']))
+        self.sub_set_action("disk.zpool", "start", tags=set(['preboot']))
         self.sub_set_action("fs", "start", tags=set(['preboot']))
         self.sub_set_action("container.zone", "ready")
         self.sub_set_action("ip", "start")
@@ -61,6 +62,7 @@ class SvcZone(svc.Svc):
         self.sub_set_action("sync.netapp", "start", tags=set(['postboot']))
         self.sub_set_action("disk.scsireserv", "start", tags=set(['postboot']))
         self.sub_set_action("disk.vg", "start", tags=set(['postboot']))
+        self.sub_set_action("disk.zpool", "start", tags=set(['postboot']))
         self.sub_set_action("fs", "start")
         self.sub_set_action("app", "start")
 
@@ -75,10 +77,12 @@ class SvcZone(svc.Svc):
         self.sub_set_action("app", "stop")
         self.sub_set_action("fs", "stop", tags=set(['postboot']))
         self.sub_set_action("disk.vg", "stop", tags=set(['postboot']))
+        self.sub_set_action("disk.zpool", "stop", tags=set(['postboot']))
         self.sub_set_action("disk.scsireserv", "stop", tags=set(['postboot']))
         self.sub_set_action("container.zone", "stop")
         self.sub_set_action("fs", "stop", tags=set(['preboot']))
         self.sub_set_action("disk.vg", "stop", tags=set(['preboot']))
+        self.sub_set_action("disk.zpool", "stop", tags=set(['preboot']))
         self.sub_set_action("disk.scsireserv", "stop", tags=set(['preboot']))
         self.sub_set_action("ip", "stop")
 
