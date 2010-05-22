@@ -86,6 +86,9 @@ class Zone(resContainer.Container):
         return self.zoneadm('boot')
 
     def stop(self):
+        """ Need wait poststat after returning to installed state on ipkg
+            example : /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
+        """
         self.zone_refresh()
         if self.state == 'installed' :
             self.log.info("zone container %s already stopped" % self.name)
@@ -95,6 +98,13 @@ class Zone(resContainer.Container):
             for t in range(self.shutdown_timeout):
                 self.zone_refresh()
                 if self.state == 'installed':
+                    for t2 in range(self.shutdown_timeout):
+                        time.sleep(1)
+                        (out,err,st) = justcall([ 'pgrep', '-fl', 'ipkg/poststate.*'+ self.name])
+                        if st == 0 : 
+                            self.log.info("Waiting for ipkg poststate complete: %s" % out)
+                        else:
+                            break
                     return 0
                 time.sleep(1)
             self.log.info("timeout out waiting for %s shutdown", self.name)
