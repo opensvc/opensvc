@@ -33,7 +33,7 @@ class Ip(Res.Ip):
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
-            'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.vmname ]
+            'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.svc.vmname ]
         return self.vcall(cmd)
 
 
