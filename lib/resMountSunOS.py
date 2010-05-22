@@ -26,6 +26,7 @@ import rcStatus
 import rcMountsSunOS as rcMounts
 import resMount as Res
 import rcExceptions as ex
+from rcUtilities import justcall
 
 class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
@@ -50,11 +51,18 @@ class Mount(Res.Mount):
             return
 
         if self.fsType == 'zfs' :
-            ret, out = self.vcall(['zfs', 'set', \
+            (out, err, ret) = justcall (['zfs', 'list', '-H', '-o', 'mountpoint', self.device ])
+            out=out.split('\n')[0]
+            if out != self.mountPoint :
+                ret, out = self.vcall(['zfs', 'set', \
                                     'mountpoint='+self.mountPoint , \
                                     self.device ])
-            if ret != 0 :
-                raise ex.excError
+                if ret != 0 :
+                    raise ex.excError
+
+            self.Mounts = None
+            if self.is_up() is True:
+                return
 
             ret, out = self.vcall(['zfs', 'mount', self.device ])
             if ret != 0:
