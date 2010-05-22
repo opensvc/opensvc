@@ -72,7 +72,7 @@ class Zone(resContainer.Container):
 
     def ready(self):
         self.zone_refresh()
-        if self.state == 'ready' or self.state == "runing" :
+        if self.state == 'ready' or self.state == "running" :
             self.log.info("zone container %s already ready" % self.name)
             return 0
         self.set_zonepath_perms()
@@ -80,7 +80,7 @@ class Zone(resContainer.Container):
 
     def boot(self):
         self.zone_refresh()
-        if self.state == "runing" :
+        if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
             return 0
         return self.zoneadm('boot')
@@ -121,6 +121,7 @@ class Zone(resContainer.Container):
         """ refresh Zone object attributes:
                 state
                 zonepath
+                brand
             from zoneadm -z zonename list -p
             zoneid:zonename:state:zonepath:uuid:brand:ip-type
         """
@@ -132,6 +133,7 @@ class Zone(resContainer.Container):
             if zonename == self.name :
                 self.state = state
                 self.zonepath = zonepath
+                self.brand = brand
                 return True
             else:
                 return False
