@@ -74,11 +74,18 @@ class Apps(Res.Resource):
             return False
         return True
 
+    def app_exist(self, name):
+        if os.path.exists(name):
+            return True
+        else:
+            return False
+
     def app(self, name, action, dedicated_log=True):
         if len(name) == 0:
             return 0
-        if not os.path.exists(name):
+        if not self.app_exist(name):
             return 0
+
         self.set_perms(name)
         cmd = self.prefix+[name, action]
         if dedicated_log:

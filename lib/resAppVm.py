@@ -21,7 +21,7 @@ import os
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, qcall
+from rcUtilities import is_exe, qcall, justcall
 import resApp
 import rcStatus
 import rcExceptions as ex
@@ -79,6 +79,15 @@ class Apps(resApp.Apps):
         if p.returncode != 0:
             return []
         return buff[0].split('\n')
+
+    def app_exist(self, name):
+        """ verify app_exists inside Vm
+        """
+        (out, err, ret) = justcall (self.prefix + ['/usr/bin/ls', '-Ld', name ])
+        if ret == 0:
+            return True
+        else:
+            return False
 
 if __name__ == "__main__":
     for c in (Apps,) :
