@@ -86,6 +86,7 @@ class Svc(Resource, Freezer):
                              "disk.loop",
                              "disk.scsireserv",
                              "disk.vg",
+                             "disk.zpool",
                              "fs",
                              "ip",
                              "sync.rsync",
