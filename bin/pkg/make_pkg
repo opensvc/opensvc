@@ -7,6 +7,7 @@ ARCH=${ARCH:-all}
 BASE=/opt/opensvc
 REV=$(date +%y%m%d.%H%M)
 P=${PKGNAME}-$VERSION-$REV.SunOS.pkg
+IPSP=${PKGNAME}@$VERSION-$REV
 REPODIR=$(cd $(dirname $0);pwd)
 export REPODIR
 PATH=$PWD:$PATH:/opt/sfw/bin
@@ -175,4 +176,4 @@ rm $REPODIR/postinstall
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
 
-[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg $P
+[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg $P $IPSP
