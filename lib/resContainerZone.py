@@ -45,10 +45,10 @@ class Zone(resContainer.Container):
         self.zone_refresh()
 
     def zoneadm(self, action):
-        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ] :
+        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach' ] :
             cmd = ['zoneadm', '-z', self.name, action ]
         else:
-            self.log.error("unsupported lxc action: %s" % action)
+            self.log.error("unsupported zone action: %s" % action)
             return 1
 
         t = datetime.now()
@@ -69,6 +69,20 @@ class Zone(resContainer.Container):
         if (S_IWOTH&mode) or (S_IXOTH&mode) or (S_IROTH&mode) or \
            (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
             self.vcall(['chmod', '700', self.zonepath])
+
+    def attach(self):
+        self.zone_refresh()
+        if self.state == "installed" :
+            self.log.info("zone container %s already installed" % self.name)
+            return 0
+        return self.zoneadm('attach')
+
+    def detach(self):
+        self.zone_refresh()
+        if self.state == "configured" :
+            self.log.info("zone container %s already detached/configured" % self.name)
+            return 0
+        return self.zoneadm('detach')
 
     def ready(self):
         self.zone_refresh()
