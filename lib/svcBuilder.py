@@ -296,6 +296,7 @@ def add_pools(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['name'] = name
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 
