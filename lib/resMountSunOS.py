@@ -54,6 +54,11 @@ class Mount(Res.Mount):
             (out, err, ret) = justcall (['zfs', 'list', '-H', '-o', 'mountpoint', self.device ])
             out=out.split('\n')[0]
             if out != self.mountPoint :
+                (out, err, ret) = justcall(['zfs', 'get', '-Hp', '-o', 'value',
+                                            'zoned', self.device ])
+                if ret == 0 and out.split('\n')[0] == 'on':
+                    (ret, out) = self.vcall(['zfs', 'set', 'zoned=off', \
+                                                self.device ])
                 ret, out = self.vcall(['zfs', 'set', \
                                     'mountpoint='+self.mountPoint , \
                                     self.device ])
