@@ -31,6 +31,8 @@ def lookup_snap_mod():
         return __import__('snapLvmLinux')
     elif rcEnv.sysname == 'HP-UX':
         return __import__('snapVxfsHP-UX')
+    elif rcEnv.sysname == 'SunOS':
+        return __import__('snapZfsSunOS')
     else:
         raise ex.excError
 
@@ -265,9 +267,13 @@ class Rsync(Res.Resource):
         if not need_snap:
             return
 
-        snap = lookup_snap_mod()
+        Snap = lookup_snap_mod()
         try:
-            rset.snaps = snap.snap(self, rset, action)
+            if rcEnv.sysname == 'SunOS':
+                rset.snaps = Snap.Snap(self.rid)
+                rset.snaps.try_snap(rset, action)
+            else:
+                rset.snaps = Snap.snap(self, rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
 
@@ -275,8 +281,8 @@ class Rsync(Res.Resource):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
-        snap = lookup_snap_mod()
-        snap.snap_cleanup(self, rset)
+        if hasattr(rset, 'snaps'):
+            rset.snaps.snap_cleanup(rset)
 
     def syncnodes(self):
         try:
