@@ -287,7 +287,7 @@ def add_pools(svc, conf):
         if re.match('pool#[0-9]', s, re.I) is None:
             continue
         name = conf.get(s, "poolname")
-        pool = __import__('resZfs')
+        pool = __import__('resVgZfs')
 
         kwargs = {}
         kwargs['rid'] = s
