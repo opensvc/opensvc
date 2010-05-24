@@ -23,6 +23,10 @@ class excError(Exception):
     """ Failed action
     """
 
+class excSignal(Exception):
+    """ Termination signal received
+    """
+
 class excUndefined(Exception):
     """ Mandatory Undefined action exception
     """

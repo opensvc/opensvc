@@ -27,6 +27,10 @@ import rcExceptions as ex
 from lock import svclock, svcunlock
 import xmlrpcClient
 import os
+import signal
+
+def signal_handler(signum, frame):
+    raise ex.excSignal
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
     try:
@@ -137,6 +141,10 @@ class Svc(Resource, Freezer):
         r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
 
         return self
+
+    def setup_signal_handlers(self):
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
     def get_res_sets(self, type):
          return [ r for r in self.resSets if r.type == type ]
@@ -490,6 +498,7 @@ class Svc(Resource, Freezer):
             self.log.info("Abort action on frozen service")
             return
         self.setup_environ()
+        self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
             self.do_action(action)
@@ -506,6 +515,9 @@ class Svc(Resource, Freezer):
         except ex.excError:
             err = 1
             pass
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            return 1
         except:
             """Save the error for deferred raising
             """
