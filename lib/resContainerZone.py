@@ -72,7 +72,7 @@ class Zone(resContainer.Container):
 
     def attach(self):
         self.zone_refresh()
-        if self.state == "installed" :
+        if self.state in ( 'installed' , 'ready', 'running')
             self.log.info("zone container %s already installed" % self.name)
             return 0
         return self.zoneadm('attach')
