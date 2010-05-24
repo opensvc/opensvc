@@ -63,6 +63,10 @@ class syncSnapCreateError(Exception):
     """ Error in snapshot creation => clean up
     """
 
+class syncSnapDestroyError(Exception):
+    """ Error in snapshot destroy => clean up
+    """
+
 class syncSnapMountError(Exception):
     """ Error mounting fs => clean up
     """
