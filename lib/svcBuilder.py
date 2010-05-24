@@ -286,7 +286,10 @@ def add_pools(svc, conf):
     for s in conf.sections():
         if re.match('pool#[0-9]', s, re.I) is None:
             continue
-        name = conf.get(s, "poolname")
+        if conf.has_option(s, "poolname@"+rcEnv.nodename):
+            poolname = conf.get(s, "poolname@"+rcEnv.nodename)
+        else:
+            name = conf.get(s, "poolname")
         pool = __import__('resVgZfs')
 
         kwargs = {}
