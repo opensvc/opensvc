@@ -19,142 +19,51 @@
 import os
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, qcall, protected_mount
+from rcUtilities import qcall, protected_mount
+from rcUtilitiesLinux import lv_info, lv_exists
 import rcExceptions as ex
+import snap
 
-def find_mount(rs, dir):
-    """Sort mounts from deepest to shallowest and return the
-       first mount whose 'mountPoint' is matching 'dir'
-    """
-    for m in sorted(rs.resources, reverse=True):
-        if m.is_disabled():
-            return None
-        if m.mountPoint in dir:
-            return m
-    return None
-
-def find_mounts(self, mounts_h):
-    rs = self.svc.get_res_sets("fs")[0]
-    if rs is None:
-        self.log.error("can not find fs resources encapsulating %s to snap"%self.src)
-        raise ex.syncNotSnapable
-    for src in self.src:
-        m = find_mount(rs, src)
-        if m is None:
-            self.log.error("can not find fs resources encapsulating %s to snap"%src)
+class Snap(snap.Snap):
+    def snapcreate(self, m):
+        snap_name = ''
+        snap_mnt = ''
+        (vg_name, lv_name, lv_size) = lv_info(self, m.device)
+        if lv_name is None:
+            self.log.error("can not snap %s: not a logical volume"%m.device)
             raise ex.syncNotSnapable
-        mounts_h[src] = m
-    return mounts_h
+        snap_name = 'osvc_sync_'+lv_name
+        if lv_exists(self, os.path.join(os.sep, 'dev', vg_name, snap_name)):
+            self.log.error("snap of %s already exists"%(lv_name))
+            raise ex.syncSnapExists
+        (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(lv_size//10)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+        if ret != 0:
+            raise ex.syncSnapCreateError
+        snap_mnt = os.path.join(rcEnv.pathtmp,
+                                'osvc_sync_'+vg_name+'_'+lv_name)
+        if not os.path.exists(snap_mnt):
+            os.makedirs(snap_mnt, 0755)
+        snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
+        (ret, buff) = self.vcall(['fsck', '-a', snap_dev])
+        if ret != 0:
+            raise ex.syncSnapMountError
+        (ret, buff) = self.vcall(['mount', '-o', 'ro', snap_dev, snap_mnt])
+        if ret != 0:
+            raise ex.syncSnapMountError
+        self.snaps[m.mountPoint] = dict(lv_name=lv_name,
+                                        vg_name=vg_name,
+                                        snap_name=snap_name,
+                                        snap_mnt=snap_mnt,
+                                        snap_dev=snap_dev)
 
-def lv_exists(self, device):
-    if qcall(['lvs', device]) == 0:
-        return True
-    return False
-
-def lv_info(self, device):
-    (ret, buff) = self.call(['lvs', '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
-    if ret != 0:
-        return (None, None, None)
-    info = buff.split()
-    if 'M' in info[2]:
-        lv_size = float(info[2].split('M')[0])
-    elif 'm' in info[2]:
-        lv_size = float(info[2].split('m')[0])
-    else:
-        self.log.error("%s output does not have the expected unit (m or M)"%' '.join(cmd))
-        ex.excError
-    return (info[0], info[1], lv_size)
-
-def snap(self, rset, action):
-    mounts_h = {}
-    for r in rset.resources:
-        if r.is_disabled():
-            continue
-
-        if r.snap is not True and r.snap is not False:
-            r.log.error("service configuration error: 'snap' must be 'true' or 'false'. default is 'false'")
-            raise ex.syncConfigSyntaxError
-
-        if not r.snap:
-            continue
-
-        if (action == "syncnodes" and not 'nodes' in r.target) or \
-           (action == "syncdrp" and not 'drpnodes' in r.target):
-            continue
-
-        mounts_h = find_mounts(r, mounts_h)
-
-    mounts = set(mounts_h.values())
-    snaps = {}
-    try:
-        for m in mounts:
-            snap_name = ''
-            snap_mnt = ''
-            (vg_name, lv_name, lv_size) = lv_info(self, m.device)
-            if lv_name is None:
-                self.log.error("can not snap %s: not a logical volume"%m.device)
-                raise ex.syncNotSnapable
-            snap_name = 'osvc_sync_'+lv_name
-            if lv_exists(self, os.path.join(os.sep, 'dev', vg_name, snap_name)):
-                self.log.error("snap of %s already exists"%(lv_name))
-                raise ex.syncSnapExists
-            (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(lv_size//10)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
-            if ret != 0:
-                raise ex.syncSnapCreateError
-            snap_mnt = os.path.join(rcEnv.pathtmp,
-                                    'osvc_sync_'+vg_name+'_'+lv_name)
-            if not os.path.exists(snap_mnt):
-                os.makedirs(snap_mnt, 0755)
-            snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
-            (ret, buff) = self.vcall(['fsck', '-a', snap_dev])
-            if ret != 0:
-                raise ex.syncSnapMountError
-            (ret, buff) = self.vcall(['mount', '-o', 'ro', snap_dev, snap_mnt])
-            if ret != 0:
-                raise ex.syncSnapMountError
-            snaps[m.mountPoint] = dict(lv_name=lv_name,
-                                       vg_name=vg_name,
-                                       snap_name=snap_name,
-                                       snap_mnt=snap_mnt,
-                                       snap_dev=snap_dev)
-    except (ex.syncNotSnapable, ex.syncSnapExists, ex.syncSnapMountError):
-        """Clean up the mess
-        """
-        snap_cleanup(self, snaps)
-        raise ex.excError
-    except:
-        raise
-
-    """Update src dirs of every sync resource to point to an
-       existing snap
-    """
-    for i, r in enumerate(rset.resources):
-        r.alt_src = list(r.src)
-        for j, src in enumerate(r.alt_src):
-            if not mounts_h.has_key(src):
-                continue
-            mnt = mounts_h[src].mountPoint
-            snap_mnt = snaps[mnt]['snap_mnt']
-            rset.resources[i].alt_src[j] = src.replace(os.path.join(mnt), os.path.join(snap_mnt), 1)
- 
-    return snaps
-
-def snap_cleanup(self, rset):
-    if not hasattr(rset, 'snaps'):
-        return
-    snaps = rset.snaps
-    for s in snaps.keys():
-        if protected_mount(snaps[s]['snap_mnt']):
-            self.log.error("the snapshot is no longer mounted in %s. panic."%snaps[s]['snap_mnt'])
+    def snapdestroykey(self, s):
+        if protected_mount(self.snaps[s]['snap_mnt']):
+            self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
             raise ex.excError
-        cmd = ['fuser', '-kmv', snaps[s]['snap_mnt']]
+        cmd = ['fuser', '-kmv', self.snaps[s]['snap_mnt']]
         (ret, out) = self.vcall(cmd, err_to_info=True)
-        cmd = ['umount', snaps[s]['snap_mnt']]
+        cmd = ['umount', self.snaps[s]['snap_mnt']]
         (ret, out) = self.vcall(cmd)
-        cmd = ['lvremove', '-f', snaps[s]['snap_dev']]
+        cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
         (ret, buff) = self.vcall(cmd)
-
-    for i, r in enumerate(rset.resources):
-        if hasattr(rset.resources[i], 'alt_src'):
-            delattr(rset.resources[i], 'alt_src')
 

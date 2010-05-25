@@ -86,11 +86,10 @@ class Snap(Res.Resource):
                 raise ex.excError
             except:
                 raise
-        print
+
         """Update src dirs of every sync resource to point to an
            existing snap
         """
-        print self.snaps
         for i, r in enumerate(rset.resources):
             r.alt_src = list(r.src)
             for j, src in enumerate(r.alt_src):

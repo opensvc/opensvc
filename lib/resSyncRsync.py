@@ -269,11 +269,8 @@ class Rsync(Res.Resource):
 
         Snap = lookup_snap_mod()
         try:
-            if rcEnv.sysname == 'SunOS':
-                rset.snaps = Snap.Snap(self.rid)
-                rset.snaps.try_snap(rset, action)
-            else:
-                rset.snaps = Snap.snap(self, rset, action)
+            rset.snaps = Snap.Snap(self.rid)
+            rset.snaps.try_snap(rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
 

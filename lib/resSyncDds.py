@@ -20,7 +20,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-from snapLvmLinux import lv_exists, lv_info
+from rcUtilitiesLinux import lv_info
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
