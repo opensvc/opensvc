@@ -260,7 +260,7 @@ class ResourceSet(Resource):
         else:
             resources.sort(reverse=True)
 
-        if action not in ["status", "print_status", "group_status"]:
+        if action not in ["status", "print_status", "group_status", "presync", "postsync"]:
             try:
                 self.pre_action(self, action)
             except exc.excAbortAction:
