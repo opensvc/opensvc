@@ -80,6 +80,6 @@ EOF
 cd $CHROOT/.. || exit 1
 tar cf - $CHROOT_BN $PSF | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
 ssh root@$REMOTEHOST "cd /tmp && swpackage -vv -s opensvc.psf -x target_type=tape @/tmp/$DEPOT"
-scp root@$REMOTEHOST:/tmp/$DEPOT /opt/opensvc/tmp/ || exit 1
+scp root@$REMOTEHOST:/tmp/$DEPOT $OSVC/tmp/ || exit 1
 
-[ -x $PATH_SCRIPT/release_depot ] && $PATH_SCRIPT/release_depot /opt/opensvc/tmp/$DEPOT
+[ -x $PATH_SCRIPT/release_depot ] && $PATH_SCRIPT/release_depot $OSVC/tmp/$DEPOT
