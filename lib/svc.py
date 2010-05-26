@@ -406,8 +406,8 @@ class Svc(Resource, Freezer):
             waitlock timeout is long, and we ourselves still
             hold the service lock we want to release early.
 	"""
-	kwargs = {'self':self}
-	fork(_remote_postsync, kwargs)
+	kwargs = {}
+	fork(self._remote_postsync, kwargs)
 
     def _remote_postsync(self):
         """ action triggered by a remote master node after
