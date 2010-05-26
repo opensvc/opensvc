@@ -286,6 +286,15 @@ def install_user():
     if sysname == 'Linux':
         install_user_linux()
 
+def install_bash_completion():
+    src = '/opt/opensvc/usr/share/bash_completion.d/opensvc'
+    d = os.path.join(os.sep, 'etc', 'bash_completion.d')
+    dst = os.path.join(d, 'opensvc')
+    if not os.path.exists(d):
+        return
+    shutil.copyfile(src, dst)
+    os.chmod(dst, 0644)
+
 move_usr_to_opt()
 convert_svclinks()
 install_cron()
@@ -293,3 +302,4 @@ install_rc()
 gen_keys()
 install_profile()
 install_user()
+install_bash_completion()
