@@ -47,6 +47,8 @@ parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
                   help="comma-separated list of resource tags to limit action to")
+parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock",
+                  help="comma-separated list of resource tags to limit action to")
 
 
 cmd = os.path.basename(__file__)
@@ -112,5 +114,5 @@ else:
 
 for s in svcs:
     s.force = options.force
-    s.action(action, rid=rid, tags=tags)
+    s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
 

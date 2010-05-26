@@ -33,6 +33,26 @@ def signal_handler(signum, frame):
     raise ex.excSignal
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
+    kwargs = {'self': self,
+              'action': action,
+              'begin': begin,
+              'end': end,
+              'actionlogfile': actionlogfile}
+    fork(dblogger, kwargs)
+
+def dblogger(self, action, begin, end, actionlogfile):
+    import logging
+    for rs in self.resSets:
+        for r in rs.resources:
+            r.log.setLevel(logging.CRITICAL)
+
+    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    gs = self.group_status()
+    xmlrpcClient.svcmon_update(self, self.group_status())
+    os.unlink(actionlogfile)
+    os._exit(0)
+
+def fork(fn, kwargs):
     try:
         if os.fork() > 0:
             """ return to parent execution
@@ -56,16 +76,9 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
     except:
         os._exit(1)
 
-    import logging
-    for rs in self.resSets:
-        for r in rs.resources:
-            r.log.setLevel(logging.CRITICAL)
-
-    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
-    gs = self.group_status()
-    xmlrpcClient.svcmon_update(self, self.group_status())
-    os.unlink(actionlogfile)
+    fn(**kwargs)
     os._exit(0)
+
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -389,11 +402,23 @@ class Svc(Resource, Freezer):
         self.all_set_action("postsync")
 
     def remote_postsync(self):
+	""" detach the remote exec of postsync because the
+            waitlock timeout is long, and we ourselves still
+            hold the service lock we want to release early.
+	"""
+	kwargs = {'self':self}
+	fork(_remote_postsync, kwargs)
+
+    def _remote_postsync(self):
         """ action triggered by a remote master node after
             syncnodes and syncdrp. Typically make use of files
-            received in var/
+            received in var/.
+            use a long waitlock timeout to give a chance to
+            remote syncs to finish
         """
-        rcmd = [os.path.join(rcEnv.pathetc, self.svcname), 'postsync']
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname),
+                '--waitlock', '3600',
+                'postsync']
         for n in self.need_postsync:
             self.log.info("exec '%s' on node %s"%(' '.join(rcmd), n))
             cmd = rcEnv.rsh.split() + [n] + rcmd
@@ -493,7 +518,7 @@ class Svc(Resource, Freezer):
     def setup_environ(self):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
 
-    def action(self, action, rid=[], tags=set([])):
+    def action(self, action, rid=[], tags=set([]), waitlock=60):
         if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
             self.log.info("Abort action on frozen service")
             return
@@ -501,16 +526,16 @@ class Svc(Resource, Freezer):
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
-            self.do_action(action)
+            self.do_action(action, waitlock=waitlock)
         else:
-            self.do_logged_action(action)
+            self.do_logged_action(action, waitlock=waitlock)
 
-    def do_action(self, action):
+    def do_action(self, action, waitlock=60):
         """Trigger action
         """
         err = 0
         try:
-            svclock(self)
+            svclock(self, timeout=waitlock)
             getattr(self, action)()
         except ex.excError:
             err = 1
@@ -526,7 +551,7 @@ class Svc(Resource, Freezer):
             traceback.print_exc()
         return err
 
-    def do_logged_action(self, action):
+    def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
         import tempfile
         import logging
@@ -547,7 +572,7 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
 
-        err = self.do_action(action)
+        err = self.do_action(action, waitlock=waitlock)
 
         """Push result and logs to database
         """
