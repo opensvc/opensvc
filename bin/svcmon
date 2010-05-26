@@ -34,6 +34,12 @@ import svcBuilder
 import xmlrpcClient
 from rcUtilities import *
 from version import version
+from lock import *
+
+try:
+    lockfd = monlock()
+except:
+    sys.exit(1)
 
 def svcmon_verbose(svcs):
     for svc in svcs:
@@ -101,14 +107,17 @@ if hasattr(options, "parm_upddb") and options.parm_upddb is not None:
 else:
     upddb = False
 
-if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-    svcs = svcBuilder.build_services(svcnames=options.parm_svcs.split(','))
-else:
-    svcs = svcBuilder.build_services()
+try:
+    if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+        svcs = svcBuilder.build_services(svcnames=options.parm_svcs.split(','))
+    else:
+        svcs = svcBuilder.build_services()
 
-if hasattr(options, "parm_verbose") and options.parm_verbose is not None:
-    svcmon_verbose(svcs)
-else:
-    svcmon_normal(svcs, upddb)
+    if hasattr(options, "parm_verbose") and options.parm_verbose is not None:
+        svcmon_verbose(svcs)
+    else:
+        svcmon_normal(svcs, upddb)
+except:
+    pass
 
-
+monunlock(lockfd)
