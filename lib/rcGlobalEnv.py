@@ -40,7 +40,8 @@ class rcEnv:
 
     """Database sink for node and service configurations and status collection.
     """
-    dbopensvc = "http://dbopensvc:80/init/default/call/xmlrpc"
+    dbopensvc_host = "dbopensvc"
+    dbopensvc = "http://%s:80/init/default/call/xmlrpc"%dbopensvc_host
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 

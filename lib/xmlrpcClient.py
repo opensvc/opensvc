@@ -47,7 +47,7 @@ def xmlrpc_decorator(fn):
     return new
 
 try:
-    a = socket.getaddrinfo(rcEnv.dbopensvc, None)
+    a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
     if len(a) == 0:
         raise Exception
 except:
