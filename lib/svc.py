@@ -574,14 +574,28 @@ class Svc(Resource, Freezer):
             self.log.error("interrupted by signal")
             err = 1
         except:
-            """Save the error for deferred raising
-            """
             err = 1
-            import traceback
-            traceback.print_exc()
+            self.save_exc()
 
         self.svcunlock()
         return err
+
+    def save_exc(self):
+        import traceback
+        try:
+            import tempfile
+            import datetime
+            now = str(datetime.datetime.now()).replace(' ', '-')
+            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
+                                            prefix='exc-'+now+'-')
+            f.close()
+            f = open(f.name, 'w')
+            traceback.print_exc(file=f)
+            self.log.error("unexpected error. stack saved in %s"%f.name)
+            f.close()
+        except:
+            self.log.error("unexpected error")
+            traceback.print_exc()
 
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
