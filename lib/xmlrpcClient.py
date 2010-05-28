@@ -84,10 +84,7 @@ def end_action(svc, action, begin, end, logfile):
     err = 'ok'
     dateprev = None
     lines = open(logfile, 'r').read()
-
-    """ If logfile is empty, default to current process pid
-    """
-    pid = os.getpid()
+    pids = set([])
 
     """Example logfile line:
     2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
@@ -125,6 +122,7 @@ def end_action(svc, action, begin, end, logfile):
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
+        pids |= set([pid])
         if lvl is None or lvl == 'DEBUG':
             continue
         if lvl == 'ERROR':
@@ -156,6 +154,12 @@ def end_action(svc, action, begin, end, logfile):
 
     """Complete the wrap-up database entry
     """
+
+    """ If logfile is empty, default to current process pid
+    """
+    if len(pids) == 0:
+        pids = set([os.getpid()])
+
     proxy.end_action(
         ['svcname',
          'action',
@@ -170,7 +174,7 @@ def end_action(svc, action, begin, end, logfile):
          repr(action),
          repr(rcEnv.nodename),
          repr(hostid),
-         repr(pid),
+         repr(','.join(map(str, pids))),
          repr(str(begin)),
          repr(str(end)),
          repr(str(end-begin)),
