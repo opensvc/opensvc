@@ -28,7 +28,7 @@ class rcEnv:
     """program used to execute remote command on other nodes or virtual hosts
     """
     if platform == "sunos5" :
-        if os.path.exists(os.sep, 'usr', 'local', 'bin', 'ssh'):
+        if os.path.exists('/usr/local/bin/ssh'):
             rsh = "/usr/local/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
             rcp = "/usr/local/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         else:
