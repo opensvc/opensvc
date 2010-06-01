@@ -22,15 +22,19 @@ import xmlrpclib
 import os
 from rcGlobalEnv import rcEnv
 import rcStatus
+import socket
 
 sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+
+def xmlrpc_decorator_dummy(fn):
+    def new(*args):
+        pass
+    return new
 
 def xmlrpc_decorator(fn):
     def new(*args):
-        import socket
         try:
             return fn(*args)
         except socket.error, xmlrpclib.ProtocolError:
@@ -41,6 +45,16 @@ def xmlrpc_decorator(fn):
             e = sys.exc_info()
             print e[0], e[1], traceback.print_tb(e[2])
     return new
+
+try:
+    a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
+    if len(a) == 0:
+        raise Exception
+except:
+    print("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc)
+    xmlrpc_decorator = xmlrpc_decorator_dummy
+
+proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
@@ -70,10 +84,7 @@ def end_action(svc, action, begin, end, logfile):
     err = 'ok'
     dateprev = None
     lines = open(logfile, 'r').read()
-
-    """ If logfile is empty, default to current process pid
-    """
-    pid = os.getpid()
+    pids = set([])
 
     """Example logfile line:
     2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
@@ -111,6 +122,7 @@ def end_action(svc, action, begin, end, logfile):
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
+        pids |= set([pid])
         if lvl is None or lvl == 'DEBUG':
             continue
         if lvl == 'ERROR':
@@ -142,6 +154,12 @@ def end_action(svc, action, begin, end, logfile):
 
     """Complete the wrap-up database entry
     """
+
+    """ If logfile is empty, default to current process pid
+    """
+    if len(pids) == 0:
+        pids = set([os.getpid()])
+
     proxy.end_action(
         ['svcname',
          'action',
@@ -156,7 +174,7 @@ def end_action(svc, action, begin, end, logfile):
          repr(action),
          repr(rcEnv.nodename),
          repr(hostid),
-         repr(pid),
+         repr(','.join(map(str, pids))),
          repr(str(begin)),
          repr(str(end)),
          repr(str(end-begin)),
@@ -229,6 +247,7 @@ def resmon_update(svc, status):
         "res_log"]
     proxy.resmon_update(vars, vals)
 
+@xmlrpc_decorator
 def push_service(svc):
     def envfile(svc):
         envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
@@ -285,9 +304,11 @@ def push_service(svc):
 
     proxy.update_service(vars, vals)
 
+@xmlrpc_decorator
 def delete_services():
     proxy.delete_services(hostid)
 
+@xmlrpc_decorator
 def push_disks(svc):
     def disk_dg(dev, svc):
         for rset in svc.get_res_sets("disk.vg"):
@@ -328,6 +349,7 @@ def push_disks(svc):
              repr(rcEnv.nodename)]
         )
 
+@xmlrpc_decorator
 def push_stats_cpu():
     try:
         s = __import__('rcStats'+sysname)
@@ -349,6 +371,7 @@ def push_stats_cpu():
          s.stats_cpu()
     )
 
+@xmlrpc_decorator
 def push_stats_mem_u():
     try:
         s = __import__('rcStats'+sysname)
@@ -368,6 +391,7 @@ def push_stats_mem_u():
          s.stats_mem_u()
     )
 
+@xmlrpc_decorator
 def push_stats_proc():
     try:
         s = __import__('rcStats'+sysname)
@@ -384,6 +408,7 @@ def push_stats_proc():
          s.stats_proc()
     )
 
+@xmlrpc_decorator
 def push_stats_swap():
     try:
         s = __import__('rcStats'+sysname)
@@ -400,6 +425,7 @@ def push_stats_swap():
          s.stats_swap()
     )
 
+@xmlrpc_decorator
 def push_stats_block():
     try:
         s = __import__('rcStats'+sysname)
@@ -416,6 +442,7 @@ def push_stats_block():
          s.stats_block()
     )
 
+@xmlrpc_decorator
 def push_stats_blockdev():
     try:
         s = __import__('rcStats'+sysname)
@@ -436,6 +463,7 @@ def push_stats_blockdev():
          s.stats_blockdev()
     )
 
+@xmlrpc_decorator
 def push_stats_netdev_err():
     try:
         s = __import__('rcStats'+sysname)
@@ -453,6 +481,7 @@ def push_stats_netdev_err():
          s.stats_netdev_err()
     )
 
+@xmlrpc_decorator
 def push_stats_netdev():
     try:
         s = __import__('rcStats'+sysname)
@@ -500,6 +529,7 @@ def stats_timestamp():
         f.close()
     return True
 
+@xmlrpc_decorator
 def push_pkg():
     p = __import__('rcPkg'+sysname)
     vars = ['pkg_nodename',

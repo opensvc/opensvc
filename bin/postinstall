@@ -209,8 +209,14 @@ def gen_keys():
 
 def convert_svclinks():
     pathetc = os.path.join(os.sep, 'opt', 'opensvc', 'etc')
+    if not os.path.exists(pathetc):
+	os.makedirs(pathetc, '0755')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
+    if not os.path.exists(svcmgr):
+	return 1
     rcService = os.path.realpath(os.path.join(os.sep, 'opt', 'opensvc', 'bin', 'rcService'))
+    if not os.path.exists(rcService):
+	return 1
     for fname in os.listdir(pathetc):
         fpath = os.path.join(pathetc, fname)
         if not os.path.islink(fpath):
@@ -288,9 +294,16 @@ def install_user():
 
 def install_bash_completion():
     src = '/opt/opensvc/usr/share/bash_completion.d/opensvc'
-    d = os.path.join(os.sep, 'etc', 'bash_completion.d')
-    dst = os.path.join(d, 'opensvc')
-    if not os.path.exists(d):
+    ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
+          os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
+    for d in ds:
+        dst = os.path.join(d, 'opensvc')
+        if not os.path.exists(d):
+            d = None
+            continue
+        else:
+            break
+    if d is None:
         return
     shutil.copyfile(src, dst)
     os.chmod(dst, 0644)

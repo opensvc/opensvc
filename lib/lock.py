@@ -38,30 +38,13 @@ def monlock(timeout=30, delay=5):
     except lockAcquire as e:
         print("another svcmon is currently running (pid=%s)"%e.pid)
         raise ex.excError
+    except:
+        print("unexpected locking error")
+        raise ex.excError
     return lockfd
 
 def monunlock(lockfd):
     unlock(lockfd)
-
-def svclock(svc, timeout=30, delay=5):
-    lockfile = os.path.join(rcEnv.pathlock, svc.svcname)
-    try:
-        svc.lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)
-    except lockTimeout:
-        svc.log.error("timed out waiting for lock")
-        raise ex.excError
-    except lockNoLockFile:
-        svc.log.error("lock_nowait: set the 'lockfile' param")
-        raise ex.excError
-    except lockCreateError:
-        svc.log.error("can not create lock file %s"%lockfile)
-        raise ex.excError
-    except lockAcquire as e:
-        svc.log.warn("another action is currently running (pid=%s)"%e.pid)
-        raise ex.excError
-
-def svcunlock(svc):
-    unlock(svc.lockfd)
 
 def lock(timeout=30, delay=5, lockfile=None):
     for i in range(timeout//delay):
@@ -97,6 +80,7 @@ def lock_nowait(lockfile=None):
         """ test if we already own the lock
         """
         if pid == os.getpid():
+            os.close(lockfd)
             return
 
         """ FD_CLOEXEC makes sure the lock is the held by processes
@@ -121,5 +105,12 @@ def lock_nowait(lockfile=None):
         raise
 
 def unlock(lockfd):
-    os.close(lockfd)
+    if lockfd is None:
+        return
+    try:
+        os.close(lockfd)
+    except:
+        """ already released by a parent process ?
+        """
+        pass
 

@@ -24,10 +24,10 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-from lock import svclock, svcunlock
 import xmlrpcClient
 import os
 import signal
+import lock
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -50,7 +50,6 @@ def dblogger(self, action, begin, end, actionlogfile):
     gs = self.group_status()
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
-    os._exit(0)
 
 def fork(fn, kwargs):
     try:
@@ -121,6 +120,7 @@ class Svc(Resource, Freezer):
         self.rset_status_cache = None
         self.print_status_fmt = "%-8s %-8s %s"
         self.presync_done = False
+        self.lockfd = None
 
     def __cmp__(self, other):
         """order by service name
@@ -154,6 +154,33 @@ class Svc(Resource, Freezer):
         r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
 
         return self
+
+    def svclock(self, timeout=30, delay=5):
+        lockfile = os.path.join(rcEnv.pathlock, self.svcname)
+        try:
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except lock.lockTimeout:
+            self.log.error("timed out waiting for lock")
+            raise ex.excError
+        except lock.lockNoLockFile:
+            self.log.error("lock_nowait: set the 'lockfile' param")
+            raise ex.excError
+        except lock.lockCreateError:
+            self.log.error("can not create lock file %s"%lockfile)
+            raise ex.excError
+        except lock.lockAcquire as e:
+            self.log.warn("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError
+        except:
+            self.log.error("unexpected locking error")
+            import traceback
+            traceback.print_exc()
+            raise ex.excError
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def svcunlock(self):
+        lock.unlock(self.lockfd)
 
     def setup_signal_handlers(self):
         signal.signal(signal.SIGINT, signal_handler)
@@ -535,21 +562,40 @@ class Svc(Resource, Freezer):
         """
         err = 0
         try:
-            svclock(self, timeout=waitlock)
+            self.svclock(timeout=waitlock)
+        except:
+            return 1
+
+        try:
             getattr(self, action)()
         except ex.excError:
             err = 1
-            pass
         except ex.excSignal:
             self.log.error("interrupted by signal")
-            return 1
-        except:
-            """Save the error for deferred raising
-            """
             err = 1
-            import traceback
-            traceback.print_exc()
+        except:
+            err = 1
+            self.save_exc()
+
+        self.svcunlock()
         return err
+
+    def save_exc(self):
+        import traceback
+        try:
+            import tempfile
+            import datetime
+            now = str(datetime.datetime.now()).replace(' ', '-')
+            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
+                                            prefix='exc-'+now+'-')
+            f.close()
+            f = open(f.name, 'w')
+            traceback.print_exc(file=f)
+            self.log.error("unexpected error. stack saved in %s"%f.name)
+            f.close()
+        except:
+            self.log.error("unexpected error")
+            traceback.print_exc()
 
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
@@ -579,7 +625,6 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        svcunlock(self)
         fork_dblogger(self, action, begin, end, actionlogfile)
         return err
 

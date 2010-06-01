@@ -69,7 +69,7 @@ class Ldom(resContainer.Container):
         return None
 
     def ping(self):
-        return check_ping(self.addr, timeout=1)
+        return check_ping(self.addr)
 
     def container_action(self,action):
         cmd = ['/usr/sbin/ldm', action, self.name]

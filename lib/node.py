@@ -68,24 +68,15 @@ class Node(Svc, Freezer):
 
     def syncservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('syncall')
-            except:
-                pass
+            svc.action('syncall')
 
     def updateservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('presync')
-            except:
-                pass
+            svc.action('presync')
 
     def pushservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('push')
-            except:
-                pass
+            svc.action('push')
 
 
 if __name__ == "__main__" :
