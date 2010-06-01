@@ -127,6 +127,7 @@ def _merge(s1, s2):
     if (s1, s2) == (STDBY_DOWN, STDBY_UP_WITH_UP): return WARN
     if (s1, s2) == (STDBY_DOWN, STDBY_UP_WITH_DOWN): return WARN
     if (s1, s2) == (STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN): return WARN
+    if (s1, s2) == (STDBY_UP_WITH_UP, STDBY_UP_WITH_UP): return STDBY_UP_WITH_UP
     return _merge(s2, s1)
 
 class Status(object):
