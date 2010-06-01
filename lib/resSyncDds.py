@@ -164,11 +164,11 @@ class syncDds(Res.Resource):
         p2 = Popen(merge_cmd, stdin=p1.stdout, stdout=PIPE)
         buff = p2.communicate()
         if p2.returncode != 0:
-            if len(buff[1]) > 0:
+            if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("sync update failed")
             raise ex.excError
-        if len(buff[0]) > 0:
+        if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
     def do_update(self, node):
