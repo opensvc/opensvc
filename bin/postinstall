@@ -207,10 +207,17 @@ def gen_keys():
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
 
+def missing_dir(sub):
+    pathd = os.path.join(os.sep, 'opt', 'opensvc', sub)
+    if not os.path.exists(pathd):
+	os.makedirs(pathd, 755)
+
+def missing_dirs():
+    missing_dir('log')
+    missing_dir('tmp')
+
 def convert_svclinks():
-    pathetc = os.path.join(os.sep, 'opt', 'opensvc', 'etc')
-    if not os.path.exists(pathetc):
-	os.makedirs(pathetc, 755)
+    missing_dir('etc')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
     if not os.path.exists(svcmgr):
 	return 1
@@ -309,6 +316,7 @@ def install_bash_completion():
     os.chmod(dst, 0644)
 
 move_usr_to_opt()
+missing_dirs()
 convert_svclinks()
 install_cron()
 install_rc()
