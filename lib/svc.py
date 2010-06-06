@@ -96,6 +96,7 @@ class Svc(Resource, Freezer):
         self.force = False
         self.status_types = ["container.hpvm",
                              "container.kvm",
+                             "container.xen",
                              "container.lxc",
                              "container.zone",
                              "container.ldom",
@@ -334,7 +335,10 @@ class Svc(Resource, Freezer):
         self.startapp()
 
     def stop(self):
-        self.stopapp()
+        try:
+            self.stopapp()
+        except ex.excError:
+            pass
         self.stopcontainer()
         self.umount()
         self.stopip()
@@ -389,12 +393,14 @@ class Svc(Resource, Freezer):
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
         self.sub_set_action("container.kvm", "start")
+        self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("container.ldom", "start")
 
     def stopcontainer(self):
         self.sub_set_action("container.ldom", "stop")
         self.sub_set_action("container.hpvm", "stop")
+        self.sub_set_action("container.xen", "stop")
         self.sub_set_action("container.kvm", "stop")
         self.sub_set_action("container.lxc", "stop")
 

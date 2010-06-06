@@ -70,6 +70,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcLdom', 'SvcLdom')
     elif svcmode == 'kvm':
         return ('svcKvm', 'SvcKvm')
+    elif svcmode == 'xen':
+        return ('svcXen', 'SvcXen')
     raise
 
 def get_tags(conf, section):
@@ -188,6 +190,8 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+'Ldom')
         elif svc.svcmode  == 'zone':
             ip = __import__('resIp'+'Zone')
+        elif svc.svcmode  == 'xen':
+            ip = __import__('resIp'+'Xen')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
         kwargs['rid'] = s
