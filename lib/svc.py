@@ -100,6 +100,7 @@ class Svc(Resource, Freezer):
                              "container.lxc",
                              "container.zone",
                              "container.ldom",
+                             "disk.drbd",
                              "disk.loop",
                              "disk.scsireserv",
                              "disk.vg",
@@ -343,6 +344,12 @@ class Svc(Resource, Freezer):
         self.umount()
         self.stopip()
 
+    def startdrbd(self):
+        self.sub_set_action("disk.drbd", "start")
+
+    def stopdrbd(self):
+        self.sub_set_action("disk.drbd", "stop")
+
     def startloop(self):
         self.sub_set_action("disk.loop", "start")
 
@@ -367,12 +374,16 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dds", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
 
     def stopdisk(self):
+        self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
 
@@ -421,9 +432,12 @@ class Svc(Resource, Freezer):
 
     def startstandby(self):
         self.sub_set_action("ip", "startstandby")
+        self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.zpool", "startstandby")
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
         self.sub_set_action("fs", "startstandby")
         self.sub_set_action("app", "startstandby")
 

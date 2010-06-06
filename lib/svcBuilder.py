@@ -203,6 +203,32 @@ def add_ips(svc, conf):
         add_triggers(r, conf, s)
         svc += r
 
+def add_drbds(svc, conf):
+    """Parse the configuration file and add a drbd object for each [drbd#n]
+    section. Drbd objects are stored in a list in the service object.
+    """
+    for s in conf.sections():
+        if re.match('drbd#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+
+        if conf.has_option(s, "res"):
+            kwargs['res'] = conf.get(s, "res")
+        else:
+            svc.log.error("res must be set in section %s"%s)
+            return
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        drbd = __import__('resDrbd')
+        r = drbd.Drbd(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
 def add_loops(svc, conf):
     """Parse the configuration file and add a loop object for each [loop#n]
     section. Loop objects are stored in a list in the service object.
@@ -221,6 +247,7 @@ def add_loops(svc, conf):
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
         loop = __import__('resLoop'+rcEnv.sysname)
@@ -834,6 +861,7 @@ def build(name):
     #
     try:
         add_ips(svc, conf)
+        add_drbds(svc, conf)
         add_loops(svc, conf)
         add_vgs(svc, conf)
         add_vmdg(svc, conf)

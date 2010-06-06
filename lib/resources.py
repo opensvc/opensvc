@@ -121,6 +121,18 @@ class Resource(object):
             else:
                 raise exc.excError
 
+    def status_stdby(self, s):
+        """ This function modifies the passed status according
+            to this node inclusion in the always_on nodeset
+        """
+        if rcEnv.nodename not in self.always_on:
+            return s
+        if s == rcStatus.UP:
+            return rcStatus.STDBY_UP
+        elif s == rcStatus.DOWN:
+            return rcStatus.STDBY_DOWN
+        return s
+
     def _status(self, verbose=False):
         return rcStatus.UNDEF
 
