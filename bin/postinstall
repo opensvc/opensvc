@@ -210,7 +210,7 @@ def gen_keys():
 def convert_svclinks():
     pathetc = os.path.join(os.sep, 'opt', 'opensvc', 'etc')
     if not os.path.exists(pathetc):
-	os.makedirs(pathetc, '0755')
+	os.makedirs(pathetc, 755)
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
     if not os.path.exists(svcmgr):
 	return 1
