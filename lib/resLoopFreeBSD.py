@@ -29,25 +29,24 @@ def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0
     """
-    if which('losetup') is None:
+    if which('mdconfig') is None:
         return []
     if not os.path.isfile(f):
         return []
-    if rcEnv.sysname != 'Linux':
-        return []
-    (ret, out) = call(['losetup', '-j', f])
-    if len(out) == 0:
+    (ret, out) = call(['mdconfig', '-l', '-v'])
+    if ret != 0:
         return []
     """ It's possible multiple loopdev are associated with the same file
     """
     devs= []
     for line in out.split('\n'):
-        l = line.split(':')
-        if len(l) == 0:
+        l = line.split()
+        if len(l) < 4:
             continue
-        if len(l[0]) == 0:
+        path = ' '.join(l[3:])
+        if path != f:
             continue
-        if not os.path.exists(l[0]):
+        if not os.path.exists('/dev/'+l[0]):
             continue
         devs.append(l[0])
     return devs
@@ -65,8 +64,8 @@ class Loop(Res.Loop):
         if self.is_up():
             self.log.info("%s is already up" % self.loopFile)
             return
-        cmd = [ 'losetup', '-f', self.loopFile ]
-        (ret, out) = self.vcall(cmd)
+        cmd = ['mdconfig', '-a', '-t', 'vnode', '-f', self.loopFile]
+        (ret, out) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
@@ -77,7 +76,7 @@ class Loop(Res.Loop):
             self.log.info("%s is already down" % self.loopFile)
             return 0
         for loop in self.loop:
-            cmd = [ 'losetup', '-d', loop ]
+            cmd = ['mdconfig', '-d', '-u', loop.strip('md')]
             (ret, out) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
