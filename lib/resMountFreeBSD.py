@@ -48,7 +48,7 @@ def try_umount(self):
     (ret, out) = self.vcall(cmd)
 
     for i in range(4):
-        cmd = ['fuser', '-kmv', self.mountPoint]
+        cmd = ['fuser', '-kmu', self.mountPoint]
         (ret, out) = self.vcall(cmd, err_to_info=True)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
@@ -76,12 +76,13 @@ class Mount(Res.Mount):
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def realdev(self):
+        dev = None
         try:
             mode = os.stat(self.device)[ST_MODE]
         except:
             self.log.debug("can not stat %s" % self.device)
             return None
-        if S_ISBLK(mode):
+        if S_ISCHR(mode):
             dev = self.device
         else:
             mnt = getmount(self.device)
