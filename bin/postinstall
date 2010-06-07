@@ -39,6 +39,7 @@ def install_cron():
             '/etc/cron.d/opensvc',
             '/var/spool/cron/crontabs/root',
             '/var/spool/cron/root',
+            '/var/cron/tabs/root',
         ]
     for loc in root_crontab_locs:
         if os.path.exists(os.path.dirname(loc)):
@@ -166,6 +167,9 @@ def activate_SunOS():
             os.symlink(rc, l)
     return True
 
+def activate_FreeBSD():
+    return True
+
 def install_rc():
     """install startup script
     """
@@ -186,6 +190,10 @@ def install_rc():
         rc = '/etc/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
+    elif sysname == "FreeBSD":
+        rc = '/etc/rc.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.FreeBSD'
+        activate = activate_FreeBSD
     else:
         print "could not select an init script: unsupported operating system"
         return False

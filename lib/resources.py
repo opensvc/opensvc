@@ -164,14 +164,16 @@ class Resource(object):
         return r
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
-             errlog=True, err_to_warn=False, err_to_info=False):
+             errlog=True, err_to_warn=False, err_to_info=False,
+             outlog=False):
         """Use subprocess module functions to do a call
         """
         return rcUtilities.call(cmd, log=self.log,
                                 cache=cache,
                                 info=info, errlog=errlog,
                                 err_to_warn=err_to_warn,
-                                err_to_info=err_to_info)
+                                err_to_info=err_to_info,
+                                outlog=outlog)
 
     def vcall(self, cmd, err_to_warn=False, err_to_info=False):
         """Use subprocess module functions to do a call and
