@@ -53,7 +53,7 @@ class Apps(resApp.Apps):
             self.log.debug("abort resApp action because container is unreachable")
             self.status_log("container is unreachable")
             return False
-        cmd = self.prefix + ['/usr/bin/test', '-d', self.app_d]
+        cmd = self.prefix + ['test', '-d', self.app_d]
         ret = qcall(cmd)
         if ret == 0:
             return True
