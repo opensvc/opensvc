@@ -751,7 +751,8 @@ def build(name):
                 return None
             vmname = conf.get("default", "vm_name")
             kwargs['vmname'] = vmname
-        if conf.has_option("default", "guest_os"):
+        if conf.has_option("default", "guest_os") and \
+           len(conf.get("default", "guest_os")) > 0:
             if svcmode not in rcEnv.vt_supported:
                 log.error("can not set 'guest_os' with '%s' mode in %s env"%(svcmode, name))
                 return None

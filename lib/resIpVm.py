@@ -34,7 +34,11 @@ class Ip(Res.Ip):
             self.log.debug("container is down")
             self.status_log("container is down")
             return False
-        rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
+        try:
+            rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
+        except:
+            self.log.error("unsupported guest os : %s"%self.svc.guestos)
+            raise ex.excError
         try:
             ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
         except:
