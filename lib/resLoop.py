@@ -31,6 +31,9 @@ class Loop(Res.Resource):
         self.loopFile = loopFile
         self.label = loopFile
 
+    def startstandby(self):
+        self.start()
+
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\
                                  self.loopFile)
