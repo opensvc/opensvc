@@ -24,15 +24,17 @@ import resources as Res
 class Loop(Res.Resource):
     """ basic loopback device resource
     """
-    def __init__(self, rid=None, loopFile=None,
+    def __init__(self, rid=None, loopFile=None, always_on=set([]),
                  optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid, "disk.loop",
                               optional=optional, disabled=disabled, tags=tags)
         self.loopFile = loopFile
         self.label = loopFile
+        self.always_on = always_on
 
     def startstandby(self):
-        self.start()
+        if rcEnv.nodename in self.always_on:
+            self.start()
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\

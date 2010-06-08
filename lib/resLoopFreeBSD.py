@@ -82,10 +82,12 @@ class Loop(Res.Loop):
                 raise ex.excError
 
     def _status(self, verbose=False):
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if self.is_up():
+            return self.status_stdby(rcStatus.UP)
+        else:
+            return self.status_stdby(rcStatus.DOWN)
 
     def __init__(self, rid, loopFile, always_on=set([]),
                  disabled=False, tags=set([]), optional=False):
-        Res.Loop.__init__(self, rid, loopFile,
+        Res.Loop.__init__(self, rid, loopFile, always_on=always_on,
                           disabled=disabled, tags=tags, optional=optional)
