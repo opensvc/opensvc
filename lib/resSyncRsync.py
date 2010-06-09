@@ -43,7 +43,7 @@ def remote_fs_mounted(self, node):
         """No check has been configured. Assume the admin knows better.
         """
         return True
-    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dst]
+    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dstfs]
     (ret, out) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
