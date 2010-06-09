@@ -31,7 +31,7 @@ def lookup_snap_mod():
         return __import__('snapLvmLinux')
     elif rcEnv.sysname == 'HP-UX':
         return __import__('snapVxfsHP-UX')
-    elif rcEnv.sysname == 'SunOS':
+    elif rcEnv.sysname in ['SunOS', 'FreeBSD']:
         return __import__('snapZfsSunOS')
     else:
         raise ex.excError
