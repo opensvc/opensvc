@@ -62,6 +62,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcLxc', 'SvcLxc')
     elif svcmode == 'zone':
         return ('svcZone', 'SvcZone')
+    elif svcmode == 'jail':
+        return ('svcJail', 'SvcJail')
     elif svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
     elif svcmode == 'hpvm':
@@ -372,6 +374,7 @@ def add_filesystems(svc, conf):
                 globalfs = False
             if globalfs is False:
                 mnt = os.path.realpath(svc.zone.zonepath+'/root/'+mnt)
+            
         mount = __import__('resMount'+rcEnv.sysname)
 
         kwargs = {}
@@ -761,6 +764,15 @@ def build(name):
         elif svcmode in rcEnv.vt_supported:
             guestos = rcEnv.sysname
             kwargs['guestos'] = guestos
+        if svcmode == 'jail':
+            if not conf.has_option("default", "jailroot"):
+                log.error("jailroot parameter is mandatory for jail mode")
+                return None
+            jailroot = conf.get("default", "jailroot")
+            if not os.path.exists(jailroot):
+                log.error("jailroot %s does not exist"%jailroot)
+                return None
+            kwargs['jailroot'] = jailroot
 
     #
     # dynamically import the module matching the service mode

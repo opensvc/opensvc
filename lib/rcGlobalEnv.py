@@ -139,7 +139,7 @@ class rcEnv:
 
     vt_libvirt = ['kvm', 'lxc', 'xen']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen']
-    vt_container = ['zone', 'lxc']
+    vt_container = ['zone', 'lxc', 'jail']
     vt_supported = vt_vm + vt_container
 
 

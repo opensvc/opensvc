@@ -99,6 +99,7 @@ class Svc(Resource, Freezer):
                              "container.xen",
                              "container.lxc",
                              "container.zone",
+                             "container.jail",
                              "container.ldom",
                              "disk.drbd",
                              "disk.loop",
@@ -403,6 +404,7 @@ class Svc(Resource, Freezer):
 
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
+        self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
         self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.hpvm", "start")
@@ -413,6 +415,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("container.xen", "stop")
         self.sub_set_action("container.kvm", "stop")
+        self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
 
     def startapp(self):
