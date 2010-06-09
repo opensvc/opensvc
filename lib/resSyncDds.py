@@ -206,7 +206,7 @@ class syncDds(Res.Resource):
 
     def get_remote_state(self, node):
         self.set_statefile()
-        cmd1 = ['LANG=C', 'cat', self.statefile]
+        cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
         (ret, out) = self.call(cmd)
         if ret != 0:

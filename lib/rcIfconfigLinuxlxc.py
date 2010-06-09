@@ -33,7 +33,7 @@ class ifconfig(rcIfconfigLinux.ifconfig):
             p1 = Popen(cmd, stdout=PIPE)
             out = Popen(self.rsh, stdout=PIPE, stdin=p1.stdout).communicate()[0]
         else:
-            self.rsh = rcEnv.rsh.split() + [hostname, '--', 'LANG=C']
+            self.rsh = rcEnv.rsh.split() + [hostname, '--', 'env', 'LANG=C']
             cmd = self.rsh + ['/sbin/ifconfig', '-a']
             out = Popen(cmd, stdout=PIPE).communicate()[0]
         self.parse(out)

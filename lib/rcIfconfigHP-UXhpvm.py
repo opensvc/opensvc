@@ -36,7 +36,7 @@ class ifconfig(rcIfconfig.ifconfig):
             if len(line) == 0:
                 continue
             intf = line.split()[0]
-            cmd = rcEnv.rsh.split(' ') + [hostname, 'LANG=C', 'ifconfig', intf]
+            cmd = rcEnv.rsh.split(' ') + [hostname, 'env', 'LANG=C', 'ifconfig', intf]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out = p.communicate()
             if "no such interface" in out[1]:
