@@ -48,13 +48,17 @@ def try_umount(self):
     (ret, out) = self.vcall(cmd)
 
     for i in range(4):
-        cmd = ['fuser', '-kmu', self.mountPoint]
-        (ret, out) = self.vcall(cmd, err_to_info=True)
+        nb_killed = self.killfuser(self.mountPoint)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
         ret = qcall(cmd)
-        if ret == 0:
+        if ret == 0 or nb_killed == 0:
             break
+
+    if ret != 0:
+        self.log.info("no more process using %s, yet umount fails. try forced umount."%self.mountPoint)
+        cmd = ['umount', '-f', self.mountPoint]
+        (ret, out) = self.vcall(cmd)
 
     return ret
 
@@ -69,6 +73,17 @@ class Mount(Res.Mount):
         self.fsck_h = {
             'ufs': {'bin': 'fsck', 'cmd': ['fsck', '-t', 'ufs', '-p', self.device]},
         }
+
+    def killfuser(self, dir):
+        cmd = ['fuser', '-kmc', dir]
+        (ret, out) = self.vcall(cmd, err_to_info=True)
+
+        """ return the number of process we sent signal to
+        """
+        l = out.split(':')
+        if len(l) < 2:
+            return 0
+        return len(l[1].split())
 
     def is_up(self):
         if self.Mounts is None:
