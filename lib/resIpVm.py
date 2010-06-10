@@ -37,8 +37,7 @@ class Ip(Res.Ip):
         try:
             rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
         except:
-            self.log.error("unsupported guest os : %s"%self.svc.guestos)
-            raise ex.excError
+            raise ex.excNotSupported
         try:
             ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
         except:
