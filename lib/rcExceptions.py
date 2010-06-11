@@ -87,6 +87,10 @@ class excNotAvailable(Exception):
     """ Not available
     """
 
+class excNotSupported(Exception):
+    """ Not supported
+    """
+
 class MissImpl(Exception):
     def __init__(self, value):
         self.value = value

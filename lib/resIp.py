@@ -60,16 +60,15 @@ class Ip(Res.Resource):
         os.environ['OPENSVC_IPADDR'] = str(self.addr)
 
     def _status(self, verbose=False):
-        if rcEnv.nodename in self.always_on:
-            if self.is_up():
-                return rcStatus.STDBY_UP
-            else:
-                return rcStatus.STDBY_DOWN
+        try:
+            s = self.is_up()
+        except ex.excNotSupported:
+            self.status_log("not supported")
+            return rcStatus.UNDEF
+        if self.is_up():
+            return self.status_stdby(rcStatus.UP)
         else:
-            if self.is_up():
-                return rcStatus.UP
-            else:
-                return rcStatus.DOWN
+            return self.status_stdby(rcStatus.DOWN)
 
     def arp_announce(self):
         if ':' in self.addr:
