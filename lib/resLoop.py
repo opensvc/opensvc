@@ -20,6 +20,7 @@
 # and open the template in the editor.
 
 import resources as Res
+from rcGlobalEnv import rcEnv
 
 class Loop(Res.Resource):
     """ basic loopback device resource
