@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+
+function date_to_release {
+        date -f "%a, %d %b %Y %H:%M:%S %z" "$*" +%y%m%d.%H%M
+}
+
+function changelog {
+        git log --pretty=format:"* %ad - %ae%n- %s" | sed -e "s/ [0-9]*:[0-9]*:[0-9]*//" -e "s/ +[0-9]* -/ -/"
+}
+
+. $PATH_SCRIPT/make.lib
+
+TBZ=$CHROOT/opensvc-$VERSION.$RELEASE.tbz
+CHROOT=$CHROOT/opensvc-$VERSION.$RELEASE
+DISTFILES_D=/usr/ports/distfiles
+TAR=opensvc-$VERSION.$RELEASE.tar.gz
+
+prepare_chroot || exit 1
+
+cd $CHROOT/.. || exit 1
+tar czf $DISTFILES_D/$TAR opensvc-$VERSION.$RELEASE || exit 1
+
+cat - <<EOF >Makefile
+# New ports collection makefile for:   opensvc
+# Date created:        $(date +"%d %B %Y")
+# Whom:                opensvc
+#
+# \$FreeBSD$
+#
+
+PORTNAME=      opensvc
+PORTVERSION=   $VERSION.$RELEASE
+CATEGORIES=    sysutils
+MASTER_SITES=  http://repo.opensvc.com/tgz
+
+MAINTAINER=    admin@opensvc.com
+COMMENT=       OpenSVC service manager
+
+#MAN1=          svcmgr.3
+#MANCOMPRESSED= yes
+
+USE_PYTHON=    2.6+
+DEST_DIR=      /
+PREFIX=        /
+NO_BUILD=      yes
+
+do-install:
+	\${CP} -a \${WRKSRC}/* \${PREFIX}/
+	\${PREFIX}/opt/opensvc/bin/postinstall
+
+.include <bsd.port.mk>
+
+EOF
+
+cat - <<-EOF >pkg-descr
+OpenSVC is a 'service' manager, as in clustered service manager, designed for real-world heterogeneous datacenters and large-scale operations like disaster recovery.
+
+Services are collections of resources (virtual machine, ip, disk groups, filesystems, file synchronizations, and application launchers).
+
+Services can be started, stopped and queried for status, providing a consistent command set for wildly different service integration types.
+
+Service configurations, status and logs are pushed to a central database coupled to a web front-end (collector).
+
+Services can be administered using the stand-alone GPLv2 software stack deployed on the nodes (nodeware), or through the web-front end.
+
+WWW: http://www.opensvc.com/
+EOF
+
+cd $CHROOT
+find opt -type f >../pkg-plist
+find opt/opensvc -type d | sed "s/^/@dirrm /" >>../pkg-plist
+cd ..
+
+make package
+
+[ -x $PATH_SCRIPT/release_tbz ] && $PATH_SCRIPT/release_tbz $TBZ
