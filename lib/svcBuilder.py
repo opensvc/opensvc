@@ -20,7 +20,6 @@ import os
 import sys
 import ConfigParser
 import logging
-import glob
 import re
 import socket
 
@@ -374,7 +373,7 @@ def add_filesystems(svc, conf):
                 globalfs = False
             if globalfs is False:
                 mnt = os.path.realpath(svc.zone.zonepath+'/root/'+mnt)
-            
+
         mount = __import__('resMount'+rcEnv.sysname)
 
         kwargs = {}
