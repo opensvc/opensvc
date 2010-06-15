@@ -19,35 +19,20 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
+import svc
+import resContainerXen as xen
 from rcGlobalEnv import rcEnv
 
-class Loop(Res.Resource):
-    """ basic loopback device resource
-    """
-    def __init__(self, rid=None, loopFile=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, "disk.loop",
-                              optional=optional, disabled=disabled, tags=tags)
-        self.loopFile = loopFile
-        self.label = loopFile
-        self.always_on = always_on
+class SvcXen(svc.Svc):
+    """ Define Xen services"""
 
-    def startstandby(self):
-        if rcEnv.nodename in self.always_on:
-            self.start()
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False, tags=set([])):
+        svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
+        if vmname is None:
+            vmname = svcname
+        self.vmname = vmname
+        self.guestos = guestos
+        self += xen.Xen(vmname)
+        self.runmethod = rcEnv.rsh.split() + [vmname]
 
-    def __str__(self):
-        return "%s loopfile=%s" % (Res.Resource.__str__(self),\
-                                 self.loopFile)
-
-if __name__ == "__main__":
-    for c in (Loop,) :
-        help(c)
-
-    print """v1=vg("myvg")"""
-    v=vg("myvg")
-    print "show v", v
-    print """v.do_action("start")"""
-    v.do_action("start")
 

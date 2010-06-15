@@ -19,35 +19,23 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
 from rcGlobalEnv import rcEnv
+resIpHv = __import__("resIp"+rcEnv.sysname)
+import resIpVm
 
-class Loop(Res.Resource):
-    """ basic loopback device resource
-    """
-    def __init__(self, rid=None, loopFile=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, "disk.loop",
-                              optional=optional, disabled=disabled, tags=tags)
-        self.loopFile = loopFile
-        self.label = loopFile
-        self.always_on = always_on
+class Ip(resIpVm.Ip, resIpHv.Ip):
+    def __init__(self, rid=None, ipDev=None, ipName=None,
+                 mask=None, always_on=set([]),
+                 disabled=False, tags=set([]), optional=False):
+        resIpVm.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
+                            mask=mask, always_on=always_on,
+                            disabled=disabled, tags=tags, optional=optional)
 
-    def startstandby(self):
-        if rcEnv.nodename in self.always_on:
-            self.start()
+    def check_ping(self):
+        return resIpHv.Ip.check_ping(self)
 
-    def __str__(self):
-        return "%s loopfile=%s" % (Res.Resource.__str__(self),\
-                                 self.loopFile)
 
 if __name__ == "__main__":
-    for c in (Loop,) :
+    for c in (Ip,) :
         help(c)
-
-    print """v1=vg("myvg")"""
-    v=vg("myvg")
-    print "show v", v
-    print """v.do_action("start")"""
-    v.do_action("start")
 
