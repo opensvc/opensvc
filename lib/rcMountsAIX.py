@@ -18,7 +18,7 @@
 #
 
 import rcMounts
-import resLoopLinux as Res
+#import resLoopAIX as Res
 from rcUtilities import *
 from subprocess import Popen
 
@@ -47,8 +47,8 @@ class Mounts(rcMounts.Mounts):
             return False
         if i.dev == dev:
             return True
-        if i.dev in Res.file_to_loop(dev):
-            return True
+#        if i.dev in Res.file_to_loop(dev):
+#            return True
         if is_bind and i.dev == src_dir_dev:
             return True
         return False
