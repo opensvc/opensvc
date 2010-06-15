@@ -19,16 +19,11 @@
 from rcUtilities import justcall
 import rcExceptions as ex
 import snap
+from rcVmZfs import dataset_exists
 
 class Snap(snap.Snap):
     """Defines a snap object with ZFS
     """
-    def dataset_exists(self, device, type):
-        (out, err, ret) = justcall('zfs get -H -o value type'.split()+[device])
-        if ret == 0 and out.split('\n')[0] == type :
-            return True
-        else:
-            return False
 
     def snapcreate(self, m):
         """ create a snapshot for m
@@ -36,12 +31,12 @@ class Snap(snap.Snap):
             dict(snapinfo key val)
         """
         dataset = m.device
-        if not self.dataset_exists(dataset, 'filesystem'):
+        if not dataset_exists(dataset, 'filesystem'):
             raise ex.syncNotSnapable
         snapdev = dataset +'@osvc_sync'
         mountPoint = m.mountPoint
         snapMountPoint= mountPoint + '/.zfs/snapshot/osvc_sync/'
-        if self.dataset_exists(snapdev, 'snapshot'):
+        if dataset_exists(snapdev, 'snapshot'):
             (ret, buff) = self.vcall(['zfs', 'destroy', snapdev ])
             if ret != 0:
                 raise ex.syncSnapDestroyError
@@ -55,7 +50,7 @@ class Snap(snap.Snap):
         """ destroy a snapshot for a mountPoint
         """
         snapdev = self.snaps[snap_key]['snapdev']
-        if not self.dataset_exists(snapdev, 'snapshot'):
+        if not dataset_exists(snapdev, 'snapshot'):
             return
         (ret, buff) = self.vcall(['zfs', 'destroy', snapdev ])
         if ret != 0:
