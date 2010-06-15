@@ -41,7 +41,7 @@ def zfs_setprop(dataset='undefinedds', propname='undefinedprop', propval='undefi
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
-    print '' + cmd
+    print cmd
     (stdout, stderr, retcode) = justcall(cmd)
     if retcode == 0 :
         return True

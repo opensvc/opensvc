@@ -26,6 +26,8 @@ import rcStatus
 import rcMountsSunOS as rcMounts
 import resMount as Res
 import rcExceptions as ex
+from rcVmZfs import zfs_getprop, zfs_getprop
+from rcVmZfs import zfs_setprop
 from rcUtilities import justcall
 
 class Mount(Res.Mount):
@@ -51,19 +53,10 @@ class Mount(Res.Mount):
             return
 
         if self.fsType == 'zfs' :
-            (out, err, ret) = justcall (['zfs', 'list', '-H', '-o', 'mountpoint', self.device ])
-            out=out.split('\n')[0]
-            if out != self.mountPoint :
-                (out, err, ret) = justcall(['zfs', 'get', '-Hp', '-o', 'value',
-                                            'zoned', self.device ])
-                if ret == 0 and out.split('\n')[0] == 'on':
-                    (ret, out) = self.vcall(['zfs', 'set', 'zoned=off', \
-                                                self.device ])
-                ret, out = self.vcall(['zfs', 'set', \
-                                    'mountpoint='+self.mountPoint , \
-                                    self.device ])
-                if ret != 0 :
-                    raise ex.excError
+            if zfs_getprop(self.device, 'mountpoint' ) != self.mountPoint :
+                if zfs_setprop(self.device, 'zoned', 'off') :
+                    if not zfs_setprop(self.device, 'mountpoint', self.mountPoint) :
+                        raise ex.excError
 
             self.Mounts = None
             if self.is_up() is True:
