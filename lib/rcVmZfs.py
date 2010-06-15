@@ -29,7 +29,7 @@ def dataset_exists(device, type):
     else:
         return False
 
-def zfs_getprop(dataset='undefinedds', propname='undefinedprop'):
+def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
     cmd = [ 'zfs', 'get', '-Hp', '-o', 'value', propname, dataset ]
     (stdout, stderr, retcode) = justcall(cmd)
     if retcode == 0 :
@@ -37,7 +37,7 @@ def zfs_getprop(dataset='undefinedds', propname='undefinedprop'):
     else:
         return ""
 
-def zfs_setprop(dataset='undefinedds', propname='undefinedprop', propval='undefinedval'):
+def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
