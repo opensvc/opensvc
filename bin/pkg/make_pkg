@@ -141,8 +141,6 @@ mkdir $TMPARCHIVE
 cd $BASE && git archive --format=tar HEAD | (
 	cd $TMPARCHIVE && tar xf - 			\
 	&& rm $TMPARCHIVE/.gitignore			\
-	&& mv $TMPARCHIVE/usr/share $TMPARCHIVE/share	\
-	&& rmdir $TMPARCHIVE/usr			\
 	&& chown -R root:root $TMPARCHIVE		\
 	&& chmod -R og-w $TMPARCHIVE
 	)
