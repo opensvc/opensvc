@@ -157,6 +157,17 @@ def activate_hpux():
         f.close()
     return True
 
+def activate_AIX():
+    rc = "/etc/rc.d/init.d/opensvc"
+    links = ["/etc/rc.d/rc2.d/S990opensvc"]
+    for l in links:
+        if not os.path.islink(l):
+            if os.path.exists(l):
+                os.unlink(l)
+            print "create link %s -> %s"%(l, rc)
+            os.symlink(rc, l)
+    return True
+
 def activate_SunOS():
     rc = "/etc/init.d/opensvc"
     links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
@@ -194,6 +205,10 @@ def install_rc():
         rc = '/etc/rc.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.FreeBSD'
         activate = activate_FreeBSD
+    elif sysname == "AIX":
+        rc = '/etc/rc.d/init.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.AIX'
+        activate = activate_AIX
     else:
         print "could not select an init script: unsupported operating system"
         return False
