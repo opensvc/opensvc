@@ -67,8 +67,8 @@ class Mount(Res.Mount):
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
                            disabled=disabled, tags=tags, optional=optional)
         self.fsck_h = {
-            'jfs': {'bin': 'fsck', 'cmd': ['fsck', '-p', self.device]},
-            'jfs2': {'bin': 'fsck', 'cmd': ['fsck', '-p', self.device]},
+            'jfs': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs', self.device]},
+            'jfs2': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs2', self.device]},
         }
 
     def is_up(self):
