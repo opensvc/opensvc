@@ -459,16 +459,22 @@ def add_syncs_zfs(svc, conf):
 
         kwargs = {}
 
-        if not conf.has_option(s, 'src'):
+        if conf.has_option(s, "src@"+rcEnv.nodename):
+            src = conf.get(s, "src@"+rcEnv.nodename)
+        elif conf.has_option(s, 'src'):
+            src = conf.get(s, "src")
+        else:
             log.error("config file section %s must have src set" % s)
             return
-        else:
-            kwargs['src'] = conf.get(s, 'src')
+        kwargs['src'] = src
 
-        if not conf.has_option(s, 'dst'):
-            kwargs['dst'] = conf.get(s, 'src')
+        if conf.has_option(s, "dst@"+rcEnv.nodename):
+            dst = conf.get(s, "dst@"+rcEnv.nodename)
+        elif conf.has_option(s, 'dst'):
+            dst = conf.get(s, "dst")
         else:
-            kwargs['dst'] = conf.get(s, 'dst')
+            dst = src
+        kwargs['dst'] = dst
 
         if not conf.has_option(s, 'target'):
             log.error("config file section %s must have target set" % s)
