@@ -51,21 +51,3 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
         print 'stdout: ' + stdout
         print 'stderr: ' + stderr
         return False
-
-def zfs_send(dataset='undef_ds',dest_nodes=None,mode='cluster', verbose=False):
-            send):
-    if mode == 'cluster':
-        snapprefix = 'dup2ls'
-    else:
-        snapprefix = 'dup2ls_backup'
-
-    snapname_base = dataset + '@' + snapprefix
-    snap_tosend = snapname_base + '_tosend'
-    snap_sent = snapname_base + '_sent'
-
-    if not dataset_exists(snap_tosent, 'snapshot' ) :
-        cmd = split('zfs snapshot ' + snap_tosend)
-        print ' '
-        (stdout, stderr, retcode) = justcall(cmd)
-        if retcode == 0 :
-            print
