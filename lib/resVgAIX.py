@@ -120,6 +120,9 @@ class Vg(resDg.Dg):
             raise ex.excError
 
         for e in out.split('\n'):
-            self.disks |= set([e.split()[0]])
+            x = e.split()
+            if len(x) != 5:
+                continue
+            self.disks |= set([x[0]])
 
         return self.disks

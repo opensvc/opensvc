@@ -46,7 +46,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         self.h[lname] = dict(vid=vid, pid=pid, wwid=wwid, size=size)
 
     def odmget(self, lname, attr):
-        cmd = ['odmget', '-q' '"name='+lname+' AND attribute='+attr+'"', 'CuAt']
+        cmd = ['odmget', '-q', 'name='+lname+' AND attribute='+attr, 'CuAt']
         (ret, out) = call(cmd)
         for f in out.split('\n'):
             if "value" not in f:

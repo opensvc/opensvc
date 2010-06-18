@@ -264,6 +264,11 @@ def push_service(svc):
     except:
         version = "0";
 
+    if hasattr(svc, "guestos"):
+        guestos = svc.guestos
+    else:
+        guestos = ""
+
     vars = ['svc_hostid',
             'svc_name',
             'svc_vmname',
@@ -278,7 +283,8 @@ def push_service(svc):
             'svc_containertype',
             'svc_envfile',
             'svc_version',
-            'svc_drnoaction']
+            'svc_drnoaction',
+            'svc_guestos']
 
     vals = [repr(hostid),
             repr(svc.svcname),
@@ -294,7 +300,8 @@ def push_service(svc):
             repr(svc.svcmode),
             repr(envfile(svc.svcname)),
             repr(version),
-            repr(svc.drnoaction)]
+            repr(svc.drnoaction),
+            repr(guestos)]
 
     if 'container' in svc.resources_by_id:
         container_info = svc.resources_by_id['container'].get_container_info()
