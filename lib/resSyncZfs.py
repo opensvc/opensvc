@@ -20,22 +20,19 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-
-from rcUtilitiesLinux import lv_info
-
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
 import resources as Res
 import datetime
-from rcVmZfs import
+from rcVmZfs import a2pool_dataset
 
 class syncZfs(Res.Resource):
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None, recursive = True,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
                  optional=False, disabled=False, tags=set([])):
-        self.label = "dds of %s to %s"%(src, target)
+        self.label = "zfs of %s to %s"%(src, target)
         self.target = target
         self.sender = sender
         self.recursive = recursive
@@ -47,18 +44,16 @@ class syncZfs(Res.Resource):
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
-        Res.Resource.__init__(self, rid, "sync.dds", optional=optional, disabled=disabled, tags=tags)
+        Res.Resource.__init__(self, rid, "sync.zfs", optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s target=%s src=%s" % (Res.Resource.__str__(self),\
                 self.target, self.src)
 
-
-    def snap_exists(self, snapname):
-        if not os.path.exists(dev):
-            self.log.debug('dev path does not exist')
-            return False
-        cmd = ['zfs', 'list', '-t', 'snapshot', dev]
+    def snap_exists(self, snapname, node=None):
+        cmd = ['/usr/sbin/zfs', 'list', '-t', 'snapshot', snapname]
+        if node is not None:
+            cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out) = self.call(cmd, errlog=False)
         if ret == 0:
             return True
@@ -70,39 +65,20 @@ class syncZfs(Res.Resource):
             self.log.error('%s should not exist'%snap)
             raise ex.excError
         if self.recursive :
-            cmd = ['zfs', 'snapshot' , '-R' , snap ]
-        else
+            cmd = ['zfs', 'snapshot' , '-r' , snap ]
+        else:
             cmd = ['zfs', 'snapshot' , snap ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def create_snap1(self):
-        self.create_snap(self.snap1, self.snap1_lv)
-        self.write_statefile()
-
-    def create_snap2(self):
-        self.create_snap(self.snap2, self.snap2_lv)
-
-    def snap_name(self, snap):
-        return os.path.basename(self.src_lv).replace('-', '_')+'_osvc_'+snap
-
     def get_src_info(self):
-        (self.src_vg, self.src_lv, self.src_size) = lv_info(self, self.src)
-        if self.src_lv is None:
-            self.log.error("unable to fetch source logical volume information")
-            raise ex.excError
-        if self.snap_size == 0:
-            self.snap_size = self.src_size//10
-        self.snap1_lv = self.snap_name('snap1')
-        self.snap2_lv = self.snap_name('snap2')
-        self.snap1 = os.path.join(os.sep, 'dev', self.src_vg, self.snap1_lv)
-        self.snap2 = os.path.join(os.sep, 'dev', self.src_vg, self.snap2_lv)
-        self.snap1_cow = os.path.join(os.sep, 'dev', 'mapper',
-                                      '-'.join([self.src_vg.replace('-', '--'),
-                                                self.snap1_lv,
-                                                'cow'])
-                                     )
+        self.src_snap_sent = self.src_ds + '@sent'
+        self.src_snap_tosend = self.src_ds + '@tosend'
+
+    def get_dst_info(self):
+        self.dst_snap_sent = self.dst_ds + '@sent'
+        self.dst_snap_tosend = self.dst_ds + '@tosend'
 
     def get_peersenders(self):
         self.peersenders = set([])
@@ -121,67 +97,29 @@ class syncZfs(Res.Resource):
     def get_info(self):
         self.get_targets()
         self.get_src_info()
+        self.get_dst_info()
+
+    def syncnodes(self):
+        self.syncupdate()
 
     def syncfullsync(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
-            return
-        self.get_info()
-        if self.snap_exists(self.snap2):
-            self.log.error('%s should not exist'%self.snap2)
-            raise ex.excError
-        self.create_snap1()
-        for n in self.targets:
-            self.do_fullsync(n)
+        self.syncupdate()
 
-    def do_fullsync(self, node):
-        cmd1 = ['dd', 'if='+self.snap1, 'bs=1M']
-        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+self.dst]
-        self.log.info(' '.join(cmd1 + ["|"] + cmd2))
-        p1 = Popen(cmd1, stdout=PIPE)
-        p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
-        p2.communicate()[0]
-        if p2.returncode != 0:
-            self.log.error("full sync failed")
-            raise ex.excError
-        self.push_statefile(node)
+    def do_update(self, node):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
 
-    def get_snap1_uuid(self):
-        cmd = ['lvs', '--noheadings', '-o', 'uuid', self.snap1]
-        (ret, out) = self.call(cmd)
-        if ret != 0:
-            raise ex.excError
-        self.snap1_uuid = out.strip()
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
-    def write_statefile(self):
-        self.set_statefile()
-        self.get_snap1_uuid()
-        self.log.info("update state file with snap uuid %s"%self.snap1_uuid)
-        with open(self.statefile, 'w') as f:
-             f.write(str(datetime.datetime.now())+';'+self.snap1_uuid+'\n')
-
-    def _push_statefile(self, node):
-        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
-
-    def push_statefile(self, node):
-        self.set_statefile()
-        self._push_statefile(node)
-        self.get_peersenders()
-        for s in self.peersenders:
-            self._push_statefile(s)
-
-    def apply_delta(self, node):
-        extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
-                       self.snap2]
-        merge_cmd = ['dds', '--merge', '--dest', self.dst, '-v']
-        merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
-        self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
-        p1 = Popen(extract_cmd, stdout=PIPE)
-        p2 = Popen(merge_cmd, stdin=p1.stdout, stdout=PIPE)
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
         buff = p2.communicate()
         if p2.returncode != 0:
             if buff[1] is not None and len(buff[1]) > 0:
@@ -191,32 +129,210 @@ class syncZfs(Res.Resource):
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
-    def do_update(self, node):
-        self.apply_delta(node)
+    def do_fullsync(self, node=None):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
 
-    def remove_snap1(self):
-        if not self.snap_exists(self.snap1):
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("full sync failed")
+            raise ex.excError
+        if buff[0] is not None and len(buff[0]) > 0:
+            self.log.info(buff[0])
+
+    def remove_snap(self, snap, node=None):
+        if not self.snap_exists(snap, node=node):
             return
-        cmd = ['lvremove', '-f', self.snap1]
+    def syncfullsync(self):
+        self.syncupdate()
+
+    def do_update(self, node):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
+
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("sync update failed")
+            raise ex.excError
+        if buff[0] is not None and len(buff[0]) > 0:
+            self.log.info(buff[0])
+
+    def do_fullsync(self, node=None):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
+
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("full sync failed")
+            raise ex.excError
+        if buff[0] is not None and len(buff[0]) > 0:
+            self.log.info(buff[0])
+
+    def remove_snap(self, snap, node=None):
+        if not self.snap_exists(snap, node=node):
+            return
+    def syncfullsync(self):
+        self.syncupdate()
+
+    def do_update(self, node):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
+                            self.src_snap_sent, self.src_snap_tosend]
+
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("sync update failed")
+            raise ex.excError
+        if buff[0] is not None and len(buff[0]) > 0:
+            self.log.info(buff[0])
+
+    def do_fullsync(self, node=None):
+        if self.recursive :  
+            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
+        else:
+            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
+
+	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
+        if node is not None:
+            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        buff = p2.communicate()
+        if p2.returncode != 0:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
+            self.log.error("full sync failed")
+            raise ex.excError
+        if buff[0] is not None and len(buff[0]) > 0:
+            self.log.info(buff[0])
+
+    def remove_snap(self, snap, node=None):
+        if not self.snap_exists(snap, node=node):
+            return
+        if self.recursive :
+               cmd = ['/usr/sbin/zfs', 'destroy', '-r', snap]
+        else:
+                cmd = ['/usr/sbin/zfs', 'destroy', snap]
+        if node is not None:
+            cmd = rcEnv.rsh.split() + [ node ] + cmd
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def rename_snap2(self):
-        if not self.snap_exists(self.snap2):
-            self.log.error("%s should exist"%self.snap2)
+    def rename_snap(self, src, dst,  node=None):
+        if self.snap_exists(dst, node):
+            self.log.error("%s should not exist"%dst)
             raise ex.excError
-        if self.snap_exists(self.snap1):
-            self.log.error("%s should not exist"%self.snap1)
-            raise ex.excError
-        cmd = ['lvrename', self.src_vg, self.snap2_lv, self.snap1_lv]
+        if self.recursive :
+            cmd = ['zfs', 'rename', '-r', src, dst]
+        else:
+            cmd = ['zfs', 'rename', src, dst]
+
+        if node is not None:
+            cmd = rcEnv.rsh.split() + [ node ] + cmd
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def rotate_snaps(self):
-        self.remove_snap1()
-        self.rename_snap2()
+    def rotate_snaps(self, src, dst, node=None):
+        self.remove_snap(dst, node)
+        self.rename_snap(src, dst, node)
+
+    def syncupdate(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
+            self.log.debug("won't sync this resource for a service not up")
+            return
+        self.get_info()
+        if not self.snap_exists(self.src_snap_tosend):
+            self.create_snap(self.src_snap_tosend)
+        if self.snap_exists(self.src_snap_sent):
+            for n in self.targets:
+                self.do_update(n)
+                self.rotate_snaps(self.dst_snap_tosend, self.dst_snap_sent, n)
+        else:
+            for n in self.targets:
+                self.do_fullsync(n)
+                self.rotate_snaps(self.dst_snap_tosend, self.dst_snap_sent, n)
+        self.rotate_snaps(self.src_snap_tosend, self.src_snap_sent)
+        self.write_statefile()
+        for n in self.targets:
+            self.push_statefile(n)
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def _status(self, verbose=False):
+        try:
+            ls = self.get_local_state()
+            now = datetime.datetime.now()
+            last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
+            delay = datetime.timedelta(minutes=self.sync_max_delay)
+        except IOError:
+            self.status_log("zfs state file not found")
+            return rcStatus.WARN
+        except:
+            import sys
+            import traceback
+            e = sys.exc_info()
+            print e[0], e[1], traceback.print_tb(e[2])
+            return rcStatus.WARN
+        if last < now - delay:
+            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
+            return rcStatus.WARN
+        return rcStatus.UP
 
     def check_remote(self, node):
         rs = self.get_remote_state(node)
@@ -240,6 +356,37 @@ class syncZfs(Res.Resource):
             out = f.read()
         return self.parse_statefile(out)
 
+    def get_snap_uuid(self, snap):
+        cmd = ['zfs', 'list', '-H', '-o', 'creation', snap]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.snap_uuid = out.strip()
+
+    def set_statefile(self):
+        self.statefile = os.path.join(rcEnv.pathvar,
+                                      self.svc.svcname+'_'+self.rid+'_zfs_state')
+
+    def write_statefile(self):
+        self.set_statefile()
+        self.get_snap_uuid(self.src_snap_sent)
+        self.log.info("update state file with snap uuid %s"%self.snap_uuid)
+        with open(self.statefile, 'w') as f:
+             f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
+
+    def _push_statefile(self, node):
+        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
+        (ret, out) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+    def push_statefile(self, node):
+        self.set_statefile()
+        self._push_statefile(node)
+        self.get_peersenders()
+        for s in self.peersenders:
+            self._push_statefile(s)
+
     def parse_statefile(self, out, node=None):
         self.set_statefile()
         if node is None:
@@ -253,94 +400,4 @@ class syncZfs(Res.Resource):
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
-
-    def syncupdate(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
-            return
-        self.get_info()
-        self.get_snap1_uuid()
-        for n in self.targets:
-            self.check_remote(n)
-        self.create_snap2()
-        for n in self.targets:
-            self.do_update(n)
-        self.rotate_snaps()
-        self.write_statefile()
-        for n in self.targets:
-            self.push_statefile(n)
-
-    def checksum(self, node, bdev, q=None):
-        cmd = ['md5sum', bdev]
-        if node != rcEnv.nodename:
-            cmd = rcEnv.rsh.split() + [node] + cmd
-        (ret, out) = self.call(cmd)
-        if ret != 0:
-            return ""
-        o = out.split()
-        if q is not None:
-            q.put(o[0])
-        else:
-            self.checksums[node] = o[0]
-
-    def syncverify(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't verify this resource for a service not up")
-            return
-        self.get_info()
-        from multiprocessing import Process, Queue
-        self.checksums = {}
-        queues = {}
-        ps = []
-        self.log.info("start checksum threads. please be patient.")
-        for n in self.targets:
-            queues[n] = Queue()
-            p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
-            p.start()
-            ps.append(p)
-        self.checksum(rcEnv.nodename, self.snap1)
-        self.log.info("md5 %s: %s"%(rcEnv.nodename, self.checksums[rcEnv.nodename]))
-        for p in ps:
-            p.join()
-        for n in self.targets:
-            self.checksums[n] = queues[n].get()
-            self.log.info("md5 %s: %s"%(n, self.checksums[n]))
-        if len(self.checksums) < 2:
-            self.log.error("not enough checksums collected")
-            raise ex.excError
-        err = False
-        for n in self.targets:
-            if self.checksums[rcEnv.nodename] != self.checksums[n]:
-                self.log.error("src/dst checksums differ for %s/%s"%(rcEnv.nodename, n))
-                err = True
-        if not err:
-            self.log.info("src/dst checksums verified")
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def _status(self, verbose=False):
-        try:
-            ls = self.get_local_state()
-            now = datetime.datetime.now()
-            last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-            delay = datetime.timedelta(minutes=self.sync_max_delay)
-        except IOError:
-            self.status_log("dds state file not found")
-            return rcStatus.WARN
-        except:
-            import sys
-            import traceback
-            e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
-            return rcStatus.WARN
-        if last < now - delay:
-            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
-            return rcStatus.WARN
-        return rcStatus.UP
 
