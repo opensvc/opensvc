@@ -442,6 +442,60 @@ def add_syncs(svc, conf):
     add_syncs_netapp(svc, conf)
     add_syncs_symclone(svc, conf)
     add_syncs_dds(svc, conf)
+    add_syncs_zfs(svc, conf)
+
+def add_syncs_zfs(svc, conf):
+    zfs = __import__('resSyncZfs')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'zfs':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        kwargs = {}
+
+        if not conf.has_option(s, 'src'):
+            log.error("config file section %s must have src set" % s)
+            return
+        else:
+            kwargs['src'] = conf.get(s, 'src')
+
+        if not conf.has_option(s, 'dst'):
+            kwargs['dst'] = conf.get(s, 'src')
+        else:
+            kwargs['dst'] = conf.get(s, 'dst')
+
+        if not conf.has_option(s, 'target'):
+            log.error("config file section %s must have target set" % s)
+            return
+        else:
+            kwargs['target'] = conf.get(s, 'target').split()
+
+        if conf.has_option(s, 'recursive'):
+            kwargs['recursive'] = conf.getboolean(s, 'recursive')
+
+        if conf.has_option(s, 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+
+        if conf.has_option(s, 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
+        elif conf.has_option('default', 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        r = zfs.syncZfs(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
 
 def add_syncs_dds(svc, conf):
     dds = __import__('resSyncDds')
