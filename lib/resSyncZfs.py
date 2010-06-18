@@ -25,7 +25,7 @@ import rcExceptions as ex
 import rcStatus
 import resources as Res
 import datetime
-from rcVmZfs import a2pool_dataset
+from rcZfs import a2pool_dataset
 
 class syncZfs(Res.Resource):
     def __init__(self, rid=None, target=None, src=None, dst=None,
