@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
+from osol_install.distro_const.dc_checkpoint import snapshot_list
 from rcUtilities import justcall
 """
 """
@@ -41,7 +42,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
-    print cmd
+    print ' '.join(cmd)
     (stdout, stderr, retcode) = justcall(cmd)
     if retcode == 0 :
         return True
@@ -50,5 +51,3 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
         print 'stdout: ' + stdout
         print 'stderr: ' + stderr
         return False
-
-
