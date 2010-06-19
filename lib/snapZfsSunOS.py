@@ -19,7 +19,7 @@
 from rcUtilities import justcall
 import rcExceptions as ex
 import snap
-from rcVmZfs import dataset_exists
+from rcZfs import dataset_exists
 
 class Snap(snap.Snap):
     """Defines a snap object with ZFS

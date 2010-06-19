@@ -111,6 +111,7 @@ class Svc(Resource, Freezer):
                              "sync.rsync",
                              "sync.symclone",
                              "sync.dds",
+                             "sync.zfs",
                              "sync.netapp",
                              "app"]
         Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
@@ -488,6 +489,7 @@ class Svc(Resource, Freezer):
     def syncnodes(self):
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
+        self.sub_set_action("sync.zfs", "syncnodes")
         self.remote_postsync()
 
     def syncdrp(self):
@@ -516,9 +518,11 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
+        self.sub_set_action("sync.zfs", "syncnodes")
 
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
+        self.sub_set_action("sync.zfs", "syncnodes")
 
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")

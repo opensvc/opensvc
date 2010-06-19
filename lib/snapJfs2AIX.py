@@ -26,7 +26,7 @@ import snap
 class Snap(snap.Snap):
     def lv_exists(self, device):
         device = device.split("/")[-1]
-        (ret, out) = self.call(['lslv', device], cache=True)
+        ret = qcall(['lslv', device], cache=True)
         if ret == 0:
             return True
         return False

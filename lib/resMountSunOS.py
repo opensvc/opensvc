@@ -26,8 +26,7 @@ import rcStatus
 import rcMountsSunOS as rcMounts
 import resMount as Res
 import rcExceptions as ex
-from rcVmZfs import zfs_getprop, zfs_getprop
-from rcVmZfs import zfs_setprop
+from rcZfs import zfs_getprop, zfs_setprop
 from rcUtilities import justcall
 
 class Mount(Res.Mount):

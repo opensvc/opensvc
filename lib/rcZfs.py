@@ -17,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-from rcUtilities import justcall
+from rcUtilities import justcall, call
 """
 """
 
@@ -41,14 +41,28 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
-    print cmd
-    (stdout, stderr, retcode) = justcall(cmd)
+    print ' '.join(cmd)
+    (retcode, stdout) = call(cmd)
     if retcode == 0 :
         return True
     else:
-        print 'status: ' , retcode
-        print 'stdout: ' + stdout
-        print 'stderr: ' + stderr
         return False
 
-
+def a2pool_dataset(s):
+    """return (pool,dataset) from mount point
+       example: a2pool_dataset('/') => ('rpool','rpool/ROOT/opensolaris-b134')
+                same with a2pool_dataset('rpool/ROOT/opensolaris-b134')
+    """
+    if len(s) == 0:
+        return ("", "")
+    ss = s
+    if s[0] == '/':
+        cmd = ['zfs', 'list', '-H',  '-o', 'name', s]
+        (ret, out) = call(cmd)
+        if ret != 0:
+            return ("", "")
+        ss = out.split('\n')[0]
+    x = ss.split('/')
+    if len(x) < 2:
+        return (ss, ss)
+    return (x[0], ss)
