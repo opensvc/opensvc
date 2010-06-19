@@ -24,6 +24,7 @@ import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
 import resContainer
+import rcExceptions as ex
 
 class Lxc(resContainer.Container):
     """
@@ -53,14 +54,9 @@ class Lxc(resContainer.Container):
            |                     |
             ---------------------
     """
-    pathlxc = os.path.join('usr', 'local', 'var', 'lib', 'lxc')
 
     def files_to_sync(self):
-        a = []
-        guest = os.path.join(os.sep, 'var', 'lib', 'lxc', self.name, 'config')
-        if os.path.exists(guest):
-            a.append(guest)
-        return a
+        return [self.cf]
 
     def lxc(self, action):
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
@@ -77,6 +73,32 @@ class Lxc(resContainer.Container):
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
         return ret
+
+    def get_rootfs(self):
+        rootfs = None
+        with open(self.cf, 'r') as f:
+            for line in f.readlines():
+                if 'lxc.rootfs' not in line:
+                    continue
+                if line.strip()[0] == '#':
+                    continue
+                l = line.replace('\n', '').split('=')
+                if len(l) < 2:
+                    continue
+                rootfs = ' '.join(l[1:]).strip()
+                break
+        if rootfs is None:
+            self.log.error("could not determine lxc container rootfs")
+            raise ex.excError
+        return rootfs
+
+    def install_drp_flag(self):
+        rootfs = self.get_rootfs()
+        flag = os.path.join(rootfs, ".drp_flag")
+        self.log.info("install drp flag in container : %s"%flag)
+        with open(flag, 'w') as f:
+            f.write(' ')
+            f.close()
 
     def container_start(self):
         self.lxc('start')
@@ -115,6 +137,11 @@ class Lxc(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
                                         optional=optional, disabled=disabled, tags=tags)
+        self.cf = os.path.join(os.sep, 'var', 'lib', 'lxc', name, 'config')
+        if not os.path.exists(self.cf):
+            self.cf = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc', name, 'config')
+        if not os.path.exists(self.cf):
+            raise ex.excInitError
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
