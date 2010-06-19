@@ -92,6 +92,14 @@ class Zone(resContainer.Container):
         self.set_zonepath_perms()
         return self.zoneadm('ready')
 
+    def install_drp_flag(self):
+        rootfs = self.zonepath
+        flag = os.path.join(rootfs, ".drp_flag")
+        self.log.info("install drp flag in container : %s"%flag)
+        with open(flag, 'w') as f:
+            f.write(' ')
+            f.close()
+
     def boot(self):
         self.zone_refresh()
         if self.state == "running" :
