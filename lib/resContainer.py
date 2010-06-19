@@ -21,6 +21,7 @@ import resources as Res
 import time
 import rcExceptions as ex
 from rcUtilities import qcall
+from rcGlobalEnv import rcEnv
 import socket
 
 class Container(Res.Resource):
@@ -86,10 +87,15 @@ class Container(Res.Resource):
         self.log.error("Waited too long for shutdown")
         raise ex.excError
 
+    def install_drp_flag(self):
+        print "TODO: install_drp_flag()"
+
     def start(self):
         if self.is_up():
             self.log.info("container %s already started" % self.name)
             return
+        if rcEnv.nodename in self.svc.drpnodes:
+            self.install_drp_flag()
         self.container_start()
         self.wait_for_startup()
 
