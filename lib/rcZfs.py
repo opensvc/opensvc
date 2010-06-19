@@ -64,5 +64,5 @@ def a2pool_dataset(s):
         ss = out.split('\n')[0]
     x = ss.split('/')
     if len(x) < 2:
-        return ("", "")
+        return (ss, ss)
     return (x[0], ss)
