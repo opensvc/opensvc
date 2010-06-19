@@ -40,7 +40,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             if "Machine Type and Model" in f:
                 pid = f.split('.')[-1]
 
-        size = self.odmget(lname, 'size_in_mb')
+        size = str(int(self.odmget(lname, 'size_in_mb'))//1024)
         wwid = self.odmget(lname, 'ww_name').replace('0x', '')
 
         self.h[lname] = dict(vid=vid, pid=pid, wwid=wwid, size=size)
