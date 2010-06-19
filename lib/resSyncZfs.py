@@ -16,18 +16,16 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-import logging
-
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
 import resources as Res
-import datetime
 from rcZfs import a2pool_dataset
 
-class syncZfs(Res.Resource):
+class SyncZfs(Res.Resource):
+    """define zfs sync resource to be zfs send/zfs receive between nodes
+    """
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None, recursive = True,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
