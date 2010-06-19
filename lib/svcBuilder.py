@@ -499,7 +499,7 @@ def add_syncs_zfs(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
-        r = zfs.syncZfs(**kwargs)
+        r = zfs.SyncZfs(**kwargs)
         add_triggers(r, conf, s)
         svc += r
 
