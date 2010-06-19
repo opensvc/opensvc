@@ -130,6 +130,7 @@ def _merge(s1, s2):
     if setstate == set([ STDBY_DOWN, STDBY_UP_WITH_DOWN ]): return WARN
     if setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN ]): return WARN
     if setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
+    if setstate == set([ STDBY_UP_WITH_DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
     raise Exception("some member has unsupported value: %s , %s "%(str(s1),str(s2)) )
 
 class Status(object):
