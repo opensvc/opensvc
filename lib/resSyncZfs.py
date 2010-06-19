@@ -17,6 +17,7 @@
 #
 import os
 from rcGlobalEnv import rcEnv
+import datetime
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
