@@ -27,10 +27,22 @@ import resContainer
 import rcExceptions as ex
 
 class Jail(resContainer.Container):
-    """ jail -c name=jail1 path=/usr/local/opt/jail1.opensvc.com host.hostname=jail1.opensvc.com ip4.addr=192.168.0.208 command=/bin/sh /etc/rc
+    """ jail -c name=jail1
+                path=/usr/local/opt/jail1.opensvc.com
+                host.hostname=jail1.opensvc.com
+                ip4.addr=192.168.0.208
+                command=/bin/sh /etc/rc
     """
     def files_to_sync(self):
         return []
+
+    def install_drp_flag(self):
+        rootfs = self.svc.jailroot
+        flag = os.path.join(rootfs, ".drp_flag")
+        self.log.info("install drp flag in container : %s"%flag)
+        with open(flag, 'w') as f:
+            f.write(' ')
+            f.close()
 
     def container_start(self):
         ips = []
