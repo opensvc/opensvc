@@ -85,7 +85,7 @@ class Lxc(resContainer.Container):
                 l = line.replace('\n', '').split('=')
                 if len(l) < 2:
                     continue
-                if l[0] != param:
+                if l[0].strip() != param:
                     continue
                 value = ' '.join(l[1:]).strip()
                 break
