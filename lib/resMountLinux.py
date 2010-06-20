@@ -24,7 +24,7 @@ import os
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from stat import *
@@ -181,6 +181,16 @@ class Mount(Res.Mount):
 
         if not self.is_devmap(statinfo):
             return set([dev])
+
+        if lv_exists(self, dev):
+            """ if the fs is built on a lv of a private vg, its
+                disks will be given by the vg resource.
+                if the fs is built on a lv of a shared vg, we
+                don't want to account its disks : don't reserve
+                them, don't account their size multiple times.
+            """
+            return set([])
+
         dm = 'dm-' + str(os.minor(statinfo.st_rdev))
         syspath = '/sys/block/' + dm + '/slaves'
         devs = get_blockdev_sd_slaves(syspath)
