@@ -74,19 +74,25 @@ class Lxc(resContainer.Container):
         self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
         return ret
 
-    def get_rootfs(self):
-        rootfs = None
+    def get_cf_value(self, param):
+        value = None
         with open(self.cf, 'r') as f:
             for line in f.readlines():
-                if 'lxc.rootfs' not in line:
+                if param not in line:
                     continue
                 if line.strip()[0] == '#':
                     continue
                 l = line.replace('\n', '').split('=')
                 if len(l) < 2:
                     continue
-                rootfs = ' '.join(l[1:]).strip()
+                if l[0] != param:
+                    continue
+                value = ' '.join(l[1:]).strip()
                 break
+        return value
+
+    def get_rootfs(self):
+        rootfs = self.get_cf_value("lxc.rootfs")
         if rootfs is None:
             self.log.error("could not determine lxc container rootfs")
             raise ex.excError
@@ -125,8 +131,12 @@ class Lxc(resContainer.Container):
         return False
 
     def get_container_info(self):
-        print "TODO: get_container_info()"
-        return {'vcpus': '0', 'vmem': '0'}
+        cpu_set = self.get_cf_value("lxc.cgroup.cpuset.cpus")
+        if cpu_set is None:
+            vcpus = 0
+        else:
+            vcpus = len(cpu_set.split(','))
+        return {'vcpus': str(vcpus), 'vmem': '0'}
 
     def _status(self, verbose=False):
         if self.is_up():
