@@ -50,6 +50,10 @@ class Container(Res.Resource):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def operational(self):
+        if self.svc.guestos == "Windows":
+            """ Windows has no sshd.
+            """
+            return True
         timeout = 1
         cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
                                 '-o', 'ForwardX11=no',

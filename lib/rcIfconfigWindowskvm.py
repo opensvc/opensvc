@@ -26,3 +26,7 @@ from rcGlobalEnv import rcEnv
 class ifconfig(rcIfconfig.ifconfig):
     def __init__(self, hostname):
         self.intf = []
+
+    def has_param(self, param, value):
+        return 0
+
