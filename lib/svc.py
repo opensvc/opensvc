@@ -467,14 +467,17 @@ class Svc(Resource, Freezer):
             use a long waitlock timeout to give a chance to
             remote syncs to finish
         """
-        rcmd = [os.path.join(rcEnv.pathetc, self.svcname),
-                '--waitlock', '3600',
-                'postsync']
         for n in self.need_postsync:
-            self.log.info("exec '%s' on node %s"%(' '.join(rcmd), n))
-            cmd = rcEnv.rsh.split() + [n] + rcmd
-            self.call(cmd)
+            self.remote_action(n, 'postsync', waitlock=3600)
+
         self.need_postsync = set([])
+
+    def remote_action(self, node, action, waitlock=60):
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname),
+                '--waitlock', str(waitlock), action]
+        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+        cmd = rcEnv.rsh.split() + [node] + rcmd
+        self.call(cmd)
 
     def presync(self):
         """ prepare files to send to slave nodes in var/.
@@ -647,7 +650,7 @@ class Svc(Resource, Freezer):
 
         err = self.do_action(action, waitlock=waitlock)
 
-        """Push result and logs to database
+        """ Push result and logs to database
         """
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
@@ -656,10 +659,23 @@ class Svc(Resource, Freezer):
         return err
 
     def restart(self):
-	""" stop then start service"""
-	# FIXME should test stop() status before start()
+	""" stop then start service
+        """
         self.stop()
         self.start()
+
+    def switch(self):
+	""" stop then start service
+        """
+        if not hasattr(self, "destination_node"):
+            self.log.error("a destination node must be provided for the switch action")
+            raise ex.excError
+        if self.destination_node not in self.nodes:
+            self.log.error("destination node %s is not in service node list"%self.destination_node)
+            raise ex.excError
+        self.stop()
+	kwargs = {'node': self.destination_node, 'action': 'start'}
+	fork(self.remote_action, kwargs)
 
 
 if __name__ == "__main__" :

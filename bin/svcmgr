@@ -49,6 +49,8 @@ parser.add_option("--tags", default=None, action="store", dest="parm_tags",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock", type="int",
                   help="comma-separated list of resource tags to limit action to")
+parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
+                  help="remote node to start or migrate the service to")
 
 
 cmd = os.path.basename(__file__)
@@ -114,5 +116,6 @@ else:
 
 for s in svcs:
     s.force = options.force
+    s.destination_node = options.parm_destination_node
     s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
 

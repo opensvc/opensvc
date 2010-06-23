@@ -64,6 +64,7 @@ action_desc = {
 	'syncall':	'combo action, chaining syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
         'disklist':     'construct disklist',
+        'switch':       'stop the service on the local node and start on the remote node',
 }
 
 def format_desc(svc=False):
