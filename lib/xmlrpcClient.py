@@ -37,7 +37,7 @@ def xmlrpc_decorator(fn):
     def new(*args):
         try:
             return fn(*args)
-        except socket.error, xmlrpclib.ProtocolError:
+        except (socket.error, xmlrpclib.ProtocolError):
             pass
         except:
             import sys
