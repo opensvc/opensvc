@@ -21,7 +21,8 @@ import os
 import rcExceptions as ex
 import resDg
 from rcGlobalEnv import rcEnv
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
+                             devs_to_disks
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
@@ -112,32 +113,7 @@ class Vg(resDg.Dg):
         if ret != 0:
             return self.disks
 	pvs = set(out.split())
-        self.disks = self.pvs_to_disks(pvs)
+        self.disks = devs_to_disks(self, pvs)
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks
-
-    def pvs_to_disks(self, pvs):
-        """If PV is a device map, replace by its sysfs name (dm-*)
-        If device map has slaves, replace by its slaves
-        """
-        disks = set()
-        dm_major = major('device-mapper')
-        try: lo_major = major('loop')
-        except: lo_major = 0
-        for pv in pvs:
-            try:
-                statinfo = os.stat(pv)
-            except:
-                self.log.error("can not stat %s" % pv)
-                raise
-            if os.major(statinfo.st_rdev) == dm_major:
-                dm = 'dm-' + str(os.minor(statinfo.st_rdev))
-                syspath = '/sys/block/' + dm + '/slaves'
-                disks |= get_blockdev_sd_slaves(syspath)
-            elif lo_major != 0 and os.major(statinfo.st_rdev) == lo_major:
-                self.log.debug("skip loop device %s from disklist"%pv)
-                pass
-            else:
-                disks.add(pv)
-        return disks
 

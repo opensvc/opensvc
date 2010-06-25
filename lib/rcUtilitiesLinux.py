@@ -60,4 +60,28 @@ def lv_info(self, device):
         ex.excError
     return (info[0], info[1], lv_size)
 
+def devs_to_disks(self, devs=set([])):
+    """ If PV is a device map, replace by its sysfs name (dm-*)
+        If device map has slaves, replace by its slaves
+    """
+    disks = set()
+    dm_major = major('device-mapper')
+    try: lo_major = major('loop')
+    except: lo_major = 0
+    for dev in devs:
+        try:
+            statinfo = os.stat(dev)
+        except:
+            self.log.error("can not stat %s" % dev)
+            raise
+        if os.major(statinfo.st_rdev) == dm_major:
+            dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+            syspath = '/sys/block/' + dm + '/slaves'
+            disks |= get_blockdev_sd_slaves(syspath)
+        elif lo_major != 0 and os.major(statinfo.st_rdev) == lo_major:
+            self.log.debug("skip loop device %s from disklist"%dev)
+            pass
+        else:
+            disks.add(dev)
+    return disks
 
