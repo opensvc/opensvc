@@ -37,6 +37,7 @@ class Node(Svc, Freezer):
           'pushservices':   'push service configuration to collector',
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
+          'prkey':          'display persistent reservation key of this node',
         }
 
     def format_desc(self):
@@ -77,6 +78,11 @@ class Node(Svc, Freezer):
     def pushservices(self):
         for svc in self.svcs:
             svc.action('push')
+
+    def prkey(self):
+        from rcGlobalEnv import rcEnv
+        m = __import__('hostid'+rcEnv.sysname)
+        print m.hostid()
 
 
 if __name__ == "__main__" :
