@@ -134,7 +134,7 @@ def activate_debian():
     if process.returncode > 0:
         print buff[1]
         return False
-    cmd = ['update-rc.d', 'opensvc', 'defaults']
+    cmd = ['update-rc.d', 'opensvc', 'defaults', '99', '01']
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
     if process.returncode > 0:
