@@ -29,6 +29,7 @@ class Vg(resDg.Dg):
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([])):
         self.label = name
+        self.tag = '@'+rcEnv.nodename
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
@@ -61,20 +62,29 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
-    def remove_tags(self):
+    def remove_tags(self, tags=[]):
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         out = out.strip(' \n')
-        tags = out.split(',')
-        for tag in tags:
-            if len(tag) == 0:
-                continue
-            self.remove_tag(tag)
+        curtags = out.split(',')
+        if len(tags) > 0:
+            """ remove only specified tags
+            """
+            for tag in tags:
+                if tag in curtags:
+                   self.remove_tag(tag)
+        else:
+            """ remove all tags
+            """
+            for tag in curtags:
+                if len(tag) == 0:
+                    continue
+                self.remove_tag(tag)
 
     def add_tags(self):
-        cmd = [ 'vgchange', '--addtag', '@'+rcEnv.nodename, self.name ]
+        cmd = [ 'vgchange', '--addtag', self.tag, self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -94,7 +104,7 @@ class Vg(resDg.Dg):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return
-        self.remove_tags()
+        self.remove_tags([self.tag])
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
