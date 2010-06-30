@@ -175,6 +175,9 @@ class Svc(Resource, Freezer):
         except lock.lockAcquire as e:
             self.log.warn("another action is currently running (pid=%s)"%e.pid)
             raise ex.excError
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            raise ex.excError
         except:
             self.log.error("unexpected locking error")
             import traceback
