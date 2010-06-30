@@ -96,8 +96,8 @@ class Kvm(resContainer.Container):
             return self.info
         for line in out.split('\n'):
             if "CPU(s):" in line: self.info['vcpus'] = line.split(':')[1].strip()
-            if "Max memory" in line: self.info['vmem'] = line.split(':')[1].strip()
-        return self.info           
+            if "Used memory:" in line: self.info['vmem'] = line.split(':')[1].strip()
+        return self.info
 
     def check_manual_boot(self):
         cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', 'autostart', self.name+'.xml')
