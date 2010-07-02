@@ -111,6 +111,8 @@ class Mount(Res.Mount):
         return self._mplist([dev])
 
     def devname_to_dev(self, x):
+        if 'cciss!' in x:
+            return '/dev/cciss/'+x.replace('cciss!', '')
         return '/dev/'+x
 
     def _mplist(self, devs):
