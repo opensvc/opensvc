@@ -114,6 +114,16 @@ class Drbd(Res.Resource):
 
     def startstandby(self):
         self.start_connection()
+        roles = self.get_roles()
+        if roles[0] == "Primary":
+            return
+        self.start_role('Secondary')
+
+    def stopstandby(self):
+        self.start_connection()
+        roles = self.get_roles()
+        if roles[0] == "Secondary":
+            return
         self.start_role('Secondary')
 
     def start(self):

@@ -86,8 +86,12 @@ class Resource(object):
     def do_action(self, action):
         if hasattr(self, action):
             if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
-                self.log.info("skip '%s' on standby resource (--force to override)"%action)
-                return
+                if hasattr(self, action+'standby'):
+                    getattr(self, action+'standby')()
+                    return
+                else:
+                    self.log.info("skip '%s' on standby resource (--force to override)"%action)
+                    return
             self.setup_environ()
             self.action_triggers("pre", action)
             getattr(self, action)()
