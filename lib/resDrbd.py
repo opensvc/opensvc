@@ -24,6 +24,7 @@ import resources as Res
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import which
+from rcGlobalEnv import rcEnv
 
 class Drbd(Res.Resource):
     """ Drbd device resource
@@ -43,6 +44,7 @@ class Drbd(Res.Resource):
         self.label = res
         self.drbdadm = None
         self.always_on = always_on
+        self.disks = set()
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
@@ -62,10 +64,40 @@ class Drbd(Res.Resource):
             else:
                 self.log("drbdadm command not found")
                 raise exc.excError
-        return [self.drbdadm, cmd, self.res]
+        return [self.drbdadm] + cmd.split() + [self.res]
 
     def disklist(self):
-        print "TODO: %s:disklist"%__file__
+        if self.disks != set():
+            return self.disks
+
+        self.disks = set()
+        devps = set()
+
+        (ret, out) = self.call(self.drbdadm_cmd('dump-xml'))
+        if ret != 0:
+            raise ex.excError
+
+        from xml.etree.ElementTree import XML, fromstring
+        tree = fromstring(out)
+        
+        for res in tree.getiterator('resource'):
+            if res.attrib['name'] != self.res:
+                continue
+            for host in res.getiterator('host'):
+                if host.attrib['name'] != rcEnv.nodename:
+                    continue
+                d = host.find('disk')
+                if d is None:
+                    continue
+                devps |= set([d.text])
+
+        try:
+            u = __import__('rcUtilities'+rcEnv.sysname)
+            self.disks = u.devs_to_disks(self, devps)
+        except:
+            self.disks = devps
+
+        return self.disks
 
     def drbdadm_down(self):
         (ret, out) = self.vcall(self.drbdadm_cmd('down'))
