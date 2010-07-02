@@ -44,6 +44,7 @@ class Resource(object):
         self.disabled = disabled
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
+        self.always_on = set([])
         if self.label is None: self.label = type
         self.status_log_str = ""
 
@@ -84,11 +85,14 @@ class Resource(object):
 
     def do_action(self, action):
         if hasattr(self, action):
+            if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
+                self.log.info("skip '%s' on standby resource (--force to override)"%action)
+                return
             self.setup_environ()
             self.action_triggers("pre", action)
             getattr(self, action)()
             self.action_triggers("post", action)
-            if action in ["start", "stop"] or "sync" in action:
+            if "start" in action or "stop" in action or "sync" in action:
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True)

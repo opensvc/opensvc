@@ -18,6 +18,6 @@ start)
 	${allservices} startstandby
 	;;
 stop)
-	${allservices} stop
+	${allservices} --force stop
 	;;
 esac

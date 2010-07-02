@@ -37,6 +37,6 @@ stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
 	fi
-	${allservices} stop
+	${allservices} --force stop
 	;;
 esac
