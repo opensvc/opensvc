@@ -63,6 +63,8 @@ elif cmd == 'alldownservices':
     svcs = svcBuilder.build_services(status=rcStatus.DOWN)
 elif cmd == 'allprimaryservices':
     svcs = svcBuilder.build_services(onlyprimary=True)
+elif cmd == 'allsecondaryservices':
+    svcs = svcBuilder.build_services(onlysecondary=True)
 elif cmd == 'svcmgr':
     parser.add_option("--service", default=None, action="store", dest="parm_svcs",
               help="comma-separated list of service to operate on")
@@ -70,6 +72,8 @@ elif cmd == 'svcmgr':
               help="operate only on service in the specified status (up/down/warn)")
     parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
               help="operate only on service flagged for autostart on this node")
+    parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
+              help="operate only on service not flagged for autostart on this node")
 else:
     svcs = svcBuilder.build_services(svcnames=[cmd])
 
@@ -77,6 +81,7 @@ else:
 
 if svcs is None:
     parm_primary = False
+    parm_secondary = False
     parm_status = None
 
     if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
@@ -89,12 +94,25 @@ if svcs is None:
     else:
         status = None
 
+    if hasattr(options, "parm_primary") and options.parm_primary is not None and \
+       hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+        parser.error("--onlyprimary and --onlysecondary are exclusive")
+
     if hasattr(options, "parm_primary") and options.parm_primary is not None:
         onlyprimary = options.parm_primary
     else:
         onlyprimary = False
 
-    svcs = svcBuilder.build_services(svcnames=svcnames, status=status, onlyprimary=onlyprimary)
+    if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+        onlysecondary = options.parm_secondary
+    else:
+        onlysecondary = False
+
+    svcs = svcBuilder.build_services(svcnames=svcnames,
+                                     status=status,
+                                     onlyprimary=onlyprimary,
+                                     onlysecondary=onlysecondary,
+                                    )
 
 if len(args) > 1:
     parser.error("More than one action")

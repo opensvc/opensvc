@@ -954,7 +954,8 @@ def is_service(f):
         return False
     return True
 
-def build_services(status=None, svcnames=[], onlyprimary=False):
+def build_services(status=None, svcnames=[],
+                   onlyprimary=False, onlysecondary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
@@ -970,6 +971,8 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
         if status is not None and svc.status() != status:
             continue
         if onlyprimary and svc.autostart_node != rcEnv.nodename:
+            continue
+        if onlysecondary and svc.autostart_node == rcEnv.nodename:
             continue
         services[svc.svcname] = svc
     return [ s for n ,s in sorted(services.items()) ]
