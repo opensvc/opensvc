@@ -43,7 +43,7 @@ class Apps(resApp.Apps):
 
     def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
-        if container.status() != rcStatus.UP:
+        if container.status(refresh=True) != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%rcStatus.status_str(container.status()))
             self.status_log("container is %s"%rcStatus.status_str(container.status()))
             raise ex.excNotAvailable
