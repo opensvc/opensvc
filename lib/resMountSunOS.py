@@ -60,6 +60,7 @@ class Mount(Res.Mount):
             if self.is_up() is True:
                 return
 
+            (stdout,stderr,returncode)= justcall(['rm', self.mountPoint+"/.opensvc" ])
             ret, out = self.vcall(['zfs', 'mount', self.device ])
             if ret != 0:
                 ret, out = self.vcall(['zfs', 'mount', '-O', self.device ])
