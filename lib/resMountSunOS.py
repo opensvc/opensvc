@@ -38,8 +38,7 @@ class Mount(Res.Mount):
                            disabled=disabled, tags=tags, optional=optional)
 
     def is_up(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
+        self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def start(self):
