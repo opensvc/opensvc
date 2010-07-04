@@ -74,8 +74,7 @@ class Mount(Res.Mount):
         }
 
     def is_up(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
+        self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def realdev(self):
