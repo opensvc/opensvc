@@ -83,7 +83,7 @@ class Apps(resApp.Apps):
     def app_exist(self, name):
         """ verify app_exists inside Vm
         """
-        (out, err, ret) = justcall (self.prefix + ['/usr/bin/ls', '-Ld', name ])
+        (out, err, ret) = justcall (self.prefix + ['/bin/ls', '-Ld', name ])
         if ret == 0:
             return True
         else:
