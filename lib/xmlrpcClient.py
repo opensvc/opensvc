@@ -23,6 +23,31 @@ import os
 from rcGlobalEnv import rcEnv
 import rcStatus
 import socket
+import httplib
+
+class TimeoutHTTP(httplib.HTTP):
+   def __init__(self, host='', port=None, strict=None,
+                timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+       if port == 0:
+           port = None
+       self._setup(self._connection_class(host, port, strict, timeout))
+
+class TimeoutTransport(xmlrpclib.Transport):
+    def __init__(self, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, *args, **kwargs):
+        xmlrpclib.Transport.__init__(self, *args, **kwargs)
+        self.timeout = timeout
+
+    def make_connection(self, host):
+        host, extra_headers, x509 = self.get_host_info(host)
+        conn = TimeoutHTTP(host, timeout=self.timeout)
+        return conn
+
+class TimeoutServerProxy(xmlrpclib.ServerProxy):
+    def __init__(self, uri, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 *args, **kwargs):
+        kwargs['transport'] = TimeoutTransport(timeout=timeout,
+                                               use_datetime=kwargs.get('use_datetime', 0))
+        xmlrpclib.ServerProxy.__init__(self, uri, *args, **kwargs)
 
 sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
@@ -54,7 +79,7 @@ except:
     print("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc)
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
 
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
