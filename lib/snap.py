@@ -27,7 +27,7 @@ def find_mount(rs, dir):
     """
     for m in sorted(rs.resources, reverse=True):
         if m.is_disabled():
-            return None
+            continue
         if m.mountPoint in dir:
             return m
     return None
@@ -35,7 +35,7 @@ def find_mount(rs, dir):
 def find_mounts(self, mounts_h):
     rs = self.svc.get_res_sets("fs")[0]
     if rs is None:
-        self.log.error("can not find fs resources encapsulating %s to snap"%self.src)
+        self.log.error("can not find fs resources encapsulating %s to snap (no fs resources)"%self.src)
         raise ex.syncNotSnapable
     for src in self.src:
         m = find_mount(rs, src)
