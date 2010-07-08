@@ -30,6 +30,7 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.svcs = svcBuilder.build_services()
+        self.force = False
         Freezer.__init__(self, '')
         self.action_desc = {
           'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -62,7 +63,7 @@ class Node(Svc, Freezer):
         return getattr(self, a)()
 
     def pushstats(self):
-        xmlrpcClient.push_stats()
+        xmlrpcClient.push_stats(force=self.force)
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()

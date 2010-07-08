@@ -572,9 +572,9 @@ def push_pkg():
     proxy.delete_pkg(rcEnv.nodename)
     proxy.insert_pkg(vars, vals)
 
-def push_stats():
-    if not stats_timestamp():
-        return
+def push_stats(force=False):
+    if not force and not stats_timestamp():
+            return
     push_stats_cpu()
     push_stats_mem_u()
     push_stats_proc()

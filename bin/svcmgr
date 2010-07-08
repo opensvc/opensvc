@@ -38,7 +38,7 @@ svcs = None
 __ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
-parser.add_option("--debug", default="False",
+parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
