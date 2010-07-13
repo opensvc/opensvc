@@ -23,7 +23,7 @@ import os
 import resources as Res
 import rcStatus
 import rcExceptions as ex
-from rcUtilities import which
+from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
 
 class Drbd(Res.Resource):
@@ -48,7 +48,7 @@ class Drbd(Res.Resource):
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
-                                 self.loopFile)
+                                 self.res)
 
     def files_to_sync(self):
         cf = os.path.join(os.sep, 'etc', 'drbd.d', self.res+'.res')
@@ -110,10 +110,19 @@ class Drbd(Res.Resource):
             raise ex.excError
 
     def get_cstate(self):
-        (ret, out) = self.call(self.drbdadm_cmd('cstate'))
+        self.prereq()
+        (out, err, ret) = justcall(self.drbdadm_cmd('cstate'))
         if ret != 0:
-            raise ex.excError
+            if "Device minor not allocated" in err:
+                return "Unattached"
+            else:
+                raise ex.excError
         return out.strip()
+
+    def prereq(self):
+        if not os.path.exists("/proc/drbd"):
+            (ret, out) = self.vcall(['modprobe', 'drbd'])
+            if ret != 0: raise ex.excError
 
     def start_connection(self):
         cstate = self.get_cstate()

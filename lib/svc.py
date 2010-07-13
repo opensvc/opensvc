@@ -214,6 +214,7 @@ class Svc(Resource, Freezer):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         for r in sets:
+            self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
                 r.action(action, tags=tags)
             except ex.excError:

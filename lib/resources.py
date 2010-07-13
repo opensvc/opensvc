@@ -84,6 +84,7 @@ class Resource(object):
             self.vcall(getattr(self, attr))
 
     def do_action(self, action):
+        self.log.debug('do_action: action=%s res=%s'%(action, self.rid))
         if hasattr(self, action):
             if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
                 if hasattr(self, action+'standby'):
@@ -116,8 +117,13 @@ class Resource(object):
         if self is optional then return True
         else return do_action() return value
         """
-        if action == None: return True
-        if self.disabled: return True
+        self.log.debug('action: action=%s res=%s'%(action, self.rid))
+        if action == None:
+            self.log.debug('action: action cannot be None')
+            return True
+        if self.disabled:
+            self.log.debug('action: skip action on disable resource')
+            return True
         try :
             self.do_action(action)
         except exc.excUndefined , ex:
@@ -277,6 +283,7 @@ class ResourceSet(Resource):
         """Call action on each resource of the ResourceSet
         """
         resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
+        self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
         if action in ["fs", "start", "startstandby"]:
             resources.sort()
         else:
