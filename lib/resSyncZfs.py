@@ -154,11 +154,11 @@ class SyncZfs(Res.Resource):
         if not self.snap_exists(snap, node=node):
             return
         if self.recursive :
-            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'destroy', '-r', snap]
+            cmd = ['zfs', 'destroy', '-r', snap]
         else:
-            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'destroy', snap]
+            cmd = ['zfs', 'destroy', snap]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [ node ] + cmd
+            cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -168,12 +168,12 @@ class SyncZfs(Res.Resource):
             self.log.error("%s should not exist"%dst)
             raise ex.excError
         if self.recursive :
-            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'rename', '-r', src, dst]
+            cmd = ['zfs', 'rename', '-r', src, dst]
         else:
-            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'rename', src, dst]
+            cmd = ['zfs', 'rename', src, dst]
 
         if node is not None:
-            cmd = rcEnv.rsh.split() + [ node ] + cmd
+            cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
