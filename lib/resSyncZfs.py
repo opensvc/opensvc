@@ -50,7 +50,7 @@ class SyncZfs(Res.Resource):
                 self.target, self.src)
 
     def snap_exists(self, snapname, node=None):
-        cmd = ['/usr/sbin/zfs', 'list', '-t', 'snapshot', snapname]
+        cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'list', '-t', 'snapshot', snapname]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out) = self.call(cmd, errlog=False)
@@ -106,13 +106,13 @@ class SyncZfs(Res.Resource):
 
     def do_update(self, node):
         if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
+            send_cmd = ['zfs', 'send', '-R', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
         else:
-            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
+            send_cmd = ['zfs', 'send', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
 
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
+	receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -130,115 +130,11 @@ class SyncZfs(Res.Resource):
 
     def do_fullsync(self, node=None):
         if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
+            send_cmd = ['zfs', 'send', '-R', self.src_snap_tosend]
         else:
-            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
+            send_cmd = ['zfs', 'send', self.src_snap_tosend]
 
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
-        if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
-
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
-        buff = p2.communicate()
-        if p2.returncode != 0:
-            if buff[1] is not None and len(buff[1]) > 0:
-                self.log.error(buff[1])
-            self.log.error("full sync failed")
-            raise ex.excError
-        if buff[0] is not None and len(buff[0]) > 0:
-            self.log.info(buff[0])
-
-    def remove_snap(self, snap, node=None):
-        if not self.snap_exists(snap, node=node):
-            return
-    def syncfullsync(self):
-        self.syncupdate()
-
-    def do_update(self, node):
-        if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
-        else:
-            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
-
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
-        if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
-
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
-        buff = p2.communicate()
-        if p2.returncode != 0:
-            if buff[1] is not None and len(buff[1]) > 0:
-                self.log.error(buff[1])
-            self.log.error("sync update failed")
-            raise ex.excError
-        if buff[0] is not None and len(buff[0]) > 0:
-            self.log.info(buff[0])
-
-    def do_fullsync(self, node=None):
-        if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
-        else:
-            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
-
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
-        if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
-
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
-        buff = p2.communicate()
-        if p2.returncode != 0:
-            if buff[1] is not None and len(buff[1]) > 0:
-                self.log.error(buff[1])
-            self.log.error("full sync failed")
-            raise ex.excError
-        if buff[0] is not None and len(buff[0]) > 0:
-            self.log.info(buff[0])
-
-    def remove_snap(self, snap, node=None):
-        if not self.snap_exists(snap, node=node):
-            return
-    def syncfullsync(self):
-        self.syncupdate()
-
-    def do_update(self, node):
-        if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
-        else:
-            send_cmd = ['/usr/sbin/zfs', 'send', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
-
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool]
-        if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
-
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
-        buff = p2.communicate()
-        if p2.returncode != 0:
-            if buff[1] is not None and len(buff[1]) > 0:
-                self.log.error(buff[1])
-            self.log.error("sync update failed")
-            raise ex.excError
-        if buff[0] is not None and len(buff[0]) > 0:
-            self.log.info(buff[0])
-
-    def do_fullsync(self, node=None):
-        if self.recursive :  
-            send_cmd = ['/usr/sbin/zfs', 'send', '-R', self.src_snap_tosend]
-        else:
-            send_cmd = ['/usr/sbin/zfs', 'send', self.src_snap_tosend]
-
-	receive_cmd = ['/usr/sbin/zfs', 'receive', '-dF', self.dst_pool ]
+	receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool ]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -258,9 +154,9 @@ class SyncZfs(Res.Resource):
         if not self.snap_exists(snap, node=node):
             return
         if self.recursive :
-               cmd = ['/usr/sbin/zfs', 'destroy', '-r', snap]
+            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'destroy', '-r', snap]
         else:
-                cmd = ['/usr/sbin/zfs', 'destroy', snap]
+            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'destroy', snap]
         if node is not None:
             cmd = rcEnv.rsh.split() + [ node ] + cmd
         (ret, out) = self.vcall(cmd)
@@ -272,9 +168,9 @@ class SyncZfs(Res.Resource):
             self.log.error("%s should not exist"%dst)
             raise ex.excError
         if self.recursive :
-            cmd = ['zfs', 'rename', '-r', src, dst]
+            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'rename', '-r', src, dst]
         else:
-            cmd = ['zfs', 'rename', src, dst]
+            cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'rename', src, dst]
 
         if node is not None:
             cmd = rcEnv.rsh.split() + [ node ] + cmd
