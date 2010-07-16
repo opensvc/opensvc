@@ -38,7 +38,7 @@ class SvcJail(svc.Svc):
         """ jail names cannot have dots
         """
         self.basevmname = vmname.split('.')[0]
-        self.runmethod = ['jexec', self.basevmname, '--']
+        self.runmethod = ['jexec', self.basevmname]
 
 if __name__ == "__main__":
     for c in (SvcJail,) :
