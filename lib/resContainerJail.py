@@ -18,11 +18,11 @@
 #
 import os
 from datetime import datetime
-from subprocess import *
 
 import rcStatus
 import resources as Res
 from rcUtilitiesFreeBSD import check_ping
+from rcUtilities import qcall
 import resContainer
 import rcExceptions as ex
 
@@ -60,7 +60,8 @@ class Jail(resContainer.Container):
         if len(ip6s) > 0:
             cmd += ['ip6.addr='+','.join(ip6s)]
         cmd += ['command=/bin/sh', '/etc/rc']
-        (ret, out) = self.vcall(cmd)
+        self.log.info(' '.join(cmd))
+        ret = qcall(cmd)
         if ret != 0:
             raise ex.excError
 
