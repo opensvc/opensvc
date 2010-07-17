@@ -252,7 +252,7 @@ class SyncZfs(Res.Resource):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
-        cmd = ['zfs', 'list', '-H', '-o', 'creation', snap]
+        cmd = ['zfs', 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
         (ret, out) = self.call(cmd)
         if ret != 0:
             raise ex.excError
