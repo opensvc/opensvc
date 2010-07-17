@@ -270,7 +270,7 @@ class SyncZfs(Res.Resource):
              f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
 
     def _push_statefile(self, node):
-        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
+        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
