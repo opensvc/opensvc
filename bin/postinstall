@@ -284,11 +284,11 @@ def move_usr_to_opt():
             dst = os.path.join(pathetc, os.path.basename(f))
             if os.path.exists(dst):
                 continue
-            if os.path.isdir(f):
-                shutil.copytree(f, dst, symlinks=True)
-            elif os.path.islink(f):
+            if os.path.islink(f):
                 linkto = os.readlink(f)
                 os.symlink(linkto, dst)
+            elif os.path.isdir(f):
+                shutil.copytree(f, dst, symlinks=True)
             else:
                 shutil.copy2(f, dst)
 
