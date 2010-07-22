@@ -86,7 +86,7 @@ class syncDds(Res.Resource):
 
     def get_peersenders(self):
         self.peersenders = set([])
-        if 'nodes' == self.sender:
+        if 'nodes' not in self.target:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])
 
@@ -330,7 +330,6 @@ class syncDds(Res.Resource):
                  optional=False, disabled=False, tags=set([])):
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
-        self.sender = sender
         self.src = src
         self.dst = dst
         self.sync_max_delay = sync_max_delay
