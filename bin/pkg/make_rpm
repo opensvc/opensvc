@@ -76,8 +76,8 @@ These are the tools to drive OpenSVC services
 /opt/opensvc/var
 /opt/opensvc/usr
 
-%changelog
-$(changelog)
+#%changelog
+#\$(changelog)
 EOF
 
 rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
