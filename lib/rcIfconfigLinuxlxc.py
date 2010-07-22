@@ -22,12 +22,13 @@ from subprocess import *
 import rcIfconfigLinux
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
+import os
 
 class ifconfig(rcIfconfigLinux.ifconfig):
     def __init__(self, hostname):
         self.intf = []
 
-        if which('lxc-attach'):
+        if which('lxc-attach') and os.path.exists('/proc/1/ns'):
             self.rsh = ['lxc-attach', '-n', hostname]
             cmd = ['echo', '/sbin/ifconfig', '-a']
             p1 = Popen(cmd, stdout=PIPE)
