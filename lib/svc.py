@@ -124,6 +124,8 @@ class Svc(Resource, Freezer):
         self.rset_status_cache = None
         self.print_status_fmt = "%-8s %-8s %s"
         self.presync_done = False
+        self.presnap_trigger = None
+        self.postsnap_trigger = None
         self.lockfd = None
 
     def __cmp__(self, other):
@@ -194,11 +196,20 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGTERM, signal_handler)
 
     def get_res_sets(self, type):
-         return [ r for r in self.resSets if r.type == type ]
+         if not isinstance(type, list):
+             l = [type]
+         else:
+             l = type
+         rsets = []
+         for t in l:
+             rsets += [ r for r in self.resSets if r.type == t ]
+         return rsets
 
     def has_res_set(self, type):
-        if len(get_res_sets(type)) > 0: return True
-        else: return False
+        if len(get_res_sets(type)) > 0:
+            return True
+        else:
+            return False
 
     def all_set_action(self, action=None, tags=set([])):
         """Call action on each member of the subset of specified type
@@ -210,9 +221,46 @@ class Svc(Resource, Freezer):
         """
         self.set_action(self.get_res_sets(type), action=action, tags=tags)
 
+    def need_snap_trigger(self, sets, action):
+        if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
+            return False
+        for rs in sets:
+            for r in rs.resources:
+                if hasattr(r, "snap") and r.snap is True:
+                    return True
+        return False
+
     def set_action(self, sets=[], action=None, tags=set([])):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
+        blacklist_actions = ["status",
+                   "print_status",
+                   "group_status",
+                   "presync",
+                   "postsync"]
+        ns = self.need_snap_trigger(sets, action)
+
+        """ snapshots are created in pre_action and destroyed in post_action
+            place presnap and postsnap triggers around pre_action
+        """
+        if ns and self.presnap_trigger is not None:
+            (ret, out) = self.vcall(self.presnap_trigger)
+            if ret != 0:
+                raise ex.excError
+
+        for r in sets:
+            if action not in blacklist_actions:
+                try:
+                    r.log.debug("start %s pre_action"%r.type)
+                    r.pre_action(r, action)
+                except:
+                    raise ex.excError
+
+        if ns and self.postsnap_trigger is not None:
+            (ret, out) = self.vcall(self.postsnap_trigger)
+            if ret != 0:
+                raise ex.excError
+
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
@@ -228,6 +276,14 @@ class Svc(Resource, Freezer):
                 else:
                     break
 
+        for r in sets:
+            if action not in blacklist_actions:
+                try:
+                    r.post_action(r, action)
+                except:
+                    raise ex.excError
+
+
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))
         for k in self.type2resSets.keys() : output += " %s" % k
@@ -239,20 +295,19 @@ class Svc(Resource, Freezer):
         """aggregate status a service
         """
         ss = rcStatus.Status()
-        for t in self.status_types:
-            for r in self.get_res_sets(t):
-                if "sync." not in r.type:
-                     ss += r.status()
+        for r in self.get_res_sets(self.status_types):
+            if "sync." not in r.type:
+                 ss += r.status()
+            else:
+                """ sync are expected to be up
+                """
+                s = r.status()
+                if s == rcStatus.UP:
+                    ss += rcStatus.UNDEF
+                elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                    ss += s
                 else:
-                    """ sync are expected to be up
-                    """
-                    s = r.status()
-                    if s == rcStatus.UP:
-                        ss += rcStatus.UNDEF
-                    elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
-                        ss += s
-                    else:
-                        ss += rcStatus.WARN
+                    ss += rcStatus.WARN
         if ss.status == rcStatus.STDBY_UP_WITH_UP:
             ss.status = rcStatus.UP
         elif ss.status == rcStatus.STDBY_UP_WITH_DOWN:
@@ -266,10 +321,9 @@ class Svc(Resource, Freezer):
         print self.print_status_fmt%("---", "------", "-----")
 
         s = rcStatus.Status(rcStatus.UNDEF)
-        for t in self.status_types:
-            for rs in self.get_res_sets(t):
-                for r in rs.resources:
-                    r.print_status()
+        for rs in self.get_res_sets(self.status_types):
+            for r in rs.resources:
+                r.print_status()
         s = self.group_status()['overall']
 
         print self.print_status_fmt%("overall",
@@ -377,7 +431,6 @@ class Svc(Resource, Freezer):
     def startdisk(self):
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("sync.symclone", "start")
-        self.sub_set_action("sync.dds", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
@@ -495,13 +548,12 @@ class Svc(Resource, Freezer):
 
     def syncnodes(self):
         self.presync()
-        self.sub_set_action("sync.rsync", "syncnodes")
-        self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncnodes")
         self.remote_postsync()
 
     def syncdrp(self):
         self.presync()
-        self.sub_set_action("sync.rsync", "syncdrp")
+        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncdrp")
         self.remote_postsync()
 
     def syncswap(self):

@@ -28,6 +28,41 @@ import resources as Res
 import datetime
 
 class syncDds(Res.Resource):
+    def pre_action(self, rset, action):
+        """Don't sync PRD services when running on !PRD node
+        """
+        if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+            self.log.debug("won't sync a PRD service running on a !PRD node")
+            raise ex.excAbortAction
+
+        for i, r in enumerate(rset.resources):
+            if r.is_disabled():
+                continue
+            if not r.svc_syncable():
+                return
+            r.get_info()
+            if action == 'syncfullsync':
+                r.create_snap1()
+            elif action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
+                if action == 'syncnodes' and self.target != ['nodes']:
+                    return
+                if action == 'syncdrp' and self.target != ['drpnodes']:
+                    return
+                r.get_info()
+                r.get_snap1_uuid()
+                nb = 0
+                tgts = r.targets.copy()
+                for n in tgts:
+                    try:
+                        r.check_remote(n)
+                        nb += 1
+                    except:
+                        self.targets -= set([n])
+                if nb != len(tgts):
+                    self.log.error('all destination nodes must be present for dds-based synchronization to proceed')
+                    raise ex.excError
+                r.create_snap2()
+
     def snap_exists(self, dev):
         if not os.path.exists(dev):
             self.log.debug('dev path does not exist')
@@ -58,6 +93,9 @@ class syncDds(Res.Resource):
                                       self.svc.svcname+'_'+self.rid+'_dds_state')
 
     def create_snap1(self):
+        if self.snap_exists(self.snap2):
+            self.log.error('%s should not exist'%self.snap2)
+            raise ex.excError
         self.create_snap(self.snap1, self.snap1_lv)
         self.write_statefile()
 
@@ -102,16 +140,16 @@ class syncDds(Res.Resource):
         self.get_targets()
         self.get_src_info()
 
-    def syncfullsync(self):
+    def svc_syncable(self):
         s = self.svc.group_status(excluded_groups=set(["sync"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
+            return False
+        return True
+
+    def syncfullsync(self):
+        if not self.svc_syncable():
             return
-        self.get_info()
-        if self.snap_exists(self.snap2):
-            self.log.error('%s should not exist'%self.snap2)
-            raise ex.excError
-        self.create_snap1()
         for n in self.targets:
             self.do_fullsync(n)
 
@@ -234,16 +272,19 @@ class syncDds(Res.Resource):
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
 
-    def syncupdate(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
+    def syncnodes(self):
+        if self.target != ['nodes']:
             return
-        self.get_info()
-        self.get_snap1_uuid()
-        for n in self.targets:
-            self.check_remote(n)
-        self.create_snap2()
+        self.syncupdate()
+
+    def syncdrp(self):
+        if self.target != ['drpnodes']:
+            return
+        self.syncupdate()
+
+    def syncupdate(self):
+        if not self.svc_syncable():
+            return
         for n in self.targets:
             self.do_update(n)
         self.rotate_snaps()

@@ -218,9 +218,13 @@ class ResourceSet(Resource):
     Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
-    def __init__(self, type=None, resources=[], optional=False, disabled=False, tags=set([])):
-        self.resources=resources
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, type=None, resources=[],
+                 optional=False, disabled=False, tags=set([])):
+        self.resources = []
+        Resource.__init__(self, type=type,
+                          optional=optional, disabled=disabled, tags=tags)
+        for r in resources:
+            self += r
 
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
@@ -234,8 +238,10 @@ class ResourceSet(Resource):
             r.rset = self
             self.resources.append(r)
             if hasattr(r, 'pre_action'):
+                r.log.debug("install pre_action")
                 self.pre_action = r.pre_action
             if hasattr(r, 'post_action'):
+                r.log.debug("install post_action")
                 self.post_action = r.post_action
         return (self)
 
@@ -289,20 +295,11 @@ class ResourceSet(Resource):
         else:
             resources.sort(reverse=True)
 
-        if action not in ["status", "print_status", "group_status", "presync", "postsync"]:
-            try:
-                self.pre_action(self, action)
-            except exc.excAbortAction:
-                return
-
         for r in resources:
             try:
                 r.action(action)
             except exc.excAbortAction:
                 break
-
-        if action != "status":
-            self.post_action(self, action)
 
 
 if __name__ == "__main__":

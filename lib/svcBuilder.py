@@ -842,6 +842,10 @@ def build(name):
     svcMod = __import__(mod)
     svc = getattr(svcMod, svc_class_name)(**kwargs)
     svc.svcmode = svcmode
+    if conf.has_option("default", "presnap_trigger"):
+        svc.presnap_trigger = conf.get("default", "presnap_trigger").split()
+    if conf.has_option("default", "postsnap_trigger"):
+        svc.postsnap_trigger = conf.get("default", "postsnap_trigger").split()
 
     #
     # Store useful properties
