@@ -104,7 +104,7 @@ def get_cpu_freq():
 def get_cpu_cores():
     c = 0
     for l in dmidecode:
-        if 'Cores Count:' in l:
+        if 'Core Count:' in l:
             c += int(l.split()[-1])
     return str(c)
 
