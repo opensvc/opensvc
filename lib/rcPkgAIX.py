@@ -17,7 +17,6 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
