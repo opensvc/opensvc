@@ -35,6 +35,7 @@ class Node(Svc, Freezer):
         self.action_desc = {
           'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
           'updateservices': 'refresh var files associated with services',
+          'pushasset':      'push asset information to collector',
           'pushservices':   'push service configuration to collector',
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
@@ -67,6 +68,9 @@ class Node(Svc, Freezer):
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()
+
+    def pushasset(self):
+        xmlrpcClient.push_asset()
 
     def syncservices(self):
         for svc in self.svcs:

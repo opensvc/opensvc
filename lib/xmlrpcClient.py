@@ -80,6 +80,7 @@ except:
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
 proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
+proxy_methods = proxy.system.listMethods()
 
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
@@ -583,6 +584,18 @@ def push_stats(force=False):
     push_stats_blockdev()
     push_stats_netdev_err()
     push_stats_netdev()
+
+def push_asset():
+    try:
+        m = __import__('rcAsset'+sysname)
+    except ImportError:
+        print "pushasset methods not implemented on", sysname
+        return
+    if "update_asset" not in proxy_methods:
+        print "'update_asset' method is not exported by the collector"
+        return
+    d = m.get_asset_dict()
+    proxy.update_asset(d.keys(), d.values())
 
 @xmlrpc_decorator
 def push_all(svcs):
