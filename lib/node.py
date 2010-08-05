@@ -40,6 +40,7 @@ class Node(Svc, Freezer):
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
           'prkey':          'display persistent reservation key of this node',
+          'checks':         'run node sanity checks, push results to collector',
         }
 
     def format_desc(self):
@@ -89,6 +90,10 @@ class Node(Svc, Freezer):
         m = __import__('hostid'+rcEnv.sysname)
         print m.hostid()
 
+    def checks(self):
+        import checks
+        c = checks.checks(self.svcs)
+        c.do_checks()
 
 if __name__ == "__main__" :
     for n in (Node,) :

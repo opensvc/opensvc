@@ -603,3 +603,12 @@ def push_all(svcs):
     for svc in svcs:
         push_disks(svc)
         push_service(svc)
+
+@xmlrpc_decorator
+def push_checks(vars, vals):
+    if "push_checks" not in proxy_methods:
+        print "'push_checks' method is not exported by the collector"
+        return
+    proxy.push_checks(vars, vals)
+
+
