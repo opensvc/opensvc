@@ -594,7 +594,7 @@ def push_asset():
     if "update_asset" not in proxy_methods:
         print "'update_asset' method is not exported by the collector"
         return
-    d = m.get_asset_dict()
+    d = m.Asset().get_asset_dict()
     proxy.update_asset(d.keys(), d.values())
 
 @xmlrpc_decorator
