@@ -80,7 +80,10 @@ except:
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
 proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
-proxy_methods = proxy.system.listMethods()
+try:
+    proxy_methods = proxy.system.listMethods()
+except socket.error:
+    proxy_methods = []
 
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
