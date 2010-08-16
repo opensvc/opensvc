@@ -44,9 +44,7 @@ class Snap(snap.Snap):
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0755)
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
-        (ret, buff) = self.vcall(['fsck', '-a', snap_dev])
-        if ret != 0:
-            raise ex.syncSnapMountError
+        self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
         (ret, buff) = self.vcall(['mount', '-o', m.mntOpt, snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
