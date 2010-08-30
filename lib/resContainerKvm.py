@@ -122,7 +122,10 @@ class Kvm(resContainer.Container):
         """ check if drp flag is already set up
         """
         for disk in tree.getiterator("disk"):
-            (dev, path) = disk.find('source').items()[0]
+            e = disk.find('source')
+            if e is None:
+                continue
+            (dev, path) = e.items()[0]
             if path == flag_disk_path:
                 self.log.info("flag virtual disk already exists")
                 return
