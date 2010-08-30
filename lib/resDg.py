@@ -1,6 +1,8 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>
+# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2010 Cyril Galibern <cyril.galibern@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,16 +31,17 @@ from rcGlobalEnv import rcEnv
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
-    def __init__(self, rid=None, name=None, type=None, always_on=set([]), optional=False,
+    def __init__(self, rid=None, name=None, type=None,
+                 always_on=set([]), optional=False,
                  disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, type, optional=optional, disabled=disabled, tags=tags)
+        Res.Resource.__init__(self, rid, type,
+                              optional=optional, disabled=disabled, tags=tags)
         self.name = name
         self.always_on = always_on
         self.disks = set()
 
     def __str__(self):
-        return "%s name=%s" % (Res.Resource.__str__(self),\
-                                    self.name)
+        return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def disklist(self):
         return self.disks
