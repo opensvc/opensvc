@@ -77,17 +77,20 @@ def svcmode_mod_name(svcmode=''):
 
 def get_tags(conf, section):
     if conf.has_option(section, 'tags'):
-       return set(conf.get(section, "tags").split())
+        return set(conf.get(section, "tags").split())
     return set([])
 
 def get_optional(conf, section):
     if conf.has_option(section, 'optional'):
-       return conf.getboolean(section, "optional")
+        return conf.getboolean(section, "optional")
     return False
 
 def get_disabled(conf, section):
     if conf.has_option(section, 'disable'):
-       return conf.getboolean(section, "disable")
+        return conf.getboolean(section, "disable")
+    if conf.has_option(section, 'disable_on') and \
+       rcEnv.nodename in conf.get(section, "disable_on").split():
+        return True
     return False
 
 def need_scsireserv(resource, conf, section):
@@ -227,6 +230,33 @@ def add_drbds(svc, conf):
         kwargs['optional'] = get_optional(conf, s)
         drbd = __import__('resDrbd')
         r = drbd.Drbd(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
+def add_vdisks(svc, conf):
+    for s in conf.sections():
+        if re.match('vdisk#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+        devpath = {}
+
+        for attr, val in conf.items(s):
+            if 'path@' in attr:
+                devpath[attr.replace('path@','')] = val
+
+        if len(devpath) == 0:
+            svc.log.error("path@node must be set in section %s"%s)
+            return
+
+        kwargs['devpath'] = devpath
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        vdisk = __import__('resVdisk')
+        r = vdisk.Vdisk(**kwargs)
         add_triggers(r, conf, s)
         svc += r
 
@@ -939,6 +969,7 @@ def build(name):
         add_ips(svc, conf)
         add_drbds(svc, conf)
         add_loops(svc, conf)
+        add_vdisks(svc, conf)
         add_vgs(svc, conf)
         add_vmdg(svc, conf)
         add_pools(svc, conf)
