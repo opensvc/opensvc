@@ -20,7 +20,6 @@ import os
 import sys
 import ConfigParser
 import logging
-import glob
 import re
 import socket
 
@@ -62,6 +61,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcLxc', 'SvcLxc')
     elif svcmode == 'zone':
         return ('svcZone', 'SvcZone')
+    elif svcmode == 'jail':
+        return ('svcJail', 'SvcJail')
     elif svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
     elif svcmode == 'hpvm':
@@ -70,21 +71,27 @@ def svcmode_mod_name(svcmode=''):
         return ('svcLdom', 'SvcLdom')
     elif svcmode == 'kvm':
         return ('svcKvm', 'SvcKvm')
+    elif svcmode == 'xen':
+        return ('svcXen', 'SvcXen')
     raise
 
-def set_optional(resource, conf, section):
-    if conf.has_option(section, 'optional') and \
-       conf.getboolean(section, "optional") == True:
-            resource.set_optional()
+def get_tags(conf, section):
+    if conf.has_option(section, 'tags'):
+        return set(conf.get(section, "tags").split())
+    return set([])
 
-def set_disable(resource, conf, section):
-    if conf.has_option(section, 'disable') and \
-       conf.getboolean(section, "disable") == True:
-            resource.disable()
+def get_optional(conf, section):
+    if conf.has_option(section, 'optional'):
+        return conf.getboolean(section, "optional")
+    return False
 
-def set_optional_and_disable(resource, conf, section):
-    set_optional(resource, conf, section)
-    set_disable(resource, conf, section)
+def get_disabled(conf, section):
+    if conf.has_option(section, 'disable'):
+        return conf.getboolean(section, "disable")
+    if conf.has_option(section, 'disable_on') and \
+       rcEnv.nodename in conf.get(section, "disable_on").split():
+        return True
+    return False
 
 def need_scsireserv(resource, conf, section):
     """scsireserv = true can be set globally or in a specific
@@ -107,8 +114,15 @@ def add_scsireserv(svc, resource, conf, section):
         sr = __import__('resScsiReserv'+rcEnv.sysname)
     except:
         sr = __import__('resScsiReserv')
-    r = sr.ScsiReserv(rid=resource.rid, disks=resource.disklist())
-    set_optional_and_disable(r, conf, section)
+
+    kwargs = {}
+    kwargs['rid'] = resource.rid
+    kwargs['tags'] = resource.tags
+    kwargs['disks'] = resource.disklist()
+    kwargs['disabled'] = resource.is_disabled()
+    kwargs['optional'] = resource.is_optional()
+
+    r = sr.ScsiReserv(**kwargs)
     svc += r
 
 def add_triggers(resource, conf, section):
@@ -180,12 +194,69 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+'Ldom')
         elif svc.svcmode  == 'zone':
             ip = __import__('resIp'+'Zone')
+        elif svc.svcmode  == 'xen':
+            ip = __import__('resIp'+'Xen')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = ip.Ip(**kwargs)
-        set_optional_and_disable(r, conf, s)
+        add_triggers(r, conf, s)
+        svc += r
+
+def add_drbds(svc, conf):
+    """Parse the configuration file and add a drbd object for each [drbd#n]
+    section. Drbd objects are stored in a list in the service object.
+    """
+    for s in conf.sections():
+        if re.match('drbd#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+
+        if conf.has_option(s, "res"):
+            kwargs['res'] = conf.get(s, "res")
+        else:
+            svc.log.error("res must be set in section %s"%s)
+            return
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        drbd = __import__('resDrbd')
+        r = drbd.Drbd(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
+def add_vdisks(svc, conf):
+    for s in conf.sections():
+        if re.match('vdisk#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+        devpath = {}
+
+        for attr, val in conf.items(s):
+            if 'path@' in attr:
+                devpath[attr.replace('path@','')] = val
+
+        if len(devpath) == 0:
+            svc.log.error("path@node must be set in section %s"%s)
+            return
+
+        kwargs['devpath'] = devpath
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        vdisk = __import__('resVdisk')
+        r = vdisk.Vdisk(**kwargs)
         add_triggers(r, conf, s)
         svc += r
 
@@ -206,9 +277,12 @@ def add_loops(svc, conf):
             return
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         loop = __import__('resLoop'+rcEnv.sysname)
         r = loop.Loop(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -233,10 +307,12 @@ def add_vgs(svc, conf):
 
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
@@ -246,14 +322,21 @@ def add_vmdg(svc, conf):
         return
     if svc.svcmode == 'hpvm':
         vg = __import__('resVgHpVm')
-    if svc.svcmode == 'ldom':
+    elif svc.svcmode == 'ldom':
         vg = __import__('resVgLdom')
     elif svc.svcmode in rcEnv.vt_libvirt:
         vg = __import__('resVgLibvirtVm')
     else:
         return
-    r = vg.Vg(rid='vmdg', name='vmdg')
-    set_optional_and_disable(r, conf, 'vmdg')
+
+    kwargs = {}
+    kwargs['rid'] = 'vmdg'
+    kwargs['tags'] = get_tags(conf, 'vmdg')
+    kwargs['name'] = 'vmdg'
+    kwargs['disabled'] = get_disabled(conf, 'vmdg')
+    kwargs['optional'] = get_optional(conf, 'vmdg')
+
+    r = vg.Vg(**kwargs)
     add_triggers(r, conf, 'vmdg')
     svc += r
     add_scsireserv(svc, r, conf, 'vmdg')
@@ -265,10 +348,21 @@ def add_pools(svc, conf):
     for s in conf.sections():
         if re.match('pool#[0-9]', s, re.I) is None:
             continue
-        name = conf.get(s, "poolname")
-        pool = __import__('resZfs')
-        r = pool.Pool(rid=s, name=name)
-        set_optional_and_disable(r, conf, s)
+        if conf.has_option(s, "poolname@"+rcEnv.nodename):
+            name = conf.get(s, "poolname@"+rcEnv.nodename)
+        else:
+            name = conf.get(s, "poolname")
+        pool = __import__('resVgZfs')
+
+        kwargs = {}
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['name'] = name
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+
+        r = pool.Pool(**kwargs)
         add_triggers(r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
@@ -309,72 +403,26 @@ def add_filesystems(svc, conf):
                 globalfs = False
             if globalfs is False:
                 mnt = os.path.realpath(svc.zone.zonepath+'/root/'+mnt)
-        always_on = always_on_nodes_set(svc, conf, s)
+
         mount = __import__('resMount'+rcEnv.sysname)
-        r = mount.Mount(s, mnt, dev, type, mnt_opt, always_on)
-        set_optional_and_disable(r, conf, s)
+
+        kwargs = {}
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['mountPoint'] = mnt
+        kwargs['device'] = dev
+        kwargs['fsType'] = type
+        kwargs['mntOpt'] = mnt_opt
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+
+        r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)
         svc += r
         #add_scsireserv(svc, r, conf, s)
 
 def add_mandatory_syncs(svc):
-    def list_mapfiles():
-        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.map')
-        files = glob.glob(pattern)
-        if len(files) > 0:
-            return files
-        return []
-
-    def list_mksffiles():
-        pattern = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.mksf')
-        files = glob.glob(pattern)
-        if len(files) > 0:
-            return files
-        return []
-
-    def list_kvmconffiles():
-        if not hasattr(svc, "vmname"):
-            return []
-        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', svc.vmname+'.xml')
-        if os.path.exists(cf):
-            return [cf]
-        return []
-
-    def list_hpvmconffiles():
-        a = []
-        if svc.svcmode != 'hpvm':
-            return a
-        guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', svc.vmname)
-        uuid = os.path.realpath(guest)
-        share = os.path.join(rcEnv.pathvar, 'vg_'+svc.svcname+'_*.share')
-        if os.path.exists(guest):
-            a.append(guest)
-        if os.path.exists(uuid):
-            a.append(uuid)
-        files = glob.glob(share)
-        if len(files) > 0:
-            a += files
-        return a
-
-    def list_ldomconffiles():
-        a = []
-        if svc.svcmode != 'ldom':
-            return a
-        ldomf = os.path.join(rcEnv.pathvar, 'ldom_'+svc.svcname+'.*')
-        files = glob.glob(ldomf)
-        if len(files) > 0:
-            a += files
-        return a
-
-    def list_lxcconffiles():
-        a = []
-        if svc.svcmode != 'lxc':
-            return a
-        guest = os.path.join(os.sep, 'var', 'lib', 'lxc', svc.vmname, 'config')
-        if os.path.exists(guest):
-            a.append(guest)
-        return a
-
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -389,18 +437,15 @@ def add_mandatory_syncs(svc):
     localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
     if os.path.exists(localrc):
         src.append(localrc)
-    src += list_mapfiles()
-    src += list_mksffiles()
-    src += list_kvmconffiles()
-    src += list_lxcconffiles()
-    src += list_hpvmconffiles()
-    src += list_ldomconffiles()
+    for rs in svc.resSets:
+        for r in rs.resources:
+            src += r.files_to_sync()
     dst = os.path.join("/")
     exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
     r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
-                       exclude=['-R']+exclude, target=targethash,
-                       internal=True)
+                           exclude=['-R']+exclude, target=targethash,
+                           internal=True)
     svc += r
 
     """2
@@ -427,6 +472,66 @@ def add_syncs(svc, conf):
     add_syncs_netapp(svc, conf)
     add_syncs_symclone(svc, conf)
     add_syncs_dds(svc, conf)
+    add_syncs_zfs(svc, conf)
+
+def add_syncs_zfs(svc, conf):
+    zfs = __import__('resSyncZfs')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'zfs':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        kwargs = {}
+
+        if conf.has_option(s, "src@"+rcEnv.nodename):
+            src = conf.get(s, "src@"+rcEnv.nodename)
+        elif conf.has_option(s, 'src'):
+            src = conf.get(s, "src")
+        else:
+            log.error("config file section %s must have src set" % s)
+            return
+        kwargs['src'] = src
+
+        if conf.has_option(s, "dst@"+rcEnv.nodename):
+            dst = conf.get(s, "dst@"+rcEnv.nodename)
+        elif conf.has_option(s, 'dst'):
+            dst = conf.get(s, "dst")
+        else:
+            dst = src
+        kwargs['dst'] = dst
+
+        if not conf.has_option(s, 'target'):
+            log.error("config file section %s must have target set" % s)
+            return
+        else:
+            kwargs['target'] = conf.get(s, 'target').split()
+
+        if conf.has_option(s, 'recursive'):
+            kwargs['recursive'] = conf.getboolean(s, 'recursive')
+
+        if conf.has_option(s, 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        elif conf.has_option('default', 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+
+        if conf.has_option(s, 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
+        elif conf.has_option('default', 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        r = zfs.SyncZfs(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
 
 def add_syncs_dds(svc, conf):
     dds = __import__('resSyncDds')
@@ -480,8 +585,10 @@ def add_syncs_dds(svc, conf):
             kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = dds.syncDds(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -535,8 +642,10 @@ def add_syncs_symclone(svc, conf):
             kwargs['precopy_timeout'] = conf.getint(s, 'precopy_timeout')
 
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
         r = sc.syncSymclone(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -586,9 +695,11 @@ def add_syncs_netapp(svc, conf):
         kwargs['path'] = conf.get(s, 'path')
         kwargs['user'] = conf.get(s, 'user')
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         r = resSyncNetapp.syncNetapp(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -647,9 +758,11 @@ def add_syncs_rsync(svc, conf):
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
         kwargs['target'] = targethash
         kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
 
         r = resSyncRsync.Rsync(**kwargs)
-        set_optional_and_disable(r, conf, s)
         add_triggers(r, conf, s)
         svc += r
 
@@ -730,7 +843,8 @@ def build(name):
                 return None
             vmname = conf.get("default", "vm_name")
             kwargs['vmname'] = vmname
-        if conf.has_option("default", "guest_os"):
+        if conf.has_option("default", "guest_os") and \
+           len(conf.get("default", "guest_os")) > 0:
             if svcmode not in rcEnv.vt_supported:
                 log.error("can not set 'guest_os' with '%s' mode in %s env"%(svcmode, name))
                 return None
@@ -739,6 +853,15 @@ def build(name):
         elif svcmode in rcEnv.vt_supported:
             guestos = rcEnv.sysname
             kwargs['guestos'] = guestos
+        if svcmode == 'jail':
+            if not conf.has_option("default", "jailroot"):
+                log.error("jailroot parameter is mandatory for jail mode")
+                return None
+            jailroot = conf.get("default", "jailroot")
+            if not os.path.exists(jailroot):
+                log.error("jailroot %s does not exist"%jailroot)
+                return None
+            kwargs['jailroot'] = jailroot
 
     #
     # dynamically import the module matching the service mode
@@ -749,6 +872,10 @@ def build(name):
     svcMod = __import__(mod)
     svc = getattr(svcMod, svc_class_name)(**kwargs)
     svc.svcmode = svcmode
+    if conf.has_option("default", "presnap_trigger"):
+        svc.presnap_trigger = conf.get("default", "presnap_trigger").split()
+    if conf.has_option("default", "postsnap_trigger"):
+        svc.postsnap_trigger = conf.get("default", "postsnap_trigger").split()
 
     #
     # Store useful properties
@@ -840,13 +967,15 @@ def build(name):
     #
     try:
         add_ips(svc, conf)
+        add_drbds(svc, conf)
         add_loops(svc, conf)
+        add_vdisks(svc, conf)
         add_vgs(svc, conf)
         add_vmdg(svc, conf)
         add_pools(svc, conf)
         add_filesystems(svc, conf)
-        add_syncs(svc, conf)
         add_apps(svc, conf)
+        add_syncs(svc, conf)
     except ex.excInitError:
         return None
 
@@ -860,7 +989,8 @@ def is_service(f):
         return False
     return True
 
-def build_services(status=None, svcnames=[], onlyprimary=False):
+def build_services(status=None, svcnames=[],
+                   onlyprimary=False, onlysecondary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
@@ -876,6 +1006,8 @@ def build_services(status=None, svcnames=[], onlyprimary=False):
         if status is not None and svc.status() != status:
             continue
         if onlyprimary and svc.autostart_node != rcEnv.nodename:
+            continue
+        if onlysecondary and svc.autostart_node == rcEnv.nodename:
             continue
         services[svc.svcname] = svc
     return [ s for n ,s in sorted(services.items()) ]

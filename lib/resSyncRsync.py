@@ -31,6 +31,10 @@ def lookup_snap_mod():
         return __import__('snapLvmLinux')
     elif rcEnv.sysname == 'HP-UX':
         return __import__('snapVxfsHP-UX')
+    elif rcEnv.sysname == 'AIX':
+        return __import__('snapJfs2AIX')
+    elif rcEnv.sysname in ['SunOS', 'FreeBSD']:
+        return __import__('snapZfsSunOS')
     else:
         raise ex.excError
 
@@ -41,7 +45,7 @@ def remote_fs_mounted(self, node):
         """No check has been configured. Assume the admin knows better.
         """
         return True
-    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dst]
+    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dstfs]
     (ret, out) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
@@ -212,6 +216,7 @@ def sync(self, type):
             self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
             continue
         sync_timestamp(self, node)
+        self.svc.need_postsync |= set([node])
     return
 
 class Rsync(Res.Resource):
@@ -264,9 +269,10 @@ class Rsync(Res.Resource):
         if not need_snap:
             return
 
-        snap = lookup_snap_mod()
+        Snap = lookup_snap_mod()
         try:
-            rset.snaps = snap.snap(self, rset, action)
+            rset.snaps = Snap.Snap(self.rid)
+            rset.snaps.try_snap(rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
 
@@ -274,8 +280,8 @@ class Rsync(Res.Resource):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
-        snap = lookup_snap_mod()
-        snap.snap_cleanup(self, rset)
+        if hasattr(rset, 'snaps'):
+            rset.snaps.snap_cleanup(rset)
 
     def syncnodes(self):
         try:
@@ -345,7 +351,7 @@ class Rsync(Res.Resource):
 
     def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,
                  bwlimit=None, sync_min_delay=30, sync_max_delay=1500,
-                 optional=False, disabled=False, internal=False):
+                 optional=False, disabled=False, tags=set([]), internal=False):
         if internal:
             if rcEnv.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
@@ -365,7 +371,7 @@ class Rsync(Res.Resource):
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
         Res.Resource.__init__(self, rid=rid, type="sync.rsync",
-                              optional=optional, disabled=disabled)
+                              optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\

@@ -31,11 +31,13 @@ class Pool(resDg.Dg):
     """ basic pool resource
     """
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([]),
+                 always_on=set([])):
         self.label = 'pool ' + name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.zpool',
-                          optional=optional, disabled=disabled)
+                          always_on=always_on,
+                          optional=optional, disabled=disabled, tags=tags)
 
     def has_it(self):
         """Returns True if the pool is present

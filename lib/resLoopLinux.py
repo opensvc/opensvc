@@ -86,5 +86,7 @@ class Loop(Res.Loop):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
-    def __init__(self, rid, loopFile):
-        Res.Loop.__init__(self, rid, loopFile)
+    def __init__(self, rid, loopFile, always_on=set([]),
+                 disabled=False, tags=set([]), optional=False):
+        Res.Loop.__init__(self, rid, loopFile, always_on=always_on,
+                          disabled=disabled, tags=tags, optional=optional)

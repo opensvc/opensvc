@@ -6,7 +6,10 @@ VERSION=1.0
 ARCH=${ARCH:-all}
 BASE=/opt/opensvc
 REV=$(date +%y%m%d.%H%M)
+IPSREV=$(date +%y%m%d%H%M)
 P=${PKGNAME}-$VERSION-$REV.SunOS.pkg
+IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
+#IPSP=pkgname@osrev,osrev,version[:timestampiso8601]
 REPODIR=$(cd $(dirname $0);pwd)
 export REPODIR
 PATH=$PWD:$PATH:/opt/sfw/bin
@@ -138,8 +141,6 @@ mkdir $TMPARCHIVE
 cd $BASE && git archive --format=tar HEAD | (
 	cd $TMPARCHIVE && tar xf - 			\
 	&& rm $TMPARCHIVE/.gitignore			\
-	&& mv $TMPARCHIVE/usr/share $TMPARCHIVE/share	\
-	&& rmdir $TMPARCHIVE/usr			\
 	&& chown -R root:root $TMPARCHIVE		\
 	&& chmod -R og-w $TMPARCHIVE
 	)
@@ -175,4 +176,4 @@ rm $REPODIR/postinstall
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
 
-[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg $P
+[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg $P $IPSP

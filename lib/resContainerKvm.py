@@ -21,19 +21,30 @@ import resources as Res
 import time
 import os
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 from rcUtilities import qcall
+from rcUtilitiesLinux import check_ping
 import resContainer
 
 class Kvm(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="kvm", name=name, type="container.kvm",
-                                        optional=optional, disabled=disabled)
+                                        optional=optional, disabled=disabled, tags=tags)
+        self.cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', name+'.xml')
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+
+    def list_kvmconffiles(self):
+        if os.path.exists(self.cf):
+            return [self.cf]
+        return []
+
+    def files_to_sync(self):
+        return self.list_kvmconffiles()
 
     def check_capabilities(self):
         cmd = ['virsh', 'capabilities']
@@ -47,20 +58,13 @@ class Kvm(resContainer.Container):
         return True
 
     def ping(self):
-        count=1
-        timeout=1
-        cmd = ['ping', '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.name]
-        (ret, out) = self.call(cmd, errlog=False)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
-        cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')
-        if not os.path.exists(cf):
-            self.log.error("%s not found"%cf)
+        if not os.path.exists(self.cf):
+            self.log.error("%s not found"%self.cf)
             raise ex.excError
-        cmd = ['virsh', 'define', cf]
+        cmd = ['virsh', 'define', self.cf]
         (ret, buff) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -92,11 +96,46 @@ class Kvm(resContainer.Container):
             return self.info
         for line in out.split('\n'):
             if "CPU(s):" in line: self.info['vcpus'] = line.split(':')[1].strip()
-            if "Max memory" in line: self.info['vmem'] = line.split(':')[1].strip()
-        return self.info           
+            if "Used memory:" in line: self.info['vmem'] = line.split(':')[1].strip()
+        return self.info
 
     def check_manual_boot(self):
         cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', 'autostart', self.name+'.xml')
         if os.path.exists(cf):
             return False
         return True
+
+    def install_drp_flag(self):
+        flag_disk_path = os.path.join(rcEnv.pathvar, 'drp_flag.vdisk')
+
+        from xml.etree.ElementTree import ElementTree, SubElement
+        tree = ElementTree()
+        tree.parse(self.cf)
+
+        """ create the vdisk if it does not exist yet
+        """
+        if not os.path.exists(flag_disk_path):
+            with open(flag_disk_path, 'w') as f:
+                f.write('')
+                f.close()
+
+        """ check if drp flag is already set up
+        """
+        for disk in tree.getiterator("disk"):
+            e = disk.find('source')
+            if e is None:
+                continue
+            (dev, path) = e.items()[0]
+            if path == flag_disk_path:
+                self.log.info("flag virtual disk already exists")
+                return
+
+        """ add vdisk to the vm xml config
+        """
+        self.log.info("install drp flag virtual disk")
+        devices = tree.find("devices")
+        e = SubElement(devices, "disk", {'device': 'disk', 'type': 'file'})
+        SubElement(e, "driver", {'name': 'qemu'})
+        SubElement(e, "source", {'file': flag_disk_path})
+        SubElement(e, "target", {'bus': 'virtio', 'dev': 'vdosvc'})
+        tree.write(self.cf)

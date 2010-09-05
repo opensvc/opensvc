@@ -19,26 +19,38 @@
 import rcStatus
 import resources as Res
 import time
+import os
 import rcExceptions as ex
 from rcUtilities import qcall
+from rcGlobalEnv import rcEnv
 import resContainer
+u = __import__('rcUtilitiesHP-UX')
 
 class HpVm(resContainer.Container):
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="hpvm", name=name, type="container.hpvm",
-                                        optional=optional, disabled=disabled)
+                                        optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def files_to_sync(self):
+        import glob
+        a = []
+        guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
+        uuid = os.path.realpath(guest)
+        share = os.path.join(rcEnv.pathvar, 'vg_'+self.svc.svcname+'_*.share')
+        if os.path.exists(guest):
+            a.append(guest)
+        if os.path.exists(uuid):
+            a.append(uuid)
+        files = glob.glob(share)
+        if len(files) > 0:
+            a += files
+        return a
+
     def ping(self):
-        count = 1
-        timeout = 1
-        cmd = ['ping', self.name, '-n', repr(count), '-m', repr(timeout)]
-        ret = qcall(cmd)
-        if ret == 0:
-            return True
-        return False
+        return u.check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
@@ -89,3 +101,7 @@ class HpVm(resContainer.Container):
             return True
         return False
 
+    def check_capabilities(self):
+        if os.path.exists('/opt/hpvm/bin/hpvmstatus'):
+            return True
+        return False

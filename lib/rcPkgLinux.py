@@ -17,7 +17,6 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
@@ -54,7 +53,7 @@ if which('dpkg') is not None:
     cmd = ['dpkg', '-l']
     listpkg = listpkg_deb
 elif which('rpm') is not None:
-    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v} %{arch}\n']
+    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch}\n']
     listpkg = listpkg_rpm
 else:
     cmd = ['true']

@@ -35,7 +35,7 @@ n = node.Node()
 
 n.action("pushstats")
 n.action("pushpkg")
-n.action("updateservices")
 n.action("pushservices")
+n.action("pushasset")
 n.action("syncservices")
 

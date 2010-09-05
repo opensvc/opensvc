@@ -20,16 +20,22 @@
 # and open the template in the editor.
 
 import resources as Res
+from rcGlobalEnv import rcEnv
 
 class Loop(Res.Resource):
     """ basic loopback device resource
     """
-    def __init__(self, rid=None, loopFile=None,
-                 optional=False, disabled=False):
+    def __init__(self, rid=None, loopFile=None, always_on=set([]),
+                 optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid, "disk.loop",
-                              optional, disabled)
+                              optional=optional, disabled=disabled, tags=tags)
         self.loopFile = loopFile
         self.label = loopFile
+        self.always_on = always_on
+
+    def startstandby(self):
+        if rcEnv.nodename in self.always_on:
+            self.start()
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\

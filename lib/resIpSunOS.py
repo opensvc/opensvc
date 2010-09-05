@@ -22,6 +22,7 @@
 
 import resIp as Res
 from subprocess import *
+from rcUtilitiesSunOS import check_ping
 
 class Ip(Res.Ip):
     """ define ip SunOS start/stop doAction """
@@ -31,12 +32,7 @@ class Ip(Res.Ip):
         return
 
     def check_ping(self):
-        timeout=2
-        cmd = ['ping', self.addr, "%s" % timeout]
-        (ret, out) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr, timeout=2)
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \

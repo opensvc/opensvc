@@ -24,7 +24,7 @@ import os
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from stat import *
@@ -62,9 +62,11 @@ def try_umount(self):
 
 class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
-    def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([])):
+    def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([]),
+                 disabled=False, tags=set([]), optional=False):
         self.Mounts = None
-        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on)
+        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
+                           disabled=disabled, tags=tags, optional=optional)
         self.fsck_h = {
             'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
             'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
@@ -72,8 +74,7 @@ class Mount(Res.Mount):
         }
 
     def is_up(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
+        self.Mounts = rcMounts.Mounts()
         return self.Mounts.has_mount(self.device, self.mountPoint)
 
     def realdev(self):
@@ -109,29 +110,39 @@ class Mount(Res.Mount):
         return self._mplist([dev])
 
     def devname_to_dev(self, x):
+        if 'cciss!' in x:
+            return '/dev/cciss/'+x.replace('cciss!', '')
         return '/dev/'+x
 
     def _mplist(self, devs):
         mps = set([])
         for dev in devs:
-            try:
-                statinfo = os.stat(dev)
-            except:
-                self.log.warning("can not stat %s" % dev)
-                continue
+            devmap = False
+            if 'dm-' in dev:
+                minor = int(dev.replace('/dev/dm-', ''))
+                dm = dev.replace('/dev/', '')
+                devmap = True
+            else:
+                try:
+                    statinfo = os.stat(dev)
+                except:
+                    self.log.warning("can not stat %s" % dev)
+                    continue
+                minor = os.minor(statinfo.st_rdev)
+                dm = 'dm-%i'%minor
+                devmap = self.is_devmap(statinfo)
 
-            if self.is_multipath(statinfo):
+            if self.is_multipath(minor):
                 mps |= set([dev])
-            elif self.is_devmap(statinfo):
-                dm = 'dm-' + str(os.minor(statinfo.st_rdev))
+            elif devmap:
                 syspath = '/sys/block/' + dm + '/slaves'
                 slaves = os.listdir(syspath)
                 mps |= self._mplist(map(self.devname_to_dev, slaves))
         return mps
 
-    def is_multipath(self, statinfo):
+    def is_multipath(self, minor):
         cmd = ['dmsetup', '-j', str(self.dm_major),
-                          '-m', str(os.minor(statinfo.st_rdev)),
+                          '-m', str(minor),
                           'table'
               ]
         (ret, buff) = self.call(cmd, errlog=False, cache=True)
@@ -145,7 +156,7 @@ class Mount(Res.Mount):
         if 'queue_if_no_path' not in l:
             return False
         cmd = ['dmsetup', '-j', str(self.dm_major),
-                          '-m', str(os.minor(statinfo.st_rdev)),
+                          '-m', str(minor),
                           'status'
               ]
         (ret, buff) = self.call(cmd, errlog=False, cache=True)
@@ -179,6 +190,16 @@ class Mount(Res.Mount):
 
         if not self.is_devmap(statinfo):
             return set([dev])
+
+        if lv_exists(self, dev):
+            """ if the fs is built on a lv of a private vg, its
+                disks will be given by the vg resource.
+                if the fs is built on a lv of a shared vg, we
+                don't want to account its disks : don't reserve
+                them, don't account their size multiple times.
+            """
+            return set([])
+
         dm = 'dm-' + str(os.minor(statinfo.st_rdev))
         syspath = '/sys/block/' + dm + '/slaves'
         devs = get_blockdev_sd_slaves(syspath)

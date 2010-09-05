@@ -30,9 +30,9 @@ import rcExceptions as ex
 class Apps(Res.Resource):
     prefix = []
 
-    def __init__(self, runmethod=[], optional=False, disabled=False):
+    def __init__(self, runmethod=[], optional=False, disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid="app", type="app",
-                              optional=optional, disabled=disabled) 
+                              optional=optional, disabled=disabled, tags=tags) 
         self.prefix = runmethod
         self.label = "app"
 
@@ -63,20 +63,38 @@ class Apps(Res.Resource):
             return False
         return True
 
+    def startstandby_checks(self):
+        if not os.path.exists(self.svc.initd):
+            self.log.info("%s is not present, no apps to start for standby"%self.svc.initd)
+            return False
+        elif not os.path.islink(self.svc.initd):
+            self.log.error("%s is not a link"%self.svc.initd)
+            return False
+        return True
+
     def status_checks(self, verbose=False):
         if not os.path.exists(self.svc.initd):
             if verbose: self.status_log("%s does not exist"%self.svc.initd)
             return False
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk"]))
-        if status["overall"] != rcStatus.UP:
+        if str(status["overall"]) != "up":
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
             if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
             return False
         return True
 
+    def app_exist(self, name):
+        if os.path.exists(name):
+            return True
+        else:
+            return False
+
     def app(self, name, action, dedicated_log=True):
         if len(name) == 0:
             return 0
+        if not self.app_exist(name):
+            return 0
+
         self.set_perms(name)
         cmd = self.prefix+[name, action]
         if dedicated_log:
@@ -104,8 +122,11 @@ class Apps(Res.Resource):
         rets = {}
         errs = 0
         nb = 0
-        if not self.status_checks(verbose=verbose):
-            return rcStatus.NA
+        try:
+            if not self.status_checks(verbose=verbose):
+                return rcStatus.NA
+        except ex.excNotAvailable:
+                return rcStatus.NA
         for name in self.sorted_app_list('C*'):
             if len(name) == 0:
                 continue
@@ -129,8 +150,11 @@ class Apps(Res.Resource):
         """Execute each startup script (SS* files). Log the return code but
            don't stop on error.
         """
-        if not self.start_checks():
-            raise ex.excError
+        try:
+            if not self.startstandby_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('S*.standby@'+rcEnv.nodename):
             self.app(name, 'start')
 
@@ -138,8 +162,11 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
-        if not self.start_checks():
-            raise ex.excError
+        try:
+            if not self.start_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('S*'):
             self.app(name, 'start')
 
@@ -147,8 +174,11 @@ class Apps(Res.Resource):
         """Execute each shutdown script (K* files). Log the return code but
            don't stop on error.
         """
-        if not self.stop_checks():
-            raise ex.excError
+        try:
+            if not self.stop_checks():
+                raise ex.excError
+        except ex.excNotAvailable:
+            return
         for name in self.sorted_app_list('K*'):
             self.app(name, 'stop')
 

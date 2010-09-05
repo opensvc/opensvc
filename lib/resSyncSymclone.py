@@ -204,14 +204,14 @@ class syncSymclone(Res.Resource):
 
     def __init__(self, rid=None, symdg=None, symdevs=[], precopy_timeout=300,
                  sync_max_delay=1440, sync_min_delay=30,
-                 optional=False, disabled=False, internal=False):
+                 optional=False, disabled=False, tags=set([]), internal=False):
         self.label = "clone symdg %s"%(symdg)
         self.symdg = symdg
         self.symdevs = symdevs
         self.precopy_timeout = precopy_timeout
         self.sync_max_delay = sync_max_delay
         self.sync_min_delay = sync_min_delay
-        Res.Resource.__init__(self, rid, "sync.symclone", optional, disabled)
+        Res.Resource.__init__(self, rid, "sync.symclone", optional=optional, disabled=disabled, tags=tags)
         self.disks = set([])
         self.symdev = {}
         self.pdevs = {}

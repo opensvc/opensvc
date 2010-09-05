@@ -24,15 +24,12 @@ import resources as Res
 import time
 import os
 from rcUtilities import justcall, vcall
+from stat import *
+import resContainer
 
+class Zone(resContainer.Container):
 
-class Zone(Res.Resource):
-    """
-     container Zone status transition diagram :
-    """
-    shutdown_timeout = 120
-
-    def __init__(self, name, optional=False, disabled=False):
+    def __init__(self, name, optional=False, disabled=False, tags=set([])):
         """define Zone object attribute :
                 name
                 label
@@ -40,7 +37,7 @@ class Zone(Res.Resource):
                 zonepath
         """
         Res.Resource.__init__(self, rid="zone", type="container.zone",
-                              optional=optional, disabled=disabled)
+                              optional=optional, disabled=disabled, tags=tags)
         self.name = name
         self.label = name
         self.state = None
@@ -48,10 +45,10 @@ class Zone(Res.Resource):
         self.zone_refresh()
 
     def zoneadm(self, action):
-        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ] :
+        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach' ] :
             cmd = ['zoneadm', '-z', self.name, action ]
         else:
-            self.log.error("unsupported lxc action: %s" % action)
+            self.log.error("unsupported zone action: %s" % action)
             return 1
 
         t = datetime.now()
@@ -61,23 +58,61 @@ class Zone(Res.Resource):
                     % (action, len, ret, out))
         return ret
 
+    def set_zonepath_perms(self):
+        if not os.path.exists(self.zonepath):
+            os.makedirs(self.zonepath)
+        s = os.stat(self.zonepath)
+        if s.st_uid != 0 or s.st_gid != 0:
+            self.log.info("set %s ownership to uid 0 gid 0"%self.zonepath)
+            os.chown(self.zonepath, 0, 0)
+        mode = s[ST_MODE]
+        if (S_IWOTH&mode) or (S_IXOTH&mode) or (S_IROTH&mode) or \
+           (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
+            self.vcall(['chmod', '700', self.zonepath])
+
+    def attach(self):
+        self.zone_refresh()
+        if self.state in ('installed' , 'ready', 'running'):
+            self.log.info("zone container %s already installed" % self.name)
+            return 0
+        return self.zoneadm('attach')
+
+    def detach(self):
+        self.zone_refresh()
+        if self.state == "configured" :
+            self.log.info("zone container %s already detached/configured" % self.name)
+            return 0
+        return self.zoneadm('detach')
+
     def ready(self):
         self.zone_refresh()
-        if self.state == 'ready' or self.state == "runing" :
+        if self.state == 'ready' or self.state == "running" :
             self.log.info("zone container %s already ready" % self.name)
             return 0
+        self.set_zonepath_perms()
         return self.zoneadm('ready')
+
+    def install_drp_flag(self):
+        rootfs = self.zonepath
+        flag = os.path.join(rootfs, ".drp_flag")
+        self.log.info("install drp flag in container : %s"%flag)
+        with open(flag, 'w') as f:
+            f.write(' ')
+            f.close()
 
     def boot(self):
         self.zone_refresh()
-        if self.state == "runing" :
+        if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
             return 0
         return self.zoneadm('boot')
 
     def stop(self):
+        """ Need wait poststat after returning to installed state on ipkg
+            example : /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
+        """
         self.zone_refresh()
-        if self.state == 'installed' :
+        if self.state in [ 'installed', 'configured'] :
             self.log.info("zone container %s already stopped" % self.name)
             return 0
         if self.state == 'running':
@@ -85,6 +120,13 @@ class Zone(Res.Resource):
             for t in range(self.shutdown_timeout):
                 self.zone_refresh()
                 if self.state == 'installed':
+                    for t2 in range(self.shutdown_timeout):
+                        time.sleep(1)
+                        (out,err,st) = justcall([ 'pgrep', '-fl', 'ipkg/poststate.*'+ self.name])
+                        if st == 0 : 
+                            self.log.info("Waiting for ipkg poststate complete: %s" % out)
+                        else:
+                            break
                     return 0
                 time.sleep(1)
             self.log.info("timeout out waiting for %s shutdown", self.name)
@@ -101,6 +143,7 @@ class Zone(Res.Resource):
         """ refresh Zone object attributes:
                 state
                 zonepath
+                brand
             from zoneadm -z zonename list -p
             zoneid:zonename:state:zonepath:uuid:brand:ip-type
         """
@@ -112,6 +155,7 @@ class Zone(Res.Resource):
             if zonename == self.name :
                 self.state = state
                 self.zonepath = zonepath
+                self.brand = brand
                 return True
             else:
                 return False

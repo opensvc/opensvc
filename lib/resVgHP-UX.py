@@ -27,14 +27,17 @@ from rcGlobalEnv import rcEnv
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
                  always_on=set([]), dsf=True,
-                 disabled=False, optional=False):
+                 disabled=False, tags=set([]), optional=False):
         self.label = name
         self.dsf = dsf
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled)
+                          disabled=disabled, tags=tags)
+
+    def files_to_sync(self):
+        return [self.mapfile_name(), self.mkfsfile_name()]
 
     def mapfile_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
@@ -121,7 +124,7 @@ class Vg(resDg.Dg):
         if err > 0:
             raise ex.excError
 
-    def diskupdate(self):
+    def presync(self):
         """ this one is exported as a service command line arg
         """
         cmd = [ 'vgexport', '-m', self.mapfile_name(), '-p', '-s', self.name ]

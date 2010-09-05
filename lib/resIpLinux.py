@@ -22,20 +22,11 @@
 
 import resIp as Res
 import rcExceptions as ex
+from rcUtilitiesLinux import check_ping
 
 class Ip(Res.Ip):
     def check_ping(self):
-        count=1
-        timeout=5
-        if ':' in self.addr:
-            ping = 'ping6'
-        else:
-            ping = 'ping'
-        cmd = [ping, '-c', repr(count), '-W', repr(timeout), '-w', repr(timeout), self.addr]
-        (ret, out) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
+        return check_ping(self.addr)
 
     def startip_cmd(self):
         if ':' in self.addr:

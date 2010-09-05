@@ -20,7 +20,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-from snapLvmLinux import lv_exists, lv_info
+from rcUtilitiesLinux import lv_info
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
@@ -28,6 +28,41 @@ import resources as Res
 import datetime
 
 class syncDds(Res.Resource):
+    def pre_action(self, rset, action):
+        """Don't sync PRD services when running on !PRD node
+        """
+        if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+            self.log.debug("won't sync a PRD service running on a !PRD node")
+            raise ex.excAbortAction
+
+        for i, r in enumerate(rset.resources):
+            if r.is_disabled():
+                continue
+            if not r.svc_syncable():
+                return
+            r.get_info()
+            if action == 'syncfullsync':
+                r.create_snap1()
+            elif action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
+                if action == 'syncnodes' and self.target != ['nodes']:
+                    return
+                if action == 'syncdrp' and self.target != ['drpnodes']:
+                    return
+                r.get_info()
+                r.get_snap1_uuid()
+                nb = 0
+                tgts = r.targets.copy()
+                for n in tgts:
+                    try:
+                        r.check_remote(n)
+                        nb += 1
+                    except:
+                        self.targets -= set([n])
+                if nb != len(tgts):
+                    self.log.error('all destination nodes must be present for dds-based synchronization to proceed')
+                    raise ex.excError
+                r.create_snap2()
+
     def snap_exists(self, dev):
         if not os.path.exists(dev):
             self.log.debug('dev path does not exist')
@@ -58,6 +93,9 @@ class syncDds(Res.Resource):
                                       self.svc.svcname+'_'+self.rid+'_dds_state')
 
     def create_snap1(self):
+        if self.snap_exists(self.snap2):
+            self.log.error('%s should not exist'%self.snap2)
+            raise ex.excError
         self.create_snap(self.snap1, self.snap1_lv)
         self.write_statefile()
 
@@ -86,7 +124,7 @@ class syncDds(Res.Resource):
 
     def get_peersenders(self):
         self.peersenders = set([])
-        if 'nodes' == self.sender:
+        if 'nodes' not in self.target:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])
 
@@ -102,16 +140,16 @@ class syncDds(Res.Resource):
         self.get_targets()
         self.get_src_info()
 
-    def syncfullsync(self):
+    def svc_syncable(self):
         s = self.svc.group_status(excluded_groups=set(["sync"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
+            return False
+        return True
+
+    def syncfullsync(self):
+        if not self.svc_syncable():
             return
-        self.get_info()
-        if self.snap_exists(self.snap2):
-            self.log.error('%s should not exist'%self.snap2)
-            raise ex.excError
-        self.create_snap1()
         for n in self.targets:
             self.do_fullsync(n)
 
@@ -164,11 +202,11 @@ class syncDds(Res.Resource):
         p2 = Popen(merge_cmd, stdin=p1.stdout, stdout=PIPE)
         buff = p2.communicate()
         if p2.returncode != 0:
-            if len(buff[1]) > 0:
+            if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("sync update failed")
             raise ex.excError
-        if len(buff[0]) > 0:
+        if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
     def do_update(self, node):
@@ -206,7 +244,7 @@ class syncDds(Res.Resource):
 
     def get_remote_state(self, node):
         self.set_statefile()
-        cmd1 = ['LANG=C', 'cat', self.statefile]
+        cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
         (ret, out) = self.call(cmd)
         if ret != 0:
@@ -234,16 +272,19 @@ class syncDds(Res.Resource):
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
 
-    def syncupdate(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
+    def syncnodes(self):
+        if self.target != ['nodes']:
             return
-        self.get_info()
-        self.get_snap1_uuid()
-        for n in self.targets:
-            self.check_remote(n)
-        self.create_snap2()
+        self.syncupdate()
+
+    def syncdrp(self):
+        if self.target != ['drpnodes']:
+            return
+        self.syncupdate()
+
+    def syncupdate(self):
+        if not self.svc_syncable():
+            return
         for n in self.targets:
             self.do_update(n)
         self.rotate_snaps()
@@ -274,24 +315,29 @@ class syncDds(Res.Resource):
         self.checksums = {}
         queues = {}
         ps = []
+        self.log.info("start checksum threads. please be patient.")
         for n in self.targets:
             queues[n] = Queue()
             p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
             p.start()
             ps.append(p)
         self.checksum(rcEnv.nodename, self.snap1)
-        self.log.info("checksum threads started. please be patient.")
+        self.log.info("md5 %s: %s"%(rcEnv.nodename, self.checksums[rcEnv.nodename]))
         for p in ps:
             p.join()
         for n in self.targets:
             self.checksums[n] = queues[n].get()
+            self.log.info("md5 %s: %s"%(n, self.checksums[n]))
         if len(self.checksums) < 2:
             self.log.error("not enough checksums collected")
             raise ex.excError
+        err = False
         for n in self.targets:
             if self.checksums[rcEnv.nodename] != self.checksums[n]:
                 self.log.error("src/dst checksums differ for %s/%s"%(rcEnv.nodename, n))
-        self.log.info("src/dst checksums verified")
+                err = True
+        if not err:
+            self.log.info("src/dst checksums verified")
 
     def start(self):
         pass
@@ -322,10 +368,9 @@ class syncDds(Res.Resource):
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None,
                  snap_size=0, sync_max_delay=1450, sync_min_delay=30,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([])):
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
-        self.sender = sender
         self.src = src
         self.dst = dst
         self.sync_max_delay = sync_max_delay
@@ -335,7 +380,7 @@ class syncDds(Res.Resource):
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
-        Res.Resource.__init__(self, rid, "sync.dds", optional, disabled)
+        Res.Resource.__init__(self, rid, "sync.dds", optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
         return "%s target=%s src=%s" % (Res.Resource.__str__(self),\

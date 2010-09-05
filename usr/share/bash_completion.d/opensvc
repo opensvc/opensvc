@@ -1,0 +1,46 @@
+svcs=$(ls /opt/opensvc/etc/*env 2>/dev/null|xargs -n1 basename|sed -e "s/.env//")
+
+service_opts="configure create disklist freeze frozen mount postsync presync print_status printsvc prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount --force --waitlock --debug --rid --tags"
+
+svcmgr_opts="$service_opts --service"
+
+_svcmgr() 
+{
+    local cur prev base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    #
+    #  Complete the arguments to some of the basic commands.
+    #
+    case "${prev}" in
+	--tags)
+	    local tags=$(grep -h "tag" /opt/opensvc/etc/*env|cut -d= -f2)
+	    COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+            return 0
+            ;;
+        --rid)
+	    local rid=$(grep -h "\[.*\]" /opt/opensvc/etc/*env|sed -e "s/\[//"|sed -e "s/\]//")
+	    COMPREPLY=( $(compgen -W "${rid}" -- ${cur}) )
+            return 0
+            ;;
+        --service)
+	    COMPREPLY=( $(compgen -W "${svcs}" -- ${cur}) )
+            return 0
+            ;;
+        *)
+        ;;
+    esac
+
+   COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
+   return 0
+}
+
+opts=$svcmgr_opts
+complete -F _svcmgr svcmgr
+
+opts=$service_opts
+for s in ${svcs} ; do
+    complete -F _svcmgr $s
+done

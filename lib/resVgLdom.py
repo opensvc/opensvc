@@ -16,23 +16,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import re
 import os
 import rcExceptions as ex
 import rcStatus
-resVg = __import__("resVgHP-UX")
+resVg = __import__("resDg")
 from subprocess import *
-from rcUtilities import qcall
-from rcGlobalEnv import rcEnv
-from subprocess import *
+import re
 
-class Vg(resVg.Vg):
+class Vg(resVg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([])):
         self.label = name
-        resVg.Vg.__init__(self, rid=rid, name=name,
+        resVg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
-                          optional=optional, disabled=disabled)
+                          optional=optional, disabled=disabled, tags=tags)
 
     def has_it(self):
         return True
@@ -44,96 +41,70 @@ class Vg(resVg.Vg):
         return rcStatus.NA
 
     def do_start(self):
-        self.do_mksf()
+        pass
 
     def do_stop(self):
         pass
 
-    def diskupdate(self):
-        if self.svc.status() != 0:
-            self.do_mksf()
-            self.do_share()
-        else:
-            self.write_mksf()
-            self.write_share()
-
-    def sharefile_name(self):
-        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
-
-    def write_share(self):
-        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
-        (ret, buff) = self.call(cmd)
-        if ret != 0:
-            raise ex.excError
-        if len(buff) == 0:
-            return
-        disklist = self.disklist()
-        with open(self.sharefile_name(), 'w') as f:
-            for line in buff.split('\n'):
-                dev = line.split(':')[0]
-                if len(dev) == 0:
-                    continue
-                if dev not in disklist:
-                    continue
-                if 'SHARE=YES' in line:
-                    f.write(dev+':YES\n')
-                else:
-                    f.write(dev+':NO\n')
-
-    def do_share(self):
-        if not os.path.exists(self.sharefile_name()):
-            return
-        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
-        (ret, buff) = self.call(cmd)
-        if ret != 0:
-            raise ex.excError
-        devs = set([])
-        for line in buff.split('\n'):
-            l = line.split(':')
-            if len(l) == 0:
-                continue
-            if len(l[0]) == 0:
-                continue
-            devs |= set([l[0]])
-        with open(self.sharefile_name(), 'r') as f:
-            err = 0
-            for line in f.readlines():
-                l = line.split(':')
-                if len(l) != 2:
-                    continue
-                dev = l[0]
-                if len(dev) == 0:
-                    continue
-                if not os.path.exists(dev):
-                    continue
-                if dev not in devs:
-                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-a', 'gdev:'+dev]
-                    (ret, out) = self.vcall(cmd)
-                    if ret != 0:
-                        raise ex.excError
-                if 'YES' in l[1]:
-                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=YES']
-                else:
-                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=NO']
-                (ret, buff) = self.vcall(cmd)
-                if ret != 0:
-                    err += 1
-                    continue
-        if err > 0:
-            raise ex.excError
-
     def disklist(self):
-        cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.svc.vmname]
+        """ VCC|name=vccname|...
+            VDS|name=vdsname|...
+            |vol=volname|..|dev=/dev/...|....
+            |vol=volname1|..|dev=/dev/...|....
+            VDS|name=vdsname1|..
+            |vol=volname2|..|dev=/dev/...|....
+
+            ldm list -o disk -p domname
+            VERSION
+            DOMAIN|..
+            VDISK|name=...|vol=volname@vds|...
+            VDISK|name=...|vol=volname2@vds2|...
+            """
+        vdevname2dev = {}
+
+        cmd = [ '/usr/sbin/ldm', 'list-services' , '-p' ]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
             raise ex.excError
-
+        vds = ''
         for line in buff[0].split('\n'):
-            l = line.split(':')
-            if len(l) < 5:
-                continue
-            if l[3] != 'disk':
-                continue
-            self.disks |= set([l[4]])
+            keys = line.split('|')
+            if keys[0] == 'VDS' and len(keys) > 1 :
+                for k in keys :
+                    name_value = k.split('=')
+                    if name_value[0] == 'name' and len(name_value) == 2 :
+                        vds = name_value[1]
+            elif vds != '' and keys[0] == '':
+                volname = ''
+                dev = ''
+                for k in keys :
+                    name_value = k.split('=')
+                    if name_value[0] == 'vol' and len(name_value) == 2 :
+                        volname = name_value[1]
+                    elif name_value[0] == 'dev' and len(name_value) == 2 :
+                        dev = name_value[1]
+                        if re.match('^/dev/dsk/', dev) is None:
+                            continue
+                        dev = dev.replace('/dev/dsk/','/dev/rdsk/',1)
+                        if re.match('^.*s[0-9]$',dev) is None:
+                            dev = dev + 's2'
+                        vdevname2dev[volname + '@' + vds ] = dev
+            else:
+                vds = ''
+
+        cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p', self.svc.vmname]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        buff = p.communicate()
+        if p.returncode != 0:
+            raise ex.excError
+        for line in buff[0].split('\n'):
+            keys = line.split('|')
+            if keys[0] == 'VDISK' and len(keys) > 1 :
+                for k in keys :
+                    name_value = k.split('=')
+                    if name_value[0] == 'vol' and len(name_value) == 2 :
+                        vol = name_value[1]
+                        if vdevname2dev.has_key(vol):
+                            self.disks |= set([ vdevname2dev[vol] ])
         return self.disks

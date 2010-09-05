@@ -21,18 +21,20 @@ import os
 import rcExceptions as ex
 import resDg
 from rcGlobalEnv import rcEnv
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
+                             devs_to_disks
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False,
+                 optional=False, disabled=False, tags=set([]),
                  always_on=set([])):
         self.label = name
+        self.tag = '@'+rcEnv.nodename
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled)
+                          disabled=disabled, tags=tags)
 
     def has_it(self):
         """Returns True if the volume is present
@@ -60,20 +62,29 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
-    def remove_tags(self):
+    def remove_tags(self, tags=[]):
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         out = out.strip(' \n')
-        tags = out.split(',')
-        for tag in tags:
-            if len(tag) == 0:
-                continue
-            self.remove_tag(tag)
+        curtags = out.split(',')
+        if len(tags) > 0:
+            """ remove only specified tags
+            """
+            for tag in tags:
+                if tag in curtags:
+                   self.remove_tag(tag)
+        else:
+            """ remove all tags
+            """
+            for tag in curtags:
+                if len(tag) == 0:
+                    continue
+                self.remove_tag(tag)
 
     def add_tags(self):
-        cmd = [ 'vgchange', '--addtag', '@'+rcEnv.nodename, self.name ]
+        cmd = [ 'vgchange', '--addtag', self.tag, self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -93,7 +104,7 @@ class Vg(resDg.Dg):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return
-        self.remove_tags()
+        self.remove_tags([self.tag])
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -112,32 +123,7 @@ class Vg(resDg.Dg):
         if ret != 0:
             return self.disks
 	pvs = set(out.split())
-        self.disks = self.pvs_to_disks(pvs)
+        self.disks = devs_to_disks(self, pvs)
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks
-
-    def pvs_to_disks(self, pvs):
-        """If PV is a device map, replace by its sysfs name (dm-*)
-        If device map has slaves, replace by its slaves
-        """
-        disks = set()
-        dm_major = major('device-mapper')
-        try: lo_major = major('loop')
-        except: lo_major = 0
-        for pv in pvs:
-            try:
-                statinfo = os.stat(pv)
-            except:
-                self.log.error("can not stat %s" % pv)
-                raise
-            if os.major(statinfo.st_rdev) == dm_major:
-                dm = 'dm-' + str(os.minor(statinfo.st_rdev))
-                syspath = '/sys/block/' + dm + '/slaves'
-                disks |= get_blockdev_sd_slaves(syspath)
-            elif lo_major != 0 and os.major(statinfo.st_rdev) == lo_major:
-                self.log.debug("skip loop device %s from disklist"%pv)
-                pass
-            else:
-                disks.add(pv)
-        return disks
 

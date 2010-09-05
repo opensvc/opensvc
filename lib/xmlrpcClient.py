@@ -22,18 +22,47 @@ import xmlrpclib
 import os
 from rcGlobalEnv import rcEnv
 import rcStatus
+import socket
+import httplib
+
+class TimeoutHTTP(httplib.HTTP):
+   def __init__(self, host='', port=None, strict=None,
+                timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+       if port == 0:
+           port = None
+       self._setup(self._connection_class(host, port, strict, timeout))
+
+class TimeoutTransport(xmlrpclib.Transport):
+    def __init__(self, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, *args, **kwargs):
+        xmlrpclib.Transport.__init__(self, *args, **kwargs)
+        self.timeout = timeout
+
+    def make_connection(self, host):
+        host, extra_headers, x509 = self.get_host_info(host)
+        conn = TimeoutHTTP(host, timeout=self.timeout)
+        return conn
+
+class TimeoutServerProxy(xmlrpclib.ServerProxy):
+    def __init__(self, uri, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 *args, **kwargs):
+        kwargs['transport'] = TimeoutTransport(timeout=timeout,
+                                               use_datetime=kwargs.get('use_datetime', 0))
+        xmlrpclib.ServerProxy.__init__(self, uri, *args, **kwargs)
 
 sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+
+def xmlrpc_decorator_dummy(fn):
+    def new(*args):
+        pass
+    return new
 
 def xmlrpc_decorator(fn):
     def new(*args):
-        import socket
         try:
             return fn(*args)
-        except socket.error, xmlrpclib.ProtocolError:
+        except (socket.error, xmlrpclib.ProtocolError):
             pass
         except:
             import sys
@@ -41,6 +70,20 @@ def xmlrpc_decorator(fn):
             e = sys.exc_info()
             print e[0], e[1], traceback.print_tb(e[2])
     return new
+
+try:
+    a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
+    if len(a) == 0:
+        raise Exception
+except:
+    print("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc)
+    xmlrpc_decorator = xmlrpc_decorator_dummy
+
+proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
+try:
+    proxy_methods = proxy.system.listMethods()
+except socket.error:
+    proxy_methods = []
 
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
@@ -70,10 +113,7 @@ def end_action(svc, action, begin, end, logfile):
     err = 'ok'
     dateprev = None
     lines = open(logfile, 'r').read()
-
-    """ If logfile is empty, default to current process pid
-    """
-    pid = os.getpid()
+    pids = set([])
 
     """Example logfile line:
     2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
@@ -111,6 +151,7 @@ def end_action(svc, action, begin, end, logfile):
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
+        pids |= set([pid])
         if lvl is None or lvl == 'DEBUG':
             continue
         if lvl == 'ERROR':
@@ -142,6 +183,12 @@ def end_action(svc, action, begin, end, logfile):
 
     """Complete the wrap-up database entry
     """
+
+    """ If logfile is empty, default to current process pid
+    """
+    if len(pids) == 0:
+        pids = set([os.getpid()])
+
     proxy.end_action(
         ['svcname',
          'action',
@@ -156,7 +203,7 @@ def end_action(svc, action, begin, end, logfile):
          repr(action),
          repr(rcEnv.nodename),
          repr(hostid),
-         repr(pid),
+         repr(','.join(map(str, pids))),
          repr(str(begin)),
          repr(str(end)),
          repr(str(end-begin)),
@@ -229,6 +276,7 @@ def resmon_update(svc, status):
         "res_log"]
     proxy.resmon_update(vars, vals)
 
+@xmlrpc_decorator
 def push_service(svc):
     def envfile(svc):
         envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
@@ -245,6 +293,11 @@ def push_service(svc):
     except:
         version = "0";
 
+    if hasattr(svc, "guestos"):
+        guestos = svc.guestos
+    else:
+        guestos = ""
+
     vars = ['svc_hostid',
             'svc_name',
             'svc_vmname',
@@ -259,7 +312,8 @@ def push_service(svc):
             'svc_containertype',
             'svc_envfile',
             'svc_version',
-            'svc_drnoaction']
+            'svc_drnoaction',
+            'svc_guestos']
 
     vals = [repr(hostid),
             repr(svc.svcname),
@@ -275,7 +329,8 @@ def push_service(svc):
             repr(svc.svcmode),
             repr(envfile(svc.svcname)),
             repr(version),
-            repr(svc.drnoaction)]
+            repr(svc.drnoaction),
+            repr(guestos)]
 
     if 'container' in svc.resources_by_id:
         container_info = svc.resources_by_id['container'].get_container_info()
@@ -285,9 +340,11 @@ def push_service(svc):
 
     proxy.update_service(vars, vals)
 
+@xmlrpc_decorator
 def delete_services():
     proxy.delete_services(hostid)
 
+@xmlrpc_decorator
 def push_disks(svc):
     def disk_dg(dev, svc):
         for rset in svc.get_res_sets("disk.vg"):
@@ -328,6 +385,7 @@ def push_disks(svc):
              repr(rcEnv.nodename)]
         )
 
+@xmlrpc_decorator
 def push_stats_cpu():
     try:
         s = __import__('rcStats'+sysname)
@@ -349,6 +407,7 @@ def push_stats_cpu():
          s.stats_cpu()
     )
 
+@xmlrpc_decorator
 def push_stats_mem_u():
     try:
         s = __import__('rcStats'+sysname)
@@ -368,6 +427,7 @@ def push_stats_mem_u():
          s.stats_mem_u()
     )
 
+@xmlrpc_decorator
 def push_stats_proc():
     try:
         s = __import__('rcStats'+sysname)
@@ -384,6 +444,7 @@ def push_stats_proc():
          s.stats_proc()
     )
 
+@xmlrpc_decorator
 def push_stats_swap():
     try:
         s = __import__('rcStats'+sysname)
@@ -400,6 +461,7 @@ def push_stats_swap():
          s.stats_swap()
     )
 
+@xmlrpc_decorator
 def push_stats_block():
     try:
         s = __import__('rcStats'+sysname)
@@ -416,6 +478,7 @@ def push_stats_block():
          s.stats_block()
     )
 
+@xmlrpc_decorator
 def push_stats_blockdev():
     try:
         s = __import__('rcStats'+sysname)
@@ -436,6 +499,7 @@ def push_stats_blockdev():
          s.stats_blockdev()
     )
 
+@xmlrpc_decorator
 def push_stats_netdev_err():
     try:
         s = __import__('rcStats'+sysname)
@@ -453,6 +517,7 @@ def push_stats_netdev_err():
          s.stats_netdev_err()
     )
 
+@xmlrpc_decorator
 def push_stats_netdev():
     try:
         s = __import__('rcStats'+sysname)
@@ -500,6 +565,7 @@ def stats_timestamp():
         f.close()
     return True
 
+@xmlrpc_decorator
 def push_pkg():
     p = __import__('rcPkg'+sysname)
     vars = ['pkg_nodename',
@@ -510,9 +576,9 @@ def push_pkg():
     proxy.delete_pkg(rcEnv.nodename)
     proxy.insert_pkg(vars, vals)
 
-def push_stats():
-    if not stats_timestamp():
-        return
+def push_stats(force=False):
+    if not force and not stats_timestamp():
+            return
     push_stats_cpu()
     push_stats_mem_u()
     push_stats_proc()
@@ -522,9 +588,30 @@ def push_stats():
     push_stats_netdev_err()
     push_stats_netdev()
 
+def push_asset():
+    try:
+        m = __import__('rcAsset'+sysname)
+    except ImportError:
+        print "pushasset methods not implemented on", sysname
+        return
+    if "update_asset" not in proxy_methods:
+        print "'update_asset' method is not exported by the collector"
+        return
+    d = m.Asset().get_asset_dict()
+    proxy.update_asset(d.keys(), d.values())
+
 @xmlrpc_decorator
 def push_all(svcs):
     proxy.delete_service_list([svc.svcname for svc in svcs])
     for svc in svcs:
         push_disks(svc)
         push_service(svc)
+
+@xmlrpc_decorator
+def push_checks(vars, vals):
+    if "push_checks" not in proxy_methods:
+        print "'push_checks' method is not exported by the collector"
+        return
+    proxy.push_checks(vars, vals)
+
+

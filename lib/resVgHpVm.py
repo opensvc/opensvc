@@ -28,11 +28,11 @@ from subprocess import *
 
 class Vg(resVg.Vg):
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False):
+                 optional=False, disabled=False, tags=set([])):
         self.label = name
         resVg.Vg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
-                          optional=optional, disabled=disabled)
+                          optional=optional, disabled=disabled, tags=tags)
 
     def has_it(self):
         return True
@@ -49,11 +49,18 @@ class Vg(resVg.Vg):
     def do_stop(self):
         pass
 
-    def diskupdate(self):
-        if self.svc.status() != 0:
+    def files_to_sync(self):
+        return [self.sharefile_name(), self.mkfsfile_name()]
+
+    def postsync(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if s['overall'].status != rcStatus.UP:
             self.do_mksf()
             self.do_share()
-        else:
+
+    def presync(self):
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if self.svc.force or s['overall'].status == rcStatus.UP:
             self.write_mksf()
             self.write_share()
 

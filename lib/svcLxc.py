@@ -24,19 +24,19 @@ import resContainerLxc as lxc
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
+import os
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
 
-    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False):
-        svc.Svc.__init__(self, svcname, optional, disabled)
+    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False, tags=set([])):
+        svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
         self += lxc.Lxc(vmname)
-        self.status_types += ["container.lxc"]
-        if which('lxc-attach'):
+        if which('lxc-attach') and os.path.exists('/proc/1/ns'):
             self.runmethod = ['lxc-attach', '-n', vmname, '--']
         else:
             self.runmethod = rcEnv.rsh.split() + [vmname]

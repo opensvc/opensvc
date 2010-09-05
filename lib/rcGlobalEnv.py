@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import sys
+import os
 
 class rcEnv:
     """Class to store globals
@@ -27,15 +28,20 @@ class rcEnv:
     """program used to execute remote command on other nodes or virtual hosts
     """
     if platform == "sunos5" :
-        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -n"
-        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -n"
+        if os.path.exists('/usr/local/bin/ssh'):
+            rsh = "/usr/local/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+            rcp = "/usr/local/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+        else:
+            rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -n"
+            rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
     else :
         rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
 
     """Database sink for node and service configurations and status collection.
     """
-    dbopensvc = "http://dbopensvc:80/init/default/call/xmlrpc"
+    dbopensvc_host = "dbopensvc"
+    dbopensvc = "http://%s:80/init/default/call/xmlrpc"%dbopensvc_host
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
@@ -133,7 +139,7 @@ class rcEnv:
 
     vt_libvirt = ['kvm', 'lxc', 'xen']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen']
-    vt_container = ['zone', 'lxc']
+    vt_container = ['zone', 'lxc', 'jail']
     vt_supported = vt_vm + vt_container
 
 

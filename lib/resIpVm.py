@@ -34,7 +34,10 @@ class Ip(Res.Ip):
             self.log.debug("container is down")
             self.status_log("container is down")
             return False
-        rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
+        try:
+            rcIfconfig = __import__("rcIfconfig"+self.svc.guestos+self.svc.svcmode)
+        except:
+            raise ex.excNotSupported
         try:
             ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
         except:
@@ -65,9 +68,11 @@ class Ip(Res.Ip):
         pass
 
     def __init__(self, rid=None, ipDev=None, ipName=None,
-                 mask=None, always_on=set([])):
+                 mask=None, always_on=set([]),
+                 disabled=False, tags=set([]), optional=False):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        mask=mask, always_on=always_on)
+                        mask=mask, always_on=always_on,
+                        disabled=disabled, tags=tags, optional=optional)
 
 
 if __name__ == "__main__":

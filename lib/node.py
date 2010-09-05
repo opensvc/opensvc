@@ -30,13 +30,17 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.svcs = svcBuilder.build_services()
+        self.force = False
         Freezer.__init__(self, '')
         self.action_desc = {
           'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
           'updateservices': 'refresh var files associated with services',
+          'pushasset':      'push asset information to collector',
           'pushservices':   'push service configuration to collector',
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
+          'prkey':          'display persistent reservation key of this node',
+          'checks':         'run node sanity checks, push results to collector',
         }
 
     def format_desc(self):
@@ -61,32 +65,35 @@ class Node(Svc, Freezer):
         return getattr(self, a)()
 
     def pushstats(self):
-        xmlrpcClient.push_stats()
+        xmlrpcClient.push_stats(force=self.force)
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()
 
+    def pushasset(self):
+        xmlrpcClient.push_asset()
+
     def syncservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('syncall')
-            except:
-                pass
+            svc.action('syncall')
 
     def updateservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('diskupdate')
-            except:
-                pass
+            svc.action('presync')
 
     def pushservices(self):
         for svc in self.svcs:
-            try:
-                svc.action('push')
-            except:
-                pass
+            svc.action('push')
 
+    def prkey(self):
+        from rcGlobalEnv import rcEnv
+        m = __import__('hostid'+rcEnv.sysname)
+        print m.hostid()
+
+    def checks(self):
+        import checks
+        c = checks.checks(self.svcs)
+        c.do_checks()
 
 if __name__ == "__main__" :
     for n in (Node,) :

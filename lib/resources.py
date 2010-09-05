@@ -30,19 +30,21 @@ from rcGlobalEnv import rcEnv
 
 class Resource(object):
     """Define basic resource
-    properties: type, optional, disabled
+    properties: type, optional=optional, disabled=disabled, tags=tags
     a Resource should provide do_action(action):
     with action into (start/stop/status)
     """
     label = None
 
-    def __init__(self, rid=None, type=None, optional=False, disabled=False):
+    def __init__(self, rid=None, type=None, optional=False, disabled=False, tags=set([])):
         self.rid = rid
+        self.tags = tags
         self.type = type
         self.optional = optional
         self.disabled = disabled
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
+        self.always_on = set([])
         if self.label is None: self.label = type
         self.status_log_str = ""
 
@@ -82,12 +84,20 @@ class Resource(object):
             self.vcall(getattr(self, attr))
 
     def do_action(self, action):
+        self.log.debug('do_action: action=%s res=%s'%(action, self.rid))
         if hasattr(self, action):
+            if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
+                if hasattr(self, action+'standby'):
+                    getattr(self, action+'standby')()
+                    return
+                else:
+                    self.log.info("skip '%s' on standby resource (--force to override)"%action)
+                    return
             self.setup_environ()
             self.action_triggers("pre", action)
             getattr(self, action)()
             self.action_triggers("post", action)
-            if action in ["start", "stop"] or "sync" in action:
+            if "start" in action or "stop" in action or "sync" in action:
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True)
@@ -107,8 +117,13 @@ class Resource(object):
         if self is optional then return True
         else return do_action() return value
         """
-        if action == None: return True
-        if self.disabled: return True
+        self.log.debug('action: action=%s res=%s'%(action, self.rid))
+        if action == None:
+            self.log.debug('action: action cannot be None')
+            return True
+        if self.disabled:
+            self.log.debug('action: skip action on disable resource')
+            return True
         try :
             self.do_action(action)
         except exc.excUndefined , ex:
@@ -119,6 +134,18 @@ class Resource(object):
                 pass
             else:
                 raise exc.excError
+
+    def status_stdby(self, s):
+        """ This function modifies the passed status according
+            to this node inclusion in the always_on nodeset
+        """
+        if rcEnv.nodename not in self.always_on:
+            return s
+        if s == rcStatus.UP:
+            return rcStatus.STDBY_UP
+        elif s == rcStatus.DOWN:
+            return rcStatus.STDBY_DOWN
+        return s
 
     def _status(self, verbose=False):
         return rcStatus.UNDEF
@@ -151,14 +178,16 @@ class Resource(object):
         return r
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
-             errlog=True, err_to_warn=False, err_to_info=False):
+             errlog=True, err_to_warn=False, err_to_info=False,
+             outlog=False):
         """Use subprocess module functions to do a call
         """
         return rcUtilities.call(cmd, log=self.log,
                                 cache=cache,
                                 info=info, errlog=errlog,
                                 err_to_warn=err_to_warn,
-                                err_to_info=err_to_info)
+                                err_to_info=err_to_info,
+                                outlog=outlog)
 
     def vcall(self, cmd, err_to_warn=False, err_to_info=False):
         """Use subprocess module functions to do a call and
@@ -174,15 +203,28 @@ class Resource(object):
         """
         return set()
 
+    def presync(self):
+        pass
+
+    def postsync(self):
+        pass
+
+    def files_to_sync(self):
+        return []
+
 class ResourceSet(Resource):
     """ Define Set of same type resources
     Example 1: ResourceSet("fs",[m1,m2])
     Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
-    def __init__(self, type=None, resources=[], optional=False, disabled=False):
-        self.resources=resources
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
+    def __init__(self, type=None, resources=[],
+                 optional=False, disabled=False, tags=set([])):
+        self.resources = []
+        Resource.__init__(self, type=type,
+                          optional=optional, disabled=disabled, tags=tags)
+        for r in resources:
+            self += r
 
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
@@ -196,8 +238,10 @@ class ResourceSet(Resource):
             r.rset = self
             self.resources.append(r)
             if hasattr(r, 'pre_action'):
+                r.log.debug("install pre_action")
                 self.pre_action = r.pre_action
             if hasattr(r, 'post_action'):
+                r.log.debug("install post_action")
                 self.post_action = r.post_action
         return (self)
 
@@ -233,28 +277,29 @@ class ResourceSet(Resource):
             s += status
         return s.status
 
-    def action(self,action=None):
+    def tag_match(self, rtags, keeptags):
+        if len(keeptags) == 0:
+            return True
+        for tag in rtags:
+            if tag in keeptags:
+                return True
+        return False
+
+    def action(self, action=None, tags=set([])):
         """Call action on each resource of the ResourceSet
         """
+        resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
+        self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
         if action in ["fs", "start", "startstandby"]:
-            self.resources.sort()
+            resources.sort()
         else:
-            self.resources.sort(reverse=True)
+            resources.sort(reverse=True)
 
-        if action not in ["status", "print_status", "group_status"]:
-            try:
-                self.pre_action(self, action)
-            except exc.excAbortAction:
-                return
-
-        for r in self.resources:
+        for r in resources:
             try:
                 r.action(action)
             except exc.excAbortAction:
                 break
-
-        if action != "status":
-            self.post_action(self, action)
 
 
 if __name__ == "__main__":

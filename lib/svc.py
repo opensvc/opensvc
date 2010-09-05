@@ -24,11 +24,34 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-from lock import svclock, svcunlock
 import xmlrpcClient
 import os
+import signal
+import lock
+
+def signal_handler(signum, frame):
+    raise ex.excSignal
 
 def fork_dblogger(self, action, begin, end, actionlogfile):
+    kwargs = {'self': self,
+              'action': action,
+              'begin': begin,
+              'end': end,
+              'actionlogfile': actionlogfile}
+    fork(dblogger, kwargs)
+
+def dblogger(self, action, begin, end, actionlogfile):
+    import logging
+    for rs in self.resSets:
+        for r in rs.resources:
+            r.log.setLevel(logging.CRITICAL)
+
+    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    gs = self.group_status()
+    xmlrpcClient.svcmon_update(self, self.group_status())
+    os.unlink(actionlogfile)
+
+def fork(fn, kwargs):
     try:
         if os.fork() > 0:
             """ return to parent execution
@@ -52,16 +75,9 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
     except:
         os._exit(1)
 
-    import logging
-    for rs in self.resSets:
-        for r in rs.resources:
-            r.log.setLevel(logging.CRITICAL)
-
-    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
-    gs = self.group_status()
-    xmlrpcClient.svcmon_update(self, self.group_status())
-    os.unlink(actionlogfile)
+    fn(**kwargs)
     os._exit(0)
+
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -69,7 +85,7 @@ class Svc(Resource, Freezer):
     type
     """
 
-    def __init__(self, svcname=None, type="hosted", optional=False, disabled=False):
+    def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
         self.svcname = svcname
         self.vmname = ""
@@ -80,19 +96,25 @@ class Svc(Resource, Freezer):
         self.force = False
         self.status_types = ["container.hpvm",
                              "container.kvm",
+                             "container.xen",
                              "container.lxc",
                              "container.zone",
+                             "container.jail",
+                             "container.ldom",
+                             "disk.drbd",
                              "disk.loop",
                              "disk.scsireserv",
                              "disk.vg",
+                             "disk.zpool",
                              "fs",
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
                              "sync.dds",
+                             "sync.zfs",
                              "sync.netapp",
                              "app"]
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled)
+        Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
         Freezer.__init__(self, svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
@@ -101,6 +123,10 @@ class Svc(Resource, Freezer):
         self.resources_by_id = {}
         self.rset_status_cache = None
         self.print_status_fmt = "%-8s %-8s %s"
+        self.presync_done = False
+        self.presnap_trigger = None
+        self.postsnap_trigger = None
+        self.lockfd = None
 
     def __cmp__(self, other):
         """order by service name
@@ -135,19 +161,110 @@ class Svc(Resource, Freezer):
 
         return self
 
+    def svclock(self, timeout=30, delay=5):
+        lockfile = os.path.join(rcEnv.pathlock, self.svcname)
+        try:
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except lock.lockTimeout:
+            self.log.error("timed out waiting for lock")
+            raise ex.excError
+        except lock.lockNoLockFile:
+            self.log.error("lock_nowait: set the 'lockfile' param")
+            raise ex.excError
+        except lock.lockCreateError:
+            self.log.error("can not create lock file %s"%lockfile)
+            raise ex.excError
+        except lock.lockAcquire as e:
+            self.log.warn("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            raise ex.excError
+        except:
+            self.log.error("unexpected locking error")
+            import traceback
+            traceback.print_exc()
+            raise ex.excError
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def svcunlock(self):
+        lock.unlock(self.lockfd)
+
+    def setup_signal_handlers(self):
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
     def get_res_sets(self, type):
-         return [ r for r in self.resSets if r.type == type ]
+         if not isinstance(type, list):
+             l = [type]
+         else:
+             l = type
+         rsets = []
+         for t in l:
+             rsets += [ r for r in self.resSets if r.type == t ]
+         return rsets
 
     def has_res_set(self, type):
-        if len(get_res_sets(type)) > 0: return True
-        else: return False
+        if len(get_res_sets(type)) > 0:
+            return True
+        else:
+            return False
 
-    def sub_set_action(self, type=None, action=None):
+    def all_set_action(self, action=None, tags=set([])):
         """Call action on each member of the subset of specified type
         """
-        for r in self.get_res_sets(type):
+        self.set_action(self.resSets, action=action, tags=tags)
+
+    def sub_set_action(self, type=None, action=None, tags=set([])):
+        """Call action on each member of the subset of specified type
+        """
+        self.set_action(self.get_res_sets(type), action=action, tags=tags)
+
+    def need_snap_trigger(self, sets, action):
+        if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
+            return False
+        for rs in sets:
+            for r in rs.resources:
+                if hasattr(r, "snap") and r.snap is True:
+                    return True
+        return False
+
+    def set_action(self, sets=[], action=None, tags=set([])):
+        """ TODO: r.is_optional() not doing what's expected if r is a rset
+        """
+        blacklist_actions = ["status",
+                   "print_status",
+                   "group_status",
+                   "presync",
+                   "postsync"]
+        ns = self.need_snap_trigger(sets, action)
+
+        """ snapshots are created in pre_action and destroyed in post_action
+            place presnap and postsnap triggers around pre_action
+        """
+        if ns and self.presnap_trigger is not None:
+            (ret, out) = self.vcall(self.presnap_trigger)
+            if ret != 0:
+                raise ex.excError
+
+        for r in sets:
+            if action not in blacklist_actions:
+                try:
+                    r.log.debug("start %s pre_action"%r.type)
+                    r.pre_action(r, action)
+                except:
+                    raise ex.excError
+
+        if ns and self.postsnap_trigger is not None:
+            (ret, out) = self.vcall(self.postsnap_trigger)
+            if ret != 0:
+                raise ex.excError
+
+        for r in sets:
+            self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
-                r.action(action)
+                r.action(action, tags=tags)
             except ex.excError:
                 if r.is_optional():
                     pass
@@ -158,6 +275,14 @@ class Svc(Resource, Freezer):
                     pass
                 else:
                     break
+
+        for r in sets:
+            if action not in blacklist_actions:
+                try:
+                    r.post_action(r, action)
+                except:
+                    raise ex.excError
+
 
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))
@@ -170,20 +295,19 @@ class Svc(Resource, Freezer):
         """aggregate status a service
         """
         ss = rcStatus.Status()
-        for t in self.status_types:
-            for r in self.get_res_sets(t):
-                if "sync." not in r.type:
-                     ss += r.status()
+        for r in self.get_res_sets(self.status_types):
+            if "sync." not in r.type:
+                 ss += r.status()
+            else:
+                """ sync are expected to be up
+                """
+                s = r.status()
+                if s == rcStatus.UP:
+                    ss += rcStatus.UNDEF
+                elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                    ss += s
                 else:
-                    """ sync are expected to be up
-                    """
-                    s = r.status()
-                    if s == rcStatus.UP:
-                        ss += rcStatus.UNDEF
-                    elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
-                        ss += s
-                    else:
-                        ss += rcStatus.WARN
+                    ss += rcStatus.WARN
         if ss.status == rcStatus.STDBY_UP_WITH_UP:
             ss.status = rcStatus.UP
         elif ss.status == rcStatus.STDBY_UP_WITH_DOWN:
@@ -197,10 +321,11 @@ class Svc(Resource, Freezer):
         print self.print_status_fmt%("---", "------", "-----")
 
         s = rcStatus.Status(rcStatus.UNDEF)
-        for t in self.status_types:
-            for rs in self.get_res_sets(t):
-                for r in rs.resources:
-                    s += r.print_status()
+        for rs in self.get_res_sets(self.status_types):
+            for r in rs.resources:
+                r.print_status()
+        s = self.group_status()['overall']
+
         print self.print_status_fmt%("overall",
                                      str(s),
                                      ""),
@@ -271,10 +396,19 @@ class Svc(Resource, Freezer):
         self.startapp()
 
     def stop(self):
-        self.stopapp()
+        try:
+            self.stopapp()
+        except ex.excError:
+            pass
         self.stopcontainer()
         self.umount()
         self.stopip()
+
+    def startdrbd(self):
+        self.sub_set_action("disk.drbd", "start")
+
+    def stopdrbd(self):
+        self.sub_set_action("disk.drbd", "stop")
 
     def startloop(self):
         self.sub_set_action("disk.loop", "start")
@@ -297,15 +431,18 @@ class Svc(Resource, Freezer):
     def startdisk(self):
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("sync.symclone", "start")
-        self.sub_set_action("sync.dds", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "start")
         self.sub_set_action("disk.vg", "start")
+        self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
 
     def stopdisk(self):
+        self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
 
@@ -325,12 +462,18 @@ class Svc(Resource, Freezer):
 
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
+        self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
+        self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.hpvm", "start")
+        self.sub_set_action("container.ldom", "start")
 
     def stopcontainer(self):
+        self.sub_set_action("container.ldom", "stop")
         self.sub_set_action("container.hpvm", "stop")
+        self.sub_set_action("container.xen", "stop")
         self.sub_set_action("container.kvm", "stop")
+        self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
 
     def startapp(self):
@@ -350,20 +493,68 @@ class Svc(Resource, Freezer):
 
     def startstandby(self):
         self.sub_set_action("ip", "startstandby")
+        self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.zpool", "startstandby")
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
         self.sub_set_action("fs", "startstandby")
         self.sub_set_action("app", "startstandby")
 
-    def diskupdate(self):
-        self.sub_set_action("disk.vg", "diskupdate")
+    def postsync(self):
+        """ action triggered by a remote master node after
+            syncnodes and syncdrp. Typically make use of files
+            received in var/
+        """
+        self.all_set_action("postsync")
+
+    def remote_postsync(self):
+	""" detach the remote exec of postsync because the
+            waitlock timeout is long, and we ourselves still
+            hold the service lock we want to release early.
+	"""
+	kwargs = {}
+	fork(self._remote_postsync, kwargs)
+
+    def _remote_postsync(self):
+        """ action triggered by a remote master node after
+            syncnodes and syncdrp. Typically make use of files
+            received in var/.
+            use a long waitlock timeout to give a chance to
+            remote syncs to finish
+        """
+        for n in self.need_postsync:
+            self.remote_action(n, 'postsync', waitlock=3600)
+
+        self.need_postsync = set([])
+
+    def remote_action(self, node, action, waitlock=60):
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname),
+                '--waitlock', str(waitlock), action]
+        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+        cmd = rcEnv.rsh.split() + [node] + rcmd
+        self.call(cmd)
+
+    def presync(self):
+        """ prepare files to send to slave nodes in var/.
+            Each resource can prepare its own set of files.
+        """
+        self.need_postsync = set([])
+        if self.presync_done:
+            return
+        self.all_set_action("presync")
+        self.presync_done = True
 
     def syncnodes(self):
-        self.sub_set_action("sync.rsync", "syncnodes")
+        self.presync()
+        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncnodes")
+        self.remote_postsync()
 
     def syncdrp(self):
-        self.sub_set_action("sync.rsync", "syncdrp")
+        self.presync()
+        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncdrp")
+        self.remote_postsync()
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
@@ -386,9 +577,11 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
+        self.sub_set_action("sync.zfs", "syncnodes")
 
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
+        self.sub_set_action("sync.zfs", "syncnodes")
 
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")
@@ -397,8 +590,6 @@ class Svc(Resource, Freezer):
         print str(self)
 
     def syncall(self):
-        try: self.diskupdate()
-        except: pass
         try: self.syncnodes()
         except: pass
         try: self.syncdrp()
@@ -409,48 +600,90 @@ class Svc(Resource, Freezer):
     def push(self):
         xmlrpcClient.push_all([self])
 
-    def disable_resources(self, keep=None):
-        if keep is None or len(keep) == 0:
+    def tag_match(self, rtags, keeptags):
+        for tag in rtags:
+            if tag in keeptags:
+                return True
+        return False
+
+    def disable_resources(self, keeprid=[], keeptags=set([])):
+        if len(keeprid) > 0:
+            ridfilter = True
+        else:
+            ridfilter = False
+
+        if len(keeptags) > 0:
+            tagsfilter = True
+        else:
+            tagsfilter = False
+
+        if not tagsfilter and not ridfilter:
             return
+
         for rs in self.resSets:
             for r in rs.resources:
-                if r.rid in keep:
+                if ridfilter and r.rid in keeprid:
+                    continue
+                if tagsfilter and self.tag_match(r.tags, keeptags):
                     continue
                 r.disable()
 
     def setup_environ(self):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
 
-    def action(self, action, rid=None):
+    def action(self, action, rid=[], tags=set([]), waitlock=60):
         if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
             self.log.info("Abort action on frozen service")
             return
         self.setup_environ()
-        self.disable_resources(keep=rid)
+        self.setup_signal_handlers()
+        self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
-            self.do_action(action)
+            self.do_action(action, waitlock=waitlock)
         else:
-            self.do_logged_action(action)
+            self.do_logged_action(action, waitlock=waitlock)
 
-    def do_action(self, action):
+    def do_action(self, action, waitlock=60):
         """Trigger action
         """
         err = 0
         try:
-            svclock(self)
+            self.svclock(timeout=waitlock)
+        except:
+            return 1
+
+        try:
             getattr(self, action)()
         except ex.excError:
             err = 1
-            pass
-        except:
-            """Save the error for deferred raising
-            """
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
             err = 1
-            import traceback
-            traceback.print_exc()
+        except:
+            err = 1
+            self.save_exc()
+
+        self.svcunlock()
         return err
 
-    def do_logged_action(self, action):
+    def save_exc(self):
+        import traceback
+        try:
+            import tempfile
+            import datetime
+            now = str(datetime.datetime.now()).replace(' ', '-')
+            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
+                                            prefix='exc-'+now+'-')
+            f.close()
+            f = open(f.name, 'w')
+            traceback.print_exc(file=f)
+            self.log.error("unexpected error. stack saved in %s"%f.name)
+            f.close()
+        except:
+            self.log.error("unexpected error")
+            traceback.print_exc()
+
+    def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
         import tempfile
         import logging
@@ -471,22 +704,34 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
 
-        err = self.do_action(action)
+        err = self.do_action(action, waitlock=waitlock)
 
-        """Push result and logs to database
+        """ Push result and logs to database
         """
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        svcunlock(self)
         fork_dblogger(self, action, begin, end, actionlogfile)
         return err
 
     def restart(self):
-	""" stop then start service"""
-	# FIXME should test stop() status before start()
+	""" stop then start service
+        """
         self.stop()
         self.start()
+
+    def switch(self):
+	""" stop then start service
+        """
+        if not hasattr(self, "destination_node"):
+            self.log.error("a destination node must be provided for the switch action")
+            raise ex.excError
+        if self.destination_node not in self.nodes:
+            self.log.error("destination node %s is not in service node list"%self.destination_node)
+            raise ex.excError
+        self.stop()
+	kwargs = {'node': self.destination_node, 'action': 'start'}
+	fork(self.remote_action, kwargs)
 
 
 if __name__ == "__main__" :

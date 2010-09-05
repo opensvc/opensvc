@@ -49,7 +49,8 @@ action_desc = {
 	'stoppool':	'deactivate zpool resources of this service',
 	'startdisk':	'combo action, chaining startvg-mount',
 	'stopdisk':	'combo action, chaining umount-stopvg',
-	'diskupdate':	'update var files associated to disks',
+	'presync':	'update var files associated to resources',
+	'postsync':	'make use of files received from master nodes in var',
 	'prstart':	'reserve scsi disks held by this service',
 	'prstop':	'release scsi disks held by this service',
 	'prstatus':	'report status of reservations on scsi disks held by this service',
@@ -60,8 +61,10 @@ action_desc = {
 	'syncfullsync':	'trigger a full copy of the volume to its target',
 	'syncupdate':	'trigger a one-time resync of the volume to its target',
 	'syncverify':	'trigger a one-time checksum-based verify of the volume and its target',
-	'syncall':	'combo action, chaining diskupdate-syncnodes-syncdrp-syncupdate',
+	'syncall':	'combo action, chaining syncnodes-syncdrp-syncupdate',
 	'push':         'push service configuration to database',
+        'disklist':     'construct disklist',
+        'switch':       'stop the service on the local node and start on the remote node',
 }
 
 def format_desc(svc=False):

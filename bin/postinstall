@@ -39,6 +39,7 @@ def install_cron():
             '/etc/cron.d/opensvc',
             '/var/spool/cron/crontabs/root',
             '/var/spool/cron/root',
+            '/var/cron/tabs/root',
         ]
     for loc in root_crontab_locs:
         if os.path.exists(os.path.dirname(loc)):
@@ -133,7 +134,7 @@ def activate_debian():
     if process.returncode > 0:
         print buff[1]
         return False
-    cmd = ['update-rc.d', 'opensvc', 'defaults']
+    cmd = ['update-rc.d', 'opensvc', 'defaults', '99', '01']
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
     if process.returncode > 0:
@@ -156,6 +157,17 @@ def activate_hpux():
         f.close()
     return True
 
+def activate_AIX():
+    rc = "/etc/rc.d/init.d/opensvc"
+    links = ["/etc/rc.d/rc2.d/S990opensvc"]
+    for l in links:
+        if not os.path.islink(l):
+            if os.path.exists(l):
+                os.unlink(l)
+            print "create link %s -> %s"%(l, rc)
+            os.symlink(rc, l)
+    return True
+
 def activate_SunOS():
     rc = "/etc/init.d/opensvc"
     links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
@@ -164,6 +176,9 @@ def activate_SunOS():
             if os.path.exists(l):
                 os.unlink(l)
             os.symlink(rc, l)
+    return True
+
+def activate_FreeBSD():
     return True
 
 def install_rc():
@@ -186,6 +201,14 @@ def install_rc():
         rc = '/etc/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
+    elif sysname == "FreeBSD":
+        rc = '/etc/rc.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.FreeBSD'
+        activate = activate_FreeBSD
+    elif sysname == "AIX":
+        rc = '/etc/rc.d/init.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.AIX'
+        activate = activate_AIX
     else:
         print "could not select an init script: unsupported operating system"
         return False
@@ -207,10 +230,23 @@ def gen_keys():
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
 
+def missing_dir(sub):
+    pathd = os.path.join(os.sep, 'opt', 'opensvc', sub)
+    if not os.path.exists(pathd):
+	os.makedirs(pathd, 755)
+
+def missing_dirs():
+    missing_dir('log')
+    missing_dir('tmp')
+
 def convert_svclinks():
-    pathetc = os.path.join(os.sep, 'opt', 'opensvc', 'etc')
+    missing_dir('etc')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
+    if not os.path.exists(svcmgr):
+	return 1
     rcService = os.path.realpath(os.path.join(os.sep, 'opt', 'opensvc', 'bin', 'rcService'))
+    if not os.path.exists(rcService):
+	return 1
     for fname in os.listdir(pathetc):
         fpath = os.path.join(pathetc, fname)
         if not os.path.islink(fpath):
@@ -248,11 +284,11 @@ def move_usr_to_opt():
             dst = os.path.join(pathetc, os.path.basename(f))
             if os.path.exists(dst):
                 continue
-            if os.path.isdir(f):
-                shutil.copytree(f, dst, symlinks=True)
-            elif os.path.islink(f):
+            if os.path.islink(f):
                 linkto = os.readlink(f)
                 os.symlink(linkto, dst)
+            elif os.path.isdir(f):
+                shutil.copytree(f, dst, symlinks=True)
             else:
                 shutil.copy2(f, dst)
 
@@ -286,10 +322,28 @@ def install_user():
     if sysname == 'Linux':
         install_user_linux()
 
+def install_bash_completion():
+    src = '/opt/opensvc/usr/share/bash_completion.d/opensvc'
+    ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
+          os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
+    for d in ds:
+        dst = os.path.join(d, 'opensvc')
+        if not os.path.exists(d):
+            d = None
+            continue
+        else:
+            break
+    if d is None:
+        return
+    shutil.copyfile(src, dst)
+    os.chmod(dst, 0644)
+
 move_usr_to_opt()
+missing_dirs()
 convert_svclinks()
 install_cron()
 install_rc()
 gen_keys()
 install_profile()
 install_user()
+install_bash_completion()

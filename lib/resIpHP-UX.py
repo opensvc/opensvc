@@ -21,16 +21,11 @@
 "Module implement Linux specific ip management"
 
 import resIp as Res
+u = __import__('rcUtilitiesHP-UX')
 
 class Ip(Res.Ip):
     def check_ping(self):
-        count=1
-        timeout=5
-        cmd = ['ping', '-n', repr(count), '-m', repr(timeout), '-i', self.addr]
-        (ret, out) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
+        return u.check_ping(self.addr)
 
     def arp_announce(self):
         """ arp_announce job is done by HP-UX ifconfig... """
