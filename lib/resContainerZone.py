@@ -44,15 +44,17 @@ class Zone(resContainer.Container):
         self.zonepath = os.path.realpath(os.path.join( 'zones', self.name))
         self.zone_refresh()
 
-    def zoneadm(self, action):
+    def zoneadm(self, action, option=None):
         if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach' ] :
             cmd = ['zoneadm', '-z', self.name, action ]
         else:
             self.log.error("unsupported zone action: %s" % action)
             return 1
+        if option is not None:
+            cmd += option
 
         t = datetime.now()
-        (ret, out) = self.vcall(cmd)
+        (ret, out) = self.vcall(cmd,err_to_info=True)
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s'
                     % (action, len, ret, out))
@@ -75,7 +77,11 @@ class Zone(resContainer.Container):
         if self.state in ('installed' , 'ready', 'running'):
             self.log.info("zone container %s already installed" % self.name)
             return 0
-        return self.zoneadm('attach')
+        ret = self.zoneadm('attach')
+        if ret == 0 :
+            return ret
+        else :
+            return self.zoneadm('attach', ['-F'] )
 
     def detach(self):
         self.zone_refresh()
