@@ -25,6 +25,14 @@ import rcExceptions as ex
 import snap
 
 class Snap(snap.Snap):
+    def mntopt_and_ro(self, m):
+        if m.mntOpt is None:
+            return 'ro'
+        opt_set = set(m.mntOpt.split(','))
+        opt_set -= set(['rw', 'ro'])
+        opt_set |= set(['ro'])
+        return ','.join(opt_set)
+
     def snapcreate(self, m):
         snap_name = ''
         snap_mnt = ''
@@ -45,7 +53,7 @@ class Snap(snap.Snap):
             os.makedirs(snap_mnt, 0755)
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
         self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
-        (ret, buff) = self.vcall(['mount', '-o', m.mntOpt, snap_dev, snap_mnt])
+        (ret, buff) = self.vcall(['mount', '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
         self.snaps[m.mountPoint] = dict(lv_name=lv_name,
