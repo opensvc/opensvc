@@ -99,12 +99,14 @@ class SyncZfs(Res.Resource):
         self.get_dst_info()
 
     def syncnodes(self):
+        """alias to syncupdate"""
         self.syncupdate()
 
     def syncfullsync(self):
+        """alias to syncupdate"""
         self.syncupdate()
 
-    def do_update(self, node):
+    def zfs_send_incremental(self, node):
         if self.recursive :  
             send_cmd = ['zfs', 'send', '-R', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
@@ -128,7 +130,7 @@ class SyncZfs(Res.Resource):
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
-    def do_fullsync(self, node=None):
+    def zfs_send_initial(self, node=None):
         if self.recursive :  
             send_cmd = ['zfs', 'send', '-R', self.src_snap_tosend]
         else:
@@ -183,6 +185,18 @@ class SyncZfs(Res.Resource):
         self.rename_snap(src, dst, node)
 
     def syncupdate(self):
+        """
+        test if service status is UP else return
+        create the snap_tosend if not already created (during pre_action)
+        if a snap has already been sent
+        then for all targets
+             zfs_send_incremental
+             rotate snap
+        else for all targets
+            zfs_send_initial
+            rotate snap
+        rotate snap on local node
+        """
         s = self.svc.group_status(excluded_groups=set(["sync"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
@@ -192,11 +206,11 @@ class SyncZfs(Res.Resource):
             self.create_snap(self.src_snap_tosend)
         if self.snap_exists(self.src_snap_sent):
             for n in self.targets:
-                self.do_update(n)
+                self.zfs_send_incremental(n)
                 self.rotate_snaps(self.dst_snap_tosend, self.dst_snap_sent, n)
         else:
             for n in self.targets:
-                self.do_fullsync(n)
+                self.zfs_send_initial(n)
                 self.rotate_snaps(self.dst_snap_tosend, self.dst_snap_sent, n)
         self.rotate_snaps(self.src_snap_tosend, self.src_snap_sent)
         self.write_statefile()
