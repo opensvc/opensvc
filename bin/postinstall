@@ -95,11 +95,7 @@ def install_cron():
                             c['ok'] = True
                         else:
                             # preserve scheduling
-                            if c['user'] == "":
-                                skip = 5
-                            else:
-                                skip = 6
-                            sched = ' '.join(line.split()[:skip])
+                            sched = ' '.join(line.split()[:5])
                             new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
                             c['ok'] = True
 	    for c in ce:
