@@ -35,6 +35,7 @@ def banner(text, ch='=', length=78):
 
 def is_exe(fpath):
     """Returns True if file path is executable, False otherwize
+    does not follow symlink
     """
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
