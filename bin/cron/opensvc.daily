@@ -37,5 +37,6 @@ n.action("pushstats")
 n.action("pushpkg")
 n.action("pushservices")
 n.action("pushasset")
+n.action("checks")
 n.action("syncservices")
 
