@@ -39,7 +39,7 @@ class SvcZone(svc.Svc):
         self.guestos = guestos
         self.zone = Zone.Zone(vmname)
         self += self.zone
-        self.runmethod = [ '/usr/sbin/zlogin' , vmname ]
+        self.runmethod = [ '/usr/sbin/zlogin', '-S', vmname ]
 
     def start(self):
         """start a zone
