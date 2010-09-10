@@ -254,6 +254,7 @@ class Svc(Resource, Freezer):
                     r.log.debug("start %s pre_action"%r.type)
                     r.pre_action(r, action)
                 except:
+                    self.save_exc()
                     raise ex.excError
 
         if ns and self.postsnap_trigger is not None:
@@ -656,6 +657,7 @@ class Svc(Resource, Freezer):
             getattr(self, action)()
         except ex.excError:
             err = 1
+            self.save_exc()
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
