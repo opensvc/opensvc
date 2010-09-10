@@ -45,6 +45,35 @@ class SyncZfs(Res.Resource):
             self.delta_store = delta_store
         Res.Resource.__init__(self, rid, "sync.zfs", optional=optional, disabled=disabled, tags=tags)
 
+    def pre_action(self, rset, action):
+        """Prepare dataset snapshots
+        Don't sync PRD services when running on !PRD node
+        skip snapshot creation if delay_snap in tags
+        delay_snap should be used for oracle archive datasets
+        """
+        if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+            self.log.debug("won't sync a PRD service running on a !PRD node")
+            raise ex.excAbortAction
+
+        for i, r in enumerate(rset.resources):
+            if r.is_disabled():
+                continue
+            if 'delay_snap' in r.tags:
+                continue
+            r.get_info()
+            if action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
+                if action == 'syncnodes' and self.target != ['nodes']:
+                    return
+                if action == 'syncdrp' and self.target != ['drpnodes']:
+                    return
+                nb = 0
+                tgts = r.targets.copy()
+                if len(tgts) == 0 :
+                    continue
+            r.get_info()
+            if not r.snap_exists(r.src_snap_tosend):
+                r.create_snap(r.src_snap_tosend)
+
     def __str__(self):
         return "%s target=%s src=%s" % (Res.Resource.__str__(self),\
                 self.target, self.src)
