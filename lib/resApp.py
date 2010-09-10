@@ -21,7 +21,7 @@ from datetime import datetime
 import os
 import glob
 
-from rcUtilities import is_exe, justcall
+from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 import resources as Res
 import rcStatus
@@ -41,7 +41,8 @@ class Apps(Res.Resource):
         if s.st_uid != 0 or s.st_gid != 0:
             self.log.info("set %s ownership to uid 0 gid 0"%rc)
             os.chown(rc, 0, 0)
-        if not is_exe(rc):
+        (ret, out) = self.call(self.prefix+['/usr/bin/test', '-x', rc])
+        if ret != 0: 
             self.vcall(self.prefix+['chmod', '+x', rc])
 
     def stop_checks(self):

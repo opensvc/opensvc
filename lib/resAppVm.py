@@ -21,7 +21,7 @@ import os
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, qcall, justcall
+from rcUtilities import qcall, justcall
 import resApp
 import rcStatus
 import rcExceptions as ex
