@@ -249,13 +249,24 @@ class Svc(Resource, Freezer):
                 raise ex.excError
 
         for r in sets:
-            if action not in blacklist_actions:
-                try:
-                    r.log.debug("start %s pre_action"%r.type)
-                    r.pre_action(r, action)
-                except:
-                    self.save_exc()
+            if action in blacklist_actions:
+                break
+            try:
+                r.log.debug("start %s pre_action"%r.type)
+                r.pre_action(r, action)
+            except ex.excError:
+                if r.is_optional():
+                    pass
+                else:
                     raise ex.excError
+            except ex.excAbortAction:
+                if r.is_optional():
+                    pass
+                else:
+                    break
+            except:
+                self.save_exc()
+                raise ex.excError
 
         if ns and self.postsnap_trigger is not None:
             (ret, out) = self.vcall(self.postsnap_trigger)
@@ -278,11 +289,23 @@ class Svc(Resource, Freezer):
                     break
 
         for r in sets:
-            if action not in blacklist_actions:
-                try:
-                    r.post_action(r, action)
-                except:
+            if action in blacklist_actions:
+                break
+            try:
+                r.post_action(r, action)
+            except ex.excError:
+                if r.is_optional():
+                    pass
+                else:
                     raise ex.excError
+            except ex.excAbortAction:
+                if r.is_optional():
+                    pass
+                else:
+                    break
+            except:
+                self.save_exc()
+                raise ex.excError
 
 
     def __str__(self):

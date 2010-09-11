@@ -53,11 +53,29 @@ class Snap(Res.Resource):
         Res.Resource.__init__(self, rid, "sync.snap", optional=optional,\
                             disabled=disabled, tags=tags)
 
-    def try_snap(self, rset, action):
+    def try_snap(self, rset, action, rid=None):
+        if action == "nodes":
+            action = "syncnodes"
+        if action == "drpnodes":
+            action = "syncdrp"
+
         mounts_h = {}
         for r in rset.resources:
+            """ if rid is set, snap only the specified resource.
+                Used by resources tagged 'delay_snap' on sync()
+
+                if rid is not set, don't snap resources tagged 'delay_snap'
+                (pre_action() code path)
+            """
+            if rid is None:
+                if "delay_snap" in r.tags:
+                    continue
+            elif rid != r.rid:
+                continue
+
             if r.is_disabled():
                 continue
+
             if r.snap is not True and r.snap is not False:
                 self.log.error("service configuration error: 'snap' must be 'true' or 'false'. default is 'false'")
                 raise ex.syncConfigSyntaxError
