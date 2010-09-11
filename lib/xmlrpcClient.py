@@ -87,7 +87,7 @@ except:
 proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
 try:
     proxy_methods = proxy.system.listMethods()
-except socket.error:
+except:
     proxy_methods = []
 
 @xmlrpc_decorator
