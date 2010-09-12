@@ -680,7 +680,6 @@ class Svc(Resource, Freezer):
             getattr(self, action)()
         except ex.excError:
             err = 1
-            self.save_exc()
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
