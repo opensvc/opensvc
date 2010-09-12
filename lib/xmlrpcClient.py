@@ -63,7 +63,12 @@ def xmlrpc_decorator(fn):
         try:
             return fn(*args)
         except (socket.error, xmlrpclib.ProtocolError):
+            """ normal for collector communications disabled
+                through 127.0.0.1 == dbopensvc
+            """
             pass
+        except socket.timeout:
+            print "connection to collector timed out"
         except:
             import sys
             import traceback
@@ -82,7 +87,7 @@ except:
 proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=20)
 try:
     proxy_methods = proxy.system.listMethods()
-except socket.error:
+except:
     proxy_methods = []
 
 @xmlrpc_decorator

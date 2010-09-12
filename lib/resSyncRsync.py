@@ -187,6 +187,22 @@ def bwlimit_option(self):
     return bwlimit
 
 def sync(self, type):
+    if type not in self.target.keys():
+        self.log.debug('%s => %s sync not applicable to %s'%(self.src, self.dst, type))
+        return 0
+
+    targets = nodes_to_sync(self, type)
+
+    if len(targets) == 0:
+        self.log.debug("no nodes to sync")
+        raise ex.syncNoNodesToSync
+
+    if "delay_snap" in self.tags:
+        if not hasattr(self.rset, 'snaps'):
+            Snap = lookup_snap_mod()
+            self.rset.snaps = Snap.Snap(self.rid)
+        self.rset.snaps.try_snap(self.rset, type, rid=self.rid)
+
     if hasattr(self, "alt_src"):
         """ The pre_action() has provided us with a better source
             to sync from. Use that
@@ -194,12 +210,6 @@ def sync(self, type):
         src = self.alt_src
     else:
         src = self.src
-
-    if type not in self.target.keys():
-        self.log.debug('%s => %s sync not applicable to %s'%(src, self.dst, type))
-        return 0
-
-    targets = nodes_to_sync(self, type)
 
     if len(src) == 0:
         self.log.debug("no files to sync")
