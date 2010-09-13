@@ -60,7 +60,7 @@ class Asset(object):
             (ret, out) = call(['cat', f])
             if ret != 0:
                 return 'Unknown'
-            return out.split('\n')[0]
+            return out.split('\n')[0].replace('OpenSolaris','').strip()
         return 'Unknown'
 
     def get_os_kernel(self):
