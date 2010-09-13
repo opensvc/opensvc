@@ -72,4 +72,5 @@ class Snap(snap.Snap):
         (ret, out) = self.vcall(cmd)
         cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
         (ret, buff) = self.vcall(cmd)
+        del(self.snaps[s])
 
