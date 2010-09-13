@@ -26,7 +26,10 @@ def is_container():
     if not os.path.exists(p):
         return False
     with open(p, 'r') as f:
-        l = f.readlines()[0].split(':')
+        lines = f.readlines()
+        if len(lines) != 1:
+            return False
+        l = lines[0].split(':')
         if l[-1].strip('\n') != '/':
             return True
     return False
