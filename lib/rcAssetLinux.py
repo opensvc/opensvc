@@ -21,13 +21,30 @@ import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
+def is_container():
+    p = '/proc/1/cgroup'
+    if not os.path.exists(p):
+        return False
+    with open(p, 'r') as f:
+        lines = f.readlines()
+        if len(lines) != 1:
+            return False
+        l = lines[0].split(':')
+        if l[-1].strip('\n') != '/':
+            return True
+    return False
+
 class Asset(object):
     def __init__(self):
-        (ret, out) = call(['dmidecode'])
-        if ret != 0:
+        self.container = is_container()
+        if self.container:
             self.dmidecode = []
         else:
-            self.dmidecode = out.split('\n')
+            (ret, out) = call(['dmidecode'])
+            if ret != 0:
+                self.dmidecode = []
+            else:
+                self.dmidecode = out.split('\n')
 
     def get_mem_bytes(self):
         cmd = ['free', '-m']
@@ -43,6 +60,8 @@ class Asset(object):
         return line[1]
 
     def get_mem_banks(self):
+        if self.container:
+            return 'n/a'
         banks =  0
         inBlock = False
         for l in self.dmidecode:
@@ -59,6 +78,8 @@ class Asset(object):
         return str(banks)
 
     def get_mem_slots(self):
+        if self.container:
+            return 'n/a'
         for l in self.dmidecode:
             if 'Number Of Devices:' in l:
                 return l.split()[-1]
@@ -67,22 +88,23 @@ class Asset(object):
     def get_os_vendor(self):
         if os.path.exists('/etc/debian_version'):
             return 'Debian'
-        if os.path.exists('/etc/redhat_release'):
-            return 'Redhat'
-        if os.path.exists('/etc/centos_release'):
-            return 'Centos'
+        if os.path.exists('/etc/redhat-release'):
+            with open('/etc/redhat-release', 'r') as f:
+                if 'CentOS' in f.read():
+                    return 'CentOS'
+                else:
+                    return 'Redhat'
         return 'Unknown'
 
     def get_os_release(self):
         files = ['/etc/debian_version',
-                 '/etc/redhat_release',
-                 '/etc/centos_release']
+                 '/etc/redhat-release']
         for f in files:
             if os.path.exists(f):
                 (ret, out) = call(['cat', f])
                 if ret != 0:
                     return 'Unknown'
-                return out.split('\n')[0]
+                return out.split('\n')[0].replace('CentOS','').strip()
         return 'Unknown'
 
     def get_os_kernel(self):
@@ -98,12 +120,18 @@ class Asset(object):
         return out.split('\n')[0]
 
     def get_cpu_freq(self):
-        for l in self.dmidecode:
-            if 'Max Speed:' in l:
-                return ' '.join(l.split()[-2:])
+        p = '/proc/cpuinfo'
+        if not os.path.exists(p):
+            return 'Unknown'
+        with open(p, 'r') as f:
+            for line in f.readlines():
+                if 'cpu MHz' in line:
+                    return line.split(':')[1].strip().split('.')[0]
         return 'Unknown'
 
     def get_cpu_cores(self):
+        if self.container:
+            return 'n/a'
         c = 0
         for l in self.dmidecode:
             if 'Core Count:' in l:
@@ -111,6 +139,8 @@ class Asset(object):
         return str(c)
 
     def get_cpu_dies(self):
+        if self.container:
+            return 'n/a'
         c = 0
         for l in self.dmidecode:
             if 'Processor Information' in l:
@@ -126,12 +156,16 @@ class Asset(object):
         return l[1].strip()
 
     def get_serial(self):
+        if self.container:
+            return 'n/a'
         for l in self.dmidecode:
             if 'Serial Number:' in l:
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
     def get_model(self):
+        if self.container:
+            return 'container'
         for l in self.dmidecode:
             if 'Product Name:' in l:
                 return l.split(':')[-1].strip()

@@ -37,9 +37,9 @@ class Apps(resApp.Apps):
                                             '-a', '-group', 'root'])
         if len(out) == 0 or rc != out.split()[0]:
             self.vcall(self.prefix+['chown', 'root:root', rc])
-        (ret, out) = self.call(self.prefix+['/usr/bin/test', '-x', rc])
+        (ret, out) = self.call(self.prefix+['test', '-x', rc])
         if ret != 0:
-            self.vcall(self.prefix+['/usr/bin/chmod', '+x', rc])
+            self.vcall(self.prefix+['chmod', '+x', rc])
 
     def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
