@@ -134,13 +134,9 @@ class Asset(object):
         return 'Unknown'
 
     def get_cpu_cores(self):
-        if self.container:
-            return 'n/a'
-        c = 0
-        for l in self.dmidecode:
-            if 'Core Count:' in l:
-                c += int(l.split()[-1])
-        return str(c)
+        with open('/proc/cpuinfo') as f:
+            return str(f.read().count('core id'))
+        return '0'
 
     def get_cpu_dies(self):
         if self.container:
