@@ -55,5 +55,25 @@ def listpkg():
         lines.append(x)
     return lines
 
+def listpatch():
+    """
+    Patch: patchnum-rev Obsoletes: num-rev[,patch-rev]... Requires: .... Incompatibles: ... Packages: ...
+    """
+    if which('showrev') is None:
+        return []
+    cmd = ['showrev', '-p']
+    (ret, out) = call(cmd, errlog=False, cache=True)
+    lines = []
+    nodename = "rcEnv.nodename"
+    for line in out.split('\n'):
+        l = line.split(' ')
+        if len(l) > 3:
+            p = l[1].split('-')
+            if len(p) != 2:
+                continue
+            else:
+                lines.append( [ nodename , p[0], p[1] ] )
+    return lines
 
-
+if __name__ == "__main__" :
+    print listpatch()

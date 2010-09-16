@@ -59,4 +59,5 @@ else:
     cmd = ['true']
     listpkg = listpkg_dummy
 
-
+def listpatch():
+    return [] 

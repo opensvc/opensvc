@@ -36,3 +36,5 @@ def listpkg():
         lines.append(x)
     return lines
 
+def listpatch():
+    return [] 

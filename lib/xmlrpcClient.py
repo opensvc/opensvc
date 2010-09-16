@@ -581,6 +581,16 @@ def push_pkg():
     proxy.delete_pkg(rcEnv.nodename)
     proxy.insert_pkg(vars, vals)
 
+@xmlrpc_decorator
+def push_patch():
+    p = __import__('rcPatch'+sysname)
+    vars = ['patch_nodename',
+            'patch_num',
+            'patch_rev']
+    vals = p.listpatch()
+    proxy.delete_patch(rcEnv.nodename)
+    proxy.insert_patch(vars, vals)
+
 def push_stats(force=False):
     if not force and not stats_timestamp():
             return
