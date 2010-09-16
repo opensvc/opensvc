@@ -114,7 +114,11 @@ class Asset(object):
         return out.split('\n')[0]
 
     def get_os_arch(self):
-        (ret, out) = call(['arch'])
+        if which('arch') is not None:
+            cmd = ['arch']
+        else:
+            cmd = ['uname', '-m']
+        (ret, out) = call(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
