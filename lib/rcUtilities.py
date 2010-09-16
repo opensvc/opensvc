@@ -81,6 +81,14 @@ def call(argv=['/bin/false'],
                            # True:  log stderr as err, warn or info
                            #        depending on err_to_warn and
                            #        err_to_info value
+
+         outdebug=True,    # True:  log.debug cmd stdout
+                           # False: skip log.debug stdout
+
+         errdebug=True,    # True:  log.debug cmd stderr
+                           # False: skip log.debug stderr
+                           #        depending on err_to_warn and
+                           #        err_to_info value
          err_to_warn=False,
          err_to_info=False):
     if log is None:
@@ -128,7 +136,7 @@ def call(argv=['/bin/false'],
                 log.error('stderr:\n' + buff[1])
             else:
                 log.warning('command succesful but stderr:\n' + buff[1])
-        else:
+        elif errdebug:
             log.debug('stderr:\n' + buff[1])
     if not empty_string(buff[0]):
         if outlog:
@@ -136,7 +144,7 @@ def call(argv=['/bin/false'],
                 log.info('output:\n' + buff[0])
             else:
                 log.error('command failed with stdout:\n' + buff[0])
-        else:
+        elif outdebug:
             log.debug('output:\n' + buff[0])
 
     return (ret, buff[0])
