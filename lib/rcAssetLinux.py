@@ -86,6 +86,11 @@ class Asset(object):
         return '0'
 
     def get_os_vendor(self):
+        if os.path.exists('/etc/lsb-release'):
+            with open('/etc/lsb-release') as f:
+                for line in f.readlines():
+                    if 'DISTRIB_ID' in line:
+                        return line.split('=')[-1].replace('\n','').strip('"')
         if os.path.exists('/etc/debian_version'):
             return 'Debian'
         if os.path.exists('/etc/redhat-release'):
@@ -99,6 +104,13 @@ class Asset(object):
     def get_os_release(self):
         files = ['/etc/debian_version',
                  '/etc/redhat-release']
+        if os.path.exists('/etc/lsb-release'):
+            with open('/etc/lsb-release') as f:
+                for line in f.readlines():
+                    if 'DISTRIB_DESCRIPTION' in line:
+                        r = line.split('=')[-1].replace('\n','').strip('"')
+                        r = r.replace(self.get_os_vendor(), '').strip()
+                        return r
         for f in files:
             if os.path.exists(f):
                 (ret, out) = call(['cat', f])
