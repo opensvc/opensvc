@@ -135,7 +135,13 @@ class Asset(object):
 
     def get_cpu_cores(self):
         with open('/proc/cpuinfo') as f:
-            return str(f.read().count('core id'))
+            lines = f.readlines()
+            lines = [l for l in lines if 'core id' in l]
+            if len(lines) == 0:
+                return '0'
+            c = lines[-1].split(':')[-1].replace('\n','').strip()
+            c = int(c) + 1
+            return str(c)
         return '0'
 
     def get_cpu_dies(self):
