@@ -39,6 +39,7 @@ class Node(Svc, Freezer):
           'pushservices':   'push service configuration to collector',
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
+          'pushpatch':      'push patch/version list to collector',
           'prkey':          'display persistent reservation key of this node',
           'checks':         'run node sanity checks, push results to collector',
         }
@@ -69,6 +70,9 @@ class Node(Svc, Freezer):
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()
+
+    def pushpatch(self):
+        xmlrpcClient.push_patch()
 
     def pushasset(self):
         xmlrpcClient.push_asset()
