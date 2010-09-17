@@ -64,7 +64,7 @@ def listpatch():
     cmd = ['showrev', '-p']
     (ret, out) = call(cmd, errlog=False, cache=True)
     lines = []
-    nodename = "rcEnv.nodename"
+    nodename = rcEnv.nodename
     for line in out.split('\n'):
         l = line.split(' ')
         if len(l) > 3:

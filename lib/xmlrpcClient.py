@@ -583,7 +583,7 @@ def push_pkg():
 
 @xmlrpc_decorator
 def push_patch():
-    p = __import__('rcPatch'+sysname)
+    p = __import__('rcPkg'+sysname)
     vars = ['patch_nodename',
             'patch_num',
             'patch_rev']
