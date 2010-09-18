@@ -122,9 +122,9 @@ class Asset(object):
         f = os.path.join(rcEnv.pathvar, 'host_mode')
         if os.path.exists(f):
             (ret, out) = call(['cat', f])
-            if ret != 0:
-                return 'Unknown'
-        return out.split('\n')[0]
+            if ret == 0:
+                return out.split('\n')[0]
+        return 'Unknown'
 
     def get_asset_dict(self):
         d = {}
