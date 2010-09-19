@@ -8,6 +8,7 @@ if [ -r /etc/rc.config.d/opensvc ] ; then
 fi
 
 osvc_path=/opt/opensvc/bin
+osvc_opts="--parallel"
 allsecondaryservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 agt=${osvc_path}/perfagt.`uname -s`
@@ -25,8 +26,8 @@ start)
 	if [ -x $agt ] ; then
 		$agt
 	fi
-	${allprimaryservices} start
-	${allsecondaryservices} startstandby
+	${allprimaryservices} ${osvc_opts} start
+	${allsecondaryservices} ${osvc_opts} startstandby
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
@@ -37,6 +38,6 @@ stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
 	fi
-	${allsecondaryservices} --force stop
+	${allsecondaryservices} ${osvc_opts} --force stop
 	;;
 esac

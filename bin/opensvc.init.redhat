@@ -13,15 +13,16 @@
 . /etc/init.d/functions
 
 osvc_path=/opt/opensvc/bin
+osvc_opts="--parallel"
 allsecondaryservices=${osvc_path}/allservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
 case $1 in
 start)
-	${allprimaryservices} start
-	${allsecondaryservices} startstandby
+	${allprimaryservices} ${osvc_opts} start
+	${allsecondaryservices} ${osvc_opts} startstandby
 	;;
 stop)
-	${allsecondaryservices} --force stop
+	${allsecondaryservices} ${osvc_opts} --force stop
 	;;
 esac

@@ -41,6 +41,8 @@ parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
+parser.add_option("-p", "--parallel", default=False, action="store_true", dest="parallel",
+                  help="start actions on specified services in parallel")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
@@ -132,8 +134,22 @@ if hasattr(options, "parm_tags") and options.parm_tags is not None:
 else:
    tags = set([])
 
+if options.parallel:
+    from multiprocessing import Process
+    p = {}
+
 for s in svcs:
     s.force = options.force
     s.destination_node = options.parm_destination_node
-    s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
+    if options.parallel:
+        d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}
+        p[s.svcname] = Process(target=s.action, name='worker_'+s.svcname, kwargs=d)
+        p[s.svcname].daemon = True
+        p[s.svcname].start()
+    else:
+        s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
+
+if options.parallel:
+    for svcname in p:
+        p[svcname].join()
 
