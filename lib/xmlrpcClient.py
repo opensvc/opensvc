@@ -288,7 +288,14 @@ def push_service(svc):
         if not os.path.exists(envfile):
             return
         with open(envfile, 'r') as f:
-            buff = f.read()
+            buff = ""
+            for line in f.readlines():
+                l = line.strip()
+                if len(l) == 0:
+                    continue
+                if l[0] == '#' or l[0] == ';':
+                    continue
+                buff += line
             return buff
         return
 
