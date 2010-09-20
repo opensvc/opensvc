@@ -98,20 +98,31 @@ class Apps(Res.Resource):
 
         self.set_perms(name)
         cmd = self.prefix+[name, action]
-        if dedicated_log:
-            self.log.info('spawn: %s' % ' '.join(cmd))
-            outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
-            f = open(outf, 'w')
-            t = datetime.now()
-            p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
-            p.communicate()
-            _len = datetime.now() - t
-            self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
-            f.close()
-            return p.returncode
-        else:
-            (out, err, ret) = justcall(cmd)
-            return ret
+        try:
+            if dedicated_log:
+                self.log.info('spawn: %s' % ' '.join(cmd))
+                outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
+                f = open(outf, 'w')
+                t = datetime.now()
+                p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
+                p.communicate()
+                _len = datetime.now() - t
+                self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
+                f.close()
+                return p.returncode
+            else:
+                (out, err, ret) = justcall(cmd)
+                return ret
+        except OSError, e:
+            if e.errno == 8:
+                self.log.error("%s execution error (Exec format error)"%name)
+                return 1
+            else:
+                self.svc.save_exc()
+                return 1
+        except:
+           self.svc.save_exc()
+           return 1
 
     def sorted_app_list(self, pattern):
         return sorted(glob.glob(os.path.join(self.svc.initd, pattern)))
