@@ -68,7 +68,7 @@ elif cmd == 'allprimaryservices':
 elif cmd == 'allsecondaryservices':
     svcs = svcBuilder.build_services(onlysecondary=True)
 elif cmd == 'svcmgr':
-    parser.add_option("--service", default=None, action="store", dest="parm_svcs",
+    parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
               help="comma-separated list of service to operate on")
     parser.add_option("--status", default=None, action="store", dest="parm_status",
               help="operate only on service in the specified status (up/down/warn)")
