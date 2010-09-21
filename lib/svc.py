@@ -23,6 +23,7 @@ from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
+from rcUtilities import fork
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -47,36 +48,8 @@ def dblogger(self, action, begin, end, actionlogfile):
             r.log.setLevel(logging.CRITICAL)
 
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
-    gs = self.group_status()
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
-
-def fork(fn, kwargs):
-    try:
-        if os.fork() > 0:
-            """ return to parent execution
-            """
-            return
-    except:
-        """ no dblogging will be done. too bad.
-        """
-        return
-
-    """ separate the son from the father
-    """
-    os.chdir('/')
-    os.setsid()
-    os.umask(0)
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-    except:
-        os._exit(1)
-
-    fn(**kwargs)
-    os._exit(0)
 
 
 class Svc(Resource, Freezer):
