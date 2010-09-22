@@ -157,7 +157,7 @@ def stats_swap_day(t):
            l = [l[0]] + l[6:] + ['0']
        if len(l) != 6:
            continue
-       if l[1] == 'kbswpcad':
+       if 'kbswpfree'in l:
            continue
        if l[0] == 'Average:':
            continue
