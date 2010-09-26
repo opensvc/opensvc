@@ -995,6 +995,9 @@ def build_services(status=None, svcnames=[],
     If no status is specified, returns all services
     """
     services = {}
+    if not os.path.exists(rcEnv.pathetc):
+        print "create dir %s"%rcEnv.pathetc
+        os.makedirs(rcEnv.pathetc)
     for name in os.listdir(rcEnv.pathetc):
         if len(svcnames) > 0 and name not in svcnames:
             continue
