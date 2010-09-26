@@ -33,8 +33,12 @@ prog = os.path.basename(__file__)
 import svcBuilder
 import xmlrpcClient
 from rcUtilities import *
-from version import version
 from lock import *
+
+try:
+    from version import version
+except:
+    version = "dev"
 
 try:
     lockfd = monlock()

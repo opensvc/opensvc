@@ -30,8 +30,12 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 prog = os.path.basename(__file__)
 
 import node
-from version import version
 from rcGlobalEnv import *
+
+try:
+    from version import version
+except:
+    version = "dev"
 
 n = node.Node()
 __ver = prog + " version " + version
