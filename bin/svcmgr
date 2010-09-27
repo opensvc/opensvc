@@ -32,7 +32,10 @@ prog = os.path.basename(__file__)
 import svcBuilder
 import rcStatus
 import rcOptParser
-from version import version
+try:
+    from version import version
+except:
+    version = "dev"
 
 svcs = None
 __ver = prog + " version " + version

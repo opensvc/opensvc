@@ -235,7 +235,7 @@ class Rsync(Res.Resource):
     or both.
     """
     timeout = 3600
-    options = [ '-HpogDtrlvx', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
+    options = [ '-HpogDtrlvxA', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
 
     def pre_action(self, rset, action):
         """Actions to do before resourceSet iterates through the resources to
