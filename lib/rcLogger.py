@@ -30,7 +30,9 @@ class Logger(logging.Logger):
 
         """Common logfile with rotation
         """
-        filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile, maxBytes=5000, backupCount=5)
+        filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
+                                                           maxBytes=5242880,
+                                                           backupCount=5)
         filehandler.setFormatter(formatter)
         self.addHandler(filehandler)
 
