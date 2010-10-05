@@ -622,6 +622,21 @@ def push_asset():
     d = m.Asset().get_asset_dict()
     proxy.update_asset(d.keys(), d.values())
 
+def push_sym():
+    if 'update_sym_xml' not in proxy_methods:
+	print "'update_sym_xml' method is not exported by the collector"
+	return
+    m = __import__('rcSymmetrix')
+    try:
+        syms = m.Syms()
+    except:
+        return
+    for sym in syms:
+        vals = []
+        for key in sym.keys:
+            vals.append(getattr(sym, 'get_'+key)())
+        proxy.update_sym_xml(sym.sid, sym.keys, vals)
+
 @xmlrpc_decorator
 def push_all(svcs):
     proxy.delete_service_list([svc.svcname for svc in svcs])

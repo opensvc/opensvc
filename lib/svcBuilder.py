@@ -48,7 +48,7 @@ rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
 rcEnv.nodename = socket.gethostname()
 
 os.environ['LANG'] = 'C'
-os.environ['PATH'] = '/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
+os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for

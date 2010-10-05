@@ -40,6 +40,7 @@ class Node(Svc, Freezer):
           'pushstats':      'push performance metrics to collector',
           'pushpkg':        'push package/version list to collector',
           'pushpatch':      'push patch/version list to collector',
+          'pushsym':        'push symmetrix configuration to collector',
           'prkey':          'display persistent reservation key of this node',
           'checks':         'run node sanity checks, push results to collector',
         }
@@ -76,6 +77,9 @@ class Node(Svc, Freezer):
 
     def pushasset(self):
         xmlrpcClient.push_asset()
+
+    def pushsym(self):
+        xmlrpcClient.push_sym()
 
     def syncservices(self):
         for svc in self.svcs:

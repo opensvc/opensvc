@@ -47,8 +47,23 @@ parser.add_option("--debug", default=False,
 parser.add_option("--force", default=False,
 		  action="store_true", dest="force",
                   help="force action")
+parser.add_option("--symcli-db-file", default=None,
+		  action="store", dest="symcli_db_file",
+                  help="[pushsym option] use symcli offline mode with the specified file. aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx")
 
 (options, args) = parser.parse_args()
+
+
+def do_symcli_db_file(symcli_db_file):
+    if symcli_db_file is None:
+        return
+    if not os.path.exists(symcli_db_file):
+        print "File does not exist: %s"%symcli_db_file
+        return
+    os.environ['SYMCLI_DB_FILE'] = symcli_db_file
+    os.environ['SYMCLI_OFFLINE'] = '1'
+    
+do_symcli_db_file(options.symcli_db_file)
 
 if len(args) > 1:
     parser.error("More than one action")
