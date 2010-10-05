@@ -82,7 +82,7 @@ class checks(check):
                     chk_svcname,
                     chk.chk_type,
                     i['chk_instance'],
-                    i['chk_value'],
+                    i['chk_value'].replace("%",""),
                     now]
                 )
         xmlrpcClient.push_checks(vars, vals)
