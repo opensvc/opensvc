@@ -1013,5 +1013,7 @@ def build_services(status=None, svcnames=[],
         if onlysecondary and svc.autostart_node == rcEnv.nodename:
             continue
         services[svc.svcname] = svc
+        if svc.collector_outdated():
+            svc.action('push')
     return [ s for n ,s in sorted(services.items()) ]
 
