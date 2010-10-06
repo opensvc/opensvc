@@ -635,6 +635,7 @@ def push_sym():
         vals = []
         for key in sym.keys:
             vals.append(getattr(sym, 'get_'+key)())
+        proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=180)
         proxy.update_sym_xml(sym.sid, sym.keys, vals)
 
 @xmlrpc_decorator
