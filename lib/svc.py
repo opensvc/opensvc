@@ -67,6 +67,7 @@ class Svc(Resource, Freezer):
         self.type2resSets = {}
         self.disks = set([])
         self.force = False
+        self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
                              "container.xen",
@@ -596,6 +597,9 @@ class Svc(Resource, Freezer):
 
     def push(self):
         xmlrpcClient.push_all([self])
+        import time
+        with open(self.push_flag, 'w') as f:
+            f.write(str(time.time()))
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
@@ -729,6 +733,28 @@ class Svc(Resource, Freezer):
         self.stop()
 	kwargs = {'node': self.destination_node, 'action': 'start'}
 	fork(self.remote_action, kwargs)
+
+    def collector_outdated(self):
+        """ return True if the env file has changed since last push
+            else return False
+        """
+        import datetime
+        pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
+        if not os.path.exists(self.push_flag):
+            self.log.debug("no last push timestamp found")
+            return True
+        try:
+            mtime = os.stat(pathenv).st_mtime
+            f = open(self.push_flag)
+            last_push = float(f.read())
+            f.close()
+        except:
+            self.log.error("can not read timestamp from %s or %s"%(pathenv, self.push_flag))
+            return True
+        if mtime > last_push:
+            self.log.debug("env file changed since last push")
+            return True
+        return False
 
 
 if __name__ == "__main__" :
