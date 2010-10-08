@@ -1003,7 +1003,10 @@ def build_services(status=None, svcnames=[],
             continue
         if not is_service(os.path.join(rcEnv.pathetc, name)):
             continue
-        svc = build(name)
+        try:
+            svc = build(name)
+        except:
+            continue
         if svc is None :
             continue
         if status is not None and svc.status() != status:
