@@ -149,7 +149,9 @@ class Drbd(Res.Resource):
     def start_role(self, role):
         roles = self.get_roles()
         if roles[0] != role:
-            self.vcall(self.drbdadm_cmd(role.lower()))
+            (ret, out) = self.vcall(self.drbdadm_cmd(role.lower()))
+            if ret != 0:
+                raise ex.excError
         else:
             self.log.info("drbd resource %s is already %s"%(self.res, role))
 
