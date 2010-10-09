@@ -46,11 +46,11 @@ class Vmax(object):
     def __init__(self, sid):
         self.sid = sid
         if 'SYMCLI_DB_FILE' in os.environ:
+            # flat format
             self.aclx = os.path.join(os.path.dirname(os.environ['SYMCLI_DB_FILE']), sid+'.aclx')
             if not os.path.exists(self.aclx):
-                l = os.environ['SYMCLI_DB_FILE'].split('.')
-                l[-1] = 'aclx'
-                self.aclx = '.'.join(l)
+                # emc grab format
+                self.aclx = os.path.join(os.path.dirname(os.environ['SYMCLI_DB_FILE']), sid, sid+'.aclx')
             if not os.path.exists(self.aclx):
                 print "missing file %s"%self.aclx
         else:
