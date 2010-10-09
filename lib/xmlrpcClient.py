@@ -341,7 +341,7 @@ def push_service(svc):
             repr(svc.svcmode),
             repr(envfile(svc.svcname)),
             repr(version),
-            repr(int(svc.drnoaction)),
+            repr(svc.drnoaction),
             repr(guestos)]
 
     if 'container' in svc.resources_by_id:
