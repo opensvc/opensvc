@@ -34,6 +34,7 @@ class Vmax(object):
     keys = ['sym_info',
             'sym_dir_info',
             'sym_dev_info',
+            'sym_ficondev_info',
             'sym_meta_info',
             'sym_disk_info',
             'sym_diskgroup_info',
@@ -79,6 +80,11 @@ class Vmax(object):
 
     def get_sym_dev_info(self):
         cmd = ['symdev', 'list']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_ficondev_info(self):
+        cmd = ['symdev', 'list', '-ficon']
         out, err, ret = self.symcmd(cmd)
         return out
 
