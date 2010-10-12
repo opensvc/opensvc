@@ -20,6 +20,10 @@ class Syms(object):
             sid = symm.find('symid').text
             if model in ['VMAX-1']:
                 self.syms.append(Vmax(sid))
+            if 'DMX' in model:
+                self.syms.append(Sym(sid))
+            else:
+                print "unsupported sym model: %s"%model
 
     def __iter__(self):
         return self
@@ -30,37 +34,18 @@ class Syms(object):
         self.index += 1
         return self.syms[self.index-1]
 
-class Vmax(object):
-    keys = ['sym_info',
-            'sym_dir_info',
-            'sym_dev_info',
-            'sym_devrdfa_info',
-            'sym_ficondev_info',
-            'sym_meta_info',
-            'sym_disk_info',
-            'sym_diskgroup_info',
-            'sym_fa_info',
-            'sym_ig_aclx',
-            'sym_pg_aclx',
-            'sym_sg_aclx',
-            'sym_view_aclx']
-
+class Sym(object):
     def __init__(self, sid):
+        self.keys = ['sym_info',
+                     'sym_dir_info',
+                     'sym_dev_info',
+                     'sym_devrdfa_info',
+                     'sym_ficondev_info',
+                     'sym_meta_info',
+                     'sym_disk_info',
+                     'sym_diskgroup_info']
+
         self.sid = sid
-        if 'SYMCLI_DB_FILE' in os.environ:
-            dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
-            # flat format
-            self.aclx = os.path.join(dir, sid+'.aclx')
-            if not os.path.exists(self.aclx):
-                # emc grab format
-                import glob
-                files = glob.glob(os.path.join(dir, sid, sid+'*.aclx'))
-                if len(files) == 1:
-                    self.aclx = files[0]
-            if not os.path.exists(self.aclx):
-                print "missing file %s"%self.aclx
-        else:
-            self.aclx = None
 
     def symcmd(self, cmd):
         cmd += ['-sid', self.sid, '-output', 'xml_element']
@@ -89,7 +74,7 @@ class Vmax(object):
         return out
 
     def get_sym_devrdfa_info(self):
-        cmd = ['symdev', 'list', '-rdfa']
+        cmd = ['symdev', 'list', '-v', '-rdfa']
         out, err, ret = self.symcmd(cmd)
         return out
 
@@ -113,10 +98,35 @@ class Vmax(object):
         out, err, ret = self.symcmd(cmd)
         return out
 
-    def get_sym_fa_info(self):
-        cmd = ['symcfg', '-fa', 'all', 'list', '-v']
-        out, err, ret = self.symcmd(cmd)
-        return out
+class Vmax(Sym):
+    def __init__(self, sid):
+        Sym.__init__(sid)
+        self.keys += ['sym_ig_aclx',
+                      'sym_pg_aclx',
+                      'sym_sg_aclx',
+                      'sym_view_aclx']
+
+        if 'SYMCLI_DB_FILE' in os.environ:
+            dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
+            # flat format
+            self.aclx = os.path.join(dir, sid+'.aclx')
+            if not os.path.exists(self.aclx):
+                # emc grab format
+                import glob
+                files = glob.glob(os.path.join(dir, sid, sid+'*.aclx'))
+                if len(files) == 1:
+                    self.aclx = files[0]
+            if not os.path.exists(self.aclx):
+                print "missing file %s"%self.aclx
+        else:
+            self.aclx = None
+
+    def symaccesscmd(self, cmd):
+        if self.aclx is None:
+            cmd += ['-output', 'xml_element']
+        else:
+            cmd += ['-file', self.aclx, '-output', 'xml_element']
+        return justcall(cmd)
 
     def get_sym_pg_aclx(self):
         cmd = ['symaccess', 'list', '-type', 'port']
