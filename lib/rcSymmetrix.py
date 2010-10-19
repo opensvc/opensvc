@@ -20,7 +20,7 @@ class Syms(object):
             sid = symm.find('symid').text
             if model in ['VMAX-1']:
                 self.syms.append(Vmax(sid))
-            if 'DMX' in model:
+            if 'DMX' in model or '3000-M' in model:
                 self.syms.append(Dmx(sid))
             else:
                 print "unsupported sym model: %s"%model
@@ -167,7 +167,7 @@ class Dmx(Sym):
 
     def symaccesscmd(self, cmd):
         if self.maskdb is None:
-            cmd += ['-output', 'xml_element']
+            cmd += ['-sid', self.sid, '-output', 'xml_element']
         else:
             cmd += ['-f', self.maskdb, '-output', 'xml_element']
         return justcall(cmd)
