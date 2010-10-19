@@ -21,7 +21,7 @@ class Syms(object):
             if model in ['VMAX-1']:
                 self.syms.append(Vmax(sid))
             if 'DMX' in model:
-                self.syms.append(Sym(sid))
+                self.syms.append(Dmx(sid))
             else:
                 print "unsupported sym model: %s"%model
 
@@ -100,7 +100,7 @@ class Sym(object):
 
 class Vmax(Sym):
     def __init__(self, sid):
-        Sym.__init__(sid)
+        Sym.__init__(self, sid)
         self.keys += ['sym_ig_aclx',
                       'sym_pg_aclx',
                       'sym_sg_aclx',
@@ -147,4 +147,34 @@ class Vmax(Sym):
         cmd = ['symaccess', 'list', 'view', '-details']
         out, err, ret = self.symaccesscmd(cmd)
         return out
+
+class Dmx(Sym):
+    def __init__(self, sid):
+        Sym.__init__(self, sid)
+        self.keys += ['sym_maskdb']
+
+        if 'SYMCLI_DB_FILE' in os.environ:
+            dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
+            # flat format
+            self.maskdb = os.path.join(dir, sid+'.bin')
+            if not os.path.exists(self.maskdb):
+                # emc grab format
+                self.maskdb = os.path.join(dir, sid, 'symmaskdb_backup.bin')
+            if not os.path.exists(self.maskdb):
+                print "missing file %s"%self.maskdb
+        else:
+            self.maskdb = None
+
+    def symaccesscmd(self, cmd):
+        if self.maskdb is None:
+            cmd += ['-output', 'xml_element']
+        else:
+            cmd += ['-f', self.maskdb, '-output', 'xml_element']
+        return justcall(cmd)
+
+    def get_sym_maskdb(self):
+        cmd = ['symmaskdb', 'list', 'database']
+        out, err, ret = self.symaccesscmd(cmd)
+        return out
+
 
