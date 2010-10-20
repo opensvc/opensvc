@@ -32,6 +32,7 @@ class checks(check):
     def __init__(self, svcs=[]):
         self.svcs = svcs
         self.register('checkFsUsage')
+        self.register('checkFsInode')
         self.register('checkVgUsage')
 
     def __iadd__(self, c):
