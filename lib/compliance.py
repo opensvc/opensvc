@@ -62,7 +62,7 @@ class Module(object):
         return '\n'.join(a)
 
     def log_action(self, out, ret):
-        ruleset = ','.join([r['name'] for r in self.ruleset])
+        ruleset = ','.join(self.ruleset)
         vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
                 'run_ruleset']
         vals = [rcEnv.nodename, self.name, str(ret), out, ruleset]
@@ -129,12 +129,15 @@ class Compliance(object):
         a.append(self.str_ruleset())
         return '\n'.join(a)
 
+    def format_rule_var(self, var):
+        var = var.upper().replace('-', '_').replace(' ', '_')
+        var = '_'.join(('OSVC_COMP', var))
+        return var
+
     def setup_env(self):
-        for rule in self.ruleset:
-            var = rule['var']
-            var = var.upper().replace('-', '_').replace(' ', '_')
-            var = '_'.join(('OSVC_COMP', var))
-            os.environ[var] = rule['val']
+        for rule in self.ruleset.values():
+            for var, val in rule['vars']:
+                os.environ[self.format_rule_var(var)] = val
 
     def get_moduleset(self):
         moduleset = xmlrpcClient.comp_get_moduleset()
@@ -150,15 +153,14 @@ class Compliance(object):
 
     def str_ruleset(self):
         a = []
-        a.append('rulesets:')
-        for rule in self.ruleset:
+        a.append('rules:')
+        for rule in self.ruleset.values():
             if len(rule['filter']) == 0:
                 a.append(' %s'%rule['name'])
             else:
                 a.append(' %s (%s)'%(rule['name'],rule['filter']))
-        a.append('rules:')
-        for r in [v for v in os.environ if 'OSVC_COMP_' in v]:
-            a.append(' %s=%s'%(r, os.environ[r]))
+            for var, val in rule['vars']:
+                a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
     def merge_moduleset_modules(self):
