@@ -29,6 +29,7 @@ pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 prog = os.path.basename(__file__)
 
+import rcExceptions as ex
 import node
 from rcGlobalEnv import *
 
@@ -44,6 +45,15 @@ parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
+parser.add_option("--module", default="",
+		  action="store", dest="module",
+                  help="compliance, set module list")
+parser.add_option("--moduleset", default="",
+		  action="store", dest="moduleset",
+                  help="compliance, set moduleset list")
+parser.add_option("--ruleset", default="",
+		  action="store", dest="ruleset",
+                  help="compliance, set ruleset list")
 parser.add_option("--force", default=False,
 		  action="store_true", dest="force",
                   help="force action")
@@ -53,6 +63,7 @@ parser.add_option("--symcli-db-file", default=None,
 
 (options, args) = parser.parse_args()
 
+n.options = options
 
 def do_symcli_db_file(symcli_db_file):
     if symcli_db_file is None:
@@ -65,14 +76,19 @@ def do_symcli_db_file(symcli_db_file):
     
 do_symcli_db_file(options.symcli_db_file)
 
-if len(args) > 1:
-    parser.error("More than one action")
 if len(args) is 0:
     parser.error("Missing action")
-action = args[0]
+action = '_'.join(args)
 if not action in n.action_desc:
-    parser.error("unsupported action")
+    parser.error("unsupported action: %s"%action)
 
-n.force = options.force
-n.action(action)
+try:
+    n.action(action)
+except ex.excError:
+    import traceback
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    sys.stderr.write(str(exc_value)+'\n')
+    sys.exit(1)
+except:
+    raise
 

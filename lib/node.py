@@ -30,7 +30,6 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.svcs = svcBuilder.build_services()
-        self.force = False
         Freezer.__init__(self, '')
         self.action_desc = {
           'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -41,18 +40,27 @@ class Node(Svc, Freezer):
           'pushpkg':        'push package/version list to collector',
           'pushpatch':      'push patch/version list to collector',
           'pushsym':        'push symmetrix configuration to collector',
-          'prkey':          'display persistent reservation key of this node',
+          'prkey':          'show persistent reservation key of this node',
           'checks':         'run node sanity checks, push results to collector',
+          'compliance_check': 'run compliance checks',
+          'compliance_fix':   'run compliance fixes',
+          'compliance_show_moduleset': 'show compliance rules applying to this node',
+          'compliance_add_moduleset': 'add moduleset specified by --moduleset for this node',
+          'compliance_del_moduleset': 'del moduleset specified by --moduleset for this node',
+          'compliance_show_ruleset': 'show compliance rules applying to this node',
+          'compliance_add_ruleset': 'add ruleset specified by --ruleset for this node',
+          'compliance_del_ruleset': 'del ruleset specified by --ruleset for this node',
         }
 
     def format_desc(self):
         from textwrap import TextWrapper
-        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
+        wrapper = TextWrapper(subsequent_indent="%29s"%"", width=78)
         desc = "Supported commands:\n"
         for a in sorted(self.action_desc):
             if not hasattr(self, a):
                 continue
-            text = "  %-16s %s\n"%(a, self.action_desc[a])
+            text = "  %-26s %s\n"%(a.replace('_', ' '),
+                                   self.action_desc[a])
             desc += wrapper.fill(text)
             desc += '\n'
         return desc
@@ -67,7 +75,7 @@ class Node(Svc, Freezer):
         return getattr(self, a)()
 
     def pushstats(self):
-        xmlrpcClient.push_stats(force=self.force)
+        xmlrpcClient.push_stats(force=self.options.force)
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()
@@ -102,6 +110,46 @@ class Node(Svc, Freezer):
         import checks
         c = checks.checks(self.svcs)
         c.do_checks()
+
+    def compliance_check(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_checks()
+
+    def compliance_fix(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_fix()
+
+    def compliance_show_moduleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_show_moduleset()
+
+    def compliance_add_moduleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_add_moduleset()
+
+    def compliance_del_moduleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_del_moduleset()
+
+    def compliance_show_ruleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_show_ruleset()
+
+    def compliance_add_ruleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_add_ruleset()
+
+    def compliance_del_ruleset(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_del_ruleset()
 
 if __name__ == "__main__" :
     for n in (Node,) :
