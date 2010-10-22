@@ -42,6 +42,7 @@ class rcEnv:
     """
     dbopensvc_host = "dbopensvc"
     dbopensvc = "http://%s:80/init/default/call/xmlrpc"%dbopensvc_host
+    dbcompliance = "http://%s:80/init/compliance/call/xmlrpc"%dbopensvc_host
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 

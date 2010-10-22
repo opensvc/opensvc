@@ -90,6 +90,12 @@ try:
 except:
     proxy_methods = []
 
+comp_proxy = TimeoutServerProxy(rcEnv.dbcompliance, timeout=20)
+try:
+    comp_proxy_methods = comp_proxy.system.listMethods()
+except:
+    comp_proxy_methods = []
+
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
     try:
@@ -654,32 +660,32 @@ def push_checks(vars, vals):
 
 @xmlrpc_decorator
 def comp_get_moduleset_modules(moduleset):
-    return proxy.comp_get_moduleset_modules(moduleset)
+    return comp_proxy.comp_get_moduleset_modules(moduleset)
 
 @xmlrpc_decorator
 def comp_get_moduleset():
-    return proxy.comp_get_moduleset(rcEnv.nodename)
+    return comp_proxy.comp_get_moduleset(rcEnv.nodename)
 
 @xmlrpc_decorator
 def comp_add_moduleset(moduleset):
-    return proxy.comp_add_moduleset(rcEnv.nodename, moduleset)
+    return comp_proxy.comp_add_moduleset(rcEnv.nodename, moduleset)
 
 @xmlrpc_decorator
 def comp_del_moduleset(moduleset):
-    return proxy.comp_del_moduleset(rcEnv.nodename, moduleset)
+    return comp_proxy.comp_del_moduleset(rcEnv.nodename, moduleset)
 
 @xmlrpc_decorator
 def comp_get_ruleset():
-    return proxy.comp_get_ruleset(rcEnv.nodename)
+    return comp_proxy.comp_get_ruleset(rcEnv.nodename)
 
 @xmlrpc_decorator
 def comp_add_ruleset(ruleset):
-    return proxy.comp_add_ruleset(rcEnv.nodename, ruleset)
+    return comp_proxy.comp_add_ruleset(rcEnv.nodename, ruleset)
 
 @xmlrpc_decorator
 def comp_del_ruleset(ruleset):
-    return proxy.comp_del_ruleset(rcEnv.nodename, ruleset)
+    return comp_proxy.comp_del_ruleset(rcEnv.nodename, ruleset)
 
 @xmlrpc_decorator
 def comp_log_action(vars, vals):
-    return proxy.comp_log_action(vars, vals)
+    return comp_proxy.comp_log_action(vars, vals)
