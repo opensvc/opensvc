@@ -43,7 +43,7 @@ class Module(object):
                 continue
             statinfo = os.stat(loc)
             mode = statinfo[ST_MODE]
-            if statinfo.st_uid != 0 or statinfo.st_gid != 0:
+            if statinfo.st_uid != 0 or statinfo.st_gid not in (0,2,3,4):
                 raise ex.excError('%s is not owned by root. security hazard.'%(loc))
             if not S_ISREG(mode):
                 continue
@@ -71,7 +71,13 @@ class Module(object):
     def action(self, action):
         cmd = [self.executable, action]
         print "[MODULE] %s"%self.name
-        (out, err, ret) = justcall(cmd)
+        try:
+            (out, err, ret) = justcall(cmd)
+        except OSError, e:
+            if e.errno == 8:
+                raise ex.excError("%s execution error (Exec format error)"%self.executable)
+            else:
+                raise
         for line in set(err.split('\n'))-set(['']):
             out += "[ERR] %s\n"%line
         print out
