@@ -130,14 +130,23 @@ class Compliance(object):
         return '\n'.join(a)
 
     def format_rule_var(self, var):
-        var = var.upper().replace('-', '_').replace(' ', '_')
+        var = var.upper().replace('-', '_').replace(' ', '_').replace('.','_')
         var = '_'.join(('OSVC_COMP', var))
         return var
+
+    def format_rule_val(self, val):
+        val = str(val)
+        illegal_chars = """`;$"""
+        for c in illegal_chars:
+            if c in val:
+                print "illegal char %s in variable value: %s"%(c,val)
+                return "suppressed"
+        return val
 
     def setup_env(self):
         for rule in self.ruleset.values():
             for var, val in rule['vars']:
-                os.environ[self.format_rule_var(var)] = val
+                os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
 
     def get_moduleset(self):
         moduleset = xmlrpcClient.comp_get_moduleset()
