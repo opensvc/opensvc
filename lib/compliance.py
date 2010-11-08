@@ -61,11 +61,11 @@ class Module(object):
         a.append("executable: %s"%self.executable)
         return '\n'.join(a)
 
-    def log_action(self, out, ret):
+    def log_action(self, out, ret, action):
         ruleset = ','.join(self.ruleset)
         vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
-                'run_ruleset']
-        vals = [rcEnv.nodename, self.name, str(ret), out, ruleset]
+                'run_ruleset', 'run_action']
+        vals = [rcEnv.nodename, self.name, str(ret), out, ruleset, action]
         xmlrpcClient.comp_log_action(vars, vals)
 
     def action(self, action):
@@ -82,7 +82,7 @@ class Module(object):
             out += "[ERR] %s\n"%line
         print out
         print "[RET] %d"%ret
-        self.log_action(out,ret)
+        self.log_action(out,ret,action)
 
     def check(self):
         self.action('check')
