@@ -45,11 +45,11 @@ class Node(Svc, Freezer):
           'compliance_check': 'run compliance checks',
           'compliance_fix':   'run compliance fixes',
           'compliance_show_moduleset': 'show compliance rules applying to this node',
-          'compliance_add_moduleset': 'add moduleset specified by --moduleset for this node',
-          'compliance_del_moduleset': 'del moduleset specified by --moduleset for this node',
+          'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
+          'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
           'compliance_show_ruleset': 'show compliance rules applying to this node',
-          'compliance_add_ruleset': 'add ruleset specified by --ruleset for this node',
-          'compliance_del_ruleset': 'del ruleset specified by --ruleset for this node',
+          'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
+          'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
         }
 
     def format_desc(self):
@@ -126,30 +126,30 @@ class Node(Svc, Freezer):
         c = compliance.Compliance(self.options)
         c.do_show_moduleset()
 
-    def compliance_add_moduleset(self):
+    def compliance_attach_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
-        c.do_add_moduleset()
+        c.do_attach_moduleset()
 
-    def compliance_del_moduleset(self):
+    def compliance_detach_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
-        c.do_del_moduleset()
+        c.do_detach_moduleset()
 
     def compliance_show_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
         c.do_show_ruleset()
 
-    def compliance_add_ruleset(self):
+    def compliance_attach_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
-        c.do_add_ruleset()
+        c.do_attach_ruleset()
 
-    def compliance_del_ruleset(self):
+    def compliance_detach_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
-        c.do_del_ruleset()
+        c.do_detach_ruleset()
 
 if __name__ == "__main__" :
     for n in (Node,) :

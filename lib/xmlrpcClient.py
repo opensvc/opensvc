@@ -667,24 +667,24 @@ def comp_get_moduleset():
     return comp_proxy.comp_get_moduleset(rcEnv.nodename)
 
 @xmlrpc_decorator
-def comp_add_moduleset(moduleset):
-    return comp_proxy.comp_add_moduleset(rcEnv.nodename, moduleset)
+def comp_attach_moduleset(moduleset):
+    return comp_proxy.comp_attach_moduleset(rcEnv.nodename, moduleset)
 
 @xmlrpc_decorator
-def comp_del_moduleset(moduleset):
-    return comp_proxy.comp_del_moduleset(rcEnv.nodename, moduleset)
+def comp_detach_moduleset(moduleset):
+    return comp_proxy.comp_detach_moduleset(rcEnv.nodename, moduleset)
 
 @xmlrpc_decorator
 def comp_get_ruleset():
     return comp_proxy.comp_get_ruleset(rcEnv.nodename)
 
 @xmlrpc_decorator
-def comp_add_ruleset(ruleset):
-    return comp_proxy.comp_add_ruleset(rcEnv.nodename, ruleset)
+def comp_attach_ruleset(ruleset):
+    return comp_proxy.comp_attach_ruleset(rcEnv.nodename, ruleset)
 
 @xmlrpc_decorator
-def comp_del_ruleset(ruleset):
-    return comp_proxy.comp_del_ruleset(rcEnv.nodename, ruleset)
+def comp_detach_ruleset(ruleset):
+    return comp_proxy.comp_detach_ruleset(rcEnv.nodename, ruleset)
 
 @xmlrpc_decorator
 def comp_log_action(vars, vals):

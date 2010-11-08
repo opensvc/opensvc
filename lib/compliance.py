@@ -210,48 +210,48 @@ class Compliance(object):
         for module in self.ordered_module:
             self.module_o[module].fix()
 
-    def do_add_moduleset(self):
+    def do_attach_moduleset(self):
         if len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = xmlrpcClient.comp_add_moduleset(moduleset)
+            d = xmlrpcClient.comp_attach_moduleset(moduleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_del_moduleset(self):
+    def do_detach_moduleset(self):
         if len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = xmlrpcClient.comp_del_moduleset(moduleset)
+            d = xmlrpcClient.comp_detach_moduleset(moduleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_add_ruleset(self):
+    def do_attach_ruleset(self):
         if len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = xmlrpcClient.comp_add_ruleset(ruleset)
+            d = xmlrpcClient.comp_attach_ruleset(ruleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_del_ruleset(self):
+    def do_detach_ruleset(self):
         if len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = xmlrpcClient.comp_del_ruleset(ruleset)
+            d = xmlrpcClient.comp_detach_ruleset(ruleset)
             if not d['status']:
                 err = True
             print d['msg']
