@@ -45,8 +45,10 @@ class Node(Svc, Freezer):
           'compliance_check': 'run compliance checks',
           'compliance_fix':   'run compliance fixes',
           'compliance_show_moduleset': 'show compliance rules applying to this node',
+          'compliance_list_modulesets': 'list available compliance modulesets',
           'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
           'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
+          'compliance_list_rulesets': 'list available compliance rulesets',
           'compliance_show_ruleset': 'show compliance rules applying to this node',
           'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
@@ -150,6 +152,16 @@ class Node(Svc, Freezer):
         import compliance
         c = compliance.Compliance(self.options)
         c.do_detach_ruleset()
+
+    def compliance_list_rulesets(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_list_rulesets()
+
+    def compliance_list_modulesets(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_list_modulesets()
 
 if __name__ == "__main__" :
     for n in (Node,) :

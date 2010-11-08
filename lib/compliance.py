@@ -257,3 +257,19 @@ class Compliance(object):
             print d['msg']
         if err:
             raise ex.excError()
+
+    def do_list_rulesets(self):
+        if len(self.options.ruleset) == 0:
+            l = xmlrpcClient.comp_list_ruleset()
+        else:
+            l = xmlrpcClient.comp_list_ruleset(self.options.ruleset)
+        print '\n'.join(l)
+
+    def do_list_modulesets(self):
+        if len(self.options.moduleset) == 0:
+            l = xmlrpcClient.comp_list_moduleset()
+        else:
+            l = xmlrpcClient.comp_list_moduleset(self.options.moduleset)
+        print '\n'.join(l)
+
+

@@ -687,5 +687,13 @@ def comp_detach_ruleset(ruleset):
     return comp_proxy.comp_detach_ruleset(rcEnv.nodename, ruleset)
 
 @xmlrpc_decorator
+def comp_list_ruleset(pattern='%'):
+    return comp_proxy.comp_list_rulesets(pattern)
+
+@xmlrpc_decorator
+def comp_list_moduleset(pattern='%'):
+    return comp_proxy.comp_list_modulesets(pattern)
+
+@xmlrpc_decorator
 def comp_log_action(vars, vals):
     return comp_proxy.comp_log_action(vars, vals)
