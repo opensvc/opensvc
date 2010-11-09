@@ -78,7 +78,8 @@ class Module(object):
             if self.do_action('fixable') not in (0, 2):
                 print 'not fixable, skip fix'
                 return 1
-            r = self.do_action('fix')
+            self.do_action('fix')
+            r = self.do_action('check')
         elif action == 'check':
             r = self.do_action('check')
             if r == 1:
