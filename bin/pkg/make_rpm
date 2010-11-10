@@ -58,7 +58,7 @@ Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
 BuildRoot: $CHROOT
-Requires: python26 libpython2.6.so.1.0
+Requires: /usr/bin/python2.6 libpython2.6.so.1.0
 
 %description
 These are the tools to drive OpenSVC services
