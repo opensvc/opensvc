@@ -44,11 +44,12 @@ class Node(Svc, Freezer):
           'checks':         'run node sanity checks, push results to collector',
           'compliance_check': 'run compliance checks',
           'compliance_fix':   'run compliance fixes',
+          'compliance_fixable': 'verify compliance fixes prerequisites',
           'compliance_show_moduleset': 'show compliance rules applying to this node',
-          'compliance_list_modulesets': 'list available compliance modulesets',
+          'compliance_list_modulesets': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
           'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
           'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
-          'compliance_list_rulesets': 'list available compliance rulesets',
+          'compliance_list_rulesets': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
           'compliance_show_ruleset': 'show compliance rules applying to this node',
           'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
@@ -122,6 +123,11 @@ class Node(Svc, Freezer):
         import compliance
         c = compliance.Compliance(self.options)
         c.do_fix()
+
+    def compliance_fixable(self):
+        import compliance
+        c = compliance.Compliance(self.options)
+        c.do_fixable()
 
     def compliance_show_moduleset(self):
         import compliance

@@ -1,10 +1,11 @@
 from stat import *
 import os
 import re
+import datetime
 import rcExceptions as ex
 import xmlrpcClient
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall
+from rcUtilities import is_exe, justcall, banner
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -69,8 +70,33 @@ class Module(object):
         xmlrpcClient.comp_log_action(vars, vals)
 
     def action(self, action):
+        print banner(self.name)
+        if action == 'fix':
+            if self.do_action('check') == 0:
+                print 'check passed, skip fix'
+                return 0
+            if self.do_action('fixable') not in (0, 2):
+                print 'not fixable, skip fix'
+                return 1
+            self.do_action('fix')
+            r = self.do_action('check')
+        elif action == 'check':
+            r = self.do_action('check')
+            if r == 1:
+                self.do_action('fixable')
+        elif action == 'fixable':
+            r = self.do_action('fixable')
+        else:
+            print 'action %s not supported'
+            r = 1
+        return r
+
+    def do_action(self, action):
+        start = datetime.datetime.now()
         cmd = [self.executable, action]
-        print "[MODULE] %s"%self.name
+        print "ACTION: %s"%action
+        print "START: %s"%str(start)
+        print "COMMAND: %s"%' '.join(cmd)
         try:
             (out, err, ret) = justcall(cmd)
         except OSError, e:
@@ -78,17 +104,24 @@ class Module(object):
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
+        end = datetime.datetime.now()
         for line in set(err.split('\n'))-set(['']):
-            out += "[ERR] %s\n"%line
-        print out
-        print "[RET] %d"%ret
+            out += "ERR: %s\n"%line
+        print "OUTPUT:"
+        print out[0:-1]
+        print "RCODE: %d"%ret
+        print "DURATION: %s"%str(end-start)
         self.log_action(out,ret,action)
+        return ret
 
     def check(self):
-        self.action('check')
+        return self.action('check')
 
     def fix(self):
-        self.action('fix')
+        return self.action('fix')
+
+    def fixable(self):
+        return self.action('fixable')
 
 class Compliance(object):
     def __init__(self, options):
@@ -128,6 +161,7 @@ class Compliance(object):
         print self
 
     def __str__(self):
+        print banner('run context')
         a = []
         a.append('modules:')
         for m in self.ordered_module:
@@ -188,6 +222,35 @@ class Compliance(object):
             raise ex.excError('could not expand moduleset modules')
         return moduleset
 
+    def digest_errors(self, err):
+        passed = [m for m in err if err[m] == 0]
+        errors = [m for m in err if err[m] == 1]
+        na = [m for m in err if err[m] == 2]
+
+        n_passed = len(passed)
+        n_errors = len(errors)
+        n_na = len(na)
+
+        def _s(n):
+            if n > 1:
+                return 's'
+            else:
+                return ''
+
+        def modules(l):
+            if len(l) == 0:
+                return ''
+            return '\n%s'%'\n'.join(map(lambda x: ' '+x, l))
+
+        print banner("digest")
+        print "%d n/a%s"%(n_na, modules(na))
+        print "%d passed%s"%(n_passed, modules(passed))
+        print "%d error%s%s"%(n_errors, _s(n_errors), modules(errors))
+
+        if len(errors) > 0:
+            return 1
+        return 0
+
     def do_show_moduleset(self):
         self.moduleset = self.get_moduleset()
         for ms in self.moduleset:
@@ -200,15 +263,25 @@ class Compliance(object):
         self.setup_env()
         print self.str_ruleset()
 
-    def do_checks(self):
+    def do_run(self, action):
+        err = {}
         self.init()
+        start = datetime.datetime.now()
         for module in self.ordered_module:
-            self.module_o[module].check()
+            err[module] = getattr(self.module_o[module], action)()
+        r = self.digest_errors(err)
+        end = datetime.datetime.now()
+        print "total duration: %s"%str(end-start)
+        return r
+
+    def do_checks(self):
+        return self.do_run('check')
 
     def do_fix(self):
-        self.init()
-        for module in self.ordered_module:
-            self.module_o[module].fix()
+        return self.do_run('fix')
+
+    def do_fixable(self):
+        return self.do_run('fixable')
 
     def do_attach_moduleset(self):
         if len(self.options.moduleset) == 0:
