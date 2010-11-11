@@ -33,6 +33,7 @@ import resScsiReserv
 class ScsiReserv(resScsiReserv.ScsiReserv):
     def scsireserv_supported(self):
         if which('sg_persist') is None:
+            self.log.debug("sg_persist must be installed to use scsi-3 reservations" )
             return False
         return True
 

@@ -311,7 +311,10 @@ def add_vgs(svc, conf):
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 
-        vg = __import__('resVg'+rcEnv.sysname)
+        if conf.has_option(s, "vgtype") and conf.get(s, "vgtype") == "veritas":
+            vg = __import__('resVg'+'Veritas')
+        else:
+            vg = __import__('resVg'+rcEnv.sysname)
         r = vg.Vg(**kwargs)
         add_triggers(r, conf, s)
         svc += r
