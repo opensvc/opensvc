@@ -204,6 +204,10 @@ def install_rc():
         rc = '/etc/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.debian'
         activate = activate_debian
+    elif os.path.exists('/etc/SuSE-release'):
+        rc = '/etc/init.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.debian'
+        activate = activate_redhat
     elif os.path.exists('/etc/redhat-release'):
         rc = '/etc/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.redhat'
