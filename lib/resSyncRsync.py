@@ -219,7 +219,7 @@ def sync(self, type):
 
     for node in targets:
         dst = node + ':' + self.dst
-        cmd = ['rsync'] + self.options + bwlimit + self.exclude + src
+        cmd = ['rsync'] + self.options + bwlimit + self.options + src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:
@@ -234,9 +234,6 @@ class Rsync(Res.Resource):
     can be restricted to production sibblings or to disaster recovery nodes,
     or both.
     """
-    timeout = 3600
-    options = [ '-HpogDtrlvxA', '--stats', '--delete', '--force', '--timeout='+str(timeout) ]
-
     def pre_action(self, rset, action):
         """Actions to do before resourceSet iterates through the resources to
            trigger action() on each one
@@ -359,7 +356,7 @@ class Rsync(Res.Resource):
         self.status_log("needs update")
         return rcStatus.DOWN
 
-    def __init__(self, rid=None, src=[], dst=None, exclude=[], target={}, dstfs=None, snap=False,
+    def __init__(self, rid=None, src=[], dst=None, options=[], target={}, dstfs=None, snap=False,
                  bwlimit=None, sync_min_delay=30, sync_max_delay=1500,
                  optional=False, disabled=False, tags=set([]), internal=False):
         if internal:
@@ -373,17 +370,24 @@ class Rsync(Res.Resource):
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
-        self.exclude = exclude
         self.snap = snap
         self.target = target
         self.bwlimit = bwlimit
         self.internal = internal
         self.sync_min_delay = sync_min_delay
         self.sync_max_delay = sync_max_delay
+        self.timeout = 3600
+        self.options = ['-HpogDtrlvx',
+                        '--stats',
+                        '--delete',
+                        '--force',
+                        '--timeout='+str(self.timeout)]
+        self.options += options
+
         Res.Resource.__init__(self, rid=rid, type="sync.rsync",
                               optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
-        return "%s src=%s dst=%s exclude=%s target=%s" % (Res.Resource.__str__(self),\
-                self.src, self.dst, self.exclude, str(self.target))
+        return "%s src=%s dst=%s options=%s target=%s" % (Res.Resource.__str__(self),\
+                self.src, self.dst, self.options, str(self.target))
 
