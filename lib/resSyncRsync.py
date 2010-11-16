@@ -219,7 +219,7 @@ def sync(self, type):
 
     for node in targets:
         dst = node + ':' + self.dst
-        cmd = ['rsync'] + self.options + bwlimit + self.options + src
+        cmd = ['rsync'] + self.options + bwlimit + src
         cmd.append(dst)
         (ret, out) = self.vcall(cmd)
         if ret != 0:

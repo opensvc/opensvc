@@ -162,6 +162,15 @@ def end_action(svc, action, begin, end, logfile):
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
+
+        # database overflow protection
+        trim_lim = 10000
+        trim_tag = ' <trimmed> '
+        trim_head = int(trim_lim/2)
+        trim_tail = trim_head-len(trim_tag)
+        if len(msg) > trim_lim:
+            msg = msg[:trim_head]+' <trimmed> '+msg[-trim_tail:]
+
         pids |= set([pid])
         if lvl is None or lvl == 'DEBUG':
             continue
