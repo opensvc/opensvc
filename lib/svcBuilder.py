@@ -447,7 +447,7 @@ def add_mandatory_syncs(svc):
     exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
     r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
-                           exclude=['-R']+exclude, target=targethash,
+                           options=['-R']+exclude, target=targethash,
                            internal=True)
     svc += r
 
@@ -466,7 +466,7 @@ def add_mandatory_syncs(svc):
             continue
         i += 1
         r = resSyncRsync.Rsync(rid="sync#i"+str(i), src=src, dst=dst,
-                           exclude=['-R']+exclude, target=targethash,
+                           options=['-R']+exclude, target=targethash,
                            internal=True)
         svc += r
 
@@ -725,6 +725,7 @@ def add_syncs_rsync(svc, conf):
             log.error("config file section %s must have src and dst set" % s)
             return
 
+        options = []
         kwargs = {}
         kwargs['src'] = conf.get(s, "src").split()
         kwargs['dst'] = conf.get(s, "dst")
@@ -732,8 +733,12 @@ def add_syncs_rsync(svc, conf):
         if conf.has_option(s, 'dstfs'):
             kwargs['dstfs'] = conf.get(s, 'dstfs')
 
+        if conf.has_option(s, 'options'):
+            options += conf.get(s, 'options').split()
         if conf.has_option(s, 'exclude'):
-            kwargs['exclude'] = conf.get(s, 'exclude').split()
+            # for backward compat (use options keyword now)
+            options += conf.get(s, 'exclude').split()
+        kwargs['options'] = options
 
         if conf.has_option(s, 'snap'):
             kwargs['snap'] = conf.getboolean(s, 'snap')

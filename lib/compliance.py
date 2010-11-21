@@ -343,6 +343,8 @@ class Compliance(object):
             l = xmlrpcClient.comp_list_moduleset()
         else:
             l = xmlrpcClient.comp_list_moduleset(self.options.moduleset)
+        if l is None:
+            return
         print '\n'.join(l)
 
 

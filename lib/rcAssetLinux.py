@@ -93,6 +93,8 @@ class Asset(object):
                         return line.split('=')[-1].replace('\n','').strip('"')
         if os.path.exists('/etc/debian_version'):
             return 'Debian'
+        if os.path.exists('/etc/SuSE-release'):
+            return 'SuSE'
         if os.path.exists('/etc/redhat-release'):
             with open('/etc/redhat-release', 'r') as f:
                 if 'CentOS' in f.read():
@@ -104,6 +106,15 @@ class Asset(object):
     def get_os_release(self):
         files = ['/etc/debian_version',
                  '/etc/redhat-release']
+        if os.path.exists('/etc/SuSE-release'):
+            v = []
+            with open('/etc/SuSE-release') as f:
+                for line in f.readlines():
+                    if 'VERSION' in line:
+                        v += [line.split('=')[-1].replace('\n','').strip('" ')]
+                    if 'PATCHLEVEL' in line:
+                        v += [line.split('=')[-1].replace('\n','').strip('" ')]
+	    return '.'.join(v)
         if os.path.exists('/etc/lsb-release'):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
@@ -150,7 +161,7 @@ class Asset(object):
             lines = f.readlines()
             lines = [l for l in lines if 'core id' in l]
             if len(lines) == 0:
-                return '0'
+                return '1'
             c = lines[-1].split(':')[-1].replace('\n','').strip()
             c = int(c) + 1
             return str(c)
