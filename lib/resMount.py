@@ -100,7 +100,7 @@ class Mount(Res.Resource):
         if rcEnv.nodename in self.always_on:
             if self.is_up():
                 if self.need_check_writable() and not self.check_writable():
-                    svc.status_log("fs is not writable")
+                    self.status_log("fs is not writable")
                     return rcStatus.WARN
                 return rcStatus.STDBY_UP
             else:
@@ -108,7 +108,7 @@ class Mount(Res.Resource):
         else:
             if self.is_up():
                 if self.need_check_writable() and not self.check_writable():
-                    svc.status_log("fs is not writable")
+                    self.status_log("fs is not writable")
                     return rcStatus.WARN
                 return rcStatus.UP
             else:
