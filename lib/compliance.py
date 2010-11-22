@@ -9,6 +9,9 @@ from rcUtilities import is_exe, justcall, banner
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
+# ex: \x1b[37;44m\x1b[1mContact List\x1b[0m\n
+regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
+
 class Module(object):
     pattern = '^S*[0-9]+-*%(name)s$'
 
@@ -62,11 +65,20 @@ class Module(object):
         a.append("executable: %s"%self.executable)
         return '\n'.join(a)
 
+
+    def strip_unprintable(self, s):
+        return regex.sub('', s)
+
     def log_action(self, out, ret, action):
         ruleset = ','.join(self.ruleset)
         vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
                 'run_ruleset', 'run_action']
-        vals = [rcEnv.nodename, self.name, str(ret), out, ruleset, action]
+        vals = [rcEnv.nodename,
+                self.name,
+                str(ret),
+                self.strip_unprintable(out),
+                ruleset,
+                action]
         xmlrpcClient.comp_log_action(vars, vals)
 
     def action(self, action):
