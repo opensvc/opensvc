@@ -7,9 +7,11 @@ syn=/opt/opensvc/tmp/glance.syntax
 hour=$(/usr/bin/date +%H)
 min=$(/usr/bin/date +%M)
 iterations=$(((23-$hour)*6+(60-$min)/10))
-cmd="/opt/perf/bin/glance -aos $syn -j 600 -iterations $iterations"
+cmd="/opt/perf/bin/glance -aos $syn -j 600 -iterations"
 
 ps -ef | grep -v $$ | grep "$cmd" && exit
+
+cmd="$cmd $iterations"
 
 cat - <<EOF > $syn || exit 1
 print GBL_STATTIME,
