@@ -10,7 +10,7 @@ from rcUtilities import is_exe, justcall, banner
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
 class Module(object):
-    pattern = 'S*[0-9]+-*%(name)s'
+    pattern = '^S*[0-9]+-*%(name)s$'
 
     def __init__(self, name):
         self.name = name
