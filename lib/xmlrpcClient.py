@@ -688,6 +688,10 @@ def comp_get_ruleset():
     return comp_proxy.comp_get_ruleset(rcEnv.nodename)
 
 @xmlrpc_decorator
+def comp_get_dated_ruleset(date):
+    return comp_proxy.comp_get_dated_ruleset(rcEnv.nodename, date)
+
+@xmlrpc_decorator
 def comp_attach_ruleset(ruleset):
     return comp_proxy.comp_attach_ruleset(rcEnv.nodename, ruleset)
 
