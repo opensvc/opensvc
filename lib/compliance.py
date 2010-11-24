@@ -83,6 +83,15 @@ class Module(object):
 
     def action(self, action):
         print banner(self.name)
+
+        if action not in ['check', 'fix', 'fixable']:
+            print 'action %s not supported'
+            return 1
+
+        if self.options.force:
+            # short-circuit all pre and post action
+            return self.do_action(action)
+
         if action == 'fix':
             if self.do_action('check') == 0:
                 print 'check passed, skip fix'
@@ -98,9 +107,6 @@ class Module(object):
                 self.do_action('fixable')
         elif action == 'fixable':
             r = self.do_action('fixable')
-        else:
-            print 'action %s not supported'
-            r = 1
         return r
 
     def do_action(self, action):
@@ -144,6 +150,7 @@ class Compliance(object):
     def __iadd__(self, o):
         self.module_o[o.name] = o
         o.ruleset = self.ruleset
+        o.options = self.options
         return self
 
     def init(self):
