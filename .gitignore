@@ -10,3 +10,4 @@ lib/version.py
 bin/pkg/release_*
 .hg/
 .hgignore
+lib/rcLocalEnv.py

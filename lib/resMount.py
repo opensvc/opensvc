@@ -63,12 +63,17 @@ class Mount(Res.Resource):
             self.log.info("fsck not implemented for %s"%self.fsType)
             return
         bin = self.fsck_h[self.fsType]['bin']
-        cmd = self.fsck_h[self.fsType]['cmd']
         if which(bin) is None:
             self.log.warning("%s not found. bypass."%self.fsType)
             return
+        if self.fsck_h[self.fsType].has_key('reportcmd'):
+            cmd = self.fsck_h[self.fsType]['reportcmd']
+            (ret, out) = self.vcall(cmd, err_to_info=True)
+            if ret not in self.fsck_h[self.fsType]['reportclean']:
+                return
+        cmd = self.fsck_h[self.fsType]['cmd']
         (ret, out) = self.vcall(cmd)
-        if ret != 0: 
+        if ret != 0:
             raise ex.excError 
 
     def need_check_writable(self):

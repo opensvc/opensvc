@@ -33,9 +33,22 @@ class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
     def __init__(self, rid, mountPoint, device, fsType, mntOpt, always_on=set([]),
                  disabled=False, tags=set([]), optional=False):
+        self.rdevice = device.replace('/dsk/','/rdsk/',1)
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt, always_on,
                            disabled=disabled, tags=tags, optional=optional)
+        self.fsck_h = {
+            'ufs': {'bin': 'fsck',
+                    'cmd':       ['fsck', '-F', 'ufs', '-y', self.rdevice],
+                    'reportcmd': ['fsck', '-F', 'ufs', '-m', self.rdevice],
+                    'reportclean': [ 32 ],
+            },
+            'vxfs': {'bin': 'fsck',
+                    'cmd':       ['fsck', '-F', 'vxfs', '-y', self.rdevice],
+                    'reportcmd': ['fsck', '-F', 'vxfs', '-m', self.rdevice],
+                    'reportclean': [ 32 ],
+            },
+        }
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
@@ -69,6 +82,7 @@ class Mount(Res.Mount):
             return
         elif self.fsType != "":
             fstype = ['-F', self.fsType]
+            self.fsck()
         else:
             fstype = []
 
