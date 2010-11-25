@@ -54,6 +54,9 @@ parser.add_option("--moduleset", default="",
 parser.add_option("--ruleset", default="",
 		  action="store", dest="ruleset",
                   help="compliance, set ruleset list")
+parser.add_option("--ruleset-date", default="",
+		  action="store", dest="ruleset_date",
+                  help="compliance, use rulesets valid on specified date")
 parser.add_option("--force", default=False,
 		  action="store_true", dest="force",
                   help="force action")

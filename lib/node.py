@@ -24,11 +24,17 @@ from freezer import Freezer
 import svcBuilder
 import xmlrpcClient
 
+class Options(object):
+    def __init__(self):
+        self.force = False
+        self.debug = False
+
 class Node(Svc, Freezer):
     """ Defines a cluster node.  It contain list of Svc.
         Implements node-level actions and checks.
     """
     def __init__(self):
+        self.options = Options()
         self.svcs = svcBuilder.build_services()
         Freezer.__init__(self, '')
         self.action_desc = {

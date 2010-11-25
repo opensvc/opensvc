@@ -203,13 +203,24 @@ class Compliance(object):
     def get_moduleset(self):
         moduleset = xmlrpcClient.comp_get_moduleset()
         if moduleset is None:
-            raise ex.excError('could not fetch module set')
+            raise ex.excError('could not fetch moduleset')
         return moduleset
 
     def get_ruleset(self):
+        if len(self.options.ruleset_date) > 0:
+            return self.get_dated_ruleset(self.options.ruleset_date)
+        return self.get_current_ruleset()
+
+    def get_current_ruleset(self):
         ruleset = xmlrpcClient.comp_get_ruleset()
         if ruleset is None:
-            raise ex.excError('could not fetch rule set')
+            raise ex.excError('could not fetch ruleset')
+        return ruleset
+
+    def get_dated_ruleset(self, date):
+        ruleset = xmlrpcClient.comp_get_dated_ruleset(self.options.ruleset_date)
+        if ruleset is None:
+            raise ex.excError('could not fetch ruleset')
         return ruleset
 
     def str_ruleset(self):
