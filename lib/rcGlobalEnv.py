@@ -16,8 +16,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+"""module rcGlobalEnv module define rcEnv class
+   rcEnv class attribute may be updated with rcLocalEnv module if present
+   rcLocalEnv module is not provided with opensvc and allow customers to
+   redefine following vars:
+       o dbopensvc_host
+       o dbopensvc_port
+       o rsh
+       o rcp
+   rcLocalEnv.py may be installed into path_opensvc/lib
+"""
 import sys
 import os
+from rcFunctions import update_cl_attr
 
 class rcEnv:
     """Class to store globals
@@ -41,8 +52,7 @@ class rcEnv:
     """Database sink for node and service configurations and status collection.
     """
     dbopensvc_host = "dbopensvc"
-    dbopensvc = "http://%s:80/init/default/call/xmlrpc"%dbopensvc_host
-    dbcompliance = "http://%s:80/init/compliance/call/xmlrpc"%dbopensvc_host
+    dbopensvc_port = "80"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
@@ -144,5 +154,9 @@ class rcEnv:
     vt_supported = vt_vm + vt_container
 
 
+    def set_db_url(self):
+        self.__class__.dbopensvc = "http://%s:%s/init/default/call/xmlrpc"% (self.dbopensvc_host, self.dbopensvc_port)
+        self.__class__.dbcompliance = "http://%s:%s/init/compliance/call/xmlrpc"%(self.dbopensvc_host, self.dbopensvc_port)
 
-
+update_cl_attr(cl=rcEnv, module="rcLocalEnv")
+rcEnv().set_db_url()
