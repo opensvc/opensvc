@@ -22,6 +22,7 @@
 """
 
 import resDg
+import re
 from rcUtilities import qcall
 
 class Vg(resDg.Dg):
@@ -101,14 +102,17 @@ class Vg(resDg.Dg):
         if len(self.disks) > 0 :
             return self.disks
 
-        disks = set()
+        disks = set([])
         cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
         (ret, out) = self.call(cmd, errlog=False)
         if ret != 0 :
-            return []
+            self.disks = disks
+            return disks
         for line in out.split('\n'):
             disk = line.split(" ")[0]
             if disk != '' :
+                if re.match('^.*s[0-9]$', disk) is None:
+                    disk += "s2"
                 disks.add("/dev/rdsk/" + disk )
        
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
