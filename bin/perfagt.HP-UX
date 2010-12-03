@@ -58,5 +58,5 @@ print GBL_STATTIME,
       GBL_DISK_PHYS_WRITE_BYTE_RATE
 EOF
 
-find /opt/opensvc/var/ -name glance$day -a -mtime 1 -exec rm {} \;
+find /opt/opensvc/var/ -name glance$day -a -mtime +1 -exec rm {} \;
 nohup $cmd >>/opt/opensvc/var/glance$day &
