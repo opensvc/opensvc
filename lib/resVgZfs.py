@@ -85,7 +85,7 @@ class Pool(resDg.Dg):
         if len(self.disks) > 0 :
             return self.disks
 
-        disks = set()
+        disks = set([])
         cmd = [ 'zpool', 'status', self.name ]
         (ret, out) = self.call(cmd, errlog=False)
         if ret != 0 :
@@ -93,7 +93,8 @@ class Pool(resDg.Dg):
             cmd = [ 'zpool', 'import' ]
             (ret, out) = self.call(cmd)
             if ret != 0 :
-                return []
+                self.disks = disks
+                return disks
             for line in out.split('\n'):
                 if re.match('^  pool: ', line) is not None:
                     # This is pool: xxxx
@@ -114,7 +115,7 @@ class Pool(resDg.Dg):
                         if re.match('^\t  raid', line) is not None:
                             continue
                         disk = line.split()[0]
-                        disks.add("/dev/rdsk/" + disk )
+                        disks.add("/dev/rdsk/" + disk)
         else :
             for line in out.split('\n'):
                 if re.match('^\t  ', line) is not None:
@@ -127,9 +128,12 @@ class Pool(resDg.Dg):
                     if re.match("^.*", disk) is not None :
                         disks.add("/dev/rdsk/" + disk )
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
-        self.disks = disks
+        for d in disks:
+            if re.match('^.*s[0-9]$', d) is None:
+                    d += "s2"
+            self.disks.add(d)
 
-        return disks
+        return self.disks
 
 if __name__ == "__main__":
     for c in (Pool,) :
