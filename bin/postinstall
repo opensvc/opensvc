@@ -67,6 +67,7 @@ def install_cron():
                 if root_crontab == '/etc/cron.d/opensvc':
                     ce[0]['user'] = "root"
                     ce[1]['user'] = "root"
+                    ce[2]['user'] = "root"
             elif os.path.exists(loc):
                 purge.append(loc)
 

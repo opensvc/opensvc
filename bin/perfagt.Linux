@@ -1,0 +1,39 @@
+#!/usr/bin/python2.6
+
+import os
+import sys
+import socket
+import datetime
+
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(pathsvc, 'lib'))
+
+import xmlrpcClient
+from rcUtilities import call
+
+nodename = socket.gethostname()
+now = str(datetime.datetime.now())
+
+def fs_u():
+    vars = ['date',
+            'nodename',
+            'mntpt',
+            'size',
+            'used']
+
+    cmd = ['df', '-lP']
+    (ret, out) = call(cmd)
+    if ret != 0:
+        return self.undef
+    lines = out.split('\n')
+    if len(lines) < 2:
+        return self.undef
+    vals = []
+    for line in lines[1:]:
+        l = line.split()
+        if len(l) != 6:
+            continue
+        vals.append([now, nodename, l[5], l[1], l[4].replace('%','')])
+    return (vars, vals)
+
+xmlrpcClient.push_stats_fs_u(fs_u())

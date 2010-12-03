@@ -561,6 +561,10 @@ def push_stats_netdev():
          s.stats_netdev()
     )
 
+@xmlrpc_decorator
+def push_stats_fs_u(l):
+    proxy.insert_stats_fs_u(l[0], l[1])
+
 def check_stats_timestamp(sync_timestamp_f, comp='more', delay=10):
     if not os.path.exists(sync_timestamp_f):
         return True
