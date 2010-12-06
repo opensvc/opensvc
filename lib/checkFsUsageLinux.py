@@ -17,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import checks
-from rcUtilities import call
+from rcUtilities import justcall
 
 class check(checks.check):
     chk_type = "fs_u"
@@ -31,8 +31,8 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-        cmd = ['df', '-klP']
-        (ret, out) = call(cmd)
+        cmd = ['df', '-lP']
+        (out,err,ret) = justcall(cmd)
         if ret != 0:
             return self.undef
         lines = out.split('\n')
@@ -43,9 +43,9 @@ class check(checks.check):
             l = line.split()
             if len(l) != 6:
                 continue
-            r.append({'chk_instance': l[5],
+            r.append({
+                      'chk_instance': l[5],
                       'chk_value': l[4],
                       'chk_svcname': self.find_svc(l[5]),
-                     }
-                    )
+                     })
         return r

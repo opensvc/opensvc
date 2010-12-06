@@ -17,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import checks
-from rcUtilities import call
+from rcUtilities import justcall
 
 class check(checks.check):
     chk_type = "vg_u"
@@ -33,7 +33,7 @@ class check(checks.check):
     def do_check(self):
         cmd = ['vgs', '--units', 'b', '--noheadings',
                '-o', 'vg_name,vg_size,vg_free']
-        (ret, out) = call(cmd, errlog=False)
+        (out,err,ret) = justcall(cmd)
         if ret != 0:
             return self.undef
         lines = out.split('\n')

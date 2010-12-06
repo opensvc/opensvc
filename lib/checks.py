@@ -19,7 +19,11 @@
 from rcGlobalEnv import rcEnv
 
 class check(object):
-    undef = [{'chk_instance': 'undef', 'chk_value': -1}]
+    undef = [{
+              'check_svcname': '',
+              'chk_instance': 'undef',
+              'chk_value': '-1'
+             }]
     def __init__(self, svcs=[]):
         self.svcs = svcs
 
@@ -71,6 +75,8 @@ class checks(check):
                 if not isinstance(i, dict):
                     continue
                 if 'chk_instance' not in i:
+                    continue
+                if i['chk_instance'] == 'undef':
                     continue
                 if 'chk_value' not in i:
                     continue
