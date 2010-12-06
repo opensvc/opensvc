@@ -20,6 +20,8 @@ def cgroup_capable(svc):
     kconf = os.path.join(os.sep, 'lib', 'modules',
                          os.uname()[2], 'build', '.config')
     if not os.path.exists(kconf):
+        kconf = os.path.join(os.sep, 'boot', 'config-'+os.uname()[2])
+    if not os.path.exists(kconf):
         svc.log.info("can not detect if system supports containerization")
         return False
     with open(kconf, 'r') as f:
