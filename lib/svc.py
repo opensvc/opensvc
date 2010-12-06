@@ -62,6 +62,7 @@ class Svc(Resource, Freezer):
         """usage : aSvc=Svc(type)"""
         self.svcname = svcname
         self.vmname = ""
+        self.containerize = True
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}

@@ -170,7 +170,21 @@ class Apps(Res.Resource):
         for name in self.sorted_app_list('S*.standby@'+rcEnv.nodename):
             self.app(name, 'start')
 
+    def containerize(self):
+        try:
+            container = __import__('rcContainer'+rcEnv.sysname)
+        except ImportError:
+            self.log.info("containerization not supported")
+            return
+        container.containerize(self.svc)
+
     def start(self):
+        from multiprocessing import Process, Queue
+        p = Process(target=self.start_job, args=())
+        p.start()
+        p.join()
+
+    def start_job(self):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
@@ -179,6 +193,8 @@ class Apps(Res.Resource):
                 raise ex.excError
         except ex.excNotAvailable:
             return
+        if self.svc.containerize:
+            self.containerize()
         for name in self.sorted_app_list('S*'):
             self.app(name, 'start')
 

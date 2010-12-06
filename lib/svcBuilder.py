@@ -886,6 +886,22 @@ def build(name):
         svc.postsnap_trigger = conf.get("default", "postsnap_trigger").split()
 
     #
+    # containerization options
+    #
+    if conf.has_option("default", "containerize"):
+        svc.containerize = conf.getboolean("default", "containerize")
+    if conf.has_option("default", "container_cpus"):
+        svc.container_cpus = conf.get("default", "container_cpus")
+    if conf.has_option("default", "container_cpu_shares"):
+        svc.container_cpu_shares = conf.get("default", "container_cpu_shares")
+    if conf.has_option("default", "container_mems"):
+        svc.container_mems = conf.get("default", "container_mems")
+    if conf.has_option("default", "container_mem_limit"):
+        svc.container_mem_limit = conf.get("default", "container_mem_limit")
+    if conf.has_option("default", "container_vmem_limit"):
+        svc.container_vmem_limit = conf.get("default", "container_vmem_limit")
+
+    #
     # Store useful properties
     #
     svc.logfile = logfile
