@@ -176,7 +176,7 @@ class Apps(Res.Resource):
         except ImportError:
             self.log.info("containerization not supported")
             return
-        container.containerize(self.svc)
+        container.containerize(self)
 
     def start(self):
         from multiprocessing import Process, Queue
