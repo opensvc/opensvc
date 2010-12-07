@@ -1,62 +1,135 @@
-#!/bin/ksh
+#!/usr/bin/env python2.6
 
-[ ! -x /opt/perf/bin/glance ] && exit
+import os
+import sys
+import socket
+import datetime
+from subprocess import *
 
-day=$(/usr/bin/date +%d)
-syn=/opt/opensvc/tmp/glance.syntax
-hour=$(/usr/bin/date +%H)
-min=$(/usr/bin/date +%M)
-iterations=$(((23-$hour)*6+(60-$min)/10))
-cmd="/opt/perf/bin/glance -aos $syn -j 600 -iterations"
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(pathsvc, 'lib'))
 
-ps -ef | grep -v $$ | grep "$cmd" && exit
+import xmlrpcClient
+from rcUtilities import justcall, is_exe
 
-cmd="$cmd $iterations"
+nodename = socket.gethostname()
+now = str(datetime.datetime.now())
 
-cat - <<EOF > $syn || exit 1
-print GBL_STATTIME,
-      // usr
-      0.00+GBL_CPU_NORMAL_UTIL+GBL_CPU_REALTIME_UTIL,
-      // nice
-      0.00+GBL_CPU_NICE_UTIL+GBL_CPU_NNICE_UTIL,
-      // sys
-      0.00+GBL_CPU_SYSCALL_UTIL+GBL_CPU_CSWITCH_UTIL+GBL_CPU_TRAP_UTIL+GBL_CPU_VFAULT_UTIL,
-      // irq
-      0.00+GBL_CPU_INTERRUPT_UTIL,
-      // wait
-      0.00+GBL_CPU_WAIT_UTIL,
-      // idle
-      0.00+GBL_CPU_IDLE_UTIL-GBL_CPU_WAIT_UTIL,
+def fs_u():
+    vars = ['date',
+            'nodename',
+            'mntpt',
+            'size',
+            'used']
 
-      // mem
-      0+GBL_MEM_PHYS,
-      0+GBL_MEM_FREE,
-      0+GBL_MEM_CACHE,
-      0+GBL_MEM_FILE_PAGE_CACHE,
-      0+GBL_MEM_SYS,
-      0+GBL_MEM_USER,
+    cmd = ['bdf', '-l']
+    (out, err, ret) = justcall(cmd)
+    if ret != 0:
+        return self.undef
+    lines = out.split('\n')
+    if len(lines) < 2:
+        return self.undef
+    vals = []
+    for line in lines[1:]:
+        l = line.split()
+        if len(l) != 6:
+            continue
+        vals.append([now, nodename, l[5], l[1], l[4].replace('%','')])
+    return (vars, vals)
 
-      // swap
-      0+GBL_MEM_SWAP,
-      0+GBL_SWAP_SPACE_AVAIL-GBL_MEM_PHYS,
+def glance_running(cmd_str):
+    (out, err, ret) = justcall(['ps', '-ef'])
+    if ret != 0:
+        print 'ps error'
+        return
 
-      // load
-      GBL_LOADAVG,
-      GBL_LOADAVG5,
-      GBL_LOADAVG15,
-      GBL_CPU_QUEUE,
+    for line in out.split('\n'):
+        l = line.split()
+        if len(l) < 6:
+            continue
+        if cmd_str in ' '.join(l[6:]):
+            return True
 
-      // process list
-      TBL_PROC_TABLE_USED,
+    return False
 
-      // disk io
-      GBL_DISK_PHYS_READ_RATE,
-      GBL_DISK_PHYS_WRITE_RATE,
+def run_glance():
+    glance = '/opt/perf/bin/glance'
+    syn = '/opt/opensvc/tmp/glance.syntax'
+    now = datetime.datetime.now()
+    iterations = (23-now.hour)*6+(60-now.minute)//10
+    cmd = ['/opt/perf/bin/glance', '-aos', syn, '-j', '600', '-iterations']
+    cmd_str = ' '.join(cmd)
 
-      // disk kB/s
-      GBL_DISK_PHYS_READ_BYTE_RATE,
-      GBL_DISK_PHYS_WRITE_BYTE_RATE
-EOF
+    if not is_exe(glance):
+        print 'glance executable not found'
+        return
 
-find /opt/opensvc/var/ -name glance$day -a -mtime +1 -exec rm {} \;
-nohup $cmd >>/opt/opensvc/var/glance$day &
+    if glance_running(cmd_str):
+        print 'glance is already running'
+        return
+
+    buff = """print GBL_STATTIME,
+// usr
+0.00+GBL_CPU_NORMAL_UTIL+GBL_CPU_REALTIME_UTIL,
+// nice
+0.00+GBL_CPU_NICE_UTIL+GBL_CPU_NNICE_UTIL,
+// sys
+0.00+GBL_CPU_SYSCALL_UTIL+GBL_CPU_CSWITCH_UTIL+GBL_CPU_TRAP_UTIL+GBL_CPU_VFAULT_UTIL,
+// irq
+0.00+GBL_CPU_INTERRUPT_UTIL,
+// wait
+0.00+GBL_CPU_WAIT_UTIL,
+// idle
+0.00+GBL_CPU_IDLE_UTIL-GBL_CPU_WAIT_UTIL,
+
+// mem
+0+GBL_MEM_PHYS,
+0+GBL_MEM_FREE,
+0+GBL_MEM_CACHE,
+0+GBL_MEM_FILE_PAGE_CACHE,
+0+GBL_MEM_SYS,
+0+GBL_MEM_USER,
+
+// swap
+0+GBL_MEM_SWAP,
+0+GBL_SWAP_SPACE_AVAIL-GBL_MEM_PHYS,
+
+// load
+GBL_LOADAVG,
+GBL_LOADAVG5,
+GBL_LOADAVG15,
+GBL_CPU_QUEUE,
+
+// process list
+TBL_PROC_TABLE_USED,
+
+// disk io
+GBL_DISK_PHYS_READ_RATE,
+GBL_DISK_PHYS_WRITE_RATE,
+
+// disk kB/s
+GBL_DISK_PHYS_READ_BYTE_RATE,
+GBL_DISK_PHYS_WRITE_BYTE_RATE
+"""
+    try:
+        with open(syn, 'w') as f:
+            f.write(buff)
+    except:
+        print 'error writing %s'%syn
+        return
+
+    collect_d = '/opt/opensvc/var/'
+    collect_f = 'glance%d'%now.day
+    collect_p = ' '.join((collect_d,collect_f))
+
+    if os.path.exists(collect_p):
+        mtime = os.stat(collect_p).st_mtime
+        if mtime < now - datetime.timedelta(days=1):
+            os.unlink(collect_p)
+
+    process = Popen(['nohup'] + cmd + ['iterations', '>>', collect_p, '&'])
+
+
+run_glance()
+xmlrpcClient.push_stats_fs_u(fs_u())
+
