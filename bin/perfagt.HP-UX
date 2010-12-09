@@ -119,15 +119,16 @@ GBL_DISK_PHYS_WRITE_BYTE_RATE
         return
 
     collect_d = '/opt/opensvc/var/'
-    collect_f = 'glance%d'%now.day
-    collect_p = ' '.join((collect_d,collect_f))
+    collect_f = 'glance%0.2d'%now.day
+    collect_p = os.path.join(collect_d, collect_f)
 
     if os.path.exists(collect_p):
         mtime = os.stat(collect_p).st_mtime
-        if mtime < now - datetime.timedelta(days=1):
+        if datetime.datetime.fromtimestamp(mtime) < now - datetime.timedelta(days=1):
             os.unlink(collect_p)
 
-    process = Popen(['nohup'] + cmd + ['iterations', '>>', collect_p, '&'])
+    _cmd = 'nohup %s %d >>%s &'%(cmd_str, iterations, collect_p)
+    process = Popen(_cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
 
 run_glance()
