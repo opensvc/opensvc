@@ -37,6 +37,8 @@ class Asset(object):
         else:
             self.manifest = out.split('\n')
 
+        self.parse_memory()
+
     def get_mem_bytes(self):
         cmd = ['swapinfo', '-Mq']
         (out, err, ret) = justcall(cmd)
@@ -44,27 +46,66 @@ class Asset(object):
             return '0'
         return str(int(out)//1024)
 
-    def get_mem_banks(self):
+    def parse_memory(self):
+        """
+	   DIMM Slot      Size (MB)
+	   ---------      ---------
+		  0A           2048
+		  3D              0
+	   ---------      ---------
+
+        or
+
+	   DIMM Location          Size(MB)     DIMM Location          Size(MB)
+	   --------------------   --------     --------------------   --------
+	   Ext 0 DIMM 0A          2048         Ext 0 DIMM 0B          2048    
+	   Ext 0 DIMM 5C          ----         Ext 0 DIMM 5D          ----    
+
+	   Ext 0 Total: 32768 (MB)
+        """
         if len(self.memory) == 0:
             return '0'
-        banks =  0
-        for l in self.memory:
+        self.banks =  0
+        self.slots =  0
+        begin = 0
+        end = 0
+        for i, l in enumerate(self.memory):
             if 'DIMM ' in l:
-                e = l.split()
-                if len(e) < 4:
-                    continue
-                if '--' not in e[4]:
-                    banks += 1
-        return str(banks-1)
+                begin = i+2
+        if begin == 0:
+            return '0'
+        for i in range(begin, len(self.memory)):
+            e = self.memory[i].split()
+            if '--' in e[0] or len(self.memory[i]) == 0:
+                end = i
+                break
+        if end == 0:
+            return '0'
+        for i in range(begin, end):
+            e = self.memory[i].split()
+            n = len(e)
+            if n == 2:
+                # old format
+                self.slots += 1
+                if e[1] != '0':
+                    self.banks += 1
+                continue
+            if n >= 5:
+                # new format 1st col
+                self.slots += 1
+                if not '--' in e[4]:
+                    self.banks += 1
+            if n == 10:
+                # new format 2nd col
+                self.slots += 1
+                if not '--' in e[9]:
+                    self.banks += 1
+
+    def get_mem_banks(self):
+        return str(self.banks)
 
     def get_mem_slots(self):
-        if len(self.memory) == 0:
-            return '0'
-        slots =  0
-        for l in self.memory:
-            if 'DIMM ' in l:
-                slots += 1
-        return str(slots-1)
+        return str(self.slots)
 
     def get_os_vendor(self):
         return 'HP'
@@ -91,22 +132,17 @@ class Asset(object):
         return out
 
     def get_cpu_freq(self):
-        # Processors:         8
-        #   4 Intel(R) Itanium 2 9100 series processors (1.59 GHz, 18 MB)
-        #      532 MT/s bus, CPU version A1
-        #      8 logical processors (2 per socket)
-        marker = False
-        for line in self.manifest:
-            if 'Processors:' in line:
-                marker = True
-                continue
-            if marker:
-                e = line.split()
-                for i, w in enumerate(e):
-                    if 'Hz' in w:
-                        break
-                return e[i-1].replace('(','')+' '+e[i].replace(',','')
-        return 'Unknown'
+        process = Popen(['adb', '/stand/vmunix', '/dev/kmem'], stdin=PIPE, stdout=PIPE, stderr=None)
+        (out, err) = process.communicate(input='itick_per_usec/2d')
+        if process.returncode != 1:
+            process = Popen(['adb', '-k', '/stand/vmunix', '/dev/mem'], stdin=PIPE, stdout=PIPE, stderr=None)
+            (out, err) = process.communicate(input='itick_per_usec/D')
+        if process.returncode != 1:
+            return 'Unknown'
+        lines = out.split('\n')
+        if len(lines) != 2:
+            return 'Unknown'
+        return lines[1].strip()
 
     def get_cpu_cores(self):
         for line in self.manifest:
