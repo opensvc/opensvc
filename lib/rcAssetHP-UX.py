@@ -114,7 +114,7 @@ class Asset(object):
         (out, err, ret) = justcall(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
-        return out
+        return out.split('\n')[0].strip()
 
     def get_os_kernel(self):
         (out, err, ret) = justcall(['swlist', '-l', 'bundle', 'QPKBASE'])
@@ -129,7 +129,7 @@ class Asset(object):
         (out, err, ret) = justcall(['uname', '-m'])
         if ret != 0:
             return 'Unknown'
-        return out
+        return out.split('\n')[0].strip()
 
     def get_cpu_freq(self):
         process = Popen(['adb', '/stand/vmunix', '/dev/kmem'], stdin=PIPE, stdout=PIPE, stderr=None)
