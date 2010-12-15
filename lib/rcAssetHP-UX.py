@@ -76,7 +76,7 @@ class Asset(object):
             return '0'
         for i in range(begin, len(self.memory)):
             e = self.memory[i].split()
-            if '--' in e[0] or len(self.memory[i]) == 0:
+            if len(self.memory[i]) == 0 or '--' in e[0]:
                 end = i
                 break
         if end == 0:
@@ -134,10 +134,10 @@ class Asset(object):
     def get_cpu_freq(self):
         process = Popen(['adb', '/stand/vmunix', '/dev/kmem'], stdin=PIPE, stdout=PIPE, stderr=None)
         (out, err) = process.communicate(input='itick_per_usec/2d')
-        if process.returncode != 1:
+        if process.returncode != 0:
             process = Popen(['adb', '-k', '/stand/vmunix', '/dev/mem'], stdin=PIPE, stdout=PIPE, stderr=None)
             (out, err) = process.communicate(input='itick_per_usec/D')
-        if process.returncode != 1:
+        if process.returncode != 0:
             return 'Unknown'
         lines = out.split('\n')
         if len(lines) != 2:
@@ -186,7 +186,7 @@ class Asset(object):
     def get_environnement(self):
         f = os.path.join(rcEnv.pathvar, 'host_mode')
         if os.path.exists(f):
-            (ret, out) = call(['cat', f])
+            (out, err, ret) = justcall(['cat', f])
             if ret == 0:
                 return out.split('\n')[0]
         return 'Unknown'

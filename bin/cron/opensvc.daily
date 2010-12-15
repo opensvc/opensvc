@@ -33,11 +33,11 @@ sys.path.append(pathlib)
 import node
 n = node.Node()
 
-n.action("pushstats")
-n.action("pushpkg")
-n.action("pushpatch")
-n.action("pushservices")
-n.action("pushasset")
-n.action("checks")
-n.action("syncservices")
+for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
+               "pushasset", "checks", "syncservices"]:
+    try:
+        n.action(action)
+    except:
+        import traceback
+        traceback.print_exc()
 
