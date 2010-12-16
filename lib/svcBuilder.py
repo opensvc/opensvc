@@ -1029,7 +1029,11 @@ def build_services(status=None, svcnames=[],
             continue
         try:
             svc = build(name)
+        except (ex.excError, ex.excInitError, excAbortAction):
+            continue
         except:
+            import traceback
+            traceback.print_exc()
             continue
         if svc is None :
             continue

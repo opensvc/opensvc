@@ -29,6 +29,7 @@ import xmlrpcClient
 import os
 import signal
 import lock
+import logging
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -90,6 +91,7 @@ class Svc(Resource, Freezer):
                              "sync.netapp",
                              "app"]
         Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
+        self.log = logging.getLogger(self.svcname.upper())
         Freezer.__init__(self, svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
