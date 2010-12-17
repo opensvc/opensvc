@@ -16,33 +16,48 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+import sys
 import logging
 import logging.handlers
 from rcGlobalEnv import *
 
-class Logger(logging.Logger):
-    def __init__(self, name):
-        logging.Logger.__init__(self, name)
+def initLogger(name):
+    log = logging.getLogger(name)
 
-        """Common log formatter
-        """
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    """Common log formatter
+    """
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-        """Common logfile with rotation
-        """
-        filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
-                                                           maxBytes=5242880,
-                                                           backupCount=5)
-        filehandler.setFormatter(formatter)
-        self.addHandler(filehandler)
+    """Common logfile with rotation
+    """
+    filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
+                                                       maxBytes=5242880,
+                                                       backupCount=5)
+    filehandler.setFormatter(formatter)
+    log.addHandler(filehandler)
 
-        """Stdout logger
-        """
-        streamhandler = logging.StreamHandler()
-        streamhandler.setFormatter(formatter)
-        self.addHandler(streamhandler)
+    """Stdout logger
+    """
+    streamhandler = logging.StreamHandler()
+    streamhandler.setFormatter(formatter)
+    log.addHandler(streamhandler)
 
-        try:
-            self.setLevel(rcEnv.loglevel)
-        except:
-            pass
+    try:
+        log.setLevel(rcEnv.loglevel)
+    except:
+        pass
+
+    if '--debug' in sys.argv:
+            rcEnv.loglevel = logging.DEBUG
+            log.setLevel(logging.DEBUG)
+    elif '--warn' in sys.argv:
+            rcEnv.loglevel = logging.WARNING
+            log.setLevel(logging.WARNING)
+    elif '--error' in sys.argv:
+            rcEnv.loglevel = logging.ERROR
+            log.setLevel(logging.ERROR)
+    else:
+            rcEnv.loglevel = logging.INFO
+            log.setLevel(logging.INFO)
+
+    return log

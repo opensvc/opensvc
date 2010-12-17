@@ -23,6 +23,7 @@ from subprocess import *
 import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
+from rcUtilities import which
 import resContainer
 import rcExceptions as ex
 
@@ -138,11 +139,14 @@ class Lxc(resContainer.Container):
             vcpus = len(cpu_set.split(','))
         return {'vcpus': str(vcpus), 'vmem': '0'}
 
-    def _status(self, verbose=False):
-        if self.is_up():
-            return rcStatus.UP
-        else:
-            return rcStatus.DOWN
+    def check_manual_boot(self):
+        return True
+
+    def check_capabilities(self):
+        if not which('lxc-info'):
+            self.log.debug("lxc-info is not in PATH")
+            return False
+        return True
 
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",

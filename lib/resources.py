@@ -24,7 +24,7 @@
 from textwrap import wrap
 import rcExceptions as exc
 import rcStatus
-import logging
+import rcLogger
 import rcUtilities
 from rcGlobalEnv import rcEnv
 
@@ -36,13 +36,14 @@ class Resource(object):
     """
     label = None
 
-    def __init__(self, rid=None, type=None, optional=False, disabled=False, tags=set([])):
+    def __init__(self, rid=None, type=None, optional=False, disabled=False,
+                 tags=set([])):
         self.rid = rid
         self.tags = tags
         self.type = type
         self.optional = optional
         self.disabled = disabled
-        self.log = logging.getLogger(str(rid).upper())
+        self.log = rcLogger.initLogger(str(rid).upper())
         self.rstatus = None
         self.always_on = set([])
         if self.label is None: self.label = type

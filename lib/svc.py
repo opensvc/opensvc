@@ -29,6 +29,7 @@ import xmlrpcClient
 import os
 import signal
 import lock
+import rcLogger
 import logging
 
 def signal_handler(signum, frame):
@@ -43,7 +44,6 @@ def fork_dblogger(self, action, begin, end, actionlogfile):
     fork(dblogger, kwargs)
 
 def dblogger(self, action, begin, end, actionlogfile):
-    import logging
     for rs in self.resSets:
         for r in rs.resources:
             r.log.setLevel(logging.CRITICAL)
@@ -90,8 +90,9 @@ class Svc(Resource, Freezer):
                              "sync.zfs",
                              "sync.netapp",
                              "app"]
-        Resource.__init__(self, type=type, optional=optional, disabled=disabled, tags=tags)
-        self.log = logging.getLogger(self.svcname.upper())
+        Resource.__init__(self, type=type, optional=optional,
+                          disabled=disabled, tags=tags)
+        self.log = rcLogger.initLogger(self.svcname.upper())
         Freezer.__init__(self, svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart

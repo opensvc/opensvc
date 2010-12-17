@@ -40,13 +40,16 @@ class Ip(Res.Resource):
         self.mask=mask
         self.label = ipName + '@' + ipDev
         self.always_on = always_on
+
+    def getaddr(self):
+        if hasattr(self, 'addr'):
+            return
         try:
-            a = socket.getaddrinfo(ipName, None)
+            a = socket.getaddrinfo(self.ipName, None)
             if len(a) == 0:
                 raise Exception
             self.addr = a[0][4][0]
         except:
-            self.log.error("could not resolve %s to an ip address"%self.ipName)
             if not disabled:
                 raise ex.excInitError
 
@@ -57,18 +60,26 @@ class Ip(Res.Resource):
         os.environ['OPENSVC_IPDEV'] = str(self.ipDev)
         os.environ['OPENSVC_IPNAME'] = str(self.ipName)
         os.environ['OPENSVC_MASK'] = str(self.mask)
-        os.environ['OPENSVC_IPADDR'] = str(self.addr)
+        try:
+            self.getaddr()
+            os.environ['OPENSVC_IPADDR'] = str(self.addr)
+        except:
+            pass
 
     def _status(self, verbose=False):
         try:
-            s = self.is_up()
+            self.getaddr()
+        except:
+            self.status_log("could not resolve %s to an ip address"%self.ipName)
+            return rcStatus.WARN
+        try:
+            if self.is_up():
+                return self.status_stdby(rcStatus.UP)
+            else:
+                return self.status_stdby(rcStatus.DOWN)
         except ex.excNotSupported:
             self.status_log("not supported")
             return rcStatus.UNDEF
-        if self.is_up():
-            return self.status_stdby(rcStatus.UP)
-        else:
-            return self.status_stdby(rcStatus.DOWN)
 
     def arp_announce(self):
         if ':' in self.addr:
@@ -118,6 +129,11 @@ class Ip(Res.Resource):
 
     def start(self):
         try:
+            self.getaddr()
+        except:
+            self.log.error("could not resolve %s to an ip address"%self.ipName)
+            raise ex.excError
+        try:
             self.allow_start()
         except (ex.IpConflict, ex.IpDevDown):
             raise ex.excError
@@ -142,6 +158,11 @@ class Ip(Res.Resource):
         self.arp_announce()
 
     def stop(self):
+        try:
+            self.getaddr()
+        except:
+            self.log.error("could not resolve %s to an ip address"%self.ipName)
+            raise ex.excError
         if self.is_up() is False:
             self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
             return

@@ -36,13 +36,16 @@ class Container(Res.Resource):
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
+
+    def getaddr(self):
+        if hasattr(self, 'addr'):
+            return
         try:
-            a = socket.getaddrinfo(name, None)
+            a = socket.getaddrinfo(self.name, None)
             if len(a) == 0:
                 raise Exception
             self.addr = a[0][4][0]
         except:
-            self.log.error("could not resolve %s to an ip address"%self.name)
             if not disabled:
                 raise ex.excInitError
 
@@ -95,6 +98,11 @@ class Container(Res.Resource):
         print "TODO: install_drp_flag()"
 
     def start(self):
+        try:
+            self.getaddr()
+        except:
+            self.log.error("could not resolve %s to an ip address"%self.name)
+            raise ex.excError
         if self.is_up():
             self.log.info("container %s already started" % self.name)
             return
@@ -104,6 +112,11 @@ class Container(Res.Resource):
         self.wait_for_startup()
 
     def stop(self):
+        try:
+            self.getaddr()
+        except:
+            self.log.error("could not resolve %s to an ip address"%self.name)
+            raise ex.excError
         if self.is_down():
             self.log.info("container %s already stopped" % self.name)
             return
@@ -138,8 +151,13 @@ class Container(Res.Resource):
         return not self.is_up()
 
     def _status(self, verbose=False):
+        try:
+            self.getaddr()
+        except:
+            self.status_log("could not resolve %s to an ip address"%self.name)
+            return rcStatus.WARN
         if not self.check_capabilities():
-            self.status_log("check_capabilities return False")
+            self.status_log("node capabilities do not permit this action")
             return rcStatus.WARN
         if not self.check_manual_boot():
             self.status_log("container auto boot is on")

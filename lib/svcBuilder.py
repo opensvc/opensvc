@@ -787,21 +787,8 @@ def setup_logging():
 	"""Setup logging to stream + logfile, and logfile rotation
 	class Logger instance name: 'log'
 	"""
-	logging.setLoggerClass(rcLogger.Logger)
 	global log
-	log = logging.getLogger('INIT')
-	if '--debug' in sys.argv:
-		rcEnv.loglevel = logging.DEBUG
-		log.setLevel(logging.DEBUG)
-	elif '--warn' in sys.argv:
-		rcEnv.loglevel = logging.WARNING
-		log.setLevel(logging.WARNING)
-	elif '--error' in sys.argv:
-		rcEnv.loglevel = logging.ERROR
-		log.setLevel(logging.ERROR)
-	else:
-		rcEnv.loglevel = logging.INFO
-		log.setLevel(logging.INFO)
+	log = rcLogger.initLogger('INIT')
 
 def syncnodes(self):
 	"""Run all sync jobs to peer nodes for the service
@@ -1029,7 +1016,7 @@ def build_services(status=None, svcnames=[],
             continue
         try:
             svc = build(name)
-        except (ex.excError, ex.excInitError, excAbortAction):
+        except (ex.excError, ex.excInitError, ex.excAbortAction):
             continue
         except:
             import traceback
