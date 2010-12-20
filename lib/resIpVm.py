@@ -59,6 +59,7 @@ class Ip(Res.Ip):
         return
 
     def start(self):
+        self.getaddr()
         try:
             self.allow_start()
         except ex.IpConflict:

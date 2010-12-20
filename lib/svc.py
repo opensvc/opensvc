@@ -469,6 +469,15 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("container.ldom", "start")
+        self.refresh_ip_status()
+
+    def refresh_ip_status(self):
+        """ Used after start/stop container because the ip resource
+            status change after its own start/stop
+        """
+        for rs in self.get_res_sets("ip"):
+            for r in rs.resources:
+                r.status(refresh=True)
 
     def stopcontainer(self):
         self.sub_set_action("container.ldom", "stop")
@@ -477,6 +486,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.kvm", "stop")
         self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
+        self.refresh_ip_status()
 
     def startapp(self):
         self.sub_set_action("app", "start")

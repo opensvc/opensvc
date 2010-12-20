@@ -50,8 +50,9 @@ class Ip(Res.Resource):
                 raise Exception
             self.addr = a[0][4][0]
         except:
-            if not disabled:
-                raise ex.excInitError
+            if not self.disabled:
+                self.log.error("could not resolve name %s"%self.ipName)
+                raise ex.excError
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
