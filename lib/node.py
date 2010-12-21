@@ -35,7 +35,7 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.options = Options()
-        self.svcs = svcBuilder.build_services()
+        self.svcs = None
         Freezer.__init__(self, '')
         self.action_desc = {
           'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -99,14 +99,20 @@ class Node(Svc, Freezer):
         xmlrpcClient.push_sym()
 
     def syncservices(self):
+        if self.svcs is None:
+            self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
             svc.action('syncall')
 
     def updateservices(self):
+        if self.svcs is None:
+            self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
             svc.action('presync')
 
     def pushservices(self):
+        if self.svcs is None:
+            self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
             svc.action('push')
 
@@ -117,6 +123,8 @@ class Node(Svc, Freezer):
 
     def checks(self):
         import checks
+        if self.svcs is None:
+            self.svcs = svcBuilder.build_services()
         c = checks.checks(self.svcs)
         c.do_checks()
 
