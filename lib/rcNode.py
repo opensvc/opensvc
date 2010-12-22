@@ -21,6 +21,7 @@ import sys
 import re
 from rcGlobalEnv import *
 import logging
+import rcExceptions as ex
 
 def node_cap_ez_ha():
 	if not os.path.exists(rcEnv.ez_path):
@@ -53,7 +54,7 @@ def node_get_hostmode(d):
 				if w == 'DEV' or w == 'PRD':
 					return w
 	print "Set DEV or PRD in " + __f
-	sys.exit(1)
+	raise ex.excError
 
 def discover_node():
 	"""Fill rcEnv class with information from node discovery
