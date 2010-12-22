@@ -84,7 +84,7 @@ class Vg(resDg.Dg):
                 if len(line) == 0:
                     return
                 a = line.split(':')[0]
-                if '/dev/pt/' not in a and '/dev/rdisk/disk' not in a and self.dsf_name(a) in dsf_names:
+                if '/dev/pt/pt' not in a and '/dev/rdisk/disk' not in a and self.dsf_name(a) in dsf_names:
                     cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(a), '-a', 'wwid', '-p']
                     (ret, out) = self.call(cmd)
                     if ret != 0:
