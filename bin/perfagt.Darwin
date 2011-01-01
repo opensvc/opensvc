@@ -9,7 +9,7 @@ pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import xmlrpcClient
-from rcUtilities import call
+from rcUtilities import justcall
 
 nodename = socket.gethostname()
 now = datetime.datetime.now()
@@ -22,7 +22,7 @@ def fs_u():
             'used']
 
     cmd = ['df', '-lkP']
-    (ret, out) = call(cmd)
+    (out, err, ret) = justcall(cmd)
     if ret != 0:
         return self.undef
     lines = out.split('\n')
@@ -61,14 +61,14 @@ def mem_u():
                 return
  
 
-    cmd = ['sysctl', '-n', 'hw.pagesize']
-    (ret, out) = call(cmd)
+    cmd = ['/usr/sbin/sysctl', '-n', 'hw.pagesize']
+    (out, err, ret) = justcall(cmd)
     if ret != 0:
         return
     pagesize = int(out.split()[0])
 
     cmd = ['vm_stat']
-    (ret, out) = call(cmd)
+    (out, err, ret) = justcall(cmd)
     if ret != 0:
         return
     h = {}
