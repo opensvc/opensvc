@@ -33,6 +33,9 @@ def fs_u():
         l = line.split()
         if len(l) != 6:
             continue
+        if l[5].startswith('/Volumes'):
+            # Darwin automount package files under /Volumes
+            continue
         vals.append([str(now), nodename, l[5], l[1], l[4].replace('%','')])
     return (vars, vals)
 
