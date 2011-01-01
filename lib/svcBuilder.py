@@ -73,6 +73,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcKvm', 'SvcKvm')
     elif svcmode == 'xen':
         return ('svcXen', 'SvcXen')
+    elif svcmode == 'vbox':
+        return ('svcVbox', 'SvcVbox')
     raise
 
 def get_tags(conf, section):
@@ -196,6 +198,8 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+'Zone')
         elif svc.svcmode  == 'xen':
             ip = __import__('resIp'+'Xen')
+        elif svc.svcmode  == 'vbox':
+            ip = __import__('resIp'+'Vbox')
         else:
             ip = __import__('resIp'+rcEnv.sysname)
         kwargs['rid'] = s

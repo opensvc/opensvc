@@ -77,6 +77,7 @@ class Svc(Resource, Freezer):
                              "container.zone",
                              "container.jail",
                              "container.ldom",
+                             "container.vbox",
                              "disk.drbd",
                              "disk.loop",
                              "disk.scsireserv",
@@ -469,6 +470,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("container.ldom", "start")
+        self.sub_set_action("container.vbox", "start")
         self.refresh_ip_status()
 
     def refresh_ip_status(self):
@@ -480,6 +482,7 @@ class Svc(Resource, Freezer):
                 r.status(refresh=True)
 
     def stopcontainer(self):
+        self.sub_set_action("container.vbox", "stop")
         self.sub_set_action("container.ldom", "stop")
         self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("container.xen", "stop")
