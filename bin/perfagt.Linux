@@ -9,7 +9,7 @@ pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
 import xmlrpcClient
-from rcUtilities import call
+from rcUtilities import justcall
 
 nodename = socket.gethostname()
 now = str(datetime.datetime.now())
@@ -22,7 +22,7 @@ def fs_u():
             'used']
 
     cmd = ['df', '-lP']
-    (ret, out) = call(cmd)
+    (out, err, ret) = justcall(cmd)
     if ret != 0:
         return self.undef
     lines = out.split('\n')
