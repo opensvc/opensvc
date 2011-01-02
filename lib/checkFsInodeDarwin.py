@@ -43,6 +43,8 @@ class check(checks.check):
             l = line.split()
             if len(l) != 9:
                 continue
+            if l[5].startswith('/Volumes'):
+                continue
             r.append({
                       'chk_instance': l[8],
                       'chk_value': l[7],
