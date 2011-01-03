@@ -67,16 +67,25 @@ class Vg(resVg.Vg):
     def sharefile_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
 
-    def write_share(self):
-        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
+    def get_devs(self):
+        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']
         (ret, buff) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         if len(buff) == 0:
-            return
+            return []
+        a = []
+        for line in buff.split('\n'):
+            if "DEVTYPE=FILE" not in line and "DEVTYPE=DISK" not in line:
+                continue
+            a.append(line)
+        return a
+
+    def write_share(self):
+        devs = self.get_devs()
         disklist = self.disklist()
         with open(self.sharefile_name(), 'w') as f:
-            for line in buff.split('\n'):
+            for line in devs:
                 dev = line.split(':')[0]
                 if len(dev) == 0:
                     continue
@@ -90,12 +99,9 @@ class Vg(resVg.Vg):
     def do_share(self):
         if not os.path.exists(self.sharefile_name()):
             return
-        cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all:DEVTYPE=DISK']
-        (ret, buff) = self.call(cmd)
-        if ret != 0:
-            raise ex.excError
+        _devs = self.get_devs()
         devs = set([])
-        for line in buff.split('\n'):
+        for line in _devs:
             l = line.split(':')
             if len(l) == 0:
                 continue
