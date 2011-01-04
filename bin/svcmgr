@@ -147,7 +147,6 @@ for s in svcs:
     if options.parallel:
         d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}
         p[s.svcname] = Process(target=s.action, name='worker_'+s.svcname, kwargs=d)
-        p[s.svcname].daemon = True
         p[s.svcname].start()
     else:
         s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
