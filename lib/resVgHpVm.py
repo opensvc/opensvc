@@ -107,7 +107,10 @@ class Vg(resVg.Vg):
                 continue
             if len(l[0]) == 0:
                 continue
-            devs |= set([l[0]])
+            if ',' in l[0]:
+                devs |= set(l[0].split(','))
+            else:
+                devs |= set([l[0]])
         with open(self.sharefile_name(), 'r') as f:
             err = 0
             for line in f.readlines():
