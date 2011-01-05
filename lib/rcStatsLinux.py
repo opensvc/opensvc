@@ -228,21 +228,27 @@ def stats_netdev_day(t):
     cmd = ['sar', '-t', '-n', 'DEV', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     lines = []
+    div = 1
     for line in buff.split('\n'):
        l = line.split()
        if len(l) != 9:
            continue
        if l[1] in ['IFACE', 'lo'] :
+           if 'rxbyt/s' in l:
+               div = 1024
            continue
        if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
           'pan'   in l[1] or 'sit'  in l[1]:
            continue
        if l[0] == 'Average:':
            continue
-       l = l[0:6]
-       l.append(rcEnv.nodename)
-       l[0] = '%s %s'%(d, l[0])
-       lines.append(l)
+       m = l[0:3]
+       m.append(str(int(float(l[4])/div)))
+       m.append(str(int(float(l[5])/div)))
+       m.append(l[6])
+       m.append(rcEnv.nodename)
+       m[0] = '%s %s'%(d, l[0])
+       lines.append(m)
     return lines
 
 
