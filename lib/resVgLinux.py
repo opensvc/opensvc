@@ -73,6 +73,7 @@ class Vg(resDg.Dg):
             """ remove only specified tags
             """
             for tag in tags:
+                tag = tag.lstrip('@')
                 if tag in curtags:
                    self.remove_tag(tag)
         else:
