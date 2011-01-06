@@ -264,6 +264,31 @@ def add_vdisks(svc, conf):
         add_triggers(r, conf, s)
         svc += r
 
+def add_hbs(svc, conf):
+    for s in conf.sections():
+        if re.match('hb#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+
+        if conf.has_option(s, "name"):
+            kwargs['name'] = conf.get(s, "name")
+        if conf.has_option(s, "type"):
+            type = conf.get(s, "type")
+        else:
+            svc.log.error("type must be set in section %s"%s)
+            return
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s)
+        kwargs['optional'] = get_optional(conf, s)
+        hb = __import__('resHb'+type)
+        r = hb.Hb(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
 def add_loops(svc, conf):
     """Parse the configuration file and add a loop object for each [loop#n]
     section. Loop objects are stored in a list in the service object.
@@ -981,6 +1006,7 @@ def build(name):
     # instanciate resources
     #
     try:
+        add_hbs(svc, conf)
         add_ips(svc, conf)
         add_drbds(svc, conf)
         add_loops(svc, conf)

@@ -69,6 +69,7 @@ class Svc(Resource, Freezer):
         self.type2resSets = {}
         self.disks = set([])
         self.force = False
+        self.cluster = False
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
@@ -90,7 +91,8 @@ class Svc(Resource, Freezer):
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
-                             "app"]
+                             "app",
+                             "hb.openha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
         self.log = rcLogger.initLogger(self.svcname.upper())
@@ -185,7 +187,7 @@ class Svc(Resource, Freezer):
          return rsets
 
     def has_res_set(self, type):
-        if len(get_res_sets(type)) > 0:
+        if len(self.get_res_sets(type)) > 0:
             return True
         else:
             return False
@@ -345,7 +347,7 @@ class Svc(Resource, Freezer):
         return rset_status
 
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "sync", "app"]),
+                     groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
                      excluded_groups=set([])):
         """print each resource status for a service
         """
@@ -393,12 +395,14 @@ class Svc(Resource, Freezer):
         return disks
 
     def start(self):
+        self.starthb()
         self.startip()
         self.mount()
         self.startcontainer()
         self.startapp()
 
     def stop(self):
+        self.stophb()
         try:
             self.stopapp()
         except ex.excError:
@@ -406,6 +410,21 @@ class Svc(Resource, Freezer):
         self.stopcontainer()
         self.umount()
         self.stopip()
+
+    def cluster_mode_safety_net(self):
+        if not self.has_res_set(['hb.openha']):
+            return
+        if not self.cluster:
+            self.log.error("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
+            raise ex.excError
+
+    def starthb(self):
+        self.cluster_mode_safety_net()
+        self.sub_set_action("hb.openha", "start")
+
+    def stophb(self):
+        self.cluster_mode_safety_net()
+        self.sub_set_action("hb.openha", "stop")
 
     def startdrbd(self):
         self.sub_set_action("disk.drbd", "start")
