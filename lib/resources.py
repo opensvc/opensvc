@@ -156,6 +156,7 @@ class Resource(object):
             self.status_log("disabled")
             return rcStatus.NA
         if self.rstatus is None or refresh:
+            self.status_log_str = ""
             self.rstatus = self._status(verbose)
         return self.rstatus
 
@@ -163,7 +164,6 @@ class Resource(object):
         self.status_log_str += "# " + text
 
     def print_status(self):
-        self.status_log_str = ""
         r = self.status(verbose=True)
         print self.svc.print_status_fmt%(self.rid,
                                          rcStatus.status_str(r),
