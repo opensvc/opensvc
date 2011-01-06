@@ -66,10 +66,24 @@ class Hb(Res.Resource):
             import traceback
             traceback.print_exc()
             return 'unknown'
-        if buff == '6':
-            return 'frozen-stop'
+        if buff == '9':
+            return 'force_stop'
+        elif buff == '8':
+            return 'unknown'
+        elif buff == '7':
+            return 'start_ready'
+        elif buff == '6':
+            return 'frozen_stop'
+        elif buff == '5':
+            return 'stop_failed'
+        elif buff == '4':
+            return 'start_failed'
+        elif buff == '3':
+            return 'starting'
         elif buff == '2':
             return 'started'
+        elif buff == '1':
+            return 'stopping'
         elif buff == '0':
             return 'stopped'
         else:
@@ -120,12 +134,12 @@ class Hb(Res.Resource):
         if status == 'unknown':
             self.status_log("unable to determine cluster service state")
             return rcStatus.WARN
-        elif status == 'frozen-stop':
-            self.status_log("cluster service is frozen")
+        elif status in ['frozen_stop', 'start_failed', 'stop_failed']:
+            self.status_log("cluster service status is %s"%status)
             return rcStatus.WARN
-        elif status == 'stopped':
+        elif status in ['stopped', 'stopping', 'force_stop']:
             return rcStatus.DOWN
-        elif status == 'started':
+        elif status in ['started', 'starting', 'start_ready']:
             return rcStatus.UP
         else:
             self.status_log("unknown cluster service status: %s"%status)
