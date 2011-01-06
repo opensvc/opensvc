@@ -48,6 +48,8 @@ parser.add_option("-p", "--parallel", default=False, action="store_true", dest="
                   help="start actions on specified services in parallel")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
+parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
+                  help="option to set when excuting from a clusterware to disable safety net")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
@@ -58,6 +60,7 @@ parser.add_option("--to", default=None, action="store", dest="parm_destination_n
                   help="remote node to start or migrate the service to")
 
 
+cluster = False
 cmd = os.path.basename(__file__)
 if cmd == 'allservices':
     svcs = svcBuilder.build_services()
@@ -80,7 +83,13 @@ elif cmd == 'svcmgr':
     parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
               help="operate only on service not flagged for autostart on this node")
 else:
-    svcs = svcBuilder.build_services(svcnames=[cmd])
+    svcname = cmd.split('.')
+    if len(svcname) == 2 and svcname[1] == 'cluster':
+        cluster = True
+        svcname = svcname[0]
+    else:
+        svcname = cmd
+    svcs = svcBuilder.build_services(svcnames=[svcname])
 
 (options, args) = parser.parse_args()
 
@@ -143,6 +152,10 @@ if options.parallel:
 
 for s in svcs:
     s.force = options.force
+    if cluster:
+			s.cluster = cluster
+    else:
+			s.cluster = options.cluster
     s.destination_node = options.parm_destination_node
     if options.parallel:
         d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}

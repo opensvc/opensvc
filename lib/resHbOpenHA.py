@@ -103,6 +103,12 @@ class Hb(Res.Resource):
     def __str__(self):
         return "%s" % (Res.Resource.__str__(self))
 
+    def stop(self):
+        pass
+
+    def start(self):
+        pass
+
     def _status(self, verbose=False):
         if not os.path.exists(self.service_cmd):
             self.status_log("open-ha is not installed")
