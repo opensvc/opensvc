@@ -43,7 +43,7 @@ cd $OSVC || exit 1
 tar cf - $EXCL bin lib usr var/compliance/*com.opensvc.* | tar xf - -C $CHROOT/opt/opensvc || exit 1
 touch $CHROOT/opt/opensvc/var/host_mode || exit 1
 echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || exit 1
-chown -R root:root $CHROOT/opt/opensvc
+sudo chown -R root:root $CHROOT/opt/opensvc
 
 # prepare control.tar.gz
 mkdir -p $CHROOT/DEBIAN || exit 1
