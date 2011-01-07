@@ -269,6 +269,10 @@ def add_hbs(svc, conf):
         if re.match('hb#[0-9]', s, re.I) is None:
             continue
 
+        if rcEnv.nodename in svc.drpnodes:
+            # no heartbeat on DRP nodes
+            return
+
         kwargs = {}
 
         if conf.has_option(s, "name"):
