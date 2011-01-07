@@ -98,7 +98,7 @@ def nodes_to_sync(self, type=None, state="syncable", status=False):
        sync their system files to all drpnodes regardless of the service
        state
     """
-    s = self.svc.group_status(excluded_groups=set(["sync"]))
+    s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
     if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
        self.rid != "sync#i1":
         self.log.debug("won't sync this resource for a service not up")
@@ -322,7 +322,7 @@ class Rsync(Res.Resource):
 
         """ sync state on nodes where the service is not UP
         """
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in sync destination nodes")
