@@ -465,6 +465,7 @@ def add_mandatory_syncs(svc):
     src = []
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
+    src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.cluster'))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
     localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
     if os.path.exists(localrc):
