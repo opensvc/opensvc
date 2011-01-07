@@ -153,10 +153,11 @@ if options.parallel:
 err = 0
 for s in svcs:
     s.force = options.force
+    s.parallel = options.parallel
     if cluster:
-			s.cluster = cluster
+        s.cluster = cluster
     else:
-			s.cluster = options.cluster
+        s.cluster = options.cluster
     s.destination_node = options.parm_destination_node
     if options.parallel:
         d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}
