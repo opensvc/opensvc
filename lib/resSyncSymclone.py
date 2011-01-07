@@ -196,7 +196,7 @@ class syncSymclone(Res.Resource):
         self.syncbreak()
 
     def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync"]))
+        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
 
     def get_svcstatus(self):
         if len(self.svcstatus) == 0:

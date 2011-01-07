@@ -141,7 +141,7 @@ class syncDds(Res.Resource):
         self.get_src_info()
 
     def svc_syncable(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             return False
@@ -306,7 +306,7 @@ class syncDds(Res.Resource):
             self.checksums[node] = o[0]
 
     def syncverify(self):
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't verify this resource for a service not up")
             return

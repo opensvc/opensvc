@@ -226,7 +226,7 @@ class SyncZfs(Res.Resource):
             rotate snap
         rotate snap on local node
         """
-        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             return
