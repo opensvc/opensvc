@@ -70,6 +70,7 @@ class Svc(Resource, Freezer):
         self.disks = set([])
         self.force = False
         self.cluster = False
+        self.parallel = False
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
