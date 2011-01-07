@@ -676,9 +676,9 @@ class Svc(Resource, Freezer):
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
-            self.do_action(action, waitlock=waitlock)
+            return self.do_action(action, waitlock=waitlock)
         else:
-            self.do_logged_action(action, waitlock=waitlock)
+            return self.do_logged_action(action, waitlock=waitlock)
 
     def do_action(self, action, waitlock=60):
         """Trigger action

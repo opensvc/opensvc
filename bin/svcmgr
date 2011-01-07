@@ -150,6 +150,7 @@ if options.parallel:
     from multiprocessing import Process
     p = {}
 
+err = 0
 for s in svcs:
     s.force = options.force
     if cluster:
@@ -162,9 +163,15 @@ for s in svcs:
         p[s.svcname] = Process(target=s.action, name='worker_'+s.svcname, kwargs=d)
         p[s.svcname].start()
     else:
-        s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
+        err += s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
 
 if options.parallel:
     for svcname in p:
         p[svcname].join()
+        r = p[svcname].exitcode
+        if r > 0:
+           # r is negative when p[svcname] is killed by signal.
+           # in this case, we don't want to decrement the err counter.
+           err += r
 
+sys.exit(err)
