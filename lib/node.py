@@ -23,11 +23,13 @@ from svc import Svc
 from freezer import Freezer
 import svcBuilder
 import xmlrpcClient
+import os
 
 class Options(object):
     def __init__(self):
         self.force = False
         self.debug = False
+        os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
     """ Defines a cluster node.  It contain list of Svc.
@@ -84,7 +86,9 @@ class Node(Svc, Freezer):
         return getattr(self, a)()
 
     def pushstats(self):
-        xmlrpcClient.push_stats(force=self.options.force)
+        xmlrpcClient.push_stats(force=self.options.force,
+                                file=self.options.stats_file,
+                                collect_date=self.options.collect_date)
 
     def pushpkg(self):
         xmlrpcClient.push_pkg()

@@ -25,7 +25,8 @@ from rcGlobalEnv import rcEnv
 today = datetime.datetime.today()
 yesterday = today - datetime.timedelta(days=1)
 
-def sarfile(day):
+def sarfile(t):
+    day = t.strftime("%d")
     f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
     if os.path.exists(f):
         return f
@@ -34,22 +35,58 @@ def sarfile(day):
         return f
     return None
 
+def dofile(fn, file, collect_date=None):
+    if which('sar') is None:
+        return []
+    if collect_date is None:
+       collect_date = today
+    else:
+       try:
+           collect_date = datetime.datetime.strptime(collect_date, "%Y-%m-%d")
+       except:
+           print "collect date format is %Y-%m-%d"
+           raise
+    i = len(file)-1
+    while i>0:
+        try:
+            j = int(file[i])
+        except:
+            break
+        i -= 1
+    if i == 0 or i == len(file)-1:
+        return []
+    file_day = int(file[i+1:])
+    file_month = collect_date.month
+    file_year = collect_date.year
+    if file_day > collect_date.day:
+        file_month -= 1
+        if file_month == 0:
+            file_month = 12
+            file_year -= 1
+    day = datetime.date(file_year, file_month, file_day)
+    print file, day
+    lines = fn(day, file)
+    return lines
+
 def twodays(fn):
     if which('sar') is None:
         return []
-    lines = fn(yesterday)
-    lines += fn(today)
+    file = sarfile(yesterday)
+    lines = []
+    if file is not None:
+        lines += fn(yesterday, file)
+    file = sarfile(today)
+    if file is not None:
+        lines += fn(today, file)
     return lines
 
-def stats_cpu():
+def stats_cpu(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_cpu_day, file, collect_date)
     return twodays(stats_cpu_day)
 
-def stats_cpu_day(t):
+def stats_cpu_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-u', 'ALL', '-P', 'ALL', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     if ret != 0:
@@ -62,7 +99,11 @@ def stats_cpu_day(t):
             """ redhat 5
             """
             l = l[0:7] + ['0', '0', '0', l[7]]
-        if len(l) != 11:
+        if len(l) == 7:
+            """ redhat 4
+            """
+            l = l[0:6] + ['0', '0', '0', '0', l[6]]
+        elif len(l) != 11:
             continue
         if l[1] == 'CPU':
             continue
@@ -73,15 +114,13 @@ def stats_cpu_day(t):
         lines.append(l)
     return lines
 
-def stats_mem_u():
+def stats_mem_u(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_mem_u_day, file, collect_date)
     return twodays(stats_mem_u_day)
 
-def stats_mem_u_day(t):
+def stats_mem_u_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-r', '-f', f]
     (ret, buff) = call(cmd)
     lines = []
@@ -107,15 +146,13 @@ def stats_mem_u_day(t):
        lines.append(l)
     return lines
 
-def stats_proc():
+def stats_proc(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_proc_day, file, collect_date)
     return twodays(stats_proc_day)
 
-def stats_proc_day(t):
+def stats_proc_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-q', '-f', f]
     (ret, buff) = call(cmd)
     lines = []
@@ -132,15 +169,13 @@ def stats_proc_day(t):
        lines.append(l)
     return lines
 
-def stats_swap():
+def stats_swap(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_swap_day, file, collect_date)
     return twodays(stats_swap_day)
 
-def stats_swap_day(t):
+def stats_swap_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-S', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     if ret != 0:
@@ -166,15 +201,13 @@ def stats_swap_day(t):
        lines.append(l)
     return lines
 
-def stats_block():
+def stats_block(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_block_day, file, collect_date)
     return twodays(stats_block_day)
 
-def stats_block_day(t):
+def stats_block_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-b', '-f', f]
     (ret, buff) = call(cmd)
     lines = []
@@ -191,15 +224,13 @@ def stats_block_day(t):
        lines.append(l)
     return lines
 
-def stats_blockdev():
+def stats_blockdev(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_blockdev_day, file, collect_date)
     return twodays(stats_blockdev_day)
 
-def stats_blockdev_day(t):
+def stats_blockdev_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-d', '-p', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     lines = []
@@ -216,15 +247,13 @@ def stats_blockdev_day(t):
        lines.append(l)
     return lines
 
-def stats_netdev():
+def stats_netdev(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_netdev_day, file, collect_date)
     return twodays(stats_netdev_day)
 
-def stats_netdev_day(t):
+def stats_netdev_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-n', 'DEV', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     lines = []
@@ -252,15 +281,13 @@ def stats_netdev_day(t):
     return lines
 
 
-def stats_netdev_err():
+def stats_netdev_err(file, collect_date=None):
+    if file is not None and os.path.exists(file):
+        return dofile(stats_netdev_err_day, file, collect_date)
     return twodays(stats_netdev_err_day)
 
-def stats_netdev_err_day(t):
+def stats_netdev_err_day(t, f):
     d = t.strftime("%Y-%m-%d")
-    day = t.strftime("%d")
-    f = sarfile(day)
-    if f is None:
-        return []
     cmd = ['sar', '-t', '-n', 'EDEV', '-f', f]
     (ret, buff) = call(cmd, errlog=False)
     lines = []

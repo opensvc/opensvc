@@ -415,10 +415,12 @@ def push_disks(svc):
         )
 
 @xmlrpc_decorator
-def push_stats_cpu():
+def push_stats_cpu(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
+        import traceback
+        traceback.print_exc()
         return
     proxy.insert_stats_cpu(
         ['date',
@@ -433,11 +435,11 @@ def push_stats_cpu():
          'guest',
          'idle',
          'nodename'],
-         s.stats_cpu()
+         s.stats_cpu(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_mem_u():
+def push_stats_mem_u(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -453,11 +455,11 @@ def push_stats_mem_u():
          'pct_commit',
          'kbmemsys',
          'nodename'],
-         s.stats_mem_u()
+         s.stats_mem_u(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_proc():
+def push_stats_proc(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -470,11 +472,11 @@ def push_stats_proc():
          'ldavg_5',
          'ldavg_15',
          'nodename'],
-         s.stats_proc()
+         s.stats_proc(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_swap():
+def push_stats_swap(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -487,11 +489,11 @@ def push_stats_swap():
          'kbswpcad',
          'pct_swpcad',
          'nodename'],
-         s.stats_swap()
+         s.stats_swap(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_block():
+def push_stats_block(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -504,11 +506,11 @@ def push_stats_block():
          'rbps',
          'wbps',
          'nodename'],
-         s.stats_block()
+         s.stats_block(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_blockdev():
+def push_stats_blockdev(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -525,11 +527,11 @@ def push_stats_blockdev():
          'svctm',
          'pct_util',
          'nodename'],
-         s.stats_blockdev()
+         s.stats_blockdev(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_netdev_err():
+def push_stats_netdev_err(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -543,11 +545,11 @@ def push_stats_netdev_err():
          'rxdropps',
          'txdropps',
          'nodename'],
-         s.stats_netdev_err()
+         s.stats_netdev_err(file, collect_date)
     )
 
 @xmlrpc_decorator
-def push_stats_netdev():
+def push_stats_netdev(file, collect_date):
     try:
         s = __import__('rcStats'+sysname)
     except:
@@ -560,7 +562,7 @@ def push_stats_netdev():
          'rxkBps',
          'txkBps',
          'nodename'],
-         s.stats_netdev()
+         s.stats_netdev(file, collect_date)
     )
 
 @xmlrpc_decorator
@@ -619,17 +621,17 @@ def push_patch():
     proxy.delete_patch(rcEnv.nodename)
     proxy.insert_patch(vars, vals)
 
-def push_stats(force=False):
+def push_stats(force=False, file=None, collect_date=None):
     if not force and not stats_timestamp():
-            return
-    push_stats_cpu()
-    push_stats_mem_u()
-    push_stats_proc()
-    push_stats_swap()
-    push_stats_block()
-    push_stats_blockdev()
-    push_stats_netdev_err()
-    push_stats_netdev()
+        return
+    push_stats_cpu(file, collect_date)
+    push_stats_mem_u(file, collect_date)
+    push_stats_proc(file, collect_date)
+    push_stats_swap(file, collect_date)
+    push_stats_block(file, collect_date)
+    push_stats_blockdev(file, collect_date)
+    push_stats_netdev_err(file, collect_date)
+    push_stats_netdev(file, collect_date)
 
 def push_asset():
     try:

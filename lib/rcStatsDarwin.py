@@ -47,7 +47,7 @@ def twodays(fn):
     lines += fn(today)
     return lines
 
-def stats_cpu():
+def stats_cpu(file, collect_date=None):
     return twodays(stats_cpu_day)
 
 def stats_cpu_day(t):
@@ -73,7 +73,7 @@ def stats_cpu_day(t):
         lines.append(l)
     return lines
 
-def stats_mem_u():
+def stats_mem_u(file, collect_date=None):
     return twodays(stats_mem_u_day)
 
 def stats_mem_u_day(t):
@@ -99,25 +99,25 @@ def stats_mem_u_day(t):
         lines.append(l)
     return lines
 
-def stats_proc():
+def stats_proc(file, collect_date=None):
     return twodays(stats_proc_day)
 
 def stats_proc_day(t):
     return []
 
-def stats_swap():
+def stats_swap(file, collect_date=None):
     return twodays(stats_swap_day)
 
 def stats_swap_day(t):
     return []
 
-def stats_block():
+def stats_block(file, collect_date=None):
     return twodays(stats_block_day)
 
 def stats_block_day(t):
     return []
 
-def stats_blockdev():
+def stats_blockdev(file, collect_date=None):
     return twodays(stats_blockdev_day)
 
 def stats_blockdev_day(t):
@@ -145,7 +145,7 @@ def stats_blockdev_day(t):
        lines.append(l)
     return lines
 
-def stats_netdev():
+def stats_netdev(file, collect_date=None):
     return twodays(stats_netdev_day)
 
 def stats_netdev_day(t):
@@ -175,7 +175,7 @@ def stats_netdev_day(t):
     return lines
 
 
-def stats_netdev_err():
+def stats_netdev_err(file, collect_date=None):
     return twodays(stats_netdev_err_day)
 
 def stats_netdev_err_day(t):
