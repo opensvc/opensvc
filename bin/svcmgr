@@ -175,4 +175,10 @@ if options.parallel:
            # in this case, we don't want to decrement the err counter.
            err += r
 
+try:
+    import logging
+    logging.shutdown()
+except:
+    pass
+
 sys.exit(err)

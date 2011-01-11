@@ -51,6 +51,10 @@ def dblogger(self, action, begin, end, actionlogfile):
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
     xmlrpcClient.svcmon_update(self, self.group_status())
     os.unlink(actionlogfile)
+    try:
+        logging.shutdown()
+    except:
+        pass
 
 
 class Svc(Resource, Freezer):
