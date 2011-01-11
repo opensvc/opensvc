@@ -101,6 +101,8 @@ def nodes_to_sync(self, type=None, state="syncable", status=False):
     s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
     if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
        self.rid != "sync#i1":
+        if s['overall'].status == rcStatus.WARN:
+            self.log.debug("won't sync this resource service in warn status")
         self.log.debug("won't sync this resource for a service not up")
         return set([])
 
