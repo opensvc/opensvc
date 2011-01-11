@@ -56,10 +56,10 @@ parser.add_option("--module", default="",
                   help="compliance, set module list")
 parser.add_option("--moduleset", default="",
 		  action="store", dest="moduleset",
-                  help="compliance, set moduleset list")
+                  help="compliance, set moduleset list. The 'all' value can be used in conjonction with detach.")
 parser.add_option("--ruleset", default="",
 		  action="store", dest="ruleset",
-                  help="compliance, set ruleset list")
+                  help="compliance, set ruleset list. The 'all' value can be used in conjonction with detach.")
 parser.add_option("--ruleset-date", default="",
 		  action="store", dest="ruleset_date",
                   help="compliance, use rulesets valid on specified date")
