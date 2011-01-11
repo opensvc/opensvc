@@ -29,6 +29,8 @@ class Options(object):
     def __init__(self):
         self.force = False
         self.debug = False
+        self.stats_file = None
+        self.collect_date = None
         os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
