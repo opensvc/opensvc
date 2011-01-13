@@ -148,6 +148,12 @@ class Ip(Res.Resource):
         if self.mask == '':
             self.log.error("No netmask set on parent interface %s" % self.ipDev)
             raise ex.excError
+        elif isinstance(self.mask, list):
+            if len(self.mask) > 0:
+                self.mask = self.mask[0]
+            else:
+                self.log.error("No netmask set on parent interface %s" % self.ipDev)
+                raise ex.excError
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                     self.addr,\
                                                     self.log)

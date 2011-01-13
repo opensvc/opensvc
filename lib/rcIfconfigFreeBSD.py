@@ -61,7 +61,9 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ipaddr += [w]
             elif 'inet6' == prev:
                 i.ip6addr += [w.split('%')[0]]
-            elif 'prefixlen' == [prev]:
+            elif 'netmask' == prev:
+                i.mask += [w]
+            elif 'prefixlen' == prev:
                 i.ip6mask += [w]
             elif 'ether' == prev:
                 i.hwaddr = w
