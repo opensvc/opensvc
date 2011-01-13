@@ -36,6 +36,9 @@ class Jail(resContainer.Container):
     def files_to_sync(self):
         return []
 
+    def operational(self):
+        return True
+
     def install_drp_flag(self):
         rootfs = self.svc.jailroot
         flag = os.path.join(rootfs, ".drp_flag")
