@@ -212,7 +212,11 @@ class Svc(Resource, Freezer):
             return False
         for rs in sets:
             for r in rs.resources:
-                if hasattr(r, "snap") and r.snap is True:
+                """ avoid to run pre/post snap triggers when there is no
+                    resource flagged for snap and on drpnodes
+                """
+                if hasattr(r, "snap") and r.snap is True and \
+                   rcEnv.nodename in self.nodes:
                     return True
         return False
 
