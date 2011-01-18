@@ -20,6 +20,7 @@ from subprocess import *
 from datetime import datetime
 import os
 import glob
+import sys
 
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
@@ -183,6 +184,8 @@ class Apps(Res.Resource):
         p = Process(target=self.start_job, args=())
         p.start()
         p.join()
+        if p.exitcode != 0:
+            raise ex.excError
 
     def start_job(self):
         """Execute each startup script (S* files). Log the return code but
@@ -190,7 +193,7 @@ class Apps(Res.Resource):
         """
         try:
             if not self.start_checks():
-                raise ex.excError
+                sys.exit(1)
         except ex.excNotAvailable:
             return
         if self.svc.containerize:
