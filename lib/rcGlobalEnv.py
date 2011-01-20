@@ -53,6 +53,7 @@ class rcEnv:
     """
     dbopensvc_host = "dbopensvc"
     dbopensvc_port = "8000"
+    dbopensvc_app = "feed"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
@@ -155,7 +156,7 @@ class rcEnv:
 
 
     def set_db_url(self):
-        self.__class__.dbopensvc = "http://%s:%s/feed/default/call/xmlrpc"% (self.dbopensvc_host, self.dbopensvc_port)
+        self.__class__.dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(self.dbopensvc_host, self.dbopensvc_port, self.dbopensvc_app)
         self.__class__.dbcompliance = "http://%s:%s/init/compliance/call/xmlrpc"%(self.dbopensvc_host, self.dbopensvc_port)
 
 update_cl_attr(cl=rcEnv, module="rcLocalEnv")
