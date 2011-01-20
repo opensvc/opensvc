@@ -9,7 +9,8 @@ fi
 
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
-allsecondaryservices=${osvc_path}/allservices
+allservices=${osvc_path}/allservices
+allsecondaryservices=${osvc_path}/allsecondaryservices
 allprimaryservices=${osvc_path}/allprimaryservices
 agt=${osvc_path}/perfagt.`uname -s`
 
@@ -38,6 +39,6 @@ stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
 	fi
-	${allsecondaryservices} ${osvc_opts} --force stop
+	${allservices} ${osvc_opts} --force stop
 	;;
 esac

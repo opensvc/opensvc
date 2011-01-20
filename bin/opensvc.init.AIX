@@ -2,6 +2,7 @@
 
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
+allservices=${osvc_path}/allservices
 allsecondaryservices=${osvc_path}/allsecondaryservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
@@ -11,6 +12,6 @@ start)
 	${allsecondaryservices} ${osvc_opts} startstandby
 	;;
 stop)
-	${allsecondaryservices} ${osvc_opts} --force stop
+	${allservices} ${osvc_opts} --force stop
 	;;
 esac

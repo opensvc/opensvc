@@ -69,7 +69,7 @@ WWW: http://www.opensvc.com/
 EOF
 
 cd $CHROOT
-find opt -type f >../pkg-plist
+find opt -type f -o -type l >../pkg-plist
 find opt/opensvc -type d | sed "s/^/@dirrm /" >>../pkg-plist
 cd ..
 
