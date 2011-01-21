@@ -18,7 +18,7 @@ def python_path():
 def install_cron():
     """install opensvc cron jobs
     """
-    if sysname == 'SunOS' :
+    if sysname == 'SunOS' or sysname == 'FreeBSD' :
         path = 'PATH='+python_path()+' '
     else:
         path = ''
