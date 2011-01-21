@@ -19,7 +19,7 @@ def install_cron():
     """install opensvc cron jobs
     """
     if sysname == 'SunOS' or sysname == 'FreeBSD' :
-        path = 'PATH='+python_path()+' '
+        path = 'PATH=$PATH:'+python_path()+' '
     else:
         path = ''
 
@@ -201,6 +201,16 @@ def activate_FreeBSD():
 def activate_Darwin():
     return True
 
+def update_file(filename, srctext, replacetext):
+    """ replace into filename srctext by replacetext
+    """
+    import fileinput
+    for line in fileinput.input(filename, inplace=1):
+        if line.rstrip('\n') == srctext.rstrip('\n') :
+            line = replacetext
+        print line.rstrip('\n')
+    fileinput.close()
+
 def install_rc():
     """install startup script
     """
@@ -245,6 +255,8 @@ def install_rc():
         os.unlink(rc)
 
     shutil.copyfile(src, rc)
+    if sysname == "SunOS" or sysname == "FreeBSD" :
+        update_file(rc, "## PATHTOUPDATE", 'PATH=$PATH:'+python_path()+' ; export PATH' )
     os.chmod(rc, 0755)
     activate()
 
