@@ -14,8 +14,6 @@ allservices=${osvc_path}/allservices
 allsecondaryservices=${osvc_path}/allsecondaryservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
-## PATHTOUPDATE
-
 case $1 in
 start)
 	${allprimaryservices} ${osvc_opts} start
