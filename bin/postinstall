@@ -253,8 +253,6 @@ def install_rc():
         os.unlink(rc)
 
     shutil.copyfile(src, rc)
-    if sysname == "SunOS" or sysname == "FreeBSD" :
-        update_file(rc, "## PATHTOUPDATE", 'PATH=$PATH:'+python_path()+' ; export PATH' )
     os.chmod(rc, 0755)
     activate()
 
