@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/opt/opensvc/bin/python
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
