@@ -1,0 +1,131 @@
+#!/opt/opensvc/bin/python
+""" module use OSVC_COMP_USER_... vars
+    which define {'username':{'propname':'propval',... }, ...}
+
+    example: 
+        {"tibco":{"shell":"/bin/ksh","gecos":"agecos",},
+         "tibco1":{"shell":"/bin/tcsh","gecos":"another gecos",},
+	}
+
+    when propname is shell, module verify that username shell is correct
+    when propname is uid, TBD
+    when propname is gecos, TBD
+    when propname is gid, TBD
+"""
+
+import os
+import sys
+import json
+
+RET_OK = 0
+RET_ERR = 1
+RET_NA = 2
+
+RET = RET_ERR
+
+PREFIX = 'OSVC_COMP_USER_'
+
+sysname, nodename, x, x, machine = os.uname()
+
+class Unfixable(Exception):
+     def __init__(self, s):
+         self.s = s
+     def __str__(self):
+         return self.s
+
+class ComplianceError(Exception):
+     def __init__(self, s):
+         self.s = s
+     def __str__(self):
+         return self.s
+
+if sysname != 'SunOS' :
+    sys.exit(RET_NA)
+
+users = {}
+for k in [ key for key in os.environ if key.startswith(PREFIX)]:
+    try:
+        users.update(json.loads(os.environ[k]))
+    except ValueError:
+        print 'user syntax error on var[', k, '] = ',os.environ[k]
+
+if len(users) == 0:
+    print "no applicable variable found in rulesets",PREFIX
+    sys.exit(RET_NA)
+
+def fixable():
+    return RET_NA
+
+def fixshell(user, shell):
+    from subprocess import Popen 
+    p = Popen([ 'usermod', '-s', shell, user ])
+    out, err = p.communicate()
+    r = p.returncode    
+    if r == 0:
+        return RET_OK
+    else:
+        return RET_ERR
+
+def checkshell(user, shell, verbose=False):
+    import pwd
+    try:
+        userinfo=pwd.getpwnam(user)
+    except KeyError:
+        if verbose:
+            print 'user', user, 'does not exist'
+        return RET_OK
+    if userinfo.pw_shell == shell:
+        if verbose:
+            print 'OK: current user', user, 'shell=', shell
+        return RET_OK
+    else:
+        if verbose:
+            print >>sys.stderr, 'current user', user, 'shell:', userinfo.pw_shell
+        return RET_ERR 
+
+def check1(user, props, verbose=False):
+    r = 0
+    if "shell" in props:
+        r += checkshell(user, props["shell"], verbose)
+    return r
+
+def fix1(user, props, verbose=False):
+    r = 0
+    if "shell" in props:
+        if checkshell(user, props["shell"]) != RET_OK:
+             r += fixshell(user, props["shell"])
+    return r
+
+def check():
+    r = 0
+    for user in users:
+        r += check1(user, users[user], verbose=True)
+    return r
+
+def fix():
+    r = 0
+    for user in users:
+        r += fix1(user, users[user])
+    return r
+
+#
+# Main
+#
+if len(sys.argv) != 2:
+    print >>sys.stderr, "need argument"
+    sys.exit(RET_ERR)
+try:
+    if sys.argv[1] == 'check':
+        RET = check()
+    elif sys.argv[1] == 'fix':
+        RET = fix()
+    elif sys.argv[1] == 'fixable':
+        RET = fixable()
+    else:
+        print >>sys.stderr, "unsupported argument '%s'"%sys.argv[1]
+        RET = RET_ERR
+except:
+    import traceback
+    traceback.print_exc()
+    sys.exit(RET_ERR)
+sys.exit(RET)
