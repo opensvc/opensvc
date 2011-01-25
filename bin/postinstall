@@ -5,10 +5,12 @@ import shutil
 import glob
 from subprocess import *
 
+python_name = 'python2.6'
+
 sysname, nodename, x, x, machine = os.uname()
 
 def python_path():
-    python_exe = 'python2.6'
+    python_exe = python_name
     for path in os.environ["PATH"].split(os.pathsep):
         exe_file = os.path.join(path, python_exe)
         if os.path.exists(exe_file) and os.access(exe_file, os.X_OK):
@@ -18,22 +20,18 @@ def python_path():
 def install_cron():
     """install opensvc cron jobs
     """
-    if sysname == 'SunOS' or sysname == 'FreeBSD' :
-        path = 'PATH=$PATH:'+python_path()+' '
-    else:
-        path = ''
 
     agt = '/opt/opensvc/bin/perfagt.'+sysname
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && " + path + " /opt/opensvc/bin/svcmon --updatedb >/dev/null 2>&1",
+           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb >/dev/null 2>&1",
            'marker': 'svcmon --updatedb',
            'ok': False
     },{
            'sched': "0 4 * * *",
            'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && " + path + " /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1",
+           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1",
            'marker': 'opensvc.daily',
            'ok': False
     },{
@@ -378,12 +376,31 @@ def install_bash_completion():
     shutil.copyfile(src, dst)
     os.chmod(dst, 0644)
 
-move_usr_to_opt()
-missing_dirs()
-convert_svclinks()
-install_cron()
-install_rc()
-gen_keys()
-install_profile()
-install_user()
-install_bash_completion()
+def install_link(source, target):
+    if source == '' or target == '':
+        return False
+    if os.path.realpath(source) == os.path.realpath(target):
+        return True
+    if os.path.exists(target):
+        os.unlink(target)
+    os.symlink(source,target)
+
+def install_pythonlink():
+    source =  os.path.join(python_path(), python_name)
+    target = '/opt/opensvc/bin/python'
+    return install_link(source=source, target=target)
+
+try:
+    install_pythonlink()
+    move_usr_to_opt()
+    missing_dirs()
+    convert_svclinks()
+    install_cron()
+    install_rc()
+    gen_keys()
+    install_profile()
+    install_user()
+    install_bash_completion()
+except:
+    import sys
+    sys.exit(1)
