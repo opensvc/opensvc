@@ -6,6 +6,7 @@ log/
 var/
 test/
 tmp/
+bin/python
 lib/version.py
 bin/pkg/release_*
 .hg/
