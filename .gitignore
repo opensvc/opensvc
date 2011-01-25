@@ -9,6 +9,7 @@ tmp/
 bin/python
 lib/version.py
 bin/pkg/release_*
+bin/python
 .hg/
 .hgignore
 lib/rcLocalEnv.py
