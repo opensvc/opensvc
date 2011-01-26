@@ -1,21 +1,26 @@
 #!/opt/opensvc/bin/python
-""" module use OSVC_COMP_USER_... vars
-    which define {'username':{'propname':'propval',... }, ...}
+""" 
+module use OSVC_COMP_USER_... vars
+which define {'username':{'propname':'propval',... }, ...}
 
-    example: 
-        {"tibco":{"shell":"/bin/ksh","gecos":"agecos",},
-         "tibco1":{"shell":"/bin/tcsh","gecos":"another gecos",},
-	}
+example: 
+{"tibco":{"shell":"/bin/ksh","gecos":"agecos",},
+ "tibco1":{"shell":"/bin/tcsh","gecos":"another gecos",},
+}
 
-    when propname is shell, module verify that username shell is correct
-    when propname is uid, TBD
-    when propname is gecos, TBD
-    when propname is gid, TBD
+supported dictionnary keys:
+- uid
+- gid
+- gecos
+- homedir
+- shell
 """
 
 import os
 import sys
 import json
+import pwd
+from subprocess import Popen 
 
 RET_OK = 0
 RET_ERR = 1
@@ -25,21 +30,26 @@ RET = RET_ERR
 
 PREFIX = 'OSVC_COMP_USER_'
 
+pwt = {
+    'shell': 'pw_shell',
+    'homedir': 'pw_dir',
+    'uid': 'pw_uid',
+    'gid': 'pw_gid',
+    'gecos': 'pw_gecos',
+}
+
+usermod_p = {
+    'shell': '-s',
+    'homedir': '-d -m',
+    'uid': '-u',
+    'gid': '-g',
+    'gecos': '-c',
+}
+
 sysname, nodename, x, x, machine = os.uname()
 
-class Unfixable(Exception):
-     def __init__(self, s):
-         self.s = s
-     def __str__(self):
-         return self.s
-
-class ComplianceError(Exception):
-     def __init__(self, s):
-         self.s = s
-     def __str__(self):
-         return self.s
-
-if sysname != 'SunOS' :
+if sysname not in ['SunOS', 'Linux']:
+    print 'module not supported on', sysname
     sys.exit(RET_NA)
 
 users = {}
@@ -56,9 +66,10 @@ if len(users) == 0:
 def fixable():
     return RET_NA
 
-def fixshell(user, shell):
-    from subprocess import Popen 
-    p = Popen([ 'usermod', '-s', shell, user ])
+def fix_item(user, item, target):
+    cmd = ['usermod', usermod_p[item], str(target), user]
+    print ' '.join(cmd)
+    p = Popen(cmd)
     out, err = p.communicate()
     r = p.returncode    
     if r == 0:
@@ -66,46 +77,51 @@ def fixshell(user, shell):
     else:
         return RET_ERR
 
-def checkshell(user, shell, verbose=False):
-    import pwd
-    try:
-        userinfo=pwd.getpwnam(user)
-    except KeyError:
+def check_item(user, item, target, current, verbose=False):
+    if target == current:
         if verbose:
-            print 'user', user, 'does not exist'
-        return RET_OK
-    if userinfo.pw_shell == shell:
-        if verbose:
-            print 'OK: current user', user, 'shell=', shell
+            print 'OK: user:', user, item+':', current
         return RET_OK
     else:
         if verbose:
-            print >>sys.stderr, 'current user', user, 'shell:', userinfo.pw_shell
+            print >>sys.stderr, 'user:', user, item+':', current, 'target:', target
         return RET_ERR 
 
-def check1(user, props, verbose=False):
+def check_user(user, props):
     r = 0
-    if "shell" in props:
-        r += checkshell(user, props["shell"], verbose)
+    try:
+        userinfo=pwd.getpwnam(user)
+    except KeyError:
+        print 'user', user, 'does not exist'
+        return RET_OK
+    for prop in pwt:
+        if prop in props:
+            r += check_item(user, prop, props[prop], getattr(userinfo, pwt[prop]), verbose=True)
     return r
 
-def fix1(user, props, verbose=False):
+def fix_user(user, props):
     r = 0
-    if "shell" in props:
-        if checkshell(user, props["shell"]) != RET_OK:
-             r += fixshell(user, props["shell"])
+    try:
+        userinfo=pwd.getpwnam(user)
+    except KeyError:
+        print 'user', user, 'does not exist'
+        return RET_OK
+    for prop in pwt:
+        if prop in props and \
+           check_item(user, prop, props[prop], getattr(userinfo, pwt[prop])) != RET_OK:
+            r += fix_item(user, prop, props[prop])
     return r
 
 def check():
     r = 0
-    for user in users:
-        r += check1(user, users[user], verbose=True)
+    for user, props in users.items():
+        r += check_user(user, props)
     return r
 
 def fix():
     r = 0
-    for user in users:
-        r += fix1(user, users[user])
+    for user, props in users.items():
+        r += fix_user(user, props)
     return r
 
 #
