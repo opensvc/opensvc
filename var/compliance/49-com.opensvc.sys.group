@@ -1,0 +1,175 @@
+#!/opt/opensvc/bin/python
+""" 
+module use OSVC_COMP_GROUP_... vars
+which define {'groupname':{'propname':'propval',... }, ...}
+
+example: 
+{"tibco":{"gid":1000,"members":"tibco,tibadm",},
+ "tibco1":{"gid":1001,"members":"tibco",},
+}
+
+supported dictionnary keys:
+- gid
+
+dictionnary keys used by another module:
+- members
+"""
+
+import os
+import sys
+import json
+import grp
+from subprocess import Popen 
+
+RET_OK = 0
+RET_ERR = 1
+RET_NA = 2
+
+RET = RET_ERR
+
+PREFIX = 'OSVC_COMP_GROUP_'
+
+grt = {
+    'gid': 'gr_gid',
+}
+
+groupmod_p = {
+    'gid': '-g',
+}
+
+sysname, nodename, x, x, machine = os.uname()
+
+if sysname not in ['SunOS', 'Linux']:
+    print 'module not supported on', sysname
+    sys.exit(RET_NA)
+
+groups = {}
+for k in [ key for key in os.environ if key.startswith(PREFIX)]:
+    try:
+        groups.update(json.loads(os.environ[k]))
+    except ValueError:
+        print 'group syntax error on var[', k, '] = ',os.environ[k]
+
+if len(groups) == 0:
+    print "no applicable variable found in rulesets",PREFIX
+    sys.exit(RET_NA)
+
+def fixable():
+    return RET_NA
+
+def fix_item(group, item, target):
+    if item in groupmod_p:
+        cmd = ['groupmod', groupmod_p[item], str(target), group]
+        print ' '.join(cmd)
+        p = Popen(cmd)
+        out, err = p.communicate()
+        r = p.returncode    
+        if r == 0:
+            return RET_OK
+        else:
+            return RET_ERR
+    else:
+        print >>sys.stderr, 'no fix implemented for', item
+        return RET_ERR
+
+def check_item(group, item, target, current, verbose=False):
+    if target == current:
+        if verbose:
+            print 'OK: group:', group, item+':', current
+        return RET_OK
+    else:
+        if verbose:
+            print >>sys.stderr, 'group:', group, item+':', current, 'target:', target
+        return RET_ERR 
+
+def try_create_group(props):
+    #   
+    # don't try to create group if passwd db is not 'files'
+    # beware: 'files' db is the implicit default
+    #   
+    if 'db' in props and props['db'] != 'files':
+        return False
+    if set(grt.keys()) <= set(props.keys()):
+        return True
+    return False
+
+def check_group(group, props):
+    r = 0
+    try:
+        groupinfo = grp.getgrnam(group)
+    except KeyError:
+        if try_create_group(props):
+            print >>sys.stderr, 'group', group, 'does not exist'
+            return RET_ERR
+        else:
+            print 'group', group, 'does not exist and not enough info to create it'
+            return RET_OK
+    for prop in grt:
+        if prop in props:
+            r |= check_item(group, prop, props[prop], getattr(groupinfo, grt[prop]), verbose=True)
+    return r
+
+def create_group(group, props):
+    cmd = ['groupadd']
+    for item in grt:
+        cmd += [groupmod_p[item], str(props[item])]
+    cmd += [group]
+    print ' '.join(cmd)
+    p = Popen(cmd)
+    out, err = p.communicate()
+    r = p.returncode    
+    if r == 0:
+        return RET_OK
+    else:
+        return RET_ERR
+
+def fix_group(group, props):
+    r = 0
+    try:
+        groupinfo = grp.getgrnam(group)
+    except KeyError:
+        if try_create_group(props):
+            return create_group(group, props)
+        else:
+            print 'group', group, 'does not exist'
+            return RET_OK
+    for prop in grt:
+        if prop in props and \
+           check_item(group, prop, props[prop], getattr(groupinfo, grt[prop])) != RET_OK:
+            r |= fix_item(group, prop, props[prop])
+    return r
+
+def check():
+    r = 0
+    for group, props in groups.items():
+        r |= check_group(group, props)
+    return r
+
+def fix():
+    r = 0
+    for group, props in groups.items():
+        r |= fix_group(group, props)
+    return r
+
+#
+# Main
+#
+if len(sys.argv) != 2:
+    print >>sys.stderr, "need argument"
+    sys.exit(RET_ERR)
+try:
+    if sys.argv[1] == 'check':
+        RET = check()
+    elif sys.argv[1] == 'fix':
+        RET = fix()
+    elif sys.argv[1] == 'fixable':
+        RET = fixable()
+    else:
+        print >>sys.stderr, "unsupported argument '%s'"%sys.argv[1]
+        RET = RET_ERR
+except:
+    import traceback
+    traceback.print_exc()
+    sys.exit(RET_ERR)
+
+sys.exit(RET)

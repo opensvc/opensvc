@@ -20,7 +20,7 @@ import os
 import sys
 import json
 import pwd
-from subprocess import Popen 
+from subprocess import Popen, list2cmdline
 
 RET_OK = 0
 RET_ERR = 1
@@ -40,7 +40,7 @@ pwt = {
 
 usermod_p = {
     'shell': '-s',
-    'homedir': '-d -m',
+    'homedir': '-m -d',
     'uid': '-u',
     'gid': '-g',
     'gecos': '-c',
@@ -67,8 +67,8 @@ def fixable():
     return RET_NA
 
 def fix_item(user, item, target):
-    cmd = ['usermod', usermod_p[item], str(target), user]
-    print ' '.join(cmd)
+    cmd = ['usermod'] + usermod_p[item].split() + [str(target), user]
+    print list2cmdline(cmd)
     p = Popen(cmd)
     out, err = p.communicate()
     r = p.returncode    
@@ -92,36 +92,71 @@ def check_user(user, props):
     try:
         userinfo=pwd.getpwnam(user)
     except KeyError:
-        print 'user', user, 'does not exist'
-        return RET_OK
+        if try_create_user(props):
+            print >>sys.stderr, 'user', user, 'does not exist'
+            return RET_ERR
+        else:
+            print 'user', user, 'does not exist and not enough info to create it'
+            return RET_OK
     for prop in pwt:
         if prop in props:
-            r += check_item(user, prop, props[prop], getattr(userinfo, pwt[prop]), verbose=True)
+            r |= check_item(user, prop, props[prop], getattr(userinfo, pwt[prop]), verbose=True)
     return r
+
+def try_create_user(props):
+    #
+    # don't try to create user if passwd db is not 'files'
+    # beware: 'files' db is the implicit default
+    #
+    if 'db' in props and props['db'] != 'files':
+        return False
+    if set(pwt.keys()) <= set(props.keys()):
+        return True
+    return False
+
+def create_user(user, props):
+    cmd = ['useradd']
+    for item in pwt:
+        prop = str(props[item])
+        if len(prop) == 0:
+            continue
+        cmd = cmd + usermod_p[item].split() + [prop]
+    cmd += [user]
+    print list2cmdline(cmd)
+    p = Popen(cmd)
+    out, err = p.communicate()
+    r = p.returncode    
+    if r == 0:
+        return RET_OK
+    else:
+        return RET_ERR
 
 def fix_user(user, props):
     r = 0
     try:
         userinfo=pwd.getpwnam(user)
     except KeyError:
-        print 'user', user, 'does not exist'
-        return RET_OK
+        if try_create_user(props):
+            return create_user(user, props)
+        else:
+            print 'user', user, 'does not exist and not enough info to create it'
+            return RET_OK
     for prop in pwt:
         if prop in props and \
            check_item(user, prop, props[prop], getattr(userinfo, pwt[prop])) != RET_OK:
-            r += fix_item(user, prop, props[prop])
+            r |= fix_item(user, prop, props[prop])
     return r
 
 def check():
     r = 0
     for user, props in users.items():
-        r += check_user(user, props)
+        r |= check_user(user, props)
     return r
 
 def fix():
     r = 0
     for user, props in users.items():
-        r += fix_user(user, props)
+        r |= fix_user(user, props)
     return r
 
 #
