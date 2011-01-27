@@ -202,6 +202,7 @@ def sync(self, type):
     if "delay_snap" in self.tags:
         if not hasattr(self.rset, 'snaps'):
             Snap = lookup_snap_mod()
+            self.rset.snaps.log = self.log
             self.rset.snaps = Snap.Snap(self.rid)
         self.rset.snaps.try_snap(self.rset, type, rid=self.rid)
 
@@ -282,6 +283,7 @@ class Rsync(Res.Resource):
         Snap = lookup_snap_mod()
         try:
             rset.snaps = Snap.Snap(self.rid)
+            rset.snaps.log = self.log
             rset.snaps.try_snap(rset, action)
         except ex.syncNotSnapable:
             raise ex.excError

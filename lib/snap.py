@@ -101,7 +101,7 @@ class Snap(Res.Resource):
                 ex.syncSnapCreateError, ex.syncSnapDestroyError):
                 """Clean up the mess
                 """
-                self.snap_cleanup(snaps)
+                self.snap_cleanup(self.snaps)
                 raise ex.excError
             except:
                 raise
