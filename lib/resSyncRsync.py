@@ -276,6 +276,7 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
         if not need_snap:
+            self.log.debug("snap not needed")
             return
 
         Snap = lookup_snap_mod()

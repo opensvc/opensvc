@@ -85,6 +85,7 @@ class Snap(Res.Resource):
 
             if (action == "syncnodes" and not 'nodes' in r.target) or \
                (action == "syncdrp" and not 'drpnodes' in r.target):
+                self.log.debug("action %s but resource target is %s"%(action, r.target))
                 continue
 
             mounts_h = find_mounts(r, mounts_h)
