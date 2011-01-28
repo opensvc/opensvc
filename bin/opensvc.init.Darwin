@@ -21,7 +21,7 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/opt/opensvc/bin/allservices</string>
-		<string>--parallel</string>
+		<string>--parallel --cluster</string>
 		<string>startstandby</string>
 	</array>
 </dict>

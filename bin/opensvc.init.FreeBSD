@@ -13,7 +13,7 @@ allprimaryservices=${osvc_path}/allprimaryservices
 
 case $1 in
 faststart)
-	${allservices} ${osvc_opts} startstandby
+	${allservices} ${osvc_opts} --cluster startstandby
 	${allprimaryservices} ${osvc_opts} start
 	;;
 faststop)

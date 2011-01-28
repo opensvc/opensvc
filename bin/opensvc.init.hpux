@@ -26,7 +26,7 @@ start)
 	if [ -x $agt ] ; then
 		$agt
 	fi
-	${allservices} ${osvc_opts} startstandby
+	${allservices} ${osvc_opts} --cluster startstandby
 	${allprimaryservices} ${osvc_opts} start
 	;;
 stop_msg)
