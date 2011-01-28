@@ -425,7 +425,7 @@ class Svc(Resource, Freezer):
         if not self.has_res_set(['hb.openha', 'hb.linuxha']):
             return
         if not self.cluster:
-            self.log.error("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
+            self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
             raise ex.excError
 
     def starthb(self):
