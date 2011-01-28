@@ -45,6 +45,8 @@ class Drbd(Res.Resource):
         self.drbdadm = None
         self.always_on = always_on
         self.disks = set()
+        if 'prevg' not in self.tags and 'postvg' not in self.tags:
+            tags |= set(['postvg'])
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
