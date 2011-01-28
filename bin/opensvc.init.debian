@@ -12,13 +12,12 @@
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
 allservices=${osvc_path}/allservices
-allsecondaryservices=${osvc_path}/allsecondaryservices
 allprimaryservices=${osvc_path}/allprimaryservices
 
 case $1 in
 start)
+	${allservices} ${osvc_opts} startstandby
 	${allprimaryservices} ${osvc_opts} start
-	${allsecondaryservices} ${osvc_opts} startstandby
 	;;
 stop)
 	${allservices} ${osvc_opts} --force stop
