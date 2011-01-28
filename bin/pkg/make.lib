@@ -29,7 +29,7 @@ function prepare_chroot {
 	EXCL="$EXCL --exclude=var/host_mode"
 	EXCL="$EXCL --exclude='var/lock/*'"
 	EXCL="$EXCL --exclude='var/cache/*'"
-	EXCL="$EXCL --exclude='lib/rcLocalEnv.py'"
+	EXCL="$EXCL --exclude=lib/rcLocalEnv.py"
 	cd $OSVC || return 1
 	tar cf - $EXCL bin lib usr | tar xf - -C $CHROOT/opt/opensvc || return 1
 	touch $CHROOT/opt/opensvc/var/host_mode || return 1
