@@ -239,6 +239,8 @@ class Compliance(object):
             else:
                 a.append(' %s (%s)'%(rule['name'],rule['filter']))
             for var, val in rule['vars']:
+                if (isinstance(val, str) or isinstance(val, unicode)) and ' ' in val:
+                    val = repr(val)
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
