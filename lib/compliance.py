@@ -134,7 +134,11 @@ class Module(object):
                 e = p.stderr.read(1)
                 if e == '':
                     break
-                if log[-1] == '\n':
+                try:
+                    if log[-1] == '\n':
+                        e = "ERR: "+e
+                except:
+                    # here len(log) is 0
                     e = "ERR: "+e
                 sys.stderr.write(e)
                 sys.stderr.flush()
