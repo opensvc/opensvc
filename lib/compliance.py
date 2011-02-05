@@ -1,11 +1,13 @@
 from stat import *
 import os
+import sys
 import re
 import datetime
 import rcExceptions as ex
 import xmlrpcClient
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
+from subprocess import *
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -112,25 +114,53 @@ class Module(object):
     def do_action(self, action):
         start = datetime.datetime.now()
         cmd = [self.executable, action]
-        print "ACTION: %s"%action
-        print "START: %s"%str(start)
-        print "COMMAND: %s"%' '.join(cmd)
+        log = ''
+        print "ACTION:   %s"%action
+        print "START:    %s"%str(start)
+        print "COMMAND:  %s"%' '.join(cmd)
+        print "LOG:"
+
+        def poll_pipes(log, last=False):
+            while True:
+                o = p.stdout.read(1)
+                if o == '':
+                    break
+                sys.stdout.write(o)
+                sys.stdout.flush()
+                log += o
+                if not last and o == '\n':
+                    break
+            while True:
+                e = p.stderr.read(1)
+                if e == '':
+                    break
+                if log[-1] == '\n':
+                    e = "ERR: "+e
+                sys.stderr.write(e)
+                sys.stderr.flush()
+                log += e
+                if not last and e == '\n':
+                    break
+            return log
+
         try:
-            (out, err, ret) = justcall(cmd)
+            import tempfile
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            while True:
+                log = poll_pipes(log)
+                if p.poll() != None:
+                    log = poll_pipes(log, last=True)
+                    break
         except OSError, e:
             if e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
         end = datetime.datetime.now()
-        for line in set(err.split('\n'))-set(['']):
-            out += "ERR: %s\n"%line
-        print "OUTPUT:"
-        print out[0:-1]
-        print "RCODE: %d"%ret
+        print "RCODE:    %d"%p.returncode
         print "DURATION: %s"%str(end-start)
-        self.log_action(out,ret,action)
-        return ret
+        self.log_action(log, p.returncode, action)
+        return p.returncode
 
     def check(self):
         return self.action('check')
