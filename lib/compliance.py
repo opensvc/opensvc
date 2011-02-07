@@ -120,9 +120,13 @@ class Module(object):
         print "COMMAND:  %s"%' '.join(cmd)
         print "LOG:"
 
+        import tempfile
+        fo = tempfile.NamedTemporaryFile()
+        fe = tempfile.NamedTemporaryFile()
+
         def poll_pipes(log, last=False):
             while True:
-                o = p.stdout.read(1)
+                o = fo.read(1)
                 if o == '':
                     break
                 sys.stdout.write(o)
@@ -131,7 +135,7 @@ class Module(object):
                 if not last and o == '\n':
                     break
             while True:
-                e = p.stderr.read(1)
+                e = fe.read(1)
                 if e == '':
                     break
                 try:
@@ -148,18 +152,21 @@ class Module(object):
             return log
 
         try:
-            import tempfile
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            p = Popen(cmd, stdout=fo, stderr=fe)
             while True:
                 log = poll_pipes(log)
                 if p.poll() != None:
                     log = poll_pipes(log, last=True)
                     break
         except OSError, e:
+            fo.close()
+            fe.close()
             if e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
+        fo.close()
+        fe.close()
         end = datetime.datetime.now()
         print "RCODE:    %d"%p.returncode
         print "DURATION: %s"%str(end-start)
