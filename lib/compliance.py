@@ -121,42 +121,51 @@ class Module(object):
         print "LOG:"
 
         import tempfile
+        import time
         fo = tempfile.NamedTemporaryFile()
         fe = tempfile.NamedTemporaryFile()
 
-        def poll_pipes(log, last=False):
+        def poll_out():
+            fop = fo.tell()
+            line = fo.readline()
+            if not line:
+                fo.seek(fop)
+                return None
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            return line
+
+        def poll_err():
+            fep = fe.tell()
+            line = fe.readline()
+            if not line:
+                fe.seek(fep)
+                return None
+            line = 'ERR: '+line
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            return line
+
+        def poll_pipes(log):
+            i = 0
             while True:
-                o = fo.read(1)
-                if o == '':
-                    break
-                sys.stdout.write(o)
-                sys.stdout.flush()
-                log += o
-                if not last and o == '\n':
-                    break
-            while True:
-                e = fe.read(1)
-                if e == '':
-                    break
-                try:
-                    if log[-1] == '\n':
-                        e = "ERR: "+e
-                except:
-                    # here len(log) is 0
-                    e = "ERR: "+e
-                sys.stderr.write(e)
-                sys.stderr.flush()
-                log += e
-                if not last and e == '\n':
+                o = poll_out()
+                e = poll_err()
+                if o is not None:
+                    log += o
+                if e is not None:
+                    log += e
+                if o is None and e is None:
                     break
             return log
 
         try:
             p = Popen(cmd, stdout=fo, stderr=fe)
             while True:
+                time.sleep(0.1)
                 log = poll_pipes(log)
                 if p.poll() != None:
-                    log = poll_pipes(log, last=True)
+                    log += poll_pipes(log)
                     break
         except OSError, e:
             fo.close()
