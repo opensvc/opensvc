@@ -50,6 +50,8 @@ parser.add_option("-f", "--force", default=False, action="store_true", dest="for
                   help="force action, ignore sanity check warnings")
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="option to set when excuting from a clusterware to disable safety net")
+parser.add_option("-i", "--interactive", default=False, action="store_true", dest="interactive",
+                  help="prompt user for a choice instead of going for defaults or failing")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
@@ -153,7 +155,7 @@ if options.parallel:
     p = {}
 
 if action in ['create', 'update']:
-    r = getattr(svcBuilder, action)(svcnames, options.resource)
+    r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive)
     sys.exit(r)
 elif action in ['disable', 'enable', 'delete']:
     r = getattr(svcBuilder, action)(svcnames, rid)

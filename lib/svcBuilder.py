@@ -1168,7 +1168,7 @@ def delete(svcnames, rid=[]):
         r |= delete_one(svcname, rid)
     return r
 
-def create(svcname, resources=[]):
+def create(svcname, resources=[], interactive=False):
     if not isinstance(svcname, list):
         print >>sys.stderr, "ouch, svcname should be a list object"
         return 1
@@ -1239,10 +1239,29 @@ def create(svcname, resources=[]):
         else:
             defaults.update(d)
 
+    from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+    try:
+        keys = KeyDict()
+        defaults.update(keys.update('DEFAULT', defaults))
+        for section, d in sections.items():
+            sections[section].update(keys.update(section, d))
+    except (MissKeyNoDefault, KeyInvalidValue):
+        if not interactive:
+            return 1
+
+    try:
+        if interactive:
+            defaults, sections = keys.form(defaults, sections)
+    except KeyboardInterrupt:
+        sys.stderr.write("Abort\n")
+        return 1
+
     conf = ConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
         conf.add_section(section)
         for key, val in d.items():
+            if key == 'rtype':
+                continue
             conf.set(section, key, val)
 
     conf.write(f)
@@ -1260,7 +1279,7 @@ def create(svcname, resources=[]):
     if not os.path.exists(svcname+'.d'):
         os.symlink(initdir, svcname+'.d')
 
-def update(svcname, resources=[]):
+def update(svcname, resources=[], interactive=False):
     fix_default_section(svcname)
     if not isinstance(svcname, list):
         print >>sys.stderr, "ouch, svcname should be a list object"
