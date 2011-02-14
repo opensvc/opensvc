@@ -13,6 +13,7 @@ class Keyword(object):
                  rtype=None,
                  order=100,
                  required=False,
+                 at=False,
                  default=None,
                  validator=None,
                  candidates=None,
@@ -22,6 +23,7 @@ class Keyword(object):
         self.keyword = keyword
         self.rtype = rtype
         self.order = order
+        self.at = at
         self.required = required
         self.default = default
         self.validator = validator
@@ -60,8 +62,12 @@ class Keyword(object):
         s += "  candidates:  %s\n"%str(self.candidates)
         s += "  validator:   %s\n"%str(validator)
         s += "  depends:     %s\n"%depends
+        s += "  @node:       %s\n"%str(self.at)
         if self.text:
             s += wrapper.fill("  help:        "+self.text)
+        if self.at:
+            s += "\n\nPrefix the value with '@node ' to specify a node-specific value.\n"
+            s += "You will be prompted for new values until you submit an empty value.\n"
         return s
 
     def form(self, d):
@@ -83,9 +89,12 @@ class Keyword(object):
         else:
             default_prompt = ""
 
+        req_satisfied = False
         while True:
             val = raw_input(self.keyword+default_prompt+"> ")
             if len(val) == 0:
+                if req_satisfied:
+                    return d
                 if default is None:
                     if self.required:
                         print "value required"
@@ -98,8 +107,23 @@ class Keyword(object):
                    val not in self.candidates:
                     print "invalid value"
                     continue
-            d[self.keyword] = val
-            return d
+            if self.at and val[0] == '@':
+                l = val.split()
+                if len(l) < 2:
+                    print "invalid value"
+                    continue
+                val = ' '.join(l[1:])
+                d[self.keyword+l[0]] = val
+                req_satisfied = True
+            else:
+                d[self.keyword] = val
+                req_satisfied = True
+            if self.at:
+                # loop for more key@node = values
+                print "More '%s' ? <enter> to step to the next parameter."%self.keyword
+                continue
+            else:
+                return d
 
 class Section(object):
     def __init__(self, section):
@@ -239,11 +263,9 @@ class KeywordStore(dict):
                 indices.append(int(sindex))
             except:
                 continue
-        print "indices for", section, ":", indices
         i = 0
         while True:
             if i not in indices:
-                print "allocated index", i
                 return i
             i += 1
 
@@ -499,8 +521,51 @@ class KeyDict(KeywordStore):
         self += Keyword(
                   section="sync",
                   keyword="src",
+                  rtype="zfs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="Source dataset of the sync."
+                )
+        self += Keyword(
+                  section="sync",
+                  keyword="dst",
+                  rtype="zfs",
+                  order=11,
+                  at=True,
+                  required=True,
+                  text="Destination dataset of the sync."
+                )
+        self += Keyword(
+                  section="sync",
+                  keyword="target",
+                  rtype="zfs",
+                  order=12,
+                  required=True,
+                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+                )
+        self += Keyword(
+                  section="sync",
+                  keyword="recursive",
+                  rtype="zfs",
+                  order=13,
+                  default=True,
+                  candidates=(True, False),
+                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+                )
+        self += Keyword(
+                  section="sync",
+                  keyword="tags",
+                  rtype="zfs",
+                  text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
+                )
+        self += Keyword(
+                  section="sync",
+                  keyword="src",
                   rtype="rsync",
                   order=10,
+                  at=True,
                   required=True,
                   text="Source of the sync. Can be a whitespace-separated list of files or dirs passed as-is to rsync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
                 )
@@ -580,6 +645,7 @@ class KeyDict(KeywordStore):
                   section="ip",
                   keyword="ipname",
                   order=12,
+                  at=True,
                   required=True,
                   text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter."
                 )
@@ -587,6 +653,7 @@ class KeyDict(KeywordStore):
                   section="ip",
                   keyword="ipdev",
                   order=11,
+                  at=True,
                   required=True,
                   text="The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
                 )
@@ -629,6 +696,7 @@ class KeyDict(KeywordStore):
                   section="pool",
                   keyword="poolname",
                   order=10,
+                  at=True,
                   text="The name of the zfs pool"
                 )
         self += Keyword(
@@ -660,6 +728,7 @@ class KeyDict(KeywordStore):
                   section="fs",
                   keyword="dev",
                   order=11,
+                  at=True,
                   required=True,
                   text="The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
                 )
@@ -694,6 +763,7 @@ class KeyDict(KeywordStore):
                   keyword="filer",
                   rtype="netapp",
                   required=True,
+                  at=True,
                   text="The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the filer@nodename syntax."
                 )
         self += Keyword(
@@ -731,6 +801,7 @@ class KeyDict(KeywordStore):
                   keyword="symdevs",
                   rtype="symclone",
                   required=True,
+                  at=True,
                   default=300,
                   text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename."
                 )
@@ -766,6 +837,7 @@ class KeyDict(KeywordStore):
                   section="vdisk",
                   keyword="path",
                   required=True,
+                  at=True,
                   text="Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
                 )
         self += Keyword(
