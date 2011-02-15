@@ -1382,7 +1382,7 @@ def _fix_default_section(svcname):
     found = False
     lines = []
     for line in f.readlines():
-        if line == '[default]\n':
+        if line.startswith('[default]'):
             line = '[DEFAULT]\n'
             found = True
         lines.append(line)
