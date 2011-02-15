@@ -191,6 +191,14 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
+        #
+        # this bug should have be fixed, but it is not the case with python
+        # 2.6.2 we ship for el5.
+        # it manifests as apache failing to spawn workers because they can't
+        # acquire stdin, closed upon thread startup.
+        #
+        sys.stdin = open(os.devnull)
+
         try:
             if not self.start_checks():
                 sys.exit(1)
