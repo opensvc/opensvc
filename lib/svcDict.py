@@ -149,6 +149,11 @@ class Section(object):
             return [k for k in self.keywords if k.rtype == rtype]
 
     def getkey(self, keyword, rtype=None):
+        if '@' in keyword:
+            l = keyword.split('@')
+            if len(l) != 2:
+                return None
+            keyword, node = l
         for k in self.keywords:
             if k.keyword == keyword and k.rtype == rtype:
                 return k
@@ -228,6 +233,8 @@ class KeywordStore(dict):
         # add missing required keys if they have a known default value
         for key in self.required_keys(section, rtype):
             if key.keyword in d:
+                continue
+            if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
                 continue
             if key.default is None:
                 sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
