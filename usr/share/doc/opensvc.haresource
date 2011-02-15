@@ -1,0 +1,24 @@
+#!/bin/sh -e
+#
+# This script is to be copied to /etc/ha.d/resource.d/ in
+# LinuxHA cluster setup and referenced in /etc/ha.d/haresources
+# with the line:
+#
+# node1 opensvc MailTo::root@localhost::Alert_Cluster_Failover
+#
+# (replace node1 with the appropriate node name)
+#
+
+osvc_path=/opt/opensvc/bin
+osvc_opts="--parallel --cluster"
+allservices=${osvc_path}/allservices
+
+case $1 in
+start)
+        ${allservices} ${osvc_opts} start
+        ;;
+stop)
+        ${allservices} ${osvc_opts} stop
+        ;;
+esac
+
