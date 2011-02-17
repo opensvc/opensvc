@@ -1267,7 +1267,7 @@ def create(svcname, resources=[], interactive=False):
     conf.write(f)
 
     os.chdir(rcEnv.pathetc)
-    if not os.path.islink(svcname):
+    if os.path.exists(svcname) and not os.path.islink(svcname):
         os.unlink(svcname)
     if not os.path.exists(svcname):
         os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
