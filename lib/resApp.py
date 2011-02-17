@@ -113,6 +113,7 @@ class Apps(Res.Resource):
                 return p.returncode
             else:
                 (out, err, ret) = justcall(cmd)
+                self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]"%(cmd, out, err, ret))
                 return ret
         except OSError, e:
             if e.errno == 8:
