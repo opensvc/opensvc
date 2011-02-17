@@ -173,6 +173,8 @@ class Apps(Res.Resource):
             self.app(name, 'start')
 
     def containerize(self):
+        if self.svc.containerize:
+            return
         try:
             container = __import__('rcContainer'+rcEnv.sysname)
         except ImportError:
