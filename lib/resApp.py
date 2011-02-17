@@ -153,7 +153,7 @@ class Apps(Res.Resource):
             return rcStatus.NA
         elif errs == 0:
             return rcStatus.UP
-        elif 0 in rets.values():
+        elif errs > 0:
             names = ', '.join([n for n in rets if rets[n] != 0 ])
             self.status_log("%s returned errors"%(names))
             return rcStatus.WARN
