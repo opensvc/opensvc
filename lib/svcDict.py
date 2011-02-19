@@ -377,6 +377,51 @@ class KeyDict(KeywordStore):
                 )
         self += Keyword(
                   section="DEFAULT",
+                  keyword="cluster_type",
+                  order=15,
+                  required=False,
+                  default="failover",
+                  candidates=["failover", "allactive", "flex", "autoflex"],
+                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range. autoflex: same as flex, but charge the collector to start the service on passive nodes when the average %cpu usage on active nodes > flex_cpu_high_threshold and stop the service on active nodes when the average %cpu usage on active nodes < flex_cpu_low_threshold."
+                )
+        self += Keyword(
+                  section="DEFAULT",
+                  keyword="flex_min_nodes",
+                  order=16,
+                  required=False,
+                  default=1,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
+                )
+        self += Keyword(
+                  section="DEFAULT",
+                  keyword="flex_max_nodes",
+                  order=16,
+                  required=False,
+                  default=0,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
+                )
+        self += Keyword(
+                  section="DEFAULT",
+                  keyword="flex_cpu_min_threshold",
+                  order=16,
+                  required=False,
+                  default=10,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Average CPU usage across the active cluster nodes below which the collector raises alerts and decides to stop service instances with autoflex cluster type."
+                )
+        self += Keyword(
+                  section="DEFAULT",
+                  keyword="flex_cpu_max_threshold",
+                  order=16,
+                  required=False,
+                  default=70,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Average CPU usage across the active cluster nodes above which the collector raises alerts and decides to start new service instances with autoflex cluster type."
+                )
+        self += Keyword(
+                  section="DEFAULT",
                   keyword="service_type",
                   order=15,
                   required=True,

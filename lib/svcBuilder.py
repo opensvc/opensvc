@@ -968,6 +968,64 @@ def build(name):
         del(svc)
         return None
 
+    if "cluster_type" in defaults:
+        svc.clustertype = defaults["cluster_type"]
+    else:
+        svc.clustertype = 'failover'
+    allowed_clustertype = ['failover', 'allactive', 'flex', 'autoflex']
+    if svc.clustertype not in allowed_clustertype:
+        log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
+        del(svc)
+        return None
+
+    if "flex_min_nodes" in defaults:
+        svc.flex_min_nodes = int(defaults["flex_min_nodes"])
+    else:
+        svc.flex_min_nodes = 1
+    if svc.flex_min_nodes < 1:
+        log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
+        del(svc)
+        return None
+    if svc.flex_min_nodes > len(svc.nodes):
+        log.error("invalid flex_min_nodes '%d' (>nb of nodes)."%svc.flex_min_nodes)
+        del(svc)
+        return None
+
+    if "flex_max_nodes" in defaults:
+        svc.flex_max_nodes = int(defaults["flex_max_nodes"])
+    else:
+        svc.flex_max_nodes = 0
+    if svc.flex_max_nodes < 0:
+        log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
+        del(svc)
+        return None
+
+    if "flex_cpu_low_threshold" in defaults:
+        svc.flex_cpu_low_threshold = int(defaults["flex_cpu_low_threshold"])
+    else:
+        svc.flex_cpu_low_threshold = 10
+    if svc.flex_cpu_low_threshold < 0:
+        log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
+        del(svc)
+        return None
+    if svc.flex_cpu_low_threshold > 100:
+        log.error("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
+        del(svc)
+        return None
+
+    if "flex_cpu_high_threshold" in defaults:
+        svc.flex_cpu_high_threshold = int(defaults["flex_cpu_high_threshold"])
+    else:
+        svc.flex_cpu_high_threshold = 10
+    if svc.flex_cpu_high_threshold < 0:
+        log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
+        del(svc)
+        return None
+    if svc.flex_cpu_high_threshold > 100:
+        log.error("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
+        del(svc)
+        return None
+
     if "service_type" in defaults:
         svc.svctype = defaults["service_type"]
     else:
