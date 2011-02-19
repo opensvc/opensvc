@@ -230,6 +230,14 @@ class SyncZfs(Res.Resource):
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             return
+
+        """ Refuse to sync from a flex non-primary node
+        """
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.autostart_node != rcEnv.nodename:
+            self.log.debug("won't sync this resource from a flex non-primary node")
+            return set([])
+
         self.get_info()
         if not self.snap_exists(self.src_snap_tosend):
             self.create_snap(self.src_snap_tosend)
