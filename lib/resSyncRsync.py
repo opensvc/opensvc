@@ -106,6 +106,13 @@ def nodes_to_sync(self, type=None, state="syncable", status=False):
         self.log.debug("won't sync this resource for a service not up")
         return set([])
 
+    """ Refuse to sync from a flex non-primary node
+    """
+    if self.svc.clustertype in ["flex", "autoflex"] and \
+       self.svc.autostart_node != rcEnv.nodename:
+        self.log.debug("won't sync this resource from a flex non-primary node")
+        return set([])
+
     """Discard the local node from the set
     """
     if type in self.target.keys():
@@ -328,7 +335,10 @@ class Rsync(Res.Resource):
         """ sync state on nodes where the service is not UP
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
+        if s['overall'].status != rcStatus.UP or \
+           (self.svc.clustertype in ['flex', 'autoflex'] and \
+            rcEnv.nodename != self.svc.autostart_node and \
+            s['overall'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in sync destination nodes")
                 return rcStatus.NA
