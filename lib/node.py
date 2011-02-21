@@ -99,6 +99,12 @@ class Node(Svc, Freezer):
         return getattr(self, a)()
 
     def check_timestamp(self, timestamp_f, comp='more', delay=10):
+        """ Return False if timestamp is fresher than now-interval
+            Return True otherwize.
+            Zero is a infinite interval
+        """
+        if delay == 0:
+            return False
         if not os.path.exists(timestamp_f):
             return True
         try:
