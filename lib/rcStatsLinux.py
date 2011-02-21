@@ -26,21 +26,8 @@ import rcStats
 class StatsProvider(rcStats.StatsProvider):
     def cpu(self, d, day, start, end):
         f = self.sarfile(day)
-        cols = ['date',
-                'cpu',
-                'usr',
-                'nice',
-                'sys',
-                'iowait',
-                'steal',
-                'irq',
-                'soft',
-                'guest',
-                'idle',
-                'nodename']
-
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-u', 'ALL', '-P', 'ALL', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         if ret != 0:
@@ -49,11 +36,45 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         for line in buff.split('\n'):
             l = line.split()
-            if len(l) == 8:
-                """ redhat 5
+            if len(l) == 7:
+                """ redhat 4
+                    18:50:01 CPU %user %nice %system %iowait %idle
                 """
-                l = l[0:7] + ['0', '0', '0', l[7]]
-            if len(l) != 11:
+		cols = ['date',
+			'cpu',
+			'usr',
+			'nice',
+			'sys',
+			'iowait',
+			'idle',
+			'nodename']
+            elif len(l) == 8:
+                """ redhat 5
+                    05:20:01 CPU %user %nice %system %iowait %steal %idle
+                """
+       		cols = ['date',
+			'cpu',
+			'usr',
+			'nice',
+			'sys',
+			'iowait',
+			'steal',
+			'idle',
+			'nodename']
+            elif len(l) == 11:
+		cols = ['date',
+			'cpu',
+			'usr',
+			'nice',
+			'sys',
+			'iowait',
+			'steal',
+			'irq',
+			'soft',
+			'guest',
+			'idle',
+			'nodename']
+            else:
                 continue
             if l[1] == 'CPU':
                 continue
