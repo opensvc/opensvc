@@ -106,6 +106,13 @@ def nodes_to_sync(self, type=None, state="syncable", status=False):
         self.log.debug("won't sync this resource for a service not up")
         return set([])
 
+    """ Refuse to sync from a flex non-primary node
+    """
+    if self.svc.clustertype in ["flex", "autoflex"] and \
+       self.svc.autostart_node != rcEnv.nodename:
+        self.log.debug("won't sync this resource from a flex non-primary node")
+        return set([])
+
     """Discard the local node from the set
     """
     if type in self.target.keys():
@@ -202,6 +209,7 @@ def sync(self, type):
     if "delay_snap" in self.tags:
         if not hasattr(self.rset, 'snaps'):
             Snap = lookup_snap_mod()
+            self.rset.snaps.log = self.log
             self.rset.snaps = Snap.Snap(self.rid)
         self.rset.snaps.try_snap(self.rset, type, rid=self.rid)
 
@@ -276,11 +284,13 @@ class Rsync(Res.Resource):
             raise ex.excAbortAction
 
         if not need_snap:
+            self.log.debug("snap not needed")
             return
 
         Snap = lookup_snap_mod()
         try:
             rset.snaps = Snap.Snap(self.rid)
+            rset.snaps.log = self.log
             rset.snaps.try_snap(rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
@@ -325,7 +335,10 @@ class Rsync(Res.Resource):
         """ sync state on nodes where the service is not UP
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
+        if s['overall'].status != rcStatus.UP or \
+           (self.svc.clustertype in ['flex', 'autoflex'] and \
+            rcEnv.nodename != self.svc.autostart_node and \
+            s['overall'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in sync destination nodes")
                 return rcStatus.NA

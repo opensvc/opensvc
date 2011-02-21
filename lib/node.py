@@ -30,6 +30,7 @@ class Options(object):
         self.force = False
         self.debug = False
         self.stats_file = None
+        self.stats_interval = 1680
         self.collect_date = None
         os.environ['LANG'] = 'C'
 
@@ -90,6 +91,7 @@ class Node(Svc, Freezer):
     def pushstats(self):
         xmlrpcClient.push_stats(force=self.options.force,
                                 file=self.options.stats_file,
+                                interval=self.options.stats_interval,
                                 collect_date=self.options.collect_date)
 
     def pushpkg(self):

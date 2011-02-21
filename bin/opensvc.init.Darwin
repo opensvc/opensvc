@@ -20,8 +20,8 @@
 	<string>com.opensvc.svcmgr</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/opt/opensvc/bin/allsecondaryservices</string>
-		<string>--parallel</string>
+		<string>/opt/opensvc/bin/allservices</string>
+		<string>--parallel --cluster</string>
 		<string>startstandby</string>
 	</array>
 </dict>

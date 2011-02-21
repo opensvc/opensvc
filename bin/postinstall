@@ -25,7 +25,7 @@ def install_cron():
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb >/dev/null 2>&1",
+           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb --maxdelaydb 120 >/dev/null 2>&1",
            'marker': 'svcmon --updatedb',
            'ok': False
     },{

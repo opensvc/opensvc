@@ -1,4 +1,4 @@
-svcs=$(ls /opt/opensvc/etc/*env 2>/dev/null|xargs -n1 basename|sed -e "s/.env//")
+svcs=$(ls /opt/opensvc/etc/*env 2>/dev/null|xargs -n1 basename 2>/dev/null|sed -e "s/.env//")
 
 service_opts="configure create disklist freeze frozen mount postsync presync print_status printsvc prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount --force --waitlock --debug --rid --tags"
 

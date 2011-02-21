@@ -1,11 +1,13 @@
 from stat import *
 import os
+import sys
 import re
 import datetime
 import rcExceptions as ex
 import xmlrpcClient
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
+from subprocess import *
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -112,25 +114,73 @@ class Module(object):
     def do_action(self, action):
         start = datetime.datetime.now()
         cmd = [self.executable, action]
-        print "ACTION: %s"%action
-        print "START: %s"%str(start)
-        print "COMMAND: %s"%' '.join(cmd)
+        log = ''
+        print "ACTION:   %s"%action
+        print "START:    %s"%str(start)
+        print "COMMAND:  %s"%' '.join(cmd)
+        print "LOG:"
+
+        import tempfile
+        import time
+        fo = tempfile.NamedTemporaryFile()
+        fe = tempfile.NamedTemporaryFile()
+
+        def poll_out():
+            fop = fo.tell()
+            line = fo.readline()
+            if not line:
+                fo.seek(fop)
+                return None
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            return line
+
+        def poll_err():
+            fep = fe.tell()
+            line = fe.readline()
+            if not line:
+                fe.seek(fep)
+                return None
+            line = 'ERR: '+line
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            return line
+
+        def poll_pipes(log):
+            i = 0
+            while True:
+                o = poll_out()
+                e = poll_err()
+                if o is not None:
+                    log += o
+                if e is not None:
+                    log += e
+                if o is None and e is None:
+                    break
+            return log
+
         try:
-            (out, err, ret) = justcall(cmd)
+            p = Popen(cmd, stdout=fo, stderr=fe)
+            while True:
+                time.sleep(0.1)
+                log = poll_pipes(log)
+                if p.poll() != None:
+                    log += poll_pipes(log)
+                    break
         except OSError, e:
+            fo.close()
+            fe.close()
             if e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
+        fo.close()
+        fe.close()
         end = datetime.datetime.now()
-        for line in set(err.split('\n'))-set(['']):
-            out += "ERR: %s\n"%line
-        print "OUTPUT:"
-        print out[0:-1]
-        print "RCODE: %d"%ret
+        print "RCODE:    %d"%p.returncode
         print "DURATION: %s"%str(end-start)
-        self.log_action(out,ret,action)
-        return ret
+        self.log_action(log, p.returncode, action)
+        return p.returncode
 
     def check(self):
         return self.action('check')
@@ -239,6 +289,8 @@ class Compliance(object):
             else:
                 a.append(' %s (%s)'%(rule['name'],rule['filter']))
             for var, val in rule['vars']:
+                if (isinstance(val, str) or isinstance(val, unicode)) and ' ' in val:
+                    val = repr(val)
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 

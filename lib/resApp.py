@@ -113,6 +113,7 @@ class Apps(Res.Resource):
                 return p.returncode
             else:
                 (out, err, ret) = justcall(cmd)
+                self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]"%(cmd, out, err, ret))
                 return ret
         except OSError, e:
             if e.errno == 8:
@@ -152,7 +153,7 @@ class Apps(Res.Resource):
             return rcStatus.NA
         elif errs == 0:
             return rcStatus.UP
-        elif 0 in rets.values():
+        elif errs > 0:
             names = ', '.join([n for n in rets if rets[n] != 0 ])
             self.status_log("%s returned errors"%(names))
             return rcStatus.WARN
@@ -172,6 +173,8 @@ class Apps(Res.Resource):
             self.app(name, 'start')
 
     def containerize(self):
+        if self.svc.containerize:
+            return
         try:
             container = __import__('rcContainer'+rcEnv.sysname)
         except ImportError:
@@ -191,6 +194,14 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files). Log the return code but
            don't stop on error.
         """
+        #
+        # this bug should have be fixed, but it is not the case with python
+        # 2.6.2 we ship for el5.
+        # it manifests as apache failing to spawn workers because they can't
+        # acquire stdin, closed upon thread startup.
+        #
+        sys.stdin = open(os.devnull)
+
         try:
             if not self.start_checks():
                 sys.exit(1)

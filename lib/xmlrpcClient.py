@@ -330,6 +330,11 @@ def push_service(svc):
     vars = ['svc_hostid',
             'svc_name',
             'svc_vmname',
+            'svc_cluster_type',
+            'svc_flex_min_nodes',
+            'svc_flex_max_nodes',
+            'svc_flex_cpu_low_threshold',
+            'svc_flex_cpu_high_threshold',
             'svc_type',
             'svc_nodes',
             'svc_drpnode',
@@ -347,6 +352,11 @@ def push_service(svc):
     vals = [repr(hostid),
             repr(svc.svcname),
             repr(svc.vmname),
+            repr(svc.clustertype),
+            repr(svc.flex_min_nodes),
+            repr(svc.flex_max_nodes),
+            repr(svc.flex_cpu_low_threshold),
+            repr(svc.flex_cpu_high_threshold),
             repr(svc.svctype),
             repr(' '.join(svc.nodes)),
             repr(svc.drpnode),
@@ -415,157 +425,6 @@ def push_disks(svc):
         )
 
 @xmlrpc_decorator
-def push_stats_cpu(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        import traceback
-        traceback.print_exc()
-        return
-    proxy.insert_stats_cpu(
-        ['date',
-         'cpu',
-         'usr',
-         'nice',
-         'sys',
-         'iowait',
-         'steal',
-         'irq',
-         'soft',
-         'guest',
-         'idle',
-         'nodename'],
-         s.stats_cpu(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_mem_u(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_mem_u(
-        ['date',
-         'kbmemfree',
-         'kbmemused',
-         'pct_memused',
-         'kbbuffers',
-         'kbcached',
-         'kbcommit',
-         'pct_commit',
-         'kbmemsys',
-         'nodename'],
-         s.stats_mem_u(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_proc(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_proc(
-        ['date',
-         'runq_sz',
-         'plist_sz',
-         'ldavg_1',
-         'ldavg_5',
-         'ldavg_15',
-         'nodename'],
-         s.stats_proc(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_swap(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_swap(
-        ['date',
-         'kbswpfree',
-         'kbswpused',
-         'pct_swpused',
-         'kbswpcad',
-         'pct_swpcad',
-         'nodename'],
-         s.stats_swap(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_block(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_block(
-        ['date',
-         'tps',
-         'rtps',
-         'wtps',
-         'rbps',
-         'wbps',
-         'nodename'],
-         s.stats_block(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_blockdev(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_blockdev(
-        ['date',
-         'dev',
-         'tps',
-         'rsecps',
-         'wsecps',
-         'avgrq_sz',
-         'avgqu_sz',
-         'await',
-         'svctm',
-         'pct_util',
-         'nodename'],
-         s.stats_blockdev(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_netdev_err(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_netdev_err(
-        ['date',
-         'dev',
-         'rxerrps',
-         'txerrps',
-         'collps',
-         'rxdropps',
-         'txdropps',
-         'nodename'],
-         s.stats_netdev_err(file, collect_date)
-    )
-
-@xmlrpc_decorator
-def push_stats_netdev(file, collect_date):
-    try:
-        s = __import__('rcStats'+sysname)
-    except:
-        return
-    proxy.insert_stats_netdev(
-        ['date',
-         'dev',
-         'rxpckps',
-         'txpckps',
-         'rxkBps',
-         'txkBps',
-         'nodename'],
-         s.stats_netdev(file, collect_date)
-    )
-
-@xmlrpc_decorator
 def push_stats_fs_u(l):
     proxy.insert_stats_fs_u(l[0], l[1])
 
@@ -621,17 +480,22 @@ def push_patch():
     proxy.delete_patch(rcEnv.nodename)
     proxy.insert_patch(vars, vals)
 
-def push_stats(force=False, file=None, collect_date=None):
+def push_stats(force=False, file=None, collect_date=None, interval=15):
     if not force and not stats_timestamp():
         return
-    push_stats_cpu(file, collect_date)
-    push_stats_mem_u(file, collect_date)
-    push_stats_proc(file, collect_date)
-    push_stats_swap(file, collect_date)
-    push_stats_block(file, collect_date)
-    push_stats_blockdev(file, collect_date)
-    push_stats_netdev_err(file, collect_date)
-    push_stats_netdev(file, collect_date)
+    try:
+        s = __import__('rcStats'+sysname)
+        sp = s.StatsProvider(collect_file=file,
+                             collect_date=collect_date,
+                             interval=interval)
+    except:
+        return
+    h = {}
+    for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
+                 'blockdev', 'netdev', 'netdev_err']:
+        h[stat] = sp.get(stat)
+    import cPickle
+    proxy.insert_stats(cPickle.dumps(h))
 
 def push_asset():
     try:

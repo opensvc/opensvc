@@ -145,6 +145,11 @@ class syncDds(Res.Resource):
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             return False
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.autostart_node != rcEnv.nodename:
+            self.log.debug("won't sync this resource from a flex non-primary node")
+            return set([])
+
         return True
 
     def syncfullsync(self):
@@ -310,6 +315,11 @@ class syncDds(Res.Resource):
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't verify this resource for a service not up")
             return
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.autostart_node != rcEnv.nodename:
+            self.log.debug("won't verify this resource from a flex non-primary node")
+            return set([])
+
         self.get_info()
         from multiprocessing import Process, Queue
         self.checksums = {}

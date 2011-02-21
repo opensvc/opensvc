@@ -97,7 +97,8 @@ class Svc(Resource, Freezer):
                              "sync.zfs",
                              "sync.netapp",
                              "app",
-                             "hb.openha"]
+                             "hb.openha",
+                             "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
         self.log = rcLogger.initLogger(self.svcname.upper())
@@ -421,19 +422,21 @@ class Svc(Resource, Freezer):
         self.stopip()
 
     def cluster_mode_safety_net(self):
-        if not self.has_res_set(['hb.openha']):
+        if not self.has_res_set(['hb.openha', 'hb.linuxha']):
             return
         if not self.cluster:
-            self.log.error("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
+            self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
             raise ex.excError
 
     def starthb(self):
         self.cluster_mode_safety_net()
         self.sub_set_action("hb.openha", "start")
+        self.sub_set_action("hb.linuxha", "start")
 
     def stophb(self):
         self.cluster_mode_safety_net()
         self.sub_set_action("hb.openha", "stop")
+        self.sub_set_action("hb.linuxha", "stop")
 
     def startdrbd(self):
         self.sub_set_action("disk.drbd", "start")

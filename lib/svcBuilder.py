@@ -99,13 +99,14 @@ def need_scsireserv(resource, conf, section):
     """scsireserv = true can be set globally or in a specific
     resource section
     """
+    defaults = conf.defaults()
     if conf.has_option(section, 'scsireserv'):
        if conf.getboolean(section, 'scsireserv') == True:
            return True
        else:
            return False
-    elif conf.has_option('default', 'scsireserv') and \
-       conf.getboolean('default', 'scsireserv') == True:
+    elif 'scsireserv' in defaults and \
+       bool(defaults['scsireserv']) == True:
            return True
     return False
 
@@ -554,15 +555,16 @@ def add_syncs_zfs(svc, conf):
         if conf.has_option(s, 'recursive'):
             kwargs['recursive'] = conf.getboolean(s, 'recursive')
 
+        defaults = conf.defaults()
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif conf.has_option('default', 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
 
         if conf.has_option(s, 'sync_min_delay'):
             kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif conf.has_option('default', 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
@@ -613,15 +615,16 @@ def add_syncs_dds(svc, conf):
         if conf.has_option(s, 'delta_store'):
             kwargs['delta_store'] = conf.get(s, 'delta_store')
 
+        defaults = conf.defaults()
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif conf.has_option('default', 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
 
         if conf.has_option(s, 'sync_min_delay'):
             kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif conf.has_option('default', 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
@@ -656,15 +659,16 @@ def add_syncs_symclone(svc, conf):
         else:
             kwargs['symdg'] = conf.get(s, 'symdg')
 
+        defaults = conf.defaults()
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif conf.has_option('default', 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
 
         if conf.has_option(s, 'sync_min_delay'):
             kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif conf.has_option('default', 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
 
 
         if 'symdevs@'+rcEnv.nodename in conf.options(s):
@@ -708,15 +712,16 @@ def add_syncs_netapp(svc, conf):
             return
 
         kwargs = {}
+        defaults = conf.defaults()
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif conf.has_option('default', 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
 
         if conf.has_option(s, 'sync_min_delay'):
             kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif conf.has_option('default', 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
 
         filers = {}
         if 'filer' in conf.options(s):
@@ -787,15 +792,16 @@ def add_syncs_rsync(svc, conf):
         if conf.has_option(s, 'bwlimit'):
             kwargs['bwlimit'] = conf.get(s, 'bwlimit')
 
+        defaults = conf.defaults()
         if conf.has_option(s, 'sync_min_delay'):
             kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif conf.has_option('default', 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint('default', 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
 
         if conf.has_option(s, 'sync_max_delay'):
             kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif conf.has_option('default', 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint('default', 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
 
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
@@ -866,29 +872,30 @@ def build(name):
     if os.path.isfile(svcconf):
         conf = ConfigParser.RawConfigParser()
         conf.read(svcconf)
-        if conf.has_option("default", "mode"):
-            svcmode = conf.get("default", "mode")
-        if conf.has_option("default", "vm_name"):
+        defaults = conf.defaults()
+        if "mode" in defaults:
+            svcmode = defaults["mode"]
+        if "vm_name" in defaults:
             if svcmode not in rcEnv.vt_supported:
                 log.error("can not set 'vm_name' with '%s' mode in %s env"%(svcmode, name))
                 return None
-            vmname = conf.get("default", "vm_name")
+            vmname = defaults["vm_name"]
             kwargs['vmname'] = vmname
-        if conf.has_option("default", "guest_os") and \
-           len(conf.get("default", "guest_os")) > 0:
+        if "guest_os" in defaults and \
+           len(defaults["guest_os"]) > 0:
             if svcmode not in rcEnv.vt_supported:
                 log.error("can not set 'guest_os' with '%s' mode in %s env"%(svcmode, name))
                 return None
-            guestos = conf.get("default", "guest_os")
+            guestos = defaults["guest_os"]
             kwargs['guestos'] = guestos
         elif svcmode in rcEnv.vt_supported:
             guestos = rcEnv.sysname
             kwargs['guestos'] = guestos
         if svcmode == 'jail':
-            if not conf.has_option("default", "jailroot"):
+            if not "jailroot" in defaults:
                 log.error("jailroot parameter is mandatory for jail mode")
                 return None
-            jailroot = conf.get("default", "jailroot")
+            jailroot = defaults["jailroot"]
             if not os.path.exists(jailroot):
                 log.error("jailroot %s does not exist"%jailroot)
                 return None
@@ -903,26 +910,26 @@ def build(name):
     svcMod = __import__(mod)
     svc = getattr(svcMod, svc_class_name)(**kwargs)
     svc.svcmode = svcmode
-    if conf.has_option("default", "presnap_trigger"):
-        svc.presnap_trigger = conf.get("default", "presnap_trigger").split()
-    if conf.has_option("default", "postsnap_trigger"):
-        svc.postsnap_trigger = conf.get("default", "postsnap_trigger").split()
+    if "presnap_trigger" in defaults:
+        svc.presnap_trigger = defaults["presnap_trigger"].split()
+    if "postsnap_trigger" in defaults:
+        svc.postsnap_trigger = defaults["postsnap_trigger"].split()
 
     #
     # containerization options
     #
-    if conf.has_option("default", "containerize"):
-        svc.containerize = conf.getboolean("default", "containerize")
-    if conf.has_option("default", "container_cpus"):
-        svc.container_cpus = conf.get("default", "container_cpus")
-    if conf.has_option("default", "container_cpu_shares"):
-        svc.container_cpu_shares = conf.get("default", "container_cpu_shares")
-    if conf.has_option("default", "container_mems"):
-        svc.container_mems = conf.get("default", "container_mems")
-    if conf.has_option("default", "container_mem_limit"):
-        svc.container_mem_limit = conf.get("default", "container_mem_limit")
-    if conf.has_option("default", "container_vmem_limit"):
-        svc.container_vmem_limit = conf.get("default", "container_vmem_limit")
+    if "containerize" in defaults:
+        svc.containerize = bool(defaults["containerize"])
+    if "container_cpus" in defaults:
+        svc.container_cpus = defaults["container_cpus"]
+    if "container_cpu_shares" in defaults:
+        svc.container_cpu_shares = defaults["container_cpu_shares"]
+    if "container_mems" in defaults:
+        svc.container_mems = defaults["container_mems"]
+    if "container_mem_limit" in defaults:
+        svc.container_mem_limit = defaults["container_mem_limit"]
+    if "container_vmem_limit" in defaults:
+        svc.container_vmem_limit = defaults["container_vmem_limit"]
 
     #
     # Store useful properties
@@ -935,20 +942,20 @@ def build(name):
     # Setup service properties from config file content
     #
 
-    if conf.has_option("default", "nodes"):
-        svc.nodes = set(conf.get("default", "nodes").split())
+    if "nodes" in defaults:
+        svc.nodes = set(defaults["nodes"].split())
         svc.nodes -= set([''])
     else:
         svc.nodes = set([])
 
-    if conf.has_option("default", "drpnodes"):
-        svc.drpnodes = set(conf.get("default", "drpnodes").split())
+    if "drpnodes" in defaults:
+        svc.drpnodes = set(defaults["drpnodes"].split())
         svc.drpnodes -= set([''])
     else:
         svc.drpnodes = set([])
 
-    if conf.has_option("default", "drpnode"):
-        svc.drpnode = conf.get("default", "drpnode")
+    if "drpnode" in defaults:
+        svc.drpnode = defaults["drpnode"]
         svc.drpnodes |= set([svc.drpnode])
         svc.drpnodes -= set([''])
     else:
@@ -961,8 +968,66 @@ def build(name):
         del(svc)
         return None
 
-    if conf.has_option("default", "service_type"):
-        svc.svctype = conf.get("default", "service_type")
+    if "cluster_type" in defaults:
+        svc.clustertype = defaults["cluster_type"]
+    else:
+        svc.clustertype = 'failover'
+    allowed_clustertype = ['failover', 'allactive', 'flex', 'autoflex']
+    if svc.clustertype not in allowed_clustertype:
+        log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
+        del(svc)
+        return None
+
+    if "flex_min_nodes" in defaults:
+        svc.flex_min_nodes = int(defaults["flex_min_nodes"])
+    else:
+        svc.flex_min_nodes = 1
+    if svc.flex_min_nodes < 1:
+        log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
+        del(svc)
+        return None
+    if svc.flex_min_nodes > len(svc.nodes):
+        log.error("invalid flex_min_nodes '%d' (>nb of nodes)."%svc.flex_min_nodes)
+        del(svc)
+        return None
+
+    if "flex_max_nodes" in defaults:
+        svc.flex_max_nodes = int(defaults["flex_max_nodes"])
+    else:
+        svc.flex_max_nodes = 0
+    if svc.flex_max_nodes < 0:
+        log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
+        del(svc)
+        return None
+
+    if "flex_cpu_low_threshold" in defaults:
+        svc.flex_cpu_low_threshold = int(defaults["flex_cpu_low_threshold"])
+    else:
+        svc.flex_cpu_low_threshold = 10
+    if svc.flex_cpu_low_threshold < 0:
+        log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
+        del(svc)
+        return None
+    if svc.flex_cpu_low_threshold > 100:
+        log.error("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
+        del(svc)
+        return None
+
+    if "flex_cpu_high_threshold" in defaults:
+        svc.flex_cpu_high_threshold = int(defaults["flex_cpu_high_threshold"])
+    else:
+        svc.flex_cpu_high_threshold = 10
+    if svc.flex_cpu_high_threshold < 0:
+        log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
+        del(svc)
+        return None
+    if svc.flex_cpu_high_threshold > 100:
+        log.error("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
+        del(svc)
+        return None
+
+    if "service_type" in defaults:
+        svc.svctype = defaults["service_type"]
     else:
         svc.svctype = ''
 
@@ -979,33 +1044,33 @@ def build(name):
         del(svc)
         return None
 
-    if conf.has_option("default", "autostart_node"):
-        svc.autostart_node = conf.get("default", "autostart_node")
+    if "autostart_node" in defaults:
+        svc.autostart_node = defaults["autostart_node"]
     else:
         svc.autostart_node = ''
 
-    if conf.has_option("default", "drp_type"):
-        svc.drp_type = conf.get("default", "drp_type")
+    if "drp_type" in defaults:
+        svc.drp_type = defaults["drp_type"]
     else:
         svc.drp_type = ''
 
-    if conf.has_option("default", "comment"):
-        svc.comment = conf.get("default", "comment")
+    if "comment" in defaults:
+        svc.comment = defaults["comment"]
     else:
         svc.comment = ''
 
-    if conf.has_option("default", "app"):
-        svc.app = conf.get("default", "app")
+    if "app" in defaults:
+        svc.app = defaults["app"]
     else:
         svc.app = ''
 
-    if conf.has_option("default", "drnoaction"):
-        svc.drnoaction = conf.get("default", "drnoaction")
+    if "drnoaction" in defaults:
+        svc.drnoaction = defaults["drnoaction"]
     else:
         svc.drnoaction = False
 
-    if conf.has_option("default", "bwlimit"):
-        svc.bwlimit = conf.get("default", "bwlimit")
+    if "bwlimit" in defaults:
+        svc.bwlimit = defaults["bwlimit"]
     else:
         svc.bwlimit = None
 
@@ -1037,20 +1102,27 @@ def is_service(f):
         return False
     return True
 
+def list_services():
+    if not os.path.exists(rcEnv.pathetc):
+        print "create dir %s"%rcEnv.pathetc
+        os.makedirs(rcEnv.pathetc)
+    s = []
+    for name in os.listdir(rcEnv.pathetc):
+        if not is_service(os.path.join(rcEnv.pathetc, name)):
+            continue
+        s.append(name)
+    return s
+
 def build_services(status=None, svcnames=[],
                    onlyprimary=False, onlysecondary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
     services = {}
-    if not os.path.exists(rcEnv.pathetc):
-        print "create dir %s"%rcEnv.pathetc
-        os.makedirs(rcEnv.pathetc)
-    for name in os.listdir(rcEnv.pathetc):
+    for name in list_services():
         if len(svcnames) > 0 and name not in svcnames:
             continue
-        if not is_service(os.path.join(rcEnv.pathetc, name)):
-            continue
+        fix_default_section([name])
         try:
             svc = build(name)
         except (ex.excError, ex.excInitError, ex.excAbortAction):
@@ -1072,3 +1144,316 @@ def build_services(status=None, svcnames=[],
             svc.action('push')
     return [ s for n ,s in sorted(services.items()) ]
 
+def toggle_one(svcname, rids=[], disable=True):
+    if len(svcname) == 0:
+        print >>sys.stderr, "service name must not be empty"
+        return 1
+    if svcname not in list_services():
+        print >>sys.stderr, "service", svcname, "does not exist"
+        return 1
+    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    conf = ConfigParser.RawConfigParser()
+    conf.read(envfile)
+    for rid in rids:
+        if not conf.has_section(rid):
+            print >>sys.stderr, "service", svcname, "has not resource", rid
+            continue
+        conf.set(rid, "disable", disable)
+    try:
+       f = open(envfile, 'w')
+    except:
+        print >>sys.stderr, "failed to open", envfile, "for writing"
+        return 1
+    conf.write(f)
+    return 0
+
+def disable_one(svcname, rids=[]):
+    return toggle_one(svcname, rids, disable=True)
+
+def disable(svcnames, rid=[]):
+    fix_default_section(svcnames)
+    if len(rid) == 0:
+        print "no resource flagged for disabling"
+        return 0
+    r = 0
+    for svcname in svcnames:
+        r |= disable_one(svcname, rid)
+    return r
+
+def enable_one(svcname, rids=[]):
+    return toggle_one(svcname, rids, disable=False)
+
+def enable(svcnames, rid=[]):
+    fix_default_section(svcnames)
+    if len(rid) == 0:
+        print "no resource flagged for enabling"
+        return 0
+    r = 0
+    for svcname in svcnames:
+        r |= enable_one(svcname, rid)
+    return r
+
+def delete_one(svcname, rids=[]):
+    if len(svcname) == 0:
+        print >>sys.stderr, "service name must not be empty"
+        return 1
+    if svcname not in list_services():
+        print >>sys.stderr, "service", svcname, "does not exist"
+        return 0
+    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    conf = ConfigParser.RawConfigParser()
+    conf.read(envfile)
+    for rid in rids:
+        if not conf.has_section(rid):
+            print >>sys.stderr, "service", svcname, "has not resource", rid
+            continue
+        conf.remove_section(rid)
+    try:
+       f = open(envfile, 'w')
+    except:
+        print >>sys.stderr, "failed to open", envfile, "for writing"
+        return 1
+    conf.write(f)
+    return 0
+
+def delete(svcnames, rid=[]):
+    fix_default_section(svcnames)
+    if len(rid) == 0:
+        print "no resource flagged for deletion"
+        return 0
+    r = 0
+    for svcname in svcnames:
+        r |= delete_one(svcname, rid)
+    return r
+
+def create(svcname, resources=[], interactive=False):
+    if not isinstance(svcname, list):
+        print >>sys.stderr, "ouch, svcname should be a list object"
+        return 1
+    if len(svcname) != 1:
+        print >>sys.stderr, "you must specify a single service name with the 'create' action"
+        return 1
+    svcname = svcname[0]
+    if len(svcname) == 0:
+        print >>sys.stderr, "service name must not be empty"
+        return 1
+    if svcname in list_services():
+        print >>sys.stderr, "service", svcname, "already exists"
+        return 1
+    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    if os.path.exists(envfile):
+        print >>sys.stderr, envfile, "already exists"
+        return 1
+    try:
+       f = open(envfile, 'w')
+    except:
+        print >>sys.stderr, "failed to open", envfile, "for writing"
+        return 1
+
+    defaults = {}
+    sections = {}
+    rtypes = {}
+
+    import json
+    for r in resources:
+        try:
+            d = json.loads(r)
+        except:
+            print >>sys.stderr, "can not parse resource:", r
+            return 1
+        if 'rid' in d:
+            section = d['rid']
+            if '#' not in section:
+                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                return 1
+            l = section.split('#')
+            if len(l) != 2:
+                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                return 1
+            rtype = l[1]
+            if rtype in rtypes:
+                rtypes[rtype] += 1
+            else:
+                rtypes[rtype] = 0
+            del(d['rid'])
+            if section in sections:
+                sections[section].update(d)
+            else:
+                sections[section] = d
+        elif 'rtype' in d:
+            if 'rid' in d:
+               del(d['rid'])
+            rtype = d['rtype']
+            if rtype in rtypes:
+                section = '%s#%d'%(rtype, rtypes[rtype])
+                rtypes[rtype] += 1
+            else:
+                section = '%s#0'%rtype
+                rtypes[rtype] = 1
+            if section in sections:
+                sections[section].update(d)
+            else:
+                sections[section] = d
+        else:
+            defaults.update(d)
+
+    from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+    try:
+        keys = KeyDict()
+        defaults.update(keys.update('DEFAULT', defaults))
+        for section, d in sections.items():
+            sections[section].update(keys.update(section, d))
+    except (MissKeyNoDefault, KeyInvalidValue):
+        if not interactive:
+            return 1
+
+    try:
+        if interactive:
+            defaults, sections = keys.form(defaults, sections)
+    except KeyboardInterrupt:
+        sys.stderr.write("Abort\n")
+        return 1
+
+    conf = ConfigParser.RawConfigParser(defaults)
+    for section, d in sections.items():
+        conf.add_section(section)
+        for key, val in d.items():
+            if key == 'rtype':
+                continue
+            conf.set(section, key, val)
+
+    conf.write(f)
+
+    os.chdir(rcEnv.pathetc)
+    if os.path.exists(svcname) and not os.path.islink(svcname):
+        os.unlink(svcname)
+    if not os.path.exists(svcname):
+        os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    initdir = svcname+'.dir'
+    if not os.path.exists(initdir):
+        os.makedirs(initdir)
+    if not os.path.islink(svcname+'.d'):
+        os.unlink(svcname+'.d')
+    if not os.path.exists(svcname+'.d'):
+        os.symlink(initdir, svcname+'.d')
+
+def update(svcname, resources=[], interactive=False):
+    fix_default_section(svcname)
+    if not isinstance(svcname, list):
+        print >>sys.stderr, "ouch, svcname should be a list object"
+        return 1
+    if len(svcname) != 1:
+        print >>sys.stderr, "you must specify a single service name with the 'create' action"
+        return 1
+    svcname = svcname[0]
+    if len(svcname) == 0:
+        print >>sys.stderr, "service name must not be empty"
+        return 1
+    if svcname not in list_services():
+        print >>sys.stderr, "service", svcname, "does not exist"
+        return 1
+    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    sections = {}
+    rtypes = {}
+    conf = ConfigParser.RawConfigParser()
+    conf.read(envfile)
+    defaults = conf.defaults()
+    for section in conf.sections():
+        sections[section] = {}
+        for o, v in conf.items(section):
+            if o in defaults.keys() + ['rtype']:
+                continue
+            sections[section][o] = v
+
+    import json
+    for r in resources:
+        try:
+            d = json.loads(r)
+        except:
+            print >>sys.stderr, "can not parse resource:", r
+            return 1
+        if 'rid' in d:
+            section = d['rid']
+            if '#' not in section:
+                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                return 1
+            l = section.split('#')
+            if len(l) != 2:
+                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                return 1
+            rtype = l[0]
+            if rtype in rtypes:
+                rtypes[rtype] += 1
+            else:
+                rtypes[rtype] = 0
+            del(d['rid'])
+            if section in sections:
+                sections[section].update(d)
+            else:
+                sections[section] = d
+        elif 'rtype' in d:
+            print >>sys.stderr, section, "'rtype' can not be used with the 'update' command"
+            return 1
+        else:
+            defaults.update(d)
+
+    conf = ConfigParser.RawConfigParser(defaults)
+    for section, d in sections.items():
+        conf.add_section(section)
+        for key, val in d.items():
+            conf.set(section, key, val)
+
+    try:
+        f = open(envfile, 'w')
+    except:
+        print >>sys.stderr, "failed to open", envfile, "for writing"
+        return 1
+
+    conf.write(f)
+
+    os.chdir(rcEnv.pathetc)
+    if not os.path.islink(svcname):
+        os.unlink(svcname)
+    if not os.path.exists(svcname):
+        os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    initdir = svcname+'.dir'
+    if not os.path.exists(initdir):
+        os.makedirs(initdir)
+    if not os.path.islink(svcname+'.d'):
+        os.unlink(svcname+'.d')
+    if not os.path.exists(svcname+'.d'):
+        os.symlink(initdir, svcname+'.d')
+
+def _fix_default_section(svcname):
+    """ [default] section is not returned by ConfigParser.defaults()
+        [DEFAULT] is. Just replace when this occurs.
+    """
+    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    if not os.path.exists(envfile):
+        # nothing to fix
+        return
+    try:
+        f = open(envfile, 'r')
+    except:
+        print >>sys.stderr, "failed to open", envfile, "for reading"
+        return 1
+    found = False
+    lines = []
+    for line in f.readlines():
+        if line.startswith('[default]'):
+            line = '[DEFAULT]\n'
+            found = True
+        lines.append(line)
+    f.close()
+    if found:
+        try:
+            f = open(envfile, 'w')
+        except:
+            print >>sys.stderr, "failed to open", envfile, "for writing"
+            return 1
+        f.write(''.join(lines))
+        f.close()
+
+def fix_default_section(svcnames):
+    for svcname in svcnames:
+        _fix_default_section(svcname)

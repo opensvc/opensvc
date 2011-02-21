@@ -10,7 +10,6 @@ fi
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
 allservices=${osvc_path}/allservices
-allsecondaryservices=${osvc_path}/allsecondaryservices
 allprimaryservices=${osvc_path}/allprimaryservices
 agt=${osvc_path}/perfagt.`uname -s`
 
@@ -27,8 +26,8 @@ start)
 	if [ -x $agt ] ; then
 		$agt
 	fi
+	${allservices} ${osvc_opts} --cluster startstandby
 	${allprimaryservices} ${osvc_opts} start
-	${allsecondaryservices} ${osvc_opts} startstandby
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
