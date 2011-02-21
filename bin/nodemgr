@@ -48,7 +48,7 @@ parser.add_option("--debug", default=False,
 parser.add_option("--stats-file", default=None,
 		  action="store", dest="stats_file",
                   help="points a metrics file for pushstats")
-parser.add_option("--stats-interval", default=1680,
+parser.add_option("--stats-interval", default=None,
 		  action="store", type="int", dest="stats_interval",
                   help="stats backlog in minutes to push to the collector")
 parser.add_option("--collect-date", default=None,

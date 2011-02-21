@@ -428,37 +428,6 @@ def push_disks(svc):
 def push_stats_fs_u(l):
     proxy.insert_stats_fs_u(l[0], l[1])
 
-def check_stats_timestamp(sync_timestamp_f, comp='more', delay=10):
-    if not os.path.exists(sync_timestamp_f):
-        return True
-    try:
-        with open(sync_timestamp_f, 'r') as f:
-            d = f.read()
-            last = datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
-            limit = last + timedelta(minutes=delay)
-            if comp == "more" and datetime.now() < limit:
-                return False
-            elif comp == "less" and datetime.now() < limit:
-                return False
-            else:
-                return True
-            f.close()
-    except:
-        return True
-    return True
-
-def stats_timestamp():
-    sync_timestamp_f = os.path.join(rcEnv.pathvar, 'last_stats_push')
-    if not check_stats_timestamp(sync_timestamp_f, 'more', 10):
-        return False
-    sync_timestamp_d = os.path.dirname(sync_timestamp_f)
-    if not os.path.isdir(sync_timestamp_d):
-        os.makedirs(sync_timestamp_d ,0755)
-    with open(sync_timestamp_f, 'w') as f:
-        f.write(str(datetime.now())+'\n')
-        f.close()
-    return True
-
 @xmlrpc_decorator
 def push_pkg():
     p = __import__('rcPkg'+sysname)
@@ -481,8 +450,6 @@ def push_patch():
     proxy.insert_patch(vars, vals)
 
 def push_stats(force=False, file=None, collect_date=None, interval=15):
-    if not force and not stats_timestamp():
-        return
     try:
         s = __import__('rcStats'+sysname)
     except ImportError:

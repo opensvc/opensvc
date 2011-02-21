@@ -24,13 +24,15 @@ from freezer import Freezer
 import svcBuilder
 import xmlrpcClient
 import os
+import ConfigParser
+import datetime
 
 class Options(object):
     def __init__(self):
         self.force = False
         self.debug = False
         self.stats_file = None
-        self.stats_interval = 1680
+        self.stats_interval = None
         self.collect_date = None
         os.environ['LANG'] = 'C'
 
@@ -39,6 +41,14 @@ class Node(Svc, Freezer):
         Implements node-level actions and checks.
     """
     def __init__(self):
+        nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
+        config_defaults = {
+          'host_mode': 'TST',
+          'push_interval': 1439,
+          'sync_interval': 1439,
+        }
+        self.config = ConfigParser.RawConfigParser(config_defaults)
+        self.config.read(nodeconf)
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
@@ -88,25 +98,125 @@ class Node(Svc, Freezer):
     def action(self, a):
         return getattr(self, a)()
 
+    def check_timestamp(self, timestamp_f, comp='more', delay=10):
+        if not os.path.exists(timestamp_f):
+            return True
+        try:
+            with open(timestamp_f, 'r') as f:
+                d = f.read()
+                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
+                limit = last + datetime.timedelta(minutes=delay)
+                if comp == "more" and datetime.datetime.now() < limit:
+                    return False
+                elif comp == "less" and datetime.datetime.now() < limit:
+                    return False
+                else:
+                    return True
+                f.close()
+        except:
+            return True
+        return True
+
+    def timestamp(self, timestamp_f, interval):
+        if not self.check_timestamp(timestamp_f, 'more', interval):
+            return False
+        timestamp_d = os.path.dirname(timestamp_f)
+        if not os.path.isdir(timestamp_d):
+            os.makedirs(timestamp_d ,0755)
+        with open(timestamp_f, 'w') as f:
+            f.write(str(datetime.datetime.now())+'\n')
+            f.close()
+        return True
+
     def pushstats(self):
+        # get interval from config file
+        if self.config.has_section('stats'):
+            interval = self.config.getint('stats', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # override with command line
+        if self.options.stats_interval is not None:
+            interval = self.options.stats_interval
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_stats_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         xmlrpcClient.push_stats(force=self.options.force,
                                 file=self.options.stats_file,
-                                interval=self.options.stats_interval,
+                                interval=2*interval,
                                 collect_date=self.options.collect_date)
 
     def pushpkg(self):
+        # get interval from config file
+        if self.config.has_section('packages'):
+            interval = self.config.getint('packages', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_pkg_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         xmlrpcClient.push_pkg()
 
     def pushpatch(self):
+        # get interval from config file
+        if self.config.has_section('patches'):
+            interval = self.config.getint('patches', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_patch_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         xmlrpcClient.push_patch()
 
     def pushasset(self):
+        # get interval from config file
+        if self.config.has_section('asset'):
+            interval = self.config.getint('asset', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_asset_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         xmlrpcClient.push_asset()
 
     def pushsym(self):
+        # get interval from config file
+        if self.config.has_section('sym'):
+            interval = self.config.getint('sym', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_sym_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         xmlrpcClient.push_sym()
 
     def syncservices(self):
+        # get interval from config file
+        if self.config.has_section('sync'):
+            interval = self.config.getint('sync', 'sync_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'sync_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_sync')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
@@ -119,6 +229,17 @@ class Node(Svc, Freezer):
             svc.action('presync')
 
     def pushservices(self):
+        # get interval from config file
+        if self.config.has_section('svcconf'):
+            interval = self.config.getint('svcconf', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_svcconf_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
@@ -130,6 +251,17 @@ class Node(Svc, Freezer):
         print m.hostid()
 
     def checks(self):
+        # get interval from config file
+        if self.config.has_section('checks'):
+            interval = self.config.getint('checks', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # do we need to run
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_checks_push')
+        if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return
+
         import checks
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
