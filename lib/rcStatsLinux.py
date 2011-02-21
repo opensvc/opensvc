@@ -36,6 +36,8 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         for line in buff.split('\n'):
             l = line.split()
+            if 'Linux' in l:
+                continue
             if len(l) == 7:
                 """ redhat 4
                     18:50:01 CPU %user %nice %system %iowait %idle
