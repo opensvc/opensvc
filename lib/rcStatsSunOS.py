@@ -48,7 +48,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return cols, lines
-        cmd = ['sar', '-u', '-f', f]
+        cmd = ['sar', '-u', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         for line in buff.split('\n'):
             l = line.split()
@@ -71,7 +71,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return cols, lines
-        cmd = ['sar', '-r', '-f', f]
+        cmd = ['sar', '-r', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
@@ -95,7 +95,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return cols, lines
-        cmd = ['sar', '-q', '-f', f]
+        cmd = ['sar', '-q', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
@@ -117,7 +117,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return cols, lines
-        cmd = ['sar', '-r', '-f', f]
+        cmd = ['sar', '-r', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
@@ -142,7 +142,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return []
-        cmd = ['sar', '-b', '-f', f]
+        cmd = ['sar', '-b', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
@@ -169,7 +169,7 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         if f is None:
             return cols, lines
-        cmd = ['sar', '-d', '-f', f]
+        cmd = ['sar', '-d', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         for line in buff.split('\n'):
             l = line.split()
