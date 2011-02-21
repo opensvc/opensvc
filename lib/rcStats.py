@@ -54,13 +54,17 @@ class StatsProvider(object):
 
     def get(self, fname):
         lines = []
+        cols = []
         for i, r in enumerate(self.ranges):
             t = self.today - datetime.timedelta(days=i)
             date = t.strftime("%Y-%m-%d")
             day = t.strftime("%d")
             start = r[0].strftime("%H:%M:%S")
             end = r[1].strftime("%H:%M:%S")
-            cols, _lines = getattr(self, fname)(date, day, start, end)
+            _cols, _lines = getattr(self, fname)(date, day, start, end)
+            if len(_cols) == 0 or len(_lines) == 0:
+                continue
+            cols = _cols
             lines += _lines
         return cols, lines
 

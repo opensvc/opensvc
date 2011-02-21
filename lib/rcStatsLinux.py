@@ -33,6 +33,7 @@ class StatsProvider(rcStats.StatsProvider):
         if ret != 0:
             cmd = ['sar', '-t', '-u', '-P', 'ALL', '-f', f, '-s', start, '-e', end]
             (ret, buff) = call(cmd)
+        cols = []
         lines = []
         for line in buff.split('\n'):
             l = line.split()
