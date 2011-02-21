@@ -151,7 +151,7 @@ echo "version = \"$VERSION-$RELEASE\"" > $TMPARCHIVE/lib/version.py
 cat > $REPODIR/postinstall <<EOF
 #!/sbin/sh
 
-su - root -c "PATH=$PATH:/usr/sfw/bin:/usr/local/bin $BASE/bin/postinstall"
+su - root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=/opt/opensvc/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin $BASE/bin/postinstall"
 EOF
 
 echo "----- Creating $PKGNAME build-$REV ..."
