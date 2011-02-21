@@ -485,11 +485,11 @@ def push_stats(force=False, file=None, collect_date=None, interval=15):
         return
     try:
         s = __import__('rcStats'+sysname)
-        sp = s.StatsProvider(collect_file=file,
-                             collect_date=collect_date,
-                             interval=interval)
-    except:
+    except ImportError:
         return
+    sp = s.StatsProvider(collect_file=file,
+                         collect_date=collect_date,
+                         interval=interval)
     h = {}
     for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                  'blockdev', 'netdev', 'netdev_err']:
