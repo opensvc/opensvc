@@ -388,6 +388,27 @@ def install_pythonlink():
     target = '/opt/opensvc/bin/python'
     return install_link(source=source, target=target)
 
+def move_host_mode():
+    hm = '/opt/opensvc/var/host_mode'
+    cf = '/opt/opensvc/etc/node.conf'
+    if not os.path.exists(hm):
+        return
+    try:
+        fp = open(hm, 'r')
+        mode = fp.read().split()[0]
+        fp.close()
+    except:
+        print 'failed to read old host_mode. renamed to', hm+'.old'
+        shutil.move(hm, hm+'.old')
+        return
+    cmd = ['/opt/opensvc/bin/nodemgr', 'set', '--param', 'node.host_mode', '--value', mode]
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+    buff = process.communicate()
+    if process.returncode != 0:
+        print 'failed to set host_mode in node.conf'
+        return
+    shutil.move(hm, hm+'.old')
+        
 try:
     install_pythonlink()
     move_usr_to_opt()
@@ -399,6 +420,7 @@ try:
     install_profile()
     install_user()
     install_bash_completion()
+    move_host_mode()
 except:
     import sys
     sys.exit(1)
