@@ -26,6 +26,7 @@ import xmlrpcClient
 import os
 import ConfigParser
 import datetime
+import sys
 
 class Options(object):
     def __init__(self):
@@ -41,14 +42,14 @@ class Node(Svc, Freezer):
         Implements node-level actions and checks.
     """
     def __init__(self):
-        nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
+        self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
         config_defaults = {
           'host_mode': 'TST',
           'push_interval': 1439,
           'sync_interval': 1439,
         }
         self.config = ConfigParser.RawConfigParser(config_defaults)
-        self.config.read(nodeconf)
+        self.config.read(self.nodeconf)
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
@@ -74,6 +75,8 @@ class Node(Svc, Freezer):
           'compliance_show_ruleset': 'show compliance rules applying to this node',
           'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
+          'get': 'get the value of the node configuration parameter pointed by --param',
+          'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
         }
 
     def format_desc(self):
@@ -328,6 +331,51 @@ class Node(Svc, Freezer):
         import compliance
         c = compliance.Compliance(self.options)
         c.do_list_modulesets()
+
+    def get(self):
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if not self.config.has_section(section):
+            print >>sys.stderr, "section '%s' not found"%section
+            return 1
+        if not self.config.has_option(section, option):
+            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            return 1
+        print self.config.get(section, option)
+        return 0
+
+    def set(self):
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        if self.options.value is None:
+            print >>sys.stderr, "no value. set --value"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if not self.config.has_section(section):
+            self.config.add_section(section)
+        if self.config.has_option(section, option) and \
+           self.config.get(section, option) == self.options.value:
+            return
+        self.config.set(section, option, self.options.value)
+        try:
+            fp = open(self.nodeconf, 'w')
+            self.config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write new %s"%self.nodeconf
+            return 1
+        return 0
 
 if __name__ == "__main__" :
     for n in (Node,) :

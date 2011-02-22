@@ -72,6 +72,12 @@ parser.add_option("--force", default=False,
 parser.add_option("--symcli-db-file", default=None,
 		  action="store", dest="symcli_db_file",
                   help="[pushsym option] use symcli offline mode with the specified file. aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx")
+parser.add_option("--param", default=None,
+		  action="store", dest="param",
+                  help="point a node configuration parameter for the 'get' and 'set' actions")
+parser.add_option("--value", default=None,
+		  action="store", dest="value",
+                  help="set a node configuration parameter value for the 'set --param' action")
 
 (options, args) = parser.parse_args()
 
