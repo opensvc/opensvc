@@ -29,10 +29,10 @@ def install_cron():
            'marker': 'svcmon --updatedb',
            'ok': False
     },{
-           'sched': "0 4 * * *",
+           'sched': "0,10,20,30,40,50 * * * *",
            'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc.daily ] && /opt/opensvc/bin/cron/opensvc.daily >/dev/null 2>&1",
-           'marker': 'opensvc.daily',
+           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc ] && /opt/opensvc/bin/cron/opensvc >/dev/null 2>&1",
+           'marker': '/opt/opensvc/bin/cron/opensvc',
            'ok': False
     },{
            'sched': "0,10,20,30,40,50 * * * *",
