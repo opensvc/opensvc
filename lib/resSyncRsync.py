@@ -58,17 +58,17 @@ cache_remote_node_type = {}
 
 def remote_node_type(self, node, type):
     if type == 'drpnodes':
-        expected_type = 'DEV'
+        expected_type = set(rcEnv.allowed_svctype) - set(['PRD'])
     elif type == 'nodes':
-        expected_type = self.svc.svctype
+        expected_type = [self.svc.svctype]
     else:
-        self.log.error('expected remote node type is bogus: %s'%type)
+        self.log.error('unknown sync target: %s'%type)
         raise ex.excError
 
-    host_mode_f = os.path.join(rcEnv.pathvar, 'host_mode')
+    rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
 
     if node not in cache_remote_node_type:
-        cmd = rcEnv.rsh.split(' ')+[node, '--', 'cat', host_mode_f]
+        cmd = rcEnv.rsh.split(' ')+[node, '--'] + rcmd
         (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
             raise ex.excError
@@ -78,10 +78,10 @@ def remote_node_type(self, node, type):
         else:
             cache_remote_node_type[node] = out
 
-    if cache_remote_node_type[node] == expected_type:
+    if cache_remote_node_type[node] in expected_type:
         return True
-    self.log.error("node %s type is not '%s'. Check %s:%s"%\
-                   (node, expected_type, node, host_mode_f))
+    self.log.error("node %s type is not in %s. Check %s:%s"%\
+                   (node, str(expected_type), node, host_mode_f))
     return False
 
 def nodes_to_sync(self, type=None, state="syncable", status=False):

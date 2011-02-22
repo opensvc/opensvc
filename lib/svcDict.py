@@ -425,9 +425,9 @@ class KeyDict(KeywordStore):
                   keyword="service_type",
                   order=15,
                   required=True,
-                  default=node_get_hostmode(os.path.join(os.path.dirname(__file__), '..', 'var')),
-                  candidates=["PRD", "DEV"],
-                  text="A DEV service can not be brought up on a PRD node, but a PRD service can be startup on a DEV node (in a DRP situation)."
+                  default=node_get_hostmode(),
+                  candidates=rcEnv.allowed_svctype,
+                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
                 )
         self += Keyword(
                   section="DEFAULT",

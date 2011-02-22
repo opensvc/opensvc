@@ -681,8 +681,11 @@ class Svc(Resource, Freezer):
         os.environ['OPENSVC_SVCNAME'] = self.svcname
 
     def action(self, action, rid=[], tags=set([]), waitlock=60):
+        if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
+            self.log.error("Abort action for non PRD service on PRD node")
+            raise ex.excError
         if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
-            self.log.info("Abort action on frozen service")
+            self.log.info("Abort action for frozen service")
             return
         self.setup_environ()
         self.setup_signal_handlers()

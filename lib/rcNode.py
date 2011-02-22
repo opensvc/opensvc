@@ -23,55 +23,15 @@ from rcGlobalEnv import *
 import logging
 import rcExceptions as ex
 
-def node_cap_ez_ha():
-	if not os.path.exists(rcEnv.ez_path):
-		return False
-	if not os.path.exists(rcEnv.ez_path_services):
-		return False
-	return True
-
-def node_cap_lxc():
-	if not os.path.exists("/proc/1/cgroup"):
-		return False
-	with open("/proc/1/cgroup") as f:
-		for line in f:
-			if not re.search("devices",line):
-				return False
-			if not re.search("memory",line):
-				return False
-			if not re.search("cpuset",line):
-				return False
-			if not re.search("ns",line):
-				return False
-	return True
-
-def node_get_hostmode(d):
-	__f = d + "/host_mode"
-	if os.path.exists(__f):
-		with open(__f) as f:
-			for line in f:
-				w = line.split()[0]
-				if w == 'DEV' or w == 'PRD':
-					return w
-	print "Set DEV or PRD in " + __f
-	raise ex.excError
+def node_get_hostmode():
+    import node
+    n = node.Node()
+    if n.config.has_section('node'):
+        return n.config.get('node', 'host_mode')
+    return n.config.get('DEFAULT', 'host_mode')
 
 def discover_node():
 	"""Fill rcEnv class with information from node discovery
 	"""
+	rcEnv.host_mode = node_get_hostmode()
 
-	global log
-	log = logging.getLogger('INIT')
-
-	rcEnv.host_mode = node_get_hostmode(rcEnv.pathvar)
-	log.debug('host mode = ' + rcEnv.host_mode)
-
-	#
-	# node capabilities
-	#
-	rcEnv.capabilities = []
-	if node_cap_lxc():
-		rcEnv.capabilities.append("lxc")
-	if node_cap_ez_ha():
-		rcEnv.capabilities.append("ez_ha")
-	log.debug('capabilities = ' + str(rcEnv.capabilities))

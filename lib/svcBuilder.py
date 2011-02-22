@@ -1031,8 +1031,7 @@ def build(name):
     else:
         svc.svctype = ''
 
-    allowed_svctype = ['PRD', 'DEV', 'TMP', 'TST']
-    if svc.svctype not in allowed_svctype:
+    if svc.svctype not in rcEnv.allowed_svctype:
         log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(allowed_svctype)))
         del(svc)
         return None

@@ -34,6 +34,7 @@ class rcEnv:
     """Class to store globals
     """
 
+    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
     platform = sys.platform
 
     """program used to execute remote command on other nodes or virtual hosts
