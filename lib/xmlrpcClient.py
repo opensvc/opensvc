@@ -464,7 +464,7 @@ def push_stats(force=False, file=None, collect_date=None, interval=15):
     import cPickle
     proxy.insert_stats(cPickle.dumps(h))
 
-def push_asset():
+def push_asset(node):
     try:
         m = __import__('rcAsset'+sysname)
     except ImportError:
@@ -473,7 +473,7 @@ def push_asset():
     if "update_asset" not in proxy_methods:
         print "'update_asset' method is not exported by the collector"
         return
-    d = m.Asset().get_asset_dict()
+    d = m.Asset(node).get_asset_dict()
     proxy.update_asset(d.keys(), d.values())
 
 def push_sym():

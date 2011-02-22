@@ -19,7 +19,7 @@
 import os
 import datetime
 from rcUtilities import call, which
-from rcGlobalEnv import rcEnv
+import rcAsset
 
 def is_container():
     p = '/proc/1/cgroup'
@@ -34,8 +34,9 @@ def is_container():
             return True
     return False
 
-class Asset(object):
-    def __init__(self):
+class Asset(rcAsset.Asset):
+    def __init__(self, node):
+        rcAsset.Asset.__init__(self, node)
         self.container = is_container()
         if self.container:
             self.dmidecode = []
@@ -200,30 +201,3 @@ class Asset(object):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
-    def get_environnement(self):
-        f = os.path.join(rcEnv.pathvar, 'host_mode')
-        if os.path.exists(f):
-            (ret, out) = call(['cat', f])
-            if ret == 0:
-                return out.split('\n')[0]
-        return 'Unknown'
-
-    def get_asset_dict(self):
-        d = {}
-        d['nodename'] = rcEnv.nodename
-        d['os_name'] = rcEnv.sysname
-        d['os_vendor'] = self.get_os_vendor()
-        d['os_release'] = self.get_os_release()
-        d['os_kernel'] = self.get_os_kernel()
-        d['os_arch'] = self.get_os_arch()
-        d['mem_bytes'] = self.get_mem_bytes()
-        d['mem_banks'] = self.get_mem_banks()
-        d['mem_slots'] = self.get_mem_slots()
-        d['cpu_freq'] = self.get_cpu_freq()
-        d['cpu_cores'] = self.get_cpu_cores()
-        d['cpu_dies'] = self.get_cpu_dies()
-        d['cpu_model'] = self.get_cpu_model()
-        d['serial'] = self.get_serial()
-        d['model'] = self.get_model()
-        d['environnement'] = self.get_environnement()
-        return d

@@ -198,7 +198,7 @@ class Node(Svc, Freezer):
         if not self.options.force and not self.timestamp(timestamp_f, interval):
             return
 
-        xmlrpcClient.push_asset()
+        xmlrpcClient.push_asset(self)
 
     def pushsym(self):
         # get interval from config file
