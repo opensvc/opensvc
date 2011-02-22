@@ -141,7 +141,7 @@ class StatsProvider(rcStats.StatsProvider):
         f = self.sarfile(day)
         lines = []
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-b', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         for line in buff.split('\n'):

@@ -102,7 +102,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         lines = []
@@ -139,7 +139,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-q', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         lines = []
@@ -167,7 +167,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-S', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         if ret != 0:
@@ -204,7 +204,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-b', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd)
         lines = []
@@ -235,7 +235,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'pct_util',
                 'nodename']
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-d', '-p', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         lines = []
@@ -263,7 +263,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-n', 'DEV', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         lines = []
@@ -303,7 +303,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         if f is None:
-            return []
+            return [], []
         cmd = ['sar', '-t', '-n', 'EDEV', '-f', f, '-s', start, '-e', end]
         (ret, buff) = call(cmd, errlog=False)
         lines = []

@@ -33,6 +33,7 @@ class StatsProvider(object):
 
         self.minutes_today = 60*self.now.hour + self.now.minute
 
+        one_minute = datetime.timedelta(minutes=1)
         self.ranges = []
         i = 0
         end = self.now
@@ -42,14 +43,14 @@ class StatsProvider(object):
                     delta = interval
                 else:
                     delta = self.minutes_today
-            elif i + 1440 > interval:
+            elif i + 1439 > interval:
                 delta = interval - i
             else:
-                delta = 1440
+                delta = 1439
             i += delta
             begin = end - datetime.timedelta(minutes=delta)
             self.ranges.append((begin, end))
-            end = end - (end - begin)
+            end = begin - one_minute
         #print map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges)
 
     def get(self, fname):
