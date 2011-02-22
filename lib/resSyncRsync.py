@@ -58,7 +58,7 @@ cache_remote_node_type = {}
 
 def remote_node_type(self, node, type):
     if type == 'drpnodes':
-        expected_type = set(rcEnv.allowed_svctype) - set(['PRD'])
+        expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
     elif type == 'nodes':
         expected_type = [self.svc.svctype]
     else:
@@ -80,8 +80,8 @@ def remote_node_type(self, node, type):
 
     if cache_remote_node_type[node] in expected_type:
         return True
-    self.log.error("node %s type is not in %s. Check %s:%s"%\
-                   (node, str(expected_type), node, host_mode_f))
+    self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
+                   (node, cache_remote_node_type[node], str(expected_type)))
     return False
 
 def nodes_to_sync(self, type=None, state="syncable", status=False):
