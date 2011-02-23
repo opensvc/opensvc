@@ -26,6 +26,7 @@ import xmlrpcClient
 import os
 import ConfigParser
 import datetime
+import time
 import sys
 
 class Options(object):
@@ -47,6 +48,7 @@ class Node(Svc, Freezer):
           'host_mode': 'TST',
           'push_interval': 1439,
           'sync_interval': 1439,
+          'sync_period': '["04:00", "06:00"]',
         }
         self.config = ConfigParser.RawConfigParser(config_defaults)
         self.config.read(self.nodeconf)
@@ -137,20 +139,103 @@ class Node(Svc, Freezer):
             f.close()
         return True
 
-    def pushstats(self):
-        # get interval from config file
-        if self.config.has_section('stats'):
-            interval = self.config.getint('stats', 'push_interval')
+    def in_period(self, period):
+        if len(period) == 0:
+            return True
+        if isinstance(period[0], list):
+            r = False
+            for p in period:
+                 r |= self.in_period(p)
+            return r
+        elif not isinstance(period[0], unicode) or len(period) != 2 or \
+             not isinstance(period[1], unicode):
+            print >>sys.stderr, "malformed period: %s"%str(period)
+            return False
+        start_s, end_s = period
+        try:
+            start_t = time.strptime(start_s, "%H:%M")
+            end_t = time.strptime(end_s, "%H:%M")
+        except:
+            print >>sys.stderr, "malformed time string: %s"%str(period)
+            return False
+        now = datetime.datetime.now()
+        if start_t <= end_t:
+            if now.hour >= start_t.tm_hour and \
+               now.minute >= start_t.tm_min and \
+               now.hour <= end_t.tm_hour and \
+               now.minute <= end_t.tm_min:
+                return True
+        elif start_t > end_t:
+            """
+                  XXXXXXXXXXXXXXXXX
+                  23h     0h      1h
+            """
+            if (now.hour >= start_t.tm_hour and \
+                now.minute >= start_t.tm_min and \
+                now.hour <= 23 and \
+                now.minute <= 59) or \
+               (now.hour >= 0 and \
+                now.minute >= 0 and \
+                now.hour <= end_t.tm_hour and \
+                now.minute <= end_t.tm_min):
+                end = end + datetime.timedelta(days=1)
+                return True
+        return False
+
+    def skip_action_period(self, section, option):
+        if option is None:
+            return False
+
+        if self.config.has_section(section):
+            period_s = self.config.get(section, option)
         else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
+            period_s = self.config.get('DEFAULT', option)
+
+        try:
+            import json
+            period = json.loads(period_s)
+        except:
+            print >>sys.stderr, "malformed parameter value: %s.%s"%(section, option)
+            return True
+
+        if self.in_period(period):
+            return False
+
+        return True
+
+    def skip_action(self, section, option, fname,
+                    cmdline_parm=None,
+                    period_option=None,
+                    force=False):
+
+        if force:
+            return False
+
+        # check if we are in allowed period
+        if self.skip_action_period(section, period_option):
+            return True
+
+        # get interval from config file
+        if self.config.has_section(section):
+            interval = self.config.getint(section, option)
+        else:
+            interval = self.config.getint('DEFAULT', option)
 
         # override with command line
-        if self.options.stats_interval is not None:
-            interval = self.options.stats_interval
+        if cmdline_parm is not None and self.options[cmdline_parm] is not None:
+            interval = self.options[cmdline_parm]
 
         # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_stats_push')
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
         if not self.options.force and not self.timestamp(timestamp_f, interval):
+            return True
+
+        return False
+
+    def pushstats(self):
+        if self.skip_action('stats', 'push_interval', 'last_stats_push',
+                            cmdline_parm='stats_interval',
+                            force=self.options.force):
             return
 
         xmlrpcClient.push_stats(force=self.options.force,
@@ -159,76 +244,43 @@ class Node(Svc, Freezer):
                                 collect_date=self.options.collect_date)
 
     def pushpkg(self):
-        # get interval from config file
-        if self.config.has_section('packages'):
-            interval = self.config.getint('packages', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_pkg_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('packages', 'push_interval', 'last_pkg_push',
+                            force=self.options.force):
             return
 
         xmlrpcClient.push_pkg()
 
     def pushpatch(self):
-        # get interval from config file
-        if self.config.has_section('patches'):
-            interval = self.config.getint('patches', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_patch_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('patches', 'push_interval', 'last_patch_push',
+                            force=self.options.force):
             return
 
         xmlrpcClient.push_patch()
 
     def pushasset(self):
-        # get interval from config file
-        if self.config.has_section('asset'):
-            interval = self.config.getint('asset', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_asset_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('asset', 'push_interval', 'last_asset_push',
+                            force=self.options.force):
             return
 
         xmlrpcClient.push_asset(self)
 
     def pushsym(self):
-        # get interval from config file
-        if self.config.has_section('sym'):
-            interval = self.config.getint('sym', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_sym_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('sym', 'push_interval', 'last_sym_push',
+                            force=self.options.force):
             return
 
         xmlrpcClient.push_sym()
 
     def syncservices(self):
-        # get interval from config file
-        if self.config.has_section('sync'):
-            interval = self.config.getint('sync', 'sync_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'sync_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_sync')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('sync', 'sync_interval', 'last_sync',
+                            period_option='sync_period',
+                            force=self.options.force):
             return
 
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
+            svc.force = self.options.force
             svc.action('syncall')
 
     def updateservices(self):
@@ -238,15 +290,8 @@ class Node(Svc, Freezer):
             svc.action('presync')
 
     def pushservices(self):
-        # get interval from config file
-        if self.config.has_section('svcconf'):
-            interval = self.config.getint('svcconf', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_svcconf_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('svcconf', 'push_interval', 'last_svcconf_push',
+                            force=self.options.force):
             return
 
         if self.svcs is None:
@@ -260,15 +305,8 @@ class Node(Svc, Freezer):
         print m.hostid()
 
     def checks(self):
-        # get interval from config file
-        if self.config.has_section('checks'):
-            interval = self.config.getint('checks', 'push_interval')
-        else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
-
-        # do we need to run
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', 'last_checks_push')
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+        if self.skip_action('checks', 'push_interval', 'last_checks_push',
+                            force=self.options.force):
             return
 
         import checks
