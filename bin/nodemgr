@@ -107,6 +107,9 @@ except ex.excError:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     sys.stderr.write(str(exc_value)+'\n')
     sys.exit(1)
+except KeyboardInterrupt:
+    sys.stderr.write("Keybord Interrupt\n")
+    sys.exit(1)
 except:
     raise
 

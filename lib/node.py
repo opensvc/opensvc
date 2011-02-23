@@ -238,6 +238,16 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
+        # get interval from config file
+        if self.config.has_section('stats'):
+            interval = self.config.getint('stats', 'push_interval')
+        else:
+            interval = self.config.getint('DEFAULT', 'push_interval')
+
+        # override with command line
+        if self.options.stats_interval is not None:
+            interval = self.options.stats_interval
+
         xmlrpcClient.push_stats(force=self.options.force,
                                 file=self.options.stats_file,
                                 interval=2*interval,
