@@ -222,8 +222,10 @@ class Node(Svc, Freezer):
             interval = self.config.getint('DEFAULT', option)
 
         # override with command line
-        if cmdline_parm is not None and self.options[cmdline_parm] is not None:
-            interval = self.options[cmdline_parm]
+        if cmdline_parm is not None:
+            v = getattr(self.options, cmdline_parm)
+            if v is not None:
+                interval = v
 
         # do we need to run
         timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
