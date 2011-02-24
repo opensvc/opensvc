@@ -22,24 +22,24 @@ class lockAcquire(Exception):
     def __init__(self, pid):
         self.pid = pid
 
-def monlock(timeout=30, delay=5):
-    lockfile = os.path.join(rcEnv.pathlock, 'svcmon.lock')
+def monlock(timeout=30, delay=5, fname='svcmon.lock'):
+    lockfile = os.path.join(rcEnv.pathlock, fname)
     try:
         lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)
     except lockTimeout:
-        print("timed out waiting for lock")
+        print("timed out waiting for lock (%s)"%lockfile)
         raise ex.excError
     except lockNoLockFile:
         print("lock_nowait: set the 'lockfile' param")
         raise ex.excError
     except lockCreateError:
-        print("can not create lock file %s"%lockfile)
+        print("can not create lock file (%s)"%lockfile)
         raise ex.excError
     except lockAcquire as e:
         print("another svcmon is currently running (pid=%s)"%e.pid)
         raise ex.excError
     except:
-        print("unexpected locking error")
+        print("unexpected locking error (%s)"%lockfile)
         raise ex.excError
     return lockfd
 

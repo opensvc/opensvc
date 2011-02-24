@@ -49,7 +49,8 @@ def dblogger(self, action, begin, end, actionlogfile):
             r.log.setLevel(logging.CRITICAL)
 
     xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
-    xmlrpcClient.svcmon_update(self, self.group_status())
+    g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
+    xmlrpcClient.svcmon_update_combo(g_vars, g_vals, r_vars, r_vals)
     os.unlink(actionlogfile)
     try:
         logging.shutdown()
@@ -344,6 +345,67 @@ class Svc(Resource, Freezer):
         print self.print_status_fmt%("overall",
                                      str(s),
                                      ""),
+
+    def svcmon_push_lists(self, status=None):
+        if status is None:
+            status = self.group_status()
+
+        if self.frozen():
+            frozen = "1"
+        else:
+            frozen = "0"
+
+        r_vars=["svcname",
+                "nodename",
+                "rid",
+                "res_desc",
+                "res_status",
+                "updated",
+                "res_log"]
+        r_vals = []
+        import datetime
+        now = datetime.datetime.now()
+        for rs in self.resSets:
+            for r in rs.resources:
+                r_vals.append([repr(self.svcname),
+                             repr(rcEnv.nodename),
+                             repr(r.rid),
+                             repr(r.label),
+                             repr(rcStatus.status_str(r.rstatus)),
+                             repr(str(now)),
+                             r.status_log_str])
+
+        g_vars=["mon_svcname",
+                "mon_svctype",
+                "mon_nodname",
+                "mon_nodtype",
+                "mon_ipstatus",
+                "mon_diskstatus",
+                "mon_syncstatus",
+                "mon_hbstatus",
+                "mon_containerstatus",
+                "mon_fsstatus",
+                "mon_appstatus",
+                "mon_overallstatus",
+                "mon_updated",
+                "mon_prinodes",
+                "mon_frozen"]
+        g_vals=[self.svcname,
+                self.svctype,
+                rcEnv.nodename,
+                rcEnv.host_mode,
+                str(status["ip"]),
+                str(status["disk"]),
+                str(status["sync"]),
+                str(status["hb"]),
+                str(status["container"]),
+                str(status["fs"]),
+                str(status["app"]),
+                str(status["overall"]),
+                str(now),
+                ' '.join(self.nodes),
+                frozen]
+        return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups):
         self.setup_environ()

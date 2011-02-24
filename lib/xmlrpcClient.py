@@ -231,72 +231,12 @@ def end_action(svc, action, begin, end, logfile):
     )
 
 @xmlrpc_decorator
-def svcmon_update(svc, status):
-    if svc.frozen():
-        frozen = "1"
+def svcmon_update_combo(g_vars, g_vals, r_vars, r_vals):
+    if 'svcmon_update_combo' in proxy_methods:
+        proxy.svcmon_update_combo(g_vars, g_vals, r_vars, r_vals)
     else:
-        frozen = "0"
-
-    vars = [\
-        "mon_svcname",
-        "mon_svctype",
-        "mon_nodname",
-        "mon_nodtype",
-        "mon_hostid",
-        "mon_ipstatus",
-        "mon_diskstatus",
-        "mon_syncstatus",
-        "mon_hbstatus",
-        "mon_containerstatus",
-        "mon_fsstatus",
-        "mon_appstatus",
-        "mon_overallstatus",
-        "mon_updated",
-        "mon_prinodes",
-        "mon_frozen"]
-    vals = [\
-        svc.svcname,
-        svc.svctype,
-        rcEnv.nodename,
-        rcEnv.host_mode,
-        hostid,
-        str(status["ip"]),
-        str(status["disk"]),
-        str(status["sync"]),
-        str(status["hb"]),
-        str(status["container"]),
-        str(status["fs"]),
-        str(status["app"]),
-        str(status["overall"]),
-        str(datetime.now()),
-        ' '.join(svc.nodes),
-        frozen]
-    proxy.svcmon_update(vars, vals)
-    resmon_update(svc, status)
-
-@xmlrpc_decorator
-def resmon_update(svc, status):
-    vals = []
-    now = datetime.now()
-    for rs in svc.resSets:
-        for r in rs.resources:
-            vals.append([repr(svc.svcname),
-                         repr(rcEnv.nodename),
-                         repr(r.rid),
-                         repr(r.label),
-                         repr(rcStatus.status_str(r.rstatus)),
-                         repr(str(now)),
-                         r.status_log_str]
-            )
-    vars = [\
-        "svcname",
-        "nodename",
-        "rid",
-        "res_desc",
-        "res_status",
-        "updated",
-        "res_log"]
-    proxy.resmon_update(vars, vals)
+        proxy.svcmon_update(g_vars, g_vals)
+        proxy.resmon_update(r_vars, r_vals)
 
 @xmlrpc_decorator
 def push_service(svc):
