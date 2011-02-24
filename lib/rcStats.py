@@ -38,7 +38,7 @@ class StatsProvider(object):
         i = 0
         end = self.now
         while i < interval:
-            if i == 0:
+            if i == 0 and self.minutes_today > 0:
                 if interval <= self.minutes_today:
                     delta = interval
                 else:
@@ -47,6 +47,8 @@ class StatsProvider(object):
                 delta = interval - i
             else:
                 delta = 1439
+            if delta == 0:
+                raise
             i += delta
             begin = end - datetime.timedelta(minutes=delta)
             self.ranges.append((begin, end))
