@@ -90,7 +90,7 @@ try:
 except:
     proxy_methods = []
 
-comp_proxy = TimeoutServerProxy(rcEnv.dbcompliance, timeout=20)
+comp_proxy = TimeoutServerProxy(rcEnv.dbcompliance, timeout=120)
 try:
     comp_proxy_methods = comp_proxy.system.listMethods()
 except:
