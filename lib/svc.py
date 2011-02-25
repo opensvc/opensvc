@@ -149,7 +149,11 @@ class Svc(Resource, Freezer):
 
         return self
 
-    def svclock(self, timeout=30, delay=5):
+    def svclock(self, action=None, timeout=30, delay=5):
+        if action in ['push', 'print_status', 'status', 'freeze', 'frozen',
+                      'thaw']:
+            # no need to serialize this action
+            return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
@@ -767,7 +771,7 @@ class Svc(Resource, Freezer):
         """
         err = 0
         try:
-            self.svclock(timeout=waitlock)
+            self.svclock(action, timeout=waitlock)
         except:
             return 1
 
