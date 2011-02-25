@@ -244,7 +244,10 @@ class Compliance(object):
         return var
 
     def format_rule_val(self, val):
-        val = str(val)
+        if isinstance(val, unicode):
+            val = repr(val).strip("'")
+        else:
+            val = str(val)
         illegal_chars = """`;$"""
         for c in illegal_chars:
             if c in val:
