@@ -124,22 +124,24 @@ class Module(object):
         import time
         fo = tempfile.NamedTemporaryFile()
         fe = tempfile.NamedTemporaryFile()
+        _fo = open(fo.name, 'r')
+        _fe = open(fe.name, 'r')
 
         def poll_out():
-            fop = fo.tell()
-            line = fo.readline()
+            fop = _fo.tell()
+            line = _fo.readline()
             if not line:
-                fo.seek(fop)
+                _fo.seek(fop)
                 return None
             sys.stdout.write(line)
             sys.stdout.flush()
             return line
 
         def poll_err():
-            fep = fe.tell()
-            line = fe.readline()
+            fep = _fe.tell()
+            line = _fe.readline()
             if not line:
-                fe.seek(fep)
+                _fe.seek(fep)
                 return None
             line = 'ERR: '+line
             sys.stdout.write(line)
@@ -170,12 +172,16 @@ class Module(object):
         except OSError, e:
             fo.close()
             fe.close()
+            _fo.close()
+            _fe.close()
             if e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
         fo.close()
         fe.close()
+        _fo.close()
+        _fe.close()
         end = datetime.datetime.now()
         print "RCODE:    %d"%p.returncode
         print "DURATION: %s"%str(end-start)
