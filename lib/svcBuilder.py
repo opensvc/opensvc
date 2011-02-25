@@ -454,6 +454,9 @@ def add_filesystems(svc, conf):
         kwargs['disabled'] = get_disabled(conf, s)
         kwargs['optional'] = get_optional(conf, s)
 
+        if conf.has_option(s, 'snap_size'):
+            kwargs['snap_size'] = conf.getint(s, 'snap_size')
+
         r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)
         svc += r

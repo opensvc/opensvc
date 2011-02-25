@@ -44,7 +44,13 @@ class Snap(snap.Snap):
         if lv_exists(self, os.path.join(os.sep, 'dev', vg_name, snap_name)):
             self.log.error("snap of %s already exists"%(lv_name))
             raise ex.syncSnapExists
-        (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(int(lv_size//10))+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+
+        if m.snap_size is not None:
+            snap_size = m.snap_size
+        else:
+            snap_size = int(lv_size//10)
+
+        (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = os.path.join(rcEnv.pathtmp,

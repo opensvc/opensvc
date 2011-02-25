@@ -805,6 +805,12 @@ class KeyDict(KeywordStore):
                   text="The filesystem type. Used to determine the fsck command to use."
                 )
         self += Keyword(
+                  section="fs",
+                  keyword="snap_size",
+                  order=14,
+                  text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
+                )
+        self += Keyword(
                   section="loop",
                   keyword="file",
                   required=True,

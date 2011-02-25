@@ -30,7 +30,7 @@ class Mount(Res.Resource):
     """Define a mount resource 
     """
     def __init__(self, rid=None, mountPoint=None, device=None, fsType=None,
-                 mntOpt=None, always_on=set([]), optional=False,
+                 mntOpt=None, snap_size=None, always_on=set([]), optional=False,
                  disabled=False, tags=set([])):
         Res.Resource.__init__(self, rid=rid, type="fs",
                               optional=optional, disabled=disabled, tags=tags)
@@ -38,6 +38,7 @@ class Mount(Res.Resource):
         self.device = device
         self.fsType = fsType
         self.mntOpt = mntOpt
+        self.snap_size = snap_size
         self.always_on = always_on
         self.label = device + '@' + mountPoint
         self.fsck_h = {}
