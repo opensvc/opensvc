@@ -21,49 +21,51 @@ import os
 import datetime
 
 class StatsProvider(object):
-    def __init__(self, collect_file=None, collect_date=None, interval=2880):
-        self.collect_date = collect_date
-        self.collect_file = collect_file
+    def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
+        self.stats_dir = stats_dir
         self.interval = interval
 
-        x, self.nodename, x, x, x = os.uname()
-        self.now = datetime.datetime.now()
-        self.today = datetime.datetime.today()
-        self.yesterday = self.today - datetime.timedelta(days=1)
+        if stats_end is None:
+            self.stats_end = datetime.datetime.now()
+        else:
+            self.stats_end = datetime.datetime.strptime(stats_end,"%Y-%m-%d %H:%M")
 
-        self.minutes_today = 60*self.now.hour + self.now.minute
+        if stats_start is None:
+            self.stats_start = self.stats_end - datetime.timedelta(minutes=interval)
+        else:
+            self.stats_start = datetime.datetime.strptime(stats_start,"%Y-%m-%d %H:%M")
+            delta = self.stats_end - self.stats_start
+            interval = delta.days * 1440 + delta.seconds // 60
+
+        x, self.nodename, x, x, x = os.uname()
+
+        self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
 
         one_minute = datetime.timedelta(minutes=1)
+        one_day = datetime.timedelta(days=1)
         self.ranges = []
         i = 0
-        end = self.now
-        while i < interval:
-            if i == 0 and self.minutes_today > 0:
-                if interval <= self.minutes_today:
-                    delta = interval
-                else:
-                    delta = self.minutes_today
-            elif i + 1439 > interval:
-                delta = interval - i
-            else:
-                delta = 1439
-            if delta == 0:
-                raise
-            i += delta
-            begin = end - datetime.timedelta(minutes=delta)
-            self.ranges.append((begin, end))
-            end = begin - one_minute
-        #print map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges)
+        end = self.stats_end
+
+        while end > self.stats_start:
+            start = end - one_day
+            if start < self.stats_start:
+                start = self.stats_start
+            if start.day != end.day:
+                start = end - datetime.timedelta(hours=end.hour, minutes=end.minute)
+            if start != end:
+                self.ranges.append((start, end))
+            end = start - one_minute
+        #print self.stats_end, interval, map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges)
 
     def get(self, fname):
         lines = []
         cols = []
-        for i, r in enumerate(self.ranges):
-            t = self.today - datetime.timedelta(days=i)
-            date = t.strftime("%Y-%m-%d")
-            day = t.strftime("%d")
-            start = r[0].strftime("%H:%M:%S")
-            end = r[1].strftime("%H:%M:%S")
+        for start, end in self.ranges:
+            date = start.strftime("%Y-%m-%d")
+            day = start.strftime("%d")
+            start = start.strftime("%H:%M:%S")
+            end = end.strftime("%H:%M:%S")
             _cols, _lines = getattr(self, fname)(date, day, start, end)
             if len(_cols) == 0 or len(_lines) == 0:
                 continue
@@ -72,10 +74,13 @@ class StatsProvider(object):
         return cols, lines
 
     def sarfile(self, day):
-        f = os.path.join(os.sep, 'var', 'log', 'sysstat', 'sa'+day)
-        if os.path.exists(f):
-            return f
-        f = os.path.join(os.sep, 'var', 'log', 'sa', 'sa'+day)
+        if self.stats_dir is None:
+            stats_dir = os.path.join(os.sep, 'var', 'log', 'sysstat')
+            if not os.path.exists(stats_dir):
+                stats_dir = os.path.join(os.sep, 'var', 'log', 'sa')
+        else:
+            stats_dir = self.stats_dir
+        f = os.path.join(stats_dir, 'sa'+day)
         if os.path.exists(f):
             return f
         return None

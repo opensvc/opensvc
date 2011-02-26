@@ -33,9 +33,9 @@ class Options(object):
     def __init__(self):
         self.force = False
         self.debug = False
-        self.stats_file = None
-        self.stats_interval = None
-        self.collect_date = None
+        self.stats_dir = None
+        self.stats_start = None
+        self.stats_end = None
         os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
@@ -236,7 +236,6 @@ class Node(Svc, Freezer):
 
     def pushstats(self):
         if self.skip_action('stats', 'push_interval', 'last_stats_push',
-                            cmdline_parm='stats_interval',
                             force=self.options.force):
             return
 
@@ -246,14 +245,11 @@ class Node(Svc, Freezer):
         else:
             interval = self.config.getint('DEFAULT', 'push_interval')
 
-        # override with command line
-        if self.options.stats_interval is not None:
-            interval = self.options.stats_interval
-
         xmlrpcClient.push_stats(force=self.options.force,
-                                file=self.options.stats_file,
-                                interval=2*interval,
-                                collect_date=self.options.collect_date)
+                                stats_dir=self.options.stats_dir,
+                                stats_start=self.options.stats_start,
+                                stats_end=self.options.stats_end,
+                                interval=2*interval)
 
     def pushpkg(self):
         if self.skip_action('packages', 'push_interval', 'last_pkg_push',

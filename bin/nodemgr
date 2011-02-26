@@ -45,15 +45,15 @@ parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
-parser.add_option("--stats-file", default=None,
-		  action="store", dest="stats_file",
-                  help="points a metrics file for pushstats")
-parser.add_option("--stats-interval", default=None,
-		  action="store", type="int", dest="stats_interval",
-                  help="stats backlog in minutes to push to the collector")
-parser.add_option("--collect-date", default=None,
-		  action="store", dest="collect_date",
-                  help="date in month of the last stats file pointed by --stats-file. If not specified the current date is chosen. The current month is chosen for stats-file <= collect date and the previous month for stats files > collect date.")
+parser.add_option("--stats-dir", default=None,
+		  action="store", dest="stats_dir",
+                  help="points the directory where the metrics files are stored for pushstats")
+parser.add_option("--stats-start", default=None,
+		  action="store", dest="stats_start",
+                  help="stats analysis start date in YYYY-MM-DD HH:MM format")
+parser.add_option("--stats-end", default=None,
+		  action="store", dest="stats_end",
+                  help="stats analysis end date in YYYY-MM-DD HH:MM format")
 parser.add_option("--module", default="",
 		  action="store", dest="module",
                   help="compliance, set module list")

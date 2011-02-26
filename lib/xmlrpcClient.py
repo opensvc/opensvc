@@ -389,14 +389,15 @@ def push_patch():
     proxy.delete_patch(rcEnv.nodename)
     proxy.insert_patch(vars, vals)
 
-def push_stats(force=False, file=None, collect_date=None, interval=15):
+def push_stats(force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None):
     try:
         s = __import__('rcStats'+sysname)
     except ImportError:
         return
-    sp = s.StatsProvider(collect_file=file,
-                         collect_date=collect_date,
-                         interval=interval)
+    sp = s.StatsProvider(interval=interval,
+                         stats_dir=stats_dir,
+                         stats_start=stats_start,
+                         stats_end=stats_end)
     h = {}
     for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                  'blockdev', 'netdev', 'netdev_err']:
