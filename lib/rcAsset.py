@@ -67,6 +67,12 @@ class Asset(object):
         except:
             return 'TST'
 
+    def get_team_responsible(self):
+        try:
+            return self.node.config.get('node', 'team_responsible')
+        except:
+            return None
+
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
@@ -85,4 +91,7 @@ class Asset(object):
         d['serial'] = self.get_serial()
         d['model'] = self.get_model()
         d['environnement'] = self.get_environnement()
+        team_responsible = self.get_team_responsible()
+        if team_responsible is not None:
+            d['team_responsible'] = team_responsible
         return d
