@@ -34,7 +34,7 @@ import node
 n = node.Node()
 
 for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
-               "pushasset", "checks", "syncservices"]:
+               "pushasset", "checks", "syncservices", "compliance_check"]:
     try:
         n.action(action)
     except:

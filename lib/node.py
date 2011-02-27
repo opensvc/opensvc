@@ -36,6 +36,9 @@ class Options(object):
         self.stats_dir = None
         self.stats_start = None
         self.stats_end = None
+        self.moduleset = ""
+        self.module = ""
+        self.ruleset_date = ""
         os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
@@ -49,6 +52,9 @@ class Node(Svc, Freezer):
           'push_interval': 1439,
           'sync_interval': 1439,
           'sync_period': '["04:00", "06:00"]',
+          'comp_check_interval': 10072,
+          'comp_check_days': '["sunday"]',
+          'comp_check_period': '["05:00", "06:00"]',
         }
         self.config = ConfigParser.RawConfigParser(config_defaults)
         self.config.read(self.nodeconf)
@@ -182,14 +188,24 @@ class Node(Svc, Freezer):
                 return True
         return False
 
+    def in_days(self, days):
+        now = datetime.datetime.now()
+        today = now.strftime('%A').lower()
+        if today in map(lambda x: x.lower(), days):
+            return True
+        return False
+
     def skip_action_period(self, section, option):
         if option is None:
             return False
 
-        if self.config.has_section(section):
+        if self.config.has_section(section) and \
+           self.config.has_option(section, option):
             period_s = self.config.get(section, option)
-        else:
+        elif self.config.has_option('DEFAULT', option):
             period_s = self.config.get('DEFAULT', option)
+        else:
+            return False
 
         try:
             import json
@@ -203,16 +219,50 @@ class Node(Svc, Freezer):
 
         return True
 
+    def skip_action_days(self, section, option):
+        if option is None:
+            return False
+
+        if self.config.has_section(section) and \
+           self.config.has_option(section, option):
+            days_s = self.config.get(section, option)
+        elif self.config.has_option('DEFAULT', option):
+            days_s = self.config.get('DEFAULT', option)
+        else:
+            return False
+
+        try:
+            import json
+            days = json.loads(days_s)
+        except:
+            print >>sys.stderr, "malformed parameter value: %s.%s"%(section, option)
+            return True
+
+        if self.in_days(days):
+            return False
+
+        return True
+
     def skip_action(self, section, option, fname,
                     cmdline_parm=None,
                     period_option=None,
+                    days_option=None,
                     force=False):
+
+        def err(msg):
+            print '%s: skip:'%section, msg, '(--force to bypass)'
 
         if force:
             return False
 
         # check if we are in allowed period
         if self.skip_action_period(section, period_option):
+            err('out of allowed periods')
+            return True
+
+        # check if we are in allowed days of week
+        if self.skip_action_days(section, days_option):
+            err('out of allowed days')
             return True
 
         # get interval from config file
@@ -230,6 +280,7 @@ class Node(Svc, Freezer):
         # do we need to run
         timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
         if not self.options.force and not self.timestamp(timestamp_f, interval):
+            err('last run < interval')
             return True
 
         return False
@@ -282,6 +333,7 @@ class Node(Svc, Freezer):
     def syncservices(self):
         if self.skip_action('sync', 'sync_interval', 'last_sync',
                             period_option='sync_period',
+                            days_option='sync_days',
                             force=self.options.force):
             return
 
@@ -324,6 +376,11 @@ class Node(Svc, Freezer):
         c.do_checks()
 
     def compliance_check(self):
+        if self.skip_action('compliance', 'comp_check_interval', 'last_comp_check',
+                            period_option='comp_check_period',
+                            days_option='comp_check_days',
+                            force=self.options.force):
+            return
         import compliance
         c = compliance.Compliance(self.options)
         c.do_checks()

@@ -41,6 +41,7 @@ def install_cron():
            'marker': agt,
            'ok': False
     }]
+    remove_entries = ['bin/nodemgr compliance check']
 
     purge = []
     root_crontab = False
@@ -111,6 +112,12 @@ def install_cron():
         print "problem preparing the new crontab"
         return False
  
+    for i, line in enumerate(new):
+        for re in remove_entries:
+            if re in line:
+                print 'delete line "%s" from %s'%(re,root_crontab)
+                del new[i]
+
     with open(root_crontab, 'w') as f:
         f.write(''.join(new))
 
