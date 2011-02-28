@@ -660,12 +660,16 @@ class Svc(Resource, Freezer):
 
     def syncnodes(self):
         self.presync()
-        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncnodes")
+        self.sub_set_action("sync.rsync", "syncnodes")
+        self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.dds", "syncnodes")
         self.remote_postsync()
 
     def syncdrp(self):
         self.presync()
-        self.sub_set_action(["sync.rsync", "sync.zfs", "sync.dds"], "syncdrp")
+        self.sub_set_action("sync.rsync", "syncdrp")
+        self.sub_set_action("sync.zfs", "syncdrp")
+        self.sub_set_action("sync.dds", "syncdrp")
         self.remote_postsync()
 
     def syncswap(self):
