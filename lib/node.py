@@ -161,30 +161,23 @@ class Node(Svc, Freezer):
         try:
             start_t = time.strptime(start_s, "%H:%M")
             end_t = time.strptime(end_s, "%H:%M")
+            start = start_t.tm_hour * 60 + start_t.tm_min
+            end = end_t.tm_hour * 60 + end_t.tm_min
         except:
             print >>sys.stderr, "malformed time string: %s"%str(period)
             return False
         now = datetime.datetime.now()
-        if start_t <= end_t:
-            if now.hour >= start_t.tm_hour and \
-               now.minute >= start_t.tm_min and \
-               now.hour <= end_t.tm_hour and \
-               now.minute <= end_t.tm_min:
+        now_m = now.hour * 60 + now.minute
+        if start <= end:
+            if now_m >= start and now_m <= end:
                 return True
-        elif start_t > end_t:
+        elif start > end:
             """
                   XXXXXXXXXXXXXXXXX
                   23h     0h      1h
             """
-            if (now.hour >= start_t.tm_hour and \
-                now.minute >= start_t.tm_min and \
-                now.hour <= 23 and \
-                now.minute <= 59) or \
-               (now.hour >= 0 and \
-                now.minute >= 0 and \
-                now.hour <= end_t.tm_hour and \
-                now.minute <= end_t.tm_min):
-                end = end + datetime.timedelta(days=1)
+            if (now_m >= start and now_m <= 1440) or \
+               (now_m >= 0 and now_m <= end):
                 return True
         return False
 
