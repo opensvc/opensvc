@@ -989,8 +989,9 @@ def build(name):
         svc.log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
         del(svc)
         return None
-    if svc.flex_min_nodes > len(svc.nodes):
-        svc.log.error("invalid flex_min_nodes '%d' (>nb of nodes)."%svc.flex_min_nodes)
+    nb_nodes = len(svc.nodes)
+    if nb_nodes > 0 and svc.flex_min_nodes > nb_nodes:
+        svc.log.error("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
         del(svc)
         return None
 
