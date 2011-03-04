@@ -537,7 +537,7 @@ def add_syncs_zfs(svc, conf):
         elif conf.has_option(s, 'src'):
             src = conf.get(s, "src")
         else:
-            log.error("config file section %s must have src set" % s)
+            svc.log.error("config file section %s must have src set" % s)
             return
         kwargs['src'] = src
 
@@ -550,7 +550,7 @@ def add_syncs_zfs(svc, conf):
         kwargs['dst'] = dst
 
         if not conf.has_option(s, 'target'):
-            log.error("config file section %s must have target set" % s)
+            svc.log.error("config file section %s must have target set" % s)
             return
         else:
             kwargs['target'] = conf.get(s, 'target').split()
@@ -593,7 +593,7 @@ def add_syncs_dds(svc, conf):
         kwargs = {}
 
         if not conf.has_option(s, 'src'):
-            log.error("config file section %s must have src set" % s)
+            svc.log.error("config file section %s must have src set" % s)
             return
         else:
             kwargs['src'] = conf.get(s, 'src')
@@ -604,7 +604,7 @@ def add_syncs_dds(svc, conf):
             kwargs['dst'] = conf.get(s, 'dst')
 
         if not conf.has_option(s, 'target'):
-            log.error("config file section %s must have target set" % s)
+            svc.log.error("config file section %s must have target set" % s)
             return
         else:
             kwargs['target'] = conf.get(s, 'target').split()
@@ -657,7 +657,7 @@ def add_syncs_symclone(svc, conf):
         kwargs = {}
 
         if not conf.has_option(s, 'symdg'):
-            log.error("config file section %s must have symdg set" % s)
+            svc.log.error("config file section %s must have symdg set" % s)
             return
         else:
             kwargs['symdg'] = conf.get(s, 'symdg')
@@ -679,7 +679,7 @@ def add_syncs_symclone(svc, conf):
         if 'symdevs' in conf.options(s) and symdevs == []:
             symdevs = conf.get(s, 'symdevs').split()
         if len(symdevs) == 0:
-            log.error("config file section %s must have symdevs or symdevs@node set" % s)
+            svc.log.error("config file section %s must have symdevs or symdevs@node set" % s)
             return
         else:
             kwargs['symdevs'] = symdevs
@@ -708,10 +708,10 @@ def add_syncs_netapp(svc, conf):
             continue
 
         if not conf.has_option(s, 'path'):
-            log.error("config file section %s must have path set" % s)
+            svc.log.error("config file section %s must have path set" % s)
             return
         if not conf.has_option(s, 'user'):
-            log.error("config file section %s must have user set" % s)
+            svc.log.error("config file section %s must have user set" % s)
             return
 
         kwargs = {}
@@ -736,7 +736,7 @@ def add_syncs_netapp(svc, conf):
             (filer, node) = o.split('@')
             filers[node] = conf.get(s, o)
         if rcEnv.nodename not in filers:
-            log.error("config file section %s must have filer@%s set" %(s, rcEnv.nodename))
+            svc.log.error("config file section %s must have filer@%s set" %(s, rcEnv.nodename))
 
         kwargs['filers'] = filers
         kwargs['path'] = conf.get(s, 'path')
@@ -766,7 +766,7 @@ def add_syncs_rsync(svc, conf):
 
         if not conf.has_option(s, 'src') or \
            not conf.has_option(s, 'dst'):
-            log.error("config file section %s must have src and dst set" % s)
+            svc.log.error("config file section %s must have src and dst set" % s)
             return
 
         options = []
@@ -967,7 +967,7 @@ def build(name):
     """ prune not managed service
     """
     if rcEnv.nodename not in svc.nodes | svc.drpnodes:
-        log.error('service %s not managed here' % name)
+        svc.log.error('service %s not managed here' % name)
         del(svc)
         return None
 
@@ -977,7 +977,7 @@ def build(name):
         svc.clustertype = 'failover'
     allowed_clustertype = ['failover', 'allactive', 'flex', 'autoflex']
     if svc.clustertype not in allowed_clustertype:
-        log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
+        svc.log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
         del(svc)
         return None
 
@@ -986,11 +986,11 @@ def build(name):
     else:
         svc.flex_min_nodes = 1
     if svc.flex_min_nodes < 1:
-        log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
+        svc.log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
         del(svc)
         return None
     if svc.flex_min_nodes > len(svc.nodes):
-        log.error("invalid flex_min_nodes '%d' (>nb of nodes)."%svc.flex_min_nodes)
+        svc.log.error("invalid flex_min_nodes '%d' (>nb of nodes)."%svc.flex_min_nodes)
         del(svc)
         return None
 
@@ -999,7 +999,7 @@ def build(name):
     else:
         svc.flex_max_nodes = 0
     if svc.flex_max_nodes < 0:
-        log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
+        svc.log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
         del(svc)
         return None
 
@@ -1008,11 +1008,11 @@ def build(name):
     else:
         svc.flex_cpu_low_threshold = 10
     if svc.flex_cpu_low_threshold < 0:
-        log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
+        svc.log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
         del(svc)
         return None
     if svc.flex_cpu_low_threshold > 100:
-        log.error("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
+        svc.log.error("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
         del(svc)
         return None
 
@@ -1021,11 +1021,11 @@ def build(name):
     else:
         svc.flex_cpu_high_threshold = 10
     if svc.flex_cpu_high_threshold < 0:
-        log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
+        svc.log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
         del(svc)
         return None
     if svc.flex_cpu_high_threshold > 100:
-        log.error("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
+        svc.log.error("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
         del(svc)
         return None
 
@@ -1035,14 +1035,14 @@ def build(name):
         svc.svctype = ''
 
     if svc.svctype not in rcEnv.allowed_svctype:
-        log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(allowed_svctype)))
+        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(allowed_svctype)))
         del(svc)
         return None
 
     """ prune service whose service type does not match host mode
     """
     if svc.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
-        log.error('service %s type %s is not allowed to run on this node (host mode %s)' % (svc.svcname, svc.svctype, rcEnv.host_mode))
+        svc.log.error('service %s type %s is not allowed to run on this node (host mode %s)' % (svc.svcname, svc.svctype, rcEnv.host_mode))
         del(svc)
         return None
 
