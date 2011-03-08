@@ -516,6 +516,10 @@ class Svc(Resource, Freezer):
     def stoploop(self):
         self.sub_set_action("disk.loop", "stop")
 
+    def stopvg(self):
+        self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.scsireserv", "stop")
+
     def startvg(self):
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
@@ -781,6 +785,9 @@ class Svc(Resource, Freezer):
 
         try:
             getattr(self, action)()
+        except AttributeError:
+            self.log.error("unsupported action")
+            err = 1
         except ex.excError:
             err = 1
         except ex.excSignal:
