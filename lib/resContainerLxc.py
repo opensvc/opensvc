@@ -73,7 +73,8 @@ class Lxc(resContainer.Container):
         (ret, out) = self.vcall(cmd)
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
-        return ret
+        if ret != 0:
+            raise ex.excError
 
     def get_cf_value(self, param):
         value = None

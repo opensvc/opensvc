@@ -70,14 +70,20 @@ class Kvm(resContainer.Container):
             raise ex.excError
         cmd = ['virsh', 'start', self.name]
         (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def container_stop(self):
         cmd = ['virsh', 'shutdown', self.name]
         (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
         (ret, buff) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def is_up(self):
         cmd = ['virsh', 'dominfo', self.name]
