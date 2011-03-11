@@ -23,6 +23,7 @@ import resDg
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
+from rcUtilities import which
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
@@ -101,11 +102,24 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
+    def remove_parts(self):
+        if not which('partx'):
+            return
+        cmd = ['lvs', '-o', 'name', '--noheadings', self.name]
+        (ret, out) = self.call(cmd)
+        if ret != 0:
+            self.log.error("can not fetch logical volume list from %s"%self.name)
+            return
+        base_cmd = ['kpartx', '-d']
+        for lv in out.split():
+             self.vcall(base_cmd+[os.path.join(os.sep, 'dev', self.name, lv)])
+
     def do_stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return
         self.remove_tags([self.tag])
+        self.remove_parts()
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
