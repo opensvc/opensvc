@@ -78,7 +78,7 @@ class Apps(resApp.Apps):
         buff = p.communicate()
         if p.returncode != 0:
             return []
-        return buff[0].split('\n')
+        return sorted(buff[0].split('\n'))
 
     def app_exist(self, name):
         """ verify app_exists inside Vm
