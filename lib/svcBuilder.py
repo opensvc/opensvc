@@ -59,6 +59,8 @@ def svcmode_mod_name(svcmode=''):
     """
     if svcmode == 'lxc':
         return ('svcLxc', 'SvcLxc')
+    elif svcmode == 'vz':
+        return ('svcVz', 'SvcVz')
     elif svcmode == 'zone':
         return ('svcZone', 'SvcZone')
     elif svcmode == 'jail':
@@ -194,6 +196,8 @@ def add_ips(svc, conf):
         if conf.has_option(s, "netmask"):
             kwargs['mask'] = conf.get(s, "netmask")
         if svc.svcmode == 'lxc':
+            ip = __import__('resIp'+rcEnv.sysname+'Lxc')
+        elif svc.svcmode == 'vz':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
         elif svc.svcmode  == 'kvm':
             ip = __import__('resIp'+'Kvm')

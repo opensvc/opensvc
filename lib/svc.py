@@ -81,6 +81,7 @@ class Svc(Resource, Freezer):
                              "container.kvm",
                              "container.xen",
                              "container.lxc",
+                             "container.vz",
                              "container.zone",
                              "container.jail",
                              "container.ldom",
@@ -566,6 +567,7 @@ class Svc(Resource, Freezer):
 
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
+        self.sub_set_action("container.vz", "start")
         self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
         self.sub_set_action("container.xen", "start")
@@ -590,6 +592,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.kvm", "stop")
         self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
+        self.sub_set_action("container.vz", "stop")
         self.refresh_ip_status()
 
     def startapp(self):
