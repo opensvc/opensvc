@@ -10,19 +10,7 @@
 	<array>
 		<string>/opt/opensvc/bin/allprimaryservices</string>
 		<string>--parallel</string>
-		<string>start</string>
-	</array>
-</dict>
-<dict>
-	<key>Disabled</key>
-	<false/>
-	<key>Label</key>
-	<string>com.opensvc.svcmgr</string>
-	<key>ProgramArguments</key>
-	<array>
-		<string>/opt/opensvc/bin/allservices</string>
-		<string>--parallel --cluster</string>
-		<string>startstandby</string>
+		<string>boot</string>
 	</array>
 </dict>
 </plist>

@@ -66,6 +66,7 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
+        self.disable_fork_dblogger = False
         self.svcname = svcname
         self.vmname = ""
         self.containerize = True
@@ -471,6 +472,19 @@ class Svc(Resource, Freezer):
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
+    def boot(self):
+        if rcEnv.nodename == self.autostart_node:
+            self.start()
+        else:
+            self.cluster = True
+            self.startstandby()
+
+    def shutdown(self):
+        # don't loose the action log on node shutdown
+        self.disable_fork_dblogger = True
+        self.force = True
+        self.stop()
+
     def start(self):
         self.starthb()
         self.startip()
@@ -848,7 +862,10 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        fork_dblogger(self, action, begin, end, actionlogfile)
+        if self.disable_fork_dblogger:
+            dblogger(self, action, begin, end, actionlogfile)
+        else:
+            fork_dblogger(self, action, begin, end, actionlogfile)
         return err
 
     def restart(self):

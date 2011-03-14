@@ -3,14 +3,12 @@
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
 allservices=${osvc_path}/allservices
-allprimaryservices=${osvc_path}/allprimaryservices
 
 case $1 in
 start)
-	${allservices} ${osvc_opts} --cluster startstandby
-	${allprimaryservices} ${osvc_opts} start
+	${allservices} ${osvc_opts} boot
 	;;
 stop)
-	${allservices} ${osvc_opts} --force stop
+	${allservices} ${osvc_opts} shutdown
 	;;
 esac

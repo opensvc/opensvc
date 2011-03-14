@@ -21,6 +21,8 @@ from rcGlobalEnv import *
 
 action_desc = {
 	'printsvc':	'display service live configuration',
+	'boot':	        'start a service if executed on the primary node, startstandby if not',
+	'shutdown':     'stop a service, disabling the background database logging',
 	'start':	'start a service, chaining startip-diskstart-startapp',
 	'startstandby':	'start service resources marked always_on',
 	'startip':	'configure service ip addresses',

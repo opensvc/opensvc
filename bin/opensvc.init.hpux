@@ -10,7 +10,6 @@ fi
 osvc_path=/opt/opensvc/bin
 osvc_opts="--parallel"
 allservices=${osvc_path}/allservices
-allprimaryservices=${osvc_path}/allprimaryservices
 agt=${osvc_path}/perfagt.`uname -s`
 
 case $1 in
@@ -26,8 +25,7 @@ start)
 	if [ -x $agt ] ; then
 		$agt
 	fi
-	${allservices} ${osvc_opts} --cluster startstandby
-	${allprimaryservices} ${osvc_opts} start
+	${allservices} ${osvc_opts} boot
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
@@ -38,6 +36,6 @@ stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
 	fi
-	${allservices} ${osvc_opts} --force stop
+	${allservices} ${osvc_opts} shutdown
 	;;
 esac
