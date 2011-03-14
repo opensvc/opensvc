@@ -167,7 +167,7 @@ class Module(object):
                 time.sleep(0.1)
                 log = poll_pipes(log)
                 if p.poll() != None:
-                    log += poll_pipes(log)
+                    log = poll_pipes(log)
                     break
         except OSError, e:
             fo.close()
