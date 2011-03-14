@@ -473,7 +473,7 @@ class Svc(Resource, Freezer):
         return disks
 
     def boot(self):
-        if rcEnv.nodename == self.autostart_node:
+        if rcEnv.nodename == self.autostart_node or self.clustertype == 'flex':
             self.start()
         else:
             self.cluster = True
