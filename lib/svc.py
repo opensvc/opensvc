@@ -96,6 +96,7 @@ class Svc(Resource, Freezer):
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.evasnap",
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
@@ -705,6 +706,7 @@ class Svc(Resource, Freezer):
     def syncresync(self):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
+        self.sub_set_action("sync.evasnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
 
     def syncbreak(self):
@@ -801,10 +803,11 @@ class Svc(Resource, Freezer):
             return 1
 
         try:
-            getattr(self, action)()
-        except AttributeError:
-            self.log.error("unsupported action")
-            err = 1
+            if hasattr(self, action):
+                getattr(self, action)()
+            else:
+                self.log.error("unsupported action")
+                err = 1
         except ex.excError:
             err = 1
         except ex.excSignal:

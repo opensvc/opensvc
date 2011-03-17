@@ -524,6 +524,7 @@ def add_syncs(svc, conf):
     add_syncs_rsync(svc, conf)
     add_syncs_netapp(svc, conf)
     add_syncs_symclone(svc, conf)
+    add_syncs_evasnap(svc, conf)
     add_syncs_dds(svc, conf)
     add_syncs_zfs(svc, conf)
 
@@ -644,6 +645,62 @@ def add_syncs_dds(svc, conf):
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
         r = dds.syncDds(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
+def add_syncs_evasnap(svc, conf):
+    try:
+        sc = __import__('resSyncEvasnap'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncEvasnap')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if conf.has_option(s, 'type') and \
+           conf.get(s, 'type') != 'evasnap':
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+
+        kwargs = {}
+
+        defaults = conf.defaults()
+        if conf.has_option(s, 'sync_max_delay'):
+            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        elif 'sync_max_delay' in defaults:
+            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
+
+        if conf.has_option(s, 'sync_min_delay'):
+            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
+        elif 'sync_min_delay' in defaults:
+            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
+
+
+        if conf.has_option(s, 'eva_name'):
+            kwargs['eva_name'] = conf.get(s, 'eva_name')
+        else:
+            svc.log.error("config file section %s must have eva_name set" % s)
+
+        import json
+        pairs = []
+        if 'pairs' in conf.options(s):
+            pairs = json.loads(conf.get(s, 'pairs'))
+        if len(pairs) == 0:
+            svc.log.error("config file section %s must have pairs set" % s)
+            return
+        else:
+            kwargs['pairs'] = pairs
+
+        if conf.has_option(s, 'timeout'):
+            kwargs['timeout'] = conf.getint(s, 'timeout')
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s)
+        r = sc.syncEvasnap(**kwargs)
         add_triggers(r, conf, s)
         svc += r
 
