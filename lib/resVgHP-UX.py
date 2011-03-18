@@ -158,6 +158,8 @@ class Vg(resDg.Dg):
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
+        if not os.path.exists(self.mapfile_name()):
+            self.do_export()
         if not self.is_imported():
             return False
         if not self.is_active():
@@ -184,10 +186,17 @@ class Vg(resDg.Dg):
             raise ex.excError
 
     def do_export(self):
-        if not self.is_imported():
-            self.log.info("%s is already exported" % self.name)
-            return
-        cmd = [ 'vgexport', '-m', self.mapfile_name(), '-s', self.name ]
+        preview = False
+        if os.path.exists(self.mapfile_name()):
+            if not self.is_imported():
+                self.log.info("%s is already exported" % self.name)
+                return
+        elif self.is_active():
+            preview = True
+        if preview:
+            cmd = [ 'vgexport', '-p', '-m', self.mapfile_name(), '-s', self.name ]
+        else:
+            cmd = [ 'vgexport', '-m', self.mapfile_name(), '-s', self.name ]
         (ret, out) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -224,7 +233,7 @@ class Vg(resDg.Dg):
 
     def disklist(self):
         need_export = False
-        if not self.is_imported():
+        if not self.is_active() and not self.is_imported():
             self.do_import()
             need_export = True
         cmd = ['strings', '/etc/lvmtab']
