@@ -1380,7 +1380,7 @@ def create(svcname, resources=[], interactive=False):
     initdir = svcname+'.dir'
     if not os.path.exists(initdir):
         os.makedirs(initdir)
-    if not os.path.islink(svcname+'.d'):
+    if not os.path.islink(svcname+'.d') and os.path.exists(svcname+'.d'):
         os.unlink(svcname+'.d')
     if not os.path.exists(svcname+'.d'):
         os.symlink(initdir, svcname+'.d')
