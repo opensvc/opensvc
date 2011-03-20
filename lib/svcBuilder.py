@@ -167,6 +167,49 @@ def always_on_nodes_set(svc, conf, section):
     always_on |= set(always_on_opt) - set(['nodes', 'drpnodes'])
     return always_on
 
+def get_sync_args(conf, s, svc):
+    kwargs = {}
+    defaults = conf.defaults()
+    if conf.has_option(s, 'sync_max_delay'):
+        kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+    elif 'sync_max_delay' in defaults:
+        kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
+
+    if conf.has_option(s, 'sync_min_delay'):
+        kwargs['sync_interval'] = conf.getint(s, 'sync_min_delay')
+        svc.log.warn("sync_min_delay is deprecated. replace with sync_interval.")
+    elif 'sync_min_delay' in defaults:
+        kwargs['sync_interval'] = int(defaults['sync_min_delay'])
+        svc.log.warn("sync_min_delay is deprecated. replace with sync_interval.")
+
+    if conf.has_option(s, 'sync_interval'):
+        kwargs['sync_interval'] = conf.getint(s, 'sync_interval')
+    elif 'sync_interval' in defaults:
+        kwargs['sync_interval'] = int(defaults['sync_interval'])
+    elif 'sync_max_delay' in kwargs:
+        kwargs['sync_interval'] = kwargs['sync_max_delay']
+
+    import json
+
+    try:
+        if conf.has_option(s, 'sync_period'):
+            kwargs['sync_period'] = json.loads(conf.get(s, 'sync_period'))
+        elif conf.has_option('DEFAULT', 'sync_period'):
+            kwargs['sync_period'] = json.loads(conf.get('DEFAULT', 'sync_period'))
+    except ValueError:
+        svc.log.error("malformed parameter value: %s.%s"%(s, 'sync_period'))
+
+    try:
+        if conf.has_option(s, 'sync_days'):
+            kwargs['sync_days'] = json.loads(conf.get(s, 'sync_days'))
+        elif conf.has_option('DEFAULT', 'sync_days'):
+            kwargs['sync_days'] = json.loads(conf.get('DEFAULT', 'sync_days'))
+    except ValueError:
+        svc.log.error("malformed parameter value: %s.%s"%(s, 'sync_days'))
+
+    return kwargs
+
+
 def add_ips(svc, conf):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
@@ -569,21 +612,11 @@ def add_syncs_zfs(svc, conf):
         if conf.has_option(s, 'recursive'):
             kwargs['recursive'] = conf.getboolean(s, 'recursive')
 
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
         r = zfs.SyncZfs(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -629,21 +662,11 @@ def add_syncs_dds(svc, conf):
         if conf.has_option(s, 'delta_store'):
             kwargs['delta_store'] = conf.get(s, 'delta_store')
 
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
         r = dds.syncDds(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -666,18 +689,6 @@ def add_syncs_evasnap(svc, conf):
 
         kwargs = {}
 
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
-
         if conf.has_option(s, 'eva_name'):
             kwargs['eva_name'] = conf.get(s, 'eva_name')
         else:
@@ -693,13 +704,11 @@ def add_syncs_evasnap(svc, conf):
         else:
             kwargs['pairs'] = pairs
 
-        if conf.has_option(s, 'timeout'):
-            kwargs['timeout'] = conf.getint(s, 'timeout')
-
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncEvasnap(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -729,18 +738,6 @@ def add_syncs_symclone(svc, conf):
         else:
             kwargs['symdg'] = conf.get(s, 'symdg')
 
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
-
         if 'symdevs@'+rcEnv.nodename in conf.options(s):
             symdevs = conf.get(s, 'symdevs@'+rcEnv.nodename).split()
         if 'symdevs' in conf.options(s) and symdevs == []:
@@ -758,6 +755,7 @@ def add_syncs_symclone(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncSymclone(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -782,17 +780,6 @@ def add_syncs_netapp(svc, conf):
             return
 
         kwargs = {}
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
         filers = {}
         if 'filer' in conf.options(s):
             for n in svc.nodes | svc.drpnodes:
@@ -812,6 +799,7 @@ def add_syncs_netapp(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
 
         r = resSyncNetapp.syncNetapp(**kwargs)
         add_triggers(r, conf, s)
@@ -862,17 +850,6 @@ def add_syncs_rsync(svc, conf):
         if conf.has_option(s, 'bwlimit'):
             kwargs['bwlimit'] = conf.get(s, 'bwlimit')
 
-        defaults = conf.defaults()
-        if conf.has_option(s, 'sync_min_delay'):
-            kwargs['sync_min_delay'] = conf.getint(s, 'sync_min_delay')
-        elif 'sync_min_delay' in defaults:
-            kwargs['sync_min_delay'] = int(defaults['sync_min_delay'])
-
-        if conf.has_option(s, 'sync_max_delay'):
-            kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
-        elif 'sync_max_delay' in defaults:
-            kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
         targethash = {}
         if 'nodes' in target: targethash['nodes'] = svc.nodes
         if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
@@ -881,6 +858,7 @@ def add_syncs_rsync(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
 
         r = resSyncRsync.Rsync(**kwargs)
         add_triggers(r, conf, s)

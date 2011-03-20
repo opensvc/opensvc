@@ -728,6 +728,17 @@ class Svc(Resource, Freezer):
     def printsvc(self):
         print str(self)
 
+    def can_sync(self, target=None):
+        ret = False
+        rtypes = ["sync.netapp", "sync.dds", "sync.zfs",
+                  "sync.rsync", "sync.zfs"]
+        for rt in rtypes:
+            for rs in self.get_res_sets(rt):
+                for r in rs.resources:
+                    ret |= r.can_sync(target)
+                    if ret: return True
+        return False
+
     def syncall(self):
         try: self.syncnodes()
         except: pass
@@ -785,6 +796,15 @@ class Svc(Resource, Freezer):
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
             err = self.do_action(action, waitlock=waitlock)
+        elif action in ["syncall", "syncdrp", "syncnodes"]:
+            if action == "syncall": kwargs = {}
+            elif action == "syncnodes": kwargs = {'target': 'nodes'}
+            elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
+            if self.can_sync(**kwargs):
+                err = self.do_logged_action(action, waitlock=waitlock)
+            else:
+                err = 0
+                self.log.debug("nothing to sync for the service for now")
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         if self.parallel:
