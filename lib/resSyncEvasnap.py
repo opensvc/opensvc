@@ -22,22 +22,30 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
-import resources as Res
 import time
 import datetime
 import xml.etree.ElementTree as ET
 import subprocess
+import resSync
 
-class syncEvasnap(Res.Resource):
+class syncEvasnap(resSync.Sync):
     def wait_for_devs_ready(self):
         pass
 
-    def in_sync_min_delay(self):
-        min = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_min_delay)
-        for info in self._lun_info.values():
-            if info['creationdatetime'] < min:
-                return False
-        return True
+    def can_sync(self, target=None):
+        ts = None
+ 
+        """ get oldest snap
+        """
+        for pair in self.pairs:
+            info = self.lun_info(pair['dst'])
+            if info is None:
+                self.info.debug("snap %s missing"%pair['dst'])
+                return True
+            _ts = info['creationdatetime']
+            if ts is None or _ts < ts:
+                ts = _ts
+        self.skip_sync(ts)
 
     def recreate(self):
         def snapname(info):
@@ -51,12 +59,12 @@ class syncEvasnap(Res.Resource):
 
         status = self._status(skip_prereq=True)
 
-        if not self.svc.force and self.in_sync_min_delay():
-            self.log.info("snapshot were created in the last %d minutes. skip."%self.sync_min_delay)
+        if not self.can_sync():
             return
 
         if not self.svc.force and status == rcStatus.UP:
             self.log.info("snapshots are already fresh. use --force to bypass")
+            return
 
         cmd = []
         for pair in self.pairs:
@@ -244,16 +252,20 @@ class syncEvasnap(Res.Resource):
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
         
 
-    def __init__(self, rid=None, pairs=[], timeout=300, eva_name="",
-                 sync_max_delay=1440, sync_min_delay=30,
+    def __init__(self, rid=None, pairs=[], eva_name="",
+                 sync_max_delay=None, sync_interval=None, sync_days=None,
+                 sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
+        resSync.Sync.__init__(self, rid=rid, type="sync.evasnap",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
+
         self.label = "EVA snapshot %s"%(rid)
         self.eva_name = eva_name
         self.pairs = pairs
-        self.timeout = timeout
-        self.sync_max_delay = sync_max_delay
-        self.sync_min_delay = sync_min_delay
-        Res.Resource.__init__(self, rid, "sync.evasnap", optional=optional, disabled=disabled, tags=tags)
         self.sssubin = os.path.join(rcEnv.pathbin, 'sssu')
         self.conf = os.path.join(rcEnv.pathetc, 'sssu.conf')
         self._lun_info = {}
