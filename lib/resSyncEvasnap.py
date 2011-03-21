@@ -45,7 +45,7 @@ class syncEvasnap(resSync.Sync):
             _ts = info['creationdatetime']
             if ts is None or _ts < ts:
                 ts = _ts
-        self.skip_sync(ts)
+        return not self.skip_sync(ts)
 
     def recreate(self):
         def snapname(info):
