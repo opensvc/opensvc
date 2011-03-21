@@ -703,6 +703,11 @@ class Svc(Resource, Freezer):
     def syncquiesce(self):
         self.sub_set_action("sync.netapp", "syncquiesce")
 
+    def resync(self):
+        self.stop()
+        self.syncresync()
+        self.start()
+
     def syncresync(self):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
