@@ -796,8 +796,8 @@ class Svc(Resource, Freezer):
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
             err = self.do_action(action, waitlock=waitlock)
-        elif action in ["syncall", "syncdrp", "syncnodes"]:
-            if action == "syncall": kwargs = {}
+        elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
+            if action == "syncall" or "syncupdate": kwargs = {}
             elif action == "syncnodes": kwargs = {'target': 'nodes'}
             elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
             if self.can_sync(**kwargs):

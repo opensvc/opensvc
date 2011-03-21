@@ -22,10 +22,11 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
-import resources as Res
 import time
+import resSync
+import datetime
 
-class syncNetapp(Res.Resource):
+class syncNetapp(resSync.Sync):
     def master(self):
         s = self.local_snapmirror_status()
         return s['master']
@@ -62,6 +63,25 @@ class syncNetapp(Res.Resource):
 
     def cmd_local(self, cmd, info=False):
         return self._cmd(cmd, "local", info=info)
+
+    def lag_to_ts(self, lag):
+        now = datetime.datetime.now()
+        l = lag.split(":")
+        if len(l) != 3:
+            self.log.error("unexpected lag format")
+            raise ex.excError
+        delta = datetime.timedelta(hours=int(l[0]),
+                                   minutes=int(l[1]),
+                                   seconds=int(l[2]))
+        return now - delta
+
+    def can_sync(self, target=None, s=None):
+        if s is None:
+            s = self.snapmirror_status(self.slave())
+        ts = self.lag_to_ts(s['lag'])
+        if self.skip_sync(ts):
+            return False
+        return True
 
     def lagged(self, lag, max=None):
         if max is None:
@@ -122,6 +142,8 @@ class syncNetapp(Res.Resource):
 
     def syncupdate(self):
         s = self.snapmirror_status(self.slave())
+        if not self.can_sync(s=s):
+            return
         if s['state'] == "Quiesced":
             self.log.error("update not applicable: quiesced")
             return
@@ -130,9 +152,6 @@ class syncNetapp(Res.Resource):
             return
         if s['state'] != "Snapmirrored" or s['status'] != "Idle":
             self.log.error("update not applicable: not in snapmirror idle status")
-            return
-        if not self.svc.force and not self.lagged(s['lag'], self.sync_min_delay):
-            self.log.debug("last sync too close")
             return
         (ret, buff) = self.cmd_slave(['snapmirror', 'update', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
@@ -259,18 +278,22 @@ class syncNetapp(Res.Resource):
         return rcStatus.DOWN
 
     def __init__(self, rid=None, filers={}, path=None, user=None,
-                 sync_max_delay=1440, sync_min_delay=30,
+                 sync_max_delay=None, sync_interval=None, sync_days=None,
+                 sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
+        resSync.Sync.__init__(self, rid=rid, type="sync.netapp",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
         self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers
         self.path = path
         self.user = user
-        self.sync_max_delay = sync_max_delay
-        self.sync_min_delay = sync_min_delay
         self.path_short = self.path.replace('/vol/','')
-        Res.Resource.__init__(self, rid, "sync.netapp", optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
-        return "%s filers=%s user=%s path=%s" % (Res.Resource.__str__(self),\
+        return "%s filers=%s user=%s path=%s" % (resSync.Sync.__str__(self),\
                 self.filers, self.user, self.path)
 
