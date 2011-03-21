@@ -1026,6 +1026,11 @@ def build(name):
         del(svc)
         return None
 
+    if "flex_primary" in defaults:
+        svc.flex_primary = defaults["flex_primary"]
+    else:
+        svc.flex_primary = ''
+
     if "flex_min_nodes" in defaults:
         svc.flex_min_nodes = int(defaults["flex_min_nodes"])
     else:
@@ -1093,9 +1098,9 @@ def build(name):
         return None
 
     if "autostart_node" in defaults:
-        svc.autostart_node = defaults["autostart_node"]
+        svc.autostart_node = defaults["autostart_node"].split()
     else:
-        svc.autostart_node = ''
+        svc.autostart_node = []
 
     if "drp_type" in defaults:
         svc.drp_type = defaults["drp_type"]
@@ -1183,9 +1188,9 @@ def build_services(status=None, svcnames=[],
             continue
         if status is not None and svc.status() != status:
             continue
-        if onlyprimary and svc.autostart_node != rcEnv.nodename:
+        if onlyprimary and rcEnv.nodename not in svc.autostart_node:
             continue
-        if onlysecondary and svc.autostart_node == rcEnv.nodename:
+        if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
         if svc.collector_outdated():

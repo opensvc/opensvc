@@ -303,7 +303,7 @@ def push_service(svc):
             repr(' '.join(svc.drpnodes)),
             repr(svc.comment),
             repr(svc.drp_type),
-            repr(svc.autostart_node),
+            repr(' '.join(svc.autostart_node)),
             repr(svc.app),
             repr(svc.svcmode),
             repr(envfile(svc.svcname)),

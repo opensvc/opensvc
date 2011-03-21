@@ -146,7 +146,7 @@ class syncDds(resSync.Sync):
             self.log.debug("won't sync this resource for a service not up")
             return False
         if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.autostart_node != rcEnv.nodename:
+           self.svc.flex_primary != rcEnv.nodename:
             self.log.debug("won't sync this resource from a flex non-primary node")
             return set([])
 
@@ -316,7 +316,7 @@ class syncDds(resSync.Sync):
             self.log.debug("won't verify this resource for a service not up")
             return
         if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.autostart_node != rcEnv.nodename:
+           self.svc.flex_primary != rcEnv.nodename:
             self.log.debug("won't verify this resource from a flex non-primary node")
             return set([])
 

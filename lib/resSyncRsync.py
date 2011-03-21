@@ -167,7 +167,7 @@ class Rsync(resSync.Sync):
         """ Refuse to sync from a flex non-primary node
         """
         if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.autostart_node != rcEnv.nodename:
+           self.svc.flex_primary != rcEnv.nodename:
             self.log.debug("won't sync this resource from a flex non-primary node")
             return set([])
 
@@ -356,7 +356,7 @@ class Rsync(resSync.Sync):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP or \
            (self.svc.clustertype in ['flex', 'autoflex'] and \
-            rcEnv.nodename != self.svc.autostart_node and \
+            rcEnv.nodename != self.svc.flex_primary and \
             s['overall'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in sync destination nodes")
