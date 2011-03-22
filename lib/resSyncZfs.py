@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,29 +21,34 @@ import datetime
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
-import resources as Res
+import resSync
 from rcZfs import a2pool_dataset
 
-class SyncZfs(Res.Resource):
+class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
     """
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None, recursive = True,
-                 snap_size=0, sync_max_delay=1450, sync_min_delay=30,
+                 snap_size=0, sync_max_delay=None, sync_interval=None,
+                 sync_days=None, sync_period=None,
                  optional=False, disabled=False, tags=set([])):
+        resSync.Sync.__init__(self, rid=rid, type="sync.zfs",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
+
         self.label = "zfs of %s to %s"%(src, target)
         self.target = target
         self.sender = sender
         self.recursive = recursive
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
         (self.dst_pool, self.dst_ds) = a2pool_dataset(dst)
-        self.sync_max_delay = sync_max_delay
-        self.sync_min_delay = sync_min_delay
         if delta_store is None:
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
-        Res.Resource.__init__(self, rid, "sync.zfs", optional=optional, disabled=disabled, tags=tags)
 
     def pre_action(self, rset, action):
         """Prepare dataset snapshots
@@ -75,7 +80,7 @@ class SyncZfs(Res.Resource):
                 r.create_snap(r.src_snap_tosend)
 
     def __str__(self):
-        return "%s target=%s src=%s" % (Res.Resource.__str__(self),\
+        return "%s target=%s src=%s" % (resSync.Sync.__str__(self),\
                 self.target, self.src)
 
     def snap_exists(self, snapname, node=None):
@@ -259,6 +264,24 @@ class SyncZfs(Res.Resource):
 
     def stop(self):
         pass
+
+    def can_sync(self, target=None):
+        try:
+            ls = self.get_local_state()
+            ts = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
+        except IOError:
+            self.log.error("zfs state file not found")
+            return True
+        except:
+            import sys
+            import traceback
+            e = sys.exc_info()
+            print e[0], e[1], traceback.print_tb(e[2])
+            return False
+        if self.skip_sync(ts):
+            self.status_log("Last sync on %s older than %i minutes"%(ts, self.sync_max_delay))
+            return False
+        return True
 
     def _status(self, verbose=False):
         try:
