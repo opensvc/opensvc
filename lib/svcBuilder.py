@@ -488,7 +488,7 @@ def add_filesystems(svc, conf):
             mnt_opt = ""
         if svc.svcmode == 'zone':
             try:
-                globalfs = conf.get(s, "globalfs")
+                globalfs = conf.getboolean(s, "globalfs")
             except:
                 globalfs = False
             if globalfs is False:
