@@ -96,6 +96,7 @@ class Svc(Resource, Freezer):
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.evasnap",
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
@@ -473,7 +474,7 @@ class Svc(Resource, Freezer):
         return disks
 
     def boot(self):
-        if rcEnv.nodename == self.autostart_node or self.clustertype == 'flex':
+        if rcEnv.nodename in self.autostart_node:
             self.start()
         else:
             self.cluster = True
@@ -702,9 +703,15 @@ class Svc(Resource, Freezer):
     def syncquiesce(self):
         self.sub_set_action("sync.netapp", "syncquiesce")
 
+    def resync(self):
+        self.stop()
+        self.syncresync()
+        self.start()
+
     def syncresync(self):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
+        self.sub_set_action("sync.evasnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
 
     def syncbreak(self):
@@ -725,6 +732,17 @@ class Svc(Resource, Freezer):
 
     def printsvc(self):
         print str(self)
+
+    def can_sync(self, target=None):
+        ret = False
+        rtypes = ["sync.netapp", "sync.dds", "sync.zfs",
+                  "sync.rsync", "sync.zfs"]
+        for rt in rtypes:
+            for rs in self.get_res_sets(rt):
+                for r in rs.resources:
+                    ret |= r.can_sync(target)
+                    if ret: return True
+        return False
 
     def syncall(self):
         try: self.syncnodes()
@@ -783,6 +801,15 @@ class Svc(Resource, Freezer):
         self.disable_resources(keeprid=rid, keeptags=tags)
         if action in ["print_status", "status", "group_status"]:
             err = self.do_action(action, waitlock=waitlock)
+        elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
+            if action == "syncall" or "syncupdate": kwargs = {}
+            elif action == "syncnodes": kwargs = {'target': 'nodes'}
+            elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
+            if self.can_sync(**kwargs):
+                err = self.do_logged_action(action, waitlock=waitlock)
+            else:
+                err = 0
+                self.log.debug("nothing to sync for the service for now")
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         if self.parallel:
@@ -801,10 +828,11 @@ class Svc(Resource, Freezer):
             return 1
 
         try:
-            getattr(self, action)()
-        except AttributeError:
-            self.log.error("unsupported action")
-            err = 1
+            if hasattr(self, action):
+                getattr(self, action)()
+            else:
+                self.log.error("unsupported action")
+                err = 1
         except ex.excError:
             err = 1
         except ex.excSignal:

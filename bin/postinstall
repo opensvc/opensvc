@@ -24,18 +24,21 @@ def install_cron():
     agt = '/opt/opensvc/bin/perfagt.'+sysname
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
+           'reset_sched': False,
            'user': "",
            'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb --maxdelaydb 120 >/dev/null 2>&1",
            'marker': 'svcmon --updatedb',
            'ok': False
     },{
            'sched': "0,10,20,30,40,50 * * * *",
+           'reset_sched': True,
            'user': "",
            'cmd': "[ -x /opt/opensvc/bin/cron/opensvc ] && /opt/opensvc/bin/cron/opensvc >/dev/null 2>&1",
            'marker': '/opt/opensvc/bin/cron/opensvc',
            'ok': False
     },{
            'sched': "0,10,20,30,40,50 * * * *",
+           'reset_sched': False,
            'user': "",
            'cmd': "[ -x %(agt)s ] && %(agt)s >/dev/null 2>&1"%dict(agt=agt),
            'marker': agt,
@@ -93,10 +96,16 @@ def install_cron():
                         continue
                     if c['marker'] in line:
                         if c['cmd'] in line:
+			    sched = ' '.join(line.split()[:5])
+                            if c['reset_sched'] and sched != c['sched']:
+                                new[i] = ' '.join([c['sched'], c['user'], c['cmd']])+'\n'
                             c['ok'] = True
                         else:
                             # preserve scheduling
-                            sched = ' '.join(line.split()[:5])
+                            if c['reset_sched']:
+                                sched = c['sched']
+                            else:
+                                sched = ' '.join(line.split()[:5])
                             new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
                             c['ok'] = True
 	    for c in ce:

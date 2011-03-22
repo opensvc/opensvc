@@ -23,8 +23,8 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
-import resources as Res
 import datetime
+import resSync
 
 def lookup_snap_mod():
     if rcEnv.sysname == 'Linux':
@@ -56,13 +56,13 @@ def remote_fs_mounted(self, node):
 
 cache_remote_node_type = {}
 
-def remote_node_type(self, node, type):
-    if type == 'drpnodes':
+def remote_node_type(self, node, target):
+    if target == 'drpnodes':
         expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
-    elif type == 'nodes':
+    elif target == 'nodes':
         expected_type = [self.svc.svctype]
     else:
-        self.log.error('unknown sync target: %s'%type)
+        self.log.error('unknown sync target: %s'%target)
         raise ex.excError
 
     rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
@@ -83,59 +83,6 @@ def remote_node_type(self, node, type):
     self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
                    (node, cache_remote_node_type[node], str(expected_type)))
     return False
-
-def nodes_to_sync(self, type=None, state="syncable", status=False):
-    """ DRP nodes are not allowed to sync nodes nor drpnodes
-    """
-    if rcEnv.nodename in self.svc.drpnodes:
-        return set([])
-
-    """Accept to sync from here only if the service is up
-       Also accept n/a status, because it's what the overall status
-       ends up to be when only sync#* are specified using --rid
-
-       sync#i1 is an exception, because we want all prd nodes to
-       sync their system files to all drpnodes regardless of the service
-       state
-    """
-    s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-    if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
-       self.rid != "sync#i1":
-        if s['overall'].status == rcStatus.WARN:
-            self.log.debug("won't sync this resource service in warn status")
-        self.log.debug("won't sync this resource for a service not up")
-        return set([])
-
-    """ Refuse to sync from a flex non-primary node
-    """
-    if self.svc.clustertype in ["flex", "autoflex"] and \
-       self.svc.autostart_node != rcEnv.nodename:
-        self.log.debug("won't sync this resource from a flex non-primary node")
-        return set([])
-
-    """Discard the local node from the set
-    """
-    if type in self.target.keys():
-        targets = self.target[type].copy()
-    else:
-        return set([])
-
-    targets -= set([rcEnv.nodename])
-
-    for node in targets.copy():
-        if not status and not remote_node_type(self, node, type):
-            targets -= set([node])
-        if not status and not remote_fs_mounted(self, node):
-            targets -= set([node])
-        if state == "syncable" and not can_sync(self, node):
-            targets -= set([node])
-        elif state == "late" and not need_sync(self, node):
-            targets -= set([node])
-
-    if len(targets) == 0:
-        raise ex.syncNoNodesToSync
-
-    return targets
 
 def get_timestamp_filename(self, node):
     sync_timestamp_d = os.path.join(rcEnv.pathvar, 'sync', node)
@@ -159,32 +106,20 @@ def sync_timestamp(self, node):
     cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, node+':/']
     self.vcall(cmd)
 
-def check_timestamp(self, node, comp="less", delay=0):
-    if self.svc.force:
-        return True
+def get_timestamp(self, node):
+    ts = None
     sync_timestamp_f = get_timestamp_filename(self, node)
     if not os.path.exists(sync_timestamp_f):
-        return True
+        return None
     try:
         with open(sync_timestamp_f, 'r') as f:
             d = f.read()
-            if comp == "more" and datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=delay):
-                return False
-            elif comp == "less" and datetime.datetime.now() < datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n") + datetime.timedelta(minutes=delay):
-                return False
-            else:
-                return True
+            ts = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
             f.close()
     except:
-        self.log.info("failed to determine last sync date for %s to %s"%(self.src, node))
-        return True
-    return True
-
-def can_sync(self, node):
-    return check_timestamp(self, node, comp="less", delay=self.sync_min_delay)
-
-def need_sync(self, node):
-    return check_timestamp(self, node, comp="more", delay=self.sync_max_delay)
+        self.log.info("failed get last sync date for %s to %s"%(self.src, node))
+        return ts
+    return ts
 
 def bwlimit_option(self):
     if self.bwlimit is not None:
@@ -195,55 +130,142 @@ def bwlimit_option(self):
         bwlimit = []
     return bwlimit
 
-def sync(self, type):
-    if type not in self.target.keys():
-        self.log.debug('%s => %s sync not applicable to %s'%(self.src, self.dst, type))
-        return 0
-
-    targets = nodes_to_sync(self, type)
-
-    if len(targets) == 0:
-        self.log.debug("no nodes to sync")
-        raise ex.syncNoNodesToSync
-
-    if "delay_snap" in self.tags:
-        if not hasattr(self.rset, 'snaps'):
-            Snap = lookup_snap_mod()
-            self.rset.snaps.log = self.log
-            self.rset.snaps = Snap.Snap(self.rid)
-        self.rset.snaps.try_snap(self.rset, type, rid=self.rid)
-
-    if hasattr(self, "alt_src"):
-        """ The pre_action() has provided us with a better source
-            to sync from. Use that
-        """
-        src = self.alt_src
-    else:
-        src = self.src
-
-    if len(src) == 0:
-        self.log.debug("no files to sync")
-        raise ex.syncNoFilesToSync
-
-    bwlimit = bwlimit_option(self)
-
-    for node in targets:
-        dst = node + ':' + self.dst
-        cmd = ['rsync'] + self.options + bwlimit + src
-        cmd.append(dst)
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
-            continue
-        sync_timestamp(self, node)
-        self.svc.need_postsync |= set([node])
-    return
-
-class Rsync(Res.Resource):
+class Rsync(resSync.Sync):
     """Defines a rsync job from local node to its remote nodes. Target nodes
     can be restricted to production sibblings or to disaster recovery nodes,
     or both.
     """
+    def node_can_sync(self, node):
+        ts = get_timestamp(self, node)
+        return not self.skip_sync(ts)
+
+    def node_need_sync(self, node):
+        ts = get_timestamp(self, node)
+        return self.alert_sync(ts)
+
+    def can_sync(self, target=None):
+        targets = set([])
+        if target is None:
+            targets = self.nodes_to_sync('nodes')
+            targets |= self.nodes_to_sync('drpnodes')
+        else:
+            targets = self.nodes_to_sync(target)
+
+        if len(targets) == 0:
+            return False
+        return True
+
+    def nodes_to_sync(self, target=None, state="syncable", status=False):
+        """ Checks are ordered by cost
+        """
+
+        """ DRP nodes are not allowed to sync nodes nor drpnodes
+        """
+        if rcEnv.nodename in self.svc.drpnodes:
+            return set([])
+
+        """ Refuse to sync from a flex non-primary node
+        """
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.flex_primary != rcEnv.nodename:
+            self.log.debug("won't sync this resource from a flex non-primary node")
+            return set([])
+
+        """Discard the local node from the set
+        """
+        if target in self.target.keys():
+            targets = self.target[target].copy()
+        else:
+            return set([])
+
+        targets -= set([rcEnv.nodename])
+        if len(targets) == 0:
+            return set([])
+
+        for node in targets.copy():
+            if state == "syncable" and not self.node_can_sync(node):
+                targets -= set([node])
+                continue
+            elif state == "late" and not self.node_need_sync(node):
+                targets -= set([node])
+                continue
+
+        if len(targets) == 0:
+            return set([])
+
+        """Accept to sync from here only if the service is up
+           Also accept n/a status, because it's what the overall status
+           ends up to be when only sync#* are specified using --rid
+
+           sync#i1 is an exception, because we want all prd nodes to
+           sync their system files to all drpnodes regardless of the service
+           state
+        """
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
+           self.rid != "sync#i1":
+            if s['overall'].status == rcStatus.WARN:
+                self.log.debug("won't sync this resource service in warn status")
+            self.log.debug("won't sync this resource for a service not up")
+            return set([])
+
+        for node in targets.copy():
+            if not status and not remote_node_type(self, node, target):
+                targets -= set([node])
+                continue
+            if not status and not remote_fs_mounted(self, node):
+                targets -= set([node])
+                continue
+
+        if len(targets) == 0:
+            return set([])
+
+        return targets
+
+    def sync(self, target):
+        if target not in self.target.keys():
+            self.log.debug('%s => %s sync not applicable to %s'%(self.src, self.dst, target))
+            return 0
+
+        targets = self.nodes_to_sync(target)
+
+        if len(targets) == 0:
+            self.log.debug("no nodes to sync")
+            raise ex.syncNoNodesToSync
+
+        if "delay_snap" in self.tags:
+            if not hasattr(self.rset, 'snaps'):
+                Snap = lookup_snap_mod()
+                self.rset.snaps.log = self.log
+                self.rset.snaps = Snap.Snap(self.rid)
+            self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
+
+        if hasattr(self, "alt_src"):
+            """ The pre_action() has provided us with a better source
+                to sync from. Use that
+            """
+            src = self.alt_src
+        else:
+            src = self.src
+
+        if len(src) == 0:
+            self.log.debug("no files to sync")
+            raise ex.syncNoFilesToSync
+
+        bwlimit = bwlimit_option(self)
+
+        for node in targets:
+            dst = node + ':' + self.dst
+            cmd = ['rsync'] + self.options + bwlimit + src
+            cmd.append(dst)
+            (ret, out) = self.vcall(cmd)
+            if ret != 0:
+                self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
+                continue
+            sync_timestamp(self, node)
+            self.svc.need_postsync |= set([node])
+        return
+
     def pre_action(self, rset, action):
         """Actions to do before resourceSet iterates through the resources to
            trigger action() on each one
@@ -264,15 +286,12 @@ class Rsync(Res.Resource):
             if r.is_disabled():
                 continue
             rtargets[i] = set([])
-            try:
-                if action == "syncnodes":
-                    rtargets[i] |= nodes_to_sync(r, 'nodes')
-                else:
-                    rtargets[i] |= nodes_to_sync(r, 'drpnodes')
-            except ex.syncNoNodesToSync:
-                pass
+            if action == "syncnodes":
+                rtargets[i] |= r.nodes_to_sync('nodes')
+            else:
+                rtargets[i] |= r.nodes_to_sync('drpnodes')
             for node in rtargets[i].copy():
-                if not can_sync(r, node):
+                if not r.node_can_sync(node):
                     rtargets[i] -= set([node])
                 elif r.snap:
                     need_snap = True
@@ -304,7 +323,7 @@ class Rsync(Res.Resource):
 
     def syncnodes(self):
         try:
-            sync(self, "nodes")
+            self.sync("nodes")
         except ex.syncNoFilesToSync:
             self.log.debug("no file to sync")
             pass
@@ -314,7 +333,7 @@ class Rsync(Res.Resource):
 
     def syncdrp(self):
         try:
-            sync(self, "drpnodes")
+            self.sync("drpnodes")
         except ex.syncNoFilesToSync:
             self.log.debug("no file to sync")
             pass
@@ -328,7 +347,7 @@ class Rsync(Res.Resource):
         target = set([])
         for i in self.target:
             target |= self.target[i]
-        if len(target) <= 1:
+        if len(target - set([rcEnv.nodename])) == 0:
             self.status_log("no destination nodes")
             return rcStatus.NA
 
@@ -337,12 +356,12 @@ class Rsync(Res.Resource):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP or \
            (self.svc.clustertype in ['flex', 'autoflex'] and \
-            rcEnv.nodename != self.svc.autostart_node and \
+            rcEnv.nodename != self.svc.flex_primary and \
             s['overall'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in sync destination nodes")
                 return rcStatus.NA
-            if need_sync(self, rcEnv.nodename):
+            if self.node_need_sync(rcEnv.nodename):
                 self.status_log("passive node needs update")
                 return rcStatus.WARN
             else:
@@ -356,24 +375,26 @@ class Rsync(Res.Resource):
 
         """ sync state on nodes where the service is UP
         """
-        nodes = 0
-        try:
-            nodes += len(nodes_to_sync(self, 'nodes', state="late", status=True))
-        except ex.syncNoNodesToSync:
-            pass
-        try:
-            nodes += len(nodes_to_sync(self, 'drpnodes', state="late", status=True))
-        except ex.syncNoNodesToSync:
-            pass
-        if nodes == 0:
+        nodes = []
+        nodes += self.nodes_to_sync('nodes', state="late", status=True)
+        nodes += self.nodes_to_sync('drpnodes', state="late", status=True)
+        if len(nodes) == 0:
             return rcStatus.UP
 
-        self.status_log("needs update")
+        self.status_log("%s need update"%', '.join(nodes))
         return rcStatus.DOWN
 
     def __init__(self, rid=None, src=[], dst=None, options=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, sync_min_delay=30, sync_max_delay=1500,
+                 bwlimit=None, sync_max_delay=None, sync_interval=None,
+                 sync_days=None, sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
+        resSync.Sync.__init__(self, rid=rid, type="sync.rsync",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
+
         if internal:
             if rcEnv.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
@@ -389,8 +410,6 @@ class Rsync(Res.Resource):
         self.target = target
         self.bwlimit = bwlimit
         self.internal = internal
-        self.sync_min_delay = sync_min_delay
-        self.sync_max_delay = sync_max_delay
         self.timeout = 3600
         self.options = ['-HpogDtrlvx',
                         '--stats',
@@ -399,10 +418,7 @@ class Rsync(Res.Resource):
                         '--timeout='+str(self.timeout)]
         self.options += options
 
-        Res.Resource.__init__(self, rid=rid, type="sync.rsync",
-                              optional=optional, disabled=disabled, tags=tags)
-
     def __str__(self):
-        return "%s src=%s dst=%s options=%s target=%s" % (Res.Resource.__str__(self),\
+        return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\
                 self.src, self.dst, self.options, str(self.target))
 

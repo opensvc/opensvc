@@ -22,11 +22,11 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
-import resources as Res
 import time
 import datetime
+import resSync
 
-class syncSymclone(Res.Resource):
+class syncSymclone(resSync.Sync):
     def wait_for_devs_ready(self):
         pass
 
@@ -141,18 +141,24 @@ class syncSymclone(Res.Resource):
         self.wait_for_active()
         self.wait_for_devs_ready()
 
+    def can_sync(self, target=None):
+        self.get_syminfo()
+        self.get_last()
+        if skip_sync(self.last):
+            return False
+        return True
+
     def recreate(self):
         self.get_syminfo()
+        self.get_last()
+        if self.skip_sync(self.last):
+            return
         self.get_svcstatus()
         if self.svcstatus['overall'].status != rcStatus.DOWN:
             self.log.error("the service (sync excluded) is in '%s' state. Must be in 'down' state"%self.svcstatus['overall'])
             raise ex.excError
         if not self.is_active():
             self.log.info("symclone dg %s is not active"%self.symdg)
-            return
-        self.get_last()
-        if self.last > datetime.datetime.now() - datetime.timedelta(minutes=self.sync_min_delay):
-            self.log.info("last symclone resync of %s occured less than %s minutes ago (sync_min_delay)"%(self.symdg, self.sync_min_delay))
             return
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'recreate', '-precopy', '-i', '20', '-c', '30']+self.pairs
         (ret, out) = self.vcall(cmd)
@@ -203,15 +209,20 @@ class syncSymclone(Res.Resource):
             self.refresh_svcstatus()
 
     def __init__(self, rid=None, symdg=None, symdevs=[], precopy_timeout=300,
-                 sync_max_delay=1440, sync_min_delay=30,
+                 sync_max_delay=None, sync_interval=None, sync_days=None,
+                 sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
+        resSync.Sync.__init__(self, rid=rid, type="sync.symclone",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
+
         self.label = "clone symdg %s"%(symdg)
         self.symdg = symdg
         self.symdevs = symdevs
         self.precopy_timeout = precopy_timeout
-        self.sync_max_delay = sync_max_delay
-        self.sync_min_delay = sync_min_delay
-        Res.Resource.__init__(self, rid, "sync.symclone", optional=optional, disabled=disabled, tags=tags)
         self.disks = set([])
         self.symdev = {}
         self.pdevs = {}
@@ -221,6 +232,6 @@ class syncSymclone(Res.Resource):
         self.last = None
 
     def __str__(self):
-        return "%s symdg=%s symdevs=%s" % (Res.Resource.__str__(self),\
+        return "%s symdg=%s symdevs=%s" % (resSync.Sync.__str__(self),\
                 self.symdg, self.symdevs)
 

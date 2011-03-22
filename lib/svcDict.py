@@ -443,7 +443,7 @@ class KeyDict(KeywordStore):
                   order=20,
                   required=True,
                   default=nodename,
-                  text="The node from 'nodes' where the service will try to start on upon node reboot. The start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
+                  text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
                 )
         self += Keyword(
                   section="DEFAULT",

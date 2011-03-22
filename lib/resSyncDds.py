@@ -24,10 +24,10 @@ from rcUtilitiesLinux import lv_info
 from subprocess import *
 import rcExceptions as ex
 import rcStatus
-import resources as Res
 import datetime
+import resSync
 
-class syncDds(Res.Resource):
+class syncDds(resSync.Sync):
     def pre_action(self, rset, action):
         """Don't sync PRD services when running on !PRD node
         """
@@ -146,7 +146,7 @@ class syncDds(Res.Resource):
             self.log.debug("won't sync this resource for a service not up")
             return False
         if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.autostart_node != rcEnv.nodename:
+           self.svc.flex_primary != rcEnv.nodename:
             self.log.debug("won't sync this resource from a flex non-primary node")
             return set([])
 
@@ -316,7 +316,7 @@ class syncDds(Res.Resource):
             self.log.debug("won't verify this resource for a service not up")
             return
         if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.autostart_node != rcEnv.nodename:
+           self.svc.flex_primary != rcEnv.nodename:
             self.log.debug("won't verify this resource from a flex non-primary node")
             return set([])
 
@@ -355,6 +355,14 @@ class syncDds(Res.Resource):
     def stop(self):
         pass
 
+    def can_sync(self, target=None):
+        try:
+            ls = self.get_local_state()
+            last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
+        except IOError:
+            return True
+        return not self.skip_sync(last)
+
     def _status(self, verbose=False):
         try:
             ls = self.get_local_state()
@@ -377,22 +385,27 @@ class syncDds(Res.Resource):
 
     def __init__(self, rid=None, target=None, src=None, dst=None,
                  delta_store=None, sender=None,
-                 snap_size=0, sync_max_delay=1450, sync_min_delay=30,
+                 snap_size=0, sync_max_delay=None,
+                 sync_interval=None, sync_days=None, sync_period=None,
                  optional=False, disabled=False, tags=set([])):
+        resSync.Sync.__init__(self, rid=rid, type="sync.dds",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional, disabled=disabled, tags=tags)
+
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
         self.src = src
         self.dst = dst
-        self.sync_max_delay = sync_max_delay
-        self.sync_min_delay = sync_min_delay
         self.snap_size = snap_size
         if delta_store is None:
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
-        Res.Resource.__init__(self, rid, "sync.dds", optional=optional, disabled=disabled, tags=tags)
 
     def __str__(self):
-        return "%s target=%s src=%s" % (Res.Resource.__str__(self),\
+        return "%s target=%s src=%s" % (resSync.Sync.__str__(self),\
                 self.target, self.src)
 
