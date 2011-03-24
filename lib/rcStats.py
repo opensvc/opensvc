@@ -21,8 +21,7 @@ import os
 import datetime
 
 class StatsProvider(object):
-    def __init__(self, collect_file=None, collect_date=None, interval=2880,
-                 stats_dir=None, stats_start=None, stats_end=None):
+    def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
         self.stats_dir = stats_dir
         self.interval = interval
 

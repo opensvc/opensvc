@@ -23,8 +23,7 @@ from rcUtilities import call, which
 import rcStats
 
 class StatsProvider(rcStats.StatsProvider):
-    def __init__(self, collect_file=None, collect_date=None, interval=2880,
-                 stats_dir=None, stats_start=None, stats_end=None):
+    def __init__(self, collect_file=None, collect_date=None, interval=2880):
         rcStats.StatsProvider.__init__(self, collect_file=None,
                                        collect_date=None, interval=2880)
         cmd = ['pagesize']
