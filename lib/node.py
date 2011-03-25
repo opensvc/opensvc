@@ -47,7 +47,7 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
-        config_defaults = {
+        self.config_defaults = {
           'host_mode': 'TST',
           'push_interval': 1439,
           'sync_interval': 1439,
@@ -56,7 +56,7 @@ class Node(Svc, Freezer):
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["05:00", "06:00"]',
         }
-        self.config = ConfigParser.RawConfigParser(config_defaults)
+        self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
         self.options = Options()
         self.svcs = None
@@ -464,6 +464,8 @@ class Node(Svc, Freezer):
            self.config.get(section, option) == self.options.value:
             return
         self.config.set(section, option, self.options.value)
+        if self.config_defaults['host_mode'] == self.config.get('DEFAULT', 'host_mode'):
+            self.config.remove_option('DEFAULT', 'host_mode')
         try:
             fp = open(self.nodeconf, 'w')
             self.config.write(fp)
