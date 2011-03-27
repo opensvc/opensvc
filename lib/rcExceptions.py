@@ -27,6 +27,10 @@ class excError(Exception):
     def __str__(self):
         return str(self.value)
 
+class OptNotFound(Exception):
+    """ Service config file option not found
+    """
+
 class excSignal(Exception):
     """ Termination signal received
     """
