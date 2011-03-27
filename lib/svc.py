@@ -787,7 +787,12 @@ class Svc(Resource, Freezer):
                 r.disable()
 
     def setup_environ(self):
+        """ Those are available to startup scripts and triggers
+        """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
+        for rs in self.resSets:
+            for r in rs.resources:
+                r.setup_environ()
 
     def action(self, action, rid=[], tags=set([]), waitlock=60):
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':

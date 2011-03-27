@@ -66,6 +66,15 @@ class Ip(Res.Resource):
             os.environ['OPENSVC_IPADDR'] = str(self.addr)
         except:
             pass
+        l = self.rid.split('#')
+        if len(l) == 2:
+            index = l[1]
+        else:
+            index = ''
+        var = 'OPENSVC_IP'+index
+        val = ' '.join((str(self.ipName), str(self.ipDev), str(self.addr),
+                        str(self.mask)))
+        os.environ[var] = val
 
     def _status(self, verbose=False):
         try:
