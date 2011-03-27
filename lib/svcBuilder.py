@@ -150,27 +150,25 @@ def get_disabled(conf, section, svc):
         return True
     return False
 
-def need_scsireserv(resource, conf, section):
+def need_scsireserv(svc, conf, section):
     """scsireserv = true can be set globally or in a specific
     resource section
     """
-    defaults = conf.defaults()
-    if conf.has_option(section, 'scsireserv'):
-       if conf.getboolean(section, 'scsireserv') == True:
-           return True
-       else:
-           return False
-    elif 'scsireserv' in defaults and \
-       bool(defaults['scsireserv']) == True:
-           return True
-    return False
+    r = False
+    try:
+        r = conf_get_boolean_scope(svc, conf, section, 'scsireserv')
+    except ex.OptNotFound:
+        defaults = conf.defaults()
+        if 'scsireserv' in defaults:
+            r = bool(defaults['scsireserv'])
+    return r
 
 def add_scsireserv(svc, resource, conf, section):
-    if not need_scsireserv(resource, conf, section):
+    if not need_scsireserv(svc, conf, section):
         return
     try:
         sr = __import__('resScsiReserv'+rcEnv.sysname)
-    except:
+    except ImportError:
         sr = __import__('resScsiReserv')
 
     kwargs = {}
