@@ -879,7 +879,7 @@ class Svc(Resource, Freezer):
 
         """Per action logfile to push to database at the end of the action
         """
-        f = tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp', prefix=self.svcname+'.'+action)
+        f = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.pathtmp, prefix=self.svcname+'.'+action)
         actionlogfile = f.name
         f.close()
         log = logging.getLogger()

@@ -102,7 +102,7 @@ class Apps(Res.Resource):
         try:
             if dedicated_log:
                 self.log.info('spawn: %s' % ' '.join(cmd))
-                outf = '/var/tmp/svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log'
+                outf = os.path.join(rcEnv.pathtmp, 'svc_'+self.svc.svcname+'_'+os.path.basename(name)+'.log')
                 f = open(outf, 'w')
                 t = datetime.now()
                 p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
