@@ -48,11 +48,14 @@ def add_file(v):
     p = re.compile('%%ENV:.+%%')
     for m in p.findall(fmt):
         s = m.strip("%").replace('ENV:', '')
-        if s not in os.environ:
+        if s in os.environ:
+            v = os.environ[s]
+        elif 'OSVC_COMP_'+s in os.environ:
+            v = os.environ['OSVC_COMP_'+s]
+        else:
             print >>sys.stderr, s, 'is not an env variable'
             RET = RET_ERR
             return []
-        v = os.environ[s]
         fmt = fmt.replace(m, v)
     fmt = fmt.replace('%%HOSTNAME%%', nodename)
     fmt = fmt.replace('%%SHORT_HOSTNAME%%', nodename.split('.')[0])
