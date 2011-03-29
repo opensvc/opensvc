@@ -1,0 +1,130 @@
+#!/opt/opensvc/bin/python
+""" 
+Verify file content. The collector provides the format with
+wildcards. The module replace the wildcards with contextual
+values.
+
+The variable format is json-serialized:
+
+{
+  "path": "/some/path/to/file",
+  "fmt": "root@corp.com		%%HOSTNAME%%@corp.com"
+}
+
+Wildcards:
+%%ENV:VARNAME%%		Any environment variable value
+%%HOSTNAME%%		Hostname
+%%SHORT_HOSTNAME%%	Short hostname
+
+"""
+
+import os
+import sys
+import json
+import re
+from subprocess import *
+
+RET_OK = 0
+RET_ERR = 1
+RET_NA = 2
+
+RET = RET_OK
+
+PREFIX = 'OSVC_COMP_FILES_'
+
+sysname, nodename, x, x, machine = os.uname()
+
+def add_file(v):
+    d = json.loads(v)
+    if 'path' not in d:
+        print >>sys.stderr, 'path should be in the dict:', os.environ[k]
+        RET = RET_ERR
+        return []
+    if 'fmt' not in d:
+        print >>sys.stderr, 'fmt should be in the dict:', os.environ[k]
+        RET = RET_ERR
+        return []
+    fmt = d['fmt']
+    p = re.compile('%%ENV:.+%%')
+    for m in p.findall(fmt):
+        s = m.strip("%").replace('ENV:', '')
+        if s not in os.environ:
+            print >>sys.stderr, s, 'is not an env variable'
+            RET = RET_ERR
+            return []
+        v = os.environ[s]
+        fmt = fmt.replace(m, v)
+    fmt = fmt.replace('%%HOSTNAME%%', nodename)
+    fmt = fmt.replace('%%SHORT_HOSTNAME%%', nodename.split('.')[0])
+    d['fmt'] = fmt
+    return [d]
+
+files = []
+
+for k in [ key for key in os.environ if key.startswith(PREFIX)]:
+    try:
+        files += add_file(os.environ[k])
+    except ValueError:
+        print >>sys.stderr, 'failed to parse variable', os.environ[k]
+
+if len(files) == 0:
+    print "no applicable variable found in rulesets", PREFIX
+    sys.exit(RET_NA)
+
+   
+def fixable():
+    return RET_NA
+
+def check_file(f, verbose=False):
+    if verbose:
+        cmd = ['diff', '-u', f['path'], '-']
+    else:
+        cmd = ['diff', '-q', f['path'], '-']
+    p = Popen(cmd, stdin=PIPE)
+    out, err = p.communicate(input=f['fmt'])
+    return p.returncode
+
+def fix_file(f):
+    if check_file(f) == RET_OK:
+        return RET_OK
+    try:
+        with open(f['path'], 'w') as fi:
+            fi.write(f['fmt'])
+    except:
+        return RET_ERR
+    return RET_OK
+
+def check():
+    r = 0
+    for f in files:
+        r |= check_file(f, verbose=True)
+    return r
+
+def fix():
+    r = 0
+    for f in files:
+        r |= fix_file(f)
+    return r
+
+#
+# Main
+#
+if len(sys.argv) != 2:
+    print >>sys.stderr, "need argument"
+    sys.exit(RET_ERR)
+try:
+    if sys.argv[1] == 'check':
+        RET = check()
+    elif sys.argv[1] == 'fix':
+        RET = fix()
+    elif sys.argv[1] == 'fixable':
+        RET = fixable()
+    else:
+        print >>sys.stderr, "unsupported argument '%s'"%sys.argv[1]
+        RET = RET_ERR
+except:
+    import traceback
+    traceback.print_exc()
+    sys.exit(RET_ERR)
+
+sys.exit(RET)
