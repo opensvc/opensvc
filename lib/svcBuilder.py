@@ -600,7 +600,7 @@ def add_filesystems(svc, conf):
         r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)
         svc += r
-        #add_scsireserv(svc, r, conf, s)
+        add_scsireserv(svc, r, conf, s)
 
 def add_mandatory_syncs(svc):
     """Mandatory files to sync:
