@@ -21,7 +21,12 @@ Wildcards:
 import os
 import sys
 import json
+import stat
 import re
+import urllib
+import tempfile
+import pwd
+import grp
 from subprocess import *
 
 RET_OK = 0
@@ -32,18 +37,12 @@ RET = RET_OK
 
 PREFIX = 'OSVC_COMP_FILES_'
 
+_usr = {}
+_grp = {}
+
 sysname, nodename, x, x, machine = os.uname()
 
-def add_file(v):
-    d = json.loads(v)
-    if 'path' not in d:
-        print >>sys.stderr, 'path should be in the dict:', os.environ[k]
-        RET = RET_ERR
-        return []
-    if 'fmt' not in d:
-        print >>sys.stderr, 'fmt should be in the dict:', os.environ[k]
-        RET = RET_ERR
-        return []
+def parse_fmt(d):
     fmt = d['fmt']
     p = re.compile('%%ENV:.+%%')
     for m in p.findall(fmt):
@@ -62,6 +61,36 @@ def add_file(v):
     d['fmt'] = fmt
     return [d]
 
+def parse_ref(d):
+    f = tempfile.NamedTemporaryFile()
+    tmpf = f.name
+    fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+    if 'invalid file' in headers.values():
+        print >>sys.stderr, d['ref'], "not found on collector"
+        return RET_ERR
+    d['fmt'] = f.read()
+    f.close()
+    return parse_fmt(d)
+
+def add_file(v):
+    d = json.loads(v)
+    if 'path' not in d:
+        print >>sys.stderr, 'path should be in the dict:', os.environ[k]
+        RET = RET_ERR
+        return []
+    if 'fmt' not in d and 'ref' not in d:
+        print >>sys.stderr, 'fmt or ref should be in the dict:', os.environ[k]
+        RET = RET_ERR
+        return []
+    if 'fmt' in d and 'ref' in d:
+        print >>sys.stderr, 'fmt and ref are exclusive:', os.environ[k]
+        RET = RET_ERR
+        return []
+    if 'fmt' in d:
+        return parse_fmt(d)
+    if 'ref' in d:
+        return parse_ref(d)
+
 files = []
 
 for k in [ key for key in os.environ if key.startswith(PREFIX)]:
@@ -78,7 +107,7 @@ if len(files) == 0:
 def fixable():
     return RET_NA
 
-def check_file(f, verbose=False):
+def check_file_fmt(f, verbose=False):
     if verbose:
         cmd = ['diff', '-u', f['path'], '-']
     else:
@@ -87,8 +116,106 @@ def check_file(f, verbose=False):
     out, err = p.communicate(input=f['fmt'])
     return p.returncode
 
-def fix_file(f):
-    if check_file(f) == RET_OK:
+def check_file_mode(f, verbose=False):
+    if 'mode' not in f:
+        return RET_OK
+    mode = oct(stat.S_IMODE(os.stat(f['path']).st_mode))
+    mode = str(mode).lstrip("0")
+    if mode != f['mode']:
+        if verbose: print >>sys.stderr, f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
+        return RET_ERR
+    return RET_OK
+
+def get_uid(uid):
+    if uid in _usr:
+        return _usr[uid]
+    tuid = uid
+    if isinstance(uid, (str, unicode)):
+        try:
+            info=pwd.getpwnam(uid)
+            tuid = info[2]
+            _usr[uid] = tuid
+        except:
+            pass
+    return tuid
+
+def get_gid(gid):
+    if gid in _grp:
+        return _grp[gid]
+    tgid = gid
+    if isinstance(gid, (str, unicode)):
+        try:
+            info=grp.getgrnam(gid)
+            tgid = info[2]
+            _grp[gid] = tgid
+        except:
+            pass
+    return tgid
+
+def check_file_uid(f, verbose=False):
+    if 'uid' not in f:
+        return RET_OK
+    tuid = get_uid(f['uid'])
+    uid = os.stat(f['path']).st_uid
+    if uid != tuid:
+        if verbose: print >>sys.stderr, f['path'], 'uid should be %s but is %s'%(tuid, str(uid))
+        return RET_ERR
+    return RET_OK
+
+def check_file_gid(f, verbose=False):
+    if 'gid' not in f:
+        return RET_OK
+    tgid = get_gid(f['gid'])
+    gid = os.stat(f['path']).st_gid
+    if gid != tgid:
+        if verbose: print >>sys.stderr, f['path'], 'gid should be %s but is %s'%(tgid, str(gid))
+        return RET_ERR
+    return RET_OK
+
+def check_file(f, verbose=False):
+    if not os.path.exists(f['path']):
+        print >>sys.stderr, f['path'], "does not exist"
+        return RET_ERR
+    r = 0
+    r |= check_file_fmt(f, verbose)
+    r |= check_file_mode(f, verbose)
+    r |= check_file_uid(f, verbose)
+    r |= check_file_gid(f, verbose)
+    return r
+
+def fix_file_mode(f):
+    if 'mode' not in f:
+        return RET_OK
+    if check_file_mode(f) == RET_OK:
+        return RET_OK
+    try:
+        print "set %s mode to %s"%(f['path'], f['mode'])
+        os.chmod(f['path'], int(f['mode'], 8))
+    except:
+        return RET_ERR
+    return RET_OK
+
+def fix_file_owner(f):
+    uid = -1
+    gid = -1
+
+    if 'uid' not in f and 'gid' not in f:
+        return RET_OK
+    if 'uid' in f and check_file_uid(f) != RET_OK:
+        uid = get_uid(f['uid'])
+    if 'gid' in f and check_file_gid(f) != RET_OK:
+        gid = get_uid(f['gid'])
+    if uid == -1 and gid == -1:
+        return RET_OK
+    try:
+        print "set %s ownership to %d:%d"%(f['path'], uid, gid)
+        os.chown(f['path'], uid, gid)
+    except:
+        return RET_ERR
+    return RET_OK
+
+def fix_file_fmt(f):
+    if check_file_fmt(f) == RET_OK:
         return RET_OK
     try:
         with open(f['path'], 'w') as fi:
@@ -106,7 +233,9 @@ def check():
 def fix():
     r = 0
     for f in files:
-        r |= fix_file(f)
+        r |= fix_file_fmt(f)
+        r |= fix_file_mode(f)
+        r |= fix_file_owner(f)
     return r
 
 #
