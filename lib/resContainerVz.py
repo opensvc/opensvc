@@ -19,8 +19,7 @@ import os
 
 import rcStatus
 import resources as Res
-from rcUtilitiesLinux import check_ping
-from rcUtilities import which
+from rcUtilities import which, qcall
 import resContainer
 import rcExceptions as ex
 
@@ -81,8 +80,12 @@ class Vz(resContainer.Container):
     def container_forcestop(self):
         raise ex.excError
 
-    def ping(self):
-        return check_ping(self.addr, timeout=1)
+    def operational(self):
+        cmd = self.svc.runmethod + ['/sbin/ifconfig', '-a']
+        ret = qcall(cmd)
+        if ret == 0:
+            return True
+        return False
 
     def is_up(self):
         """ CTID 101 exist mounted running

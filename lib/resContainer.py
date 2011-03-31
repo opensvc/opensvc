@@ -80,8 +80,9 @@ class Container(Res.Resource):
     def wait_for_startup(self):
         self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
-        self.log.info("wait for container ping")
-        self.wait_for_fn(self.ping, self.startup_timeout, 2)
+        if hasattr(self, 'ping'):
+            self.log.info("wait for container ping")
+            self.wait_for_fn(self.ping, self.startup_timeout, 2)
         self.log.info("wait for container operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
