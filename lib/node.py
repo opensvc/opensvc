@@ -137,6 +137,10 @@ class Node(Svc, Freezer):
     def timestamp(self, timestamp_f, interval):
         if not self.check_timestamp(timestamp_f, 'more', interval):
             return False
+        if self.options.force:
+            # don't update the timestamp in force mode
+            # to not perturb the schedule
+            return True
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d ,0755)
