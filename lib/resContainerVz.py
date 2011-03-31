@@ -26,11 +26,15 @@ import rcExceptions as ex
 
 class Vz(resContainer.Container):
     def files_to_sync(self):
-        return [self.cf]
+        return [self._cf]
 
     def get_cf_value(self, param):
         value = None
-        with open(self.cf, 'r') as f:
+        try:
+            cf = self.cf()
+        except:
+            return value
+        with open(cf, 'r') as f:
             for line in f.readlines():
                 if param not in line:
                     continue
@@ -46,7 +50,7 @@ class Vz(resContainer.Container):
         return value
 
     def get_rootfs(self):
-        with open(self.cf, 'r') as f:
+        with open(self.cf(), 'r') as f:
             for line in f:
                 if 'VE_PRIVATE' in line:
                     return line.strip('\n').split('=')[1].strip('"').replace('$VEID', self.name)
@@ -100,7 +104,11 @@ class Vz(resContainer.Container):
         return {'vcpus': '0', 'vmem': '0'}
 
     def check_manual_boot(self):
-        with open(self.cf, 'r') as f:
+        try:
+            cf = self.cf()
+        except:
+            return True
+        with open(self.cf(), 'r') as f:
             for line in f:
                 if 'ONBOOT' in line and 'yes' in line:
                     return False
@@ -112,12 +120,16 @@ class Vz(resContainer.Container):
             return False
         return True
 
+    def cf(self):
+        if not os.path.exists(self._cf):
+            self.log.error("%s does not exist"%self._cf)
+            raise ex.excError
+        return self._cf
+
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="vz", name=name, type="container.vz",
                                         optional=optional, disabled=disabled, tags=tags)
-        self.cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
-        if not os.path.exists(self.cf):
-            raise ex.excInitError
+        self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
