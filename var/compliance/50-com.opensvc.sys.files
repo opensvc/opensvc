@@ -119,7 +119,11 @@ def check_file_fmt(f, verbose=False):
 def check_file_mode(f, verbose=False):
     if 'mode' not in f:
         return RET_OK
-    mode = oct(stat.S_IMODE(os.stat(f['path']).st_mode))
+    try:
+        mode = oct(stat.S_IMODE(os.stat(f['path']).st_mode))
+    except:
+        if verbose: print >>sys.stderr, f['path'], 'can not stat file'
+        return RET_ERR
     mode = str(mode).lstrip("0")
     if mode != f['mode']:
         if verbose: print >>sys.stderr, f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
@@ -217,6 +221,10 @@ def fix_file_owner(f):
 def fix_file_fmt(f):
     if check_file_fmt(f) == RET_OK:
         return RET_OK
+    d = os.path.dirname(f['path'])
+    if not os.path.exists(d):
+       os.makedirs(d)
+       os.chown(d, f['uid'], f['gid'])
     try:
         with open(f['path'], 'w') as fi:
             fi.write(f['fmt'])
