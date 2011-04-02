@@ -23,23 +23,25 @@ from rcGlobalEnv import *
 
 def initLogger(name):
     log = logging.getLogger(name)
+    name_width = len(name) + 8
 
     """Common log formatter
     """
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    streamformatter = logging.Formatter("%(asctime)s %(levelname)-7s %(name)-"+str(name_width)+"s %(message)s", datefmt="%H:%M:%S")
 
     """Common logfile with rotation
     """
     filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
                                                        maxBytes=5242880,
                                                        backupCount=5)
-    filehandler.setFormatter(formatter)
+    filehandler.setFormatter(fileformatter)
     log.addHandler(filehandler)
 
     """Stdout logger
     """
     streamhandler = logging.StreamHandler()
-    streamhandler.setFormatter(formatter)
+    streamhandler.setFormatter(streamformatter)
     log.addHandler(streamhandler)
 
     try:
