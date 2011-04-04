@@ -343,15 +343,23 @@ class Svc(Resource, Freezer):
         print self.print_status_fmt%("rid", "status", "label")
         print self.print_status_fmt%("---", "------", "-----")
 
-        s = rcStatus.Status(rcStatus.UNDEF)
         for rs in self.get_res_sets(self.status_types):
-            for r in rs.resources:
+            for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
                 r.print_status()
-        s = self.group_status()['overall']
 
-        print self.print_status_fmt%("overall",
-                                     str(s),
-                                     ""),
+        for rs in self.get_res_sets(self.status_types):
+            for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
+                r.print_status()
+
+        for rs in self.get_res_sets(self.status_types):
+            for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
+                r.print_status()
+
+        print self.print_status_fmt%("---", "------", "-----")
+        print self.print_status_fmt%("avail", str(self.group_status()['avail']), "\n"),
+        print self.print_status_fmt%("hb", str(self.group_status()['hb']), "\n"),
+        print self.print_status_fmt%("sync", str(self.group_status()['sync']), "\n"),
+        print self.print_status_fmt%("overall", str(self.group_status()['overall']), ""),
 
     def svcmon_push_lists(self, status=None):
         if status is None:
@@ -393,6 +401,7 @@ class Svc(Resource, Freezer):
                 "mon_containerstatus",
                 "mon_fsstatus",
                 "mon_appstatus",
+                "mon_availstatus",
                 "mon_overallstatus",
                 "mon_updated",
                 "mon_prinodes",
@@ -408,6 +417,7 @@ class Svc(Resource, Freezer):
                 str(status["container"]),
                 str(status["fs"]),
                 str(status["app"]),
+                str(status["avail"]),
                 str(status["overall"]),
                 str(now),
                 ' '.join(self.nodes),
@@ -428,36 +438,64 @@ class Svc(Resource, Freezer):
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
                      excluded_groups=set([])):
+        from copy import copy
         """print each resource status for a service
         """
         status = {}
         groups = groups.copy() - excluded_groups
         rset_status = self.get_rset_status(groups)
-        moregroups = groups | set(["overall"])
+        moregroups = groups | set(["overall", "avail"])
+
+        # initialise status of each group
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
-        for t in self.status_types:
+
+        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
             for r in self.get_res_sets(t):
                 s = rset_status[r.type]
                 status[group] += s
-                if group != "sync":
+                status["avail"] += s
+
+        if status["avail"].status == rcStatus.STDBY_UP_WITH_UP:
+            status["avail"].status = rcStatus.UP
+            # now that we now the avail status we can promote
+            # stdbyup to up
+            for g in status:
+                if status[g] == rcStatus.STDBY_UP:
+                    status[g] = rcStatus.UP
+        elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
+            status["avail"].status = rcStatus.STDBY_UP
+
+        # overall status is avail + sync status
+        # seed overall with avail
+        status["overall"] = copy(status["avail"])
+
+        for t in [_t for _t in self.status_types if _t.startswith('hb')]:
+            if 'hb' not in groups:
+                continue
+            for r in self.get_res_sets(t):
+                s = rset_status[r.type]
+                status['hb'] += s
+                status["overall"] += s
+
+        for t in [_t for _t in self.status_types if _t.startswith('sync')]:
+            if 'sync' not in groups:
+                continue
+            for r in self.get_res_sets(t):
+                """ sync are expected to be up
+                """
+                s = rset_status[r.type]
+                status['sync'] += s
+                if s == rcStatus.UP:
+                    status["overall"] += rcStatus.UNDEF
+                elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
                     status["overall"] += s
                 else:
-                    """ sync are expected to be up
-                    """
-                    if s == rcStatus.UP:
-                        status["overall"] += rcStatus.UNDEF
-                    elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
-                        status["overall"] += s
-                    else:
-                        status["overall"] += rcStatus.WARN
-        if status["overall"].status == rcStatus.STDBY_UP_WITH_UP:
-            status["overall"].status = rcStatus.UP
-        elif status["overall"].status == rcStatus.STDBY_UP_WITH_DOWN:
-            status["overall"].status = rcStatus.STDBY_UP
+                    status["overall"] += rcStatus.WARN
+
         self.group_status_cache = status
         return status
 
