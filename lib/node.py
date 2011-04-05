@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,10 @@ class Node(Svc, Freezer):
         self.config_defaults = {
           'host_mode': 'TST',
           'push_interval': 1439,
+          'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
+          'push_period': '["04:00", "06:00"]',
           'sync_interval': 1439,
+          'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'sync_period': '["04:00", "06:00"]',
           'comp_check_interval': 10072,
           'comp_check_days': '["sunday"]',
@@ -86,6 +89,60 @@ class Node(Svc, Freezer):
           'get': 'get the value of the node configuration parameter pointed by --param',
           'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
         }
+
+    def _setup_sync_conf(self):
+        sync_interval = 9999
+        sync_days = set([])
+        sync_period = []
+        if self.svcs is None:
+            self.svcs = svcBuilder.build_services()
+        for svc in self.svcs:
+            for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
+                for r in rs.resources:
+                    sync_days |= set(r.sync_days)
+                    if not isinstance(r.sync_period[0], list):
+                        rsync_period = [r.sync_period]
+                    else:
+                        rsync_period = r.sync_period
+                    for rp in rsync_period:
+                        rp = map(lambda x: str(x), rp)
+                        if rp not in sync_period:
+                            sync_period.append(rp)
+                    if r.sync_interval < sync_interval:
+                        sync_interval = r.sync_interval
+        if not self.config.has_section('sync'):
+            self.config.add_section('sync')
+        import json
+        if sync_interval != 9999:
+            self.config.set('sync', 'sync_interval', sync_interval)
+        if len(sync_days) > 0:
+            self.config.set('sync', 'sync_days', json.dumps(list(sync_days)))
+        if len(sync_period) > 0:
+            self.config.set('sync', 'sync_period', json.dumps(sync_period))
+        self.write_config()
+
+    def write_config(self):
+        for o in self.config_defaults:
+            if self.config.has_option('DEFAULT', o):
+                self.config.remove_option('DEFAULT', o)
+        try:
+            fp = open(self.nodeconf, 'w')
+            self.config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write new %s"%self.nodeconf
+            raise Exception()
+        self.config = ConfigParser.RawConfigParser(self.config_defaults)
+        self.config.read(self.nodeconf)
+
+    def setup_sync_conf(self):
+        if not self.config.has_section('sync'):
+            self._setup_sync_conf()
+            return
+        if not self.config.has_option('sync', 'sync_interval') or \
+           not self.config.has_option('sync', 'sync_days') or \
+           not self.config.has_option('sync', 'sync_period'):
+            self._setup_sync_conf()
 
     def format_desc(self):
         from textwrap import TextWrapper
@@ -263,7 +320,8 @@ class Node(Svc, Freezer):
             return True
 
         # get interval from config file
-        if self.config.has_section(section):
+        if self.config.has_section(section) and \
+           self.config.has_option(section, option):
             interval = self.config.getint(section, option)
         else:
             interval = self.config.getint('DEFAULT', option)
@@ -284,6 +342,8 @@ class Node(Svc, Freezer):
 
     def pushstats(self):
         if self.skip_action('stats', 'push_interval', 'last_stats_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -301,6 +361,8 @@ class Node(Svc, Freezer):
 
     def pushpkg(self):
         if self.skip_action('packages', 'push_interval', 'last_pkg_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -308,6 +370,8 @@ class Node(Svc, Freezer):
 
     def pushpatch(self):
         if self.skip_action('patches', 'push_interval', 'last_patch_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -315,6 +379,8 @@ class Node(Svc, Freezer):
 
     def pushasset(self):
         if self.skip_action('asset', 'push_interval', 'last_asset_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -322,12 +388,15 @@ class Node(Svc, Freezer):
 
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
         xmlrpcClient.push_sym()
 
     def syncservices(self):
+        self.setup_sync_conf()
         if self.skip_action('sync', 'sync_interval', 'last_sync',
                             period_option='sync_period',
                             days_option='sync_days',
@@ -348,6 +417,8 @@ class Node(Svc, Freezer):
 
     def pushservices(self):
         if self.skip_action('svcconf', 'push_interval', 'last_svcconf_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -363,6 +434,8 @@ class Node(Svc, Freezer):
 
     def checks(self):
         if self.skip_action('checks', 'push_interval', 'last_checks_push',
+                            period_option='push_period',
+                            days_option='push_days',
                             force=self.options.force):
             return
 
@@ -468,14 +541,9 @@ class Node(Svc, Freezer):
            self.config.get(section, option) == self.options.value:
             return
         self.config.set(section, option, self.options.value)
-        if self.config_defaults['host_mode'] == self.config.get('DEFAULT', 'host_mode'):
-            self.config.remove_option('DEFAULT', 'host_mode')
         try:
-            fp = open(self.nodeconf, 'w')
-            self.config.write(fp)
-            fp.close()
+            self.write_config()
         except:
-            print >>sys.stderr, "failed to write new %s"%self.nodeconf
             return 1
         return 0
 
