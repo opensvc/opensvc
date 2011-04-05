@@ -27,7 +27,7 @@ class Module(object):
             if re.match(self.pattern%dict(name=name), e) is not None:
                 match.append(e)
         if len(match) == 0:
-            raise ex.excError('module %s not found in %s'%(name, comp_dir))
+            raise ex.excInitError('module %s not found in %s'%(name, comp_dir))
         if len(match) > 1:
             raise ex.excError('module %s matches too many entries in %s'%(name,
                               comp_dir))
@@ -228,7 +228,10 @@ class Compliance(object):
                                ','.join(self.module), comp_dir))
 
         for module in self.module:
-            self += Module(module)
+            try:
+                self += Module(module)
+            except ex.excInitError, e:
+                print >>sys.stderr, e
 
         self.ordered_module = self.module_o.keys()
         self.ordered_module.sort(lambda x, y: cmp(self.module_o[x].ordering,
