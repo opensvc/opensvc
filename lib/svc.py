@@ -113,7 +113,7 @@ class Svc(Resource, Freezer):
         self.runmethod = []
         self.resources_by_id = {}
         self.rset_status_cache = None
-        self.print_status_fmt = "%-8s %-8s %s"
+        self.print_status_fmt = "%-14s %-8s %s"
         self.presync_done = False
         self.presnap_trigger = None
         self.postsnap_trigger = None
@@ -340,26 +340,61 @@ class Svc(Resource, Freezer):
     def print_status(self):
         """print each resource status for a service
         """
-        print self.print_status_fmt%("rid", "status", "label")
-        print self.print_status_fmt%("---", "------", "-----")
+        from textwrap import wrap
 
+        def print_res(e, fmt, pfx):
+            rid, status, label, log = e
+            print fmt%(rid, status, label)
+            if len(log) > 0:
+                print '\n'.join(wrap(log,
+                                     initial_indent = pfx,
+                                     subsequent_indent = pfx,
+                                     width=78
+                                    )
+                               )
+
+        fmt = "%-20s %-8s %s"
+        print fmt%("overall", str(self.group_status()['overall']), "\n"),
+        fmt = "|- %-17s %-8s %s"
+        print fmt%("avail", str(self.group_status()['avail']), "\n"),
+
+        l = []
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
-                r.print_status()
+                l.append(r.status_quad())
+        last = len(l) - 1
+        if last > 0:
+            for i, e in enumerate(l):
+                if i == last:
+                    fmt = "|  '- %-14s %-8s %s"
+                    pfx = "|     %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
+                else:
+                    fmt = "|  |- %-14s %-8s %s"
+                    pfx = "|  |  %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
 
-        for rs in self.get_res_sets(self.status_types):
-            for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
-                r.print_status()
+        fmt = "|- %-17s %-8s %s"
+        print fmt%("sync", str(self.group_status()['sync']), "\n"),
 
+        l = []
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
-                r.print_status()
+                l.append(r.status_quad())
+        last = len(l) - 1
+        if last > 0:
+            for i, e in enumerate(l):
+                if i == last:
+                    fmt = "|  '- %-14s %-8s %s"
+                    pfx = "|     %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
+                else:
+                    fmt = "|  |- %-14s %-8s %s"
+                    pfx = "|  |  %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
 
-        print self.print_status_fmt%("---", "------", "-----")
-        print self.print_status_fmt%("avail", str(self.group_status()['avail']), "\n"),
-        print self.print_status_fmt%("hb", str(self.group_status()['hb']), "\n"),
-        print self.print_status_fmt%("sync", str(self.group_status()['sync']), "\n"),
-        print self.print_status_fmt%("overall", str(self.group_status()['overall']), ""),
+        fmt = "'- %-17s %-8s %s"
+        print fmt%("hb", str(self.group_status()['hb']), "\n"),
 
     def svcmon_push_lists(self, status=None):
         if status is None:

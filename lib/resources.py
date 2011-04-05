@@ -21,7 +21,6 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-from textwrap import wrap
 import rcExceptions as exc
 import rcStatus
 import logging
@@ -163,20 +162,9 @@ class Resource(object):
     def status_log(self, text):
         self.status_log_str += "# " + text
 
-    def print_status(self):
+    def status_quad(self):
         r = self.status(verbose=True)
-        print self.svc.print_status_fmt%(self.rid,
-                                         rcStatus.status_str(r),
-                                         self.label)
-        if len(self.status_log_str) > 0:
-            print '\n'.join(wrap(self.status_log_str,
-                        initial_indent =    '                  ',
-                        subsequent_indent = '                  ',
-                        width=78
-                       )
-                     )
-
-        return r
+        return (self.rid, rcStatus.status_str(r), self.label, self.status_log_str)
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
