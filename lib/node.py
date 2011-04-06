@@ -90,6 +90,7 @@ class Node(Svc, Freezer):
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
           'get': 'get the value of the node configuration parameter pointed by --param',
           'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
+          'delete': 'delete a node configuration parameter (pointed by --param)',
         }
 
     def _setup_sync_conf(self):
@@ -555,6 +556,28 @@ class Node(Svc, Freezer):
         import compliance
         c = compliance.Compliance(self.options)
         c.do_list_modulesets()
+
+    def delete(self):
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if not self.config.has_section(section):
+            print >>sys.stderr, "section '%s' not found"%section
+            return 1
+        if not self.config.has_option(section, option):
+            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            return 1
+        try:
+            self.config.remove_option(section, option)
+            self.write_config()
+        except:
+            return 1
+        return 0
 
     def get(self):
         if self.options.param is None:
