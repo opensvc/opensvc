@@ -430,12 +430,13 @@ def nodeconf_params_rename():
     if not os.path.exists(nodeconf):
         return
     import ConfigParser
+    import copy
     config = ConfigParser.RawConfigParser()
     config.read(nodeconf)
     changed = False
-    if config.has_section('DEFAULT'):
-        for o in config.options('DEFAULT'):
-            config.remove_option('DEFAULT', o)
+    for o in copy.copy(config.defaults()):
+        config.remove_option('DEFAULT', o)
+        changed = True
     for s in config.sections():
         for o in config.options(s):
             if o in ['sync_interval', 'push_interval', 'comp_check_interval']:
