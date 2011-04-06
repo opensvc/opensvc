@@ -1148,7 +1148,7 @@ def build(name):
     if "flex_cpu_high_threshold" in defaults:
         svc.flex_cpu_high_threshold = int(defaults["flex_cpu_high_threshold"])
     else:
-        svc.flex_cpu_high_threshold = 10
+        svc.flex_cpu_high_threshold = 90
     if svc.flex_cpu_high_threshold < 0:
         svc.log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
         del(svc)
