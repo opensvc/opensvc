@@ -424,7 +424,43 @@ def move_host_mode():
         print 'failed to set host_mode in node.conf'
         return
     shutil.move(hm, hm+'.old')
-        
+ 
+def nodeconf_params_rename():
+    nodeconf = os.path.join(os.sep, 'opt', 'opensvc', 'etc', 'node.conf')
+    if not os.path.exists(nodeconf):
+        return
+    import ConfigParser
+    config = ConfigParser.RawConfigParser()
+    config.read(nodeconf)
+    changed = False
+    if config.has_section('DEFAULT'):
+        for o in config.options('DEFAULT'):
+            config.remove_option('DEFAULT', o)
+    for s in config.sections():
+        for o in config.options(s):
+            if o in ['sync_interval', 'push_interval', 'comp_check_interval']:
+                v = config.getint(s, o)
+                config.remove_option(s, o)
+                config.set(s, 'interval', v)
+                changed = True
+            if o in ['sync_days', 'push_days', 'comp_check_days']:
+                v = config.get(s, o)
+                config.remove_option(s, o)
+                config.set(s, 'days', v)
+                changed = True
+            if o in ['sync_period', 'push_period', 'comp_check_period']:
+                v = config.get(s, o)
+                config.remove_option(s, o)
+                config.set(s, 'period', v)
+                changed = True
+    if changed:
+        try:
+            fp = open(nodeconf, 'w')
+            config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write new %s"%nodeconf
+
 try:
     install_pythonlink()
     move_usr_to_opt()
@@ -437,6 +473,9 @@ try:
     install_user()
     install_bash_completion()
     move_host_mode()
+    nodeconf_params_rename()
 except:
+    import traceback
+    traceback.print_exc()
     import sys
     sys.exit(1)

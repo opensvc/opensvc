@@ -114,11 +114,11 @@ class Node(Svc, Freezer):
             self.config.add_section('sync')
         import json
         if sync_interval != 9999:
-            self.config.set('sync', 'sync_interval', sync_interval)
+            self.config.set('sync', 'interval', sync_interval)
         if len(sync_days) > 0:
-            self.config.set('sync', 'sync_days', json.dumps(list(sync_days)))
+            self.config.set('sync', 'days', json.dumps(list(sync_days)))
         if len(sync_period) > 0:
-            self.config.set('sync', 'sync_period', json.dumps(sync_period))
+            self.config.set('sync', 'period', json.dumps(sync_period))
         self.write_config()
 
     def write_config(self):
@@ -139,9 +139,9 @@ class Node(Svc, Freezer):
         if not self.config.has_section('sync'):
             self._setup_sync_conf()
             return
-        if not self.config.has_option('sync', 'sync_interval') or \
-           not self.config.has_option('sync', 'sync_days') or \
-           not self.config.has_option('sync', 'sync_period'):
+        if not self.config.has_option('sync', 'interval') or \
+           not self.config.has_option('sync', 'days') or \
+           not self.config.has_option('sync', 'period'):
             self._setup_sync_conf()
 
     def format_desc(self):
@@ -254,8 +254,8 @@ class Node(Svc, Freezer):
             return False
 
         if self.config.has_section(section) and \
-           self.config.has_option(section, option):
-            period_s = self.config.get(section, option)
+           self.config.has_option(section, 'period'):
+            period_s = self.config.get(section, 'period')
         elif self.config.has_option('DEFAULT', option):
             period_s = self.config.get('DEFAULT', option)
         else:
@@ -265,7 +265,7 @@ class Node(Svc, Freezer):
             import json
             period = json.loads(period_s)
         except:
-            print >>sys.stderr, "malformed parameter value: %s.%s"%(section, option)
+            print >>sys.stderr, "malformed parameter value: %s.period"%section
             return True
 
         if self.in_period(period):
@@ -278,8 +278,8 @@ class Node(Svc, Freezer):
             return False
 
         if self.config.has_section(section) and \
-           self.config.has_option(section, option):
-            days_s = self.config.get(section, option)
+           self.config.has_option(section, 'days'):
+            days_s = self.config.get(section, 'days')
         elif self.config.has_option('DEFAULT', option):
             days_s = self.config.get('DEFAULT', option)
         else:
@@ -289,7 +289,7 @@ class Node(Svc, Freezer):
             import json
             days = json.loads(days_s)
         except:
-            print >>sys.stderr, "malformed parameter value: %s.%s"%(section, option)
+            print >>sys.stderr, "malformed parameter value: %s.days"%section
             return True
 
         if self.in_days(days):
@@ -321,8 +321,8 @@ class Node(Svc, Freezer):
 
         # get interval from config file
         if self.config.has_section(section) and \
-           self.config.has_option(section, option):
-            interval = self.config.getint(section, option)
+           self.config.has_option(section, 'interval'):
+            interval = self.config.getint(section, 'interval')
         else:
             interval = self.config.getint('DEFAULT', option)
 
