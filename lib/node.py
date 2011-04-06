@@ -28,6 +28,7 @@ import ConfigParser
 import datetime
 import time
 import sys
+from rcGlobalEnv import rcEnv
 
 class Options(object):
     def __init__(self):
@@ -47,6 +48,7 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
+        self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.config_defaults = {
           'host_mode': 'TST',
           'push_interval': 1439,
@@ -120,6 +122,8 @@ class Node(Svc, Freezer):
         if len(sync_period) > 0:
             self.config.set('sync', 'period', json.dumps(sync_period))
         self.write_config()
+        with open(self.setup_sync_flag, 'w') as f:
+            f.write(str(time.time()))
 
     def write_config(self):
         for o in self.config_defaults:
@@ -135,11 +139,35 @@ class Node(Svc, Freezer):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
 
+    def setup_sync_outdated(self):
+        """ return True if one env file has changed in the last 10'
+            else return False
+        """
+        import datetime
+        import glob
+        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+        if not os.path.exists(self.setup_sync_flag):
+            return True
+        for pathenv in envs:
+            try:
+                mtime = os.stat(pathenv).st_mtime
+                f = open(self.setup_sync_flag)
+                last = float(f.read())
+                f.close()
+            except:
+                return True
+            if mtime > last:
+                return True
+        return False
+
     def setup_sync_conf(self):
-        if not self.config.has_section('sync'):
+        if self.setup_sync_outdated():
             self._setup_sync_conf()
             return
-        if not self.config.has_option('sync', 'interval') or \
+        elif not self.config.has_section('sync'):
+            self._setup_sync_conf()
+            return
+        elif not self.config.has_option('sync', 'interval') or \
            not self.config.has_option('sync', 'days') or \
            not self.config.has_option('sync', 'period'):
             self._setup_sync_conf()
