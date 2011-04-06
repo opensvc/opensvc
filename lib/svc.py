@@ -396,6 +396,22 @@ class Svc(Resource, Freezer):
         fmt = "'- %-17s %-8s %s"
         print fmt%("hb", str(self.group_status()['hb']), "\n"),
 
+        l = []
+        for rs in self.get_res_sets(self.status_types):
+            for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
+                l.append(r.status_quad())
+        last = len(l) - 1
+        if last > 0:
+            for i, e in enumerate(l):
+                if i == last:
+                    fmt = "   '- %-14s %-8s %s"
+                    pfx = "      %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
+                else:
+                    fmt = "   |- %-14s %-8s %s"
+                    pfx = "   |  %-14s %-8s "%('','')
+                    print_res(e, fmt, pfx)
+
     def svcmon_push_lists(self, status=None):
         if status is None:
             status = self.group_status()
