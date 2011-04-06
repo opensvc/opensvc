@@ -48,6 +48,7 @@ class Node(Svc, Freezer):
     """
     def __init__(self):
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
+        self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.config_defaults = {
           'host_mode': 'TST',
@@ -61,8 +62,7 @@ class Node(Svc, Freezer):
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["05:00", "06:00"]',
         }
-        self.config = ConfigParser.RawConfigParser(self.config_defaults)
-        self.config.read(self.nodeconf)
+        self.load_config()
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
@@ -121,14 +121,33 @@ class Node(Svc, Freezer):
             self.config.set('sync', 'days', json.dumps(list(sync_days)))
         if len(sync_period) > 0:
             self.config.set('sync', 'period', json.dumps(sync_period))
-        self.write_config()
+        self.write_dotconfig()
         with open(self.setup_sync_flag, 'w') as f:
             f.write(str(time.time()))
+
+    def write_dotconfig(self):
+        for o in self.config_defaults:
+            if self.config.has_option('DEFAULT', o):
+                self.config.remove_option('DEFAULT', o)
+        for s in self.config.sections():
+            if s == 'sync':
+                continue
+            self.config.remove_section(s)
+        try:
+            fp = open(self.dotnodeconf, 'w')
+            self.config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write new %s"%self.dotnodeconf
+            raise Exception()
+        self.load_config()
 
     def write_config(self):
         for o in self.config_defaults:
             if self.config.has_option('DEFAULT', o):
                 self.config.remove_option('DEFAULT', o)
+        if self.config.has_section('sync'):
+            self.config.remove_section('sync')
         try:
             fp = open(self.nodeconf, 'w')
             self.config.write(fp)
@@ -136,8 +155,12 @@ class Node(Svc, Freezer):
         except:
             print >>sys.stderr, "failed to write new %s"%self.nodeconf
             raise Exception()
+        self.load_config()
+
+    def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
+        self.config.read(self.dotnodeconf)
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
