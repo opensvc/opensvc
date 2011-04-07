@@ -602,7 +602,7 @@ def add_filesystems(svc, conf):
         svc += r
         add_scsireserv(svc, r, conf, s)
 
-def add_mandatory_syncs(svc):
+def add_mandatory_syncs(svc, conf):
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -610,6 +610,7 @@ def add_mandatory_syncs(svc):
 
     """1
     """
+    kwargs = {}
     src = []
     src.append(os.path.join(rcEnv.pathetc, svc.svcname))
     src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
@@ -626,9 +627,14 @@ def add_mandatory_syncs(svc):
     dst = os.path.join("/")
     exclude = ['--exclude=*.core']
     targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    r = resSyncRsync.Rsync(rid="sync#i0", src=src, dst=dst,
-                           options=['-R']+exclude, target=targethash,
-                           internal=True)
+    kwargs['rid'] = "sync#i0"
+    kwargs['src'] = src
+    kwargs['dst'] = dst
+    kwargs['options'] = ['-R']+exclude
+    kwargs['target'] = targethash
+    kwargs['internal'] = True
+    kwargs.update(get_sync_args(conf, 'sync', svc))
+    r = resSyncRsync.Rsync(**kwargs)
     svc += r
 
     """2
@@ -641,13 +647,19 @@ def add_mandatory_syncs(svc):
     for src, exclude in rcEnv.drp_sync_files:
         """'-R' triggers rsync relative mode
         """
+        kwargs = {}
         src = [ s for s in src if os.path.exists(s) ]
         if len(src) == 0:
             continue
         i += 1
-        r = resSyncRsync.Rsync(rid="sync#i"+str(i), src=src, dst=dst,
-                           options=['-R']+exclude, target=targethash,
-                           internal=True)
+        kwargs['rid'] = "sync#i"+str(i)
+        kwargs['src'] = src
+        kwargs['dst'] = dst
+        kwargs['options'] = ['-R']+exclude
+        kwargs['target'] = targethash
+        kwargs['internal'] = True
+        kwargs.update(get_sync_args(conf, 'sync', svc))
+        r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
 def add_syncs(svc, conf):
@@ -899,7 +911,7 @@ def add_syncs_rsync(svc, conf):
     """Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus
     the those described in the config file.
     """
-    add_mandatory_syncs(svc)
+    add_mandatory_syncs(svc, conf)
 
     for s in conf.sections():
         if re.match('sync#[0-9]', s, re.I) is None:
