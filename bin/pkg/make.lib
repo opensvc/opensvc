@@ -23,7 +23,8 @@ else
         fi   
 fi
 OSVC=$PATH_SCRIPT/../..
-CHROOT=$OSVC/tmp/BUILDROOT/opensvc-$VERSION-$RELEASE.noarch
+CHROOT_BN=opensvc-$VERSION-$RELEASE.noarch
+CHROOT=$OSVC/tmp/BUILDROOT/$CHROOT_BN
 
 if [ "$(id -u)" == "0" ] ; then
 	SUDO=""
