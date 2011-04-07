@@ -3,7 +3,11 @@ function changelog {
 }
 
 function date_to_release {
-        date -d "$*" +%y%m%d.%H%M
+        if [ "$(uname -s)" == "FreeBSD" ] ; then
+		date -f "%a, %d %b %Y %H:%M:%S %z" "$*" +%y%m%d.%H%M
+	else
+		date -d "$*" +%y%m%d.%H%M
+	fi
 }
 
 HEAD=$(git log -1 --pretty=format:%aD || exit 1)
@@ -21,11 +25,17 @@ fi
 OSVC=$PATH_SCRIPT/../..
 CHROOT=$OSVC/tmp/BUILDROOT/opensvc-$VERSION-$RELEASE.noarch
 
+if [ "$(id -u)" == "0" ] ; then
+	SUDO=""
+else
+	SUDO="sudo"
+fi
+
 function prepare_chroot {
 	#
 	# prepare skeleton (data.tar.gz)
 	#
-	[ "${CHROOT%%noarch}" != "$CHROOT" ] && sudo rm -rf $CHROOT
+	[ "${CHROOT%%noarch}" != "$CHROOT" ] && $SUDO rm -rf $CHROOT
 	mkdir -p $CHROOT/opt/opensvc/etc || return 1
 	mkdir -p $CHROOT/opt/opensvc/var || return 1
 	mkdir -p $CHROOT/opt/opensvc/log || return 1
@@ -46,7 +56,7 @@ function prepare_chroot {
 	cd $OSVC || return 1
 	tar cf - $EXCL bin lib usr var/compliance/*com.opensvc.* | tar xf - -C $CHROOT/opt/opensvc || return 1
 	echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || return 1
-        sudo chown -R root:root $CHROOT/opt/opensvc || return 1
+        $SUDO chown -R 0:0 $CHROOT/opt/opensvc || return 1
 	return 0
 }
 
