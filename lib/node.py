@@ -28,6 +28,7 @@ import ConfigParser
 import datetime
 import time
 import sys
+import json
 from rcGlobalEnv import rcEnv
 
 class Options(object):
@@ -94,34 +95,20 @@ class Node(Svc, Freezer):
         }
 
     def _setup_sync_conf(self):
-        sync_interval = 9999
-        sync_days = set([])
-        sync_period = []
+        h = {}
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
             for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
                 for r in rs.resources:
-                    sync_days |= set(r.sync_days)
-                    if not isinstance(r.sync_period[0], list):
-                        rsync_period = [r.sync_period]
-                    else:
-                        rsync_period = r.sync_period
-                    for rp in rsync_period:
-                        rp = map(lambda x: str(x), rp)
-                        if rp not in sync_period:
-                            sync_period.append(rp)
-                    if r.sync_interval < sync_interval:
-                        sync_interval = r.sync_interval
-        if not self.config.has_section('sync'):
-            self.config.add_section('sync')
-        import json
-        if sync_interval != 9999:
-            self.config.set('sync', 'interval', sync_interval)
-        if len(sync_days) > 0:
-            self.config.set('sync', 'days', json.dumps(list(sync_days)))
-        if len(sync_period) > 0:
-            self.config.set('sync', 'period', json.dumps(sync_period))
+                    s = '#'.join((svc.svcname, r.rid))
+                    if not self.config.has_section(s):
+                        self.config.add_section(s)
+                    self.config.set(s, 'svcname', svc.svcname)
+                    self.config.set(s, 'rid', r.rid)
+                    self.config.set(s, 'interval', r.sync_interval)
+                    self.config.set(s, 'days', json.dumps(r.sync_days))
+                    self.config.set(s, 'period', json.dumps(r.sync_period))
         self.write_dotconfig()
         with open(self.setup_sync_flag, 'w') as f:
             f.write(str(time.time()))
@@ -131,9 +118,8 @@ class Node(Svc, Freezer):
             if self.config.has_option('DEFAULT', o):
                 self.config.remove_option('DEFAULT', o)
         for s in self.config.sections():
-            if s == 'sync':
-                continue
-            self.config.remove_section(s)
+            if '#sync#' not in s:
+                self.config.remove_section(s)
         try:
             fp = open(self.dotnodeconf, 'w')
             self.config.write(fp)
@@ -147,8 +133,9 @@ class Node(Svc, Freezer):
         for o in self.config_defaults:
             if self.config.has_option('DEFAULT', o):
                 self.config.remove_option('DEFAULT', o)
-        if self.config.has_section('sync'):
-            self.config.remove_section('sync')
+        for s in self.config.sections():
+            if '#sync#' in s:
+                self.config.remove_section(s)
         try:
             fp = open(self.nodeconf, 'w')
             self.config.write(fp)
@@ -314,7 +301,6 @@ class Node(Svc, Freezer):
             return False
 
         try:
-            import json
             period = json.loads(period_s)
         except:
             print >>sys.stderr, "malformed parameter value: %s.period"%section
@@ -338,7 +324,6 @@ class Node(Svc, Freezer):
             return False
 
         try:
-            import json
             days = json.loads(days_s)
         except:
             print >>sys.stderr, "malformed parameter value: %s.days"%section
@@ -447,16 +432,30 @@ class Node(Svc, Freezer):
 
         xmlrpcClient.push_sym()
 
+    def need_sync(self):
+        l = []
+        for s in self.config.sections():
+            if '#sync#' not in s:
+                continue
+            ts = '_'.join(('last_sync',
+                           self.config.get(s, 'svcname'),
+                           self.config.get(s, 'rid')))
+            if self.skip_action(s, 'sync_interval', ts,
+                                period_option='sync_period',
+                                days_option='sync_days',
+                                force=self.options.force):
+                    continue
+            l.append(self.config.get(s, 'svcname'))
+        return l
+
     def syncservices(self):
         self.setup_sync_conf()
-        if self.skip_action('sync', 'sync_interval', 'last_sync',
-                            period_option='sync_period',
-                            days_option='sync_days',
-                            force=self.options.force):
+        svcnames = self.need_sync()
+        if len(svcnames) == 0:
             return
 
         if self.svcs is None:
-            self.svcs = svcBuilder.build_services()
+            self.svcs = svcBuilder.build_services(svcnames=svcnames)
         for svc in self.svcs:
             svc.force = self.options.force
             svc.action('syncall')
