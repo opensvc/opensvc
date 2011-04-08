@@ -911,6 +911,7 @@ def add_syncs_rsync(svc, conf):
     """Add mandatory node-to-nodes and node-to-drpnode synchronizations, plus
     the those described in the config file.
     """
+    import glob
     add_mandatory_syncs(svc, conf)
 
     for s in conf.sections():
@@ -928,7 +929,9 @@ def add_syncs_rsync(svc, conf):
 
         options = []
         kwargs = {}
-        kwargs['src'] = conf.get(s, "src").split()
+        kwargs['src'] = []
+        for src in conf.get(s, "src").split():
+            kwargs['src'] += glob.glob(src)
         kwargs['dst'] = conf.get(s, "dst")
 
         if conf.has_option(s, 'dstfs'):
