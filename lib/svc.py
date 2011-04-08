@@ -353,6 +353,7 @@ class Svc(Resource, Freezer):
                                     )
                                )
 
+        print self.svcname
         fmt = "%-20s %-8s %s"
         print fmt%("overall", str(self.group_status()['overall']), "\n"),
         fmt = "|- %-17s %-8s %s"
