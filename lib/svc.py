@@ -364,7 +364,7 @@ class Svc(Resource, Freezer):
             for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
                 l.append(r.status_quad())
         last = len(l) - 1
-        if last > 0:
+        if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
                     fmt = "|  '- %-14s %-8s %s"
@@ -383,7 +383,7 @@ class Svc(Resource, Freezer):
             for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
                 l.append(r.status_quad())
         last = len(l) - 1
-        if last > 0:
+        if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
                     fmt = "|  '- %-14s %-8s %s"
@@ -402,7 +402,7 @@ class Svc(Resource, Freezer):
             for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
                 l.append(r.status_quad())
         last = len(l) - 1
-        if last > 0:
+        if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
                     fmt = "   '- %-14s %-8s %s"
