@@ -3,6 +3,7 @@
 import os
 import shutil
 import glob
+import sys
 from subprocess import *
 
 python_name = 'python2.6'
@@ -487,5 +488,4 @@ try:
 except:
     import traceback
     traceback.print_exc()
-    import sys
     sys.exit(1)
