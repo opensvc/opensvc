@@ -214,16 +214,30 @@ class CompCron(object):
         self.activate_cron(cron_file)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print >>sys.stderr, "need argument"
-        sys.exit(1)
-    o = CompCron()
-    if sys.argv[1] == 'check':
-        sys.exit(o.check())
-    elif sys.argv[1] == 'fix':
-        sys.exit(o.fix())
-    elif sys.argv[1] == 'fixable':
-        sys.exit(o.fixable())
-    else:
-        print >>sys.stderr, "unsupported argument '%s'"%sys.argv[1]
+    syntax = """syntax:
+      %s PREFIX check|fixable|fix"""%sys.argv[0]
+    if len(sys.argv) != 3:
+        print >>sys.stderr, "wrong number of arguments"
+        print >>sys.stderr, syntax
         sys.exit(RET_ERR)
+    o = CompCron(sys.argv[1])
+    try:
+        if sys.argv[2] == 'check':
+            RET = o.check()
+        elif sys.argv[2] == 'fix':
+            RET = o.fix()
+        elif sys.argv[2] == 'fixable':
+            RET = o.fixable()
+        else:
+            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
+            print >>sys.stderr, syntax
+            RET = RET_ERR
+    except NotApplicable:
+        sys.exit(RET_NA)
+    except:
+        import traceback
+        traceback.print_exc()
+        sys.exit(RET_ERR)
+
+    sys.exit(RET)
+
