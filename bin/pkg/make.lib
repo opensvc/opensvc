@@ -49,6 +49,7 @@ function prepare_chroot {
 	EXCL="$EXCL --exclude=*.pyc"
 	EXCL="$EXCL --exclude='log/*'"
 	EXCL="$EXCL --exclude='etc/*'"
+	EXCL="$EXCL --exclude='etc/.*'"
 	EXCL="$EXCL --exclude='tmp/*'"
 	EXCL="$EXCL --exclude=var/host_mode"
 	EXCL="$EXCL --exclude='var/lock/*'"
