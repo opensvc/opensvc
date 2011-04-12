@@ -481,7 +481,7 @@ def comp_detach_ruleset(ruleset):
 
 @xmlrpc_decorator
 def comp_list_ruleset(pattern='%'):
-    return comp_proxy.comp_list_rulesets(pattern)
+    return comp_proxy.comp_list_rulesets(pattern, rcEnv.nodename)
 
 @xmlrpc_decorator
 def comp_list_moduleset(pattern='%'):
