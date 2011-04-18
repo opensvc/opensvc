@@ -35,12 +35,12 @@ class Sync(Res.Resource):
             self.sync_max_delay = sync_max_delay
 
         if sync_interval is None:
-            self.sync_interval = 1439
+            self.sync_interval = 121
         else:
             self.sync_interval = sync_interval
 
         if sync_period is None:
-            self.sync_period = ["04:00", "06:00"]
+            self.sync_period = ["03:59", "05:59"]
         else:
             self.sync_period = sync_period
 
@@ -52,13 +52,11 @@ class Sync(Res.Resource):
         Res.Resource.__init__(self, rid=rid, type=type,
                               optional=optional, disabled=disabled, tags=tags)
 
-    def check_timestamp(self, ts=None, comp='more', delay=10):
+    def check_timestamp(self, ts, comp='more', delay=10):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
         """
-        if ts is None:
-            raise
         if delay == 0:
             raise
         limit = ts + datetime.timedelta(minutes=delay)
