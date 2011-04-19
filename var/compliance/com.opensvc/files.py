@@ -222,7 +222,10 @@ class CompFiles(object):
         d = os.path.dirname(f['path'])
         if not os.path.exists(d):
            os.makedirs(d)
-           os.chown(d, f['uid'], f['gid'])
+           try:
+               os.chown(d, f['uid'], f['gid'])
+           except:
+               pass
         try:
             with open(f['path'], 'w') as fi:
                 fi.write(f['fmt'])
