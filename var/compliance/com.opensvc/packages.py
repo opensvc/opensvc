@@ -16,7 +16,7 @@ from comp import *
 
 class CompPackages(object):
     def __init__(self, prefix='OSVC_COMP_PACKAGES_'):
-        self.prefix = prefix
+        self.prefix = prefix.upper()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['Linux']:

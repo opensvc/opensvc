@@ -12,7 +12,7 @@ from comp import *
 
 class CompCron(object):
     def __init__(self, prefix='OSVC_COMP_CRON_ENTRY_'):
-        self.prefix = prefix
+        self.prefix = prefix.upper()
         self.ce = []
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 

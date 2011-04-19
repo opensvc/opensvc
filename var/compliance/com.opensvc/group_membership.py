@@ -27,7 +27,7 @@ from comp import *
 
 class CompGroupMembership(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
-        self.prefix = prefix
+        self.prefix = prefix.upper()
         self.grt = {
             'members': 'gr_mem',
         }

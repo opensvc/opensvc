@@ -28,7 +28,7 @@ from comp import *
 
 class CompUser(object):
     def __init__(self, prefix='OSVC_COMP_USER_'):
-        self.prefix = prefix
+        self.prefix = prefix.upper()
         self.pwt = {
             'shell': 'pw_shell',
             'homedir': 'pw_dir',
