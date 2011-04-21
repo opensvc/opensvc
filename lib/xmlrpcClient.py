@@ -31,6 +31,17 @@ sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
 
+def setNodeEnv():
+    import ConfigParser
+    nodeconf = os.path.join(rcEnv.pathetc, 'node.conf')
+    config = ConfigParser.RawConfigParser()
+    config.read(nodeconf)
+    if config.has_option('node', 'dbopensvc'):
+        rcEnv.dbopensvc = config.get('node', 'dbopensvc')
+    if config.has_option('node', 'dbcompliance'):
+        rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+    del(config)
+
 def xmlrpc_decorator_dummy(fn):
     def new(*args):
         pass
@@ -69,6 +80,7 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {'key_file': self.__key_file, 'cert_file': self.__cert_file})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
+setNodeEnv()
 proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 try:
     proxy_methods = proxy.system.listMethods()
