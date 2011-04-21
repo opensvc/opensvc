@@ -35,7 +35,7 @@ class CompPackages(object):
             raise NotApplicable()
 
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
-        if vendor == 'Debian':
+        if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
             self.fix_pkg = self.apt_fix_pkg
         elif vendor in ['CentOS', 'Redhat']:
