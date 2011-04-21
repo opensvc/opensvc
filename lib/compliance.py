@@ -124,8 +124,6 @@ class Module(object):
         import time
         fo = tempfile.NamedTemporaryFile()
         fe = tempfile.NamedTemporaryFile()
-        _fo = open(fo.name, 'r')
-        _fe = open(fe.name, 'r')
 
         def poll_out():
             fop = _fo.tell()
@@ -163,6 +161,8 @@ class Module(object):
 
         try:
             p = Popen(cmd, stdout=fo, stderr=fe)
+            _fo = open(fo.name, 'r')
+            _fe = open(fe.name, 'r')
             while True:
                 time.sleep(0.1)
                 log = poll_pipes(log)
@@ -170,10 +170,10 @@ class Module(object):
                     log = poll_pipes(log)
                     break
         except OSError, e:
-            fo.close()
-            fe.close()
             _fo.close()
             _fe.close()
+            fo.close()
+            fe.close()
             if e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
