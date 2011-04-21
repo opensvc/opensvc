@@ -94,6 +94,7 @@ def sync_timestamp(self, node):
     sync_timestamp_d = os.path.dirname(sync_timestamp_f)
     sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
     sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
+    sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
     if not os.path.isdir(sync_timestamp_d):
         os.makedirs(sync_timestamp_d ,0755)
     if not os.path.isdir(sync_timestamp_d_src):
@@ -103,6 +104,7 @@ def sync_timestamp(self, node):
         f.close()
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
+    shutil.copy2(sync_timestamp_f, sched_timestamp_f)
     cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, node+':/']
     self.vcall(cmd)
 
