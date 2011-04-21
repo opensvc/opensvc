@@ -122,18 +122,18 @@ class Sync(Res.Resource):
         if self.svc.force:
             return False
         if self.sync_interval == 0:
-            self.log.debug('skip sync: disabled by sync_interval = 0')
+            self.log.info('skip sync: disabled by sync_interval = 0')
             return True
         if not self.in_days():
-            self.log.debug('skip sync: not in allowed days (%s)'%str(self.sync_days))
+            self.log.info('skip sync: not in allowed days (%s)'%str(self.sync_days))
             return True
         if not self.in_period():
-            self.log.debug('skip sync: not in allowed period (%s)'%str(self.sync_period))
+            self.log.info('skip sync: not in allowed period (%s)'%str(self.sync_period))
             return True
         if ts is None:
-            self.log.debug("don't skip sync: no timestamp")
+            self.log.info("don't skip sync: no timestamp")
         elif not self.check_timestamp(ts, comp="less", delay=self.sync_interval):
-            self.log.debug('skip sync: too soon (%d)'%self.sync_interval)
+            self.log.info('skip sync: too soon (%d)'%self.sync_interval)
             return True
         return False
 
