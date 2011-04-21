@@ -454,11 +454,22 @@ class Node(Svc, Freezer):
         if len(svcnames) == 0:
             return
 
+        from multiprocessing import Process
+        p = {}
+
         if self.svcs is None:
             self.svcs = svcBuilder.build_services(svcnames=svcnames)
+
         for svc in self.svcs:
             svc.force = self.options.force
-            svc.action('syncall')
+            d = {'action': 'syncall'}
+            p[svc.svcname] = Process(target=svc.action,
+                                     name='worker_'+svc.svcname,
+                                     kwargs=d)
+            p[svc.svcname].start()
+
+        for svcname in p:
+            p[svcname].join()
 
     def updateservices(self):
         if self.svcs is None:

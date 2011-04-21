@@ -28,7 +28,6 @@
 """
 import sys
 import os
-from rcFunctions import update_cl_attr
 
 class rcEnv:
     """Class to store globals
@@ -155,10 +154,6 @@ class rcEnv:
     vt_container = ['zone', 'lxc', 'jail', 'vz']
     vt_supported = vt_vm + vt_container
 
+    dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(dbopensvc_host, dbopensvc_port, dbopensvc_app)
+    dbcompliance = "http://%s:%s/init/compliance/call/xmlrpc"%(dbopensvc_host, dbopensvc_port)
 
-    def set_db_url(self):
-        self.__class__.dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(self.dbopensvc_host, self.dbopensvc_port, self.dbopensvc_app)
-        self.__class__.dbcompliance = "http://%s:%s/init/compliance/call/xmlrpc"%(self.dbopensvc_host, self.dbopensvc_port)
-
-update_cl_attr(cl=rcEnv, module="rcLocalEnv")
-rcEnv().set_db_url()
