@@ -1259,11 +1259,23 @@ def list_services():
         s.append(name)
     return s
 
+def setNodeEnv():
+    import ConfigParser
+    nodeconf = os.path.join(rcEnv.pathetc, 'node.conf')
+    config = ConfigParser.RawConfigParser()
+    config.read(nodeconf)
+    if config.has_option('node', 'dbopensvc'):
+        rcEnv.dbopensvc = config.get('node', 'dbopensvc')
+    if config.has_option('node', 'dbcompliance'):
+        rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+    del(config)
+
 def build_services(status=None, svcnames=[],
                    onlyprimary=False, onlysecondary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
+    setNodeEnv()
     services = {}
     for name in list_services():
         if len(svcnames) > 0 and name not in svcnames:
