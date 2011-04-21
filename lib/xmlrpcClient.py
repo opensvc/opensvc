@@ -33,7 +33,8 @@ hostid = hostId.hostid()
 
 def setNodeEnv():
     import ConfigParser
-    nodeconf = os.path.join(rcEnv.pathetc, 'node.conf')
+    pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
+    nodeconf = os.path.join(pathetc, 'node.conf')
     config = ConfigParser.RawConfigParser()
     config.read(nodeconf)
     if config.has_option('node', 'dbopensvc'):
