@@ -63,6 +63,7 @@ def xmlrpc_decorator(fn):
         if rcEnv.uuid == "" and \
            rcEnv.dbopensvc is not None and \
            not rcEnv.warned and \
+           auth_node and \
            fn.__name__ != "register_node":
             import sys
             print >>sys.stderr, "this node is not registered. try 'nodemgr register'"
@@ -126,8 +127,7 @@ def begin_action(svc, action, begin):
     except:
         version = "0";
 
-    proxy.begin_action(
-        ['svcname',
+    args = [['svcname',
          'action',
          'hostname',
          'hostid',
@@ -138,9 +138,11 @@ def begin_action(svc, action, begin):
          repr(rcEnv.nodename),
          repr(hostid),
          repr(version),
-         repr(str(begin))],
-        (rcEnv.uuid, rcEnv.nodename)
-    )
+         repr(str(begin))]
+    ]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.begin_action(*args)
 
 @xmlrpc_decorator
 def end_action(svc, action, begin, end, logfile):
