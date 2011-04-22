@@ -92,6 +92,7 @@ class Node(Svc, Freezer):
           'get': 'get the value of the node configuration parameter pointed by --param',
           'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
           'delete': 'delete a node configuration parameter (pointed by --param)',
+          'register': 'obtain a registration number from the collector, used to authenticate the node',
         }
 
     def _setup_sync_conf(self):
@@ -629,6 +630,25 @@ class Node(Svc, Freezer):
             self.write_config()
         except:
             return 1
+        return 0
+
+    def register(self):
+        u = xmlrpcClient.register_node()
+        if u is None:
+            print >>sys.stderr, "failed to obtain a registration number"
+            return 1
+        elif isinstance(u, list):
+            print >>sys.stderr, u[0]
+            return 1
+        try:
+            if not self.config.has_section('node'):
+                self.config.add_section('node')
+            self.config.set('node', 'uuid', u)
+            self.write_config()
+        except:
+            print >>sys.stderr, "failed to write registration number: %s"%u
+            return 1
+        print "registered"
         return 0
 
 if __name__ == "__main__" :

@@ -30,6 +30,7 @@ socket.setdefaulttimeout(120)
 sysname, nodename, x, x, machine = os.uname()
 hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
+rcEnv.warned = False
 
 def setNodeEnv():
     import ConfigParser
@@ -41,6 +42,10 @@ def setNodeEnv():
         rcEnv.dbopensvc = config.get('node', 'dbopensvc')
     if config.has_option('node', 'dbcompliance'):
         rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+    if config.has_option('node', 'uuid'):
+        rcEnv.uuid = config.get('node', 'uuid')
+    else:
+        rcEnv.uuid = ""
     del(config)
 
 def xmlrpc_decorator_dummy(fn):
@@ -50,6 +55,20 @@ def xmlrpc_decorator_dummy(fn):
 
 def xmlrpc_decorator(fn):
     def new(*args):
+        if fn.__name__ == "register_node" and \
+           'register_node' not in proxy_methods:
+            import sys
+            print >>sys.stderr, "collector does not support node registration"
+            return
+        if rcEnv.uuid == "" and \
+           rcEnv.dbopensvc is not None and \
+           not rcEnv.warned and \
+           fn.__name__ != "register_node":
+            import sys
+            print >>sys.stderr, "this node is not registered. try 'nodemgr register'"
+            print >>sys.stderr, "to disable this warning, set 'dbopensvc = None' in node.conf"
+            rcEnv.warned = True
+            return
         try:
             return fn(*args)
         except (socket.error, xmlrpclib.ProtocolError):
@@ -71,7 +90,7 @@ try:
     if len(a) == 0:
         raise Exception
 except:
-    print("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc)
+    print >>sys.stderr, "could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
 class SafeTransportWithCert(xmlrpclib.SafeTransport):
@@ -94,6 +113,11 @@ try:
 except:
     comp_proxy_methods = []
 
+if "register_node" in proxy_methods:
+    auth_node = True
+else:
+    auth_node = False
+
 @xmlrpc_decorator
 def begin_action(svc, action, begin):
     try:
@@ -114,7 +138,8 @@ def begin_action(svc, action, begin):
          repr(rcEnv.nodename),
          repr(hostid),
          repr(version),
-         repr(str(begin))]
+         repr(str(begin))],
+        (rcEnv.uuid, rcEnv.nodename)
     )
 
 @xmlrpc_decorator
@@ -197,7 +222,10 @@ def end_action(svc, action, begin, end, logfile):
                      res_err])
 
     if len(vals) > 0:
-        proxy.res_action_batch(vars, vals)
+        args = [vars, vals]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.res_action_batch(*args)
 
     """Complete the wrap-up database entry
     """
@@ -207,7 +235,7 @@ def end_action(svc, action, begin, end, logfile):
     if len(pids) == 0:
         pids = set([os.getpid()])
 
-    proxy.end_action(
+    args = [
         ['svcname',
          'action',
          'hostname',
@@ -226,15 +254,27 @@ def end_action(svc, action, begin, end, logfile):
          repr(str(end)),
          repr(str(end-begin)),
          repr(str(err))]
-    )
+    ]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.end_action(*args)
 
 @xmlrpc_decorator
 def svcmon_update_combo(g_vars, g_vals, r_vars, r_vals):
     if 'svcmon_update_combo' in proxy_methods:
-        proxy.svcmon_update_combo(g_vars, g_vals, r_vars, r_vals)
+        args = [g_vars, g_vals, r_vars, r_vals]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.svcmon_update_combo(*args)
     else:
-        proxy.svcmon_update(g_vars, g_vals)
-        proxy.resmon_update(r_vars, r_vals)
+        args = [g_vars, g_vals]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.svcmon_update(*args)
+        args = [r_vars, r_vals]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.resmon_update(*args)
 
 @xmlrpc_decorator
 def push_service(svc):
@@ -315,11 +355,17 @@ def push_service(svc):
         vals += [container_info['vcpus'],
                  container_info['vmem']]
 
-    proxy.update_service(vars, vals)
+    args = [vars, vals]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.update_service(*args)
 
 @xmlrpc_decorator
 def delete_services():
-    proxy.delete_services(hostid)
+    args = [hostid]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.delete_services(*args)
 
 @xmlrpc_decorator
 def push_disks(svc):
@@ -338,15 +384,17 @@ def push_disks(svc):
     disks = di.diskInfo()
     disklist_cache = {}
 
-    proxy.delete_disks(svc.svcname, rcEnv.nodename)
+    args = [svc.svcname, rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.delete_disks(*args)
 
     for d in svc.disklist():
         if disks.disk_id(d) is None or disks.disk_id(d) == "":
             """ no point pushing to db an empty entry
             """
             continue
-        proxy.register_disk(
-            ['disk_id',
+        args = [['disk_id',
              'disk_svcname',
              'disk_size',
              'disk_vendor',
@@ -360,11 +408,17 @@ def push_disks(svc):
              repr(disks.disk_model(d)),
              repr(disk_dg(d, svc)),
              repr(rcEnv.nodename)]
-        )
+        ]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.register_disk(*args)
 
 @xmlrpc_decorator
 def push_stats_fs_u(l):
-    proxy.insert_stats_fs_u(l[0], l[1])
+    args = [l[0], l[1]]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.insert_stats_fs_u(*args)
 
 @xmlrpc_decorator
 def push_pkg():
@@ -374,8 +428,14 @@ def push_pkg():
             'pkg_version',
             'pkg_arch']
     vals = p.listpkg()
-    proxy.delete_pkg(rcEnv.nodename)
-    proxy.insert_pkg(vars, vals)
+    args = [rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.delete_pkg(*args)
+    args = [vars, vals]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.insert_pkg(*args)
 
 @xmlrpc_decorator
 def push_patch():
@@ -384,8 +444,14 @@ def push_patch():
             'patch_num',
             'patch_rev']
     vals = p.listpatch()
-    proxy.delete_patch(rcEnv.nodename)
-    proxy.insert_patch(vars, vals)
+    args = [rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.delete_patch(*args)
+    args = [vars, vals]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.insert_patch(*args)
 
 def push_stats(force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None):
     try:
@@ -401,7 +467,10 @@ def push_stats(force=False, interval=None, stats_dir=None, stats_start=None, sta
                  'blockdev', 'netdev', 'netdev_err']:
         h[stat] = sp.get(stat)
     import cPickle
-    proxy.insert_stats(cPickle.dumps(h))
+    args = [cPickle.dumps(h)]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.insert_stats(*args)
 
 def push_asset(node):
     try:
@@ -413,7 +482,10 @@ def push_asset(node):
         print "'update_asset' method is not exported by the collector"
         return
     d = m.Asset(node).get_asset_dict()
-    proxy.update_asset(d.keys(), d.values())
+    args = [d.keys(), d.values()]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.update_asset(*args)
 
 def push_sym():
     if 'update_sym_xml' not in proxy_methods:
@@ -429,11 +501,17 @@ def push_sym():
         for key in sym.keys:
             vals.append(getattr(sym, 'get_'+key)())
         proxy = TimeoutServerProxy(rcEnv.dbopensvc, timeout=180)
-        proxy.update_sym_xml(sym.sid, sym.keys, vals)
+        args = [sym.sid, sym.keys, vals]
+        if auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        proxy.update_sym_xml(*args)
 
 @xmlrpc_decorator
 def push_all(svcs):
-    proxy.delete_service_list([svc.svcname for svc in svcs])
+    args = [[svc.svcname for svc in svcs]]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.delete_service_list(*args)
     for svc in svcs:
         push_disks(svc)
         push_service(svc)
@@ -443,48 +521,88 @@ def push_checks(vars, vals):
     if "push_checks" not in proxy_methods:
         print "'push_checks' method is not exported by the collector"
         return
-    proxy.push_checks(vars, vals)
+    args = [vars, vals]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    proxy.push_checks(*args)
+
+@xmlrpc_decorator
+def register_node():
+    return proxy.register_node(rcEnv.nodename)
 
 @xmlrpc_decorator
 def comp_get_moduleset_modules(moduleset):
-    return comp_proxy.comp_get_moduleset_modules(moduleset)
+    args = [moduleset]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_get_moduleset_modules(*args)
 
 @xmlrpc_decorator
 def comp_get_moduleset():
-    return comp_proxy.comp_get_moduleset(rcEnv.nodename)
+    args = [rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_get_moduleset(*args)
 
 @xmlrpc_decorator
 def comp_attach_moduleset(moduleset):
-    return comp_proxy.comp_attach_moduleset(rcEnv.nodename, moduleset)
+    args = [rcEnv.nodename, moduleset]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_attach_moduleset(*args)
 
 @xmlrpc_decorator
 def comp_detach_moduleset(moduleset):
-    return comp_proxy.comp_detach_moduleset(rcEnv.nodename, moduleset)
+    args = [rcEnv.nodename, moduleset]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_detach_moduleset(*args)
 
 @xmlrpc_decorator
 def comp_get_ruleset():
-    return comp_proxy.comp_get_ruleset(rcEnv.nodename)
+    args = [rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_get_ruleset(*args)
 
 @xmlrpc_decorator
 def comp_get_dated_ruleset(date):
-    return comp_proxy.comp_get_dated_ruleset(rcEnv.nodename, date)
+    args = [rcEnv.nodename, date]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_get_dated_ruleset(*args)
 
 @xmlrpc_decorator
 def comp_attach_ruleset(ruleset):
-    return comp_proxy.comp_attach_ruleset(rcEnv.nodename, ruleset)
+    args = [rcEnv.nodename, ruleset]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_attach_ruleset(*args)
 
 @xmlrpc_decorator
 def comp_detach_ruleset(ruleset):
-    return comp_proxy.comp_detach_ruleset(rcEnv.nodename, ruleset)
+    args = [rcEnv.nodename, ruleset]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_detach_ruleset(*args)
 
 @xmlrpc_decorator
 def comp_list_ruleset(pattern='%'):
-    return comp_proxy.comp_list_rulesets(pattern, rcEnv.nodename)
+    args = [pattern, rcEnv.nodename]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_list_rulesets(*args)
 
 @xmlrpc_decorator
 def comp_list_moduleset(pattern='%'):
-    return comp_proxy.comp_list_modulesets(pattern)
+    args = [pattern]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_list_modulesets(*args)
 
 @xmlrpc_decorator
 def comp_log_action(vars, vals):
-    return comp_proxy.comp_log_action(vars, vals)
+    args = [vars, vals]
+    if auth_node:
+        args += [(rcEnv.uuid, rcEnv.nodename)]
+    return comp_proxy.comp_log_action(*args)

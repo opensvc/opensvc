@@ -100,8 +100,9 @@ action = '_'.join(args)
 if not action in n.action_desc:
     parser.error("unsupported action: %s"%action)
 
+err = 0
 try:
-    n.action(action)
+    err = n.action(action)
 except ex.excError:
     import traceback
     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -113,3 +114,4 @@ except KeyboardInterrupt:
 except:
     raise
 
+sys.exit(err)
