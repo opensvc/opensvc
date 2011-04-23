@@ -100,7 +100,7 @@ def sync_timestamp(self, node):
     if not os.path.isdir(sync_timestamp_d_src):
         os.makedirs(sync_timestamp_d_src ,0755)
     with open(sync_timestamp_f, 'w') as f:
-        f.write(str(datetime.datetime.now())+'\n')
+        f.write(str(self.svc.action_start_date)+'\n')
         f.close()
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
