@@ -31,6 +31,7 @@ import signal
 import lock
 import rcLogger
 import logging
+import datetime
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -118,6 +119,7 @@ class Svc(Resource, Freezer):
         self.presnap_trigger = None
         self.postsnap_trigger = None
         self.lockfd = None
+        self.action_start_date = datetime.datetime.now()
 
     def __cmp__(self, other):
         """order by service name
@@ -885,6 +887,7 @@ class Svc(Resource, Freezer):
                 r.setup_environ()
 
     def action(self, action, rid=[], tags=set([]), waitlock=60):
+        self.action_start_date = datetime.datetime.now()
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             raise ex.excError
