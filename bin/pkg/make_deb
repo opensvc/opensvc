@@ -20,7 +20,7 @@ chmod 755 $CHROOT/DEBIAN/postinst
 
 cat - <<-EOF >$CHROOT/DEBIAN/control
 Package: opensvc
-Version: $RELEASE-$VERSION
+Version: $VERSION-$RELEASE
 Section: system 
 Priority: optional
 Architecture: all
