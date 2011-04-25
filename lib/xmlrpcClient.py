@@ -102,14 +102,14 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
 setNodeEnv()
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 try:
+    proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
     proxy_methods = proxy.system.listMethods()
 except:
     proxy_methods = []
 
-comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
 try:
+    comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
     comp_proxy_methods = comp_proxy.system.listMethods()
 except:
     comp_proxy_methods = []
