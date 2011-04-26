@@ -32,6 +32,29 @@ hostId = __import__('hostid'+sysname)
 hostid = hostId.hostid()
 rcEnv.warned = False
 
+
+def split_url(url):
+    if url.startswith('https'):
+        transport = 'https'
+        url = url.replace('https://', '')
+    elif url.startswith('http'):
+        transport = 'http'
+        url = url.replace('http://', '')
+    l = url.split('/')
+    if len(l) < 2:
+        raise
+    app = l[1]
+    l = l[0].split(':')
+    if len(l) == 1:
+        host = l[0]
+        port = '80'
+    elif len(l) == 2:
+        host = l[0]
+        port = l[1]
+    else:
+        raise
+    return transport, host, port, app
+
 def setNodeEnv():
     import ConfigParser
     pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
@@ -40,8 +63,18 @@ def setNodeEnv():
     config.read(nodeconf)
     if config.has_option('node', 'dbopensvc'):
         rcEnv.dbopensvc = config.get('node', 'dbopensvc')
+        try:
+            rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = split_url(rcEnv.dbopensvc)
+        except:
+            import sys
+            print >>sys.stderr, "malformed dbopensvc url: %s"%rcEnv.dbopensvc
     if config.has_option('node', 'dbcompliance'):
         rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+        try:
+            rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = split_url(rcEnv.dbcompliance)
+        except:
+            import sys
+            print >>sys.stderr, "malformed dbcompliance url: %s"%rcEnv.dbcompliance
     if config.has_option('node', 'uuid'):
         rcEnv.uuid = config.get('node', 'uuid')
     else:
@@ -86,11 +119,14 @@ def xmlrpc_decorator(fn):
             print e[0], e[1], traceback.print_tb(e[2])
     return new
 
+setNodeEnv()
+
 try:
     a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
     if len(a) == 0:
         raise Exception
 except:
+    import sys
     print >>sys.stderr, "could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
@@ -101,7 +137,6 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {'key_file': self.__key_file, 'cert_file': self.__cert_file})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
-setNodeEnv()
 try:
     proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
     proxy_methods = proxy.system.listMethods()
