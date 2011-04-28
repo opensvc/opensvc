@@ -137,6 +137,38 @@ class Ip(Res.Resource):
         if rcEnv.nodename in self.always_on:
              self.start()
 
+    def lock(self, timeout=30, delay=1):
+        import lock
+        lockfile = os.path.join(rcEnv.pathlock, 'startip')
+        try:
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except lock.lockTimeout:
+            self.log.error("timed out waiting for lock")
+            raise ex.excError
+        except lock.lockNoLockFile:
+            self.log.error("lock_nowait: set the 'lockfile' param")
+            raise ex.excError
+        except lock.lockCreateError:
+            self.log.error("can not create lock file %s"%lockfile)
+            raise ex.excError
+        except lock.lockAcquire as e:
+            self.log.warn("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            raise ex.excError
+        except:
+            self.log.error("unexpected locking error")
+            import traceback
+            traceback.print_exc()
+            raise ex.excError
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def unlock(self):
+        import lock
+        lock.unlock(self.lockfd)
+
     def start(self):
         try:
             self.getaddr()
@@ -151,6 +183,7 @@ class Ip(Res.Resource):
             return
         self.log.debug('pre-checks passed')
 
+        self.lock()
         ifconfig = rcIfconfig.ifconfig()
         if self.mask is None:
             self.mask = ifconfig.interface(self.ipDev).mask
@@ -167,6 +200,7 @@ class Ip(Res.Resource):
                                                     self.addr,\
                                                     self.log)
         (ret, out) = self.startip_cmd()
+        self.unlock()
         if ret != 0:
             self.log.error("failed")
             raise ex.excError
