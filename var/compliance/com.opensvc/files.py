@@ -123,7 +123,7 @@ class CompFiles(object):
             if verbose: print >>sys.stderr, f['path'], 'can not stat file'
             return RET_ERR
         mode = str(mode).lstrip("0")
-        if mode != f['mode']:
+        if mode != str(f['mode']):
             if verbose: print >>sys.stderr, f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
             return RET_ERR
         return RET_OK
