@@ -54,6 +54,8 @@ class CompFiles(object):
             raise NotApplicable()
 
     def parse_fmt(self, d):
+        if isinstance(d['fmt'], int):
+            d['fmt'] = str(d['fmt'])+'\n'
         fmt = d['fmt']
         p = re.compile('%%ENV:.+%%')
         for m in p.findall(fmt):
