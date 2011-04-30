@@ -145,7 +145,7 @@ class CompGroup(object):
             r |= self.check_group(group, props)
         return r
 
-    def fix():
+    def fix(self):
         r = 0
         for group, props in self.groups.items():
             r |= self.fix_group(group, props)
