@@ -183,6 +183,8 @@ class CompFiles(object):
         r |= self.check_file_mode(f, verbose)
         r |= self.check_file_uid(f, verbose)
         r |= self.check_file_gid(f, verbose)
+        if r == 0:
+            print "OK:", f['path']
         return r
 
     def fix_file_mode(self, f):
