@@ -24,6 +24,7 @@
 from rcGlobalEnv import rcEnv
 import resDg
 from rcUtilities import qcall
+import os
 
 import re
 
@@ -62,7 +63,7 @@ class Pool(resDg.Dg):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
-        cmd = [ 'zpool', 'import', self.name ]
+        cmd = [ 'zpool', 'import', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
         (ret, out) = self.vcall(cmd)
         return ret
 
