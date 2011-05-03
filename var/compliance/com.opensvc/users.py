@@ -12,7 +12,7 @@ supported dictionnary keys:
 - uid
 - gid
 - gecos
-- homedir
+- home
 - shell
 """
 
@@ -31,14 +31,14 @@ class CompUser(object):
         self.prefix = prefix.upper()
         self.pwt = {
             'shell': 'pw_shell',
-            'homedir': 'pw_dir',
+            'home': 'pw_dir',
             'uid': 'pw_uid',
             'gid': 'pw_gid',
             'gecos': 'pw_gecos',
         }
         self.usermod_p = {
             'shell': '-s',
-            'homedir': '-m -d',
+            'home': '-m -d',
             'uid': '-u',
             'gid': '-g',
             'gecos': '-c',
