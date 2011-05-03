@@ -72,8 +72,13 @@ class Ip(Res.Resource):
         else:
             index = ''
         var = 'OPENSVC_IP'+index
-        val = ' '.join((str(self.ipName), str(self.ipDev), str(self.addr),
-                        str(self.mask)))
+        l = []
+        for p in ['ipName', 'ipDev', 'addr', 'mask']:
+            if hasattr(self, p):
+                l.append(str(getattr(self, p)))
+            else:
+                l.append('unknown')
+        val = ' '.join(l)
         os.environ[var] = val
 
     def _status(self, verbose=False):
