@@ -145,6 +145,7 @@ class Ip(Res.Resource):
     def lock(self, timeout=30, delay=1):
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'startip')
+        lockfd = None
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
@@ -167,8 +168,7 @@ class Ip(Res.Resource):
             import traceback
             traceback.print_exc()
             raise ex.excError
-        if lockfd is not None:
-            self.lockfd = lockfd
+        self.lockfd = lockfd
 
     def unlock(self):
         import lock
