@@ -54,6 +54,8 @@ class CompFiles(object):
             raise NotApplicable()
 
     def parse_fmt(self, d):
+        if isinstance(d['fmt'], int):
+            d['fmt'] = str(d['fmt'])+'\n'
         fmt = d['fmt']
         p = re.compile('%%ENV:.+%%')
         for m in p.findall(fmt):
@@ -123,7 +125,7 @@ class CompFiles(object):
             if verbose: print >>sys.stderr, f['path'], 'can not stat file'
             return RET_ERR
         mode = str(mode).lstrip("0")
-        if mode != f['mode']:
+        if mode != str(f['mode']):
             if verbose: print >>sys.stderr, f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
             return RET_ERR
         return RET_OK
@@ -183,6 +185,8 @@ class CompFiles(object):
         r |= self.check_file_mode(f, verbose)
         r |= self.check_file_uid(f, verbose)
         r |= self.check_file_gid(f, verbose)
+        if r == 0:
+            print "OK:", f['path']
         return r
 
     def fix_file_mode(self, f):

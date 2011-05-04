@@ -35,6 +35,7 @@ class rcEnv:
 
     allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
     platform = sys.platform
+    sysname, nodename, x, x, machine = os.uname()
 
     """program used to execute remote command on other nodes or virtual hosts
     """

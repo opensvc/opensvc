@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 
 import os
 import shutil
@@ -6,16 +6,21 @@ import glob
 import sys
 from subprocess import *
 
-python_name = 'python2.6'
+python_names = ['python2.7', 'python2.6']
 
 sysname, nodename, x, x, machine = os.uname()
 
 def python_path():
-    python_exe = python_name
+    for n in python_names:
+        p = _python_path(n)
+        if p is not None:
+            return p
+
+def _python_path(python_exe):
     for path in os.environ["PATH"].split(os.pathsep):
         exe_file = os.path.join(path, python_exe)
         if os.path.exists(exe_file) and os.access(exe_file, os.X_OK):
-            return os.path.dirname(exe_file)
+            return exe_file
     return None
 
 def install_cron():
@@ -401,9 +406,12 @@ def install_link(source, target):
     os.symlink(source,target)
 
 def install_pythonlink():
-    source =  os.path.join(python_path(), python_name)
+    p = python_path()
+    if p is None:
+        print >>sys.stderr, "could not find a valid python installation"
+        sys.exit(1)
     target = '/opt/opensvc/bin/python'
-    return install_link(source=source, target=target)
+    return install_link(source=p, target=target)
 
 def move_host_mode():
     hm = '/opt/opensvc/var/host_mode'

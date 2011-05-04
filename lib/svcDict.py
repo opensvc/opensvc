@@ -1,6 +1,8 @@
 #!/opt/opensvc/bin/python
 
 import sys
+from rcGlobalEnv import rcEnv
+from rcNode import node_get_hostmode
 
 class MissKeyNoDefault(Exception):
      pass
@@ -26,7 +28,6 @@ class Keyword(object):
         self.at = at
         self.required = required
         self.default = default
-        self.validator = validator
         self.candidates = candidates
         self.depends = depends
         self.text = text
@@ -42,10 +43,6 @@ class Keyword(object):
         from textwrap import TextWrapper
         wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
 
-        if self.validator is None:
-            validator = False
-        else:
-            validator = True
         depends = ""
         for d in self.depends:
             depends += "%s in %s\n"%(d[0], d[1])
@@ -60,7 +57,7 @@ class Keyword(object):
         s += "  required:    %s\n"%str(self.required)
         s += "  default:     %s\n"%str(self.default)
         s += "  candidates:  %s\n"%str(self.candidates)
-        s += "  validator:   %s\n"%str(validator)
+        s += "  validator:   %s\n"%str(hasattr(self, "validator"))
         s += "  depends:     %s\n"%depends
         s += "  @node:       %s\n"%str(self.at)
         if self.text:
@@ -99,7 +96,7 @@ class Keyword(object):
                     if self.required:
                         print "value required"
                         continue
-                    # keyword is optional, leave dictionaty untouched
+                    # keyword is optional, leave dictionary untouched
                     return d
                 else:
                     val = default
@@ -107,15 +104,21 @@ class Keyword(object):
                    val not in self.candidates:
                     print "invalid value"
                     continue
-            if self.at and val[0] == '@':
+            elif self.at and val[0] == '@':
                 l = val.split()
                 if len(l) < 2:
                     print "invalid value"
                     continue
                 val = ' '.join(l[1:])
+                if not self.validator(val):
+                    print "invalid value"
+                    continue
                 d[self.keyword+l[0]] = val
                 req_satisfied = True
             else:
+                if not self.validator(val):
+                    print "invalid value"
+                    continue
                 d[self.keyword] = val
                 req_satisfied = True
             if self.at:
@@ -124,6 +127,855 @@ class Keyword(object):
                 continue
             else:
                 return d
+
+    def validator(self, val):
+        return True
+
+
+class KeywordInteger(Keyword):
+    def validator(val):
+        try:
+             val = int(val)
+        except:
+             return False
+        return True
+
+
+class KeywordMode(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="mode",
+                  order=10,
+                  default="hosted",
+                  candidates=["hosted"] + rcEnv.vt_supported,
+                  text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
+                )
+
+class KeywordVmName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="vm_name",
+                  order=11,
+                  depends=[('mode', rcEnv.vt_supported)],
+                  text="This need to be set if the virtual machine name is different from the service name."
+                )
+
+class KeywordClusterType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="cluster_type",
+                  order=15,
+                  required=False,
+                  default="failover",
+                  candidates=["failover", "allactive", "flex", "autoflex"],
+                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range. autoflex: same as flex, but charge the collector to start the service on passive nodes when the average %cpu usage on active nodes > flex_cpu_high_threshold and stop the service on active nodes when the average %cpu usage on active nodes < flex_cpu_low_threshold."
+                )
+
+class KeywordFlexMinNodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="flex_min_nodes",
+                  order=16,
+                  required=False,
+                  default=1,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
+                )
+
+class KeywordFlexMaxNodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="flex_max_nodes",
+                  order=16,
+                  required=False,
+                  default=0,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
+                )
+
+class KeywordFlexCpuMinThreshold(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="flex_cpu_min_threshold",
+                  order=16,
+                  required=False,
+                  default=10,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Average CPU usage across the active cluster nodes below which the collector raises alerts and decides to stop service instances with autoflex cluster type."
+                )
+
+class KeywordFlexCpuMaxThreshold(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="flex_cpu_max_threshold",
+                  order=16,
+                  required=False,
+                  default=70,
+                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  text="Average CPU usage across the active cluster nodes above which the collector raises alerts and decides to start new service instances with autoflex cluster type."
+                )
+
+class KeywordServiceType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="service_type",
+                  order=15,
+                  required=True,
+                  default=node_get_hostmode(),
+                  candidates=rcEnv.allowed_svctype,
+                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+                )
+
+class KeywordNodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="nodes",
+                  order=20,
+                  required=True,
+                  default=rcEnv.nodename,
+                  text="List of cluster local nodes able to start the service.  Whitespace separated."
+                )
+
+class KeywordAutostartNode(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="autostart_node",
+                  order=20,
+                  required=True,
+                  default=rcEnv.nodename,
+                  text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
+                )
+
+class KeywordDrpnode(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="drpnode",
+                  order=21,
+                  text="The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources."
+                )
+
+class KeywordDrpnodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="drpnodes",
+                  order=21,
+                  text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources."
+                )
+
+class KeywordApp(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="app",
+                  order=24,
+                  default="DEFAULT",
+                  text="Used to identify who is responsible for is service, who is billable and provides a most useful filtering key. Better keep it a short code."
+                )
+
+class KeywordComment(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="comment",
+                  order=25,
+                  text="Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usualy responsible for."
+                )
+
+class KeywordScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="scsireserv",
+                  order=25,
+                  default=False,
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordBwlimit(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="bwlimit",
+                  order=25,
+                  text="Bandwidth limit in KB applied to all rsync transfers."
+                )
+
+class KeywordSyncInterval(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="sync_interval",
+                  order=26,
+                  default=121,
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
+                )
+
+class KeywordSyncMaxDelay(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="sync_max_delay",
+                  order=27,
+                  default=1440,
+                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'"
+                )
+
+class KeywordPresnapTrigger(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="presnap_trigger",
+                  order=28,
+                  text="Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like)."
+                )
+
+class KeywordPostsnapTrigger(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="postsnap_trigger",
+                  order=29,
+                  text="Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'."
+                )
+
+class KeywordContainerize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="containerize",
+                  order=30,
+                  default=True,
+                  candidates=(True, False),
+                  text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
+                )
+
+class KeywordContainerCpus(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_cpus",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2"
+                )
+
+class KeywordContainerMems(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_mems",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2"
+                )
+
+class KeywordContainerCpuShare(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_cpu_share",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services."
+                )
+
+class KeywordContainerMemLimit(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_mem_limit",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing."
+                )
+
+class KeywordContainerVmemLimit(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_vmem_limit",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit."
+                )
+
+class KeywordSyncType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="type",
+                  order=10,
+                  required=True,
+                  candidates=("rsync", "dds", "netapp", "zfs", "symclone"),
+                  default="rsync",
+                  text="Point a sync driver to use."
+                )
+
+class KeywordSyncZfsSrc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="src",
+                  rtype="zfs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="Source dataset of the sync."
+                )
+
+class KeywordSyncZfsDst(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dst",
+                  rtype="zfs",
+                  order=11,
+                  at=True,
+                  required=True,
+                  text="Destination dataset of the sync."
+                )
+
+class KeywordSyncZfsTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="target",
+                  rtype="zfs",
+                  order=12,
+                  required=True,
+                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+                )
+
+class KeywordSyncZfsRecursive(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="recursive",
+                  rtype="zfs",
+                  order=13,
+                  default=True,
+                  candidates=(True, False),
+                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+                )
+
+class KeywordSyncZfsTags(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="tags",
+                  rtype="zfs",
+                  text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
+                )
+
+class KeywordSyncRsyncSrc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="src",
+                  rtype="rsync",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="Source of the sync. Can be a whitespace-separated list of files or dirs passed as-is to rsync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
+                )
+
+class KeywordSyncRsyncDst(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dst",
+                  rtype="rsync",
+                  order=11,
+                  required=True,
+                  text="Destination of the sync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
+                )
+
+class KeywordSyncRsyncTags(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="tags",
+                  rtype="rsync",
+                  text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
+                )
+
+class KeywordSyncRsyncExclude(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="exclude",
+                  rtype="rsync",
+                  text="!deprecated!. A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
+                )
+
+class KeywordSyncRsyncOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="options",
+                  rtype="rsync",
+                  text="A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
+                )
+
+class KeywordSyncRsyncTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="target",
+                  rtype="rsync",
+                  order=12,
+                  required=True,
+                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+                )
+
+class KeywordSyncRsyncSnap(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="snap",
+                  rtype="rsync",
+                  order=14,
+                  candidates=(True, False),
+                  default=False,
+                  text="If set to true, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
+                )
+
+class KeywordSyncRsyncDstfs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dstfs",
+                  rtype="rsync",
+                  order=13,
+                  text="If set to a remote mount point, OpenSVC will verify that the specified mount point is really hosting a mounted FS. This can be used as a safety net to not overflow the parent FS (may be root)."
+                )
+
+class KeywordSyncRsyncBwlimit(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="bwlimit",
+                  rtype="rsync",
+                  text="Bandwidth limit in KB applied to this rsync transfer. Takes precedence over 'bwlimit' set in [DEFAULT]."
+                )
+
+class KeywordSyncSyncInterval(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="sync_interval",
+                  default=30,
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. If no set in a resource section, fallback to the value set in the 'default' section. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
+                )
+
+class KeywordSyncSyncMaxDelay(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="sync_max_delay",
+                  default=1440,
+                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
+                )
+
+class KeywordIpIpname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="ipname",
+                  order=12,
+                  at=True,
+                  required=True,
+                  text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter."
+                )
+
+class KeywordIpIpdev(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="ipdev",
+                  order=11,
+                  at=True,
+                  required=True,
+                  text="The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
+                )
+
+class KeywordIpNetmask(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="netmask",
+                  order=13,
+                  text="If an ip is already plumbed on the root interface (if which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64."
+                )
+
+class KeywordVgType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="type",
+                  order=9,
+                  required=False,
+                  candidates=['veritas'],
+                  text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordVgVgname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="vgname",
+                  order=10,
+                  required=True,
+                  text="The name of the volume group"
+                )
+
+class KeywordVgDsf(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="dsf",
+                  candidates=(True, False),
+                  default=True,
+                  text="HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed /dev/dsk/... devices. Otherwize, ad-hoc multipathed /dev/disk/... devices."
+                )
+
+class KeywordVgScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="scsireserv",
+                  default=False,
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordPoolPoolname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="poolname",
+                  order=10,
+                  at=True,
+                  text="The name of the zfs pool"
+                )
+
+class KeywordPoolTags(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="tags",
+                  text="tags  = preboot may be used when zfs pool is required before container boot else postboot is presumed"
+                )
+
+class KeywordVmdgScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vmdg",
+                  keyword="scsireserv",
+                  default=False,
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordDrbdScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="drbd",
+                  keyword="scsireserv",
+                  default=False,
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordDrbdRes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="drbd",
+                  keyword="res",
+                  order=11,
+                  text="The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
+                )
+
+class KeywordFsDev(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="dev",
+                  order=11,
+                  at=True,
+                  required=True,
+                  text="The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
+                )
+
+class KeywordFsMnt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="mnt",
+                  order=12,
+                  required=True,
+                  text="The mount point where to mount the filesystem."
+                )
+
+class KeywordFsMntOpt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="mnt_opt",
+                  order=13,
+                  text="The mount options."
+                )
+
+class KeywordFsType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="type",
+                  order=14,
+                  required=True,
+                  text="The filesystem type. Used to determine the fsck command to use."
+                )
+
+class KeywordFsSnapSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="snap_size",
+                  order=14,
+                  text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
+                )
+
+class KeywordLoopFile(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="loop",
+                  keyword="file",
+                  required=True,
+                  text="The file hosting the disk image to map."
+                )
+
+class KeywordSyncNetappFiler(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="filer",
+                  rtype="netapp",
+                  required=True,
+                  at=True,
+                  text="The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the filer@nodename syntax."
+                )
+
+class KeywordSyncNetappPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="path",
+                  rtype="netapp",
+                  required=True,
+                  text="Specifies the volume or qtree to drive snapmirror on."
+                )
+
+class KeywordSyncNetappUser(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="user",
+                  rtype="netapp",
+                  required=True,
+                  default="nasadm",
+                  text="Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
+                )
+
+class KeywordSyncSymcloneSymdg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symdg",
+                  rtype="symclone",
+                  required=True,
+                  text="Name of the symmetrix device group where the source and target devices are grouped."
+                )
+
+class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="precopy_timeout",
+                  rtype="symclone",
+                  required=True,
+                  default=300,
+                  text="Seconds to wait for a precopy (syncresync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
+                )
+
+class KeywordSyncSymcloneSymdevs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symdevs",
+                  rtype="symclone",
+                  required=True,
+                  at=True,
+                  default=300,
+                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename."
+                )
+
+class KeywordSyncDdsSrc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="src",
+                  rtype="dds",
+                  required=True,
+                  text="Points the origin of the snapshots to replicate from."
+                )
+
+class KeywordSyncDdsDst(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dst",
+                  rtype="dds",
+                  required=True,
+                  text="Target file or block device. Optional. Defaults to src. Points the media to replay the binary-delta received from source node to. This media must have a size superior or equal to source."
+                )
+
+class KeywordSyncDdsTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="target",
+                  rtype="dds",
+                  required=True,
+                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  text="Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-syncupdate-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
+                )
+
+class KeywordSyncDdsSnapSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="snap_size",
+                  rtype="dds",
+                  text="Default to 10% of origin. In MB, rounded to physical extent boundaries by lvm tools. Size of the snapshots created by OpenSVC to extract binary deltas from. Opensvc creates at most 2 snapshots : one short-lived to gather changed data from, and one long-lived to gather changed chunks list from. Volume groups should have the necessary space always available."
+                )
+
+class KeywordVdiskPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vdisk",
+                  keyword="path",
+                  required=True,
+                  at=True,
+                  text="Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
+                )
+
+class KeywordHbType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="hb",
+                  keyword="type",
+                  required=True,
+                  candidates=('OpenHA', 'LinuxHA'),
+                  text="Specify the heartbeat driver to use."
+                )
+
+class KeywordHbName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="hb",
+                  keyword="name",
+                  rtype="OpenHA",
+                  text="Specify the service name used by the heartbeat. Defaults to the service name."
+                )
 
 class Section(object):
     def __init__(self, section):
@@ -312,16 +1164,6 @@ class KeyDict(KeywordStore):
         KeywordStore.__init__(self)
 
         import os
-        from rcNode import node_get_hostmode
-        from rcGlobalEnv import rcEnv
-        sysname, nodename, x, x, machine = os.uname()
-
-        def is_integer(val):
-            try:
-                 val = int(val)
-            except:
-                 return False
-            return True
 
         def kw_disable(resource):
             return Keyword(
@@ -360,557 +1202,80 @@ class KeyDict(KeywordStore):
             self += kw_optional(r)
             self += kw_always_on(r)
 
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="mode",
-                  order=10,
-                  default="hosted",
-                  candidates=["hosted"] + rcEnv.vt_supported,
-                  text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="vm_name",
-                  order=11,
-                  depends=[('mode', rcEnv.vt_supported)],
-                  text="This need to be set if the virtual machine name is different from the service name."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="cluster_type",
-                  order=15,
-                  required=False,
-                  default="failover",
-                  candidates=["failover", "allactive", "flex", "autoflex"],
-                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range. autoflex: same as flex, but charge the collector to start the service on passive nodes when the average %cpu usage on active nodes > flex_cpu_high_threshold and stop the service on active nodes when the average %cpu usage on active nodes < flex_cpu_low_threshold."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="flex_min_nodes",
-                  order=16,
-                  required=False,
-                  default=1,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
-                  text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="flex_max_nodes",
-                  order=16,
-                  required=False,
-                  default=0,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
-                  text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="flex_cpu_min_threshold",
-                  order=16,
-                  required=False,
-                  default=10,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
-                  text="Average CPU usage across the active cluster nodes below which the collector raises alerts and decides to stop service instances with autoflex cluster type."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="flex_cpu_max_threshold",
-                  order=16,
-                  required=False,
-                  default=70,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
-                  text="Average CPU usage across the active cluster nodes above which the collector raises alerts and decides to start new service instances with autoflex cluster type."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="service_type",
-                  order=15,
-                  required=True,
-                  default=node_get_hostmode(),
-                  candidates=rcEnv.allowed_svctype,
-                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="nodes",
-                  order=20,
-                  required=True,
-                  default=nodename,
-                  text="List of cluster local nodes able to start the service.  Whitespace separated."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="autostart_node",
-                  order=20,
-                  required=True,
-                  default=nodename,
-                  text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="drpnode",
-                  order=21,
-                  text="The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="drpnodes",
-                  order=21,
-                  text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="app",
-                  order=24,
-                  default="DEFAULT",
-                  text="Used to identify who is responsible for is service, who is billable and provides a most useful filtering key. Better keep it a short code."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="comment",
-                  order=25,
-                  text="Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usualy responsible for."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="scsireserv",
-                  order=25,
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="bwlimit",
-                  order=25,
-                  validator=is_integer,
-                  text="Bandwidth limit in KB applied to all rsync transfers."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="sync_min_delay",
-                  order=26,
-                  validator=is_integer,
-                  default=30,
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="sync_max_delay",
-                  order=27,
-                  validator=is_integer,
-                  default=1440,
-                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'"
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="presnap_trigger",
-                  order=28,
-                  text="Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like)."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="postsnap_trigger",
-                  order=29,
-                  text="Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="containerize",
-                  order=30,
-                  default=True,
-                  candidates=(True, False),
-                  text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="container_cpus",
-                  order=31,
-                  validator=is_integer,
-                  depends=[('containerize', [True])],
-                  text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2"
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="container_mems",
-                  order=31,
-                  validator=is_integer,
-                  depends=[('containerize', [True])],
-                  text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2"
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="container_cpu_share",
-                  order=31,
-                  validator=is_integer,
-                  depends=[('containerize', [True])],
-                  text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="container_mem_limit",
-                  order=31,
-                  validator=is_integer,
-                  depends=[('containerize', [True])],
-                  text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing."
-                )
-        self += Keyword(
-                  section="DEFAULT",
-                  keyword="container_vmem_limit",
-                  order=31,
-                  validator=is_integer,
-                  depends=[('containerize', [True])],
-                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="type",
-                  order=10,
-                  required=True,
-                  candidates=("rsync", "dds", "netapp", "zfs", "symclone"),
-                  default="rsync",
-                  text="Point a sync driver to use."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="src",
-                  rtype="zfs",
-                  order=10,
-                  at=True,
-                  required=True,
-                  text="Source dataset of the sync."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="dst",
-                  rtype="zfs",
-                  order=11,
-                  at=True,
-                  required=True,
-                  text="Destination dataset of the sync."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="target",
-                  rtype="zfs",
-                  order=12,
-                  required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
-                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="recursive",
-                  rtype="zfs",
-                  order=13,
-                  default=True,
-                  candidates=(True, False),
-                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="tags",
-                  rtype="zfs",
-                  text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="src",
-                  rtype="rsync",
-                  order=10,
-                  at=True,
-                  required=True,
-                  text="Source of the sync. Can be a whitespace-separated list of files or dirs passed as-is to rsync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="dst",
-                  rtype="rsync",
-                  order=11,
-                  required=True,
-                  text="Destination of the sync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="tags",
-                  rtype="rsync",
-                  text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="exclude",
-                  rtype="rsync",
-                  text="!deprecated!. A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="options",
-                  rtype="rsync",
-                  text="A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="target",
-                  rtype="rsync",
-                  order=12,
-                  required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
-                  text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="snap",
-                  rtype="rsync",
-                  order=14,
-                  candidates=(True, False),
-                  default=False,
-                  text="If set to true, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="dstfs",
-                  rtype="rsync",
-                  order=13,
-                  text="If set to a remote mount point, OpenSVC will verify that the specified mount point is really hosting a mounted FS. This can be used as a safety net to not overflow the parent FS (may be root)."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="bwlimit",
-                  rtype="rsync",
-                  validator=is_integer,
-                  text="Bandwidth limit in KB applied to this rsync transfer. Takes precedence over 'bwlimit' set in [DEFAULT]."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="sync_min_delay",
-                  validator=is_integer,
-                  default=30,
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. If no set in a resource section, fallback to the value set in the 'default' section. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="sync_max_delay",
-                  validator=is_integer,
-                  default=1440,
-                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
-                )
-        self += Keyword(
-                  section="ip",
-                  keyword="ipname",
-                  order=12,
-                  at=True,
-                  required=True,
-                  text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter."
-                )
-        self += Keyword(
-                  section="ip",
-                  keyword="ipdev",
-                  order=11,
-                  at=True,
-                  required=True,
-                  text="The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
-                )
-        self += Keyword(
-                  section="ip",
-                  keyword="netmask",
-                  order=13,
-                  text="If an ip is already plumbed on the root interface (if which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64."
-                )
-        self += Keyword(
-                  section="vg",
-                  keyword="type",
-                  order=9,
-                  required=False,
-                  candidates=['veritas'],
-                  text="The volume group driver to use. Leave empty to activate the native volume group manager."
-                )
-        self += Keyword(
-                  section="vg",
-                  keyword="vgname",
-                  order=10,
-                  required=True,
-                  text="The name of the volume group"
-                )
-        self += Keyword(
-                  section="vg",
-                  keyword="dsf",
-                  candidates=(True, False),
-                  default=True,
-                  text="HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed /dev/dsk/... devices. Otherwize, ad-hoc multipathed /dev/disk/... devices."
-                )
-        self += Keyword(
-                  section="vg",
-                  keyword="scsireserv",
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-        self += Keyword(
-                  section="pool",
-                  keyword="poolname",
-                  order=10,
-                  at=True,
-                  text="The name of the zfs pool"
-                )
-        self += Keyword(
-                  section="pool",
-                  keyword="tags",
-                  text="tags  = preboot may be used when zfs pool is required before container boot else postboot is presumed"
-                )
-        self += Keyword(
-                  section="vmdg",
-                  keyword="scsireserv",
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-        self += Keyword(
-                  section="drbd",
-                  keyword="scsireserv",
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-        self += Keyword(
-                  section="drbd",
-                  keyword="res",
-                  order=11,
-                  text="The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
-                )
-        self += Keyword(
-                  section="fs",
-                  keyword="dev",
-                  order=11,
-                  at=True,
-                  required=True,
-                  text="The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
-                )
-        self += Keyword(
-                  section="fs",
-                  keyword="mnt",
-                  order=12,
-                  required=True,
-                  text="The mount point where to mount the filesystem."
-                )
-        self += Keyword(
-                  section="fs",
-                  keyword="mnt_opt",
-                  order=13,
-                  text="The mount options."
-                )
-        self += Keyword(
-                  section="fs",
-                  keyword="type",
-                  order=14,
-                  required=True,
-                  text="The filesystem type. Used to determine the fsck command to use."
-                )
-        self += Keyword(
-                  section="fs",
-                  keyword="snap_size",
-                  order=14,
-                  text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
-                )
-        self += Keyword(
-                  section="loop",
-                  keyword="file",
-                  required=True,
-                  text="The file hosting the disk image to map."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="filer",
-                  rtype="netapp",
-                  required=True,
-                  at=True,
-                  text="The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the filer@nodename syntax."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="path",
-                  rtype="netapp",
-                  required=True,
-                  text="Specifies the volume or qtree to drive snapmirror on."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="user",
-                  rtype="netapp",
-                  required=True,
-                  default="nasadm",
-                  text="Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="symdg",
-                  rtype="symclone",
-                  required=True,
-                  text="Name of the symmetrix device group where the source and target devices are grouped."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="precopy_timeout",
-                  rtype="symclone",
-                  required=True,
-                  default=300,
-                  text="Seconds to wait for a precopy (syncresync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="symdevs",
-                  rtype="symclone",
-                  required=True,
-                  at=True,
-                  default=300,
-                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="src",
-                  rtype="dds",
-                  required=True,
-                  text="Points the origin of the snapshots to replicate from."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="dst",
-                  rtype="dds",
-                  required=True,
-                  text="Target file or block device. Optional. Defaults to src. Points the media to replay the binary-delta received from source node to. This media must have a size superior or equal to source."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="target",
-                  rtype="dds",
-                  required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
-                  text="Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-syncupdate-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
-                )
-        self += Keyword(
-                  section="sync",
-                  keyword="snap_size",
-                  rtype="dds",
-                  text="Default to 10% of origin. In MB, rounded to physical extent boundaries by lvm tools. Size of the snapshots created by OpenSVC to extract binary deltas from. Opensvc creates at most 2 snapshots : one short-lived to gather changed data from, and one long-lived to gather changed chunks list from. Volume groups should have the necessary space always available."
-                )
-        self += Keyword(
-                  section="vdisk",
-                  keyword="path",
-                  required=True,
-                  at=True,
-                  text="Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
-                )
-        self += Keyword(
-                  section="hb",
-                  keyword="type",
-                  required=True,
-                  candidates=('OpenHA', 'LinuxHA'),
-                  text="Specify the heartbeat driver to use."
-                )
-        self += Keyword(
-                  section="hb",
-                  keyword="name",
-                  rtype="OpenHA",
-                  text="Specify the service name used by the heartbeat. Defaults to the service name."
-                )
+        self += KeywordMode()
+        self += KeywordVmName()
+        self += KeywordClusterType()
+        self += KeywordFlexMinNodes()
+        self += KeywordFlexMaxNodes()
+        self += KeywordFlexCpuMinThreshold()
+        self += KeywordFlexCpuMaxThreshold()
+        self += KeywordServiceType()
+        self += KeywordNodes()
+        self += KeywordAutostartNode()
+        self += KeywordDrpnode()
+        self += KeywordDrpnodes()
+        self += KeywordApp()
+        self += KeywordComment()
+        self += KeywordScsireserv()
+        self += KeywordBwlimit()
+        self += KeywordSyncInterval()
+        self += KeywordSyncMaxDelay()
+        self += KeywordPresnapTrigger()
+        self += KeywordPostsnapTrigger()
+        self += KeywordContainerize()
+        self += KeywordContainerCpus()
+        self += KeywordContainerMems()
+        self += KeywordContainerCpuShare()
+        self += KeywordContainerMemLimit()
+        self += KeywordContainerVmemLimit()
+        self += KeywordSyncType()
+        self += KeywordSyncZfsSrc()
+        self += KeywordSyncZfsDst()
+        self += KeywordSyncZfsTarget()
+        self += KeywordSyncZfsRecursive()
+        self += KeywordSyncZfsTags()
+        self += KeywordSyncRsyncSrc()
+        self += KeywordSyncRsyncDst()
+        self += KeywordSyncRsyncTags()
+        self += KeywordSyncRsyncExclude()
+        self += KeywordSyncRsyncOptions()
+        self += KeywordSyncRsyncTarget()
+        self += KeywordSyncRsyncSnap()
+        self += KeywordSyncRsyncDstfs()
+        self += KeywordSyncRsyncBwlimit()
+        self += KeywordSyncSyncInterval()
+        self += KeywordSyncSyncMaxDelay()
+        self += KeywordIpIpname()
+        self += KeywordIpIpdev()
+        self += KeywordIpNetmask()
+        self += KeywordVgType()
+        self += KeywordVgVgname()
+        self += KeywordVgDsf()
+        self += KeywordVgScsireserv()
+        self += KeywordPoolPoolname()
+        self += KeywordPoolTags()
+        self += KeywordVmdgScsireserv()
+        self += KeywordDrbdScsireserv()
+        self += KeywordDrbdRes()
+        self += KeywordFsDev()
+        self += KeywordFsMnt()
+        self += KeywordFsMntOpt()
+        self += KeywordFsType()
+        self += KeywordFsSnapSize()
+        self += KeywordLoopFile()
+        self += KeywordSyncNetappFiler()
+        self += KeywordSyncNetappPath()
+        self += KeywordSyncNetappUser()
+        self += KeywordSyncSymcloneSymdg()
+        self += KeywordSyncSymclonePrecopyTimeout()
+        self += KeywordSyncSymcloneSymdevs()
+        self += KeywordSyncDdsSrc()
+        self += KeywordSyncDdsDst()
+        self += KeywordSyncDdsTarget()
+        self += KeywordSyncDdsSnapSize()
+        self += KeywordVdiskPath()
+        self += KeywordHbType()
+        self += KeywordHbName()
 
 if __name__ == "__main__":
     store = KeyDict()

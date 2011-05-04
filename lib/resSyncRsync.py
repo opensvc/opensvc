@@ -71,7 +71,7 @@ def remote_node_type(self, node, target):
         cmd = rcEnv.rsh.split(' ')+[node, '--'] + rcmd
         (ret, out) = self.call(cmd, cache=True)
         if ret != 0:
-            raise ex.excError
+            return False
         words = out.split()
         if len(words) == 1:
             cache_remote_node_type[node] = words[0]

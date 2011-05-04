@@ -38,12 +38,31 @@ class checks(check):
         self.register('checkFsUsage')
         self.register('checkFsInode')
         self.register('checkVgUsage')
+        self.register_local_checkers()
 
     def __iadd__(self, c):
         if isinstance(c, check):
             self.check_list.append(c)
         elif isinstance(c, checks):
             self.check_list += c.check_list
+
+    def register_local_checkers(self):
+        import os
+        import glob
+        check_d = os.path.join(rcEnv.pathvar, 'check')
+        if not os.path.exists(check_d):
+            return
+        import sys
+        sys.path.append(check_d)
+        for f in glob.glob(os.path.join(check_d, 'check*.py')):
+            if rcEnv.sysname not in f:
+                continue
+            cname = os.path.basename(f).replace('.py', '')
+            try:
+                m = __import__(cname)
+                self += m.check(svcs=self.svcs)
+            except:
+                print >>sys.stderr, 'Could not import check:', cname
 
     def register(self, chk_name):
         try:

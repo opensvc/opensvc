@@ -27,10 +27,38 @@ import httplib
 
 socket.setdefaulttimeout(120)
 
-sysname, nodename, x, x, machine = os.uname()
-hostId = __import__('hostid'+sysname)
+hostId = __import__('hostid'+rcEnv.sysname)
 hostid = hostId.hostid()
+utils = __import__('rcUtilities'+rcEnv.sysname)
 rcEnv.warned = False
+
+
+def split_url(url):
+    if url == 'None':
+        return 'https', '127.0.0.1', '443', '/'
+    if url.startswith('https'):
+        transport = 'https'
+        url = url.replace('https://', '')
+    elif url.startswith('http'):
+        transport = 'http'
+        url = url.replace('http://', '')
+    l = url.split('/')
+    if len(l) < 2:
+        raise
+    app = l[1]
+    l = l[0].split(':')
+    if len(l) == 1:
+        host = l[0]
+        if transport == 'http':
+            port = '80'
+        else:
+            port = '443'
+    elif len(l) == 2:
+        host = l[0]
+        port = l[1]
+    else:
+        raise
+    return transport, host, port, app
 
 def setNodeEnv():
     import ConfigParser
@@ -40,8 +68,18 @@ def setNodeEnv():
     config.read(nodeconf)
     if config.has_option('node', 'dbopensvc'):
         rcEnv.dbopensvc = config.get('node', 'dbopensvc')
+        try:
+            rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = split_url(rcEnv.dbopensvc)
+        except:
+            import sys
+            print >>sys.stderr, "malformed dbopensvc url: %s"%rcEnv.dbopensvc
     if config.has_option('node', 'dbcompliance'):
         rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+        try:
+            rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = split_url(rcEnv.dbcompliance)
+        except:
+            import sys
+            print >>sys.stderr, "malformed dbcompliance url: %s"%rcEnv.dbcompliance
     if config.has_option('node', 'uuid'):
         rcEnv.uuid = config.get('node', 'uuid')
     else:
@@ -54,7 +92,7 @@ def xmlrpc_decorator_dummy(fn):
     return new
 
 def xmlrpc_decorator(fn):
-    def new(*args):
+    def new(*args, **kwargs):
         if fn.__name__ == "register_node" and \
            'register_node' not in proxy_methods:
             import sys
@@ -71,7 +109,7 @@ def xmlrpc_decorator(fn):
             rcEnv.warned = True
             return
         try:
-            return fn(*args)
+            return fn(*args, **kwargs)
         except (socket.error, xmlrpclib.ProtocolError):
             """ normal for collector communications disabled
                 through 127.0.0.1 == dbopensvc
@@ -86,11 +124,14 @@ def xmlrpc_decorator(fn):
             print e[0], e[1], traceback.print_tb(e[2])
     return new
 
+setNodeEnv()
+
 try:
     a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
     if len(a) == 0:
         raise Exception
 except:
+    import sys
     print >>sys.stderr, "could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc
     xmlrpc_decorator = xmlrpc_decorator_dummy
 
@@ -101,20 +142,27 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {'key_file': self.__key_file, 'cert_file': self.__cert_file})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
-setNodeEnv()
-proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
 try:
+    if not utils.check_ping(rcEnv.dbopensvc_host):
+        raise
+    proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
     proxy_methods = proxy.system.listMethods()
 except:
+    proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
     proxy_methods = []
 
-comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
 try:
+    if not utils.check_ping(rcEnv.dbcompliance_host):
+        raise
+    comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
     comp_proxy_methods = comp_proxy.system.listMethods()
 except:
+    comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
     comp_proxy_methods = []
 
-if "register_node" in proxy_methods:
+if len(proxy_methods) == 0:
+    auth_node = True
+elif "register_node" in proxy_methods:
     auth_node = True
 else:
     auth_node = False
@@ -382,7 +430,7 @@ def push_disks(svc):
                     return vg.name
         return ""
 
-    di = __import__('rcDiskInfo'+sysname)
+    di = __import__('rcDiskInfo'+rcEnv.sysname)
     disks = di.diskInfo()
     disklist_cache = {}
 
@@ -424,7 +472,7 @@ def push_stats_fs_u(l):
 
 @xmlrpc_decorator
 def push_pkg():
-    p = __import__('rcPkg'+sysname)
+    p = __import__('rcPkg'+rcEnv.sysname)
     vars = ['pkg_nodename',
             'pkg_name',
             'pkg_version',
@@ -441,7 +489,7 @@ def push_pkg():
 
 @xmlrpc_decorator
 def push_patch():
-    p = __import__('rcPkg'+sysname)
+    p = __import__('rcPkg'+rcEnv.sysname)
     vars = ['patch_nodename',
             'patch_num',
             'patch_rev']
@@ -455,9 +503,10 @@ def push_patch():
         args += [(rcEnv.uuid, rcEnv.nodename)]
     proxy.insert_patch(*args)
 
+@xmlrpc_decorator
 def push_stats(force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None):
     try:
-        s = __import__('rcStats'+sysname)
+        s = __import__('rcStats'+rcEnv.sysname)
     except ImportError:
         return
     sp = s.StatsProvider(interval=interval,
@@ -476,9 +525,9 @@ def push_stats(force=False, interval=None, stats_dir=None, stats_start=None, sta
 
 def push_asset(node):
     try:
-        m = __import__('rcAsset'+sysname)
+        m = __import__('rcAsset'+rcEnv.sysname)
     except ImportError:
-        print "pushasset methods not implemented on", sysname
+        print "pushasset methods not implemented on", rcEnv.sysname
         return
     if "update_asset" not in proxy_methods:
         print "'update_asset' method is not exported by the collector"
