@@ -696,7 +696,7 @@ def add_syncs_zfs(svc, conf):
             continue
 
         try:
-            kwargs['target'] = conf_get_string_scope(svc, conf, s, 'dst').split()
+            kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
         except ex.OptNotFound:
             svc.log.error("config file section %s must have target set" % s)
             continue
