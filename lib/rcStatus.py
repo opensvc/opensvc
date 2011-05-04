@@ -79,58 +79,57 @@ def _merge(s1, s2):
     """
     if s1 not in _status_str:
         raise Exception("left member has unsupported value: %s"%str(s1))
-    if s2 not in _status_str:
+    elif s2 not in _status_str:
         raise Exception("right member has unsupported value: %s"%str(s2))
 
     if s1 == UNDEF: return s2
-    if s2 == UNDEF: return s1
+    elif s2 == UNDEF: return s1
     setstate = set([s1, s2])
     if setstate == set([ UP, UP ]): return UP
-    if setstate == set([ UP, DOWN ]): return WARN
-    if setstate == set([ UP, WARN ]): return WARN
-    if setstate == set([ UP, NA ]): return UP
-    if setstate == set([ UP, TODO ]): return WARN
-    if setstate == set([ UP, STDBY_UP ]): return STDBY_UP_WITH_UP
-    if setstate == set([ UP, STDBY_DOWN ]): return WARN
-    if setstate == set([ UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
-    if setstate == set([ UP, STDBY_UP_WITH_DOWN ]): return WARN
-    if setstate == set([ DOWN, DOWN ]): return DOWN
-    if setstate == set([ DOWN, WARN ]): return WARN
-    if setstate == set([ DOWN, NA ]): return DOWN
-    if setstate == set([ DOWN, TODO ]): return WARN
-    if setstate == set([ DOWN, STDBY_UP ]): return STDBY_UP_WITH_DOWN
-    if setstate == set([ DOWN, STDBY_DOWN ]): return WARN
-    if setstate == set([ DOWN, STDBY_UP_WITH_UP ]): return WARN
-    if setstate == set([ DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
-    if setstate == set([ WARN, WARN ]): return WARN
-    if setstate == set([ WARN, NA ]): return WARN
-    if setstate == set([ WARN, TODO ]): return WARN
-    if setstate == set([ WARN, STDBY_UP ]): return WARN
-    if setstate == set([ WARN, STDBY_DOWN ]): return WARN
-    if setstate == set([ WARN, STDBY_UP_WITH_UP ]): return WARN
-    if setstate == set([ WARN, STDBY_UP_WITH_DOWN ]): return WARN
-    if setstate == set([ NA, NA ] ): return NA
-    if setstate == set([ NA, TODO ]): return WARN
-    if setstate == set([ NA, STDBY_UP ]): return STDBY_UP
-    if setstate == set([ NA, STDBY_DOWN ]): return STDBY_DOWN
-    if setstate == set([ NA, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
-    if setstate == set([ NA, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
-    if setstate == set([ TODO, TODO ]): return TODO
-    if setstate == set([ TODO, STDBY_UP ]): return TODO
-    if setstate == set([ TODO, STDBY_DOWN ]): return TODO
-    if setstate == set([ TODO, STDBY_UP_WITH_UP ]): return TODO
-    if setstate == set([ TODO, STDBY_UP_WITH_DOWN ]): return TODO
-    if setstate == set([ STDBY_UP, STDBY_UP ]): return STDBY_UP
-    if setstate == set([ STDBY_UP, STDBY_DOWN ]): return WARN
-    if setstate == set([ STDBY_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
-    if setstate == set([ STDBY_UP, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
-    if setstate == set([ STDBY_DOWN, STDBY_DOWN ]): return WARN
-    if setstate == set([ STDBY_DOWN, STDBY_DOWN ]): return WARN
-    if setstate == set([ STDBY_DOWN, STDBY_UP_WITH_UP ]): return WARN
-    if setstate == set([ STDBY_DOWN, STDBY_UP_WITH_DOWN ]): return WARN
-    if setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN ]): return WARN
-    if setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
-    if setstate == set([ STDBY_UP_WITH_DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
+    elif setstate == set([ UP, DOWN ]): return WARN
+    elif setstate == set([ UP, WARN ]): return WARN
+    elif setstate == set([ UP, NA ]): return UP
+    elif setstate == set([ UP, TODO ]): return WARN
+    elif setstate == set([ UP, STDBY_UP ]): return STDBY_UP_WITH_UP
+    elif setstate == set([ UP, STDBY_DOWN ]): return WARN
+    elif setstate == set([ UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
+    elif setstate == set([ UP, STDBY_UP_WITH_DOWN ]): return WARN
+    elif setstate == set([ DOWN, DOWN ]): return DOWN
+    elif setstate == set([ DOWN, WARN ]): return WARN
+    elif setstate == set([ DOWN, NA ]): return DOWN
+    elif setstate == set([ DOWN, TODO ]): return WARN
+    elif setstate == set([ DOWN, STDBY_UP ]): return STDBY_UP_WITH_DOWN
+    elif setstate == set([ DOWN, STDBY_DOWN ]): return STDBY_DOWN
+    elif setstate == set([ DOWN, STDBY_UP_WITH_UP ]): return WARN
+    elif setstate == set([ DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
+    elif setstate == set([ WARN, WARN ]): return WARN
+    elif setstate == set([ WARN, NA ]): return WARN
+    elif setstate == set([ WARN, TODO ]): return WARN
+    elif setstate == set([ WARN, STDBY_UP ]): return WARN
+    elif setstate == set([ WARN, STDBY_DOWN ]): return WARN
+    elif setstate == set([ WARN, STDBY_UP_WITH_UP ]): return WARN
+    elif setstate == set([ WARN, STDBY_UP_WITH_DOWN ]): return WARN
+    elif setstate == set([ NA, NA ] ): return NA
+    elif setstate == set([ NA, TODO ]): return WARN
+    elif setstate == set([ NA, STDBY_UP ]): return STDBY_UP
+    elif setstate == set([ NA, STDBY_DOWN ]): return STDBY_DOWN
+    elif setstate == set([ NA, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
+    elif setstate == set([ NA, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
+    elif setstate == set([ TODO, TODO ]): return TODO
+    elif setstate == set([ TODO, STDBY_UP ]): return TODO
+    elif setstate == set([ TODO, STDBY_DOWN ]): return TODO
+    elif setstate == set([ TODO, STDBY_UP_WITH_UP ]): return TODO
+    elif setstate == set([ TODO, STDBY_UP_WITH_DOWN ]): return TODO
+    elif setstate == set([ STDBY_UP, STDBY_UP ]): return STDBY_UP
+    elif setstate == set([ STDBY_UP, STDBY_DOWN ]): return WARN
+    elif setstate == set([ STDBY_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
+    elif setstate == set([ STDBY_UP, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
+    elif setstate == set([ STDBY_DOWN, STDBY_DOWN ]): return STDBY_DOWN
+    elif setstate == set([ STDBY_DOWN, STDBY_UP_WITH_UP ]): return WARN
+    elif setstate == set([ STDBY_DOWN, STDBY_UP_WITH_DOWN ]): return WARN
+    elif setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_DOWN ]): return WARN
+    elif setstate == set([ STDBY_UP_WITH_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
+    elif setstate == set([ STDBY_UP_WITH_DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
     raise Exception("some member has unsupported value: %s , %s "%(str(s1),str(s2)) )
 
 class Status(object):
