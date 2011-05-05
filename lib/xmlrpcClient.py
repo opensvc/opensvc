@@ -25,11 +25,8 @@ import rcStatus
 import socket
 import httplib
 
-socket.setdefaulttimeout(120)
-
 hostId = __import__('hostid'+rcEnv.sysname)
 hostid = hostId.hostid()
-utils = __import__('rcUtilities'+rcEnv.sysname)
 rcEnv.warned = False
 
 
@@ -142,9 +139,9 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {'key_file': self.__key_file, 'cert_file': self.__cert_file})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
+socket.setdefaulttimeout(5)
+
 try:
-    if not utils.check_ping(rcEnv.dbopensvc_host):
-        raise
     proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
     proxy_methods = proxy.system.listMethods()
 except:
@@ -152,13 +149,13 @@ except:
     proxy_methods = []
 
 try:
-    if not utils.check_ping(rcEnv.dbcompliance_host):
-        raise
     comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
     comp_proxy_methods = comp_proxy.system.listMethods()
 except:
     comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
     comp_proxy_methods = []
+
+socket.setdefaulttimeout(120)
 
 if len(proxy_methods) == 0:
     auth_node = True
