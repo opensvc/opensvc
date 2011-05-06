@@ -146,6 +146,56 @@ lxc.network.mtu = 1500
     def setup_template(self):
         self.set_vm_name()
 
+    def disable_udev(self):
+        updaterc = os.path.join(self.section['rootfs'], 'usr', 'sbin', 'update-rc.d')
+        chkconfig = os.path.join(self.section['rootfs'], 'sbin', 'chkconfig')
+        if os.path.exists(updaterc):
+            self.r.vcall(['chroot', self.section['rootfs'], 'update-rc.d', '-f', 'udev', 'remove'])
+        elif os.path.exists(chkconfig):
+            self.r.vcall(['chroot', self.section['rootfs'], 'chkconfig', 'udev', 'off'])
+
+    def setup_getty(self):
+         getty = os.path.join(self.section['rootfs'], 'sbin', 'getty')
+         if os.path.exists(getty):
+             self.r.log.info("setup getty")
+             inittab = os.path.join(self.section['rootfs'], 'etc', 'inittab')
+             with open(inittab, 'a') as f:
+                 f.write("""
+1:2345:respawn:/sbin/getty 38400 console
+c1:12345:respawn:/sbin/getty 38400 tty1 linux
+""")
+
+    def setup_authkeys(self):
+        pub = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
+        authkeys = os.path.join(self.section['rootfs'], 'root', '.ssh', 'authorized_keys')
+        if not os.path.exists(pub):
+            self.r.log.error("no dsa found on node for root")
+            return
+        import shutil
+        if not os.path.exists(os.path.dirname(authkeys)):
+            os.makedirs(os.path.dirname(authkeys))
+        shutil.copyfile(pub, authkeys)
+        os.chmod(authkeys, int('600', 8))
+        self.r.log.info("setup hypervisor root trust")
+
+    def setup_ip(self, r):
+        r.getaddr()
+        buff = """
+auto %(ipdev)s
+iface %(ipdev)s inet static
+    address %(ipaddr)s
+    netmask %(netmask)s
+
+"""%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
+        interfaces = os.path.join(self.section['rootfs'], 'etc', 'network', 'interfaces')
+        with open(interfaces, 'a') as f:
+            f.write(buff)
+
+    def setup_ips(self):
+        for rs in self.r.svc.get_res_sets("ip"):
+            for r in rs.resources:
+                self.setup_ip(r)
+
     def provisioner(self):
         path = self.section['rootfs']
         template = self.section['template']
@@ -157,6 +207,10 @@ lxc.network.mtu = 1500
         self.unpack_template()
         self.setup_template()
         self.setup_lxc()
+        self.disable_udev()
+        self.setup_getty()
+        self.setup_authkeys()
+        self.setup_ips()
 
         self.r.log.info("provisioned")
         return True

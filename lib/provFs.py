@@ -1,5 +1,5 @@
 from provisioning import Provisioning
-from subprocess import Popen, list2cmdline
+from rcUtilities import justcall
 import os
 
 class ProvisioningFs(Provisioning):
@@ -14,8 +14,8 @@ class ProvisioningFs(Provisioning):
 
     def check_fs(self):
         cmd = self.info + [self.dev]
-        (err, out) = self.r.vcall(cmd)
-        if err != 0:
+        out, err, ret = justcall(cmd)
+        if ret != 0:
             return True
         self.log.info("%s is not formatted"%self.dev)
         return False
@@ -29,11 +29,12 @@ class ProvisioningFs(Provisioning):
             self.r.log.error("%s device does not exist"%self.dev)
             return False
 
-        cmd = self.mkfs + [self.dev]
-        (err, out) = self.r.vcall(cmd)
-        if err != 0:
-            self.r.log.error('Failed to format %s'%self.dev)
-            return False
+        if not self.check_fs():
+            cmd = self.mkfs + [self.dev]
+            (err, out) = self.r.vcall(cmd)
+            if err != 0:
+                self.r.log.error('Failed to format %s'%self.dev)
+                return False
 
         self.r.log.info("provisioned")
         self.r.start()
