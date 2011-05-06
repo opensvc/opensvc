@@ -198,6 +198,9 @@ class Resource(object):
     def postsync(self):
         pass
 
+    def provision(self):
+        pass
+
     def files_to_sync(self):
         return []
 

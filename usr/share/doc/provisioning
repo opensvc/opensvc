@@ -1,0 +1,1 @@
+/opt/opensvc/bin/svcmgr -s test create --resource '{"mode": "lxc", "template": "http://download.openvz.org/template/precreated/debian-6.0-x86_64.tar.gz", "rootfs": "/opt/lxc/rootfs.test"}' --resource '{"rtype": "loop", "file": "/tmp/fooloop", "size": 11}' --resource '{"rtype": "fs", "type": "ext4", "dev": "/tmp/fooloop", "mnt": "/tmp/fooloopmnt"}' --provision

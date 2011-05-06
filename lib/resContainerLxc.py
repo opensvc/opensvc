@@ -152,12 +152,17 @@ class Lxc(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
                                         optional=optional, disabled=disabled, tags=tags)
-        self.cf = os.path.join(os.sep, 'var', 'lib', 'lxc', name, 'config')
-        if not os.path.exists(self.cf):
-            self.cf = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc', name, 'config')
-        if not os.path.exists(self.cf):
+        self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
+        if not os.path.exists(self.d_lxc):
+            self.d_lxc = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc')
+        if not os.path.exists(self.d_lxc):
             raise ex.excInitError
+        self.cf = os.path.join(self.d_lxc, name, 'config')
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def provision(self):
+        m = __import__("provLxc")
+        prov = m.ProvisioningLxc(self)
+        prov.provisioner()
