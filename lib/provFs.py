@@ -15,9 +15,9 @@ class ProvisioningFs(Provisioning):
     def check_fs(self):
         cmd = self.info + [self.dev]
         out, err, ret = justcall(cmd)
-        if ret != 0:
+        if ret == 0:
             return True
-        self.log.info("%s is not formatted"%self.dev)
+        self.r.log.info("%s is not formatted"%self.dev)
         return False
 
     def provisioner(self):
