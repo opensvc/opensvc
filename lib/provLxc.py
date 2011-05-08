@@ -184,6 +184,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         self.r.log.info("setup hypervisor root trust")
 
     def setup_ip(self, r):
+        self.purge_known_hosts(r.addr)
         if os.path.exists(self.interfaces):
             return self.setup_ip_debian(r)
         elif os.path.exists(self.network):
@@ -214,9 +215,17 @@ iface %(ipdev)s inet static
             f.write(buff)
 
     def setup_ips(self):
+        self.purge_known_hosts()
         for rs in self.r.svc.get_res_sets("ip"):
             for r in rs.resources:
                 self.setup_ip(r)
+
+    def purge_known_hosts(self, ip=None):
+        if ip is None:
+            cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
+        else:
+            cmd = ['ssh-keygen', '-R', ip]
+        ret, out = self.r.vcall(cmd)
 
     def provisioner(self):
         path = self.section['rootfs']
