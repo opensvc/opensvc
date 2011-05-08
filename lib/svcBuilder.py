@@ -1078,6 +1078,7 @@ def build(name):
     svc.logfile = logfile
     svc.conf = svcconf
     svc.initd = svcinitd
+    svc.config = conf
 
     #
     # Setup service properties from config file content
@@ -1260,7 +1261,7 @@ def list_services():
     return s
 
 def build_services(status=None, svcnames=[],
-                   onlyprimary=False, onlysecondary=False):
+                   onlyprimary=False, onlysecondary=False, autopush=True):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
@@ -1286,7 +1287,7 @@ def build_services(status=None, svcnames=[],
         if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
-        if svc.collector_outdated():
+        if autopush and svc.collector_outdated():
             svc.action('push')
     return [ s for n ,s in sorted(services.items()) ]
 
@@ -1372,7 +1373,7 @@ def delete(svcnames, rid=[]):
         r |= delete_one(svcname, rid)
     return r
 
-def create(svcname, resources=[], interactive=False):
+def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
         print >>sys.stderr, "ouch, svcname should be a list object"
         return 1
@@ -1445,7 +1446,7 @@ def create(svcname, resources=[], interactive=False):
 
     from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
     try:
-        keys = KeyDict()
+        keys = KeyDict(provision=provision)
         defaults.update(keys.update('DEFAULT', defaults))
         for section, d in sections.items():
             sections[section].update(keys.update(section, d))
@@ -1483,7 +1484,7 @@ def create(svcname, resources=[], interactive=False):
     if not os.path.exists(svcname+'.d'):
         os.symlink(initdir, svcname+'.d')
 
-def update(svcname, resources=[], interactive=False):
+def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
     if not isinstance(svcname, list):
         print >>sys.stderr, "ouch, svcname should be a list object"

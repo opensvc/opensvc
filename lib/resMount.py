@@ -129,6 +129,12 @@ class Mount(Res.Resource):
         """
         return cmp(self.mountPoint, other.mountPoint)
 
+    def provision(self):
+        t = self.fsType[0].upper()+self.fsType[1:].lower()
+        m = __import__("provFs"+t)
+        prov = getattr(m, "ProvisioningFs"+t)(self)
+        prov.provisioner()
+
 if __name__ == "__main__":
     for c in (Mount,) :
         help(c)

@@ -20,7 +20,8 @@ class Keyword(object):
                  validator=None,
                  candidates=None,
                  depends=[],
-                 text=""):
+                 text="",
+                 provisioning=False):
         self.section = section
         self.keyword = keyword
         self.rtype = rtype
@@ -31,6 +32,7 @@ class Keyword(object):
         self.candidates = candidates
         self.depends = depends
         self.text = text
+        self.provisioning = provisioning
 
     def __cmp__(self, o):
         if o.order > self.order:
@@ -57,7 +59,6 @@ class Keyword(object):
         s += "  required:    %s\n"%str(self.required)
         s += "  default:     %s\n"%str(self.default)
         s += "  candidates:  %s\n"%str(self.candidates)
-        s += "  validator:   %s\n"%str(hasattr(self, "validator"))
         s += "  depends:     %s\n"%depends
         s += "  @node:       %s\n"%str(self.at)
         if self.text:
@@ -68,12 +69,18 @@ class Keyword(object):
         return s
 
     def form(self, d):
+        # skip this form if dependencies are not met
         for d_keyword, d_value in self.depends:
             if d_keyword not in d:
                 return d
             if d[d_keyword] not in d_value:
                 return d
+
+        # print the form
         print self
+
+        # if we got a json seed, use its values as default
+        # else use the Keyword object default
         if self.keyword in d:
             default = d[self.keyword]
         elif self.default is not None:
@@ -88,7 +95,10 @@ class Keyword(object):
 
         req_satisfied = False
         while True:
-            val = raw_input(self.keyword+default_prompt+"> ")
+            try:
+                val = raw_input(self.keyword+default_prompt+"> ")
+            except EOFError:
+                break
             if len(val) == 0:
                 if req_satisfied:
                     return d
@@ -104,21 +114,16 @@ class Keyword(object):
                    val not in self.candidates:
                     print "invalid value"
                     continue
+                d[self.keyword] = val
             elif self.at and val[0] == '@':
                 l = val.split()
                 if len(l) < 2:
                     print "invalid value"
                     continue
                 val = ' '.join(l[1:])
-                if not self.validator(val):
-                    print "invalid value"
-                    continue
                 d[self.keyword+l[0]] = val
                 req_satisfied = True
             else:
-                if not self.validator(val):
-                    print "invalid value"
-                    continue
                 d[self.keyword] = val
                 req_satisfied = True
             if self.at:
@@ -128,12 +133,8 @@ class Keyword(object):
             else:
                 return d
 
-    def validator(self, val):
-        return True
-
-
 class KeywordInteger(Keyword):
-    def validator(val):
+    def validator(self, val, d=None):
         try:
              val = int(val)
         except:
@@ -141,16 +142,52 @@ class KeywordInteger(Keyword):
         return True
 
 
+class KeywordProvision(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="provision",
+                  keyword="provision",
+                  default="no",
+                  candidates=('yes', 'no'),
+                  text="Say yes to provision this resource. Warning, provisioning implies destructive operations like formating."
+                )
+
 class KeywordMode(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="mode",
+                  required=True,
                   order=10,
                   default="hosted",
                   candidates=["hosted"] + rcEnv.vt_supported,
                   text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
+                )
+
+class KeywordRootfs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="rootfs",
+                  depends=[('mode', ["lxc", "vz", "zone"])],
+                  text="Sets the root fs directory of the container",
+                  required=True,
+                  provisioning=True
+                )
+
+class KeywordTemplate(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="template",
+                  depends=[('mode', ["lxc", "vz", "zone"])],
+                  text="Sets the url of the template unpacked into the container root fs.",
+                  required=True,
+                  provisioning=True
                 )
 
 class KeywordVmName(Keyword):
@@ -326,7 +363,7 @@ class KeywordBwlimit(KeywordInteger):
                   section="DEFAULT",
                   keyword="bwlimit",
                   order=25,
-                  text="Bandwidth limit in KB applied to all rsync transfers."
+                  text="Bandwidth limit in KB applied to all rsync transfers. Leave empty to enforce no limit."
                 )
 
 class KeywordSyncInterval(KeywordInteger):
@@ -612,7 +649,7 @@ class KeywordSyncRsyncBwlimit(KeywordInteger):
                   section="sync",
                   keyword="bwlimit",
                   rtype="rsync",
-                  text="Bandwidth limit in KB applied to this rsync transfer. Takes precedence over 'bwlimit' set in [DEFAULT]."
+                  text="Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over 'bwlimit' set in [DEFAULT]."
                 )
 
 class KeywordSyncSyncInterval(KeywordInteger):
@@ -820,6 +857,18 @@ class KeywordFsSnapSize(Keyword):
                   text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
                 )
 
+class KeywordLoopSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="loop",
+                  keyword="size",
+                  required=True,
+                  default=10,
+                  text="The size of the loop file to provision.",
+                  provisioning=True
+                )
+
 class KeywordLoopFile(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -996,9 +1045,15 @@ class Section(object):
 
     def getkeys(self, rtype=None):
         if rtype is None:
-            return [k for k in self.keywords if k.rtype is None]
+            return [k for k in self.keywords if k.rtype is None and not k.provisioning]
         else:
-            return [k for k in self.keywords if k.rtype == rtype]
+            return [k for k in self.keywords if k.rtype == rtype and not k.provisioning]
+
+    def getprovkeys(self, rtype=None):
+        if rtype is None:
+            return [k for k in self.keywords if k.rtype is None and k.provisioning]
+        else:
+            return [k for k in self.keywords if k.rtype == rtype and k.provisioning]
 
     def getkey(self, keyword, rtype=None):
         if '@' in keyword:
@@ -1012,12 +1067,14 @@ class Section(object):
         return None
 
 class KeywordStore(dict):
-    def __init__(self):
+    def __init__(self, provision=False):
         self.sections = {}
+        self.provision = provision
 
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
             return self
+        o.top = self
         if o.section not in self.sections:
              self.sections[o.section] = Section(o.section)
         self.sections[o.section] += o
@@ -1040,12 +1097,28 @@ class KeywordStore(dict):
             return []
         return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
 
+    def purge_keywords_from_dict(self, d, section):
+        if 'type' in d:
+            rtype = d['type']
+        else:
+            rtype = None
+        for keyword, value in d.items():
+            key = self.sections[section].getkey(keyword)
+            if key is None and rtype is not None:
+                key = self.sections[section].getkey(keyword, rtype)
+            if key is None:
+                if keyword != "rtype":
+                    print "Remove unknown keyword '%s' from section '%s'"%(keyword, section)
+                    del d[keyword]
+        return d
+
     def update(self, rid, d):
         """ Given a resource dictionary, spot missing required keys
             and provide a new dictionary to merge populated by default
             values
         """
-        completion = {}
+        import copy
+        completion = copy.copy(d)
 
         # decompose rid into section and rtype
         if rid == 'DEFAULT':
@@ -1072,13 +1145,8 @@ class KeywordStore(dict):
             if key is None and rtype is not None:
                 key = self.sections[section].getkey(keyword, rtype)
             if key is None:
-                if keyword != "rtype":
-                    print "Remove unknown keyword '%s' from section '%s'"%(keyword, rid)
-                    del d[keyword]
                 continue
-            if key.candidates is None:
-                continue
-            if value not in key.candidates:
+            if key.candidates is not None and value not in key.candidates:
                 print "'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid)
                 raise KeyInvalidValue()
 
@@ -1093,6 +1161,25 @@ class KeywordStore(dict):
                 raise MissKeyNoDefault()
             print "Implicitely add [%s]"%rid, key.keyword, "=", key.default
             completion[key.keyword] = key.default
+
+        """
+        # do we have a provisioning for for this resource ?
+        prov = self.get_provisioning_class(section, completion)
+
+        if prov is not None:
+            # is provisioning needed ?
+            tmp = {rid: completion}
+            if prov(rid, tmp).validate():
+                print rid, "resource is valid"
+            elif prov(rid, tmp).provisioner():
+                print rid, "resource provisioned"
+            else:
+                print rid, "resource provisioning failed"
+        """
+
+        # purge unknown keywords and provisioning keywords
+        completion = self.purge_keywords_from_dict(completion, section)
+
         return completion
 
     def form_sections(self, sections):
@@ -1132,9 +1219,12 @@ class KeywordStore(dict):
         for key in sorted(self.DEFAULT.getkeys()):
             defaults = key.form(defaults)
         while True:
-            section = self.form_sections(sections)
+            try:
+                section = self.form_sections(sections)
+            except EOFError:
+                break
             if section == "quit":
-                 break
+                break
             if '#' in section:
                 rid = section
                 section = section.split('#')[0]
@@ -1148,20 +1238,94 @@ class KeywordStore(dict):
                 if rid not in sections:
                     sections[rid] = {}
                 sections[rid] = key.form(sections[rid])
-            if 'type' not in sections[rid]:
+            if 'type' in sections[rid]:
+                specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
+                if len(specific_keys) > 0:
+                    print "\nKeywords specific to the '%s' driver\n"%sections[rid]['type']
+                for key in sorted(specific_keys):
+                    if rid not in sections:
+                        sections[rid] = {}
+                    sections[rid] = key.form(sections[rid])
+
+            """
+            # do we have a provisioning for for this resource ?
+            prov = self.get_provisioning_class(section, sections[rid])
+
+            if prov is None:
                 continue
-            specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
-            if len(specific_keys) > 0:
-                print "\nKeywords specific to the '%s' driver\n"%sections[rid]['type']
-            for key in sorted(specific_keys):
+
+            # is provisioning needed ?
+            if prov(rid, sections).validate():
+                print rid, "resource is valid"
+                continue
+
+            # toggle provisioning keywords
+            # either --provision or user said so on prompt
+            if not self.provision:
+                tmp = {}
+                tmp = KeywordProvision().form(tmp)
+                if tmp['provision'] == "no":
+                    continue
+
+            provkeys = self.sections[section].getprovkeys()
+            if len(provkeys) > 0:
+                print "\nProvisioning keywords\n"
+            for key in sorted(provkeys):
                 if rid not in sections:
                     sections[rid] = {}
                 sections[rid] = key.form(sections[rid])
+
+            if 'type' in sections[rid]:
+                specific_provkeys = self.sections[section].getprovkeys(rtype=sections[rid]['type'])
+                if len(specific_provkeys) > 0:
+                    print "\nProvisioning keywords specific to the '%s' driver\n"%sections[rid]['type']
+                for key in sorted(specific_provkeys):
+                    if rid not in sections:
+                        sections[rid] = {}
+                    sections[rid] = key.form(sections[rid])
+
+            # now we have everything needed to provision. just do it.
+            prov(rid, sections).provisioner()
+            """
+
+            # purge the provisioning keywords
+            sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
+
         return defaults, sections
 
+    """
+    def get_provisioning_class(self, section, d):
+        mod_prefix = 'prov'
+        class_prefix = 'Provisioning'
+        rtype = ""
+        if section == 'DEFAULT':
+            section = ""
+            if 'mode' in d:
+                rtype = d['mode']
+        else:
+            section = section[0].upper() + section[1:].lower()
+            if 'type' in d:
+                rtype = d['type']
+        if len(rtype) > 2:
+            rtype = rtype[0].upper() + rtype[1:].lower()
+        try:
+            m = __import__(mod_prefix+section+rtype)
+            return getattr(m, class_prefix+section+rtype)
+        except ImportError:
+            import traceback
+            traceback.print_exc()
+            pass
+        try:
+            m = __import__(mod_prefix+section)
+            return getattr(m, class_prefix+section)
+        except ImportError:
+            print mod_prefix+section+rtype, "nor", mod_prefix+section, "provisioning modules not implemented"
+            return None
+    """
+
 class KeyDict(KeywordStore):
-    def __init__(self):
-        KeywordStore.__init__(self)
+    def __init__(self, provision=False):
+        KeywordStore.__init__(self, provision)
 
         import os
 
@@ -1177,7 +1341,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="disable_on",
-                  text="A list of nodenames where to consider the 'disable' value is True."
+                  text="A list of nodenames where to consider the 'disable' value is True. Also supports the 'nodes' and 'drpnodes' special values."
                 )
         def kw_optional(resource):
             return Keyword(
@@ -1203,6 +1367,8 @@ class KeyDict(KeywordStore):
             self += kw_always_on(r)
 
         self += KeywordMode()
+        self += KeywordRootfs()
+        self += KeywordTemplate()
         self += KeywordVmName()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
@@ -1257,12 +1423,13 @@ class KeyDict(KeywordStore):
         self += KeywordVmdgScsireserv()
         self += KeywordDrbdScsireserv()
         self += KeywordDrbdRes()
+        self += KeywordFsType()
         self += KeywordFsDev()
         self += KeywordFsMnt()
         self += KeywordFsMntOpt()
-        self += KeywordFsType()
         self += KeywordFsSnapSize()
         self += KeywordLoopFile()
+        self += KeywordLoopSize()
         self += KeywordSyncNetappFiler()
         self += KeywordSyncNetappPath()
         self += KeywordSyncNetappUser()

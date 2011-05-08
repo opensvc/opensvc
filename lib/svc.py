@@ -702,6 +702,11 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.vz", "stop")
         self.refresh_ip_status()
 
+    def provision(self):
+        self.sub_set_action("disk.loop", "provision")
+        self.sub_set_action("fs", "provision")
+        self.sub_set_action("container.lxc", "provision")
+
     def startapp(self):
         self.sub_set_action("app", "start")
 

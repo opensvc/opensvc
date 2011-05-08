@@ -90,3 +90,9 @@ class Loop(Res.Loop):
                  disabled=False, tags=set([]), optional=False):
         Res.Loop.__init__(self, rid, loopFile, always_on=always_on,
                           disabled=disabled, tags=tags, optional=optional)
+
+    def provision(self):
+        m = __import__("provLoop")
+        prov = m.ProvisioningLoop(self)
+        prov.provisioner()
+

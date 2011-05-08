@@ -58,6 +58,8 @@ parser.add_option("--tags", default=None, action="store", dest="parm_tags",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--resource", default=[], action="append",
                   help="a resource definition in json dictionary format fed to create or update")
+parser.add_option("--provision", default=False, action="store_true", dest="provision",
+                  help="provision the service in addition to env file creation. defaults to False.")
 parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock", type="int",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
@@ -155,7 +157,13 @@ if options.parallel:
     p = {}
 
 if action in ['create', 'update']:
-    r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive)
+    r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+    if options.provision:
+        if action == 'create':
+            # don't push to the collector yet
+            svcs = svcBuilder.build_services(svcnames=svcnames, autopush=False)
+            if len(svcs) == 1:
+                svcs[0].action("provision")
     sys.exit(r)
 elif action in ['disable', 'enable', 'delete']:
     r = getattr(svcBuilder, action)(svcnames, rid)

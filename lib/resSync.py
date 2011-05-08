@@ -84,8 +84,12 @@ class Sync(Res.Resource):
             self.log.error("malformed period: %s"%str(self.sync_period))
             return False
         start_s, end_s = self.sync_period
-        start_t = time.strptime(start_s, "%H:%M")
-        end_t = time.strptime(end_s, "%H:%M")
+        try:
+            start_t = time.strptime(start_s, "%H:%M")
+            end_t = time.strptime(end_s, "%H:%M")
+        except ValueError:
+            self.log.error("malformed period: %s"%str(self.sync_period))
+            return False
         start = start_t.tm_hour * 60 + start_t.tm_min
         end = end_t.tm_hour * 60 + end_t.tm_min
         try:
