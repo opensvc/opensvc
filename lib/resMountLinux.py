@@ -35,6 +35,9 @@ def try_umount(self):
     if ret == 0:
         return 0
 
+    if "not mounted" in err:
+        return 0
+
     """ don't try to kill process using the source of a 
         protected bind mount
     """
@@ -76,7 +79,16 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mountPoint)
+        ret = self.Mounts.has_mount(self.device, self.mountPoint)
+        if ret:
+            return True
+
+        # might be mount using a /dev/mapper/ name too
+        l = self.device.split('/')
+        if len(l) != 4 or l[2] == "mapper":
+           return False
+        dev = "/dev/mapper/%s-%s"%(l[2].replace('-','--'),l[3].replace('-','--'))
+        return self.Mounts.has_mount(dev, self.mountPoint)
 
     def realdev(self):
         try:

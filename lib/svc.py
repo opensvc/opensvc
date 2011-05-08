@@ -704,6 +704,7 @@ class Svc(Resource, Freezer):
 
     def provision(self):
         self.sub_set_action("disk.loop", "provision")
+        self.sub_set_action("disk.vg", "provision")
         self.sub_set_action("fs", "provision")
         self.sub_set_action("container.lxc", "provision")
 

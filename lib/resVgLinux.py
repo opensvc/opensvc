@@ -142,3 +142,8 @@ class Vg(resDg.Dg):
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks
 
+    def provision(self):
+        m = __import__("provVgLinux")
+        prov = getattr(m, "ProvisioningVg")(self)
+        prov.provisioner()
+

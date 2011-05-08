@@ -1,6 +1,7 @@
 from provisioning import Provisioning
 from rcGlobalEnv import rcEnv
 import os
+import rcExceptions as ex
 
 class ProvisioningLxc(Provisioning):
     config_template = """\
@@ -58,6 +59,10 @@ lxc.network.mtu = 1500
         if self.d_lxc is not None:
             self.config = os.path.join(self.d_lxc, self.vm_name, 'config')
 
+        # network config candidates
+        self.interfaces = os.path.join(self.section['rootfs'], 'etc', 'network', 'interfaces')
+        self.network = os.path.join(self.section['rootfs'], 'etc', 'sysconfig', 'network-scripts')
+
     def validate(self):
         if self.d_lxc is None:
             self.r.log.error("this node is not lxc capable")
@@ -104,7 +109,7 @@ lxc.network.mtu = 1500
                 h = f.read().strip()
         except:
             self.r.log.error("can not get container hostname")
-            raise
+            raise ex.excError
     
         if h != self.vm_name:
             self.r.log.info("container hostname is not %s"%self.vm_name)
@@ -131,7 +136,7 @@ lxc.network.mtu = 1500
         fname, headers = urllib.urlretrieve(template, self.template_local)
         if 'invalid file' in headers.values():
             self.r.log.error("%s not found"%template)
-            raise
+            raise ex.excError
 
     def unpack_template(self):
         import tarfile
@@ -179,6 +184,24 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         self.r.log.info("setup hypervisor root trust")
 
     def setup_ip(self, r):
+        if os.path.exists(self.interfaces):
+            return self.setup_ip_debian(r)
+        elif os.path.exists(self.network):
+            return self.setup_ip_rh(r)
+
+    def setup_ip_rh(self, r):
+        r.getaddr()
+        buff = """
+DEVICE=%(ipdev)s
+IPADDR=%(ipaddr)s
+NETMASK=%(netmask)s
+ONBOOT=yes
+"""%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
+        intf = os.path.join(self.network, 'ifcfg-'+r.ipDev)
+        with open(intf, 'w') as f:
+            f.write(buff)
+
+    def setup_ip_debian(self, r):
         r.getaddr()
         buff = """
 auto %(ipdev)s
@@ -187,8 +210,7 @@ iface %(ipdev)s inet static
     netmask %(netmask)s
 
 """%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
-        interfaces = os.path.join(self.section['rootfs'], 'etc', 'network', 'interfaces')
-        with open(interfaces, 'a') as f:
+        with open(self.interfaces, 'a') as f:
             f.write(buff)
 
     def setup_ips(self):
@@ -212,5 +234,6 @@ iface %(ipdev)s inet static
         self.setup_authkeys()
         self.setup_ips()
 
+        self.r.start()
         self.r.log.info("provisioned")
         return True
