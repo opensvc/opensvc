@@ -241,6 +241,11 @@ class Ip(Res.Resource):
             self.log.error("%s refuse to go down"%self.addr)
             raise ex.excError
 
+    def provision(self):
+        m = __import__("provIp")
+        prov = m.ProvisioningIp(self)
+        prov.provisioner()
+
 
 if __name__ == "__main__":
     for c in (Ip,) :

@@ -92,7 +92,7 @@ class Loop(Res.Loop):
                           disabled=disabled, tags=tags, optional=optional)
 
     def provision(self):
-        m = __import__("provLoop")
+        m = __import__("provLoopLinux")
         prov = m.ProvisioningLoop(self)
         prov.provisioner()
 

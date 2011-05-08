@@ -4,12 +4,17 @@ import json
 import rcExceptions as ex
 from stat import *
 from rcUtilities import justcall
+import glob
 
 class ProvisioningVg(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
         self.pvs = r.svc.config.get(self.r.rid, 'pvs')
         self.pvs = self.pvs.split()
+        l = []
+        for pv in self.pvs:
+            l += glob.glob(pv)
+        self.pvs = l
 
     def provisioner(self):
         if self.r.has_it():
@@ -43,7 +48,7 @@ class ProvisioningVg(Provisioning):
             if ret != 0:
                 raise ex.excError
 
-        cmd = ['vgcreate', self.r.name, ' '.join(self.pvs)]
+        cmd = ['vgcreate', self.r.name] + self.pvs
         ret, out = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
