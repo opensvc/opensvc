@@ -74,7 +74,11 @@ class Mount(Res.Resource):
                 return
         cmd = self.fsck_h[self.fsType]['cmd']
         (ret, out) = self.vcall(cmd)
-        if ret != 0:
+        if 'allowed_ret' in self.fsck_h[self.fsType]:
+            allowed_ret = self.fsck_h[self.fsType]['allowed_ret']
+        else:
+            allowed_ret = [0]
+        if ret not in allowed_ret:
             raise ex.excError 
 
     def need_check_writable(self):
