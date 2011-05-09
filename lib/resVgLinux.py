@@ -40,9 +40,9 @@ class Vg(resDg.Dg):
     def has_it(self):
         """Returns True if the volume is present
         """
-        cmd = [ 'vgs', '--noheadings', '-o', 'name' ]
+        cmd = ['vgdisplay', self.name]
         (ret, out) = self.call(cmd, cache=True)
-        if self.name in out.split():
+        if ret == 0:
             return True
         return False
 
@@ -53,6 +53,9 @@ class Vg(resDg.Dg):
             return False
         cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
         (ret, out) = self.call(cmd)
+        if len(out) == 0 and ret == 0:
+            # no lv ... happens in provisioning, where lv are not created yet
+            return True
         if re.match(' ....-[-o]', out, re.MULTILINE) is None:
             return True
         return False
@@ -125,6 +128,16 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
+        # wait for deactivation to take effect
+        for i in range(3, 0, -1):
+            if self.is_up() and i > 0:
+                time.sleep(1)
+                continue
+            break
+        if i == 0:
+            self.log.error("deactivation failed to release all logical volumes")
+            raise ex.excError
+
     def disklist(self):
         if not self.has_it():
             return set()
@@ -141,4 +154,9 @@ class Vg(resDg.Dg):
         self.disks = devs_to_disks(self, pvs)
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks
+
+    def provision(self):
+        m = __import__("provVgLinux")
+        prov = getattr(m, "ProvisioningVg")(self)
+        prov.provisioner()
 
