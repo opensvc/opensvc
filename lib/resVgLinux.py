@@ -41,7 +41,7 @@ class Vg(resDg.Dg):
         """Returns True if the volume is present
         """
         cmd = ['vgdisplay', self.name]
-        (ret, out) = self.call(cmd, cache=True)
+        (ret, out) = self.call(cmd, cache=True, errlog=False)
         if ret == 0:
             return True
         return False
