@@ -113,13 +113,12 @@ class ScsiReserv(Res.Resource):
         return r
 
     def disk_wait_reservation(self, disk):
-        i = 0
-        while i>0:
-            i -= 1
+        for i in range(3, 0, -1):
             if self.disk_reserved(disk):
                 self.log.info("reservation acquired for disk %s" % disk)
                 return 0
-            time.sleep(1)
+            if i > 0:
+                time.sleep(1)
         self.log.error("timed out waiting for reservation for disk %s" % disk)
         return 1
 
