@@ -78,6 +78,8 @@ class Lxc(resContainer.Container):
 
     def get_cf_value(self, param):
         value = None
+        if not os.path.exists(self.cf):
+            return None
         with open(self.cf, 'r') as f:
             for line in f.readlines():
                 if param not in line:

@@ -751,6 +751,17 @@ class KeywordVgScsireserv(Keyword):
                   text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
                 )
 
+class KeywordVgPvs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="pvs",
+                  required=True,
+                  text="The list of paths to the physical volumes of the volume group.",
+                  provisioning=True
+                )
+
 class KeywordPoolPoolname(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -813,6 +824,28 @@ class KeywordFsDev(Keyword):
                   at=True,
                   required=True,
                   text="The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
+                )
+
+class KeywordFsVg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="vg",
+                  required=True,
+                  text="The name of the disk group the filesystem device should be provisioned from.",
+                  provisioning=True
+                )
+
+class KeywordFsSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="size",
+                  required=True,
+                  text="The size in MB of the logical volume to provision for this filesystem.",
+                  provisioning=True
                 )
 
 class KeywordFsMnt(Keyword):
@@ -1418,6 +1451,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgVgname()
         self += KeywordVgDsf()
         self += KeywordVgScsireserv()
+        self += KeywordVgPvs()
         self += KeywordPoolPoolname()
         self += KeywordPoolTags()
         self += KeywordVmdgScsireserv()
@@ -1428,6 +1462,8 @@ class KeyDict(KeywordStore):
         self += KeywordFsMnt()
         self += KeywordFsMntOpt()
         self += KeywordFsSnapSize()
+        self += KeywordFsVg()
+        self += KeywordFsSize()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordSyncNetappFiler()
