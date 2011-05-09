@@ -71,10 +71,15 @@ class Mount(Res.Mount):
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt,
                            snap_size, always_on,
                            disabled=disabled, tags=tags, optional=optional)
+        """
+            0    - No errors
+            1    - File system errors corrected
+            32   - E2fsck canceled by user request
+        """
         self.fsck_h = {
-            'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
-            'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
-            'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device]},
+            'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
+            'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
+            'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
         }
 
     def is_up(self):
