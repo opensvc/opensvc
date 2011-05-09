@@ -225,7 +225,7 @@ iface %(ipdev)s inet static
             cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
         else:
             cmd = ['ssh-keygen', '-R', ip]
-        ret, out = self.r.vcall(cmd)
+        ret, out = self.r.vcall(cmd, err_to_info=True)
 
     def provisioner(self):
         path = self.section['rootfs']
