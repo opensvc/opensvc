@@ -339,6 +339,20 @@ class Svc(Resource, Freezer):
             ss.status = rcStatus.STDBY_UP
         return ss.status
 
+    def json_status(self):
+        import json
+        d = {
+              'resources': {},
+            }
+        for rs in self.get_res_sets(self.status_types):
+            for r in [_r for _r in rs.resources]:
+                rid, status, label, log = r.status_quad()
+                d['resources'][rid] = {'status': status, 'label': label, 'log':log}
+        ss = self.group_status()
+        for g in ss:
+            d[g] = str(ss[g])
+        print json.dumps(d)
+
     def print_status(self):
         """print each resource status for a service
         """
