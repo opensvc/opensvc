@@ -145,3 +145,9 @@ class Kvm(resContainer.Container):
         SubElement(e, "source", {'file': flag_disk_path})
         SubElement(e, "target", {'bus': 'virtio', 'dev': 'vdosvc'})
         tree.write(self.cf)
+
+    def provision(self):
+        m = __import__("provKvm")
+        prov = m.ProvisioningKvm(self)
+        prov.provisioner()
+

@@ -721,6 +721,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.vg", "provision")
         self.sub_set_action("fs", "provision")
         self.sub_set_action("container.lxc", "provision")
+        self.sub_set_action("container.kvm", "provision")
         self.sub_set_action("ip", "provision")
         self.push()
 
