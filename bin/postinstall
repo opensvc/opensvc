@@ -401,7 +401,7 @@ def install_link(source, target):
         return False
     if os.path.realpath(source) == os.path.realpath(target):
         return True
-    if os.path.exists(target):
+    if os.path.islink(target) or os.path.exists(target):
         os.unlink(target)
     os.symlink(source,target)
 
