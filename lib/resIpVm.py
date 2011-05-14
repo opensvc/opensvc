@@ -42,7 +42,8 @@ class Ip(Res.Ip):
         try:
             ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
         except:
-            self.log.error("failed to fetch interface configuration")
+            self.log.debug("failed to fetch interface configuration")
+            self.status_log("failed to fetch interface configuration")
             return False
         if ifconfig.has_param("ipaddr", self.addr) is not None or \
            ifconfig.has_param("ip6addr", self.addr) is not None:
