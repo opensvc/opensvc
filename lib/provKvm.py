@@ -103,7 +103,7 @@ class ProvisioningKvm(Provisioning):
         raise ex.excError
 
     def get_config(self):
-        cf = []
+        cf = ['todo']
         s = ';'.join(('vm', self.r.svc.vmname))
         cf.append(s)
         s = 'ns;192.168.122.1'
@@ -143,6 +143,5 @@ class ProvisioningKvm(Provisioning):
         self.setup_kvm()
         self.setup_ips()
 
-        self.r.start()
         self.r.log.info("provisioned")
         return True
