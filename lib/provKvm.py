@@ -38,7 +38,6 @@ class ProvisioningKvm(Provisioning):
         if ret != 0:
             raise ex.excError
 
-
     def setup_ips(self):
         self.purge_known_hosts()
         for rs in self.r.svc.get_res_sets("ip"):
@@ -68,8 +67,79 @@ class ProvisioningKvm(Provisioning):
         if ret != 0:
             raise ex.excError
 
+    def get_pubkey(self):
+        p = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
+        try:
+            with open(p) as f:
+                pub = f.read(8000)
+        except:
+            self.r.log.error('failed to read root public key')
+            raise ex.excError
+        return pub
+
+    def get_gw(self):
+        cmd = ['route', '-n']
+        ret, out = self.r.call(cmd)
+        if ret != 0:
+            self.r.log.error('failed to read routing table')
+            raise ex.excError
+        for line in out.split('\n'):
+            if line.startswith('0.0.0.0'):
+                l = line.split()
+                if len(l) > 1:
+                    return l[1]
+        self.r.log.error('failed to find default gateway')
+        raise ex.excError
+
+    def get_ns(self):
+        p = os.path.join(os.sep, 'etc', 'resolv.conf')
+        with open(p) as f:
+            for line in f.readlines():
+                if 'nameserver' in line:
+                    l = line.split()
+                    if len(l) > 1:
+                        return l[1]
+        self.r.log.error('failed to find a nameserver')
+        raise ex.excError
+
+    def get_config(self):
+        cf = []
+        s = ';'.join(('vm', self.r.svc.vmname))
+        cf.append(s)
+        s = 'ns;192.168.122.1'
+        cf.append(s)
+        s = ';'.join(('gw', self.get_gw()))
+        cf.append(s)
+        try:
+            s = ';'.join(('hv_root_pubkey', self.get_pubkey()))
+            cf.append(s)
+        except ex.excError:
+            pass
+        for rs in self.r.svc.get_res_sets("ip"):
+            for r in rs.resources:
+                s = ';'.join((r.rid, r.ipDev, r.addr, r.mask))
+                cf.append(s)
+        cf.append('')
+        return '\n'.join(cf)
+
+    def setup_cfdisk(self):
+        config = self.get_config()
+        block = len(config)//512 + 1
+        cfdisk = os.path.join(rcEnv.pathtmp, self.r.svc.svcname+'.cfdisk')
+        try:
+            with open(cfdisk, 'w') as f:
+                f.write(config)
+                f.seek(block*512)
+                f.write('\0')
+        except:
+            self.r.log.error("failed to create config disk")
+            raise ex.excError
+        self.virtinst += " --disk path=%s,device=floppy"%cfdisk
+        self.r.log.info("created config disk with content;\n%s", config)
+
     def provisioner(self):
         self.setup_snap()
+        self.setup_cfdisk()
         self.setup_kvm()
         self.setup_ips()
 
