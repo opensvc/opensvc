@@ -20,6 +20,7 @@ import os
 from datetime import datetime
 from subprocess import *
 
+import sys
 import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
@@ -154,11 +155,17 @@ class Lxc(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
                                         optional=optional, disabled=disabled, tags=tags)
-        self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
-        if not os.path.exists(self.d_lxc):
-            self.d_lxc = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc')
-        if not os.path.exists(self.d_lxc):
+        self.prefix = None
+        prefixes = [os.sep, os.path.join(os.sep, 'usr', 'local')]
+        for prefix in prefixes:
+            hint = os.path.join(prefix, 'bin', 'lxc-start')
+            if os.path.exists(hint):
+                self.prefix = prefix
+                break
+        if self.prefix is None:
+            print >>sys.stderr, "lxc config dir does not exist"
             raise ex.excInitError
+        self.d_lxc = os.path.join(self.prefix, 'var', 'lib', 'lxc')
         self.cf = os.path.join(self.d_lxc, name, 'config')
 
     def __str__(self):

@@ -78,7 +78,7 @@ lxc.network.mtu = 1500
         return True
 
     def check_lxc(self):
-        if os.path.exists(self.config):
+        if os.path.exists(self.r.cf):
             return True
         return False
 
