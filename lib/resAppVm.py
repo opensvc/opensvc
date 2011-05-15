@@ -30,14 +30,14 @@ class Apps(resApp.Apps):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
     def set_perms(self, rc):
-        (ret, out) = self.call(self.prefix+['/usr/bin/find',
+        (ret, out, err) = self.call(self.prefix+['/usr/bin/find',
                                             self.app_d,
                                             '-name', os.path.basename(rc),
                                             '-a', '-user', 'root',
                                             '-a', '-group', 'root'])
         if len(out) == 0 or rc != out.split()[0]:
             self.vcall(self.prefix+['chown', 'root:root', rc])
-        (ret, out) = self.call(self.prefix+['test', '-x', rc])
+        (ret, out, err) = self.call(self.prefix+['test', '-x', rc])
         if ret != 0:
             self.vcall(self.prefix+['chmod', '+x', rc])
 
@@ -58,7 +58,7 @@ class Apps(resApp.Apps):
         if ret == 0:
             return True
         cmd = self.prefix + ['/bin/mkdir', '-p', self.app_d]
-        ret = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd)
         if ret != 0:
             return False
         return True

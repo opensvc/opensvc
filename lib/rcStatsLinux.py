@@ -29,10 +29,10 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-u', 'ALL', '-P', 'ALL', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         if ret != 0:
             cmd = ['sar', '-t', '-u', '-P', 'ALL', '-f', f, '-s', start, '-e', end]
-            (ret, buff) = call(cmd)
+            (ret, buff, err) = call(cmd)
         cols = []
         lines = []
         for line in buff.split('\n'):
@@ -104,7 +104,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         lines = []
         for line in buff.split('\n'):
            l = line.split()
@@ -141,7 +141,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-q', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         lines = []
         for line in buff.split('\n'):
            l = line.split()
@@ -169,12 +169,12 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-S', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         if ret != 0:
             """ redhat 5
             """
             cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
-            (ret, buff) = call(cmd)
+            (ret, buff, err) = call(cmd)
         lines = []
         for line in buff.split('\n'):
            l = line.split()
@@ -206,7 +206,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-b', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         lines = []
         for line in buff.split('\n'):
            l = line.split()
@@ -237,7 +237,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-d', '-p', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         for line in buff.split('\n'):
            l = line.split()
@@ -265,7 +265,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-n', 'DEV', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         div = 1
         for line in buff.split('\n'):
@@ -305,7 +305,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-n', 'EDEV', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         for line in buff.split('\n'):
            l = line.split()

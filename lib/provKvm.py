@@ -34,7 +34,7 @@ class ProvisioningKvm(Provisioning):
         if self.virtinst is None:
             self.r.log.error("the 'virtinst' parameter must be set")
             raise ex.excError
-        ret, out = self.r.vcall(self.virtinst.split())
+        ret, out, err = self.r.vcall(self.virtinst.split())
         if ret != 0:
             raise ex.excError
 
@@ -49,7 +49,7 @@ class ProvisioningKvm(Provisioning):
             cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
         else:
             cmd = ['ssh-keygen', '-R', ip]
-        ret, out = self.r.vcall(cmd, err_to_info=True)
+        ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def setup_snap(self):
         if self.snap is None:
@@ -63,7 +63,7 @@ class ProvisioningKvm(Provisioning):
             raise ex.excError
  
         cmd = ['btrfs', 'subvolume', 'snapshot', self.snapof, self.snap]
-        ret, out = self.r.vcall(cmd)
+        ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -79,7 +79,7 @@ class ProvisioningKvm(Provisioning):
 
     def get_gw(self):
         cmd = ['route', '-n']
-        ret, out = self.r.call(cmd)
+        ret, out, err = self.r.call(cmd)
         if ret != 0:
             self.r.log.error('failed to read routing table')
             raise ex.excError

@@ -282,7 +282,7 @@ class ResourceSet(Resource):
         """
         resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
         self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
-        if action in ["fs", "start", "startstandby"]:
+        if action in ["fs", "start", "startstandby", "provision"]:
             resources.sort()
         else:
             resources.sort(reverse=True)

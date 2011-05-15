@@ -33,7 +33,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'cpu',
                 'nodename']
         cmd = ['bsdsar', '-u', '-n', day]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         if ret != 0:
             return cols, lines
@@ -71,15 +71,15 @@ class StatsProvider(rcStats.StatsProvider):
                 'nodename']
 
         cmd = ['sysctl', 'hw.physmem']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         physmem = int(out.split(': ')[1])/1024
 
         cmd = ['sysctl', 'hw.usermem']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         usermem = int(out.split(': ')[1])/1024
 
         cmd = ['bsdsar', '-r', '-n', day]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         lines = []
         for line in buff.split('\n'):
             l = line.split()
@@ -103,7 +103,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'pct_swpcad',
                 'nodename']
         cmd = ['bsdsar', '-r', '-n', day]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         if ret != 0:
             return cols, lines
@@ -130,7 +130,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'dev',
                 'nodename']
         cmd = ['bsdsar', '-I', '-n', day]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         if ret != 0:
             return cols, lines
@@ -153,7 +153,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'dev',
                 'nodename']
         cmd = ['bsdsar', '-I', '-n', day]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         lines = []
         if ret != 0:
             return cols, lines

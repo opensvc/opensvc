@@ -245,7 +245,7 @@ class Svc(Resource, Freezer):
             place presnap and postsnap triggers around pre_action
         """
         if ns and self.presnap_trigger is not None:
-            (ret, out) = self.vcall(self.presnap_trigger)
+            (ret, out, err) = self.vcall(self.presnap_trigger)
             if ret != 0:
                 raise ex.excError
 
@@ -270,7 +270,7 @@ class Svc(Resource, Freezer):
                 raise ex.excError
 
         if ns and self.postsnap_trigger is not None:
-            (ret, out) = self.vcall(self.postsnap_trigger)
+            (ret, out, err) = self.vcall(self.postsnap_trigger)
             if ret != 0:
                 raise ex.excError
 

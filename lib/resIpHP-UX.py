@@ -34,7 +34,7 @@ class Ip(Res.Ip):
     def startip_cmd(self):
         if ':' in self.addr:
             cmd = ['ifconfig', self.ipDev, 'inet6', 'up']
-            (ret, out) = self.vcall(cmd)
+            (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
             cmd = ['ifconfig', self.stacked_dev, 'inet6', self.addr+'/'+self.mask, 'up']

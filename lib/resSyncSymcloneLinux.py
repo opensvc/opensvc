@@ -37,13 +37,13 @@ class syncSymclone(symclone.syncSymclone):
 
     def refresh_multipath(self, dev):
         cmd = ['multipath', '-v0', '-r', dev]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def dev_ready(self, dev):
         cmd = ['sg_turs', dev]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             return False
         return True

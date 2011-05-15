@@ -23,7 +23,7 @@ def listpkg():
     if which('pkg_info') is None:
         return []
     cmd = ['pkg_info']
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     for line in out.split('\n'):
         l = line.split()

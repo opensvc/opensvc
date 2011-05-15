@@ -42,7 +42,7 @@ class Apps(Res.Resource):
         if s.st_uid != 0 or s.st_gid != 0:
             self.log.info("set %s ownership to uid 0 gid 0"%rc)
             os.chown(rc, 0, 0)
-        (ret, out) = self.call(self.prefix+['test', '-x', rc])
+        (ret, out, err) = self.call(self.prefix+['test', '-x', rc])
         if ret != 0: 
             self.vcall(self.prefix+['chmod', '+x', rc])
 

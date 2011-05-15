@@ -36,7 +36,7 @@ class check(checks.check):
 vg_name=/dev/vg00:vg_write_access=read,write:vg_status=available:max_lv=255:cur_lv=9:open_lv=9:max_pv=16:cur_pv=1:act_pv=1:max_pe_per_pv=4384:vgda=2:pe_size=32:total_pe=4347:alloc_pe=2712:free_pe=1635:total_pvg=0:total_spare_pvs=0:total_spare_pvs_in_use=0:vg_version=1.0:vg_max_size=2192g:vg_max_extents=70144
         """
         cmd = ['vgdisplay', '-F']
-        (ret, out) = call(cmd, errlog=False)
+        (ret, out, err) = call(cmd, errlog=False)
         if ret != 0:
             return self.undef
         lines = out.split('\n')

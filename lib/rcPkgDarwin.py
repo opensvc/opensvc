@@ -33,7 +33,7 @@ groups: com.apple.snowleopard-repair-permissions.pkg-group com.apple.FindSystemF
 
 def pkgversion(package):
     cmd = ['pkgutil', '--pkg-info', package]
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     for line in out.split('\n'):
         l = line.split(': ')
         if len(l) != 2:
@@ -46,7 +46,7 @@ def listpkg():
     if which('pkgutil') is None:
         return []
     cmd = ['pkgutil', '--packages']
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     for line in out.split('\n'):
         if len(line) == 0:

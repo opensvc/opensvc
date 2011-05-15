@@ -42,7 +42,7 @@ class ProvisioningFs(Provisioning):
         if which('lvcreate'):
             # create the logical volume
             cmd = ['lvcreate', '-n', dev, '-L', str(self.section['size'])+'M', self.section['vg']]
-            ret, out = self.r.vcall(cmd)
+            ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
         else:
@@ -66,6 +66,16 @@ class ProvisioningFs(Provisioning):
             self.r.log.error("failed to find logical volume device mapper info")
             raise ex.excError
         self.dev = '/dev/dm-'+minor
+        import time
+        for i in range(3, 0, -1):
+            if os.path.exists(self.dev):
+                break
+            if i != 0:
+                time.sleep(1)
+        if i == 0:
+            self.r.log.error("timed out waiting for %s to appear"%self.dev)
+            raise ex.excError
+            
 
     def provision_dev(self):
         if 'vg' not in self.section:
@@ -86,8 +96,8 @@ class ProvisioningFs(Provisioning):
 
         if not self.check_fs():
             cmd = self.mkfs + [self.dev]
-            (err, out) = self.r.vcall(cmd)
-            if err != 0:
+            (ret, out, err) = self.r.vcall(cmd)
+            if ret != 0:
                 self.r.log.error('Failed to format %s'%self.dev)
                 raise ex.excError
 

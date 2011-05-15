@@ -53,7 +53,7 @@ class Mounts(rcMounts.Mounts):
 
     def __init__(self):
         self.mounts = []
-        (ret, out) = call(['mount'])
+        (ret, out, err) = call(['mount'])
         for l in out.split('\n'):
             words = l.split()
             if len(words) < 4:

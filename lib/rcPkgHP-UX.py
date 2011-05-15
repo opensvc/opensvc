@@ -23,7 +23,7 @@ def listpkg():
     if which('swlist') is None:
         return []
     cmd = ['swlist', '-l', 'product']
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     for line in out.split('\n'):
         l = line.split()

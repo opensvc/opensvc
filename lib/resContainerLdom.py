@@ -46,7 +46,7 @@ class Ldom(resContainer.Container):
 
     def check_capabilities(self):
         cmd = ['/usr/sbin/ldm', 'list' ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return False
         return True
@@ -58,7 +58,7 @@ class Ldom(resContainer.Container):
                 DOMAIN|[varname=varvalue]*
         """
         cmd = ['/usr/sbin/ldm', 'list', '-p', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return None
         for word in out.split("|"):
@@ -73,7 +73,7 @@ class Ldom(resContainer.Container):
 
     def container_action(self,action):
         cmd = ['/usr/sbin/ldm', action, self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         return None
@@ -117,7 +117,7 @@ class Ldom(resContainer.Container):
             self.container_action('unbind')
         if state == 'active' :
             cmd = rcEnv.rsh.split() + [ self.name, '/usr/sbin/init', '5' ]
-            (ret, buff) = self.vcall(cmd)
+            (ret, buff, err) = self.vcall(cmd)
             if ret == 0:
                 try:
                     self.log.info("wait for container shutdown")
@@ -128,7 +128,7 @@ class Ldom(resContainer.Container):
 
     def check_manual_boot(self):
         cmd = ['/usr/sbin/ldm', 'list-variable', 'auto-boot?', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return False
         if out != 'auto-boot?=False' :

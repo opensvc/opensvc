@@ -40,7 +40,7 @@ class syncSymclone(resSync.Sync):
 
     def get_symld(self):
         cmd = ['/usr/symcli/bin/symld', '-g', self.symdg, 'list', '-v']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         ld = {}
@@ -82,14 +82,14 @@ class syncSymclone(resSync.Sync):
 
     def is_active(self):
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+self.pairs
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_activable(self):
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-precopy']+self.pairs
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
@@ -135,7 +135,7 @@ class syncSymclone(resSync.Sync):
             return
         self.wait_for_activable()
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'activate', '-i', '20', '-c', '30']+self.pairs
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.wait_for_active()
@@ -161,7 +161,7 @@ class syncSymclone(resSync.Sync):
             self.log.info("symclone dg %s is not active"%self.symdg)
             return
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'recreate', '-precopy', '-i', '20', '-c', '30']+self.pairs
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

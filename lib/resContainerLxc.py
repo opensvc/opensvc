@@ -71,7 +71,7 @@ class Lxc(resContainer.Container):
             return 1
 
         t = datetime.now()
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
         if ret != 0:
@@ -163,10 +163,12 @@ class Lxc(resContainer.Container):
                 self.prefix = prefix
                 break
         if self.prefix is None:
-            print >>sys.stderr, "lxc config dir does not exist"
+            print >>sys.stderr, "lxc install prefix not found"
             raise ex.excInitError
         self.d_lxc = os.path.join(self.prefix, 'var', 'lib', 'lxc')
         self.cf = os.path.join(self.d_lxc, name, 'config')
+        if not os.path.exists(self.d_lxc):
+            os.makedirs(self.d_lxc)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

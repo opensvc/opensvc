@@ -54,7 +54,7 @@ class Zone(resContainer.Container):
             cmd += option
 
         t = datetime.now()
-        (ret, out) = self.vcall(cmd,err_to_info=True)
+        (ret, out, err) = self.vcall(cmd,err_to_info=True)
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s'
                     % (action, len, ret, out))
@@ -122,7 +122,7 @@ class Zone(resContainer.Container):
             self.log.info("zone container %s already stopped" % self.name)
             return 0
         if self.state == 'running':
-            (ret, out) = self.vcall(['zlogin' , self.name , '/sbin/init' , '0'])
+            (ret, out, err) = self.vcall(['zlogin' , self.name , '/sbin/init' , '0'])
             for t in range(self.shutdown_timeout):
                 self.zone_refresh()
                 if self.state == 'installed':

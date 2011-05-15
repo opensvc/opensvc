@@ -33,7 +33,7 @@ class Snap(snap.Snap):
 
     def lv_info(self, device):
         device = device.split("/")[-1]
-        (ret, buff) = self.call(['lslv', device], cache=True)
+        (ret, buff, err) = self.call(['lslv', device], cache=True)
         if ret != 0:
             return (None, None, None)
         vg_name = None
@@ -94,17 +94,17 @@ class Snap(snap.Snap):
             raise ex.syncSnapExists
         print lv_size
         print lv_size//10
-        (ret, buff) = self.vcall(['mklv', '-t', 'jfs2', '-y', snap_name, vg_name, str(lv_size//10)+'M'])
+        (ret, buff, err) = self.vcall(['mklv', '-t', 'jfs2', '-y', snap_name, vg_name, str(lv_size//10)+'M'])
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = '/service/tmp/osvc_sync_'+os.path.basename(vg_name)+'_'+os.path.basename(lv_name)
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0755)
         snap_dev = os.path.join(os.sep, 'dev', snap_name)
-        (ret, buff) = self.vcall(['snapshot', '-o', 'snapfrom='+m.mountPoint, snap_dev])
+        (ret, buff, err) = self.vcall(['snapshot', '-o', 'snapfrom='+m.mountPoint, snap_dev])
         if ret != 0:
             raise ex.syncSnapMountError
-        (ret, buff) = self.vcall(['mount', '-o', 'snapshot', snap_dev, snap_mnt])
+        (ret, buff, err) = self.vcall(['mount', '-o', 'snapshot', snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
         self.snaps[m.mountPoint] = dict(lv_name=lv_name,
@@ -124,7 +124,7 @@ class Snap(snap.Snap):
         ret = qcall(cmd)
 
         cmd = ['umount', self.snaps[s]['snap_mnt']]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         cmd = ['snapshot', '-d', self.snaps[s]['snap_dev']]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
 

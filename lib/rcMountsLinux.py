@@ -56,7 +56,7 @@ class Mounts(rcMounts.Mounts):
 
     def __init__(self):
         self.mounts = []
-        (ret, out) = call(['mount'])
+        (ret, out, err) = call(['mount'])
         for l in out.split('\n'):
             if len(l.split()) != 6:
                 return

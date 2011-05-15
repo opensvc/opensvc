@@ -42,7 +42,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
     print ' '.join(cmd)
-    (retcode, stdout) = call(cmd)
+    (retcode, stdout, stderr) = call(cmd)
     if retcode == 0 :
         return True
     else:
@@ -58,7 +58,7 @@ def a2pool_dataset(s):
     ss = s
     if s[0] == '/':
         cmd = ['zfs', 'list', '-H',  '-o', 'name', s]
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return ("", "")
         ss = out.split('\n')[0]

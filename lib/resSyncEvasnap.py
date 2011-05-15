@@ -103,16 +103,16 @@ class syncEvasnap(resSync.Sync):
             _cmd = copy(cmd)
             _cmd[1] = re.sub(r'password=.*', 'password=xxxxx', _cmd[1])
             self.log.info(subprocess.list2cmdline(_cmd))
-            ret, out = self.call(cmd)
+            ret, out, err = self.call(cmd)
             if 'Error:' in out > 0:
                 self.log.error(out)
             else:
                 self.log.info(out)
         else:
-            ret, out = self.call(cmd)
+            ret, out, err = self.call(cmd)
         if check and "Error" in out:
             raise ex.excError("sssu command execution error")
-        return ret, out
+        return ret, out, err
 
     def lun_info(self, wwid):
         if wwid in self._lun_info:
@@ -129,7 +129,7 @@ class syncEvasnap(resSync.Sync):
             'mask': {}
         }
         try:
-            ret, out = self.sssu(["find vdisk lunwwid="+wwid+" xml"])
+            ret, out, err = self.sssu(["find vdisk lunwwid="+wwid+" xml"])
         except:
             return None
         l = out.split('\n')
@@ -245,7 +245,7 @@ class syncEvasnap(resSync.Sync):
         for pair in self.pairs:
             if len(pair) != 3:
                 raise ex.excError("syntax error in pair %s"%str(pair))
-        ret, out = self.sssu(check=False)
+        ret, out, err = self.sssu(check=False)
         if "Error opening https connection" in out:
             raise ex.excError("error login to %s"%self.manager)
         elif "Error" in out:

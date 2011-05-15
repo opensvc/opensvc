@@ -41,7 +41,7 @@ class Vbox(resContainer.Container):
         if self.vminfo is not None:
             return self.vminfo
         cmd = ['VBoxManage', 'showvminfo', '--machinereadable', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return None
         h = {}
@@ -67,14 +67,14 @@ class Vbox(resContainer.Container):
 
     def check_capabilities(self):
         cmd = ['VBoxManage', '-v']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return False
         return True
 
     def state(self):
         cmd = ['VBoxManage', 'list', 'runningvms']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return None
         for line in out.split('\n'):
@@ -90,7 +90,7 @@ class Vbox(resContainer.Container):
 
     def container_action(self, action, add=[]):
         cmd = ['VBoxManage', action, self.name] + add
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

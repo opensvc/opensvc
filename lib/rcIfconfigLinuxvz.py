@@ -25,7 +25,7 @@ class ifconfig(rcIfconfigLinux.ifconfig):
     def __init__(self, vmname):
         self.intf = []
         cmd = ['vzctl', 'exec', vmname, '/sbin/ifconfig', '-a']
-        ret, out = call(cmd)
+        ret, out, err = call(cmd)
         if ret != 0:
             raise ex.excError
         self.parse(out)

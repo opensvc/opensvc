@@ -30,7 +30,7 @@ class StatsProvider(rcStats.StatsProvider):
                                        stats_start=stats_start,
                                        stats_end=stats_end)
         cmd = ['pagesize']
-        (ret, pagesize) = call(cmd)
+        (ret, pagesize, err) = call(cmd)
         self.pagesize = int(pagesize)
 
     def sarfile(self, day):
@@ -52,7 +52,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return cols, lines
         cmd = ['sar', '-u', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) != 5:
@@ -75,7 +75,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return cols, lines
         cmd = ['sar', '-r', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) != 3:
@@ -99,7 +99,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return cols, lines
         cmd = ['sar', '-q', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) != 5:
@@ -121,7 +121,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return cols, lines
         cmd = ['sar', '-r', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) != 3:
@@ -146,7 +146,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-b', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd)
+        (ret, buff, err) = call(cmd)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) != 9:
@@ -173,7 +173,7 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return cols, lines
         cmd = ['sar', '-d', '-f', f, '-s', start, '-e', end]
-        (ret, buff) = call(cmd, errlog=False)
+        (ret, buff, err) = call(cmd, errlog=False)
         for line in buff.split('\n'):
             l = line.split()
             if len(l) == 8:

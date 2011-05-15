@@ -76,9 +76,9 @@ class Mount(Res.Mount):
                 return
 
             (stdout,stderr,returncode)= justcall(['rm', self.mountPoint+"/.opensvc" ])
-            ret, out = self.vcall(['zfs', 'mount', self.device ])
+            ret, out, err = self.vcall(['zfs', 'mount', self.device ])
             if ret != 0:
-                ret, out = self.vcall(['zfs', 'mount', '-O', self.device ])
+                ret, out, err = self.vcall(['zfs', 'mount', '-O', self.device ])
                 if ret != 0:
                     raise ex.excError
             return
@@ -96,7 +96,7 @@ class Mount(Res.Mount):
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
         cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.Mounts = None
             raise ex.excError
@@ -104,24 +104,24 @@ class Mount(Res.Mount):
 
     def try_umount(self):
         if self.fsType == 'zfs' :
-            ret, out = self.vcall(['zfs', 'umount', self.device ])
+            ret, out, err = self.vcall(['zfs', 'umount', self.device ])
             if ret != 0 :
-                ret, out = self.vcall(['zfs', 'umount', '-f', self.device ])
+                ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ])
                 if ret != 0 :
                     raise ex.excError
             return
-        (ret, out) = self.vcall(['umount', self.mountPoint], err_to_info=True)
+        (ret, out, err) = self.vcall(['umount', self.mountPoint], err_to_info=True)
         if ret == 0 :
             return
         for i in range(4):
-            (ret, out) = self.vcall(['fuser', '-ck', self.mountPoint],
+            (ret, out, err) = self.vcall(['fuser', '-ck', self.mountPoint],
                                     err_to_info=True)
-            (ret, out) = self.vcall(['umount', self.mountPoint],
+            (ret, out, err) = self.vcall(['umount', self.mountPoint],
                                     err_to_info=True)
             if ret == 0 :
                 return
             if self.fsType != 'lofs' :
-                (ret, out) = self.vcall(['umount', '-f', self.mountPoint],
+                (ret, out, err) = self.vcall(['umount', '-f', self.mountPoint],
                                         err_to_info=True)
                 if ret == 0 :
                     return

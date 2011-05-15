@@ -70,7 +70,7 @@ class Jail(resContainer.Container):
 
     def container_stop(self):
         cmd = ['jail', '-r', self.svc.basevmname]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -86,7 +86,7 @@ class Jail(resContainer.Container):
 
     def is_up(self):
         cmd = ['jls']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         for line in out.split('\n'):

@@ -95,10 +95,9 @@ lxc.network.mtu = 1500
             return
         name = self.setup_lxc_config()
         cmd = ['lxc-create', '-n', self.vm_name, '-f', self.config]
-        (err, out) = self.r.vcall(cmd)
-        if err == 0:
-            return True
-        return False
+        (ret, out, err) = self.r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def check_vm_name(self):
         if not os.path.exists(self.p_hostname):
@@ -225,7 +224,7 @@ iface %(ipdev)s inet static
             cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
         else:
             cmd = ['ssh-keygen', '-R', ip]
-        ret, out = self.r.vcall(cmd, err_to_info=True)
+        ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def provisioner(self):
         path = self.section['rootfs']

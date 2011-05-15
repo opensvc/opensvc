@@ -72,7 +72,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already imported" % self.name)
             return
         cmd = ['importvg', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -81,7 +81,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already exported" % self.name)
             return
         cmd = ['exportvg', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -90,7 +90,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already available" % self.name)
             return
         cmd = ['varyonvg', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -99,7 +99,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already unavailable" % self.name)
             return
         cmd = ['varyoffvg', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -115,7 +115,7 @@ class Vg(resDg.Dg):
 
     def disklist(self):
         cmd = ['lsvg', '-p', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
 

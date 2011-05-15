@@ -36,7 +36,7 @@ def check_ping(addr, timeout=5, count=1):
                  '-W', repr(timeout),
                  '-w', repr(timeout),
                  addr]
-    (ret, out) = call(cmd)
+    (ret, out, err) = call(cmd)
     if ret == 0:
         return True
     return False
@@ -47,7 +47,7 @@ def lv_exists(self, device):
     return False
 
 def lv_info(self, device):
-    (ret, buff) = self.call(['lvs', '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
+    (ret, buff, err) = self.call(['lvs', '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
     if ret != 0:
         return (None, None, None)
     info = buff.split()

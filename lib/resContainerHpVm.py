@@ -54,25 +54,25 @@ class HpVm(resContainer.Container):
 
     def container_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_stop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-g', '-F', '-P', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_forcestop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-F', '-P', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def check_manual_boot(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
-        (ret, out) = self.call(cmd, cache=True)
+        (ret, out, err) = self.call(cmd, cache=True)
         if ret != 0:
             return False
         if out.split(":")[11] == "Manual":
@@ -82,7 +82,7 @@ class HpVm(resContainer.Container):
 
     def get_container_info(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
-        (ret, out) = self.call(cmd, cache=True)
+        (ret, out, err) = self.call(cmd, cache=True)
         self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
             return self.info
@@ -94,7 +94,7 @@ class HpVm(resContainer.Container):
 
     def is_up(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return False
         if out.split(":")[10] == "On":

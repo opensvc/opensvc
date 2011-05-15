@@ -41,7 +41,7 @@ class Vg(resDg.Dg):
         """Returns True if the volume is present
         """
         cmd = ['vgdisplay', self.name]
-        (ret, out) = self.call(cmd, cache=True, errlog=False)
+        (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret == 0:
             return True
         return False
@@ -52,23 +52,23 @@ class Vg(resDg.Dg):
         if not self.has_it():
             return False
         cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if len(out) == 0 and ret == 0:
             # no lv ... happens in provisioning, where lv are not created yet
             return True
-        if re.match(' ....-[-o]', out, re.MULTILINE) is None:
+        if re.search(' ....a.', out, re.MULTILINE) is not None:
             return True
         return False
 
     def remove_tag(self, tag):
         cmd = [ 'vgchange', '--deltag', '@'+tag, self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def remove_tags(self, tags=[]):
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         out = out.strip(' \n')
@@ -90,7 +90,7 @@ class Vg(resDg.Dg):
 
     def add_tags(self):
         cmd = [ 'vgchange', '--addtag', self.tag, self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -101,7 +101,7 @@ class Vg(resDg.Dg):
         self.remove_tags()
         self.add_tags()
         cmd = [ 'vgchange', '-a', 'y', self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -109,7 +109,7 @@ class Vg(resDg.Dg):
         if not which('partx'):
             return
         cmd = ['lvs', '-o', 'name', '--noheadings', self.name]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("can not fetch logical volume list from %s"%self.name)
             return
@@ -124,14 +124,17 @@ class Vg(resDg.Dg):
         self.remove_tags([self.tag])
         self.remove_parts()
         cmd = [ 'vgchange', '-a', 'n', self.name ]
-        (ret, out) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
+        (ret, out, err) = self.vcall(cmd, err_to_info=True)
+        if ret == 0:
+            return
 
-        # wait for deactivation to take effect
+        import time
         for i in range(3, 0, -1):
             if self.is_up() and i > 0:
                 time.sleep(1)
+                (ret, out, err) = self.vcall(cmd, err_to_info=True)
+                if ret == 0:
+                    return
                 continue
             break
         if i == 0:
@@ -147,7 +150,7 @@ class Vg(resDg.Dg):
         self.disks = set()
 
         cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
-        (ret, out) = self.call(cmd, cache=True)
+        (ret, out, err) = self.call(cmd, cache=True)
         if ret != 0:
             return self.disks
 	pvs = set(out.split())

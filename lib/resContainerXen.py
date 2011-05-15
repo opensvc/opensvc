@@ -45,7 +45,7 @@ class Xen(resContainer.Container):
 
     def check_capabilities(self):
         cmd = ['virsh', 'capabilities']
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             self.status_log("can not fetch capabilities")
             return False
@@ -61,29 +61,29 @@ class Xen(resContainer.Container):
         cf = os.path.join(os.sep, 'opt', 'opensvc', 'var', self.name+'.xml')
         if os.path.exists(cf):
             cmd = ['virsh', 'define', cf]
-            (ret, buff) = self.vcall(cmd)
+            (ret, buff, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
         cmd = ['virsh', 'start', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_stop(self):
         cmd = ['virsh', 'shutdown', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def is_up(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
         if "running" in out.split() or "idle" in out.split() :
@@ -92,7 +92,7 @@ class Xen(resContainer.Container):
 
     def get_container_info(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, errlog=False, cache=True)
+        (ret, out, err) = self.call(cmd, errlog=False, cache=True)
         self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
             return self.info

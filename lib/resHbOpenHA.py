@@ -91,7 +91,7 @@ class Hb(Res.Resource):
 
     def service_action(self, command):
         cmd = [service_cmd, '-A', self.cluster_name(), command]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

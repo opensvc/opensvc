@@ -25,7 +25,7 @@ def listpkg_dummy():
     return []
 
 def listpkg_rpm():
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     for line in out.split('\n'):
         l = line.split()
@@ -36,7 +36,7 @@ def listpkg_rpm():
     return lines
 
 def listpkg_deb():
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     arch = ""
     for line in out.split('\n'):
