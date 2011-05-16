@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
@@ -36,14 +35,14 @@ class diskInfo(rcDiskInfo.diskInfo):
         else:
             return ""
         cmd = [scsi_id, '-g', '-u', '-d', dev]
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret == 0:
             id = out.split('\n')[0][1:]
             self.disk_ids[dev] = id
             return id
         sdev = dev.replace("/dev/", "/block/")
         cmd = [scsi_id, '-g', '-u', '-s', sdev]
-        (ret, out) = call(cmd, errlog=False)
+        (ret, out, err) = call(cmd, errlog=False)
         if ret == 0:
             id = out.split('\n')[0][1:]
             self.disk_ids[dev] = id
@@ -86,7 +85,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             path = dev.replace('/dev/', '/sys/block/')+'/size'
             if not os.path.exists(path):
                 cmd = ['blockdev', '--getsize', dev]
-                (ret, out) = call(cmd)
+                (ret, out, err) = call(cmd)
                 if ret != 0:
                     return 0
                 return int(out)/2097152

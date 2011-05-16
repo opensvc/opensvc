@@ -69,7 +69,7 @@ class Vg(resVg.Vg):
 
     def get_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']
-        (ret, buff) = self.call(cmd)
+        (ret, buff, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         if len(buff) == 0:
@@ -124,14 +124,14 @@ class Vg(resVg.Vg):
                     continue
                 if dev not in devs:
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-a', 'gdev:'+dev]
-                    (ret, out) = self.vcall(cmd)
+                    (ret, out, err) = self.vcall(cmd)
                     if ret != 0:
                         raise ex.excError
                 if 'YES' in l[1]:
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=YES']
                 else:
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=NO']
-                (ret, buff) = self.vcall(cmd)
+                (ret, buff, err) = self.vcall(cmd)
                 if ret != 0:
                     err += 1
                     continue

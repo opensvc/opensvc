@@ -46,7 +46,7 @@ def remote_fs_mounted(self, node):
         """
         return True
     cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dstfs]
-    (ret, out) = self.call(cmd, cache=True)
+    (ret, out, err) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
     if self.dstfs not in out.split():
@@ -69,7 +69,7 @@ def remote_node_type(self, node, target):
 
     if node not in cache_remote_node_type:
         cmd = rcEnv.rsh.split(' ')+[node, '--'] + rcmd
-        (ret, out) = self.call(cmd, cache=True)
+        (ret, out, err) = self.call(cmd, cache=True)
         if ret != 0:
             return False
         words = out.split()
@@ -260,7 +260,7 @@ class Rsync(resSync.Sync):
             dst = node + ':' + self.dst
             cmd = ['rsync'] + self.options + bwlimit + src
             cmd.append(dst)
-            (ret, out) = self.vcall(cmd)
+            (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue

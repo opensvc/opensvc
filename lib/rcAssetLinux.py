@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 #
@@ -41,7 +40,7 @@ class Asset(rcAsset.Asset):
         if self.container:
             self.dmidecode = []
         else:
-            (ret, out) = call(['dmidecode'])
+            (ret, out, err) = call(['dmidecode'])
             if ret != 0:
                 self.dmidecode = []
             else:
@@ -49,7 +48,7 @@ class Asset(rcAsset.Asset):
 
     def get_mem_bytes(self):
         cmd = ['free', '-m']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -125,14 +124,14 @@ class Asset(rcAsset.Asset):
                         return r
         for f in files:
             if os.path.exists(f):
-                (ret, out) = call(['cat', f])
+                (ret, out, err) = call(['cat', f])
                 if ret != 0:
                     return 'Unknown'
                 return out.split('\n')[0].replace('CentOS','').strip()
         return 'Unknown'
 
     def get_os_kernel(self):
-        (ret, out) = call(['uname', '-r'])
+        (ret, out, err) = call(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
@@ -142,7 +141,7 @@ class Asset(rcAsset.Asset):
             cmd = ['arch']
         else:
             cmd = ['uname', '-m']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
@@ -178,7 +177,7 @@ class Asset(rcAsset.Asset):
         return str(c)
 
     def get_cpu_model(self):
-        (ret, out) = call(['grep', 'model name', '/proc/cpuinfo'])
+        (ret, out, err) = call(['grep', 'model name', '/proc/cpuinfo'])
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')

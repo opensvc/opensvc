@@ -245,7 +245,7 @@ class Svc(Resource, Freezer):
             place presnap and postsnap triggers around pre_action
         """
         if ns and self.presnap_trigger is not None:
-            (ret, out) = self.vcall(self.presnap_trigger)
+            (ret, out, err) = self.vcall(self.presnap_trigger)
             if ret != 0:
                 raise ex.excError
 
@@ -270,7 +270,7 @@ class Svc(Resource, Freezer):
                 raise ex.excError
 
         if ns and self.postsnap_trigger is not None:
-            (ret, out) = self.vcall(self.postsnap_trigger)
+            (ret, out, err) = self.vcall(self.postsnap_trigger)
             if ret != 0:
                 raise ex.excError
 
@@ -338,6 +338,20 @@ class Svc(Resource, Freezer):
         elif ss.status == rcStatus.STDBY_UP_WITH_DOWN:
             ss.status = rcStatus.STDBY_UP
         return ss.status
+
+    def json_status(self):
+        import json
+        d = {
+              'resources': {},
+            }
+        for rs in self.get_res_sets(self.status_types):
+            for r in [_r for _r in rs.resources]:
+                rid, status, label, log = r.status_quad()
+                d['resources'][rid] = {'status': status, 'label': label, 'log':log}
+        ss = self.group_status()
+        for g in ss:
+            d[g] = str(ss[g])
+        print json.dumps(d)
 
     def print_status(self):
         """print each resource status for a service
@@ -707,6 +721,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.vg", "provision")
         self.sub_set_action("fs", "provision")
         self.sub_set_action("container.lxc", "provision")
+        self.sub_set_action("container.kvm", "provision")
         self.sub_set_action("ip", "provision")
         self.push()
 

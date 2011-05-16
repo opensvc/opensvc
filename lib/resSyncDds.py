@@ -68,7 +68,7 @@ class syncDds(resSync.Sync):
             self.log.debug('dev path does not exist')
             return False
         cmd = ['lvs', '--noheadings', '-o', 'snap_percent', dev]
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
         if len(out.strip()) == 0:
@@ -84,7 +84,7 @@ class syncDds(resSync.Sync):
                '-L', str(self.snap_size)+'M',
                os.path.join(os.sep, 'dev', self.src_vg, self.src_lv)
               ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -172,7 +172,7 @@ class syncDds(resSync.Sync):
 
     def get_snap1_uuid(self):
         cmd = ['lvs', '--noheadings', '-o', 'uuid', self.snap1]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         self.snap1_uuid = out.strip()
@@ -186,7 +186,7 @@ class syncDds(resSync.Sync):
 
     def _push_statefile(self, node):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -221,7 +221,7 @@ class syncDds(resSync.Sync):
         if not self.snap_exists(self.snap1):
             return
         cmd = ['lvremove', '-f', self.snap1]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -233,7 +233,7 @@ class syncDds(resSync.Sync):
             self.log.error("%s should not exist"%self.snap1)
             raise ex.excError
         cmd = ['lvrename', self.src_vg, self.snap2_lv, self.snap1_lv]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -251,7 +251,7 @@ class syncDds(resSync.Sync):
         self.set_statefile()
         cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
             raise ex.excError
@@ -301,7 +301,7 @@ class syncDds(resSync.Sync):
         cmd = ['md5sum', bdev]
         if node != rcEnv.nodename:
             cmd = rcEnv.rsh.split() + [node] + cmd
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             return ""
         o = out.split()

@@ -30,7 +30,7 @@ import rcExceptions as ex
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
-    (ret, out) = self.vcall(cmd)
+    (ret, out, err) = self.vcall(cmd)
     if ret == 0:
         return 0
 
@@ -45,11 +45,11 @@ def try_umount(self):
         action reliability, ie don't contest oprator's will
     """
     cmd = ['sync']
-    (ret, out) = self.vcall(cmd)
+    (ret, out, err) = self.vcall(cmd)
 
     for i in range(4):
         cmd = ['fuser', '-kc', self.mountPoint]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
         ret = qcall(cmd)
@@ -93,7 +93,7 @@ class Mount(Res.Mount):
         else:
             mntopt = []
         cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

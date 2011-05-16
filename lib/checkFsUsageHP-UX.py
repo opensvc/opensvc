@@ -36,7 +36,7 @@ class check(checks.check):
         /dev/vg00/lvol3    1048576  228080  814208   22% /
         """
         cmd = ['bdf', '-l']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return self.undef
         lines = out.split('\n')

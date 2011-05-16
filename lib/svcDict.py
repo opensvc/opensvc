@@ -166,6 +166,42 @@ class KeywordMode(Keyword):
                   text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
                 )
 
+class KeywordVirtinst(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="virtinst",
+                  depends=[('mode', ["kvm", "xen"])],
+                  text="The virt-install command to use to create the container.",
+                  required=True,
+                  provisioning=True
+                )
+
+class KeywordSnap(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="snap",
+                  depends=[('mode', ["kvm", "xen"])],
+                  text="The target snapshot full path containing the new container disk files.",
+                  required=True,
+                  provisioning=True
+                )
+
+class KeywordSnapof(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="snapof",
+                  depends=[('mode', ["kvm", "xen"])],
+                  text="The snapshot origin full path containing the reference container disk files.",
+                  required=True,
+                  provisioning=True
+                )
+
 class KeywordRootfs(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1479,6 +1515,9 @@ class KeyDict(KeywordStore):
         self += KeywordVdiskPath()
         self += KeywordHbType()
         self += KeywordHbName()
+        self += KeywordVirtinst()
+        self += KeywordSnap()
+        self += KeywordSnapof()
 
 if __name__ == "__main__":
     store = KeyDict()

@@ -75,7 +75,7 @@ class Drbd(Res.Resource):
         self.disks = set()
         devps = set()
 
-        (ret, out) = self.call(self.drbdadm_cmd('dump-xml'))
+        (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
         if ret != 0:
             raise ex.excError
 
@@ -102,12 +102,12 @@ class Drbd(Res.Resource):
         return self.disks
 
     def drbdadm_down(self):
-        (ret, out) = self.vcall(self.drbdadm_cmd('down'))
+        (ret, out, err) = self.vcall(self.drbdadm_cmd('down'))
         if ret != 0:
             raise ex.excError
 
     def drbdadm_up(self):
-        (ret, out) = self.vcall(self.drbdadm_cmd('up'))
+        (ret, out, err) = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
             raise ex.excError
 
@@ -123,7 +123,7 @@ class Drbd(Res.Resource):
 
     def prereq(self):
         if not os.path.exists("/proc/drbd"):
-            (ret, out) = self.vcall(['modprobe', 'drbd'])
+            (ret, out, err) = self.vcall(['modprobe', 'drbd'])
             if ret != 0: raise ex.excError
 
     def start_connection(self):
@@ -140,7 +140,7 @@ class Drbd(Res.Resource):
             self.drbdadm_up()
 
     def get_roles(self):
-        (ret, out) = self.call(self.drbdadm_cmd('role'))
+        (ret, out, err) = self.call(self.drbdadm_cmd('role'))
         if ret != 0:
             raise ex.excError
         out = out.strip().split('/')
@@ -151,7 +151,7 @@ class Drbd(Res.Resource):
     def start_role(self, role):
         roles = self.get_roles()
         if roles[0] != role:
-            (ret, out) = self.vcall(self.drbdadm_cmd(role.lower()))
+            (ret, out, err) = self.vcall(self.drbdadm_cmd(role.lower()))
             if ret != 0:
                 raise ex.excError
         else:
@@ -179,7 +179,7 @@ class Drbd(Res.Resource):
         self.drbdadm_down()
 
     def _status(self, verbose=False):
-        (ret, out) = self.call(self.drbdadm_cmd('dstate'))
+        (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)
             return rcStatus.WARN

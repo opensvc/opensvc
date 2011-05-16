@@ -60,12 +60,12 @@ class Vg(resDg.Dg):
 
     def do_startvol(self):
         cmd = [ 'vxvol', '-g', self.name, '-f', 'startall' ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         return ret
 
     def do_stopvol(self):
         cmd = [ 'vxvol', '-g', self.name, '-f', 'stopall' ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         return ret
 
     def do_start(self):
@@ -78,7 +78,7 @@ class Vg(resDg.Dg):
                 return ret
         for flag in [ '-t', '-tC', '-tCf']:
             cmd = [ 'vxdg', flag, 'import', self.name ]
-            (ret, out) = self.vcall(cmd)
+            (ret, out, err) = self.vcall(cmd)
             if ret == 0 :
                 ret = self.do_startvol()
                 return ret
@@ -90,7 +90,7 @@ class Vg(resDg.Dg):
             return 0
         ret = self.do_stopvol()
         cmd = [ 'vxdg', 'deport', self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         return ret
 
     def disklist(self):
@@ -104,7 +104,7 @@ class Vg(resDg.Dg):
 
         disks = set([])
         cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0 :
             self.disks = disks
             return disks

@@ -35,7 +35,7 @@ def file_to_loop(f):
         return []
     if rcEnv.sysname != 'Linux':
         return []
-    (ret, out) = call(['losetup', '-j', f])
+    (ret, out, err) = call(['losetup', '-j', f])
     if len(out) == 0:
         return []
     """ It's possible multiple loopdev are associated with the same file
@@ -66,7 +66,7 @@ class Loop(Res.Loop):
             self.log.info("%s is already up" % self.loopFile)
             return
         cmd = [ 'losetup', '-f', self.loopFile ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
@@ -78,7 +78,7 @@ class Loop(Res.Loop):
             return 0
         for loop in self.loop:
             cmd = [ 'losetup', '-d', loop ]
-            (ret, out) = self.vcall(cmd)
+            (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
 

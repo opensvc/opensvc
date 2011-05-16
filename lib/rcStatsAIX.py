@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>'
 #
@@ -48,7 +47,7 @@ def stats_cpu_day(t):
     if f is None:
         return []
     cmd = ['sar', '-u', '-P', 'ALL', '-f', f]
-    (ret, buff) = call(cmd, errlog=False)
+    (ret, buff, err) = call(cmd, errlog=False)
     lines = []
     for line in buff.split('\n'):
         l = line.split()
@@ -85,7 +84,7 @@ def stats_proc_day(t):
     if f is None:
         return []
     cmd = ['sar', '-q', '-f', f]
-    (ret, buff) = call(cmd)
+    (ret, buff, err) = call(cmd)
     lines = []
     for line in buff.split('\n'):
         l = line.split()
@@ -115,7 +114,7 @@ def stats_block_day(t):
     if f is None:
         return []
     cmd = ['sar', '-b', '-f', f]
-    (ret, buff) = call(cmd)
+    (ret, buff, err) = call(cmd)
     lines = []
     for line in buff.split('\n'):
         l = line.split()
@@ -141,7 +140,7 @@ def stats_blockdev_day(t):
     if f is None:
         return []
     cmd = ['sar', '-d', '-f', f]
-    (ret, buff) = call(cmd, errlog=False)
+    (ret, buff, err) = call(cmd, errlog=False)
     lines = []
     for line in buff.split('\n'):
         l = line.split()

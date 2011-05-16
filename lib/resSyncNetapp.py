@@ -95,7 +95,7 @@ class syncNetapp(resSync.Sync):
         return False
 
     def syncresync(self):
-        (ret, buff) = self.cmd_slave(['snapmirror', 'resync', '-f', self.slave()+':'+self.path_short], info=True)
+        (ret, buff, err) = self.cmd_slave(['snapmirror', 'resync', '-f', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
 
@@ -109,13 +109,13 @@ class syncNetapp(resSync.Sync):
         src = slave+':'+self.path_short
         dst = master+':'+self.path_short
 
-        (ret, buff) = self._cmd(['snapmirror', 'resync', '-f', '-S', src, dst], master, info=True)
+        (ret, buff, err) = self._cmd(['snapmirror', 'resync', '-f', '-S', src, dst], master, info=True)
         if ret != 0:
             raise ex.excError
-        (ret, buff) = self._cmd(['snapmirror', 'release', self.path_short, src], master, info=True)
+        (ret, buff, err) = self._cmd(['snapmirror', 'release', self.path_short, src], master, info=True)
         if ret != 0:
             raise ex.excError
-        (ret, buff) = self._cmd(['snapmirror', 'status', '-l', dst], slave, info=False)
+        (ret, buff, err) = self._cmd(['snapmirror', 'status', '-l', dst], slave, info=False)
         if ret != 0:
             raise ex.excError
         snap = ""
@@ -136,7 +136,7 @@ class syncNetapp(resSync.Sync):
             raise ex.excError
         import time
         time.sleep(5)
-        (ret, buff) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
+        (ret, buff, err) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
         if ret != 0:
             raise ex.excError
 
@@ -153,7 +153,7 @@ class syncNetapp(resSync.Sync):
         if s['state'] != "Snapmirrored" or s['status'] != "Idle":
             self.log.error("update not applicable: not in snapmirror idle status")
             return
-        (ret, buff) = self.cmd_slave(['snapmirror', 'update', self.slave()+':'+self.path_short], info=True)
+        (ret, buff, err) = self.cmd_slave(['snapmirror', 'update', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
 
@@ -162,7 +162,7 @@ class syncNetapp(resSync.Sync):
         if s['state'] != "Quiesced":
             self.log.info("resume not applicable: not quiesced")
             return
-        (ret, buff) = self.cmd_slave(['snapmirror', 'resume', self.slave()+':'+self.path_short], info=True)
+        (ret, buff, err) = self.cmd_slave(['snapmirror', 'resume', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
 
@@ -177,13 +177,13 @@ class syncNetapp(resSync.Sync):
         if s['status'] == "Pending":
             self.log.error("Can not quiesce: volume in snapmirror Pending status")
             raise ex.excError
-        (ret, buff) = self.cmd_slave(['snapmirror', 'quiesce', self.slave()+':'+self.path_short], info=True)
+        (ret, buff, err) = self.cmd_slave(['snapmirror', 'quiesce', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
         self.wait_quiesce()
 
     def syncbreak(self):
-        (ret, buff) = self.cmd_slave(['snapmirror', 'break', self.slave()+':'+self.path_short], info=True)
+        (ret, buff, err) = self.cmd_slave(['snapmirror', 'break', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
         self.wait_break()
@@ -210,7 +210,7 @@ class syncNetapp(resSync.Sync):
         raise ex.excError
 
     def snapmirror_status(self, filer):
-        (ret, buff) = self._cmd(['snapmirror', 'status'], filer)
+        (ret, buff, err) = self._cmd(['snapmirror', 'status'], filer)
         if ret != 0:
 	    self.log.error("can get snapmirror status from %s"%filer)
             raise ex.excError

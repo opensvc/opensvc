@@ -25,7 +25,7 @@ class diskInfo(rcDiskInfo.diskInfo):
     def __init__(self):
         self.h = {}
         cmd = ["scsimgr", "-p", "get_attr", "all_lun", "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         for e in out.split('\n'):
             if len(e) == 0:
                 continue
@@ -51,7 +51,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def scan(self, dev):
         cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
-        (ret, out) = call(cmd, errlog=False)
+        (ret, out, err) = call(cmd, errlog=False)
         dev = self.devkey(dev)
         if ret != 0:
             self.h[dev] = dict(wwid="", vid="", pid="", size="")

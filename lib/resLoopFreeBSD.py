@@ -33,7 +33,7 @@ def file_to_loop(f):
         return []
     if not os.path.isfile(f):
         return []
-    (ret, out) = call(['mdconfig', '-l', '-v'])
+    (ret, out, err) = call(['mdconfig', '-l', '-v'])
     if ret != 0:
         return []
     """ It's possible multiple loopdev are associated with the same file
@@ -65,7 +65,7 @@ class Loop(Res.Loop):
             self.log.info("%s is already up" % self.loopFile)
             return
         cmd = ['mdconfig', '-a', '-t', 'vnode', '-f', self.loopFile]
-        (ret, out) = self.call(cmd, info=True, outlog=False)
+        (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
@@ -77,7 +77,7 @@ class Loop(Res.Loop):
             return 0
         for loop in self.loop:
             cmd = ['mdconfig', '-d', '-u', loop.strip('md')]
-            (ret, out) = self.vcall(cmd)
+            (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
 

@@ -60,7 +60,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def disk_registered(self, disk):
         cmd = [ 'sg_persist', '-n', '-k', disk ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read registrations for disk %s" % disk)
         if self.hostid in out:
@@ -69,21 +69,21 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def disk_register(self, disk):
         cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, disk ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to register key %s with disk %s" % (self.hostid, disk))
         return ret
 
     def disk_unregister(self, disk):
         cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, disk ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
         return ret
 
     def get_reservation_key(self, disk):
         cmd = [ 'sg_persist', '-n', '-r', disk ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to list reservation for disk %s" % disk)
         if 'Key=' not in out:
@@ -95,7 +95,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def disk_reserved(self, disk):
         cmd = [ 'sg_persist', '-n', '-r', disk ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read reservation for disk %s" % disk)
         if self.hostid in out:
@@ -104,21 +104,21 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def disk_release(self, disk):
         cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to release disk %s" % disk)
         return ret
 
     def disk_reserve(self, disk):
         cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
     def disk_preempt_reservation(self, disk, oldkey):
         cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to preempt reservation for disk %s" % disk)
         return ret

@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>
 #
@@ -25,7 +24,7 @@ import rcAsset
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
-        (ret, out) = call(['prtconf'])
+        (ret, out, err) = call(['prtconf'])
         if ret != 0:
             self.prtconf = []
         else:
@@ -49,7 +48,7 @@ class Asset(rcAsset.Asset):
     def get_os_name(self):
         f = '/etc/release'
         if os.path.exists(f):
-            (ret, out) = call(['cat', f])
+            (ret, out, err) = call(['cat', f])
             if ret != 0:
                 return 'Unknown'
             if 'OpenSolaris' in out:
@@ -59,26 +58,26 @@ class Asset(rcAsset.Asset):
     def get_os_release(self):
         f = '/etc/release'
         if os.path.exists(f):
-            (ret, out) = call(['cat', f])
+            (ret, out, err) = call(['cat', f])
             if ret != 0:
                 return 'Unknown'
             return out.split('\n')[0].replace('OpenSolaris','').strip()
         return 'Unknown'
 
     def get_os_kernel(self):
-        (ret, out) = call(['uname', '-v'])
+        (ret, out, err) = call(['uname', '-v'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
     def get_os_arch(self):
-        (ret, out) = call(['uname', '-m'])
+        (ret, out, err) = call(['uname', '-m'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
     def get_cpu_freq(self):
-        (ret, out) = call(['psrinfo', '-pv'])
+        (ret, out, err) = call(['psrinfo', '-pv'])
         if ret != 0:
             return '0'
         for w in out.split():
@@ -88,19 +87,19 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def get_cpu_cores(self):
-        (ret, out) = call(['psrinfo'])
+        (ret, out, err) = call(['psrinfo'])
         if ret != 0:
             return '0'
         return str(len(out.split('\n'))-1)
 
     def get_cpu_dies(self):
-        (ret, out) = call(['psrinfo', '-p'])
+        (ret, out, err) = call(['psrinfo', '-p'])
         if ret != 0:
             return '0'
         return out.split('\n')[0]
 
     def get_cpu_model(self):
-        (ret, out) = call(['psrinfo', '-pv'])
+        (ret, out, err) = call(['psrinfo', '-pv'])
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -109,7 +108,7 @@ class Asset(rcAsset.Asset):
         return lines[2].strip()
 
     def get_serial(self):
-        (ret, out) = call(['hostid'])
+        (ret, out, err) = call(['hostid'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]

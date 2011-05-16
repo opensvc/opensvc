@@ -69,11 +69,11 @@ class Mount(Res.Resource):
             return
         if self.fsck_h[self.fsType].has_key('reportcmd'):
             cmd = self.fsck_h[self.fsType]['reportcmd']
-            (ret, out) = self.vcall(cmd, err_to_info=True)
+            (ret, out, err) = self.vcall(cmd, err_to_info=True)
             if ret not in self.fsck_h[self.fsType]['reportclean']:
                 return
         cmd = self.fsck_h[self.fsType]['cmd']
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if 'allowed_ret' in self.fsck_h[self.fsType]:
             allowed_ret = self.fsck_h[self.fsType]['allowed_ret']
         else:

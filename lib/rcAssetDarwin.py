@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 #
@@ -26,7 +25,7 @@ class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
         self.sphw = {}
-        (ret, out) = call(['system_profiler', 'SPHardwareDataType'])
+        (ret, out, err) = call(['system_profiler', 'SPHardwareDataType'])
         if ret == 0:
             for line in out.split('\n'):
                 l = line.split(':')
@@ -57,7 +56,7 @@ class Asset(rcAsset.Asset):
         return 'Apple'
 
     def get_os_release(self):
-        (ret, out) = call(['uname', '-r'])
+        (ret, out, err) = call(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split()[0]
@@ -67,7 +66,7 @@ class Asset(rcAsset.Asset):
 
     def get_os_arch(self):
         cmd = ['uname', '-m']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]

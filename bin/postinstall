@@ -94,26 +94,33 @@ def install_cron():
 
     new = False
     if os.path.exists(root_crontab):
-        with open(root_crontab, 'r') as f:
+        try:
+            f = open(root_crontab, 'r')
             new = f.readlines()
-            for i, line in enumerate(new):
-                for c in ce:
-                    if c['full'] is None:
-                        continue
-                    if c['marker'] in line:
-                        if c['cmd'] in line:
-			    sched = ' '.join(line.split()[:5])
-                            if c['reset_sched'] and sched != c['sched']:
-                                new[i] = ' '.join([c['sched'], c['user'], c['cmd']])+'\n'
-                            c['ok'] = True
+            f.close()
+        except:
+            f.close()
+            import traceback
+            traceback.print_exc()
+
+        for i, line in enumerate(new):
+            for c in ce:
+                if c['full'] is None:
+                    continue
+                if c['marker'] in line:
+                    if c['cmd'] in line:
+                        sched = ' '.join(line.split()[:5])
+                    if c['reset_sched'] and sched != c['sched']:
+                        new[i] = ' '.join([c['sched'], c['user'], c['cmd']])+'\n'
+                        c['ok'] = True
+                    else:
+                        # preserve scheduling
+                        if c['reset_sched']:
+                            sched = c['sched']
                         else:
-                            # preserve scheduling
-                            if c['reset_sched']:
-                                sched = c['sched']
-                            else:
-                                sched = ' '.join(line.split()[:5])
-                            new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
-                            c['ok'] = True
+                            sched = ' '.join(line.split()[:5])
+                        new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
+                        c['ok'] = True
 	    for c in ce:
                 if c['full'] is not None and not c['ok']:
                     new.append(c['full']+'\n')
@@ -133,8 +140,14 @@ def install_cron():
                 print 'delete line "%s" from %s'%(re,root_crontab)
                 del new[i]
 
-    with open(root_crontab, 'w') as f:
+    try:
+        f = open(root_crontab, 'w')
         f.write(''.join(new))
+        f.close()
+    except:
+        f.close()
+        import traceback
+        traceback.print_exc()
 
     """ Activate changes (actually only needed on HP-UX)
     """
@@ -144,10 +157,17 @@ def install_cron():
         buff = process.communicate()
 
     for loc in purge:
-        with open(loc, 'r') as f:
+        try:
+            f = open(loc, 'r')
             new = [ line for line in f.readlines() if not 'opensvc.daily' in line and not  'svcmon --updatedb' in line ]
-        with open(loc, 'w') as f:
+            f.close()
+            f = open(loc, 'w')
             f.write(''.join(new))
+            f.close()
+        except:
+            f.close()
+            import traceback
+            traceback.print_exc()
 
     """ Clean up old standard file locations
     """
@@ -189,9 +209,14 @@ def activate_hpux():
             if os.path.exists(l):
                 os.unlink(l)
             os.symlink(rc, l)
-    with open("/etc/rc.config.d/opensvc", "w") as f:
+    try:
+        f = open("/etc/rc.config.d/opensvc", "w")
         f.write("RUN_OPENSVC=1\n")
         f.close()
+    except:
+        f.close()
+        import traceback
+        traceback.print_exc()
     return True
 
 def activate_AIX():
@@ -362,8 +387,14 @@ def install_profile():
     buff = "export PATH=$PATH:/opt/opensvc/bin:/opt/opensvc/etc\n"
     if not os.path.exists(prof_d):
         return
-    with open(prof, 'w') as f:
+    try:
+        f = open(prof, 'w')
         f.write(buff)
+        f.close()
+    except:
+        f.close()
+        import traceback
+        traceback.print_exc()
 
 def install_user_linux():
     cmd = ['useradd', '-m', 'opensvc', '-s', '/bin/bash']
@@ -401,7 +432,7 @@ def install_link(source, target):
         return False
     if os.path.realpath(source) == os.path.realpath(target):
         return True
-    if os.path.exists(target):
+    if os.path.islink(target) or os.path.exists(target):
         os.unlink(target)
     os.symlink(source,target)
 

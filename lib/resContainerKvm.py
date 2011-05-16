@@ -48,7 +48,7 @@ class Kvm(resContainer.Container):
 
     def check_capabilities(self):
         cmd = ['virsh', 'capabilities']
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             self.status_log("can not fetch capabilities")
             return False
@@ -65,29 +65,29 @@ class Kvm(resContainer.Container):
             self.log.error("%s not found"%self.cf)
             raise ex.excError
         cmd = ['virsh', 'define', self.cf]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         cmd = ['virsh', 'start', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_stop(self):
         cmd = ['virsh', 'shutdown', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def is_up(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
         if "running" in out.split():
@@ -96,7 +96,7 @@ class Kvm(resContainer.Container):
 
     def get_container_info(self):
         cmd = ['virsh', 'dominfo', self.name]
-        (ret, out) = self.call(cmd, errlog=False, cache=True)
+        (ret, out, err) = self.call(cmd, errlog=False, cache=True)
         self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
             return self.info
@@ -145,3 +145,9 @@ class Kvm(resContainer.Container):
         SubElement(e, "source", {'file': flag_disk_path})
         SubElement(e, "target", {'bus': 'virtio', 'dev': 'vdosvc'})
         tree.write(self.cf)
+
+    def provision(self):
+        m = __import__("provKvm")
+        prov = m.ProvisioningKvm(self)
+        prov.provisioner()
+

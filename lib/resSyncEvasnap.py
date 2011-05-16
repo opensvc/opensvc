@@ -40,7 +40,7 @@ class syncEvasnap(resSync.Sync):
         for pair in self.pairs:
             info = self.lun_info(pair['dst'])
             if info is None:
-                self.info.debug("snap %s missing"%pair['dst'])
+                self.log.debug("snap %s missing"%pair['dst'])
                 return True
             _ts = info['creationdatetime']
             if ts is None or _ts < ts:
@@ -81,7 +81,13 @@ class syncEvasnap(resSync.Sync):
         cmd = []
         for pair in self.pairs:
             info = self.lun_info(pair['src'])
-            cmd += ['add snapshot %s vdisk="%s" allocation_policy=demand world_wide_lun_name=%s'%(snapname(info), info['objectname'], self.convert_wwid(pair['dst']))]
+            if 'allocation_policy' in pair:
+                policy = str(pair['allocation_policy']).lower()
+            else:
+                policy = 'demand'
+            if policy not in ['demand', 'fully']:
+                policy = 'demand'
+            cmd += ['add snapshot %s vdisk="%s" allocation_policy=%s world_wide_lun_name=%s'%(snapname(info), info['objectname'], policy, self.convert_wwid(pair['dst']))]
         self.sssu(cmd, verbose=True)
 
         cmd = []
@@ -103,16 +109,16 @@ class syncEvasnap(resSync.Sync):
             _cmd = copy(cmd)
             _cmd[1] = re.sub(r'password=.*', 'password=xxxxx', _cmd[1])
             self.log.info(subprocess.list2cmdline(_cmd))
-            ret, out = self.call(cmd)
+            ret, out, err = self.call(cmd)
             if 'Error:' in out > 0:
                 self.log.error(out)
             else:
                 self.log.info(out)
         else:
-            ret, out = self.call(cmd)
+            ret, out, err = self.call(cmd)
         if check and "Error" in out:
             raise ex.excError("sssu command execution error")
-        return ret, out
+        return ret, out, err
 
     def lun_info(self, wwid):
         if wwid in self._lun_info:
@@ -129,7 +135,7 @@ class syncEvasnap(resSync.Sync):
             'mask': {}
         }
         try:
-            ret, out = self.sssu(["find vdisk lunwwid="+wwid+" xml"])
+            ret, out, err = self.sssu(["find vdisk lunwwid="+wwid+" xml"])
         except:
             return None
         l = out.split('\n')
@@ -243,9 +249,9 @@ class syncEvasnap(resSync.Sync):
         self.username = self.config.get(self.eva_name, "username")
         self.password = self.config.get(self.eva_name, "password")
         for pair in self.pairs:
-            if len(pair) != 3:
-                raise ex.excError("syntax error in pair %s"%str(pair))
-        ret, out = self.sssu(check=False)
+            if 'src' not in pair or 'dst' not in pair or 'mask' not in pair:
+                raise ex.excError("missing parameter in pair %s"%str(pair))
+        ret, out, err = self.sssu(check=False)
         if "Error opening https connection" in out:
             raise ex.excError("error login to %s"%self.manager)
         elif "Error" in out:

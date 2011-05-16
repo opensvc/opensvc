@@ -50,7 +50,7 @@ class Snap(snap.Snap):
         else:
             snap_size = int(lv_size//10)
 
-        (ret, buff) = self.vcall(['lvcreate', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+        (ret, buff, err) = self.vcall(['lvcreate', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = os.path.join(rcEnv.pathtmp,
@@ -59,7 +59,7 @@ class Snap(snap.Snap):
             os.makedirs(snap_mnt, 0755)
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
         self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
-        (ret, buff) = self.vcall(['mount', '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
+        (ret, buff, err) = self.vcall(['mount', '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
         self.snaps[m.mountPoint] = dict(lv_name=lv_name,
@@ -73,10 +73,10 @@ class Snap(snap.Snap):
             self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
             raise ex.excError
         cmd = ['fuser', '-kmv', self.snaps[s]['snap_mnt']]
-        (ret, out) = self.vcall(cmd, err_to_info=True)
+        (ret, out, err) = self.vcall(cmd, err_to_info=True)
         cmd = ['umount', self.snaps[s]['snap_mnt']]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
         del(self.snaps[s])
 

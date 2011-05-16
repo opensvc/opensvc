@@ -32,7 +32,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         size = 'unknown'
 
         cmd = ['lscfg', '-vpl', lname]
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
 
         for f in out.split('\n'):
             if "Manufacturer" in f:
@@ -47,7 +47,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def odmget(self, lname, attr):
         cmd = ['odmget', '-q', 'name='+lname+' AND attribute='+attr, 'CuAt']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         for f in out.split('\n'):
             if "value" not in f:
                 continue

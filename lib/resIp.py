@@ -204,7 +204,7 @@ class Ip(Res.Resource):
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                     self.addr,\
                                                     self.log)
-        (ret, out) = self.startip_cmd()
+        (ret, out, err) = self.startip_cmd()
         self.unlock()
         if ret != 0:
             self.log.error("failed")
@@ -225,7 +225,7 @@ class Ip(Res.Resource):
         self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                     self.addr,\
                                                     self.log)
-        (ret, out) = self.stopip_cmd()
+        (ret, out, err) = self.stopip_cmd()
         if ret != 0:
             self.log.error("failed")
             raise ex.excError

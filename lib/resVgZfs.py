@@ -54,7 +54,7 @@ class Pool(resDg.Dg):
         if not self.has_it():
             return False
         cmd = [ 'zpool', 'list', '-H', '-o', 'health', self.name ]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if out.strip() == "ONLINE" :
             return True
         return False
@@ -64,7 +64,7 @@ class Pool(resDg.Dg):
             self.log.info("%s is already up" % self.name)
             return 0
         cmd = [ 'zpool', 'import', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         return ret
 
     def do_stop(self):
@@ -72,7 +72,7 @@ class Pool(resDg.Dg):
             self.log.info("%s is already down" % self.name)
             return 0
         cmd = [ 'zpool', 'export', self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         return ret
 
     def disklist(self):
@@ -88,11 +88,11 @@ class Pool(resDg.Dg):
 
         disks = set([])
         cmd = [ 'zpool', 'status', self.name ]
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0 :
             matchedPool=False
             cmd = [ 'zpool', 'import' ]
-            (ret, out) = self.call(cmd)
+            (ret, out, err) = self.call(cmd)
             if ret != 0 :
                 self.disks = disks
                 return disks

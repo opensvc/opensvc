@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 #
@@ -25,7 +24,7 @@ import rcAssetLinux
 class Asset(rcAssetLinux.Asset):
     def get_mem_bytes(self):
         cmd = ['sysctl', 'hw.realmem']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -45,7 +44,7 @@ class Asset(rcAssetLinux.Asset):
 
     def get_os_arch(self):
         cmd = ['sysctl', 'hw.machine_arch']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -58,7 +57,7 @@ class Asset(rcAssetLinux.Asset):
 
     def get_cpu_model(self):
         cmd = ['sysctl', 'hw.model']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -71,7 +70,7 @@ class Asset(rcAssetLinux.Asset):
 
     def get_cpu_cores(self):
         cmd = ['sysctl', 'hw.ncpu']
-        (ret, out) = call(cmd)
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')

@@ -30,7 +30,7 @@ class Snap(snap.Snap):
         return False
 
     def lv_info(self, device):
-        (ret, buff) = self.call(['lvdisplay', device])
+        (ret, buff, err) = self.call(['lvdisplay', device])
         if ret != 0:
             return (None, None, None)
         vg_name = None
@@ -56,14 +56,14 @@ class Snap(snap.Snap):
         if self.lv_exists(os.path.join(vg_name, snap_name)):
             self.log.error("snap of %s already exists"%(lv_name))
             raise ex.syncSnapExists
-        (ret, buff) = self.vcall(['lvcreate', '-L', str(lv_size//10)+'M', '-n', snap_name, vg_name])
+        (ret, buff, err) = self.vcall(['lvcreate', '-L', str(lv_size//10)+'M', '-n', snap_name, vg_name])
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = '/service/tmp/osvc_sync_'+os.path.basename(vg_name)+'_'+os.path.basename(lv_name)
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0755)
         snap_dev = os.path.join(vg_name, snap_name)
-        (ret, buff) = self.vcall(['mount', '-F', 'vxfs', '-o', 'ro,snapof='+m.device, snap_dev, snap_mnt])
+        (ret, buff, err) = self.vcall(['mount', '-F', 'vxfs', '-o', 'ro,snapof='+m.device, snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
         self.snaps[m.mountPoint] = dict(lv_name=lv_name,
@@ -83,7 +83,7 @@ class Snap(snap.Snap):
         ret = qcall(cmd)
 
         cmd = ['umount', self.snaps[s]['snap_mnt']]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
-        (ret, buff) = self.vcall(cmd)
+        (ret, buff, err) = self.vcall(cmd)
 

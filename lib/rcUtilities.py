@@ -169,12 +169,16 @@ def call(argv=['/bin/false'],
         if outlog:
             if ret == 0:
                 log.info('output:\n' + buff[0])
+            elif err_to_info:
+                log.info('command failed with stdout:\n' + buff[0])
+            elif err_to_warn:
+                log.warning('command failed with stdout:\n' + buff[0])
             else:
                 log.error('command failed with stdout:\n' + buff[0])
         elif outdebug:
             log.debug('output:\n' + buff[0])
 
-    return (ret, buff[0])
+    return (ret, buff[0], buff[1])
 
 def qcall(argv=['/bin/false']) :
     """qcall Launch Popen it args disgarding output and stderr"""
@@ -211,6 +215,6 @@ def protected_mount(path):
 
 if __name__ == "__main__":
     print "call(('id','-a'))"
-    (r,output)=call(("/usr/bin/id","-a"))
+    (r,output,err)=call(("/usr/bin/id","-a"))
     print "status: ",r,"output:",output
 

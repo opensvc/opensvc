@@ -5,7 +5,12 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
 prepare_chroot || exit 1
 
-SPEC=$OSVC/tmp/SPECS/opensvc.spec
+SPEC_D=$OSVC/tmp/SPECS
+SPEC=$SPEC_D/opensvc.spec
+
+[ ! -d $SPEC_D ] && {
+	mkdir -p $SPEC_D || exit 1
+}
 
 cat - <<-EOF >$SPEC
 Summary: OpenSVC node tools
@@ -15,7 +20,7 @@ Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
 BuildRoot: $CHROOT
-Requires: /usr/bin/python2.6
+Provides: /opt/opensvc/bin/python
 
 %description
 These are the tools to drive OpenSVC services

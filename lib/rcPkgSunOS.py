@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
 #
@@ -39,7 +38,7 @@ def listpkg():
     if which('pkginfo') is None:
         return []
     cmd = ['pkginfo', '-l']
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     for line in out.split('\n'):
         l = line.split(':')
@@ -62,7 +61,7 @@ def listpatch():
     if which('showrev') is None:
         return []
     cmd = ['showrev', '-p']
-    (ret, out) = call(cmd, errlog=False, cache=True)
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     nodename = rcEnv.nodename
     for line in out.split('\n'):

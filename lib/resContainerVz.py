@@ -66,7 +66,7 @@ class Vz(resContainer.Container):
 
     def vzctl(self, action, options=[]):
         cmd = ['vzctl', action, self.name] + options
-        ret, out = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         return out
@@ -91,7 +91,7 @@ class Vz(resContainer.Container):
         """ CTID 101 exist mounted running
         """
         cmd = ['vzctl', 'status', self.name]
-        ret, out = self.call(cmd)
+        ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError
         l = out.split()

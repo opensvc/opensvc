@@ -44,12 +44,12 @@ class ProvisioningVg(Provisioning):
 
         for pv in self.pvs:
             cmd = ['pvcreate', '-f', pv]
-            ret, out = self.r.vcall(cmd)
+            ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
 
         cmd = ['vgcreate', self.r.name] + self.pvs
-        ret, out = self.r.vcall(cmd)
+        ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

@@ -105,7 +105,7 @@ def containerize(res):
         if not os.path.exists(cgroup_mntpt):
             res.log.info('mkdir %s'%cgroup_mntpt)
             os.makedirs(cgroup_mntpt)
-        (ret, out) = res.vcall(['mount', '-t', 'cgroup', 'none', cgroup_mntpt])
+        (ret, out, err) = res.vcall(['mount', '-t', 'cgroup', 'none', cgroup_mntpt])
         if ret != 0:
             raise ex.excError
 

@@ -55,7 +55,7 @@ class Mounts(rcMounts.Mounts):
 
     def __init__(self):
         self.mounts = []
-        (ret, out) = call(['mount'])
+        (ret, out, err) = call(['mount'])
         lines = out.split('\n')
         if len(lines) < 3:
             return

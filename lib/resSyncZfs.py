@@ -87,7 +87,7 @@ class SyncZfs(resSync.Sync):
         cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'list', '-t', 'snapshot', snapname]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node] + cmd
-        (ret, out) = self.call(cmd, errlog=False)
+        (ret, out, err) = self.call(cmd, errlog=False)
         if ret == 0:
             return True
         else:
@@ -101,7 +101,7 @@ class SyncZfs(resSync.Sync):
             cmd = ['zfs', 'snapshot' , '-r' , snap ]
         else:
             cmd = ['zfs', 'snapshot' , snap ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -195,7 +195,7 @@ class SyncZfs(resSync.Sync):
             cmd = ['zfs', 'destroy', snap]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -210,7 +210,7 @@ class SyncZfs(resSync.Sync):
 
         if node is not None:
             cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -313,7 +313,7 @@ class SyncZfs(resSync.Sync):
         self.set_statefile()
         cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
             raise ex.excError
@@ -327,7 +327,7 @@ class SyncZfs(resSync.Sync):
 
     def get_snap_uuid(self, snap):
         cmd = ['zfs', 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         self.snap_uuid = out.strip()
@@ -345,7 +345,7 @@ class SyncZfs(resSync.Sync):
 
     def _push_statefile(self, node):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 

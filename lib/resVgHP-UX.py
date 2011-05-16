@@ -63,14 +63,14 @@ class Vg(resDg.Dg):
 
     def dsf_name(self, dev):
         cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(dev), '-a', 'device_file', '-p']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         return out.split()[0]
 
     def write_mksf(self):
         cmd = ['ioscan', '-F', '-m', 'dsf']
-        (ret, buff) = self.call(cmd)
+        (ret, buff, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         if len(buff) == 0:
@@ -86,7 +86,7 @@ class Vg(resDg.Dg):
                 a = line.split(':')[0]
                 if '/dev/pt/pt' not in a and '/dev/rdisk/disk' not in a and self.dsf_name(a) in dsf_names:
                     cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(a), '-a', 'wwid', '-p']
-                    (ret, out) = self.call(cmd)
+                    (ret, out, err) = self.call(cmd)
                     if ret != 0:
                         raise ex.excError
                     f.write(":".join([a, out.split()[0].replace('0x', '')])+'\n')
@@ -97,7 +97,7 @@ class Vg(resDg.Dg):
 
         instance = {}
         cmd = ['scsimgr', 'get_attr', 'all_lun', '-a', 'wwid', '-a', 'instance', '-p']
-        (ret, buff) = self.call(cmd)
+        (ret, buff, err) = self.call(cmd)
         for line in buff.split('\n'):
             l = line.split(':')
             if len(l) != 2:
@@ -117,7 +117,7 @@ class Vg(resDg.Dg):
                     err += 1
                     continue
                 cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
-                (ret, buff) = self.vcall(cmd)
+                (ret, buff, err) = self.vcall(cmd)
                 if ret != 0:
                     err += 1
                     continue
@@ -197,7 +197,7 @@ class Vg(resDg.Dg):
             cmd = [ 'vgexport', '-p', '-m', self.mapfile_name(), '-s', self.name ]
         else:
             cmd = [ 'vgexport', '-m', self.mapfile_name(), '-s', self.name ]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -206,7 +206,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already available" % self.name)
             return
         cmd = ['vgchange', '-a', 'y', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -215,7 +215,7 @@ class Vg(resDg.Dg):
             self.log.info("%s is already unavailable" % self.name)
             return
         cmd = ['vgchange', '-a', 'n', self.name]
-        (ret, out) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -237,7 +237,7 @@ class Vg(resDg.Dg):
             self.do_import()
             need_export = True
         cmd = ['strings', '/etc/lvmtab']
-        (ret, out) = self.call(cmd)
+        (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
 

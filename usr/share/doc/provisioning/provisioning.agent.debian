@@ -1,0 +1,104 @@
+#!/usr/bin/python
+
+import os
+import sys
+from subprocess import Popen
+
+class provAgent(object):
+    dev = "/dev/fd0"
+    data = {}
+
+    def __init__(self):
+        self.get_cfdisk()
+
+    def get_cfdisk(self):
+        if not os.path.exists(self.dev):
+            print >>sys.stderr, 'no cfdisk'
+            sys.exit(1)
+
+        with open(self.dev) as f:
+            buff = f.read(1024)
+
+        if not buff.startswith('todo'):
+            print >>sys.stderr, 'nothing to do'
+            sys.exit(1)
+
+        for line in buff.split('\n'):
+            if len(line) == 0:
+                continue
+            l = line.split(';')
+            if len(l) < 2:
+                print >>sys.stderr, 'malformed line:', line
+                continue
+            self.data[l[0]] = l[1:]
+
+    def set_done(self):
+        with open(self.dev) as f:
+            buff = f.read(1024)
+        buff = "done"+buff[4:]
+        with open(self.dev, "w") as f:
+            f.write(buff)
+        
+    def set_vm(self):
+        if 'vm' not in self.data:
+            print >>sys.stderr, 'no vm in cfdisk'
+            return
+        h = self.data['vm'][0]
+        with open('/etc/hostname', 'w') as f:
+            f.write(h+'\n')
+
+    def set_ns(self):
+        if 'ns' not in self.data:
+            print >>sys.stderr, 'no ns in cfdisk'
+            return
+        h = self.data['ns'][0]
+        with open('/etc/resolv.conf', 'w') as f:
+            f.write('nameserver %s\n'%h)
+
+    def set_pub(self):
+        if 'hv_root_pubkey' not in self.data:
+            print >>sys.stderr, 'no hv_root_pubkey in cfdisk'
+            return
+        try:
+            os.makedirs('/root/.ssh')
+        except:
+            pass
+        h = self.data['hv_root_pubkey'][0]
+        with open('/root/.ssh/authorized_keys', 'a') as f:
+            f.write('%s\n'%h)
+
+    def set_ip(self, l):
+        if len(l) != 3:
+            return
+        dev, addr, mask = l
+        buff = """
+auto %(dev)s
+iface %(dev)s inet static
+    address %(addr)s
+    netmask %(mask)s
+    gateway %(gw)s
+"""%dict(dev=dev, addr=addr, mask=mask, gw=self.data['gw'][0])
+
+        with open('/etc/network/interfaces', 'w')as f:
+            f.write(buff)
+
+    def set_ips(self):
+        for i, l in self.data.items():
+            if not i.startswith('ip#'):
+                continue
+            self.set_ip(l)
+
+    def reboot(self):
+        cmd = ['reboot']
+        p = Popen(cmd)
+        p.communicate()
+
+    def setup(self):
+        self.set_vm()
+        self.set_ns()
+        self.set_pub()
+        self.set_ips()
+        self.set_done()
+        self.reboot()
+
+provAgent().setup()
