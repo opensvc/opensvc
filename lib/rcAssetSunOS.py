@@ -1,4 +1,3 @@
-#!/usr/bin/python2.6
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>
 #
