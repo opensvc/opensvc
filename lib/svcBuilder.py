@@ -470,6 +470,8 @@ def add_vgs(svc, conf):
         kwargs['optional'] = get_optional(conf, s)
 
         try:
+            if len(vgtype) > 2:
+                vgtype = vgtype[0].upper() + vgtype[1:].lower()
             vg = __import__('resVg'+vgtype)
         except ImportError:
             svc.log.error("vg type %s is not implemented"%vgtype)
