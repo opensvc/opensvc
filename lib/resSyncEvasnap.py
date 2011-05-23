@@ -282,6 +282,6 @@ class syncEvasnap(resSync.Sync):
         self._lun_info = {}
 
     def __str__(self):
-        return "%s eva_name=%s evasnap_masking=%s pairs=%s" % (Res.Resource.__str__(self),\
-                self.eva_name, self.evasnap_masking, str(self.pairs))
+        return "%s eva_name=%s pairs=%s" % (resSync.Sync.__str__(self),\
+                self.eva_name, str(self.pairs))
 
