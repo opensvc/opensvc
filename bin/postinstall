@@ -116,9 +116,9 @@ def install_cron():
                             sched = ' '.join(line.split()[:5])
                         new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
                         c['ok'] = True
-	    for c in ce:
-                if c['full'] is not None and not c['ok']:
-                    new.append(c['full']+'\n')
+        for c in ce:
+            if c['full'] is not None and not c['ok']:
+                new.append(c['full']+'\n')
     else:
         new = []
         for c in ce:
