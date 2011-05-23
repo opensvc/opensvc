@@ -100,6 +100,7 @@ class syncEvasnap(resSync.Sync):
         self.sssu(cmd, verbose=True)
 
     def sssu(self, cmd=[], verbose=False, check=True):
+        os.chdir(rcEnv.pathtmp)
         cmd = [self.sssubin,
                "select manager %s username=%s password=%s"%(self.manager, self.username, self.password),
                "select system %s"%self.eva_name] + cmd
