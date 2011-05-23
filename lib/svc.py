@@ -863,7 +863,10 @@ class Svc(Resource, Freezer):
         for rt in rtypes:
             for rs in self.get_res_sets(rt):
                 for r in rs.resources:
-                    ret |= r.can_sync(target)
+                    try:
+                        ret |= r.can_sync(target)
+                    except ex.excError:
+                        return False
                     if ret: return True
         return False
 
