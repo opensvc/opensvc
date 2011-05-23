@@ -37,15 +37,15 @@ class Ip(Res.Ip):
         else:
             cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', self.mask, 'up']
 
-        ret, out, err = self.vcall(cmd)
+        ret, out = self.vcall(cmd)
         if ret != 0:
-            return ret, out, err
+            return ret, out
 
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
         for i in range(5, 0, -1):
             if check_ping(self.addr, timeout=1, count=1):
-                return ret, out, err
+                return ret, out
         self.log.error("timed out waiting for ip activation")
         raise ex.excError
 
