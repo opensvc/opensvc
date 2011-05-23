@@ -28,7 +28,6 @@ from rcNode import discover_node
 from rcUtilities import *
 import rcLogger
 import resSyncRsync
-import resSyncNetapp
 import rcExceptions as ex
 
 check_privs()
@@ -665,6 +664,7 @@ def add_mandatory_syncs(svc, conf):
 def add_syncs(svc, conf):
     add_syncs_rsync(svc, conf)
     add_syncs_netapp(svc, conf)
+    add_syncs_nexenta(svc, conf)
     add_syncs_symclone(svc, conf)
     add_syncs_evasnap(svc, conf)
     add_syncs_dds(svc, conf)
@@ -852,6 +852,56 @@ def add_syncs_symclone(svc, conf):
         add_triggers(r, conf, s)
         svc += r
 
+def add_syncs_nexenta(svc, conf):
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        kwargs = {}
+
+        if not conf.has_option(s, 'type'):
+            continue
+        elif conf.get(s, 'type') != 'nexenta':
+            continue
+
+        try:
+            kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have path set" % s)
+            continue
+
+        filers = {}
+        if 'filer' in conf.options(s):
+            for n in svc.nodes | svc.drpnodes:
+                filers[n] = conf.get(s, 'filer')
+        if 'filer@nodes' in conf.options(s):
+            for n in svc.nodes:
+                filers[n] = conf.get(s, 'filer@nodes')
+        if 'filer@drpnodes' in conf.options(s):
+            for n in svc.nodes:
+                filers[n] = conf.get(s, 'filer@drpnodes')
+        for o in conf.options(s):
+            if 'filer@' not in o:
+                continue
+            (filer, node) = o.split('@')
+            if node in ('nodes', 'drpnodes'):
+                continue
+            filers[node] = conf.get(s, o)
+        if rcEnv.nodename not in filers:
+            svc.log.error("config file section %s must have filer@%s set" %(s, rcEnv.nodename))
+
+        kwargs['filers'] = filers
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s)
+        kwargs.update(get_sync_args(conf, s, svc))
+
+        import resSyncNexenta
+        r = resSyncNexenta.syncNexenta(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
 def add_syncs_netapp(svc, conf):
     for s in conf.sections():
         if re.match('sync#[0-9]', s, re.I) is None:
@@ -903,6 +953,7 @@ def add_syncs_netapp(svc, conf):
         kwargs['optional'] = get_optional(conf, s)
         kwargs.update(get_sync_args(conf, s, svc))
 
+        import resSyncNetapp
         r = resSyncNetapp.syncNetapp(**kwargs)
         add_triggers(r, conf, s)
         svc += r
