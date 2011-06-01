@@ -177,7 +177,7 @@ class Resource(object):
         return self.rstatus
 
     def status_log(self, text):
-        self.status_log_str += "# " + text
+        self.status_log_str += "# " + text + "\n"
 
     def status_quad(self):
         r = self.status(verbose=True)
