@@ -100,6 +100,7 @@ class syncEvasnap(resSync.Sync):
         self.sssu(cmd, verbose=True)
 
     def sssu(self, cmd=[], verbose=False, check=True):
+        os.chdir(rcEnv.pathtmp)
         cmd = [self.sssubin,
                "select manager %s username=%s password=%s"%(self.manager, self.username, self.password),
                "select system %s"%self.eva_name] + cmd
@@ -129,7 +130,7 @@ class syncEvasnap(resSync.Sync):
             wwid = self.convert_wwid(wwid)
 
         info = {
-            'parent_wwid': 'unknown',
+            'oxuid': 'unknown',
             'lunid': -1,
             'creationdatetime': datetime.datetime(year=datetime.MINYEAR, month=1, day=1),
             'mask': {}
@@ -150,16 +151,16 @@ class syncEvasnap(resSync.Sync):
             lunid = p.find("lunnumber").text
             info['mask'][host] = int(lunid)
         
-        e_parent_wwid = e.find("sharinginformation/parentvdiskhexuid")
-        if e_parent_wwid is not None:
-            info['parent_wwid'] = e_parent_wwid.text.replace('-','')
+        e_oxuid = e.find("objectparenthexuid")
+        if e_oxuid is not None:
+            info['oxuid'] = e_oxuid.text.replace('-','')
 
         e_objectname = e.find("objectname")
         if e_objectname is not None:
             info['objectname'] = e_objectname.text
 
         e_creationdatetime = e.find("creationdatetime")
-        if e_parent_wwid is not None:
+        if e_oxuid is not None:
             try:
                 creationdatetime = datetime.datetime.strptime(e_creationdatetime.text, "%d-%b-%Y %H:%M:%S")
                 info['creationdatetime'] = creationdatetime
@@ -181,28 +182,33 @@ class syncEvasnap(resSync.Sync):
             self.status_log(str(e))
             return rcStatus.WARN
         for pair in self.pairs:
-            info = self.lun_info(pair['dst'])
-            if info is None:
+            info_s = self.lun_info(pair['src'])
+            info_d = self.lun_info(pair['dst'])
+            if info_s is None:
+                errlog.append("snapshot source %s does not exists"%pair['src'])
+                err |= True
+                continue
+            if info_d is None:
                 errlog.append("snapshot %s does not exists"%pair['dst'])
                 err |= True
                 continue
-            if info['parent_wwid'].lower() != pair['src'].lower():
-                errlog.append("snapshot %s exists but incorrect parent wwid"%pair['dst'])
+            if info_s['oxuid'].lower() != info_d['oxuid'].lower():
+                errlog.append("snapshot %s exists but incorrect parent object uid: %s"%(pair['dst'], info_d['oxuid'].lower()))
                 err |= True
-            if info['creationdatetime'] < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            if info_d['creationdatetime'] < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
                 errlog.append("snapshot %s too old"%pair['dst'])
                 err |= True
             for mask in pair['mask']:
                 hostpath = '\\'.join(mask.split('\\')[:-1])
                 hostname = mask.split('\\')[-2]
                 dstlunid = mask.split('\\')[-1]
-                if hostpath not in info['mask']:
+                if hostpath not in info_d['mask']:
                     errlog.append("snapshot %s exists but not presented to host %s"%(pair['dst'], hostname))
                     err |= True
                     continue
                 try:
                     dstlunid = int(dstlunid)
-                    if info['mask'][hostpath] != dstlunid:
+                    if info_d['mask'][hostpath] != dstlunid:
                         errlog.append("snapshot %s exists but incorrect lunid for host %s"%(pair['dst'], hostname))
                         err |= True
                 except ValueError:
@@ -277,6 +283,6 @@ class syncEvasnap(resSync.Sync):
         self._lun_info = {}
 
     def __str__(self):
-        return "%s eva_name=%s evasnap_masking=%s pairs=%s" % (Res.Resource.__str__(self),\
-                self.eva_name, self.evasnap_masking, str(self.pairs))
+        return "%s eva_name=%s pairs=%s" % (resSync.Sync.__str__(self),\
+                self.eva_name, str(self.pairs))
 

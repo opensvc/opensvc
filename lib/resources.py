@@ -61,6 +61,23 @@ class Resource(object):
         """
         return 0
 
+    def save_exc(self):
+        import traceback
+        try:
+            import tempfile
+            import datetime
+            now = str(datetime.datetime.now()).replace(' ', '-')
+            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
+                                            prefix='exc-'+now+'-')
+            f.close()
+            f = open(f.name, 'w')
+            traceback.print_exc(file=f)
+            self.log.error("unexpected error. stack saved in %s"%f.name)
+            f.close()
+        except:
+            self.log.error("unexpected error")
+            traceback.print_exc()
+
     def setup_environ(self):
         """ setup environement variables for use by triggers and startup
             scripts. This method needs defining in each class with their
@@ -160,7 +177,7 @@ class Resource(object):
         return self.rstatus
 
     def status_log(self, text):
-        self.status_log_str += "# " + text
+        self.status_log_str += "# " + text + "\n"
 
     def status_quad(self):
         r = self.status(verbose=True)

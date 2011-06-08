@@ -369,6 +369,9 @@ class syncDds(resSync.Sync):
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
             delay = datetime.timedelta(minutes=self.sync_max_delay)
+        except ex.excError:
+            self.status_log("failed to get status")
+            return rcStatus.WARN
         except IOError:
             self.status_log("dds state file not found")
             return rcStatus.WARN

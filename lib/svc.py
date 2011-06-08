@@ -101,6 +101,7 @@ class Svc(Resource, Freezer):
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
+                             "sync.nexenta",
                              "app",
                              "hb.openha",
                              "hb.linuxha"]
@@ -656,6 +657,7 @@ class Svc(Resource, Freezer):
 
     def startdisk(self):
         self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.scsireserv", "start")
@@ -812,12 +814,15 @@ class Svc(Resource, Freezer):
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
+        self.sub_set_action("sync.nexenta", "syncswap")
 
     def syncresume(self):
         self.sub_set_action("sync.netapp", "syncresume")
+        self.sub_set_action("sync.nexenta", "syncresume")
 
     def syncquiesce(self):
         self.sub_set_action("sync.netapp", "syncquiesce")
+        self.sub_set_action("sync.nexenta", "syncquiesce")
 
     def resync(self):
         self.stop()
@@ -826,16 +831,19 @@ class Svc(Resource, Freezer):
 
     def syncresync(self):
         self.sub_set_action("sync.netapp", "syncresync")
+        self.sub_set_action("sync.nexenta", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
         self.sub_set_action("sync.evasnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
 
     def syncbreak(self):
         self.sub_set_action("sync.netapp", "syncbreak")
+        self.sub_set_action("sync.nexenta", "syncbreak")
         self.sub_set_action("sync.symclone", "syncbreak")
 
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
+        self.sub_set_action("sync.nexenta", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
         self.sub_set_action("sync.zfs", "syncnodes")
 
@@ -851,12 +859,15 @@ class Svc(Resource, Freezer):
 
     def can_sync(self, target=None):
         ret = False
-        rtypes = ["sync.netapp", "sync.dds", "sync.zfs",
+        rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
                   "sync.rsync", "sync.zfs"]
         for rt in rtypes:
             for rs in self.get_res_sets(rt):
                 for r in rs.resources:
-                    ret |= r.can_sync(target)
+                    try:
+                        ret |= r.can_sync(target)
+                    except ex.excError:
+                        return False
                     if ret: return True
         return False
 
@@ -966,23 +977,6 @@ class Svc(Resource, Freezer):
 
         self.svcunlock()
         return err
-
-    def save_exc(self):
-        import traceback
-        try:
-            import tempfile
-            import datetime
-            now = str(datetime.datetime.now()).replace(' ', '-')
-            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
-                                            prefix='exc-'+now+'-')
-            f.close()
-            f = open(f.name, 'w')
-            traceback.print_exc(file=f)
-            self.log.error("unexpected error. stack saved in %s"%f.name)
-            f.close()
-        except:
-            self.log.error("unexpected error")
-            traceback.print_exc()
 
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
