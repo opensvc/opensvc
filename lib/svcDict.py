@@ -202,6 +202,18 @@ class KeywordSnapof(Keyword):
                   provisioning=True
                 )
 
+class KeywordContainerOrigin(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_origin",
+                  depends=[('mode', ["zone"])],
+                  text="The origin container having the reference container disk files.",
+                  required=True,
+                  provisioning=True
+                )
+
 class KeywordRootfs(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1518,6 +1530,7 @@ class KeyDict(KeywordStore):
         self += KeywordVirtinst()
         self += KeywordSnap()
         self += KeywordSnapof()
+        self += KeywordContainerOrigin()
 
 if __name__ == "__main__":
     store = KeyDict()

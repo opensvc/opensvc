@@ -23,12 +23,18 @@ import rcStatus
 import resources as Res
 import time
 import os
-from rcUtilities import justcall, vcall
+from rcUtilities import justcall, vcall, qcall
 from stat import *
 import resContainer
+import rcExceptions as ex
+
+ZONECFG="/usr/sbin/zonecfg"
+ZLOGIN="/usr/sbin/zlogin"
+PGREP="/usr/bin/pgrep"
+PWAIT="/usr/bin/pwait"
+INIT="/sbin/init"
 
 class Zone(resContainer.Container):
-
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
         """define Zone object attribute :
                 name
@@ -41,11 +47,23 @@ class Zone(resContainer.Container):
         self.name = name
         self.label = name
         self.state = None
-        self.zonepath = os.path.realpath(os.path.join( 'zones', self.name))
+        self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
         self.zone_refresh()
 
+    def zonecfg(self, zonecfg_args=None):
+        cmd = [ZONECFG, '-z', self.name, zonecfg_args ]
+        t = datetime.now()
+        (ret, out, err) = self.vcall(cmd,err_to_info=True)
+        len = datetime.now() - t
+        self.log.info('%s "%s" done in %s - ret %i - logs in %s'
+                    % (" ".join(cmd[0:3]),
+                       "".join([c for c in zonecfg_args if c != ";"]),
+                       len, ret, out))
+        self.zone_refresh()
+        return ret
+
     def zoneadm(self, action, option=None):
-        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach' ] :
+        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach', 'install', 'clone' ] :
             cmd = ['zoneadm', '-z', self.name, action ]
         else:
             self.log.error("unsupported zone action: %s" % action)
@@ -58,6 +76,7 @@ class Zone(resContainer.Container):
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s'
                     % (action, len, ret, out))
+        self.zone_refresh()
         return ret
 
     def set_zonepath_perms(self):
@@ -107,6 +126,7 @@ class Zone(resContainer.Container):
             f.close()
 
     def boot(self):
+        "return 0 if zone is running else return self.zoneadm('boot')"
         self.zone_refresh()
         if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
@@ -138,6 +158,9 @@ class Zone(resContainer.Container):
             self.log.info("timeout out waiting for %s shutdown", self.name)
         return self.zoneadm('halt')
 
+    def container_start(self):
+        return self.boot()
+
     def _status(self, verbose=False):
         self.zone_refresh()
         if self.state == 'running' :
@@ -168,8 +191,59 @@ class Zone(resContainer.Container):
         else:
             return False
 
+    def is_running(self):
+        "return True if zone is running else False"
+        self.zone_refresh()
+        if self.state == 'running' :
+            return True
+        else:
+            return False
+
+    def is_up(self):
+        "return self.is_running status"
+        return self.is_running()
+
+    def operational(self):
+        "return status of: zlogin zone pwd"
+        cmd = [ ZLOGIN, self.name, 'pwd']
+        if qcall(cmd) == 0:
+            return True
+        else:
+            return False
+
+    def boot_and_wait_reboot(self):
+        """boot zone, then wait for automatic zone reboot
+            boot zone
+            wait for zone init process end
+            wait for zone running
+            wait for zone operational
+        """
+        self.log.info("wait for zone boot and reboot...")
+        if self.boot() != 0:
+            raise(Exception("zone boot failed"))
+        if self.is_running is False:
+            raise(Exception("zone is not running"))
+        cmd = [PGREP, "-z", self.name, "-f", INIT]
+        (out, err, st) = justcall(cmd)
+        if st != 0:
+            raise(Exception("fail to detect zone init process"))
+        pids = " ".join(out.split("\n")).rstrip()
+        cmd = [PWAIT, pids]
+        self.log.info("wait for zone init process %s termination" % (pids))
+        if qcall(cmd) != 0:
+            raise(Exception("failed " + " ".join(cmd)))
+        self.log.info("wait for zone running again")
+        self.wait_for_fn(self.is_up, self.startup_timeout, 2)
+        self.log.info("wait for zone operational")
+        self.wait_for_fn(self.operational, self.startup_timeout, 2)
+        
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+
+    def provision(self):
+        m = __import__("provZone")
+        m.ProvisioningZone(self).provisioner()
+
 
 
 if __name__ == "__main__":
