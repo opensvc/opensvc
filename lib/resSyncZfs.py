@@ -22,7 +22,7 @@ from subprocess import *
 import rcExceptions as ex
 import rcStatus
 import resSync
-from rcZfs import a2pool_dataset
+from rcZfs import a2pool_dataset, Dataset
 
 class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
@@ -94,7 +94,8 @@ class SyncZfs(resSync.Sync):
             return False
 
     def create_snap(self, snap):
-        if self.snap_exists(snap):
+        snapds=Dataset(snap)
+        if snapds.exists():
             self.log.error('%s should not exist'%snap)
             raise ex.excError
         if self.recursive :
@@ -108,6 +109,7 @@ class SyncZfs(resSync.Sync):
     def get_src_info(self):
         self.src_snap_sent = self.src_ds + '@sent'
         self.src_snap_tosend = self.src_ds + '@tosend'
+        self.tosend = "tosend"
 
     def get_dst_info(self):
         self.dst_snap_sent = self.dst_ds + '@sent'

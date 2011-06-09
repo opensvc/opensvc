@@ -99,6 +99,12 @@ class excNotSupported(Exception):
     """ Not supported
     """
 
+class excBug(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 class MissImpl(Exception):
     def __init__(self, value):
         self.value = value
@@ -122,4 +128,3 @@ class IpAlreadyUp(Exception):
         self.value = value
     def __str__(self):
         return repr(self.value)
-
