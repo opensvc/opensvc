@@ -1,15 +1,33 @@
-from provisioning import Provisioning
-from rcGlobalEnv import rcEnv
-from rcUtilities import which,vcall,justcall
+#
+# Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2011 Cyril Galibern <cyril.galibern@opensvc.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
 import os
-import rcExceptions as ex
-import rcZfs
 import resContainerZone
+from provisioning import Provisioning
+from rcZfs import Dataset
 
 SYSIDCFG="/etc/sysidcfg"
 
 class ProvisioningZone(Provisioning):
     def __init__(self, r):
+        """
+        """
         Provisioning.__init__(self, r)
 
         self.section = r.svc.config.defaults()
@@ -25,9 +43,9 @@ class ProvisioningZone(Provisioning):
             self.snapof = None
 
         if 'snap' in self.section:
-            self.snap = self.section['snap']
+            self.clone = self.section['snap']
         else:
-            self.snap = None
+            self.clone = "rpool/zones/" + r.name
 
         if 'virtinst' in self.section:
             self.virtinst = self.section['virtinst']
@@ -88,32 +106,58 @@ class ProvisioningZone(Provisioning):
             self.r.save_exc()
             raise(e("exception %s during create_sysidcfg file" % (e.__str__())))
 
+    def zone_configure(self, zone=None):
+        "configure zone, if zone is None, configure self.r"
+        if zone is None:
+            zone = self.r
+        if zone.state is None:
+            zone.zonecfg("create; set zonepath=" + zone.zonepath)
+            if zone.state != "configured":
+                raise(Exception("zone %s is not configured" % (zone.name)))
+
     def create_zone2clone(self):
+        """verify if self.container_origin zone is installed
+        else configure container_origin if required
+        then install container_origin if required
+        """
         zonename = self.container_origin
         zone2clone = resContainerZone.Zone(name=zonename)
         zone2clone.log = self.r.log
-        if zone2clone.state is None:
-            zone2clone.zonecfg("create; set zonepath=" + zone2clone.zonepath)
+        self.zone_configure(zone=zone2clone)
         if zone2clone.state == "configured":
             zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
             raise(Exception("zone %s is not installed" % (zonename)))
 
     def create_cloned_zone(self):
+        "clone zone self.r from container_origin"
         zone = self.r
-        if zone.state is None:
-            zone.zonecfg("create; set zonepath=" + zone.zonepath)
-            if zone.state != "configured":
-                raise(Exception("zone %s is not configured" % (zone.name)))
         if zone.state == "configured":
             zone.zoneadm("clone", [self.container_origin])
         if zone.state != "installed":
             raise(Exception("zone %s is not installed" % (zone.name)))
-        
+
+    def create_zonepath(self):
+        """create zonepath dataset from clone of snapshot of self.snapof
+        snapshot for self.snapof will be created
+        then cloned to self.clone
+        """
+        zonename = self.r.name
+        source_ds = Dataset(self.snapof)
+        if source_ds.exists(type="filesystem") is False:
+            raise(Exception("source dataset doesn't exist " + self.snapof))
+        snapshot = source_ds.snapshot(zonename)
+        snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.r.zonepath])
+
     def provisioner(self):
         try:
-            self.create_zone2clone()
-            self.create_cloned_zone()
+            self.zone_configure()
+            if self.snapof is None:
+                self.create_zone2clone()
+                self.create_cloned_zone()
+            else:
+                self.create_zonepath()
+                self.r.zoneadm("attach", ["-F"])
             self.create_sysidcfg()
             self.r.boot_and_wait_reboot()
             self.r.log.info("provisioned")
