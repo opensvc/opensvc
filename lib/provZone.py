@@ -21,6 +21,7 @@ import os
 import resContainerZone
 from provisioning import Provisioning
 from rcZfs import Dataset
+import rcZone
 
 SYSIDCFG="/etc/sysidcfg"
 
@@ -29,7 +30,7 @@ class ProvisioningZone(Provisioning):
         """
         """
         Provisioning.__init__(self, r)
-
+        self.log = self.r.log
         self.section = r.svc.config.defaults()
 
         if 'container_origin' in self.section:
@@ -47,17 +48,13 @@ class ProvisioningZone(Provisioning):
         else:
             self.clone = "rpool/zones/" + r.name
 
-        if 'virtinst' in self.section:
-            self.virtinst = self.section['virtinst']
-        else:
-            self.virtinst = None
-
         if 'zonepath' in self.section:
             self.zonepath = self.section['zonepath']
         else:
             self.zonepath = None
 
     def get_ns(self):
+        "return (domain, nameservers) detected from resolv.conf"
         p = os.path.join(os.sep, 'etc', 'resolv.conf')
         domain = None
         nameservers = set()
@@ -76,9 +73,8 @@ class ProvisioningZone(Provisioning):
         else:
             return None
 
-    def create_sysidcfg(self):
+    def create_sysidcfg(self, zone=None):
         try:
-            zone = self.r
             self.r.log.info("creating zone sysidcfg file")
             ns = self.get_ns()
             if ns is None:
@@ -123,9 +119,25 @@ class ProvisioningZone(Provisioning):
         zonename = self.container_origin
         zone2clone = resContainerZone.Zone(name=zonename)
         zone2clone.log = self.r.log
+        if zone2clone.state == "installed":
+            return
         self.zone_configure(zone=zone2clone)
-        if zone2clone.state == "configured":
-            zone2clone.zoneadm("install")
+        if zone2clone.state != "configured":
+            raise(Exception("zone %s is not configured" % (zonename)))
+        zone2clone.zoneadm("install")
+        if zone2clone.state != "installed":
+            raise(Exception("zone %s is not installed" % (zonename)))
+        self.create_sysidcfg(zone2clone)
+        brand = zone2clone.brand
+        if brand == "native":
+            zone2clone.boot_and_wait_reboot()
+        elif brand == "ipkg":
+            zone2clone.boot()
+        else:
+            raise(Exception("don't known how to manage zone brand: %s" % (brand)))
+        zone2clone.wait_multi_user()
+        zone2clone.stop()
+        zone2clone.zone_refresh()
         if zone2clone.state != "installed":
             raise(Exception("zone %s is not installed" % (zonename)))
 
@@ -149,17 +161,41 @@ class ProvisioningZone(Provisioning):
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.r.zonepath])
 
-    def provisioner(self):
+    def provisioner(self, need_boot=True):
+        """provision zone
+        - configure zone
+        - if snapof and zone brand is native
+           then create zonepath from snapshot of snapof
+           then attach zone
+        - if snapof and zone brand is ipkg
+           then try to detect zone associated with snapof
+           then define container_origin
+        - if container_origin
+           then clone  container_origin
+        - create sysidcfg
+        - if need_boot boot and wait multiuser
+        """
         try:
             self.zone_configure()
-            if self.snapof is None:
-                self.create_zone2clone()
-                self.create_cloned_zone()
-            else:
+            if self.snapof is not None and self.r.brand == 'native':
                 self.create_zonepath()
                 self.r.zoneadm("attach", ["-F"])
-            self.create_sysidcfg()
-            self.r.boot_and_wait_reboot()
+            elif self.snapof is not None and self.r.brand == 'ipkg':
+                zones = rcZone.Zones()
+                src_dataset = Dataset(self.snapof)
+                zonepath = src_dataset.getprop('mountpoint')
+                self.container_origin = zones.zonename_from_zonepath(zonepath).zonename
+                self.log.info("source zone is %s (detected from with snapof %s)" % (self.container_origin, self.snapof))
+            if self.container_origin is not None:
+                self.create_zone2clone()
+                self.create_cloned_zone()
+
+            self.create_sysidcfg(self.r)
+
+            if need_boot is True:
+                self.r.boot()
+                self.r.wait_multi_user()
+
             self.r.log.info("provisioned")
             return True
         except Exception, e:

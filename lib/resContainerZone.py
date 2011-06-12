@@ -23,7 +23,7 @@ import rcStatus
 import resources as Res
 import time
 import os
-from rcUtilities import justcall, vcall, qcall
+from rcUtilities import justcall, qcall
 from stat import *
 import resContainer
 import rcExceptions as ex
@@ -33,6 +33,9 @@ ZLOGIN="/usr/sbin/zlogin"
 PGREP="/usr/bin/pgrep"
 PWAIT="/usr/bin/pwait"
 INIT="/sbin/init"
+SVCS="/usr/bin/svcs"
+
+MULTI_USER_SMF="svc:/milestone/multi-user:default"
 
 class Zone(resContainer.Container):
     def __init__(self, name, optional=False, disabled=False, tags=set([])):
@@ -125,13 +128,42 @@ class Zone(resContainer.Container):
             f.write(' ')
             f.close()
 
+    def get_smf_state(self, smf=None):
+        cmd = [ ZLOGIN, self.name, SVCS, '-H', '-o', 'state', smf]
+        (out, err, status) = justcall(cmd)
+        if status == 0:
+            return out.split('\n')[0]
+        else:
+            return False
+
+    def is_smf_state(self, smf=None, value=None):
+        current_value = self.get_smf_state(smf)
+        if current_value is False:
+            return False
+        elif current_value == value:
+            return True
+        else:
+            return False
+
+    def is_multi_user(self):
+        return self.is_smf_state(MULTI_USER_SMF, "online")
+
+    def wait_multi_user(self):
+        self.log.info("wait for smf state on on %s", MULTI_USER_SMF)
+        self.wait_for_fn(self.is_multi_user, self.startup_timeout, 2)
+        
     def boot(self):
         "return 0 if zone is running else return self.zoneadm('boot')"
         self.zone_refresh()
         if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
             return 0
-        return self.zoneadm('boot')
+        if self.zoneadm('boot') != 0:
+            raise(Exception("Failed call zoneadm boot"))
+        if self.state == "running":
+            return(0)
+        else:
+            raise(Exception("zone should be running"))
 
     def stop(self):
         """ Need wait poststat after returning to installed state on ipkg
