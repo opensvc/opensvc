@@ -90,8 +90,9 @@ class SvcZone(svc.Svc):
 
     def startip(self):
         self.sub_set_action("ip", "check_ping")
+        self.sub_set_action("container.zone", "attach")
+        self.sub_set_action("container.zone", "ready")
         self.sub_set_action("ip", "start")
-
 
 if __name__ == "__main__":
     for c in (SvcZone,) :
