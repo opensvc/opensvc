@@ -26,7 +26,7 @@ import os
 from rcUtilities import justcall, qcall
 from stat import *
 import resContainer
-import rcExceptions as ex
+from rcExceptions import excError
 
 ZONECFG="/usr/sbin/zonecfg"
 ZLOGIN="/usr/sbin/zlogin"
@@ -55,13 +55,17 @@ class Zone(resContainer.Container):
 
     def zonecfg(self, zonecfg_args=None):
         cmd = [ZONECFG, '-z', self.name, zonecfg_args ]
-        t = datetime.now()
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
-        len = datetime.now() - t
-        self.log.info('%s "%s" done in %s - ret %i - logs in %s'
-                    % (" ".join(cmd[0:3]),
-                       "".join([c for c in zonecfg_args if c != ";"]),
-                       len, ret, out))
+        if ret != 0:
+            msg = '%s "%s" failed status: %i - logs in %s' % (
+                " ".join(cmd[0:3]), "".join([c for c in zonecfg_args if c != ";"]),
+                ret, out)
+            self.log.error(msg)
+            raise excError(msg)
+        else:
+            self.log.info('%s "%s" done status: %i - logs in %s' %
+                (" ".join(cmd[0:3]), "".join([c for c in zonecfg_args if c != ";"]),
+                ret, out))
         self.zone_refresh()
         return ret
 
@@ -77,8 +81,13 @@ class Zone(resContainer.Container):
         t = datetime.now()
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
         len = datetime.now() - t
-        self.log.info('%s done in %s - ret %i - logs in %s'
-                    % (action, len, ret, out))
+        if ret != 0:
+            msg = '%s failed status: %i in %s logs in %s' % (' '.join(cmd), ret, len, out)
+            self.log.error(msg)
+            raise excError(msg)
+        else:
+            self.log.info('%s done in %s - ret %i - logs in %s'
+                            % (' '.join(cmd), len, ret, out))
         self.zone_refresh()
         return ret
 
@@ -99,11 +108,10 @@ class Zone(resContainer.Container):
         if self.state in ('installed' , 'ready', 'running'):
             self.log.info("zone container %s already installed" % self.name)
             return 0
-        ret = self.zoneadm('attach')
-        if ret == 0 :
-            return ret
-        else :
-            return self.zoneadm('attach', ['-F'] )
+        try:
+            self.zoneadm('attach')
+        except excError:
+            self.zoneadm('attach', ['-F'] )
 
     def detach(self):
         self.zone_refresh()
@@ -158,12 +166,11 @@ class Zone(resContainer.Container):
         if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
             return 0
-        if self.zoneadm('boot') != 0:
-            raise(Exception("Failed call zoneadm boot"))
+        self.zoneadm('boot')
         if self.state == "running":
             return(0)
         else:
-            raise(Exception("zone should be running"))
+            raise(excError("zone should be running"))
 
     def stop(self):
         """ Need wait poststat after returning to installed state on ipkg
@@ -251,19 +258,18 @@ class Zone(resContainer.Container):
             wait for zone operational
         """
         self.log.info("wait for zone boot and reboot...")
-        if self.boot() != 0:
-            raise(Exception("zone boot failed"))
+        self.boot()
         if self.is_running is False:
-            raise(Exception("zone is not running"))
+            raise(excError("zone is not running"))
         cmd = [PGREP, "-z", self.name, "-f", INIT]
         (out, err, st) = justcall(cmd)
         if st != 0:
-            raise(Exception("fail to detect zone init process"))
+            raise(excError("fail to detect zone init process"))
         pids = " ".join(out.split("\n")).rstrip()
         cmd = [PWAIT, pids]
         self.log.info("wait for zone init process %s termination" % (pids))
         if qcall(cmd) != 0:
-            raise(Exception("failed " + " ".join(cmd)))
+            raise(excError("failed " + " ".join(cmd)))
         self.log.info("wait for zone running again")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         self.log.info("wait for zone operational")
