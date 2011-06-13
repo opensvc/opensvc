@@ -61,6 +61,14 @@ class Resource(object):
         """
         return 0
 
+    def print_exc(self):
+        import traceback
+        try:
+            self.log.error(traceback.format_exc())
+        except:
+            self.log.error("unexpected error")
+            traceback.print_exc()
+
     def save_exc(self):
         import traceback
         try:
@@ -150,7 +158,7 @@ class Resource(object):
             if self.optional:
                 pass
             else:
-                raise exc.excError
+                raise
 
     def status_stdby(self, s):
         """ This function modifies the passed status according
