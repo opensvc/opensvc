@@ -260,7 +260,7 @@ class Svc(Resource, Freezer):
                 if r.is_optional():
                     pass
                 else:
-                    raise ex.excError
+                    raise
             except ex.excAbortAction:
                 if r.is_optional():
                     pass
@@ -283,7 +283,7 @@ class Svc(Resource, Freezer):
                 if r.is_optional():
                     pass
                 else:
-                    raise ex.excError
+                    raise
             except ex.excAbortAction:
                 if r.is_optional():
                     pass
@@ -724,6 +724,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("fs", "provision")
         self.sub_set_action("container.lxc", "provision")
         self.sub_set_action("container.kvm", "provision")
+        self.sub_set_action("container.zone", "provision")
         self.sub_set_action("ip", "provision")
         self.push()
 
@@ -965,7 +966,8 @@ class Svc(Resource, Freezer):
             else:
                 self.log.error("unsupported action")
                 err = 1
-        except ex.excError:
+        except ex.excError,e:
+            self.log.error("excError action=%s, %s" % (action, e.__str__()))
             err = 1
         except ex.excSignal:
             self.log.error("interrupted by signal")

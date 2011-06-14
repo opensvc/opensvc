@@ -184,8 +184,8 @@ class KeywordSnap(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="snap",
-                  depends=[('mode', ["kvm", "xen"])],
-                  text="The target snapshot full path containing the new container disk files.",
+                  depends=[('mode', ["kvm", "xen", "zone"])],
+                  text="The target snapshot/clone full path containing the new container disk files.",
                   required=True,
                   provisioning=True
                 )
@@ -196,8 +196,20 @@ class KeywordSnapof(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="snapof",
-                  depends=[('mode', ["kvm", "xen"])],
+                  depends=[('mode', ["kvm", "xen", "zone"])],
                   text="The snapshot origin full path containing the reference container disk files.",
+                  required=True,
+                  provisioning=True
+                )
+
+class KeywordContainerOrigin(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_origin",
+                  depends=[('mode', ["zone"])],
+                  text="The origin container having the reference container disk files.",
                   required=True,
                   provisioning=True
                 )
@@ -1518,6 +1530,7 @@ class KeyDict(KeywordStore):
         self += KeywordVirtinst()
         self += KeywordSnap()
         self += KeywordSnapof()
+        self += KeywordContainerOrigin()
 
 if __name__ == "__main__":
     store = KeyDict()
