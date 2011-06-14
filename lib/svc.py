@@ -925,10 +925,10 @@ class Svc(Resource, Freezer):
         self.action_start_date = datetime.datetime.now()
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
-            raise ex.excError
+            return 1
         if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
             self.log.info("Abort action for frozen service")
-            return
+            return 1
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
