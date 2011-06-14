@@ -19,10 +19,13 @@
 
 import os
 import resContainerZone
+import lock
 from provisioning import Provisioning
 from rcZfs import Dataset
 import rcZone
 from rcExceptions import excError
+from rcGlobalEnv import rcEnv
+
 
 SYSIDCFG="/etc/sysidcfg"
 
@@ -186,7 +189,19 @@ class ProvisioningZone(Provisioning):
             self.container_origin = zones.zonename_from_zonepath(zonepath).zonename
             self.log.info("source zone is %s (detected from snapof %s)" % (self.container_origin, self.snapof))
         if self.container_origin is not None:
-            self.create_zone2clone()
+            lockname='create_zone2clone-' + self.container_origin
+            lockfile = os.path.join(rcEnv.pathlock, lockname)
+            self.log.info("wait get lock %s"%(lockname))
+            try:
+                lockfd = lock.lock(timeout=1200, delay=5, lockfile=lockfile)
+            except:
+                raise(excError("failure in get lock %s"%(lockname)))
+            try:
+                self.create_zone2clone()
+            except:
+                lock.unlock(lockfd)
+                raise
+            lock.unlock(lockfd)
             self.create_cloned_zone()
 
         self.create_sysidcfg(self.r)
