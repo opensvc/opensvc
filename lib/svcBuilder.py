@@ -865,10 +865,21 @@ def add_syncs_nexenta(svc, conf):
             continue
 
         try:
+            kwargs['name'] = conf_get_string(svc, conf, s, 'name')
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'name' set" % s)
+            continue
+
+        try:
             kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
         except ex.OptNotFound:
             svc.log.error("config file section %s must have path set" % s)
             continue
+
+        try:
+            kwargs['reversible'] = conf.getboolean(s, "reversible")
+        except:
+            pass
 
         filers = {}
         if 'filer' in conf.options(s):
@@ -1287,7 +1298,8 @@ def build(name):
         add_filesystems(svc, conf)
         add_apps(svc, conf)
         add_syncs(svc, conf)
-    except ex.excInitError:
+    except (ex.excInitError, ex.excError), e:
+        log.error(str(e))
         return None
 
     return svc
