@@ -147,6 +147,9 @@ class ProvisioningZone(Provisioning):
     def create_cloned_zone(self):
         "clone zone self.r from container_origin"
         zone = self.r
+        if zone.state == "running":
+            self.log.info("zone %s already running"%zone.name)
+            return
         if zone.state == "configured":
             zone.zoneadm("clone", [self.container_origin])
         if zone.state != "installed":
