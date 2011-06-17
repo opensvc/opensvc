@@ -118,6 +118,7 @@ def call(argv=['/bin/false'],
                            #        err_to_info value
          err_to_warn=False,
          err_to_info=False):
+    "return(ret, stdout,stderr)"
     if log is None:
         log = logging.getLogger('CALL')
     if not argv or len(argv) == 0:
