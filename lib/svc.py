@@ -726,6 +726,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.kvm", "provision")
         self.sub_set_action("container.zone", "provision")
         self.sub_set_action("ip", "provision")
+        self.sub_set_action("fs", "start", tags=set(['postboot']))
         self.push()
 
     def startapp(self):
