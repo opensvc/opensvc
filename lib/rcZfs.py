@@ -40,7 +40,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
     print ' '.join(cmd)
-    (retcode, stdout, stderr) = call(cmd)
+    (retcode, stdout, stderr) = vcall(cmd)
     if retcode == 0 :
         return True
     else:
