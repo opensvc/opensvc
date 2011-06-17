@@ -15,7 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-from rcUtilities import justcall, call
+from rcUtilities import justcall, call, vcall
+import logging
+import sys
 """
 """
 
@@ -65,15 +67,23 @@ def a2pool_dataset(s):
 
 class Dataset(object):
     """Define Dataset Class"""
-    def __init__(self, name):
+    log = None
+    def __init__(self, name, log=None):
         self.name = name
-
+        if log is None:
+            if Dataset.log is None:
+                Dataset.log = logging.getLogger("DATASET".upper())
+                Dataset.log.addHandler(logging.StreamHandler(sys.stdout))
+                Dataset.log.setLevel(logging.INFO)
+            self.log = Dataset.log
+        else:
+            self.log = log
     def __str__(self, option=None):
         if option is None:
             cmd = ['zfs', 'list', self.name ]
         else:
             cmd = ['zfs', 'list'] + option + [ self.name ]
-        (stdout, stderr, retcode) = justcall(cmd)
+        (retcode, stdout, stderr) = call(cmd, log=self.log)
         if retcode == 0:
             return stdout
         else:
@@ -82,16 +92,19 @@ class Dataset(object):
     def destroy(self):
         "destroy dataset"
         cmd = ['zfs', 'destroy', self.name ]
-        (stdout, stderr, retcode) = justcall(cmd)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return True
         else:
             return False
 
     def exists(self, type="all"):
-        "return True if dataset exists else return False"
+        """return True if dataset exists else return False
+        if type is provided, also verify dataset type"""
         (out, err, ret) = justcall('zfs get -H -o value type'.split()+[self.name])
-        if ret == 0 and out.split('\n')[0] == type :
+        if ret == 0 and type == "all":
+            return True
+        elif ret == 0 and out.split('\n')[0] == type:
             return True
         else:
             return False
@@ -102,7 +115,7 @@ class Dataset(object):
             cmd = ['zfs', 'create', self.name ]
         else:
             cmd = ['zfs', 'create'] + option + [ self.name ]
-        (stdout, stderr, retcode) = justcall(cmd)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return True
         else:
@@ -125,12 +138,19 @@ class Dataset(object):
         Return True is sucess else return False
         """
         cmd = [ 'zfs', 'set', propname + '='+ propval, self.name ]
-        print ' '.join(cmd)
-        (retcode, stdout, stderr) = call(cmd)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0 :
             return True
         else:
             return False
+
+    def verify_prop(self, nv_pairs={}):
+        """for name, val from nv_pairs dict,
+        if zfs name property value of dataset differ from val
+        then zfs set name=value on dataset object"""
+        for name in nv_pairs.keys():
+            if self.getprop(name) != nv_pairs[name]:
+                self.setprop(propname=name, propval=nv_pairs[name])
 
     def snapshot(self, snapname=None):
         """snapshot dataset
@@ -141,7 +161,7 @@ class Dataset(object):
             raise(rcExceptions.excBug("snapname should be defined"))
         snapdataset = self.name + "@" + snapname
         cmd = ['zfs', 'snapshot', snapdataset ]
-        (stdout, stderr, retcode) = justcall(cmd)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return Dataset(snapdataset)
         else:
@@ -156,7 +176,7 @@ class Dataset(object):
             cmd = ['zfs', 'clone', self.name, name]
         else:
             cmd = ['zfs', 'clone'] + option + [ self.name, name ]
-        (stdout, stderr, retcode) = justcall(cmd)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return Dataset(name)
         else:
@@ -165,11 +185,18 @@ class Dataset(object):
 if __name__ == "__main__":
     dsname="rpool/toto"
     ds = Dataset(dsname)
-    print "create dataset", ds.name
     if ds.create(option=[ "-o", "mountpoint=none"]) is False:
         print "========== Failed"
     else:
         print ds
+
+    ds.verify_prop({'mountpoint':'/tmp/mnt', 'refquota':(10*1024*1024).__str__(),})
+
+    print "show type,refquota,mountpoint"
+    for p in ('type', 'refquota', 'mountpoint'):
+        print '%s value: %s'%(p, ds.getprop(p))
+    print ds
+
     val = ds.setprop('opensvc:name', 'Example')
     print ds.__str__(["-Ho", "opensvc:name"])
 
@@ -177,22 +204,18 @@ if __name__ == "__main__":
     print "val Value=",val
 
     for sname in ["foo" , "bar"]:
-        print "create snapshot for", sname
         s = ds.snapshot(sname)
         if s is False:
             print "========== Failed"
         else:
             print s
-            print "create clone"
             c=s.clone(dsname + "/clone_"+ sname)
             if c is False:
                 print "========== Failed"
             else:
                 print c
-                print "Destroy clone:", c.name
                 c.destroy()
 
-            print "Destroy snapshot for", sname
             if s.destroy() is False:
                 print "========== Failed"
 
