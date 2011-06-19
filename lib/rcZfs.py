@@ -133,24 +133,28 @@ class Dataset(object):
         else:
             return ""
 
-    def setprop(self, propname, propval):
+    def setprop(self, propname, propval, err_to_warn=False, err_to_info=False):
         """set Dataset property value
         Return True is sucess else return False
         """
         cmd = [ 'zfs', 'set', propname + '='+ propval, self.name ]
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log,
+                                        err_to_warn=err_to_warn,
+                                        err_to_info=err_to_info)
         if retcode == 0 :
             return True
         else:
             return False
 
-    def verify_prop(self, nv_pairs={}):
+    def verify_prop(self, nv_pairs={}, err_to_warn=False, err_to_info=False):
         """for name, val from nv_pairs dict,
         if zfs name property value of dataset differ from val
         then zfs set name=value on dataset object"""
         for name in nv_pairs.keys():
             if self.getprop(name) != nv_pairs[name]:
-                self.setprop(propname=name, propval=nv_pairs[name])
+                self.setprop(propname=name, propval=nv_pairs[name],
+                            err_to_warn=err_to_warn,
+                            err_to_info=err_to_info)
 
     def snapshot(self, snapname=None):
         """snapshot dataset
