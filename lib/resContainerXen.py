@@ -49,9 +49,6 @@ class Xen(resContainer.Container):
         if ret != 0:
             self.status_log("can not fetch capabilities")
             return False
-        if 'hvm' not in out:
-            self.status_log("hvm not supported by host")
-            return False
         return True
 
     def ping(self):
