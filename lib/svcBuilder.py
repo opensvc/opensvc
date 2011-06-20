@@ -121,6 +121,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcKvm', 'SvcKvm')
     elif svcmode == 'xen':
         return ('svcXen', 'SvcXen')
+    elif svcmode == 'ovm':
+        return ('svcOvm', 'SvcOvm')
     elif svcmode == 'vbox':
         return ('svcVbox', 'SvcVbox')
     raise
@@ -296,7 +298,7 @@ def add_ips(svc, conf):
             ip = __import__('resIp'+'Ldom')
         elif svc.svcmode  == 'zone':
             ip = __import__('resIp'+'Zone')
-        elif svc.svcmode  == 'xen':
+        elif svc.svcmode  == 'xen' or svc.svcmode  == 'ovm':
             ip = __import__('resIp'+'Xen')
         elif svc.svcmode  == 'vbox':
             ip = __import__('resIp'+'Vbox')

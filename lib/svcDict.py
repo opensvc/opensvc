@@ -172,7 +172,7 @@ class KeywordVirtinst(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="virtinst",
-                  depends=[('mode', ["kvm", "xen"])],
+                  depends=[('mode', ["kvm", "xen", "ovm"])],
                   text="The virt-install command to use to create the container.",
                   required=True,
                   provisioning=True
@@ -184,7 +184,7 @@ class KeywordSnap(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="snap",
-                  depends=[('mode', ["kvm", "xen", "zone"])],
+                  depends=[('mode', ["kvm", "xen", "ovm", "zone"])],
                   text="The target snapshot/clone full path containing the new container disk files.",
                   required=True,
                   provisioning=True
@@ -196,7 +196,7 @@ class KeywordSnapof(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="snapof",
-                  depends=[('mode', ["kvm", "xen", "zone"])],
+                  depends=[('mode', ["kvm", "xen", "ovm", "zone"])],
                   text="The snapshot origin full path containing the reference container disk files.",
                   required=True,
                   provisioning=True
