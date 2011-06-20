@@ -46,7 +46,22 @@ class Asset(rcAsset.Asset):
             else:
                 self.dmidecode = out.split('\n')
 
-    def get_mem_bytes(self):
+    def get_mem_bytes_hv(self):
+        cmd = ['virsh', 'nodeinfo']
+        (ret, out, err) = call(cmd)
+        if ret != 0:
+            return '0'
+        lines = out.split('\n')
+        for line in lines:
+            if 'Memory size' not in line:
+                continue
+            l = line.split()
+            if len(l) < 2:
+                continue
+            return l[-2]
+        return '0'
+
+    def get_mem_bytes_phy(self):
         cmd = ['free', '-m']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -58,6 +73,11 @@ class Asset(rcAsset.Asset):
         if len(line) < 2:
             return '0'
         return line[1]
+
+    def get_mem_bytes(self):
+        if 'xen' in self.get_os_kernel():
+            return self.get_mem_bytes_hv()
+        return self.get_mem_bytes_phy()
 
     def get_mem_banks(self):
         if self.container:
@@ -97,8 +117,11 @@ class Asset(rcAsset.Asset):
             return 'SuSE'
         if os.path.exists('/etc/redhat-release'):
             with open('/etc/redhat-release', 'r') as f:
-                if 'CentOS' in f.read():
+                buff = f.read()
+                if 'CentOS' in buff:
                     return 'CentOS'
+                elif 'Oracle' in buff:
+                    return 'Oracle'
                 else:
                     return 'Redhat'
         return 'Unknown'
@@ -127,7 +150,7 @@ class Asset(rcAsset.Asset):
                 (ret, out, err) = call(['cat', f])
                 if ret != 0:
                     return 'Unknown'
-                return out.split('\n')[0].replace('CentOS','').strip()
+                return out.split('\n')[0].replace(self.get_os_vendor(), '').strip()
         return 'Unknown'
 
     def get_os_kernel(self):
