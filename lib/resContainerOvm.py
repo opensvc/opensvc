@@ -56,12 +56,18 @@ class Ovm(resContainer.Container):
     def ping(self):
         return rcU.check_ping(self.addr, timeout=1, count=1)
 
+    def find_vmcf(self):
+        import glob
+        l = glob.glob('/var/ovs/mount/*/running_pool/'+self.name+'/vm.cfg')+glob.glob(os.path.join(self.xen_d, self.name))
+        if len(l) > 1:
+            self.log.warning("%d configuration files found in repositories (%s)"%(len(l), str(l)))
+        elif len(l) == 0:
+            raise ex.excError("no configuration file found in repositories")
+        return l[0]
+
     def container_start(self):
-        cf = os.path.join(self.xen_d, self.name)
-        if not os.path.exists(cf):
-            self.log.error("%s does not exist"%cf)
-            raise ex.excError
-        cmd = ['xm', 'start', self.name]
+        cf = self.find_vmcf()
+        cmd = ['xm', 'create', cf]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -79,15 +85,14 @@ class Ovm(resContainer.Container):
             raise ex.excError
 
     def is_up(self):
-        cmd = ['xm', 'list', self.name, '--state=running']
+        cmd = ['xm', 'list', '--state=running']
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 4:
-                self.log.error("malformed 'xm list %s' output: %s"%(self.name, line))
-                self.info = {'vcpus': '0', 'vmem': '0'}
+                continue
             if self.name == l[0]:
                 return True
         return False
@@ -101,12 +106,14 @@ class Ovm(resContainer.Container):
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 4:
-                self.log.error("malformed 'xm list %s' output: %s"%(self.name, line))
-                self.info = {'vcpus': '0', 'vmem': '0'}
+                continue
             if self.name != l[0]:
                 continue
             self.info['vcpus'] = l[3]
             self.info['vmem'] = l[2]
+            return self.info           
+        self.log.error("malformed 'xm list %s' output: %s"%(self.name, line))
+        self.info = {'vcpus': '0', 'vmem': '0'}
         return self.info           
 
     def check_manual_boot(self):
