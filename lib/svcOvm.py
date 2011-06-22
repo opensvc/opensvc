@@ -35,4 +35,6 @@ class SvcOvm(svc.Svc):
         self += ovm.Ovm(vmname)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
+    def _migrate(self):
+        self.sub_set_action("container.ovm", "_migrate")
 

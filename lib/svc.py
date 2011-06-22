@@ -1023,6 +1023,27 @@ class Svc(Resource, Freezer):
         self.stop()
         self.start()
 
+    def migrate(self):
+        if not hasattr(self, "destination_node"):
+            self.log.error("a destination node must be provided for the switch action")
+            raise ex.excError
+        if self.destination_node not in self.nodes:
+            self.log.error("destination node %s is not in service node list"%self.destination_node)
+            raise ex.excError
+        if not hasattr(self, '_migrate'):
+            self.log.error("the 'migrate' action is not supported with %s service mode"%self.svcmode)
+            raise ex.excError
+        self.prstop()
+        try:
+            self.remote_action(node=self.destination_node, action='mount')
+            self._migrate()
+        except:
+            self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
+            raise
+        self.umount()
+	kwargs = {'node': self.destination_node, 'action': 'prstart'}
+	fork(self.remote_action, kwargs)
+
     def switch(self):
 	""" stop then start service
         """

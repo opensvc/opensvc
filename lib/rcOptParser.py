@@ -72,6 +72,7 @@ action_desc = {
 	'push':         'push service configuration to database',
         'disklist':     'construct disklist',
         'switch':       'stop the service on the local node and start on the remote node',
+        'migrate':      'live migrate the service to the remote node',
         'json_status':  'provide the resource and aggregated status in json format, for use by tier tools',
 }
 

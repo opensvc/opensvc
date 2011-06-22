@@ -65,6 +65,12 @@ class Ovm(resContainer.Container):
             raise ex.excError("no configuration file found in repositories")
         return l[0]
 
+    def _migrate(self):
+        cmd = ['xm', 'migrate', '-l', self.name, self.svc.destination_node]
+        (ret, buff, err) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
     def container_start(self):
         cf = self.find_vmcf()
         cmd = ['xm', 'create', cf]
