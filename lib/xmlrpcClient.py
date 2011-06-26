@@ -177,13 +177,15 @@ def begin_action(svc, action, begin):
          'hostname',
          'hostid',
          'version',
-         'begin',],
+         'begin',
+         'cron'],
         [repr(svc.svcname),
          repr(action),
          repr(rcEnv.nodename),
          repr(hostid),
          repr(version),
-         repr(str(begin))]
+         repr(str(begin)),
+         repr(svc.cron)]
     ]
     if auth_node:
         args += [(rcEnv.uuid, rcEnv.nodename)]

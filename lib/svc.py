@@ -75,6 +75,7 @@ class Svc(Resource, Freezer):
         self.resSets = []
         self.type2resSets = {}
         self.disks = set([])
+        self.cron = False
         self.force = False
         self.cluster = False
         self.parallel = False

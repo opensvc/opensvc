@@ -33,6 +33,7 @@ from rcGlobalEnv import rcEnv
 
 class Options(object):
     def __init__(self):
+        self.cron = False
         self.force = False
         self.debug = False
         self.stats_dir = None
@@ -463,6 +464,7 @@ class Node(Svc, Freezer):
 
         for svc in self.svcs:
             svc.force = self.options.force
+            svc.cron = self.cron
             d = {'action': 'syncall'}
             p[svc.svcname] = Process(target=svc.action,
                                      name='worker_'+svc.svcname,
@@ -476,6 +478,7 @@ class Node(Svc, Freezer):
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
+            svc.cron = self.cron
             svc.action('presync')
 
     def pushservices(self):
@@ -488,6 +491,7 @@ class Node(Svc, Freezer):
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
+            svc.cron = self.cron
             svc.action('push')
 
     def prkey(self):

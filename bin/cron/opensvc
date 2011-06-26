@@ -32,6 +32,7 @@ sys.path.append(pathlib)
 
 import node
 n = node.Node()
+n.cron = True
 
 for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
                "pushasset", "checks", "syncservices", "compliance_check"]:
