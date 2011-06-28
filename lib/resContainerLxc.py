@@ -156,7 +156,9 @@ class Lxc(resContainer.Container):
         resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
                                         optional=optional, disabled=disabled, tags=tags)
         self.prefix = None
-        prefixes = [os.sep, os.path.join(os.sep, 'usr', 'local')]
+        prefixes = [os.sep,
+                    os.path.join(os.sep, 'usr'),
+                    os.path.join(os.sep, 'usr', 'local')]
         for prefix in prefixes:
             hint = os.path.join(prefix, 'bin', 'lxc-start')
             if os.path.exists(hint):
