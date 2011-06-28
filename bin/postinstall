@@ -175,14 +175,20 @@ def install_cron():
         if os.path.exists(f):
             os.unlink(f)
 
-def activate_redhat():
-    cmd = ['chkconfig', '--add', 'opensvc']
+def activate_chkconfig(svc):
+    cmd = ['chkconfig', '--add', svc]
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
     buff = process.communicate()
     if process.returncode > 0:
         print buff[1]
         return False
     return True
+
+def activate_ovm():
+    activate_chkconfig('zopensvc')
+
+def activate_redhat():
+    activate_chkconfig('opensvc')
 
 def activate_debian():
     cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
@@ -269,9 +275,19 @@ def install_rc():
         src = '/opt/opensvc/bin/opensvc.init.debian'
         activate = activate_redhat
     elif os.path.exists('/etc/redhat-release'):
-        rc = '/etc/init.d/opensvc'
+        try:
+            f = open('/etc/redhat-release', 'r')
+            buff = f.read()
+            f.close()
+        except:
+            buff = ""
+        if 'Oracle VM server' in buff:
+            rc = '/etc/init.d/zopensvc'
+            activate = activate_ovm
+        else:
+            rc = '/etc/init.d/opensvc'
+            activate = activate_redhat
         src = '/opt/opensvc/bin/opensvc.init.redhat'
-        activate = activate_redhat
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.hpux'
