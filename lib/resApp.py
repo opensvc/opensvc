@@ -149,7 +149,7 @@ class Apps(Res.Resource):
             errs += ret
             rets[name] = ret
         if nb == 0:
-            self.status_log("no startup script")
+            self.status_log("no checkup scripts")
             return rcStatus.NA
         elif errs == 0:
             return rcStatus.UP
