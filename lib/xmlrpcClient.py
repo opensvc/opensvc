@@ -374,7 +374,8 @@ def push_service(svc):
             'svc_envfile',
             'svc_version',
             'svc_drnoaction',
-            'svc_guestos']
+            'svc_guestos',
+            'svc_ha']
 
     vals = [repr(hostid),
             repr(svc.svcname),
@@ -396,7 +397,8 @@ def push_service(svc):
             repr(envfile(svc.svcname)),
             repr(version),
             repr(svc.drnoaction),
-            repr(guestos)]
+            repr(guestos),
+            repr(svc.ha)]
 
     if 'container' in svc.resources_by_id:
         container_info = svc.resources_by_id['container'].get_container_info()

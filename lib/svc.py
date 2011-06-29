@@ -67,6 +67,7 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
+        self.ha = False
         self.disable_fork_dblogger = False
         self.svcname = svcname
         self.vmname = ""
@@ -154,6 +155,9 @@ class Svc(Resource, Freezer):
         r.svc = self
         import logging
         r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
+
+        if r.type.startswith("hb"):
+            self.ha = True
 
         return self
 
