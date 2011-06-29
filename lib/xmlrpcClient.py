@@ -398,7 +398,7 @@ def push_service(svc):
             repr(version),
             repr(svc.drnoaction),
             repr(guestos),
-            repr(svc.ha)]
+            '1' if svc.ha else '0']
 
     if 'container' in svc.resources_by_id:
         container_info = svc.resources_by_id['container'].get_container_info()
