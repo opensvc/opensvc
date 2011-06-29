@@ -107,6 +107,7 @@ class Svc(Resource, Freezer):
                              "sync.nexenta",
                              "app",
                              "hb.openha",
+                             "hb.ovm",
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
@@ -600,11 +601,11 @@ class Svc(Resource, Freezer):
         self.stop()
 
     def start(self):
-        self.starthb()
         self.startip()
         self.mount()
         self.startcontainer()
         self.startapp()
+        self.starthb()
 
     def stop(self):
         self.stophb()
@@ -617,19 +618,19 @@ class Svc(Resource, Freezer):
         self.stopip()
 
     def cluster_mode_safety_net(self):
-        if not self.has_res_set(['hb.openha', 'hb.linuxha']):
+        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha']):
             return
         if not self.cluster:
             self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
             raise ex.excError
 
     def starthb(self):
-        self.cluster_mode_safety_net()
+        self.sub_set_action("hb.ovm", "start")
         self.sub_set_action("hb.openha", "start")
         self.sub_set_action("hb.linuxha", "start")
 
     def stophb(self):
-        self.cluster_mode_safety_net()
+        self.sub_set_action("hb.ovm", "stop")
         self.sub_set_action("hb.openha", "stop")
         self.sub_set_action("hb.linuxha", "stop")
 
@@ -935,9 +936,16 @@ class Svc(Resource, Freezer):
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
-        if self.frozen() and action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
-            self.log.info("Abort action for frozen service")
-            return 1
+
+        if action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
+            if self.frozen():
+                self.log.info("Abort action for frozen service")
+                return 1
+            try:
+                self.cluster_mode_safety_net()
+            except ex.excError:
+                return 1
+
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
