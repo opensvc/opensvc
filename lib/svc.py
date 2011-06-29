@@ -618,7 +618,7 @@ class Svc(Resource, Freezer):
         self.stopip()
 
     def cluster_mode_safety_net(self):
-        if not self.ha:
+        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha']):
             return
         if not self.cluster:
             self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
