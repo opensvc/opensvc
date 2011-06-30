@@ -185,7 +185,7 @@ def begin_action(svc, action, begin):
          repr(hostid),
          repr(version),
          repr(str(begin)),
-         repr(svc.cron)]
+         '1' if svc.cron else '0']
     ]
     if auth_node:
         args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -209,7 +209,8 @@ def end_action(svc, action, begin, end, logfile):
             'begin',
             'end',
             'status_log',
-            'status']
+            'status',
+            'cron']
     vals = []
     for line in lines.split(';EOL\n'):
         if line.count(';') != 4:
@@ -230,7 +231,8 @@ def end_action(svc, action, begin, end, logfile):
                          dateprev,
                          date,
                          msg,
-                         res_err])
+                         res_err,
+                         '1' if svc.cron else '0'])
 
         res_err = 'ok'
         (date, res, lvl, msg, pid) = line.split(';')
@@ -268,7 +270,8 @@ def end_action(svc, action, begin, end, logfile):
                      dateprev,
                      date,
                      msg,
-                     res_err])
+                     res_err,
+                     '1' if svc.cron else '0'])
 
     if len(vals) > 0:
         args = [vars, vals]
@@ -293,7 +296,8 @@ def end_action(svc, action, begin, end, logfile):
          'begin',
          'end',
          'time',
-         'status'],
+         'status',
+         'cron'],
         [repr(svc.svcname),
          repr(action),
          repr(rcEnv.nodename),
@@ -302,7 +306,8 @@ def end_action(svc, action, begin, end, logfile):
          repr(str(begin)),
          repr(str(end)),
          repr(str(end-begin)),
-         repr(str(err))]
+         repr(str(err)),
+         '1' if svc.cron else '0']
     ]
     if auth_node:
         args += [(rcEnv.uuid, rcEnv.nodename)]
