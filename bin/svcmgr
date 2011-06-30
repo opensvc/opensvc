@@ -48,6 +48,8 @@ parser.add_option("-p", "--parallel", default=False, action="store_true", dest="
                   help="start actions on specified services in parallel")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
+parser.add_option("--cron", default=False, action="store_true", dest="cron",
+                  help="used by cron'ed action to tell the collector to treat the log entries as such")
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="option to set when excuting from a clusterware to disable safety net")
 parser.add_option("-i", "--interactive", default=False, action="store_true", dest="interactive",
@@ -173,6 +175,7 @@ err = 0
 for s in svcs:
     s.force = options.force
     s.parallel = options.parallel
+    s.cron = options.cron
     if cluster:
         s.cluster = cluster
     else:

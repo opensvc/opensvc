@@ -792,8 +792,10 @@ class Svc(Resource, Freezer):
         self.need_postsync = set([])
 
     def remote_action(self, node, action, waitlock=60):
-        rcmd = [os.path.join(rcEnv.pathetc, self.svcname),
-                '--waitlock', str(waitlock), action]
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
+        if self.cron:
+            rcmd += ['--cron']
+        rcmd += ['--waitlock', str(waitlock), action]
         self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         cmd = rcEnv.rsh.split() + [node] + rcmd
         self.call(cmd)
