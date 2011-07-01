@@ -1055,7 +1055,8 @@ class Svc(Resource, Freezer):
             self.remote_action(node=self.destination_node, action='mount')
             self._migrate()
         except:
-            self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
+            if self.has_res_set(['disk.scsireserv']):
+                self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.umount()
 	kwargs = {'node': self.destination_node, 'action': 'prstart'}
