@@ -792,7 +792,7 @@ class Svc(Resource, Freezer):
         self.need_postsync = set([])
 
     def remote_action(self, node, action, waitlock=60):
-        rcmd = [os.path.join(rcEnv.pathbin, 'svcmgr', '-s', self.svcname)]
+        rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
         if self.cluster:
             rcmd += ['--cluster']
         if self.cron:
