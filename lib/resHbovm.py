@@ -66,7 +66,12 @@ class Hb(Res.Resource):
             self.status_log("OVM agent daemons are not running")
             return rcStatus.WARN
         self.manager = rcOvm.Ovm(log=self.log)
-        if not self.manager.vm_ha_enabled(self.svc.vmname):
+        try:
+            ha_enabled = self.manager.vm_ha_enabled(self.svc.vmname)
+        except ex.excError, e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+        if not ha_enabled:
             self.status_log("HA not enabled for this VM")
             return rcStatus.WARN
         return rcStatus.UP
