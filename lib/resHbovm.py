@@ -51,16 +51,16 @@ class Hb(Res.Resource):
         return "%s" % (Res.Resource.__str__(self))
 
     def stop(self):
-        self.manager = rcOvm.Ovm(log=self.log)
         try:
-        self.manager.vm_disable_ha(self.svc.vmname)
+            self.manager = rcOvm.Ovm(log=self.log)
+            self.manager.vm_disable_ha(self.svc.vmname)
         except ex.excError, e:
             self.log.error(str(e))
             raise
 
     def start(self):
-        self.manager = rcOvm.Ovm(log=self.log)
         try:
+            self.manager = rcOvm.Ovm(log=self.log)
             self.manager.vm_enable_ha(self.svc.vmname)
         except ex.excError, e:
             self.log.error(str(e))
@@ -73,8 +73,8 @@ class Hb(Res.Resource):
         if not self.process_running():
             self.status_log("OVM agent daemons are not running")
             return rcStatus.WARN
-        self.manager = rcOvm.Ovm(log=self.log)
         try:
+            self.manager = rcOvm.Ovm(log=self.log)
             ha_enabled = self.manager.vm_ha_enabled(self.svc.vmname)
         except ex.excError, e:
             self.status_log(str(e))
