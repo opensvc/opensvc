@@ -52,11 +52,19 @@ class Hb(Res.Resource):
 
     def stop(self):
         self.manager = rcOvm.Ovm(log=self.log)
+        try:
         self.manager.vm_disable_ha(self.svc.vmname)
+        except ex.excError, e:
+            self.log.error(str(e))
+            raise
 
     def start(self):
         self.manager = rcOvm.Ovm(log=self.log)
-        self.manager.vm_enable_ha(self.svc.vmname)
+        try:
+            self.manager.vm_enable_ha(self.svc.vmname)
+        except ex.excError, e:
+            self.log.error(str(e))
+            raise
 
     def _status(self, verbose=False):
         if not os.path.exists(self.ovsinit):
