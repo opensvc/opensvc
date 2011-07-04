@@ -987,8 +987,11 @@ class Svc(Resource, Freezer):
             else:
                 self.log.error("unsupported action")
                 err = 1
-        except ex.excError,e:
-            self.log.error("excError action=%s, %s" % (action, e.__str__()))
+        except ex.excError, e:
+            s = "'%s' action stopped on execution error"%action
+            if len(str(e)) > 0:
+                s += ":", str(e)
+            self.log.error(s)
             err = 1
         except ex.excSignal:
             self.log.error("interrupted by signal")
