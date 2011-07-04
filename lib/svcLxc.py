@@ -36,7 +36,7 @@ class SvcLxc(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += lxc.Lxc(vmname)
-        if which('lxc-attach') and os.path.exists('/proc/1/ns'):
+        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', vmname, '--']
         else:
             self.runmethod = rcEnv.rsh.split() + [vmname]

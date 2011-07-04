@@ -28,7 +28,7 @@ class ifconfig(rcIfconfigLinux.ifconfig):
     def __init__(self, hostname):
         self.intf = []
 
-        if which('lxc-attach') and os.path.exists('/proc/1/ns'):
+        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.rsh = ['lxc-attach', '-n', hostname]
             cmd = ['echo', '/sbin/ifconfig', '-a']
             p1 = Popen(cmd, stdout=PIPE)
