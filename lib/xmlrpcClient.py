@@ -139,7 +139,7 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {'key_file': self.__key_file, 'cert_file': self.__cert_file})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert)
 
-socket.setdefaulttimeout(5)
+socket.setdefaulttimeout(20)
 
 try:
     proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
