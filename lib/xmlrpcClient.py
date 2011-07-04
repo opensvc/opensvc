@@ -199,7 +199,7 @@ def end_action(svc, action, begin, end, logfile):
     pids = set([])
 
     """Example logfile line:
-    2009-11-11 01:03:25,252;DISK.VG;INFO;unxtstsvc01_data is already up;10200;EOL
+    2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL
     """
     vars = ['svcname',
             'action',
@@ -212,10 +212,10 @@ def end_action(svc, action, begin, end, logfile):
             'status',
             'cron']
     vals = []
-    for line in lines.split(';EOL\n'):
-        if line.count(';') != 4:
+    for line in lines.split(';;EOL\n'):
+        if line.count(';;') != 4:
             continue
-        date = line.split(';')[0]
+        date = line.split(';;')[0]
 
         """Push to database the previous line, so that begin and end
         date are available.
@@ -235,7 +235,7 @@ def end_action(svc, action, begin, end, logfile):
                          '1' if svc.cron else '0'])
 
         res_err = 'ok'
-        (date, res, lvl, msg, pid) = line.split(';')
+        (date, res, lvl, msg, pid) = line.split(';;')
 
         # database overflow protection
         trim_lim = 10000
