@@ -178,10 +178,31 @@ class Vg(resDg.Dg):
         self.log.info(' '.join(cmd))
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
-        if len(buff[1]) > 0 and buff[1] != "vgimport: ":
-            self.log.error('error:\n' + buff[1])
+
+        # we will modify buff[1], so convert from tuple to list
+        buff = list(buff)
+
+        # test string for warnings
+        #buff[1] = """Warning: Cannot determine block size of Physical Volume "/dev/rdisk/disk394".
+        #Assuming a default value of 1024 bytes. Continuing.
+        #Warning: Cannot determine block size of Physical Volume "/dev/rdisk/disk395".
+        #Assuming a default value of 1024 bytes. Continuing.
+        #vgimport:"""
+
+        if len(buff[1]) > 0:
+            import re
+            regex = re.compile("Warning:.*\n.*Continuing.\n", re.MULTILINE)
+            w = regex.findall(buff[1])
+            if len(w) > 0:
+                warnings = '\n'.join(w)
+                self.log.warning(warnings)
+                buff[1] = regex.sub('', buff[1])
+            if buff[1] != "vgimport: " and buff[1] != "vgimport:":
+                self.log.error('error:\n' + buff[1])
+
         if len(buff[0]) > 0:
             self.log.debug('output:\n' + buff[0])
+
         if process.returncode != 0:
             raise ex.excError
 
