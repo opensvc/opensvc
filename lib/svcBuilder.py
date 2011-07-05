@@ -132,14 +132,32 @@ def get_tags(conf, section):
         return set(conf.get(section, "tags").split())
     return set([])
 
-def get_optional(conf, section):
+def get_optional(conf, section, svc):
     if conf.has_option(section, 'optional'):
         return conf.getboolean(section, "optional")
+    nodes = set([])
+    if conf.has_option(section, 'optional_on'):
+        l = conf.get(section, "optional_on").split()
+        for i in l:
+            if i == 'nodes': nodes |= svc.nodes
+            elif i == 'drpnodes': nodes |= svc.drpnodes
+            else: nodes |= set([i])
+    if rcEnv.nodename in nodes:
+        return True
     return False
 
-def get_monitor(conf, section):
+def get_monitor(conf, section, svc):
     if conf.has_option(section, 'monitor'):
         return conf.getboolean(section, "monitor")
+    nodes = set([])
+    if conf.has_option(section, 'monitor_on'):
+        l = conf.get(section, "monitor_on").split()
+        for i in l:
+            if i == 'nodes': nodes |= svc.nodes
+            elif i == 'drpnodes': nodes |= svc.drpnodes
+            else: nodes |= set([i])
+    if rcEnv.nodename in nodes:
+        return True
     return False
 
 def get_disabled(conf, section, svc):
@@ -313,8 +331,8 @@ def add_ips(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
         r = ip.Ip(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -339,8 +357,8 @@ def add_drbds(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
         drbd = __import__('resDrbd')
         r = drbd.Drbd(**kwargs)
         add_triggers(r, conf, s)
@@ -367,8 +385,8 @@ def add_vdisks(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
         vdisk = __import__('resVdisk')
         r = vdisk.Vdisk(**kwargs)
         add_triggers(r, conf, s)
@@ -402,7 +420,7 @@ def add_hbs(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
 
         try:
             hb = __import__('resHb'+hbtype)
@@ -434,8 +452,8 @@ def add_loops(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
 
         try:
             loop = __import__('resLoop'+rcEnv.sysname)
@@ -479,8 +497,8 @@ def add_vgs(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
 
         try:
             vg = __import__('resVg'+vgtype)
@@ -510,8 +528,8 @@ def add_vmdg(svc, conf):
     kwargs['tags'] = get_tags(conf, 'vmdg')
     kwargs['name'] = 'vmdg'
     kwargs['disabled'] = get_disabled(conf, 'vmdg', svc)
-    kwargs['optional'] = get_optional(conf, 'vmdg')
-    kwargs['monitor'] = get_monitor(conf, s)
+    kwargs['optional'] = get_optional(conf, 'vmdg', svc)
+    kwargs['monitor'] = get_monitor(conf, 'vmdg', svc)
 
     r = vg.Vg(**kwargs)
     add_triggers(r, conf, 'vmdg')
@@ -540,8 +558,8 @@ def add_pools(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
 
         r = pool.Pool(**kwargs)
         add_triggers(r, conf, s)
@@ -610,8 +628,8 @@ def add_filesystems(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
-        kwargs['monitor'] = get_monitor(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
 
         r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)
@@ -726,7 +744,7 @@ def add_syncs_zfs(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = zfs.SyncZfs(**kwargs)
         add_triggers(r, conf, s)
@@ -780,7 +798,7 @@ def add_syncs_dds(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = dds.syncDds(**kwargs)
         add_triggers(r, conf, s)
@@ -821,7 +839,7 @@ def add_syncs_evasnap(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncEvasnap(**kwargs)
         add_triggers(r, conf, s)
@@ -863,7 +881,7 @@ def add_syncs_symclone(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncSymclone(**kwargs)
         add_triggers(r, conf, s)
@@ -922,7 +940,7 @@ def add_syncs_nexenta(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
 
         import resSyncNexenta
@@ -978,7 +996,7 @@ def add_syncs_netapp(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
 
         import resSyncNetapp
@@ -1041,7 +1059,7 @@ def add_syncs_rsync(svc, conf):
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s)
+        kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
 
         r = resSyncRsync.Rsync(**kwargs)
