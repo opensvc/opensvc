@@ -74,7 +74,6 @@ class checks(check):
 
     def do_checks(self):
         import datetime
-        import xmlrpcClient
 
         now = str(datetime.datetime.now())
         vars = [\
@@ -111,4 +110,4 @@ class checks(check):
                     i['chk_value'].replace("%",""),
                     now]
                 )
-        xmlrpcClient.push_checks(vars, vals)
+        self.node.collector.call('push_checks', vars, vals)

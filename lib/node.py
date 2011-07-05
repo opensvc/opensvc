@@ -95,11 +95,18 @@ class Node(Svc, Freezer):
           'delete': 'delete a node configuration parameter (pointed by --param)',
           'register': 'obtain a registration number from the collector, used to authenticate the node',
         }
+        self.collector = xmlrpcClient.Collector()
+
+    def build_services(self):
+        if self.svcs is not None:
+            return
+        self.svcs = svcBuilder.build_services()
+        for svc in self.svcs:
+             svc.node = self
 
     def _setup_sync_conf(self):
         h = {}
-        if self.svcs is None:
-            self.svcs = svcBuilder.build_services()
+        self.build_services()
         for svc in self.svcs:
             for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
                 for r in rs.resources:
@@ -392,7 +399,7 @@ class Node(Svc, Freezer):
         else:
             interval = self.config.getint('DEFAULT', 'push_interval')
 
-        xmlrpcClient.push_stats(force=self.options.force,
+        self.collector.call('push_stats', force=self.options.force,
                                 stats_dir=self.options.stats_dir,
                                 stats_start=self.options.stats_start,
                                 stats_end=self.options.stats_end,
@@ -405,7 +412,7 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
-        xmlrpcClient.push_pkg()
+        self.collector.call('push_pkg')
 
     def pushpatch(self):
         if self.skip_action('patches', 'push_interval', 'last_patch_push',
@@ -414,7 +421,7 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
-        xmlrpcClient.push_patch()
+        self.collector.call('push_patch')
 
     def pushasset(self):
         if self.skip_action('asset', 'push_interval', 'last_asset_push',
@@ -423,7 +430,7 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
-        xmlrpcClient.push_asset(self)
+        self.collector.call('push_asset', self)
 
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',
@@ -432,7 +439,7 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
-        xmlrpcClient.push_sym()
+        self.collector.call('push_sym')
 
     def need_sync(self):
         l = []
@@ -464,7 +471,7 @@ class Node(Svc, Freezer):
 
         for svc in self.svcs:
             svc.force = self.options.force
-            svc.cron = self.cron
+            svc.cron = self.options.cron
             d = {'action': 'syncall'}
             p[svc.svcname] = Process(target=svc.action,
                                      name='worker_'+svc.svcname,
@@ -478,7 +485,7 @@ class Node(Svc, Freezer):
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
-            svc.cron = self.cron
+            svc.cron = self.options.cron
             svc.action('presync')
 
     def pushservices(self):
@@ -491,7 +498,7 @@ class Node(Svc, Freezer):
         if self.svcs is None:
             self.svcs = svcBuilder.build_services()
         for svc in self.svcs:
-            svc.cron = self.cron
+            svc.cron = self.options.cron
             svc.action('push')
 
     def prkey(self):
@@ -507,9 +514,9 @@ class Node(Svc, Freezer):
             return
 
         import checks
-        if self.svcs is None:
-            self.svcs = svcBuilder.build_services()
+        self.build_services()
         c = checks.checks(self.svcs)
+        c.node = self
         c.do_checks()
 
     def compliance_check(self):
@@ -520,56 +527,67 @@ class Node(Svc, Freezer):
             return
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_checks()
 
     def compliance_fix(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_fix()
 
     def compliance_fixable(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_fixable()
 
     def compliance_show_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_show_moduleset()
 
     def compliance_attach_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_attach_moduleset()
 
     def compliance_detach_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_detach_moduleset()
 
     def compliance_show_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_show_ruleset()
 
     def compliance_attach_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_attach_ruleset()
 
     def compliance_detach_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_detach_ruleset()
 
     def compliance_list_ruleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_list_rulesets()
 
     def compliance_list_moduleset(self):
         import compliance
         c = compliance.Compliance(self.options)
+        c.node = self
         c.do_list_modulesets()
 
     def delete(self):
@@ -637,7 +655,7 @@ class Node(Svc, Freezer):
         return 0
 
     def register(self):
-        u = xmlrpcClient.register_node()
+        u = self.collector.call('register_node')
         if u is None:
             print >>sys.stderr, "failed to obtain a registration number"
             return 1

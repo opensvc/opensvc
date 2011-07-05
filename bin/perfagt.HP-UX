@@ -132,5 +132,5 @@ GBL_DISK_PHYS_WRITE_BYTE_RATE
 
 
 run_glance()
-xmlrpcClient.push_stats_fs_u(fs_u())
+xmlrpcClient.Collector().call('push_stats_fs_u', fs_u())
 

@@ -36,4 +36,4 @@ def fs_u():
         vals.append([now, nodename, l[5], l[1], l[4].replace('%','')])
     return (vars, vals)
 
-xmlrpcClient.push_stats_fs_u(fs_u())
+xmlrpcClient.Collector().call('push_stats_fs_u', fs_u())

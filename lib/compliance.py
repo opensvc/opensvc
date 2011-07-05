@@ -4,7 +4,6 @@ import sys
 import re
 import datetime
 import rcExceptions as ex
-import xmlrpcClient
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
@@ -81,7 +80,7 @@ class Module(object):
                 self.strip_unprintable(out),
                 ruleset,
                 action]
-        xmlrpcClient.comp_log_action(vars, vals)
+        self.node.collector.call('comp_log_action', vars, vals)
 
     def action(self, action):
         print banner(self.name)
@@ -202,11 +201,13 @@ class Compliance(object):
         self.options = options
         self.module_o = {}
         self.module = []
+        self.node = None
 
     def __iadd__(self, o):
         self.module_o[o.name] = o
         o.ruleset = self.ruleset
         o.options = self.options
+        o.node = self.node
         return self
 
     def init(self):
@@ -270,7 +271,7 @@ class Compliance(object):
                 os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
 
     def get_moduleset(self):
-        moduleset = xmlrpcClient.comp_get_moduleset()
+        moduleset = self.node.collector.call('comp_get_moduleset')
         if moduleset is None:
             raise ex.excError('could not fetch moduleset')
         return moduleset
@@ -281,13 +282,13 @@ class Compliance(object):
         return self.get_current_ruleset()
 
     def get_current_ruleset(self):
-        ruleset = xmlrpcClient.comp_get_ruleset()
+        ruleset = self.node.collector.call('comp_get_ruleset')
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
 
     def get_dated_ruleset(self, date):
-        ruleset = xmlrpcClient.comp_get_dated_ruleset(self.options.ruleset_date)
+        ruleset = self.node.collector('comp_get_dated_ruleset', self.options.ruleset_date)
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
@@ -312,7 +313,7 @@ class Compliance(object):
         return set(self.module + modules) - set([''])
 
     def get_moduleset_modules(self, m):
-        moduleset = xmlrpcClient.comp_get_moduleset_modules(m)
+        moduleset = self.node.collector.call('comp_get_moduleset_modules', m)
         if moduleset is None:
             raise ex.excError('could not expand moduleset modules')
         return moduleset
@@ -383,7 +384,7 @@ class Compliance(object):
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = xmlrpcClient.comp_attach_moduleset(moduleset)
+            d = self.node.collector.call('comp_attach_moduleset', moduleset)
             if not d['status']:
                 err = True
             print d['msg']
@@ -395,7 +396,7 @@ class Compliance(object):
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = xmlrpcClient.comp_detach_moduleset(moduleset)
+            d = self.node.collector.call('comp_detach_moduleset', moduleset)
             if not d['status']:
                 err = True
             print d['msg']
@@ -407,7 +408,7 @@ class Compliance(object):
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = xmlrpcClient.comp_attach_ruleset(ruleset)
+            d = self.node.collector.call('comp_attach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']
@@ -419,7 +420,7 @@ class Compliance(object):
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = xmlrpcClient.comp_detach_ruleset(ruleset)
+            d = self.node.collector.call('comp_detach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']
@@ -428,16 +429,16 @@ class Compliance(object):
 
     def do_list_rulesets(self):
         if len(self.options.ruleset) == 0:
-            l = xmlrpcClient.comp_list_ruleset()
+            l = self.node.collector.call('comp_list_ruleset')
         else:
-            l = xmlrpcClient.comp_list_ruleset(self.options.ruleset)
+            l = self.node.collector.call('comp_list_ruleset', self.options.ruleset)
         print '\n'.join(l)
 
     def do_list_modulesets(self):
         if len(self.options.moduleset) == 0:
-            l = xmlrpcClient.comp_list_moduleset()
+            l = self.node.collector.call('comp_list_moduleset')
         else:
-            l = xmlrpcClient.comp_list_moduleset(self.options.moduleset)
+            l = self.node.collector.call('comp_list_moduleset', self.options.moduleset)
         if l is None:
             return
         print '\n'.join(l)

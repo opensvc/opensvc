@@ -94,5 +94,5 @@ def mem_u():
             ))+'\n')
 
 
-xmlrpcClient.push_stats_fs_u(fs_u())
+xmlrpcClient.Collector().call('push_stats_fs_u', fs_u())
 mem_u()

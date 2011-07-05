@@ -32,6 +32,7 @@ import lock
 import rcLogger
 import logging
 import datetime
+import node
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -49,9 +50,9 @@ def dblogger(self, action, begin, end, actionlogfile):
         for r in rs.resources:
             r.log.setLevel(logging.CRITICAL)
 
-    xmlrpcClient.end_action(self, action, begin, end, actionlogfile)
+    self.node.collector.call('end_action', self, action, begin, end, actionlogfile)
     g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
-    xmlrpcClient.svcmon_update_combo(g_vars, g_vals, r_vars, r_vals)
+    self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
     os.unlink(actionlogfile)
     try:
         logging.shutdown()
@@ -67,6 +68,7 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
+        self.node = None
         self.ha = False
         self.disable_fork_dblogger = False
         self.svcname = svcname
@@ -903,7 +905,7 @@ class Svc(Resource, Freezer):
         except: pass
 
     def push(self):
-        xmlrpcClient.push_all([self])
+        self.node.collector.call('push_all', [self])
         import time
         with open(self.push_flag, 'w') as f:
             f.write(str(time.time()))
@@ -945,6 +947,8 @@ class Svc(Resource, Freezer):
                 r.setup_environ()
 
     def action(self, action, rid=[], tags=set([]), waitlock=60):
+        if self.node is None:
+            self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
@@ -1020,7 +1024,7 @@ class Svc(Resource, Freezer):
 
         """Provision a database entry to store action log later
         """
-        xmlrpcClient.begin_action(self, action, begin)
+        self.node.collector.call('begin_action', self, action, begin)
 
         """Per action logfile to push to database at the end of the action
         """
