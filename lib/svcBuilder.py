@@ -1072,7 +1072,16 @@ def add_apps(svc, conf):
     else:
         resApp = __import__('resApp')
 
-    r = resApp.Apps(runmethod=svc.runmethod)
+    kwargs = {}
+    kwargs['runmethod'] = svc.runmethod
+
+    s = 'app'
+    if conf.has_section(s):
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs['monitor'] = get_monitor(conf, s, svc)
+       
+    r = resApp.Apps(**kwargs)
     svc += r
 
 def setup_logging():
