@@ -111,8 +111,8 @@ class Vg(resVg.Vg):
                 devs |= set(l[0].split(','))
             else:
                 devs |= set([l[0]])
+        errors = 0
         with open(self.sharefile_name(), 'r') as f:
-            err = 0
             for line in f.readlines():
                 l = line.split(':')
                 if len(l) != 2:
@@ -126,6 +126,7 @@ class Vg(resVg.Vg):
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-a', 'gdev:'+dev]
                     (ret, out, err) = self.vcall(cmd)
                     if ret != 0:
+                        self.log.error("error adding device %s hpvm device table"%dev)
                         raise ex.excError
                 if 'YES' in l[1]:
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=YES']
@@ -133,9 +134,10 @@ class Vg(resVg.Vg):
                     cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=NO']
                 (ret, buff, err) = self.vcall(cmd)
                 if ret != 0:
-                    err += 1
+                    self.log.error("error setting the shared attribute for %s"%dev)
+                    errors += 1
                     continue
-        if err > 0:
+        if errors > 0:
             raise ex.excError
 
     def disklist(self):
