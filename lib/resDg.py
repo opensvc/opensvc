@@ -33,9 +33,10 @@ class Dg(Res.Resource):
     """
     def __init__(self, rid=None, name=None, type=None,
                  always_on=set([]), optional=False,
-                 disabled=False, tags=set([])):
+                 disabled=False, tags=set([]), monitor=False):
         Res.Resource.__init__(self, rid, type,
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional, disabled=disabled,
+                              tags=tags, monitor=monitor)
         self.name = name
         self.always_on = always_on
         self.disks = set()
