@@ -31,9 +31,12 @@ rcEnv.warned = False
 
 import logging
 import logging.handlers
-log = logging.getLogger("xml")
+logfile = os.path.join(os.path.dirname(__file__), '..', 'log', 'xmlrpc.log')
+log = logging.getLogger("xmlrpc")
 fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-filehandler = logging.handlers.RotatingFileHandler("/tmp/xml.log")
+filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
+                                                   maxBytes=5242880,
+                                                   backupCount=5)
 filehandler.setFormatter(fileformatter)
 log.addHandler(filehandler)
 log.setLevel(logging.DEBUG)
@@ -104,6 +107,7 @@ class Collector(object):
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
+        log.debug("call %s"%fn)
         if len(args) > 1:
             args = args[1:]
         else:
@@ -354,25 +358,20 @@ class Collector(object):
         self.proxy.end_action(*args)
     
     def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
-        log.debug("enter svcmon_update_combo")
         if 'svcmon_update_combo' in self.proxy_methods:
             args = [g_vars, g_vals, r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            log.debug("proxy.svcmon_update_combo: %s"%str(args))
             self.proxy.svcmon_update_combo(*args)
         else:
             args = [g_vars, g_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            log.debug("proxy.svcmon_update: %s"%str(args))
             self.proxy.svcmon_update(*args)
             args = [r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            log.debug("proxy.resmon_update: %s"%str(args))
             self.proxy.resmon_update(*args)
-        log.debug("leave svcmon_update_combo")
     
     def push_service(self, svc):
         def envfile(svc):
