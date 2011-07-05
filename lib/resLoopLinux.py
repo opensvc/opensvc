@@ -87,9 +87,10 @@ class Loop(Res.Loop):
         else: return rcStatus.DOWN
 
     def __init__(self, rid, loopFile, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False):
+                 disabled=False, tags=set([]), optional=False, monitor=False):
         Res.Loop.__init__(self, rid, loopFile, always_on=always_on,
-                          disabled=disabled, tags=tags, optional=optional)
+                          disabled=disabled, tags=tags, optional=optional,
+                          monitor=monitor)
 
     def provision(self):
         m = __import__("provLoopLinux")

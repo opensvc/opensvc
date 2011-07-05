@@ -28,10 +28,11 @@ from subprocess import *
 
 class Vg(resVg.Vg):
     def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False, tags=set([])):
+                 optional=False, disabled=False, tags=set([]),
+                 monitor=False):
         self.label = name
         resVg.Vg.__init__(self, rid=rid, name=name,
-                          type='disk.vg',
+                          type='disk.vg', monitor=monitor,
                           optional=optional, disabled=disabled, tags=tags)
 
     def has_it(self):

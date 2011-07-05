@@ -25,9 +25,12 @@ from rcGlobalEnv import rcEnv
 import os
 
 class Ldom(resContainer.Container):
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
-        resContainer.Container.__init__(self, rid="ldom", name=name, type="container.ldom",
-                                        optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, name, optional=False, disabled=False, monitor=False,
+                 tags=set([])):
+        resContainer.Container.__init__(self, rid="ldom", name=name,
+                                        type="container.ldom",
+                                        optional=optional, disabled=disabled,
+                                        monitor=monitor, tags=tags)
         self.shutdown_timeout = 240
         self.sshbin = '/usr/local/bin/ssh'
 

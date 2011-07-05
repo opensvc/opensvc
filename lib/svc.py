@@ -354,8 +354,13 @@ class Svc(Resource, Freezer):
             }
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources]:
-                rid, status, label, log = r.status_quad()
-                d['resources'][rid] = {'status': status, 'label': label, 'log':log}
+                rid, status, label, log, monitor = r.status_quad()
+                d['resources'][rid] = {'status': status,
+                                       'label': label,
+                                       'log':log,
+                                       'monitor':monitor,
+                                       'disable': disable,
+                                       'optional': optional}
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
@@ -367,8 +372,12 @@ class Svc(Resource, Freezer):
         from textwrap import wrap
 
         def print_res(e, fmt, pfx):
-            rid, status, label, log = e
-            print fmt%(rid, status, label)
+            rid, status, label, log, monitor, disabled, optional = e
+            flags = ''
+            flags += 'M' if monitor else '.'
+            flags += 'D' if disabled else '.'
+            flags += 'O' if optional else '.'
+            print fmt%(rid, flags, status, label)
             if len(log) > 0:
                 print '\n'.join(wrap(log,
                                      initial_indent = pfx,
@@ -378,10 +387,10 @@ class Svc(Resource, Freezer):
                                )
 
         print self.svcname
-        fmt = "%-20s %-8s %s"
-        print fmt%("overall", str(self.group_status()['overall']), "\n"),
-        fmt = "|- %-17s %-8s %s"
-        print fmt%("avail", str(self.group_status()['avail']), "\n"),
+        fmt = "%-20s %4s %-8s %s"
+        print fmt%("overall", '', str(self.group_status()['overall']), "\n"),
+        fmt = "|- %-17s %4s %-8s %s"
+        print fmt%("avail", '', str(self.group_status()['avail']), "\n"),
 
         l = []
         for rs in self.get_res_sets(self.status_types):
@@ -391,16 +400,16 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %-8s %s"
-                    pfx = "|     %-14s %-8s "%('','')
+                    fmt = "|  '- %-14s %4s %-8s %s"
+                    pfx = "|     %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %-8s %s"
-                    pfx = "|  |  %-14s %-8s "%('','')
+                    fmt = "|  |- %-14s %4s %-8s %s"
+                    pfx = "|  |  %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
 
-        fmt = "|- %-17s %-8s %s"
-        print fmt%("sync", str(self.group_status()['sync']), "\n"),
+        fmt = "|- %-17s %4s %-8s %s"
+        print fmt%("sync", '', str(self.group_status()['sync']), "\n"),
 
         l = []
         for rs in self.get_res_sets(self.status_types):
@@ -410,16 +419,16 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %-8s %s"
-                    pfx = "|     %-14s %-8s "%('','')
+                    fmt = "|  '- %-14s %4s %-8s %s"
+                    pfx = "|     %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %-8s %s"
-                    pfx = "|  |  %-14s %-8s "%('','')
+                    fmt = "|  |- %-14s %4s %-8s %s"
+                    pfx = "|  |  %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
 
-        fmt = "'- %-17s %-8s %s"
-        print fmt%("hb", str(self.group_status()['hb']), "\n"),
+        fmt = "'- %-17s %4s %-8s %s"
+        print fmt%("hb", '', str(self.group_status()['hb']), "\n"),
 
         l = []
         for rs in self.get_res_sets(self.status_types):
@@ -429,12 +438,12 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "   '- %-14s %-8s %s"
-                    pfx = "      %-14s %-8s "%('','')
+                    fmt = "   '- %-14s %4s %-8s %s"
+                    pfx = "      %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "   |- %-14s %-8s %s"
-                    pfx = "   |  %-14s %-8s "%('','')
+                    fmt = "   |- %-14s %4s %-8s %s"
+                    pfx = "   |  %-14s %4s %-8s "%('','','')
                     print_res(e, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):

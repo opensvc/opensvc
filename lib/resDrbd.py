@@ -37,9 +37,11 @@ class Drbd(Res.Resource):
         Stop 'downs' the drbd devices.
     """
     def __init__(self, rid=None, res=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([])):
+                 optional=False, disabled=False, tags=set([]),
+                 monitor=False):
         Res.Resource.__init__(self, rid, "disk.drbd",
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional, disabled=disabled, tags=tags,
+                              monitor=monitor)
         self.res = res
         self.label = res
         self.drbdadm = None

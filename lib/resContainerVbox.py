@@ -25,11 +25,12 @@ import os
 utilities = __import__('rcUtilities'+rcEnv.sysname)
 
 class Vbox(resContainer.Container):
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
+    def __init__(self, name, optional=False, disabled=False, monitor=False,
+                 tags=set([])):
         resContainer.Container.__init__(self, rid="vbox", name=name,
                                         type="container.vbox",
                                         optional=optional, disabled=disabled,
-                                        tags=tags)
+                                        monitor=monitor, tags=tags)
         self.shutdown_timeout = 240
         #self.sshbin = '/usr/local/bin/ssh'
         self.vminfo = None

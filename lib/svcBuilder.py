@@ -137,6 +137,11 @@ def get_optional(conf, section):
         return conf.getboolean(section, "optional")
     return False
 
+def get_monitor(conf, section):
+    if conf.has_option(section, 'monitor'):
+        return conf.getboolean(section, "monitor")
+    return False
+
 def get_disabled(conf, section, svc):
     if conf.has_option(section, 'disable'):
         return conf.getboolean(section, "disable")
@@ -309,6 +314,7 @@ def add_ips(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
         r = ip.Ip(**kwargs)
         add_triggers(r, conf, s)
         svc += r
@@ -334,6 +340,7 @@ def add_drbds(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
         drbd = __import__('resDrbd')
         r = drbd.Drbd(**kwargs)
         add_triggers(r, conf, s)
@@ -361,6 +368,7 @@ def add_vdisks(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
         vdisk = __import__('resVdisk')
         r = vdisk.Vdisk(**kwargs)
         add_triggers(r, conf, s)
@@ -427,6 +435,7 @@ def add_loops(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
 
         try:
             loop = __import__('resLoop'+rcEnv.sysname)
@@ -471,6 +480,7 @@ def add_vgs(svc, conf):
         kwargs['tags'] = get_tags(conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
 
         try:
             vg = __import__('resVg'+vgtype)
@@ -501,6 +511,7 @@ def add_vmdg(svc, conf):
     kwargs['name'] = 'vmdg'
     kwargs['disabled'] = get_disabled(conf, 'vmdg', svc)
     kwargs['optional'] = get_optional(conf, 'vmdg')
+    kwargs['monitor'] = get_monitor(conf, s)
 
     r = vg.Vg(**kwargs)
     add_triggers(r, conf, 'vmdg')
@@ -530,6 +541,7 @@ def add_pools(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
 
         r = pool.Pool(**kwargs)
         add_triggers(r, conf, s)
@@ -599,6 +611,7 @@ def add_filesystems(svc, conf):
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s)
+        kwargs['monitor'] = get_monitor(conf, s)
 
         r = mount.Mount(**kwargs)
         add_triggers(r, conf, s)

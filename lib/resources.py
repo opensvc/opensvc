@@ -36,12 +36,13 @@ class Resource(object):
     label = None
 
     def __init__(self, rid=None, type=None, optional=False, disabled=False,
-                 tags=set([])):
+                 monitor=False, tags=set([])):
         self.rid = rid
         self.tags = tags
         self.type = type
         self.optional = optional
         self.disabled = disabled
+        self.monitor = monitor
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
         self.always_on = set([])
@@ -189,7 +190,13 @@ class Resource(object):
 
     def status_quad(self):
         r = self.status(verbose=True)
-        return (self.rid, rcStatus.status_str(r), self.label, self.status_log_str)
+        return (self.rid,
+                rcStatus.status_str(r),
+                self.label,
+                self.status_log_str,
+                self.monitor,
+                self.disabled,
+                self.optional)
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,

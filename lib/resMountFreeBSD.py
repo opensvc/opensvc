@@ -67,11 +67,13 @@ class Mount(Res.Mount):
     """ define FreeBSD mount/umount doAction """
     def __init__(self, rid, mountPoint, device, fsType, mntOpt,
                  snap_size=None, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False):
+                 disabled=False, tags=set([]), optional=False,
+                 monitor=False):
         self.Mounts = None
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt,
                            snap_size, always_on,
-                           disabled=disabled, tags=tags, optional=optional)
+                           disabled=disabled, tags=tags, optional=optional,
+                           monitor=monitor)
         self.fsck_h = {
             'ufs': {'bin': 'fsck', 'cmd': ['fsck', '-t', 'ufs', '-p', self.device]},
         }

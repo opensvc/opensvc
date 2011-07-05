@@ -22,7 +22,7 @@ from subprocess import *
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]), dsf=True,
+                 always_on=set([]), dsf=True, monitor=False,
                  disabled=False, tags=set([]), optional=False):
         self.label = name
         self.dsf = dsf
@@ -30,7 +30,8 @@ class Vg(resDg.Dg):
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled, tags=tags)
+                          disabled=disabled, tags=tags,
+                          monitor=monitor)
 
     def has_it(self):
         """ returns True if the volume is present

@@ -152,9 +152,12 @@ class Lxc(resContainer.Container):
             return False
         return True
 
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
-        resContainer.Container.__init__(self, rid="lxc", name=name, type="container.lxc",
-                                        optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, name, optional=False, disabled=False, monitor=False,
+                 tags=set([])):
+        resContainer.Container.__init__(self, rid="lxc", name=name,
+                                        type="container.lxc",
+                                        optional=optional, disabled=disabled,
+                                        monitor=monitor, tags=tags)
         self.prefix = None
         hint = os.path.join(os.sep, 'usr', 'bin', 'lxc-start')
         if os.path.exists(hint):

@@ -27,9 +27,11 @@ import resContainer
 u = __import__('rcUtilitiesHP-UX')
 
 class HpVm(resContainer.Container):
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
+    def __init__(self, name, optional=False, disabled=False,
+                 monitor=False, tags=set([])):
         resContainer.Container.__init__(self, rid="hpvm", name=name, type="container.hpvm",
-                                        optional=optional, disabled=disabled, tags=tags)
+                                        optional=optional, disabled=disabled,
+                                        monitor=monitor, tags=tags)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

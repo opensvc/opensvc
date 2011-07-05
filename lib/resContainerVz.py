@@ -129,9 +129,12 @@ class Vz(resContainer.Container):
             raise ex.excError
         return self._cf
 
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
-        resContainer.Container.__init__(self, rid="vz", name=name, type="container.vz",
-                                        optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, name, optional=False, disabled=False, monitor=False,
+                 tags=set([])):
+        resContainer.Container.__init__(self, rid="vz", name=name,
+                                        type="container.vz",
+                                        optional=optional, disabled=disabled,
+                                        monitor=monitor, tags=tags)
         self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
 
     def __str__(self):

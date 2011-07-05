@@ -107,9 +107,12 @@ class Jail(resContainer.Container):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, name, optional=False, disabled=False, tags=set([])):
-        resContainer.Container.__init__(self, rid="jail", name=name, type="container.jail",
-                                        optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, name, optional=False, disabled=False,
+                 monitor=False, tags=set([])):
+        resContainer.Container.__init__(self, rid="jail", name=name,
+                                        type="container.jail",
+                                        optional=optional, disabled=disabled,
+                                        monitor=monitor, tags=tags)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
