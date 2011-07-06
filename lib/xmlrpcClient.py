@@ -24,14 +24,16 @@ from rcGlobalEnv import rcEnv
 import rcStatus
 import socket
 import httplib
+import rcExceptions as ex
 
 hostId = __import__('hostid'+rcEnv.sysname)
 hostid = hostId.hostid()
 rcEnv.warned = False
+pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 import logging
 import logging.handlers
-logfile = os.path.join(os.path.dirname(__file__), '..', 'log', 'xmlrpc.log')
+logfile = os.path.join(pathosvc, 'log', 'xmlrpc.log')
 log = logging.getLogger("xmlrpc")
 fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
@@ -101,13 +103,12 @@ class Collector(object):
             rcEnv.uuid = ""
         del(config)
     
-    def call_dummy(self, *args):
-        pass
-    
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
-        log.debug("call %s"%fn)
+        if len(self.proxy_methods) == 0:
+            return
+        self.log.debug("call %s"%fn)
         if len(args) > 1:
             args = args[1:]
         else:
@@ -154,6 +155,63 @@ class Collector(object):
                          'comp_list_ruleset',
                          'comp_list_moduleset',
                          'comp_log_action']
+        self.method_cache = os.path.join(pathosvc, "var", "collector")
+        self.auth_node = True
+        self.log = log
+
+    def load_method_cache(self):
+        if not os.path.exists(self.method_cache):
+            self.log.error("missing %s"%self.method_cache)
+            raise ex.excError
+        import ConfigParser
+        conf = ConfigParser.RawConfigParser()
+        conf.read(self.method_cache)
+        if not conf.has_section("methods"):
+            self.log.error("missing 'methods' section of %s"%self.method_cache)
+            raise ex.excError
+        if not conf.has_option("methods", "feed"):
+            self.log.error("missing 'feed' option in 'methods' section of %s"%self.method_cache)
+            raise ex.excError
+        if not conf.has_option("methods", "compliance"):
+            self.log.error("missing 'compliance' option in 'methods' section of %s"%self.method_cache)
+            raise ex.excError
+        self.proxy_methods = conf.get("methods", "feed").split(',')
+        self.comp_proxy_methods = conf.get("methods", "compliance").split(',')
+        self.log.debug("%s loaded"%self.method_cache)
+        self.log.debug("%d methods"%len(self.proxy_methods))
+        self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
+
+    def write_method_cache(self):
+        import ConfigParser
+        conf = ConfigParser.RawConfigParser()
+        conf.add_section('methods')
+        if len(self.proxy_methods) > 0:
+            conf.set('methods', 'feed', ','.join(self.proxy_methods))
+        if len(self.comp_proxy_methods) > 0:
+            conf.set('methods', 'compliance', ','.join(self.comp_proxy_methods))
+        f = open(self.method_cache, 'w')
+        conf.write(f)
+        self.log.debug("%s refreshed"%self.method_cache)
+
+    def get_methods(self):
+        self.log.debug("get method lists")
+        try:
+            if self.proxy is None:
+                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            self.proxy_methods = self.proxy.system.listMethods()
+        except:
+            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+            self.proxy_methods = []
+        self.log.debug("%d methods"%len(self.proxy_methods))
+
+        try:
+            if self.comp_proxy is None:
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+            self.comp_proxy_methods = self.comp_proxy.system.listMethods()
+        except:
+            self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+            self.comp_proxy_methods = []
+        self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
     def init(self, fn):
         if fn in self.comp_fns and self.comp_proxy is not None:
@@ -170,45 +228,28 @@ class Collector(object):
         except:
             import sys
             print >>sys.stderr, "could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc
-            self.call = self.call_dummy
-
-        if fn not in self.comp_fns:
-            socket.setdefaulttimeout(20)
-            try:
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
-                self.proxy_methods = self.proxy.system.listMethods()
-            except:
-                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-                self.proxy_methods = []
-            
-            log.debug("%d methods found on collector"%len(self.proxy_methods))
-
-            if len(self.proxy_methods) == 0:
-                self.auth_node = True
-            elif "register_node" in self.proxy_methods:
-                self.auth_node = True
-            else:
-                self.auth_node = False
-        else:
-            socket.setdefaulttimeout(30)
-            try:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
-                self.comp_proxy_methods = self.comp_proxy.system.listMethods()
-            except:
-                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-                self.comp_proxy_methods = []
-            
-            log.debug("%d comp methods found on collector"%len(self.comp_proxy_methods))
-
-            if len(self.comp_proxy_methods) == 0:
-                self.auth_node = True
-            elif "register_node" in self.comp_proxy_methods:
-                self.auth_node = True
-            else:
-                self.auth_node = False
 
         socket.setdefaulttimeout(120)
-        
+
+        if fn not in self.comp_fns:
+            try:
+                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            except:
+                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        else:
+            try:
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+            except:
+                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+
+        try:
+            self.load_method_cache()
+        except ex.excError:
+            self.get_methods()
+            self.write_method_cache()
+
+        if "register_node" not in self.proxy_methods:
+            self.auth_node = False
    
     def begin_action(self, svc, action, begin):
         try:
