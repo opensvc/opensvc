@@ -56,7 +56,7 @@ class rcEnv:
     dbopensvc_port = "8000"
     dbopensvc_app = "feed"
     dbcompliance_host = dbopensvc_host
-    dbcompliance_port = 80
+    dbcompliance_port = dbopensvc_port
     dbcompliance_app = "init"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover

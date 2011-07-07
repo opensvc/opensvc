@@ -50,6 +50,8 @@ from Queue import Empty
 def call_worker(q):
     e = "foo"
     o = Collector()
+    o._worker = True
+    o.log = logging.getLogger("xmlrpc.worker")
     o.init()
     while e is not None:
         try:
@@ -184,6 +186,7 @@ class Collector(object):
         self.log.error("call %s error"%fn)
     
     def __init__(self):
+        self._worker = False
         self.worker = None
         self.queue = None
         self.comp_fns = ['comp_get_moduleset_modules',
@@ -244,7 +247,7 @@ class Collector(object):
         except:
             self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
             self.proxy_methods = []
-        self.log.debug("%d methods"%len(self.proxy_methods))
+        self.log.debug("%d feed methods"%len(self.proxy_methods))
 
         try:
             if self.comp_proxy is None:
@@ -281,13 +284,15 @@ class Collector(object):
                 if not utils.check_ping(rcEnv.dbopensvc_host):
                     self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
                     raise
+                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            except:
+                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+            try:
                 if not utils.check_ping(rcEnv.dbcompliance_host):
                     self.log.error("could not ping %s. disable collector updates."%rcEnv.dbcompliance)
                     raise
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
             except:
-                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
                 self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
         elif fn not in self.comp_fns:
             try:
