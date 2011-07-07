@@ -37,28 +37,19 @@ import node
 def signal_handler(signum, frame):
     raise ex.excSignal
 
-def fork_dblogger(self, action, begin, end, actionlogfile):
-    kwargs = {'self': self,
-              'action': action,
-              'begin': begin,
-              'end': end,
-              'actionlogfile': actionlogfile}
-    fork(dblogger, kwargs)
-
-def dblogger(self, action, begin, end, actionlogfile):
+def dblogger(self, action, begin, end, actionlogfile, sync=False):
     for rs in self.resSets:
         for r in rs.resources:
             r.log.setLevel(logging.CRITICAL)
 
-    self.node.collector.call('end_action', self, action, begin, end, actionlogfile)
+    self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=sync)
     g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
-    self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
+    self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=sync)
     os.unlink(actionlogfile)
     try:
         logging.shutdown()
     except:
         pass
-
 
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
@@ -70,7 +61,7 @@ class Svc(Resource, Freezer):
         """usage : aSvc=Svc(type)"""
         self.node = None
         self.ha = False
-        self.disable_fork_dblogger = False
+        self.sync_dblogger = False
         self.svcname = svcname
         self.vmname = ""
         self.containerize = True
@@ -607,7 +598,7 @@ class Svc(Resource, Freezer):
 
     def shutdown(self):
         # don't loose the action log on node shutdown
-        self.disable_fork_dblogger = True
+        self.sync_dblogger = True
         self.force = True
         self.stop()
 
@@ -1024,7 +1015,7 @@ class Svc(Resource, Freezer):
 
         """Provision a database entry to store action log later
         """
-        self.node.collector.call('begin_action', self, action, begin)
+        self.node.collector.call('begin_action', self, action, begin, sync=self.sync_dblogger)
 
         """Per action logfile to push to database at the end of the action
         """
@@ -1044,10 +1035,7 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        if self.disable_fork_dblogger:
-            dblogger(self, action, begin, end, actionlogfile)
-        else:
-            fork_dblogger(self, action, begin, end, actionlogfile)
+        dblogger(self, action, begin, end, actionlogfile, self.sync_dblogger)
         return err
 
     def restart(self):

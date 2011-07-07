@@ -44,6 +44,39 @@ log.addHandler(filehandler)
 log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 
+from multiprocessing import Queue, Process
+from Queue import Empty
+
+def call_worker(q):
+    e = "foo"
+    o = Collector()
+    o.init()
+    while e is not None:
+        try:
+            e = q.get(block=True, timeout=1)
+        except Empty:
+            break
+        fn, args, kwargs = e
+        o.log.debug("xmlrpc async %s"%fn)
+        try:
+            getattr(o.proxy, fn)(*args, **kwargs)
+            o.log.debug("xml async done")
+            continue
+        except (socket.error, xmlrpclib.ProtocolError):
+            """ normal for collector communications disabled
+                through 127.0.0.1 == dbopensvc
+            """
+            pass
+        except socket.timeout:
+            print "connection to collector timed out"
+        except:
+            import sys
+            import traceback
+            e = sys.exc_info()
+            print e[0], e[1], traceback.print_tb(e[2])
+        o.log.debug("xml async error")
+        e = None
+ 
 class Collector(object):
     proxy = None
     proxy_method = None
@@ -102,7 +135,11 @@ class Collector(object):
         else:
             rcEnv.uuid = ""
         del(config)
-    
+
+    def submit(self, fn, *args, **kwargs):
+        self.init_worker()
+        self.queue.put((fn, args, kwargs), block=True)
+
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
@@ -129,7 +166,9 @@ class Collector(object):
             rcEnv.warned = True
             return
         try:
-            return getattr(self, fn)(*args, **kwargs)
+            buff = getattr(self, fn)(*args, **kwargs)
+            self.log.debug("call %s done"%fn)
+            return buff
         except (socket.error, xmlrpclib.ProtocolError):
             """ normal for collector communications disabled
                 through 127.0.0.1 == dbopensvc
@@ -142,8 +181,11 @@ class Collector(object):
             import traceback
             e = sys.exc_info()
             print e[0], e[1], traceback.print_tb(e[2])
+        self.log.error("call %s error"%fn)
     
     def __init__(self):
+        self.worker = None
+        self.queue = None
         self.comp_fns = ['comp_get_moduleset_modules',
                          'comp_get_moduleset',
                          'comp_attach_moduleset',
@@ -213,11 +255,12 @@ class Collector(object):
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
-    def init(self, fn):
-        if fn in self.comp_fns and self.comp_proxy is not None:
-            return
-        elif self.proxy is not None:
-            return
+    def init(self, fn=None):
+        if fn is not None:
+            if fn in self.comp_fns and self.comp_proxy is not None:
+                return
+            elif self.proxy is not None:
+                return
 
         self.setNodeEnv()
     
@@ -231,7 +274,14 @@ class Collector(object):
 
         socket.setdefaulttimeout(120)
 
-        if fn not in self.comp_fns:
+        if fn is None:
+            try:
+                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+            except:
+                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        elif fn not in self.comp_fns:
             try:
                 self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
             except:
@@ -250,8 +300,26 @@ class Collector(object):
 
         if "register_node" not in self.proxy_methods:
             self.auth_node = False
-   
-    def begin_action(self, svc, action, begin):
+
+    def stop_worker(self):
+        if self.queue is None or self.worker is None:
+            return
+        self.queue.put(None)
+        self.worker.join()
+
+    def init_worker(self):
+        if self.worker is None:
+            try:
+                self.queue = Queue()
+            except:
+                self.log.error("Queue not supported. disable async mode")
+                self.queue = None
+                return
+            self.worker = Process(target=call_worker, args=(self.queue,))
+            self.worker.start()
+            self.log.debug("worker started")
+
+    def begin_action(self, svc, action, begin, sync=True):
         try:
             import version
             version = version.version
@@ -275,9 +343,12 @@ class Collector(object):
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.begin_action(*args)
+        if sync:
+            self.proxy.begin_action(*args)
+        else:
+            self.submit("begin_action", *args)
     
-    def end_action(self, svc, action, begin, end, logfile):
+    def end_action(self, svc, action, begin, end, logfile, sync=True):
         err = 'ok'
         dateprev = None
         lines = open(logfile, 'r').read()
@@ -362,7 +433,10 @@ class Collector(object):
             args = [vars, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.res_action_batch(*args)
+            if sync:
+                self.proxy.res_action_batch(*args)
+            else:
+                self.submit("res_action_batch", *args)
     
         """Complete the wrap-up database entry
         """
@@ -396,25 +470,37 @@ class Collector(object):
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.end_action(*args)
+        if sync:
+            self.proxy.end_action(*args)
+        else:
+            self.submit("end_action", *args)
     
-    def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
+    def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals, sync=True):
         if 'svcmon_update_combo' in self.proxy_methods:
             args = [g_vars, g_vals, r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.svcmon_update_combo(*args)
+            if sync:
+                self.proxy.svcmon_update_combo(*args)
+            else:
+                self.submit("svcmon_update_combo", *args)
         else:
             args = [g_vars, g_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.svcmon_update(*args)
+            if sync:
+                self.proxy.svcmon_update(*args)
+            else:
+                self.submit("svcmon_update", *args)
             args = [r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.resmon_update(*args)
+            if sync:
+                self.proxy.resmon_update(*args)
+            else:
+                self.submit("resmon_update", *args)
     
-    def push_service(self, svc):
+    def push_service(self, svc, sync=True):
         def envfile(svc):
             envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
             if not os.path.exists(envfile):
@@ -499,13 +585,13 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_service(*args)
     
-    def delete_services(self):
+    def delete_services(self, sync=True):
         args = [hostid]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.delete_services(*args)
     
-    def push_disks(self, svc):
+    def push_disks(self, svc, sync=True):
         def disk_dg(dev, svc):
             for rset in svc.get_res_sets("disk.vg"):
                 for vg in rset.resources:
@@ -550,13 +636,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.register_disk(*args)
     
-    def push_stats_fs_u(self, l):
+    def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_stats_fs_u(*args)
     
-    def push_pkg(self):
+    def push_pkg(self, sync=True):
         p = __import__('rcPkg'+rcEnv.sysname)
         vars = ['pkg_nodename',
                 'pkg_name',
@@ -572,7 +658,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_pkg(*args)
     
-    def push_patch(self):
+    def push_patch(self, sync=True):
         p = __import__('rcPkg'+rcEnv.sysname)
         vars = ['patch_nodename',
                 'patch_num',
@@ -587,7 +673,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
-    def push_stats(self, force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None):
+    def push_stats(self, force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None, sync=True):
         try:
             s = __import__('rcStats'+rcEnv.sysname)
         except ImportError:
@@ -606,7 +692,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_stats(*args)
     
-    def push_asset(self, node):
+    def push_asset(self, node, sync=True):
         try:
             m = __import__('rcAsset'+rcEnv.sysname)
         except ImportError:
@@ -621,7 +707,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
     
-    def push_sym(self):
+    def push_sym(self, sync=True):
         if 'update_sym_xml' not in self.proxy_methods:
     	    print "'update_sym_xml' method is not exported by the collector"
     	    return
@@ -640,16 +726,16 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             sym_proxy.update_sym_xml(*args)
     
-    def push_all(self, svcs):
+    def push_all(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.delete_service_list(*args)
         for svc in svcs:
-            self.push_disks(svc)
-            self.push_service(svc)
+            self.push_service(svc, sync=sync)
+            self.push_disks(svc, sync=sync)
     
-    def push_checks(self, vars, vals):
+    def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:
             print "'push_checks' method is not exported by the collector"
             return
@@ -658,70 +744,70 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.push_checks(*args)
     
-    def register_node(self):
+    def register_node(self, sync=True):
         return self.proxy.register_node(rcEnv.nodename)
     
-    def comp_get_moduleset_modules(self, moduleset):
+    def comp_get_moduleset_modules(self, moduleset, sync=True):
         args = [moduleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_moduleset_modules(*args)
     
-    def comp_get_moduleset(self):
+    def comp_get_moduleset(self, sync=True):
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_moduleset(*args)
     
-    def comp_attach_moduleset(self, moduleset):
+    def comp_attach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_attach_moduleset(*args)
     
-    def comp_detach_moduleset(self, moduleset):
+    def comp_detach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_detach_moduleset(*args)
     
-    def comp_get_ruleset(self):
+    def comp_get_ruleset(self, sync=True):
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_ruleset(*args)
     
-    def comp_get_dated_ruleset(self, date):
+    def comp_get_dated_ruleset(self, date, sync=True):
         args = [rcEnv.nodename, date]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_dated_ruleset(*args)
     
-    def comp_attach_ruleset(self, ruleset):
+    def comp_attach_ruleset(self, ruleset, sync=True):
         args = [rcEnv.nodename, ruleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_attach_ruleset(*args)
     
-    def comp_detach_ruleset(self, ruleset):
+    def comp_detach_ruleset(self, ruleset, sync=True):
         args = [rcEnv.nodename, ruleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_detach_ruleset(*args)
     
-    def comp_list_ruleset(self, pattern='%'):
+    def comp_list_ruleset(self, pattern='%', sync=True):
         args = [pattern, rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_list_rulesets(*args)
     
-    def comp_list_moduleset(self, pattern='%'):
+    def comp_list_moduleset(self, pattern='%', sync=True):
         args = [pattern]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_list_modulesets(*args)
     
-    def comp_log_action(self, vars, vals):
+    def comp_log_action(self, vars, vals, sync=True):
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]

@@ -80,7 +80,7 @@ class Module(object):
                 self.strip_unprintable(out),
                 ruleset,
                 action]
-        self.node.collector.call('comp_log_action', vars, vals)
+        self.node.collector.call('comp_log_action', vars, vals, sync=False)
 
     def action(self, action):
         print banner(self.name)
