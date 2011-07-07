@@ -234,7 +234,7 @@ class Ip(Res.Resource):
             raise ex.excError
 
         import time
-        tmo = 10
+        tmo = 15
         for i in range(tmo):
             if not self.check_ping():
                 break
