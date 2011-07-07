@@ -1314,6 +1314,9 @@ def build(name):
     else:
         svc.comment = ''
 
+    if "monitor_action" in defaults:
+        svc.monitor_action = defaults["monitor_action"]
+
     if "app" in defaults:
         svc.app = defaults["app"]
     else:

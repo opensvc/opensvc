@@ -118,6 +118,8 @@ class Svc(Resource, Freezer):
         self.postsnap_trigger = None
         self.lockfd = None
         self.action_start_date = datetime.datetime.now()
+        self.monitor_action = None
+        self.group_status_cache = None
 
     def __cmp__(self, other):
         """order by service name
@@ -513,6 +515,31 @@ class Svc(Resource, Freezer):
                 rset_status[rs.type] = rs.status()
         return rset_status
 
+    def resource_monitor(self):
+        if self.group_status_cache is None:
+            self.group_status(excluded_groups=set(['sync']))
+        if 'hb' not in self.group_status_cache:
+            return
+        hb_status = self.group_status_cache['hb']
+        if hb_status.status != rcStatus.UP:
+            return
+
+        monitored_resources = []
+        for rs in self.resSets:
+            for r in rs.resources:
+                if r.monitor:
+                    monitored_resources.append(r)
+
+        for r in monitored_resources:
+            if r.rstatus != rcStatus.UP:
+                if hasattr(self, self.monitor_action):
+                    getattr(self, self.monitor_action)()
+                return
+
+    def freezestop(self):
+        self.svcunlock()
+        self.sub_set_action('hb.openha', 'freezestop')
+        
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
                      excluded_groups=set([])):
@@ -950,14 +977,15 @@ class Svc(Resource, Freezer):
                 self.log.info("Abort action for frozen service")
                 return 1
             try:
-                self.cluster_mode_safety_net()
+                if action != "resource_monitor":
+                    self.cluster_mode_safety_net()
             except ex.excError:
                 return 1
 
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ["print_status", "status", "group_status"]:
+        if action in ["print_status", "status", "group_status", "resource_monitor"]:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}

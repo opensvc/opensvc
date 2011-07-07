@@ -74,6 +74,7 @@ action_desc = {
         'switch':       'stop the service on the local node and start on the remote node',
         'migrate':      'live migrate the service to the remote node',
         'json_status':  'provide the resource and aggregated status in json format, for use by tier tools',
+        'resource_monitor':  'detect monitored resource failures and trigger monitor_action',
 }
 
 def format_desc(svc=False):

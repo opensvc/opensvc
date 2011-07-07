@@ -90,10 +90,13 @@ class Hb(Res.Resource):
             return 'unknown'
 
     def service_action(self, command):
-        cmd = [service_cmd, '-A', self.cluster_name(), command]
+        cmd = [self.service_cmd, '-A', self.cluster_name(), command]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def freezestop(self):
+        self.service_action('freeze-stop')
 
     def process_running(self):
         daemons = [self.heartc, self.heartd, self.nmond]
