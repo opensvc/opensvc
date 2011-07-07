@@ -220,7 +220,7 @@ class Collector(object):
         self.proxy_methods = conf.get("methods", "feed").split(',')
         self.comp_proxy_methods = conf.get("methods", "compliance").split(',')
         self.log.debug("%s loaded"%self.method_cache)
-        self.log.debug("%d methods"%len(self.proxy_methods))
+        self.log.debug("%d feed methods"%len(self.proxy_methods))
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
     def write_method_cache(self):
@@ -282,7 +282,7 @@ class Collector(object):
                     self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
                     raise
                 if not utils.check_ping(rcEnv.dbcompliance_host):
-                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
+                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbcompliance)
                     raise
                 self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
@@ -305,6 +305,9 @@ class Collector(object):
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
             except:
                 self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+
+        self.log.debug("feed proxy %s"%str(self.proxy))
+        self.log.debug("compliance proxy %s"%str(self.comp_proxy))
 
         try:
             self.load_method_cache()

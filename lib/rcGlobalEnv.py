@@ -55,6 +55,9 @@ class rcEnv:
     dbopensvc_host = "dbopensvc"
     dbopensvc_port = "8000"
     dbopensvc_app = "feed"
+    dbcompliance_host = dbopensvc_host
+    dbcompliance_port = 80
+    dbcompliance_app = "init"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
@@ -156,5 +159,5 @@ class rcEnv:
     vt_supported = vt_vm + vt_container
 
     dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(dbopensvc_host, dbopensvc_port, dbopensvc_app)
-    dbcompliance = "http://%s:%s/init/compliance/call/xmlrpc"%(dbopensvc_host, dbopensvc_port)
+    dbcompliance = "http://%s:%s/%s/compliance/call/xmlrpc"%(dbcompliance_host, dbcompliance_port, dbcompliance_app)
 
