@@ -97,12 +97,15 @@ class Node(Svc, Freezer):
         }
         self.collector = xmlrpcClient.Collector()
 
-    def build_services(self):
+    def build_services(self, *args, **kwargs):
         if self.svcs is not None:
             return
-        self.svcs = svcBuilder.build_services()
+        self.svcs = svcBuilder.build_services(*args, **kwargs)
         for svc in self.svcs:
              svc.node = self
+
+    def close(self):
+        self.collector.stop_worker()
 
     def _setup_sync_conf(self):
         h = {}

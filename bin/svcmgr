@@ -32,12 +32,14 @@ prog = os.path.basename(__file__)
 import svcBuilder
 import rcStatus
 import rcOptParser
+import node
 try:
     from version import version
 except:
     version = "dev"
 
-svcs = None
+node = node.Node()
+
 __ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
@@ -71,16 +73,16 @@ parser.add_option("--to", default=None, action="store", dest="parm_destination_n
 cluster = False
 cmd = os.path.basename(__file__)
 if cmd == 'allservices':
-    svcs = svcBuilder.build_services()
+    node.build_services()
 elif cmd == 'allupservices':
-    svcs = svcBuilder.build_services(status=rcStatus.UP)
-    svcs += svcBuilder.build_services(status=rcStatus.WARN)
+    node.build_services(status=rcStatus.UP)
+    node.build_services(status=rcStatus.WARN)
 elif cmd == 'alldownservices':
-    svcs = svcBuilder.build_services(status=rcStatus.DOWN)
+    node.build_services(status=rcStatus.DOWN)
 elif cmd == 'allprimaryservices':
-    svcs = svcBuilder.build_services(onlyprimary=True)
+    node.build_services(onlyprimary=True)
 elif cmd == 'allsecondaryservices':
-    svcs = svcBuilder.build_services(onlysecondary=True)
+    node.build_services(onlysecondary=True)
 elif cmd == 'svcmgr':
     parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
               help="comma-separated list of service to operate on")
@@ -97,11 +99,11 @@ else:
         svcname = svcname[0]
     else:
         svcname = cmd
-    svcs = svcBuilder.build_services(svcnames=[svcname])
+    node.build_services(svcnames=[svcname])
 
 (options, args) = parser.parse_args()
 
-if svcs is None:
+if len(node.svcs):
     parm_primary = False
     parm_secondary = False
     parm_status = None
@@ -130,11 +132,10 @@ if svcs is None:
     else:
         onlysecondary = False
 
-    svcs = svcBuilder.build_services(svcnames=svcnames,
-                                     status=status,
-                                     onlyprimary=onlyprimary,
-                                     onlysecondary=onlysecondary,
-                                    )
+    node.build_services(svcnames=svcnames,
+                        status=status,
+                        onlyprimary=onlyprimary,
+                        onlysecondary=onlysecondary)
 
 if len(args) > 1:
     parser.error("More than one action")
@@ -158,21 +159,25 @@ if options.parallel:
     from multiprocessing import Process
     p = {}
 
+def _exit(r):
+    node.close()
+    sys.exit(r)
+
 if action in ['create', 'update']:
     r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
     if options.provision:
         if action == 'create':
             # don't push to the collector yet
-            svcs = svcBuilder.build_services(svcnames=svcnames, autopush=False)
-            if len(svcs) == 1:
-                svcs[0].action("provision")
-    sys.exit(r)
+            node.build_services(svcnames=svcnames, autopush=False)
+            if len(node.svcs) == 1:
+                node.svcs[0].action("provision")
+    _exit(r)
 elif action in ['disable', 'enable', 'delete']:
     r = getattr(svcBuilder, action)(svcnames, rid)
-    sys.exit(r)
+    _exit(r)
 
 err = 0
-for s in svcs:
+for s in node.svcs:
     s.force = options.force
     s.parallel = options.parallel
     s.cron = options.cron
@@ -186,7 +191,12 @@ for s in svcs:
         p[s.svcname] = Process(target=s.action, name='worker_'+s.svcname, kwargs=d)
         p[s.svcname].start()
     else:
-        err += s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
+        try:
+            err += s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
+        except s.exMonitorAction:
+            s.cluster = True
+            s.action('toc')
+            getattr(s, s.monitor_action)()
 
 if options.parallel:
     for svcname in p:
@@ -203,4 +213,4 @@ try:
 except:
     pass
 
-sys.exit(err)
+_exit(err)

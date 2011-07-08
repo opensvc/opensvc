@@ -34,35 +34,28 @@ pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 import logging
 import logging.handlers
 logfile = os.path.join(pathosvc, 'log', 'xmlrpc.log')
-log = logging.getLogger("xmlrpc")
 fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
                                                    maxBytes=5242880,
                                                    backupCount=5)
 filehandler.setFormatter(fileformatter)
-log.addHandler(filehandler)
-log.setLevel(logging.DEBUG)
-log.debug("logger setup")
 
 from multiprocessing import Queue, Process
 from Queue import Empty
 
 def call_worker(q):
     e = "foo"
-    o = Collector()
-    o._worker = True
-    o.log = logging.getLogger("xmlrpc.worker")
+    o = Collector(worker=True)
     o.init()
     while e is not None:
-        try:
-            e = q.get(block=True, timeout=1)
-        except Empty:
+        e = q.get()
+        if e is None:
             break
         fn, args, kwargs = e
         o.log.debug("xmlrpc async %s"%fn)
         try:
             getattr(o.proxy, fn)(*args, **kwargs)
-            o.log.debug("xml async done")
+            o.log.debug("xmlrpc async %s done"%fn)
             continue
         except (socket.error, xmlrpclib.ProtocolError):
             """ normal for collector communications disabled
@@ -70,21 +63,16 @@ def call_worker(q):
             """
             pass
         except socket.timeout:
-            print "connection to collector timed out"
+            o.log.error("connection to collector timed out")
         except:
             import sys
             import traceback
             e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
-        o.log.debug("xml async error")
-        e = None
+            o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
+        o.log.error("xmlrpc async %s error. stop worker."%fn)
+    o.log.info("shutdown")
  
 class Collector(object):
-    proxy = None
-    proxy_method = None
-    comp_proxy = None
-    comp_proxy_method = None
-
     def split_url(self, url):
         if url == 'None':
             return 'https', '127.0.0.1', '443', '/'
@@ -140,6 +128,7 @@ class Collector(object):
 
     def submit(self, fn, *args, **kwargs):
         self.init_worker()
+        self.log.debug("enqueue %s"%fn)
         self.queue.put((fn, args, kwargs), block=True)
 
     def call(self, *args, **kwargs):
@@ -185,8 +174,13 @@ class Collector(object):
             print e[0], e[1], traceback.print_tb(e[2])
         self.log.error("call %s error"%fn)
     
-    def __init__(self):
-        self._worker = False
+    def __init__(self, worker=False):
+        self.proxy = None
+        self.proxy_method = None
+        self.comp_proxy = None
+        self.comp_proxy_method = None
+
+        self._worker = worker
         self.worker = None
         self.queue = None
         self.comp_fns = ['comp_get_moduleset_modules',
@@ -202,7 +196,10 @@ class Collector(object):
                          'comp_log_action']
         self.method_cache = os.path.join(pathosvc, "var", "collector")
         self.auth_node = True
-        self.log = log
+        self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
+        self.log.addHandler(filehandler)
+        self.log.setLevel(logging.DEBUG)
+        self.log.debug("logger setup")
 
     def load_method_cache(self):
         if not os.path.exists(self.method_cache):
@@ -326,20 +323,26 @@ class Collector(object):
     def stop_worker(self):
         if self.queue is None or self.worker is None:
             return
+        self.log.debug("give poison pill to worker")
         self.queue.put(None)
         self.worker.join()
 
     def init_worker(self):
-        if self.worker is None:
-            try:
-                self.queue = Queue()
-            except:
-                self.log.error("Queue not supported. disable async mode")
-                self.queue = None
-                return
-            self.worker = Process(target=call_worker, args=(self.queue,))
-            self.worker.start()
-            self.log.debug("worker started")
+        if self._worker:
+            return
+       
+        if self.worker is not None:
+            return
+
+        try:
+            self.queue = Queue()
+        except:
+            self.log.error("Queue not supported. disable async mode")
+            self.queue = None
+            return
+        self.worker = Process(target=call_worker, args=(self.queue,))
+        self.worker.start()
+        self.log.debug("worker started")
 
     def begin_action(self, svc, action, begin, sync=True):
         try:

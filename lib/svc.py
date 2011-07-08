@@ -162,6 +162,9 @@ class Svc(Resource, Freezer):
                       'thaw']:
             # no need to serialize this action
             return
+        if self.lockfd is not None:
+            # already acquired
+            return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
@@ -190,6 +193,7 @@ class Svc(Resource, Freezer):
 
     def svcunlock(self):
         lock.unlock(self.lockfd)
+        self.lockfd = None
 
     def setup_signal_handlers(self):
         signal.signal(signal.SIGINT, signal_handler)
@@ -532,13 +536,20 @@ class Svc(Resource, Freezer):
 
         for r in monitored_resources:
             if r.rstatus != rcStatus.UP:
-                if hasattr(self, self.monitor_action):
-                    getattr(self, self.monitor_action)()
+                if self.monitor_action is not None and \
+                   hasattr(self, self.monitor_action):
+                    raise self.exMonitorAction
                 return
 
+    class exMonitorAction(Exception):
+        pass
+
     def freezestop(self):
-        self.svcunlock()
         self.sub_set_action('hb.openha', 'freezestop')
+
+    def toc(self):
+        self.log.info("start monitor action '%s'"%self.monitor_action)
+        pass
         
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
@@ -1028,6 +1039,9 @@ class Svc(Resource, Freezer):
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
+        except self.exMonitorAction:
+            self.svcunlock()
+            raise
         except:
             err = 1
             self.save_exc()
