@@ -30,6 +30,7 @@ import time
 import sys
 import json
 from rcGlobalEnv import rcEnv
+import rcCommandWorker
 
 class Options(object):
     def __init__(self):
@@ -96,6 +97,7 @@ class Node(Svc, Freezer):
           'register': 'obtain a registration number from the collector, used to authenticate the node',
         }
         self.collector = xmlrpcClient.Collector()
+        self.cmdworker = rcCommandWorker.CommandWorker()
 
     def build_services(self, *args, **kwargs):
         if self.svcs is not None:
@@ -106,6 +108,7 @@ class Node(Svc, Freezer):
 
     def close(self):
         self.collector.stop_worker()
+        self.cmdworker.stop_worker()
 
     def _setup_sync_conf(self):
         h = {}
@@ -473,16 +476,16 @@ class Node(Svc, Freezer):
             self.build_services(svcnames=svcnames)
 
         for svc in self.svcs:
-            svc.force = self.options.force
-            svc.cron = self.options.cron
-            d = {'action': 'syncall'}
-            p[svc.svcname] = Process(target=svc.action,
-                                     name='worker_'+svc.svcname,
-                                     kwargs=d)
-            p[svc.svcname].start()
+            p[svc.svcname] = rcCommandWorker.CommandWorker(name=svc.svcname)
+            cmd = [os.path.join(rcEnv.pathetc, svc.svcname), 'syncall']
+            if self.options.force:
+                cmd.append('--force')
+            if self.options.cron:
+                cmd.append('--cron')
+            p[svc.svcname].enqueue(cmd)
 
         for svcname in p:
-            p[svcname].join()
+            p[svcname].stop_worker()
 
     def updateservices(self):
         if self.svcs is None:

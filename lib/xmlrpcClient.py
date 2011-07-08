@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/python
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
@@ -73,7 +73,7 @@ def call_worker(q):
             import traceback
             e = sys.exc_info()
             o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
-        o.log.error("xmlrpc async %s error. stop worker."%fn)
+        o.log.error("xmlrpc async %s error"%fn)
     o.log.info("shutdown")
  
 class Collector(object):
@@ -322,11 +322,20 @@ class Collector(object):
             self.auth_node = False
 
     def stop_worker(self):
-        if self.queue is None or self.worker is None:
+        if self.queue is None:
+            self.log.debug("worker already stopped (queue is None)")
+            return
+        if self.worker is None:
+            self.log.debug("worker already stopped (worker is None)")
+            return
+        if not self.worker.is_alive():
+            self.log.debug("worker already stopped (not alive)")
             return
         self.log.debug("give poison pill to worker")
         self.queue.put(None)
         self.worker.join()
+        self.queue = None
+        self.worker = None
 
     def init_worker(self):
         if self._worker:
@@ -341,7 +350,7 @@ class Collector(object):
             self.log.error("Queue not supported. disable async mode")
             self.queue = None
             return
-        self.worker = Process(target=call_worker, args=(self.queue,))
+        self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue,))
         self.worker.start()
         self.log.debug("worker started")
 

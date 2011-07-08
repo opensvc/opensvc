@@ -42,3 +42,4 @@ for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
         import traceback
         traceback.print_exc()
 
+n.close()

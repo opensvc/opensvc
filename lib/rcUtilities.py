@@ -23,15 +23,10 @@ from subprocess import *
 from rcGlobalEnv import rcEnv
 
 def fork(fn, kwargs):
-    try:
-        if os.fork() > 0:
-            """ return to parent execution
-            """
-            return
-    except:
-        """ no dblogging will be done. too bad.
+    if os.fork() > 0:
+        """ return to parent execution
         """
-        return
+        return pid
 
     """ separate the son from the father
     """

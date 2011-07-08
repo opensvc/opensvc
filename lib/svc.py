@@ -23,7 +23,6 @@ from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import fork
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -812,14 +811,10 @@ class Svc(Resource, Freezer):
         self.all_set_action("postsync")
 
     def remote_postsync(self):
-	""" detach the remote exec of postsync because the
+	""" run the remote exec of postsync async because the
             waitlock timeout is long, and we ourselves still
             hold the service lock we want to release early.
 	"""
-	kwargs = {}
-	fork(self._remote_postsync, kwargs)
-
-    def _remote_postsync(self):
         """ action triggered by a remote master node after
             syncnodes and syncdrp. Typically make use of files
             received in var/.
@@ -840,7 +835,7 @@ class Svc(Resource, Freezer):
         rcmd += ['--waitlock', str(waitlock), action]
         self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         cmd = rcEnv.rsh.split() + [node] + rcmd
-        self.call(cmd)
+        self.node.cmdworker.enqueue(cmd)
 
     def presync(self):
         """ prepare files to send to slave nodes in var/.
@@ -926,12 +921,15 @@ class Svc(Resource, Freezer):
         return False
 
     def syncall(self):
-        try: self.syncnodes()
-        except: pass
-        try: self.syncdrp()
-        except: pass
-        try: self.syncupdate()
-        except: pass
+        self.presync()
+        self.sub_set_action("sync.rsync", "syncnodes")
+        self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.dds", "syncnodes")
+        self.sub_set_action("sync.rsync", "syncdrp")
+        self.sub_set_action("sync.zfs", "syncdrp")
+        self.sub_set_action("sync.dds", "syncdrp")
+        self.syncupdate()
+        self.remote_postsync()
 
     def push(self):
         self.node.collector.call('push_all', [self])
@@ -988,7 +986,7 @@ class Svc(Resource, Freezer):
                 self.log.info("Abort action for frozen service")
                 return 1
             try:
-                if action != "resource_monitor":
+                if action not in ["resource_monitor", "presync", "postsync", "syncall"]:
                     self.cluster_mode_safety_net()
             except ex.excError:
                 return 1
@@ -1105,8 +1103,7 @@ class Svc(Resource, Freezer):
                 self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.umount()
-	kwargs = {'node': self.destination_node, 'action': 'prstart'}
-	fork(self.remote_action, kwargs)
+	self.remote_action(node=self.destination_node, action='prstart')
 
     def switch(self):
 	""" stop then start service
@@ -1118,8 +1115,7 @@ class Svc(Resource, Freezer):
             self.log.error("destination node %s is not in service node list"%self.destination_node)
             raise ex.excError
         self.stop()
-	kwargs = {'node': self.destination_node, 'action': 'start'}
-	fork(self.remote_action, kwargs)
+	self.remote_action(node=self.destination_node, action='start')
 
     def collector_outdated(self):
         """ return True if the env file has changed since last push

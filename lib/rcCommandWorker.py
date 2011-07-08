@@ -1,0 +1,61 @@
+#!/opt/opensvc/bin/python
+
+import os
+from multiprocessing import Queue, Process
+from Queue import Empty
+from rcUtilities import justcall
+
+pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+
+import logging
+import logging.handlers
+logfile = os.path.join(pathosvc, 'log', 'cmdworker.log')
+fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
+                                                   maxBytes=5242880,
+                                                   backupCount=5)
+filehandler.setFormatter(fileformatter)
+log = logging.getLogger("cmdworker")
+log.addHandler(filehandler)
+log.setLevel(logging.DEBUG)
+log.debug("logger setup")
+
+def worker(q):
+    log.debug("worker started")
+    cmd = "foo"
+    while cmd is not None:
+        cmd = q.get()
+        if cmd is None:
+            log.debug("shutdown (poison pill)")
+            break
+        log.info("call: %s", ' '.join(cmd))
+        out, err, ret = justcall(cmd)
+        log.info("ret: %d", ret)
+        continue
+    log.debug("shutdown")
+
+class CommandWorker(object):
+    def __init__(self, name=""):
+        self.q = None
+        self.p = None
+        self.name = "cmdworker"
+        if name:
+            self.name += "_"+name
+
+    def start_worker(self):
+        self.q = Queue()
+        self.p = Process(target=worker, name=self.name, args=(self.q,))
+        self.p.start()
+
+    def enqueue(self, cmd):
+        if self.p is None:
+            self.start_worker()
+        self.q.put(cmd, block=True)
+
+    def stop_worker(self):
+        if self.p is None or not self.p.is_alive():
+            return
+        log.debug("give poison pill to worker")
+        self.enqueue(None)
+        self.p.join()
+

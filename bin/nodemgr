@@ -39,6 +39,7 @@ except:
     version = "dev"
 
 n = node.Node()
+
 __ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + n.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
@@ -103,6 +104,10 @@ action = '_'.join(args)
 if not action in n.action_desc:
     parser.error("unsupported action: %s"%action)
 
+def _exit(r):
+    n.close()
+    sys.exit(r)
+
 err = 0
 try:
     err = n.action(action)
@@ -110,11 +115,11 @@ except ex.excError:
     import traceback
     exc_type, exc_value, exc_traceback = sys.exc_info()
     sys.stderr.write(str(exc_value)+'\n')
-    sys.exit(1)
+    _exit(1)
 except KeyboardInterrupt:
     sys.stderr.write("Keybord Interrupt\n")
-    sys.exit(1)
+    _exit(1)
 except:
     raise
 
-sys.exit(err)
+_exit(err)
