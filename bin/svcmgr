@@ -103,7 +103,7 @@ else:
 
 (options, args) = parser.parse_args()
 
-if len(node.svcs):
+if node.svcs is None:
     parm_primary = False
     parm_secondary = False
     parm_status = None
