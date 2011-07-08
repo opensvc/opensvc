@@ -258,8 +258,9 @@ class Collector(object):
 
     def init(self, fn=None):
         if fn is not None:
-            if fn in self.comp_fns and self.comp_proxy is not None:
-                return
+            if fn in self.comp_fns:
+                if self.comp_proxy is not None:
+                    return
             elif self.proxy is not None:
                 return
 
