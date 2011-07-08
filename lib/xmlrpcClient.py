@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/opt/opensvc/bin/python
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
@@ -39,6 +39,10 @@ filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
                                                    maxBytes=5242880,
                                                    backupCount=5)
 filehandler.setFormatter(fileformatter)
+log = logging.getLogger("xmlrpc")
+log.addHandler(filehandler)
+log.setLevel(logging.DEBUG)
+log.debug("logger setup")
 
 from multiprocessing import Queue, Process
 from Queue import Empty
@@ -197,9 +201,6 @@ class Collector(object):
         self.method_cache = os.path.join(pathosvc, "var", "collector")
         self.auth_node = True
         self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
-        self.log.addHandler(filehandler)
-        self.log.setLevel(logging.DEBUG)
-        self.log.debug("logger setup")
 
     def load_method_cache(self):
         if not os.path.exists(self.method_cache):
