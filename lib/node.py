@@ -470,7 +470,7 @@ class Node(Svc, Freezer):
         p = {}
 
         if self.svcs is None:
-            self.svcs = svcBuilder.build_services(svcnames=svcnames)
+            self.build_services(svcnames=svcnames)
 
         for svc in self.svcs:
             svc.force = self.options.force
@@ -486,7 +486,7 @@ class Node(Svc, Freezer):
 
     def updateservices(self):
         if self.svcs is None:
-            self.svcs = svcBuilder.build_services()
+            self.build_services()
         for svc in self.svcs:
             svc.cron = self.options.cron
             svc.action('presync')
@@ -499,7 +499,7 @@ class Node(Svc, Freezer):
             return
 
         if self.svcs is None:
-            self.svcs = svcBuilder.build_services()
+            self.build_services()
         for svc in self.svcs:
             svc.cron = self.options.cron
             svc.action('push')
