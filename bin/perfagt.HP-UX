@@ -2,17 +2,16 @@
 
 import os
 import sys
-import socket
 import datetime
 from subprocess import *
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
-import xmlrpcClient
+import node
 from rcUtilities import justcall, is_exe
 
-nodename = socket.gethostname()
+node = node.Node()
 now = str(datetime.datetime.now())
 
 def fs_u():
@@ -34,7 +33,7 @@ def fs_u():
         l = line.split()
         if len(l) != 6:
             continue
-        vals.append([now, nodename, l[5], l[1], l[4].replace('%','')])
+        vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
     return (vars, vals)
 
 def glance_running(cmd_str):
@@ -132,5 +131,6 @@ GBL_DISK_PHYS_WRITE_BYTE_RATE
 
 
 run_glance()
-xmlrpcClient.Collector().call('push_stats_fs_u', fs_u())
+node.collector.call('push_stats_fs_u', fs_u())
+node.close()
 

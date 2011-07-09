@@ -31,6 +31,7 @@ import sys
 import json
 from rcGlobalEnv import rcEnv
 import rcCommandWorker
+import socket
 
 class Options(object):
     def __init__(self):
@@ -50,6 +51,7 @@ class Node(Svc, Freezer):
         Implements node-level actions and checks.
     """
     def __init__(self):
+        self.nodename = socket.gethostname()
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')

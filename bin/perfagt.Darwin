@@ -2,16 +2,15 @@
 
 import os
 import sys
-import socket
 import datetime
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(pathsvc, 'lib'))
 
-import xmlrpcClient
+import node
 from rcUtilities import justcall
 
-nodename = socket.gethostname()
+node = node.Node()
 now = datetime.datetime.now()
 
 def fs_u():
@@ -36,7 +35,7 @@ def fs_u():
         if l[5].startswith('/Volumes'):
             # Darwin automount package files under /Volumes
             continue
-        vals.append([str(now), nodename, l[5], l[1], l[4].replace('%','')])
+        vals.append([str(now), node.nodename, l[5], l[1], l[4].replace('%','')])
     return (vars, vals)
 
 def mem_u():
@@ -94,5 +93,5 @@ def mem_u():
             ))+'\n')
 
 
-xmlrpcClient.Collector().call('push_stats_fs_u', fs_u())
+node.collector.call('push_stats_fs_u', fs_u())
 mem_u()
