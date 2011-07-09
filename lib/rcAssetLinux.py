@@ -74,8 +74,17 @@ class Asset(rcAsset.Asset):
             return '0'
         return line[1]
 
+    def is_xen_hv(self):
+        c = os.path.join(os.sep, 'proc', 'capabilities')
+        if not os.path.exists(c):
+            return False
+        with open(c, 'r') as f:
+            if 'control_d' in f.read():
+                return True
+        return False
+
     def get_mem_bytes(self):
-        if 'xen' in self.get_os_kernel():
+        if self.is_xen_hv():
             return self.get_mem_bytes_hv()
         return self.get_mem_bytes_phy()
 
