@@ -284,14 +284,14 @@ class Collector(object):
         if fn is None:
             try:
                 if not utils.check_ping(rcEnv.dbopensvc_host):
-                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
+                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc_host)
                     raise
                 self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
             except:
                 self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
             try:
                 if not utils.check_ping(rcEnv.dbcompliance_host):
-                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbcompliance)
+                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbcompliance_host)
                     raise
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
             except:
@@ -299,7 +299,7 @@ class Collector(object):
         elif fn not in self.comp_fns:
             try:
                 if not utils.check_ping(rcEnv.dbopensvc_host):
-                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
+                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc_host)
                     raise
                 self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
             except:
@@ -307,7 +307,7 @@ class Collector(object):
         else:
             try:
                 if not utils.check_ping(rcEnv.dbcompliance_host):
-                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc)
+                    self.log.error("could not ping %s. disable collector updates."%rcEnv.dbopensvc_host)
                     raise
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
             except:
