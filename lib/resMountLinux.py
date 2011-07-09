@@ -107,7 +107,6 @@ class Mount(Res.Mount):
             return False
         if S_ISREG(mode):
             devs = file_to_loop(self.device)
-            print devs
             for dev in devs:
                 ret = self.Mounts.has_mount(dev, self.mountPoint)
                 if ret:
@@ -253,10 +252,29 @@ class Mount(Res.Mount):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
         Res.Mount.start(self)
+
+        """ loopback mount
+            if the file has already been binded to a loop re-use
+            the loopdev to avoid allocating another one
+        """
+        try:
+            mode = os.stat(self.device)[ST_MODE]
+        except:
+            self.log.debug("can not stat %s" % self.device)
+            return False
+        if S_ISREG(mode):
+            devs = file_to_loop(self.device)
+            if len(devs) > 0:
+                self.device = devs[0]
+                mntopt_l = self.mntOpt.split(',')
+                mntopt_l.remove("loop")
+                self.mntOpt = ','.join(mntopt_l)
+
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
+
         self.fsck()
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
