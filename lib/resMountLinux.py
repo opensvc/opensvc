@@ -26,6 +26,7 @@ import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists
 from rcGlobalEnv import rcEnv
+from rcLoopLinux import file_to_loop
 import rcExceptions as ex
 from stat import *
 
@@ -92,10 +93,27 @@ class Mount(Res.Mount):
 
         # might be mount using a /dev/mapper/ name too
         l = self.device.split('/')
-        if len(l) != 4 or l[2] == "mapper":
-           return False
-        dev = "/dev/mapper/%s-%s"%(l[2].replace('-','--'),l[3].replace('-','--'))
-        return self.Mounts.has_mount(dev, self.mountPoint)
+        if len(l) == 4 and l[2] != "mapper":
+            dev = "/dev/mapper/%s-%s"%(l[2].replace('-','--'),l[3].replace('-','--'))
+            ret = self.Mounts.has_mount(dev, self.mountPoint)
+            if ret:
+                return True
+
+        # might be a loopback mount
+        try:
+            mode = os.stat(self.device)[ST_MODE]
+        except:
+            self.log.debug("can not stat %s" % self.device)
+            return False
+        if S_ISREG(mode):
+            devs = file_to_loop(self.device)
+            print devs
+            for dev in devs:
+                ret = self.Mounts.has_mount(dev, self.mountPoint)
+                if ret:
+                    return True
+
+        return False
 
     def realdev(self):
         try:
