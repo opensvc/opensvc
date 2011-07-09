@@ -117,11 +117,11 @@ def call(argv=['/bin/false'],
     if log is None:
         log = logging.getLogger('CALL')
     if not argv or len(argv) == 0:
-        return (0, '')
+        return (0, '', '')
     if which(argv[0]) is None:
         log.error("%s does not exist or not in path or is not executable"%
                   argv[0])
-        return (1, '')
+        return (1, '', '')
     cmd = ' '.join(argv)
     if info:
         log.info(cmd)
