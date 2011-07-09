@@ -21,6 +21,12 @@ log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 
 def worker(q):
+    try:
+        _worker(q)
+    except ex.excSignal:
+         log.info("interrupted by signal")
+
+def _worker(q):
     log.debug("worker started")
     cmd = "foo"
     while cmd is not None:

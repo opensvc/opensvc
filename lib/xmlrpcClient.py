@@ -51,30 +51,33 @@ def call_worker(q):
     e = "foo"
     o = Collector(worker=True)
     o.init()
-    while e is not None:
-        e = q.get()
-        if e is None:
-            break
-        fn, args, kwargs = e
-        o.log.debug("xmlrpc async %s"%fn)
-        try:
-            getattr(o.proxy, fn)(*args, **kwargs)
-            o.log.debug("xmlrpc async %s done"%fn)
-            continue
-        except (socket.error, xmlrpclib.ProtocolError):
-            """ normal for collector communications disabled
-                through 127.0.0.1 == dbopensvc
-            """
-            pass
-        except socket.timeout:
-            o.log.error("connection to collector timed out")
-        except:
-            import sys
-            import traceback
-            e = sys.exc_info()
-            o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
-        o.log.error("xmlrpc async %s error"%fn)
-    o.log.info("shutdown")
+    try:
+        while e is not None:
+            e = q.get()
+            if e is None:
+                break
+            fn, args, kwargs = e
+            o.log.debug("xmlrpc async %s"%fn)
+            try:
+                getattr(o.proxy, fn)(*args, **kwargs)
+                o.log.debug("xmlrpc async %s done"%fn)
+                continue
+            except (socket.error, xmlrpclib.ProtocolError):
+                """ normal for collector communications disabled
+                    through 127.0.0.1 == dbopensvc
+                """
+                pass
+            except socket.timeout:
+                o.log.error("connection to collector timed out")
+            except:
+                import sys
+                import traceback
+                e = sys.exc_info()
+                o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
+            o.log.error("xmlrpc async %s error"%fn)
+        o.log.info("shutdown")
+    except ex.excSignal:
+        o.log.info("interrupted on signal")
  
 class Collector(object):
     def split_url(self, url):
