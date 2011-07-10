@@ -179,7 +179,6 @@ elif action in ['disable', 'enable', 'delete']:
 err = 0
 for s in node.svcs:
     s.force = options.force
-    s.parallel = options.parallel
     s.cron = options.cron
     if cluster:
         s.cluster = cluster
@@ -188,7 +187,10 @@ for s in node.svcs:
     s.destination_node = options.parm_destination_node
     if options.parallel:
         d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}
-        p[s.svcname] = Process(target=s.action, name='worker_'+s.svcname, kwargs=d)
+        p[s.svcname] = Process(target=node.service_action_worker,
+                               name='worker_'+s.svcname,
+                               args=[s],
+                               kwargs=d)
         p[s.svcname].start()
     else:
         try:

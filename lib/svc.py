@@ -71,7 +71,6 @@ class Svc(Resource, Freezer):
         self.cron = False
         self.force = False
         self.cluster = False
-        self.parallel = False
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
@@ -1007,11 +1006,7 @@ class Svc(Resource, Freezer):
                 self.log.debug("nothing to sync for the service for now")
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
-        if self.parallel:
-            import sys
-            sys.exit(err)
-        else:
-            return err
+        return err
 
     def do_action(self, action, waitlock=60):
         """Trigger action

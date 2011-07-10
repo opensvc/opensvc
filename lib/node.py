@@ -681,6 +681,11 @@ class Node(Svc, Freezer):
         print "registered"
         return 0
 
+    def service_action_worker(self, s, **kwargs):
+        r = s.action(**kwargs)
+        self.close()
+        sys.exit(r)
+
 if __name__ == "__main__" :
     for n in (Node,) :
         help(n)
