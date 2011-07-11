@@ -50,6 +50,10 @@ class Node(Svc, Freezer):
     """ Defines a cluster node.  It contain list of Svc.
         Implements node-level actions and checks.
     """
+    def __str__(self):
+        s = self.nodename
+        return s
+
     def __init__(self):
         self.nodename = socket.gethostname()
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
