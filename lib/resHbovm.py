@@ -18,7 +18,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
+import resHb
 from rcGlobalEnv import rcEnv
 import os
 import rcStatus
@@ -26,13 +26,13 @@ import rcExceptions as ex
 from rcUtilities import justcall, which
 import rcOvm
 
-class Hb(Res.Resource):
+class Hb(resHb.Hb):
     """ HeartBeat ressource
     """
     def __init__(self, rid=None, name=None, always_on=set([]),
                  optional=False, disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, "hb.ovm",
-                              optional=optional, disabled=disabled, tags=tags)
+        resHb.Hb.__init__(self, rid, "hb.ovm",
+                          optional=optional, disabled=disabled, tags=tags)
         self.ovsinit = os.path.join(os.sep, 'etc', 'init.d', 'ovs-agent')
 
     def process_running(self):
@@ -46,9 +46,6 @@ class Hb(Res.Resource):
             if not line.startswith('ok!'):
                 return False
         return True
-
-    def __str__(self):
-        return "%s" % (Res.Resource.__str__(self))
 
     def stop(self):
         try:
@@ -66,7 +63,7 @@ class Hb(Res.Resource):
             self.log.error(str(e))
             raise
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         if not os.path.exists(self.ovsinit):
             self.status_log("OVM agent is not installed")
             return rcStatus.WARN

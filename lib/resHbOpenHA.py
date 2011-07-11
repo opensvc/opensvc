@@ -18,20 +18,20 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
+import resHb
 from rcGlobalEnv import rcEnv
 import os
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import justcall
 
-class Hb(Res.Resource):
+class Hb(resHb.Hb):
     """ HeartBeat ressource
     """
     def __init__(self, rid=None, name=None, always_on=set([]),
                  optional=False, disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, "hb.openha",
-                              optional=optional, disabled=disabled, tags=tags)
+        resHb.Hb.__init__(self, rid, "hb.openha",
+                          optional=optional, disabled=disabled, tags=tags)
         self.basedir = os.path.join(os.sep, 'usr', 'local', 'cluster')
         self.bindir = os.path.join(self.basedir, 'bin')
         self.logdir = os.path.join(self.basedir, 'log')
@@ -123,16 +123,7 @@ class Hb(Res.Resource):
             return False
         return True
 
-    def __str__(self):
-        return "%s" % (Res.Resource.__str__(self))
-
-    def stop(self):
-        pass
-
-    def start(self):
-        pass
-
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         if not os.path.exists(self.service_cmd):
             self.status_log("open-ha is not installed")
             return rcStatus.WARN

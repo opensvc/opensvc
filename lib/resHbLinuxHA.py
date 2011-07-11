@@ -18,20 +18,20 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import resources as Res
+import resHb
 from rcGlobalEnv import rcEnv
 import os
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import justcall, which
 
-class Hb(Res.Resource):
+class Hb(resHb.Hb):
     """ HeartBeat ressource
     """
     def __init__(self, rid=None, name=None, always_on=set([]),
                  optional=False, disabled=False, tags=set([])):
-        Res.Resource.__init__(self, rid, "hb.linuxha",
-                              optional=optional, disabled=disabled, tags=tags)
+        resHb.Hb.__init__(self, rid, "hb.linuxha",
+                          optional=optional, disabled=disabled, tags=tags)
         self.status_cmd = 'cl_status'
         self.name = name
 
@@ -44,16 +44,7 @@ class Hb(Res.Resource):
             return False
         return True
 
-    def __str__(self):
-        return "%s" % (Res.Resource.__str__(self))
-
-    def stop(self):
-        pass
-
-    def start(self):
-        pass
-
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         if not which(self.status_cmd):
             self.status_log("heartbeat is not installed")
             return rcStatus.WARN
