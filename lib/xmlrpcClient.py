@@ -20,6 +20,7 @@
 from datetime import datetime, timedelta
 import xmlrpclib
 import os
+import sys
 from rcGlobalEnv import rcEnv
 import rcStatus
 import socket
@@ -70,7 +71,6 @@ def call_worker(q):
             except socket.timeout:
                 o.log.error("connection to collector timed out")
             except:
-                import sys
                 import traceback
                 e = sys.exc_info()
                 o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
@@ -118,14 +118,12 @@ class Collector(object):
             try:
                 rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = self.split_url(rcEnv.dbopensvc)
             except:
-                import sys
                 self.log.error("malformed dbopensvc url: %s"%rcEnv.dbopensvc)
         if config.has_option('node', 'dbcompliance'):
             rcEnv.dbcompliance = config.get('node', 'dbcompliance')
             try:
                 rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(rcEnv.dbcompliance)
             except:
-                import sys
                 self.log.error("malformed dbcompliance url: %s"%rcEnv.dbcompliance)
         if config.has_option('node', 'uuid'):
             rcEnv.uuid = config.get('node', 'uuid')
@@ -150,7 +148,6 @@ class Collector(object):
             args = []
         if fn == "register_node" and \
            'register_node' not in self.proxy_methods:
-            import sys
             print >>sys.stderr, "collector does not support node registration"
             return
         if rcEnv.uuid == "" and \
@@ -158,7 +155,6 @@ class Collector(object):
            not rcEnv.warned and \
            self.auth_node and \
            fn != "register_node":
-            import sys
             print >>sys.stderr, "this node is not registered. try 'nodemgr register'"
             print >>sys.stderr, "to disable this warning, set 'dbopensvc = None' in node.conf"
             rcEnv.warned = True
@@ -175,7 +171,6 @@ class Collector(object):
         except socket.timeout:
             print "connection to collector timed out"
         except:
-            import sys
             import traceback
             e = sys.exc_info()
             print e[0], e[1], traceback.print_tb(e[2])
@@ -274,7 +269,6 @@ class Collector(object):
             if len(a) == 0:
                 raise Exception
         except:
-            import sys
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc)
 
         socket.setdefaulttimeout(120)
