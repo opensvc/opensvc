@@ -104,6 +104,11 @@ class Node(Svc, Freezer):
         }
         self.collector = xmlrpcClient.Collector()
         self.cmdworker = rcCommandWorker.CommandWorker()
+        try:
+            rcos = __import__('rcOs'+rcEnv.sysname)
+        except ImportError:
+            rcos = __import__('rcOs')
+        self.os = rcos.Os()
 
     def build_services(self, *args, **kwargs):
         if self.svcs is not None:

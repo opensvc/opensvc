@@ -547,6 +547,12 @@ class Svc(Resource, Freezer):
     class exMonitorAction(Exception):
         pass
 
+    def reboot(self):
+        self.node.os.reboot()
+
+    def crash(self):
+        self.node.os.crash()
+
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')
 
