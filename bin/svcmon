@@ -165,12 +165,4 @@ if options.verbose:
 else:
     svcmon_normal(node.svcs, options.upddb)
 
-for svc in node.svcs:
-    try:
-        svc.action('resource_monitor')
-    except svc.exMonitorAction:
-        svc.cluster = True
-        svc.action('toc')
-        getattr(svc, svc.monitor_action)()
-
 node.close()
