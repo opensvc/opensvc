@@ -198,7 +198,7 @@ for s in node.svcs:
         except s.exMonitorAction:
             s.cluster = True
             s.action('toc')
-            getattr(s, s.monitor_action)()
+            s.action(s.monitor_action)
 
 if options.parallel:
     for svcname in p:

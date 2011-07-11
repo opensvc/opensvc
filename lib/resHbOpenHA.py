@@ -39,6 +39,7 @@ class Hb(Res.Resource):
         self.cfsvcdir = os.path.join(self.basedir, 'conf', 'services')
         self.cfnoddir = os.path.join(self.basedir, 'conf', 'nodes')
         self.cfmondir = os.path.join(self.basedir, 'conf', 'monitor')
+        os.environ['EZ'] = self.basedir
         os.environ['EZ_BIN'] = self.bindir
         os.environ['EZ_SERVICES'] = self.cfsvcdir
         os.environ['EZ_NODES'] = self.cfnoddir
@@ -96,7 +97,12 @@ class Hb(Res.Resource):
             raise ex.excError
 
     def freezestop(self):
-        self.service_action('freeze-stop')
+        cmd = ['env']
+        vars = ('EZ', 'EZ_BIN', 'EZ_SERVICES', 'EZ_NODES', 'EZ_MONITOR', 'EZ_LOG')
+        for var in vars:
+            cmd.append(var+'='+os.environ[var])
+        cmd += [self.service_cmd, '-A', self.cluster_name(), 'freeze-stop']
+        self.svc.node.cmdworker.enqueue(cmd)
 
     def process_running(self):
         daemons = [self.heartc, self.heartd, self.nmond]

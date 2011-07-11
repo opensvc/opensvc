@@ -37,10 +37,6 @@ def signal_handler(signum, frame):
     raise ex.excSignal
 
 def dblogger(self, action, begin, end, actionlogfile, sync=False):
-    for rs in self.resSets:
-        for r in rs.resources:
-            r.log.setLevel(logging.CRITICAL)
-
     self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=sync)
     g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
     self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=sync)
@@ -143,12 +139,18 @@ class Svc(Resource, Freezer):
             # Error
             pass
 
-        self.resources_by_id[r.rid] = r
+        if isinstance(r, Resource):
+            self.resources_by_id[r.rid] = r
+
         if r.rid in rcEnv.vt_supported:
             self.resources_by_id["container"] = r
+
         r.svc = self
         import logging
-        r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
+        if r.rid is not None:
+            r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
+        else:
+            r.log = logging.getLogger(str(self.svcname+'.'+str(r.type)).upper())
 
         if r.type.startswith("hb"):
             self.ha = True
@@ -157,7 +159,7 @@ class Svc(Resource, Freezer):
 
     def svclock(self, action=None, timeout=30, delay=5):
         if action in ['push', 'print_status', 'status', 'freeze', 'frozen',
-                      'thaw']:
+                      'thaw', 'freezestop']:
             # no need to serialize this action
             return
         if self.lockfd is not None:
@@ -243,7 +245,10 @@ class Svc(Resource, Freezer):
                    "print_status",
                    "group_status",
                    "presync",
-                   "postsync"]
+                   "postsync",
+                   "freezestop",
+                   "resource_monitor"]
+
         ns = self.need_snap_trigger(sets, action)
 
         """ snapshots are created in pre_action and destroyed in post_action
