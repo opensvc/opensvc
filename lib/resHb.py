@@ -28,7 +28,7 @@ class Hb(Res.Resource):
     """ HeartBeat ressource
     """
     def cluster_files(self):
-        svcfile = os.path.join(rcEnv.pathbin, self.svc.svcname)
+        svcfile = os.path.join(rcEnv.pathetc, self.svc.svcname)
         svcmgr = os.path.join('..', 'bin', 'svcmgr')
         svcmgr_real = os.path.join(rcEnv.pathbin, 'svcmgr')
         cluster_f = '.'.join((svcfile, 'cluster'))
@@ -38,10 +38,9 @@ class Hb(Res.Resource):
             if os.path.islink(f):
                 if os.path.exists(f):
                     if os.path.realpath(f) == svcmgr_real:
-                        # ok
+                        self.log.debug("%s: symlink ok."%f)
                         pass
                     else:
-                        # symlink exists but points to wrong file
                         self.log.info("%s: symlink exists but points to wrong file. fix."%f)
                         os.unlink(f)
                         os.symlink(svcmgr, f)
@@ -51,12 +50,10 @@ class Hb(Res.Resource):
                     os.symlink(svcmgr, f)
             else:
                 if os.path.exists(f):
-                    # regular file
                     self.log.info("%s: regular file. fix."%f)
                     os.unlink(f)
                     os.symlink(svcmgr, f)
                 else:
-                    # not regular nor symlink
                     self.log.info("%s: not regular file nor symlink. fix."%f)
                     os.symlink(svcmgr, f)
 
