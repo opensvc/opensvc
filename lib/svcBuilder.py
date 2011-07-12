@@ -1373,7 +1373,7 @@ def list_services():
     return s
 
 def build_services(status=None, svcnames=[],
-                   onlyprimary=False, onlysecondary=False, autopush=True):
+                   onlyprimary=False, onlysecondary=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
@@ -1399,8 +1399,6 @@ def build_services(status=None, svcnames=[],
         if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
-        if autopush and svc.collector_outdated():
-            svc.action('push')
     return [ s for n ,s in sorted(services.items()) ]
 
 def toggle_one(svcname, rids=[], disable=True):
