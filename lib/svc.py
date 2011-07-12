@@ -526,9 +526,11 @@ class Svc(Resource, Freezer):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         if 'hb' not in self.group_status_cache:
+            self.log.debug("no heartbeat heartbeat resource. no need to check monitored resources.")
             return
         hb_status = self.group_status_cache['hb']
         if hb_status.status != rcStatus.UP:
+            self.log.debug("heartbeat status is not up. no need to check monitored resources.")
             return
 
         monitored_resources = []
@@ -537,12 +539,18 @@ class Svc(Resource, Freezer):
                 if r.monitor:
                     monitored_resources.append(r)
 
+        if len(monitored_resources) == 0:
+            self.log.debug("no monitored resource")
+            return
+
         for r in monitored_resources:
             if r.rstatus != rcStatus.UP:
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
                     raise self.exMonitorAction
                 return
+
+        self.log.debug("monitored resources are up")
 
     class exMonitorAction(Exception):
         pass
@@ -556,9 +564,11 @@ class Svc(Resource, Freezer):
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')
 
+    def stonith(self):
+        self.sub_set_action('stonith.ilo', 'start')
+        
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
-        pass
         
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),

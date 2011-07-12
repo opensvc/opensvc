@@ -392,6 +392,49 @@ def add_vdisks(svc, conf):
         add_triggers(r, conf, s)
         svc += r
 
+def add_stoniths(svc, conf):
+    for s in conf.sections():
+        if re.match('stonith#[0-9]', s, re.I) is None:
+            continue
+
+        if rcEnv.nodename in svc.drpnodes:
+            # no stonith on DRP nodes
+            return
+
+        kwargs = {}
+
+        try:
+            _type = conf_get_string(svc, conf, s, 'type')
+            if len(_type) > 1:
+                _type = _type[0].upper()+_type[1:].lower()
+        except ex.OptNotFound:
+            svc.log.error("type must be set in section %s"%s)
+            return
+
+        try:
+            kwargs['name'] = conf_get_string(svc, conf, s, 'name')
+        except ex.OptNotFound:
+            if _type in ('Ilo'):
+                svc.log.error("name must be set in section %s"%s)
+                return
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s, svc)
+
+        st = __import__('resStonith'+_type)
+        try:
+            st = __import__('resStonith'+_type)
+        except ImportError:
+            svc.log.error("resStonith%s is not implemented"%_type)
+            continue
+
+        r = st.Stonith(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
 def add_hbs(svc, conf):
     for s in conf.sections():
         if re.match('hb#[0-9]', s, re.I) is None:
@@ -1337,6 +1380,7 @@ def build(name):
     #
     try:
         add_hbs(svc, conf)
+        add_stoniths(svc, conf)
         add_ips(svc, conf)
         add_drbds(svc, conf)
         add_loops(svc, conf)

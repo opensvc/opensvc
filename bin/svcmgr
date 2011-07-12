@@ -28,6 +28,7 @@ pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
 sys.path.append(os.path.join(pathsvc, 'lib'))
 prog = os.path.basename(__file__)
+action = None
 
 import svcBuilder
 import rcStatus
@@ -94,14 +95,21 @@ elif cmd == 'svcmgr':
               help="operate only on service not flagged for autostart on this node")
 else:
     svcname = cmd.split('.')
-    if len(svcname) == 2 and svcname[1] == 'cluster':
-        cluster = True
-        svcname = svcname[0]
+    if len(svcname) == 2:
+        if svcname[1] == 'cluster':
+            cluster = True
+            svcname = svcname[0]
+        elif svcname[1] == 'stonith':
+            cluster = True
+            svcname = svcname[0]
+            action = "stonith"
     else:
         svcname = cmd
     node.build_services(svcnames=[svcname])
 
 (options, args) = parser.parse_args()
+if action is not None:
+    args = ['stonith']
 
 if node.svcs is None:
     parm_primary = False
@@ -138,10 +146,11 @@ if node.svcs is None:
                         onlysecondary=onlysecondary)
 
 if len(args) > 1:
-    parser.error("More than one action")
+    parser.error("More than one action: %s"%str(args))
 if len(args) is 0:
     parser.error("Missing action")
-action = args[0]
+if action is None:
+    action = args[0]
 if not action in rcOptParser.action_desc.keys():
     parser.error("unsupported action")
 

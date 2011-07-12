@@ -50,6 +50,16 @@ class Hb(resHb.Hb):
         self.heartd = os.path.join(self.bindir, 'heartd')
         self.nmond = os.path.join(self.bindir, 'nmond')
         self.name = name
+        self.state = {'0': 'stopped',
+                      '1': 'stopping',
+                      '2': 'started',
+                      '3': 'starting',
+                      '4': 'start_failed',
+                      '5': 'stop_failed',
+                      '6': 'frozen_stop',
+                      '7': 'start_ready',
+                      '8': 'unknown',
+                      '9': 'force_stop'}
 
     def cluster_name(self):
         if self.name is None:
@@ -57,8 +67,22 @@ class Hb(resHb.Hb):
         else:
             return self.name
 
-    def service_status(self):
-        service_state = os.path.join(self.svcdir, self.cluster_name(), 'STATE.'+rcEnv.nodename)
+    def service_local_status(self):
+        return self.service_status(rcEnv.nodename)
+
+    def service_remote_status(self):
+        if len(self.svc.nodes) != 2:
+            self.log.error("HA cluster must have 2 nodes")
+            raise ex.excError
+        nodes = [n for n in self.svc.nodes if n != rcEnv.nodename]
+        if len(nodes) != 1:
+            self.log.error("local node is not in cluster")
+            raise ex.excError
+        peer = nodes[0]
+        return self.service_status(peer)
+
+    def service_status(self, nodename):
+        service_state = os.path.join(self.svcdir, self.cluster_name(), 'STATE.'+nodename)
         try:
             f = open(service_state, 'r')
             buff = f.read().strip(' \n')
@@ -67,26 +91,8 @@ class Hb(resHb.Hb):
             import traceback
             traceback.print_exc()
             return 'unknown'
-        if buff == '9':
-            return 'force_stop'
-        elif buff == '8':
-            return 'unknown'
-        elif buff == '7':
-            return 'start_ready'
-        elif buff == '6':
-            return 'frozen_stop'
-        elif buff == '5':
-            return 'stop_failed'
-        elif buff == '4':
-            return 'start_failed'
-        elif buff == '3':
-            return 'starting'
-        elif buff == '2':
-            return 'started'
-        elif buff == '1':
-            return 'stopping'
-        elif buff == '0':
-            return 'stopped'
+        if buff in self.state:
+            return self.state[buff]
         else:
             return 'unknown'
 
@@ -123,6 +129,12 @@ class Hb(resHb.Hb):
             return False
         return True
 
+    def need_stonith(self):
+        status = self.service_remote_status()
+        if status == 'unknown':
+            return True
+        return False
+
     def __status(self, verbose=False):
         if not os.path.exists(self.service_cmd):
             self.status_log("open-ha is not installed")
@@ -130,7 +142,7 @@ class Hb(resHb.Hb):
         if not self.process_running():
             self.status_log("open-ha daemons are not running")
             return rcStatus.WARN
-        status = self.service_status()
+        status = self.service_local_status()
         if status == 'unknown':
             self.status_log("unable to determine cluster service state")
             return rcStatus.WARN

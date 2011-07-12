@@ -75,6 +75,7 @@ action_desc = {
         'migrate':      'live migrate the service to the remote node',
         'json_status':  'provide the resource and aggregated status in json format, for use by tier tools',
         'resource_monitor':  'detect monitored resource failures and trigger monitor_action',
+        'stonith':      'command provided to the heartbeat daemon to fence peer node in case of split brain',
 }
 
 def format_desc(svc=False):
@@ -89,24 +90,3 @@ def format_desc(svc=False):
                 desc += '\n'
 	return desc
 
-class svcOptionParser:
-	def __init__(self, svc=False):
-		__ver = rcEnv.prog + " version " + str(rcEnv.ver)
-		__usage = "%prog [options] command\n\n" + format_desc(svc)
-		parser = optparse.OptionParser(version=__ver, usage=__usage)
-		parser.add_option("--debug", default="False",
-				  action="store_true", dest="debug",
-				  help="debug mode")
-		parser.add_option("-f", "--force", default=False,
-				  action="store_true", dest="force",
-				  help="force action, ignore sanity check warnings")
-		(self.options, self.args) = parser.parse_args()
-		if len(self.args) > 1:
-			parser.error("More than one action")
-		if len(self.args) is 0:
-			parser.error("Missing action")
-		self.action = self.args[0]
-		if svc and not hasattr(svc, self.action):
-			parser.error("unsupported action")
-                if svc:
-			svc.force = self.options.force
