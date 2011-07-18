@@ -41,6 +41,10 @@ class Ip(Res.Ip):
             raise ex.excNotSupported
         try:
             ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
+        except ex.excError, e:
+            self.log.debug(str(e))
+            self.status_log(str(e))
+            return False
         except:
             self.log.debug("failed to fetch interface configuration")
             self.status_log("failed to fetch interface configuration")

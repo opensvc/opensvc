@@ -54,12 +54,17 @@ class ifconfig(rcIfconfig.ifconfig):
             if 'broadcast' in prev:
                 i.bcast = w
             elif 'netmask' in prev:
-                i.mask = "%d.%d.%d.%d"%(
-                    int(w[0:2], 16),
-                    int(w[2:4], 16),
-                    int(w[4:6], 16),
-                    int(w[6:8], 16)
-                )
+                if w == '0':
+                    i.mask = "0.0.0.0"
+                elif len(w) == 8:
+                    i.mask = "%d.%d.%d.%d"%(
+                        int(w[0:2], 16),
+                        int(w[2:4], 16),
+                        int(w[4:6], 16),
+                        int(w[6:8], 16)
+                    )
+                else:
+                    raise ex.excError("malformed ifconfig %s netmask: %s"%(intf, w))
             elif 'inet' == prev:
                 i.ipaddr = w
             elif 'inet6' == prev:

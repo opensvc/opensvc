@@ -35,7 +35,7 @@ class ifconfig(rcIfconfig.ifconfig):
         for line in intf_list.split('\n'):
             if len(line) == 0:
                 continue
-            intf = line.split()[0]
+            intf = line.split()[0].replace('*', '')
             cmd = rcEnv.rsh.split(' ') + [hostname, 'env', 'LANG=C', 'ifconfig', intf]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out = p.communicate()
@@ -44,3 +44,4 @@ class ifconfig(rcIfconfig.ifconfig):
             elif p.returncode != 0:
                 raise ex.excError
             self.parse(out[0])
+                
