@@ -99,9 +99,11 @@ def do_symcli_db_file(symcli_db_file):
 do_symcli_db_file(options.symcli_db_file)
 
 if len(args) is 0:
+    n.close()
     parser.error("Missing action")
 action = '_'.join(args)
 if not action in n.action_desc:
+    n.close()
     parser.error("unsupported action: %s"%action)
 
 def _exit(r):

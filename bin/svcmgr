@@ -128,6 +128,7 @@ if node.svcs is None:
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None and \
        hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+        node.close()
         parser.error("--onlyprimary and --onlysecondary are exclusive")
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None:
@@ -146,12 +147,15 @@ if node.svcs is None:
                         onlysecondary=onlysecondary)
 
 if len(args) > 1:
+    node.close()
     parser.error("More than one action: %s"%str(args))
 if len(args) is 0:
+    node.close()
     parser.error("Missing action")
 if action is None:
     action = args[0]
 if not action in rcOptParser.action_desc.keys():
+    node.close()
     parser.error("unsupported action")
 
 if hasattr(options, "parm_rid") and options.parm_rid is not None:
