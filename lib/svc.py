@@ -525,8 +525,13 @@ class Svc(Resource, Freezer):
     def resource_monitor(self):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
-        if 'hb' not in self.group_status_cache:
-            self.log.debug("no heartbeat heartbeat resource. no need to check monitored resources.")
+        has_hb = False
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+            for r in rs.resources:
+                if not r.disabled:
+                    has_hb = True
+        if not has_hb:
+            self.log.debug("no active heartbeat resource. no need to check monitored resources.")
             return
         hb_status = self.group_status_cache['hb']
         if hb_status.status != rcStatus.UP:
@@ -678,6 +683,13 @@ class Svc(Resource, Freezer):
 
     def cluster_mode_safety_net(self):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+            return
+        all_disabled = True
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+            for r in rs.resources:
+                if not r.disabled:
+                    all_disabled = False
+        if all_disabled:
             return
         if not self.cluster:
             self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")

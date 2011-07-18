@@ -58,7 +58,7 @@ class Stonith(Res.Resource):
     def sanity(self):
         for rs in self.svc.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha']):
             for r in rs.resources:
-                if hasattr(r, 'need_stonith') and r.need_stonith():
+                if not r.disabled and hasattr(r, 'need_stonith') and r.need_stonith():
                     self.log.info("heartbeat %s asks for stonith"%r.rid)
                     return True
         self.log.debug("no heartbeat asks for stonith")
