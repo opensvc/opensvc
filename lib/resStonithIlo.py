@@ -11,5 +11,5 @@ class Stonith(resStonith.Stonith):
 
     def _start(self):
         username, password, key = self.creds()
-        cmd = rcEnv.rsh.split() + ['-l', username, '-i', key, self.name, 'power', 'cycle']
+        cmd = rcEnv.rsh.split() + ['-l', username, '-i', key, self.name, 'power', 'reset']
         self.vcall(cmd)
