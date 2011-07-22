@@ -4,7 +4,6 @@ import os
 import shutil
 import glob
 import sys
-from subprocess import *
 
 python_names = ['python2.7', 'python2.6']
 
@@ -153,8 +152,7 @@ def install_cron():
     """
     if '/var/spool/' in root_crontab:
         cmd = ['crontab', root_crontab]
-        process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        buff = process.communicate()
+        ret = os.system(' '.join(cmd))
 
     for loc in purge:
         try:
@@ -177,10 +175,8 @@ def install_cron():
 
 def activate_chkconfig(svc):
     cmd = ['chkconfig', '--add', svc]
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
-    if process.returncode > 0:
-        print buff[1]
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
         return False
     return True
 
@@ -192,16 +188,12 @@ def activate_redhat():
 
 def activate_debian():
     cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
-    if process.returncode > 0:
-        print buff[1]
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
         return False
     cmd = ['update-rc.d', 'opensvc', 'defaults', '99', '01']
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
-    if process.returncode > 0:
-        print buff[1]
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
         return False
     return True
 
@@ -326,8 +318,7 @@ def gen_keys():
     if os.path.exists(pub) or os.path.exists(priv):
         return
     cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '', '-f', priv]
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
+    ret = os.system(' '.join(cmd))
 
 def missing_dir(sub):
     pathd = os.path.join(os.sep, 'opt', 'opensvc', sub)
@@ -414,14 +405,12 @@ def install_profile():
 
 def install_user_linux():
     cmd = ['useradd', '-m', 'opensvc', '-s', '/bin/bash']
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
+    ret = os.system(' '.join(cmd))
 
 def install_user():
     cmd = ['id', 'opensvc']
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
-    if process.returncode == 0:
+    ret = os.system(' '.join(cmd))
+    if ret == 0:
         return
 
     if sysname == 'Linux':
@@ -474,9 +463,8 @@ def move_host_mode():
         shutil.move(hm, hm+'.old')
         return
     cmd = ['/opt/opensvc/bin/nodemgr', 'set', '--param', 'node.host_mode', '--value', mode]
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-    buff = process.communicate()
-    if process.returncode != 0:
+    ret = os.system(' '.join(cmd))
+    if ret != 0:
         print 'failed to set host_mode in node.conf'
         return
     shutil.move(hm, hm+'.old')

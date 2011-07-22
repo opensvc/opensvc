@@ -412,7 +412,7 @@ def add_stoniths(svc, conf):
             return
 
         try:
-            kwargs['name'] = conf_get_string(svc, conf, s, 'name')
+            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
         except ex.OptNotFound:
             if _type in ('Ilo'):
                 svc.log.error("name must be set in section %s"%s)
