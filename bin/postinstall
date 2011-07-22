@@ -317,7 +317,7 @@ def gen_keys():
     pub = os.path.join(home, ".ssh", "id_dsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
         return
-    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '', '-f', priv]
+    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '""', '-f', priv]
     ret = os.system(' '.join(cmd))
 
 def missing_dir(sub):
