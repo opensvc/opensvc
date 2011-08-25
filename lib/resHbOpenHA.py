@@ -146,12 +146,12 @@ class Hb(resHb.Hb):
         if status == 'unknown':
             self.status_log("unable to determine cluster service state")
             return rcStatus.WARN
-        elif status in ['frozen_stop', 'start_failed', 'stop_failed']:
+        elif status in ['frozen_stop', 'start_failed', 'stop_failed', 'starting', 'start_ready', 'stopping', 'force_stop']:
             self.status_log("cluster service status is %s"%status)
             return rcStatus.WARN
-        elif status in ['stopped', 'stopping', 'force_stop']:
+        elif status in ['stopped']:
             return rcStatus.DOWN
-        elif status in ['started', 'starting', 'start_ready']:
+        elif status in ['started']:
             return rcStatus.UP
         else:
             self.status_log("unknown cluster service status: %s"%status)
