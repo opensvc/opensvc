@@ -93,7 +93,7 @@ class Apps(Res.Resource):
         else:
             return False
 
-    def app(self, name, action, dedicated_log=True):
+    def app(self, name, action, dedicated_log=True, return_out=False):
         if len(name) == 0:
             return 0
         if not self.app_exist(name):
@@ -113,6 +113,11 @@ class Apps(Res.Resource):
                 self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
                 f.close()
                 return p.returncode
+            elif return_out:
+                (out, err, ret) = justcall(cmd)
+                if ret != 0:
+                    return "Error: info not implemented in launcher"
+                return out
             else:
                 (out, err, ret) = justcall(cmd)
                 self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]"%(cmd, out, err, ret))
@@ -225,6 +230,30 @@ class Apps(Res.Resource):
             return
         for name in self.sorted_app_list('K*'):
             self.app(name, 'stop')
+
+    def info(self):
+        """Execute each startup script (S* files) info method.
+        """
+        try:
+            if not self.start_checks():
+                return []
+        except ex.excNotAvailable:
+            return []
+        l = []
+        for name in self.sorted_app_list('S*'):
+            s = self.app(name, 'info', dedicated_log=False, return_out=True)
+            name = os.path.basename(os.path.realpath(name))
+            if len(s) == 0:
+                l.append([self.svc.svcname, name, "Error", "info not implemented in launcher"])
+            for line in s.split('\n'):
+                if len(line) == 0:
+                    continue
+                v = line.split(":")
+                if len(v) < 2:
+                    l.append([self.svc.svcname, name, "Error", "parsing: %s"%line])
+                    continue
+                l.append([self.svc.svcname, name, v[0], ":".join(v[1:]).strip()])
+        return l
 
 if __name__ == "__main__":
     for c in (Apps,) :

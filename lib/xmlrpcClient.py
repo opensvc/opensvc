@@ -533,6 +533,23 @@ class Collector(object):
             else:
                 self.submit("resmon_update", *args)
     
+    def push_appinfo(self, svc, sync=True):
+        if 'update_appinfo' not in self.proxy_methods:
+            return
+
+        vars = ['app_svcname',
+                'app_launcher',
+                'app_key',
+                'app_value']
+        vals = svc.resources_by_id['app'].info()
+        if len(vals) == 0:
+            return
+
+        args = [vars, vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.update_appinfo(*args)
+
     def push_service(self, svc, sync=True):
         def envfile(svc):
             envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
@@ -766,6 +783,7 @@ class Collector(object):
         self.proxy.delete_service_list(*args)
         for svc in svcs:
             self.push_service(svc, sync=sync)
+            self.push_appinfo(svc, sync=sync)
             self.push_disks(svc, sync=sync)
     
     def push_checks(self, vars, vals, sync=True):
