@@ -411,11 +411,18 @@ def add_stoniths(svc, conf):
             svc.log.error("type must be set in section %s"%s)
             return
 
-        try:
-            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
-        except ex.OptNotFound:
-            if _type in ('Ilo'):
-                svc.log.error("name must be set in section %s"%s)
+        if _type in ('Ilo'):
+            try:
+                kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+            except ex.OptNotFound:
+                pass
+            try:
+                kwargs['name'] = conf_get_string_scope(svc, conf, s, 'target')
+            except ex.OptNotFound:
+                pass
+    
+            if 'name' not in kwargs:
+                svc.log.error("target must be set in section %s"%s)
                 return
 
         kwargs['rid'] = s
