@@ -91,8 +91,11 @@ class Hb(resHb.Hb):
             import traceback
             traceback.print_exc()
             return 'unknown'
-        if buff in self.state:
-            return self.state[buff]
+        if len(buff) < 1:
+            self.log.error("%s is corrupted"%service_state)
+            return 'unknown'
+        if buff[0] in self.state:
+            return self.state[buff[0]]
         else:
             return 'unknown'
 
