@@ -117,7 +117,12 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return ret
 
     def disk_preempt_reservation(self, disk, oldkey):
-        cmd = [ 'sg_persist', '-n', '--out', '--preempt-abort', '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
+        m = __import__("rcDiskInfo"+rcEnv.sysname)
+        if m.diskInfo.disk_vendor(disk).strip() in ["VMware"]:
+            preempt_opt = '--preempt'
+        else:
+            preempt_opt = '--preempt-abort'
+        cmd = [ 'sg_persist', '-n', '--out', preempt_opt, '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to preempt reservation for disk %s" % disk)
