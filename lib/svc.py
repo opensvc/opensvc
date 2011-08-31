@@ -71,6 +71,7 @@ class Svc(Resource, Freezer):
         self.status_types = ["container.hpvm",
                              "container.kvm",
                              "container.xen",
+                             "container.esx",
                              "container.ovm",
                              "container.lxc",
                              "container.vz",
@@ -772,6 +773,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
         self.sub_set_action("container.xen", "start")
+        self.sub_set_action("container.esx", "start")
         self.sub_set_action("container.ovm", "start")
         self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("container.ldom", "start")
@@ -791,6 +793,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.ldom", "stop")
         self.sub_set_action("container.hpvm", "stop")
         self.sub_set_action("container.xen", "stop")
+        self.sub_set_action("container.esx", "stop")
         self.sub_set_action("container.ovm", "stop")
         self.sub_set_action("container.kvm", "stop")
         self.sub_set_action("container.jail", "stop")

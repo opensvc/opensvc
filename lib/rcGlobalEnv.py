@@ -46,7 +46,10 @@ class rcEnv:
         else:
             rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -n"
             rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
-    else :
+    elif os.path.exists('/etc/vmware-release'):
+        rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
+        rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
+    else:
         rsh = "/usr/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         rcp = "/usr/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
 
@@ -154,7 +157,7 @@ class rcEnv:
     ]
 
     vt_libvirt = ['kvm', 'lxc', 'xen']
-    vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm']
+    vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx']
     vt_container = ['zone', 'lxc', 'jail', 'vz']
     vt_supported = vt_vm + vt_container
 
