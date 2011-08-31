@@ -105,7 +105,7 @@ def sync_timestamp(self, node):
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
     shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, node+':/']
+    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, 'root@'+node+':/']
     self.vcall(cmd)
 
 def get_timestamp(self, node):
@@ -257,7 +257,7 @@ class Rsync(resSync.Sync):
         bwlimit = bwlimit_option(self)
 
         for node in targets:
-            dst = node + ':' + self.dst
+            dst = 'root@' + node + ':' + self.dst
             cmd = ['rsync'] + self.options + bwlimit + src
             cmd.append(dst)
             (ret, out, err) = self.vcall(cmd)
