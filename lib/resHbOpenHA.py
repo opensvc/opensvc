@@ -36,14 +36,14 @@ class Hb(resHb.Hb):
         self.bindir = os.path.join(self.basedir, 'bin')
         self.logdir = os.path.join(self.basedir, 'log')
         self.svcdir = os.path.join(self.basedir, 'services')
-        self.cfsvcdir = os.path.join(self.basedir, 'conf', 'services')
-        self.cfnoddir = os.path.join(self.basedir, 'conf', 'nodes')
-        self.cfmondir = os.path.join(self.basedir, 'conf', 'monitor')
+        self.cfsvc = os.path.join(self.basedir, 'conf', 'services')
+        self.cfnod = os.path.join(self.basedir, 'conf', 'nodes')
+        self.cfmon = os.path.join(self.basedir, 'conf', 'monitor')
         os.environ['EZ'] = self.basedir
         os.environ['EZ_BIN'] = self.bindir
-        os.environ['EZ_SERVICES'] = self.cfsvcdir
-        os.environ['EZ_NODES'] = self.cfnoddir
-        os.environ['EZ_MONITOR'] = self.cfmondir
+        os.environ['EZ_SERVICES'] = self.cfsvc
+        os.environ['EZ_NODES'] = self.cfnod
+        os.environ['EZ_MONITOR'] = self.cfmon
         os.environ['EZ_LOG'] = self.logdir
         self.service_cmd = os.path.join(self.bindir, 'service')
         self.heartc = os.path.join(self.bindir, 'heartc')
@@ -114,7 +114,29 @@ class Hb(resHb.Hb):
         self.svc.node.cmdworker.enqueue(cmd)
 
     def process_running(self):
-        daemons = [self.heartc, self.heartd, self.nmond]
+        if not os.path.exists(self.cfmon):
+            return True
+        buff = ""
+        with open(self.cfmon) as f:
+            buff = f.read()
+        daemons = []
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) < 4:
+                continue
+            if '#' in l[0]:
+                continue
+            if l[1] == 'net':
+                l[1] = ''
+            else:
+                l[1] = '_'+l[1]
+            daemons.append(' '.join(l[1:-1]))
+        for i, d in enumerate(daemons):
+            if i%2:
+                daemons[i] = self.heartc+d
+            else:
+                daemons[i] = self.heartd+d
+        daemons.append(self.nmond)
         (out, err, ret) = justcall(['ps', '-ef'])
         if ret != 0:
             return False
