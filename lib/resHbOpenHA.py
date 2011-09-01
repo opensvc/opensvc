@@ -130,12 +130,11 @@ class Hb(resHb.Hb):
                 l[1] = ''
             else:
                 l[1] = '_'+l[1]
-            daemons.append(' '.join(l[1:-1]))
-        for i, d in enumerate(daemons):
-            if i%2:
-                daemons[i] = self.heartc+d
+            if rcEnv.nodename == l[0]:
+                l[1] = self.heartc + l[1]
             else:
-                daemons[i] = self.heartd+d
+                l[1] = self.heartd + l[1]
+            daemons.append(' '.join(l[1:-2]))
         daemons.append(self.nmond)
         (out, err, ret) = justcall(['ps', '-ef'])
         if ret != 0:
