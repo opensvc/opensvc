@@ -21,7 +21,7 @@ def fs_u():
             'size',
             'used']
 
-    cmd = ['bdf', '-l']
+    cmd = ['df', '-lP']
     (out, err, ret) = justcall(cmd)
     if ret != 0:
         return self.undef
