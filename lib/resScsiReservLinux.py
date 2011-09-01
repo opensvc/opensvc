@@ -28,6 +28,7 @@ import rcExceptions as ex
 from rcUtilities import which
 from subprocess import *
 import resScsiReserv
+from rcGlobalEnv import rcEnv
 
 
 class ScsiReserv(resScsiReserv.ScsiReserv):
@@ -118,7 +119,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def disk_preempt_reservation(self, disk, oldkey):
         m = __import__("rcDiskInfo"+rcEnv.sysname)
-        if m.diskInfo.disk_vendor(disk).strip() in ["VMware"]:
+        if m.diskInfo().disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = '--preempt'
         else:
             preempt_opt = '--preempt-abort'
