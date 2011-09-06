@@ -69,6 +69,18 @@ parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock"
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
                   help="remote node to start or migrate the service to")
+parser.add_option("--module", default="",
+                  action="store", dest="module",
+                  help="compliance, set module list")
+parser.add_option("--moduleset", default="",
+                  action="store", dest="moduleset",
+                  help="compliance, set moduleset list. The 'all' value can be used in conjonction with detach.")
+parser.add_option("--ruleset", default="",
+                  action="store", dest="ruleset",
+                  help="compliance, set ruleset list. The 'all' value can be used in conjonction with detach.")
+parser.add_option("--ruleset-date", default="",
+                  action="store", dest="ruleset_date",
+                  help="compliance, use rulesets valid on specified date")
 
 
 cluster = False
@@ -146,14 +158,14 @@ if node.svcs is None:
                         onlyprimary=onlyprimary,
                         onlysecondary=onlysecondary)
 
-if len(args) > 1:
-    node.close()
-    parser.error("More than one action: %s"%str(args))
 if len(args) is 0:
     node.close()
     parser.error("Missing action")
 if action is None:
-    action = args[0]
+    if args[0] == 'compliance':
+        action = '_'.join(args)
+    else:
+        action = args[0]
 if not action in rcOptParser.action_desc.keys():
     node.close()
     parser.error("unsupported action")
@@ -191,6 +203,7 @@ elif action in ['disable', 'enable', 'delete']:
 
 err = 0
 for s in node.svcs:
+    s.options = options
     s.force = options.force
     s.cron = options.cron
     if cluster:

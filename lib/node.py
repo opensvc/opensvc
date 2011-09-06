@@ -233,7 +233,12 @@ class Node(Svc, Freezer):
         return self
 
     def action(self, a):
-        return getattr(self, a)()
+        if a.startswith("compliance_"):
+            from compliance import Compliance
+            o = Compliance(self.skip_action, self.options, self.collector)
+            return getattr(o, a)()
+        else:
+            return getattr(self, a)()
 
     def check_timestamp(self, timestamp_f, comp='more', delay=10):
         """ Return False if timestamp is fresher than now-interval
@@ -539,77 +544,6 @@ class Node(Svc, Freezer):
         c = checks.checks(self.svcs)
         c.node = self
         c.do_checks()
-
-    def compliance_check(self):
-        if self.skip_action('compliance', 'comp_check_interval', 'last_comp_check',
-                            period_option='comp_check_period',
-                            days_option='comp_check_days',
-                            force=self.options.force):
-            return
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_checks()
-
-    def compliance_fix(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_fix()
-
-    def compliance_fixable(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_fixable()
-
-    def compliance_show_moduleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_show_moduleset()
-
-    def compliance_attach_moduleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_attach_moduleset()
-
-    def compliance_detach_moduleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_detach_moduleset()
-
-    def compliance_show_ruleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_show_ruleset()
-
-    def compliance_attach_ruleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_attach_ruleset()
-
-    def compliance_detach_ruleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_detach_ruleset()
-
-    def compliance_list_ruleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_list_rulesets()
-
-    def compliance_list_moduleset(self):
-        import compliance
-        c = compliance.Compliance(self.options)
-        c.node = self
-        c.do_list_modulesets()
 
     def delete(self):
         if self.options.param is None:

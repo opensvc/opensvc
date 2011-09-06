@@ -76,6 +76,17 @@ action_desc = {
         'json_status':  'provide the resource and aggregated status in json format, for use by tier tools',
         'resource_monitor':  'detect monitored resource failures and trigger monitor_action',
         'stonith':      'command provided to the heartbeat daemon to fence peer node in case of split brain',
+        'compliance_check': 'run compliance checks',
+        'compliance_fix':   'run compliance fixes',
+        'compliance_fixable': 'verify compliance fixes prerequisites',
+        'compliance_show_moduleset': 'show compliance rules applying to this node',
+        'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
+        'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
+        'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
+        'compliance_list_ruleset': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
+        'compliance_show_ruleset': 'show compliance rules applying to this node',
+        'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
+        'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
 }
 
 def format_desc(svc=False):

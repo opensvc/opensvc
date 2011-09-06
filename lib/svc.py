@@ -46,6 +46,16 @@ def dblogger(self, action, begin, end, actionlogfile, sync=False):
     except:
         pass
 
+class Options(object):
+    def __init__(self):
+        self.cron = False
+        self.force = False
+        self.debug = False
+        self.moduleset = ""
+        self.module = ""
+        self.ruleset_date = ""
+        os.environ['LANG'] = 'C'
+
 class Svc(Resource, Freezer):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
@@ -54,6 +64,7 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
+        self.options = Options()
         self.node = None
         self.ha = False
         self.sync_dblogger = False
@@ -1016,7 +1027,7 @@ class Svc(Resource, Freezer):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ['thaw', 'status', 'frozen', 'push', 'print_status']:
+        if action not in ['thaw', 'status', 'frozen', 'push', 'print_status'] and 'compliance' not in action:
             if self.frozen():
                 self.log.info("Abort action for frozen service")
                 return 1
@@ -1029,7 +1040,7 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ["print_status", "status", "group_status", "resource_monitor"]:
+        if action in ["print_status", "status", "group_status", "resource_monitor"] or 'compliance' in action:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}
@@ -1054,7 +1065,11 @@ class Svc(Resource, Freezer):
             return 1
 
         try:
-            if hasattr(self, action):
+            if action.startswith("compliance_"):
+                from compliance import Compliance
+                o = Compliance(self.node.skip_action, self.options, self.node.collector, self.svcname)
+                getattr(o, action)()
+            elif hasattr(self, action):
                 getattr(self, action)()
             else:
                 self.log.error("unsupported action")
@@ -1062,7 +1077,7 @@ class Svc(Resource, Freezer):
         except ex.excError, e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
-                s += ":", str(e)
+                s += ": %s"%str(e)
             self.log.error(s)
             err = 1
         except ex.excSignal:

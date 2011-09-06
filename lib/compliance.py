@@ -80,7 +80,10 @@ class Module(object):
                 self.strip_unprintable(out),
                 ruleset,
                 action]
-        self.node.collector.call('comp_log_action', vars, vals, sync=False)
+        if self.svcname is not None:
+            vars.append('run_svcname')
+            vals.append(self.svcname)
+        self.collector.call('comp_log_action', vars, vals, sync=False)
 
     def action(self, action):
         print banner(self.name)
@@ -197,17 +200,33 @@ class Module(object):
         return self.action('fixable')
 
 class Compliance(object):
-    def __init__(self, options):
+    def __init__(self, skip_action=None, options=None, collector=None, svcname=None):
+        self.skip_action = skip_action
+        self.options = options
+        self.collector = collector
+        self.svcname = svcname
         self.options = options
         self.module_o = {}
         self.module = []
-        self.node = None
+
+    def compliance_check(self):
+        flag = "last_comp_check"
+        if self.svcname is not None:
+            flag = '.'.join((flag, self.svcname))
+        if self.skip_action is not None and \
+           self.skip_action("compliance", 'comp_check_interval', flag,
+                            period_option='comp_check_period',
+                            days_option='comp_check_days',
+                            force=self.options.force):
+            return
+        self.do_checks()
 
     def __iadd__(self, o):
         self.module_o[o.name] = o
+        o.svcname = self.svcname
         o.ruleset = self.ruleset
         o.options = self.options
-        o.node = self.node
+        o.collector = self.collector
         return self
 
     def init(self):
@@ -271,24 +290,34 @@ class Compliance(object):
                 os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
 
     def get_moduleset(self):
-        moduleset = self.node.collector.call('comp_get_moduleset')
+        if self.svcname is not None:
+            moduleset = self.collector.call('comp_get_svc_moduleset', self.svcname)
+        else:
+            moduleset = self.collector.call('comp_get_moduleset')
         if moduleset is None:
             raise ex.excError('could not fetch moduleset')
         return moduleset
 
     def get_ruleset(self):
-        if len(self.options.ruleset_date) > 0:
+        if hasattr(self.options, 'ruleset_date') and \
+           len(self.options.ruleset_date) > 0:
             return self.get_dated_ruleset(self.options.ruleset_date)
         return self.get_current_ruleset()
 
     def get_current_ruleset(self):
-        ruleset = self.node.collector.call('comp_get_ruleset')
+        if self.svcname is not None:
+            ruleset = self.collector.call('comp_get_svc_ruleset', self.svcname)
+        else:
+            ruleset = self.collector.call('comp_get_ruleset')
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
 
     def get_dated_ruleset(self, date):
-        ruleset = self.node.collector('comp_get_dated_ruleset', self.options.ruleset_date)
+        if self.svcname is not None:
+            ruleset = self.collector.call('comp_get_dated_ruleset', self.options.ruleset_date)
+        else:
+            ruleset = self.collector.call('comp_get_dated_svc_ruleset', self.svcname, self.options.ruleset_date)
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
@@ -313,7 +342,7 @@ class Compliance(object):
         return set(self.module + modules) - set([''])
 
     def get_moduleset_modules(self, m):
-        moduleset = self.node.collector.call('comp_get_moduleset_modules', m)
+        moduleset = self.collector.call('comp_get_moduleset_modules', m)
         if moduleset is None:
             raise ex.excError('could not expand moduleset modules')
         return moduleset
@@ -347,14 +376,14 @@ class Compliance(object):
             return 1
         return 0
 
-    def do_show_moduleset(self):
+    def compliance_show_moduleset(self):
         self.moduleset = self.get_moduleset()
         for ms in self.moduleset:
             print ms+':'
             for m in self.get_moduleset_modules(ms):
                 print ' %s'%m
 
-    def do_show_ruleset(self):
+    def compliance_show_ruleset(self):
         self.ruleset = self.get_ruleset()
         self.setup_env()
         print self.str_ruleset()
@@ -373,72 +402,84 @@ class Compliance(object):
     def do_checks(self):
         return self.do_run('check')
 
-    def do_fix(self):
+    def compliance_fix(self):
         return self.do_run('fix')
 
-    def do_fixable(self):
+    def compliance_fixable(self):
         return self.do_run('fixable')
 
-    def do_attach_moduleset(self):
-        if len(self.options.moduleset) == 0:
+    def compliance_attach_moduleset(self):
+        if not hasattr(self.options, 'moduleset') or \
+           len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = self.node.collector.call('comp_attach_moduleset', moduleset)
+            if self.svcname is not None:
+                d = self.collector.call('comp_attach_svc_moduleset', self.svcname, moduleset)
+            else:
+                d = self.collector.call('comp_attach_moduleset', moduleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_detach_moduleset(self):
-        if len(self.options.moduleset) == 0:
+    def compliance_detach_moduleset(self):
+        if not hasattr(self.options, 'moduleset') or \
+           len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
         err = False
         for moduleset in self.options.moduleset.split(','):
-            d = self.node.collector.call('comp_detach_moduleset', moduleset)
+            if self.svcname is not None:
+                d = self.collector.call('comp_detach_svc_moduleset', self.svcname, moduleset)
+            else:
+                d = self.collector.call('comp_detach_moduleset', moduleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_attach_ruleset(self):
-        if len(self.options.ruleset) == 0:
+    def compliance_attach_ruleset(self):
+        if not hasattr(self.options, 'ruleset') or \
+           len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = self.node.collector.call('comp_attach_ruleset', ruleset)
+            d = self.collector.call('comp_attach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_detach_ruleset(self):
-        if len(self.options.ruleset) == 0:
+    def compliance_detach_ruleset(self):
+        if not hasattr(self.options, 'ruleset') or \
+           len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = self.node.collector.call('comp_detach_ruleset', ruleset)
+            d = self.collector.call('comp_detach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']
         if err:
             raise ex.excError()
 
-    def do_list_rulesets(self):
-        if len(self.options.ruleset) == 0:
-            l = self.node.collector.call('comp_list_ruleset')
+    def compliance_list_ruleset(self):
+        if not hasattr(self.options, 'ruleset') or \
+           len(self.options.ruleset) == 0:
+            l = self.collector.call('comp_list_ruleset')
         else:
-            l = self.node.collector.call('comp_list_ruleset', self.options.ruleset)
+            l = self.collector.call('comp_list_ruleset', self.options.ruleset)
         print '\n'.join(l)
 
-    def do_list_modulesets(self):
-        if len(self.options.moduleset) == 0:
-            l = self.node.collector.call('comp_list_moduleset')
+    def compliance_list_moduleset(self):
+        if not hasattr(self.options, 'moduleset') or \
+           len(self.options.moduleset) == 0:
+            l = self.collector.call('comp_list_moduleset')
         else:
-            l = self.node.collector.call('comp_list_moduleset', self.options.moduleset)
+            l = self.collector.call('comp_list_moduleset', self.options.moduleset)
         if l is None:
             return
         print '\n'.join(l)
