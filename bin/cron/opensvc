@@ -42,4 +42,11 @@ for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
         import traceback
         traceback.print_exc()
 
+for s in n.svcs:
+    try:
+        s.action('compliance_check')
+    except:
+        import traceback
+        traceback.print_exc()
+
 n.close()

@@ -187,12 +187,19 @@ class Collector(object):
         self.queue = None
         self.comp_fns = ['comp_get_moduleset_modules',
                          'comp_get_moduleset',
+                         'comp_get_svc_moduleset',
                          'comp_attach_moduleset',
+                         'comp_attach_svc_moduleset',
                          'comp_detach_moduleset',
+                         'comp_detach_svc_moduleset',
                          'comp_get_ruleset',
+                         'comp_get_svc_ruleset',
                          'comp_get_dated_ruleset',
+                         'comp_get_dated_svc_ruleset',
                          'comp_attach_ruleset',
+                         'comp_attach_svc_ruleset',
                          'comp_detach_ruleset',
+                         'comp_detach_svc_ruleset',
                          'comp_list_ruleset',
                          'comp_list_moduleset',
                          'comp_log_action']
@@ -810,18 +817,42 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_moduleset(*args)
     
+    def comp_get_svc_moduleset(self, svc, sync=True):
+        args = [svc]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_get_svc_moduleset(*args)
+    
     def comp_attach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_attach_moduleset(*args)
+
+    def comp_attach_svc_moduleset(self, svc, moduleset, sync=True):
+        args = [svc, moduleset]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_attach_svc_moduleset(*args)
     
+    def comp_detach_svc_moduleset(self, svcname, moduleset, sync=True):
+        args = [svcname, moduleset]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_detach_svc_moduleset(*args)
+
     def comp_detach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_detach_moduleset(*args)
     
+    def comp_get_svc_ruleset(self, svcname, sync=True):
+        args = [svcname]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_get_svc_ruleset(*args)
+
     def comp_get_ruleset(self, sync=True):
         args = [rcEnv.nodename]
         if self.auth_node:
@@ -839,6 +870,12 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_attach_ruleset(*args)
+    
+    def comp_detach_svc_ruleset(self, svcname, ruleset, sync=True):
+        args = [svcname, ruleset]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_detach_svc_ruleset(*args)
     
     def comp_detach_ruleset(self, ruleset, sync=True):
         args = [rcEnv.nodename, ruleset]
