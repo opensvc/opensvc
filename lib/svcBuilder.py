@@ -1463,11 +1463,13 @@ def toggle_one(svcname, rids=[], disable=True):
     if svcname not in list_services():
         print >>sys.stderr, "service", svcname, "does not exist"
         return 1
+    if len(rids) == 0:
+        rids = ['DEFAULT']
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     conf = ConfigParser.RawConfigParser()
     conf.read(envfile)
     for rid in rids:
-        if not conf.has_section(rid):
+        if rid != 'DEFAULT' and not conf.has_section(rid):
             print >>sys.stderr, "service", svcname, "has not resource", rid
             continue
         conf.set(rid, "disable", disable)
@@ -1484,9 +1486,6 @@ def disable_one(svcname, rids=[]):
 
 def disable(svcnames, rid=[]):
     fix_default_section(svcnames)
-    if len(rid) == 0:
-        print "no resource flagged for disabling"
-        return 0
     r = 0
     for svcname in svcnames:
         r |= disable_one(svcname, rid)
@@ -1497,9 +1496,6 @@ def enable_one(svcname, rids=[]):
 
 def enable(svcnames, rid=[]):
     fix_default_section(svcnames)
-    if len(rid) == 0:
-        print "no resource flagged for enabling"
-        return 0
     r = 0
     for svcname in svcnames:
         r |= enable_one(svcname, rid)

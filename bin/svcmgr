@@ -117,7 +117,8 @@ else:
             action = "stonith"
     else:
         svcname = cmd
-    node.build_services(svcnames=[svcname])
+    svcnames = [svcname]
+    node.build_services(svcnames=svcnames)
 
 (options, args) = parser.parse_args()
 if action is not None:
