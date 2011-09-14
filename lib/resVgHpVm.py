@@ -75,43 +75,34 @@ class Vg(resVg.Vg):
             raise ex.excError
         if len(buff) == 0:
             return []
-        a = []
+        a = {}
         for line in buff.split('\n'):
+            if len(line) == 0:
+                continue
             if "DEVTYPE=FILE" not in line and "DEVTYPE=DISK" not in line:
                 continue
-            a.append(line)
+            if "SHARE=YES" in line:
+                share = "YES"
+            else:
+                share = "NO"
+            devs = line.split(":")[0]
+            for dev in devs.split(","):
+                a[dev] = {'share': share}
         return a
 
     def write_share(self):
         devs = self.get_devs()
         disklist = self.disklist()
         with open(self.sharefile_name(), 'w') as f:
-            for line in devs:
-                dev = line.split(':')[0]
-                if len(dev) == 0:
-                    continue
+            for dev in devs:
                 if dev not in disklist:
                     continue
-                if 'SHARE=YES' in line:
-                    f.write(dev+':YES\n')
-                else:
-                    f.write(dev+':NO\n')
+                f.write("%s:%s\n"%(dev, devs[dev]['share']))
 
     def do_share(self):
         if not os.path.exists(self.sharefile_name()):
             return
-        _devs = self.get_devs()
-        devs = set([])
-        for line in _devs:
-            l = line.split(':')
-            if len(l) == 0:
-                continue
-            if len(l[0]) == 0:
-                continue
-            if ',' in l[0]:
-                devs |= set(l[0].split(','))
-            else:
-                devs |= set([l[0]])
+        devs = self.get_devs()
         errors = 0
         with open(self.sharefile_name(), 'r') as f:
             for line in f.readlines():
@@ -119,6 +110,7 @@ class Vg(resVg.Vg):
                 if len(l) != 2:
                     continue
                 dev = l[0]
+                share = l[1].strip()
                 if len(dev) == 0:
                     continue
                 if not os.path.exists(dev):
@@ -129,10 +121,10 @@ class Vg(resVg.Vg):
                     if ret != 0:
                         self.log.error("error adding device %s hpvm device table"%dev)
                         raise ex.excError
-                if 'YES' in l[1]:
-                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=YES']
-                else:
-                    cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE=NO']
+                if dev in devs and share == devs[dev]['share']:
+                    self.log.debug("skip set sharing of %s: already set to %s"%(dev, devs[dev]['share']))
+                    continue
+                cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-m', 'gdev:'+dev+':attr:SHARE='+share]
                 (ret, buff, err) = self.vcall(cmd)
                 if ret != 0:
                     self.log.error("error setting the shared attribute for %s"%dev)
