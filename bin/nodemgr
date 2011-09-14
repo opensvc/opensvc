@@ -30,8 +30,12 @@ sys.path.append(os.path.join(pathsvc, 'lib'))
 prog = os.path.basename(__file__)
 
 import rcExceptions as ex
-import node
 from rcGlobalEnv import *
+from rcUtilities import check_privs
+
+check_privs()
+
+import node
 
 try:
     from version import version
