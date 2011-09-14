@@ -81,6 +81,12 @@ parser.add_option("--ruleset", default="",
 parser.add_option("--ruleset-date", default="",
                   action="store", dest="ruleset_date",
                   help="compliance, use rulesets valid on specified date")
+parser.add_option("--param", default=None,
+                  action="store", dest="param",
+                  help="point a service configuration parameter for the 'get' and 'set' actions")
+parser.add_option("--value", default=None,
+                  action="store", dest="value",
+                  help="set a service configuration parameter value for the 'set --param' action")
 
 
 cluster = False

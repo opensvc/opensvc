@@ -99,7 +99,7 @@ class Node(Svc, Freezer):
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
           'get': 'get the value of the node configuration parameter pointed by --param',
           'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
-          'delete': 'delete a node configuration parameter (pointed by --param)',
+          'unset': 'unset a node configuration parameter (pointed by --param)',
           'register': 'obtain a registration number from the collector, used to authenticate the node',
         }
         self.collector = xmlrpcClient.Collector()
@@ -545,7 +545,7 @@ class Node(Svc, Freezer):
         c.node = self
         c.do_checks()
 
-    def delete(self):
+    def unset(self):
         if self.options.param is None:
             print >>sys.stderr, "no parameter. set --param"
             return 1
