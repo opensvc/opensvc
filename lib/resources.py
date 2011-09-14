@@ -148,7 +148,7 @@ class Resource(object):
             self.log.debug('action: action cannot be None')
             return True
         if self.disabled:
-            self.log.debug('action: skip action on disable resource')
+            self.log.debug('action: skip action on disabled resource')
             return True
         try :
             self.do_action(action)
