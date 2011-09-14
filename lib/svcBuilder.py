@@ -133,6 +133,11 @@ def get_tags(conf, section):
     return set([])
 
 def get_optional(conf, section, svc):
+    if not conf.has_section(section):
+        if conf.has_option('DEFAULT', 'optional'):
+            return conf.getboolean("DEFAULT", "optional")
+        else:
+            return False
     if conf.has_option(section, 'optional'):
         return conf.getboolean(section, "optional")
     nodes = set([])
@@ -147,6 +152,11 @@ def get_optional(conf, section, svc):
     return False
 
 def get_monitor(conf, section, svc):
+    if not conf.has_section(section):
+        if conf.has_option('DEFAULT', 'monitor'):
+            return conf.getboolean("DEFAULT", "monitor")
+        else:
+            return False
     if conf.has_option(section, 'monitor'):
         return conf.getboolean(section, "monitor")
     nodes = set([])
@@ -161,6 +171,11 @@ def get_monitor(conf, section, svc):
     return False
 
 def get_disabled(conf, section, svc):
+    if not conf.has_section(section):
+        if conf.has_option('DEFAULT', 'disable'):
+            return conf.getboolean("DEFAULT", "disable")
+        else:
+            return False
     if conf.has_option(section, 'disable'):
         return conf.getboolean(section, "disable")
     nodes = set([])
@@ -717,6 +732,8 @@ def add_mandatory_syncs(svc, conf):
     kwargs['options'] = ['-R']+exclude
     kwargs['target'] = targethash
     kwargs['internal'] = True
+    kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
+    kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
     kwargs.update(get_sync_args(conf, 'sync', svc))
     r = resSyncRsync.Rsync(**kwargs)
     svc += r
@@ -742,6 +759,8 @@ def add_mandatory_syncs(svc, conf):
         kwargs['options'] = ['-R']+exclude
         kwargs['target'] = targethash
         kwargs['internal'] = True
+        kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
+        kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
         kwargs.update(get_sync_args(conf, 'sync', svc))
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
@@ -1126,10 +1145,9 @@ def add_apps(svc, conf):
     kwargs['runmethod'] = svc.runmethod
 
     s = 'app'
-    if conf.has_section(s):
-        kwargs['disabled'] = get_disabled(conf, s, svc)
-        kwargs['optional'] = get_optional(conf, s, svc)
-        kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
        
     r = resApp.Apps(**kwargs)
     svc += r
