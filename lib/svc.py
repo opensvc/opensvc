@@ -78,6 +78,7 @@ class Svc(Resource, Freezer):
         self.cron = False
         self.force = False
         self.cluster = False
+        self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
@@ -1027,7 +1028,7 @@ class Svc(Resource, Freezer):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ['thaw', 'status', 'frozen', 'push', 'print_status'] and 'compliance' not in action:
+        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status'] and 'compliance' not in action:
             if self.frozen():
                 self.log.info("Abort action for frozen service")
                 return 1
@@ -1040,7 +1041,7 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ["print_status", "status", "group_status", "resource_monitor"] or 'compliance' in action:
+        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}
@@ -1168,23 +1169,105 @@ class Svc(Resource, Freezer):
             else return False
         """
         import datetime
-        pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         if not os.path.exists(self.push_flag):
             self.log.debug("no last push timestamp found")
             return True
         try:
-            mtime = os.stat(pathenv).st_mtime
+            mtime = os.stat(self.pathenv).st_mtime
             f = open(self.push_flag)
             last_push = float(f.read())
             f.close()
         except:
-            self.log.error("can not read timestamp from %s or %s"%(pathenv, self.push_flag))
+            self.log.error("can not read timestamp from %s or %s"%(self.pathenv, self.push_flag))
             return True
         if mtime > last_push:
             self.log.debug("env file changed since last push")
             return True
         return False
 
+    def write_config(self):
+        try:
+            fp = open(self.pathenv, 'w')
+            self.config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write new %s"%self.nodeconf
+            raise ex.excError()
+
+    def load_config(self):
+        import ConfigParser
+        self.config = ConfigParser.RawConfigParser()
+        self.config.read(self.pathenv)
+
+    def unset(self):
+        self.load_config()
+        import sys
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if section != 'DEFAULT' and not self.config.has_section(section):
+            print >>sys.stderr, "section '%s' not found"%section
+            return 1
+        if not self.config.has_option(section, option):
+            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            return 1
+        try:
+            self.config.remove_option(section, option)
+            self.write_config()
+        except:
+            return 1
+        return 0
+
+    def get(self):
+        self.load_config()
+        import sys
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if section != 'DEFAULT' and not self.config.has_section(section):
+            print >>sys.stderr, "section '%s' not found"%section
+            return 1
+        if not self.config.has_option(section, option):
+            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            return 1
+        print self.config.get(section, option)
+        return 0
+
+    def set(self):
+        self.load_config()
+        import sys
+        if self.options.param is None:
+            print >>sys.stderr, "no parameter. set --param"
+            return 1
+        if self.options.value is None:
+            print >>sys.stderr, "no value. set --value"
+            return 1
+        l = self.options.param.split('.')
+        if len(l) != 2:
+            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            return 1
+        section, option = l
+        if section != 'DEFAULT' and not self.config.has_section(section):
+            self.config.add_section(section)
+        if self.config.has_option(section, option) and \
+           self.config.get(section, option) == self.options.value:
+            return
+        self.config.set(section, option, self.options.value)
+        try:
+            self.write_config()
+        except:
+            return 1
+        return 0
 
 if __name__ == "__main__" :
     for c in (Svc,) :
