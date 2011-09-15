@@ -215,10 +215,15 @@ class Node(Svc, Freezer):
 
     def format_desc(self):
         from textwrap import TextWrapper
+        from compliance import Compliance
+        o = Compliance(self.skip_action, self.options, self.collector)
         wrapper = TextWrapper(subsequent_indent="%29s"%"", width=78)
         desc = "Supported commands:\n"
         for a in sorted(self.action_desc):
-            if not hasattr(self, a):
+            if a.startswith("compliance_"):
+                if not hasattr(o, a):
+                    continue
+            elif not hasattr(self, a):
                 continue
             text = "  %-26s %s\n"%(a.replace('_', ' '),
                                    self.action_desc[a])
