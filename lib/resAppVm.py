@@ -73,7 +73,7 @@ class Apps(resApp.Apps):
         return self.checks(verbose=verbose)
 
     def sorted_app_list(self, pattern):
-        cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern]
+        cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern.replace('*','\*'), '-maxdepth 1']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
