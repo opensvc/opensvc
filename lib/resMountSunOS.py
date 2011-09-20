@@ -106,9 +106,9 @@ class Mount(Res.Mount):
 
     def try_umount(self):
         if self.fsType == 'zfs' :
-            ret, out, err = self.vcall(['zfs', 'umount', self.device ])
+            ret, out, err = self.vcall(['zfs', 'umount', self.device ], err_to_info=True)
             if ret != 0 :
-                ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ])
+                ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ], err_to_info=True)
                 if ret != 0 :
                     raise ex.excError
             return

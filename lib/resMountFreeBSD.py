@@ -30,7 +30,7 @@ from stat import *
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
-    (ret, out, err) = self.vcall(cmd, err_to_warn=True)
+    (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
         return 0
 
@@ -45,7 +45,7 @@ def try_umount(self):
         action reliability, ie don't contest oprator's will
     """
     cmd = ['sync']
-    (ret, out, err) = self.vcall(cmd)
+    (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     for i in range(4):
         nb_killed = self.killfuser(self.mountPoint)
@@ -58,7 +58,7 @@ def try_umount(self):
     if ret != 0:
         self.log.info("no more process using %s, yet umount fails. try forced umount."%self.mountPoint)
         cmd = ['umount', '-f', self.mountPoint]
-        (ret, out, err) = self.vcall(cmd)
+        (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     return ret
 
