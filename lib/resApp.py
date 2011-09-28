@@ -243,8 +243,9 @@ class Apps(Res.Resource):
         for name in self.sorted_app_list('S*'):
             s = self.app(name, 'info', dedicated_log=False, return_out=True)
             name = os.path.basename(os.path.realpath(name))
-            if len(s) == 0:
+            if type(s) != str or len(s) == 0:
                 l.append([self.svc.svcname, name, "Error", "info not implemented in launcher"])
+                continue
             for line in s.split('\n'):
                 if len(line) == 0:
                     continue
