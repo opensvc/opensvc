@@ -3,6 +3,7 @@ import rcStatus
 import re
 import os
 from rcGlobalEnv import rcEnv
+import rcExceptions as ex
 
 class Stonith(Res.Resource):
     def __init__(self, rid=None, type=None, always_on=set([]),
