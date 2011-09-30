@@ -8,8 +8,8 @@ class Stonith(resStonith.Stonith):
         resStonith.Stonith.__init__(self, rid, "stonith.ilo",
                                     optional=optional, disabled=disabled, tags=tags)
         self.name = name
+        self.username, self.password, self.key = self.creds()
 
     def _start(self):
-        username, password, key = self.creds()
-        cmd = rcEnv.rsh.split() + ['-l', username, '-i', key, self.name, 'power', 'reset']
+        cmd = rcEnv.rsh.split() + ['-l', self.username, '-i', self.key, self.name, 'power', 'reset']
         self.vcall(cmd)
