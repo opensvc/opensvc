@@ -37,7 +37,7 @@ class SvcZone(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self.zone = Zone.Zone(vmname)
+        self.zone = Zone.Zone(vmname, disabled=disabled)
         self += self.zone
         self.runmethod = [ '/usr/sbin/zlogin', '-S', vmname ]
 

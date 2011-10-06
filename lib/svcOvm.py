@@ -32,7 +32,7 @@ class SvcOvm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += ovm.Ovm(vmname)
+        self += ovm.Ovm(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
     def _migrate(self):

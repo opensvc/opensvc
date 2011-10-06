@@ -1215,6 +1215,7 @@ def build(name):
                 log.error("jailroot %s does not exist"%jailroot)
                 return None
             kwargs['jailroot'] = jailroot
+        kwargs['disabled'] = get_disabled(conf, "", "")
 
     #
     # dynamically import the module matching the service mode

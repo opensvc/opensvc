@@ -32,7 +32,7 @@ class SvcXen(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += xen.Xen(vmname)
+        self += xen.Xen(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
 

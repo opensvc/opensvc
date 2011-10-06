@@ -33,7 +33,7 @@ class SvcJail(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self.jailroot = jailroot
-        self += jail.Jail(vmname)
+        self += jail.Jail(vmname, disabled=disabled)
 
         """ jail names cannot have dots
         """
