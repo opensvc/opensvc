@@ -70,6 +70,9 @@ class Esx(resContainer.Container):
         for vmx in l:
             if pattern in vmx:
                 self.vmx = vmx
+        if self.vmx is None:
+            self.log.error("vm %s not found on this node"%self.name)
+            raise ex.excError
         return self.vmx
 
     def _migrate(self):
@@ -95,7 +98,10 @@ class Esx(resContainer.Container):
             raise ex.excError
 
     def is_up(self):
-        (ret, out, err) = self.vmcmd(['getstate'])
+        try:
+            (ret, out, err) = self.vmcmd(['getstate'])
+        except:
+            return False
         if ret != 0:
             return False
         l = out.split()
@@ -117,8 +123,14 @@ class Esx(resContainer.Container):
 
     def get_container_info(self):
         self.info = {'vcpus': '0', 'vmem': '0'}
-        self.info['vcpus'] = self.getconfig('numvcpus')
-        self.info['vmem'] = self.getconfig('memsize')
+        try:
+            self.info['vcpus'] = self.getconfig('numvcpus')
+        except:
+            self.info['vcpus'] = '0'
+        try:
+            self.info['vmem'] = self.getconfig('memsize')
+        except:
+            self.info['vmem'] = '0'
         return self.info           
 
     def check_manual_boot(self):
