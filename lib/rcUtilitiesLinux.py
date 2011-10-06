@@ -18,6 +18,8 @@ def major(driver):
 
 def get_blockdev_sd_slaves(syspath):
     slaves = set()
+    if not os.path.exists(syspath):
+        return slaves
     for s in os.listdir(syspath):
         if re.match('^sd[a-z]*', s) is not None:
             slaves.add('/dev/' + s)
