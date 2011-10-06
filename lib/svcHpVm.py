@@ -34,6 +34,6 @@ class SvcHpVm(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += hpvm.HpVm(vmname)
+        self += hpvm.HpVm(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 

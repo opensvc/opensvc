@@ -29,7 +29,7 @@ class SvcVz(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += vz.Vz(vmname)
+        self += vz.Vz(vmname, disabled=disabled)
         self.runmethod = ['vzctl', 'exec', vmname]
 
 

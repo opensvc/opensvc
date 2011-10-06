@@ -34,6 +34,6 @@ class SvcLdom(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += ldom.Ldom(vmname)
+        self += ldom.Ldom(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 

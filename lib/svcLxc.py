@@ -35,7 +35,7 @@ class SvcLxc(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += lxc.Lxc(vmname)
+        self += lxc.Lxc(vmname, disabled=disabled)
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', vmname, '--']
         else:

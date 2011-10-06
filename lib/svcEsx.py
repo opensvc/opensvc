@@ -31,7 +31,7 @@ class SvcEsx(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += esx.Esx(vmname)
+        self += esx.Esx(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
     def _migrate(self):

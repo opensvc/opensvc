@@ -31,6 +31,6 @@ class SvcVbox(svc.Svc):
             vmname = svcname
         self.vmname = vmname
         self.guestos = guestos
-        self += vbox.Vbox(vmname)
+        self += vbox.Vbox(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
