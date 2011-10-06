@@ -39,6 +39,10 @@ try:
 except:
     version = "dev"
 
+def _exit(r):
+    node.close()
+    sys.exit(r)
+
 node = node.Node()
 
 __ver = prog + " version " + version
@@ -177,6 +181,18 @@ if not action in rcOptParser.action_desc.keys():
     node.close()
     parser.error("unsupported action")
 
+if len(svcnames) == 0:
+    sys.stderr.write("""No service specified. Try:
+ allservices
+ allupservices
+ alldownservices
+ allprimaryservices
+ allsecondaryservices
+ svcmgr -s svcname,...
+ svcname
+""")
+    _exit(1)
+
 if hasattr(options, "parm_rid") and options.parm_rid is not None:
    rid = options.parm_rid.split(',')
 else:
@@ -190,10 +206,6 @@ else:
 if options.parallel:
     from multiprocessing import Process
     p = {}
-
-def _exit(r):
-    node.close()
-    sys.exit(r)
 
 if action in ['create', 'update']:
     r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
