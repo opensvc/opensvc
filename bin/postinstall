@@ -522,6 +522,23 @@ def nodeconf_params():
         except:
             print >>sys.stderr, "failed to write new %s"%nodeconf
 
+def save_exc():
+    import traceback
+    try:
+        import tempfile
+        import datetime
+        pathtmp = os.path.join(os.sep, 'opt', 'opensvc', 'tmp')
+        now = str(datetime.datetime.now()).replace(' ', '-')
+        f = tempfile.NamedTemporaryFile(dir=pathtmp, prefix='exc-'+now+'-')
+        f.close()
+        f = open(f.name, 'w')
+        traceback.print_exc(file=f)
+        print >>sys.stderr, "unexpected error. stack saved in %s"%f.name
+        f.close()
+    except:
+        print >>sys.stderr, "unexpected error"
+        traceback.print_exc()
+
 try:
     install_pythonlink()
     move_usr_to_opt()
@@ -536,6 +553,5 @@ try:
     move_host_mode()
     nodeconf_params()
 except:
-    import traceback
-    traceback.print_exc()
+    save_exc()
     sys.exit(1)
