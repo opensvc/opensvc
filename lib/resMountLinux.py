@@ -32,7 +32,7 @@ from stat import *
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
-    (ret, out, err) = self.vcall(cmd, err_to_info=True)
+    (ret, out, err) = self.vcall(cmd, err_to_warn=True)
     if ret == 0:
         return 0
 
@@ -50,7 +50,7 @@ def try_umount(self):
         action reliability, ie don't contest oprator's will
     """
     cmd = ['sync']
-    (ret, out, err) = self.vcall(cmd, err_to_info=True)
+    (ret, out, err) = self.vcall(cmd)
 
     for i in range(4):
         cmd = ['fuser', '-kmv', self.mountPoint]
@@ -99,18 +99,19 @@ class Mount(Res.Mount):
             if ret:
                 return True
 
-        # might be a loopback mount
-        try:
-            mode = os.stat(self.device)[ST_MODE]
-        except:
-            self.log.debug("can not stat %s" % self.device)
-            return False
-        if S_ISREG(mode):
-            devs = file_to_loop(self.device)
-            for dev in devs:
-                ret = self.Mounts.has_mount(dev, self.mountPoint)
-                if ret:
-                    return True
+        if self.fsType not in ("nfs", "nfs4"):
+            # might be a loopback mount
+            try:
+                mode = os.stat(self.device)[ST_MODE]
+                if S_ISREG(mode):
+                    devs = file_to_loop(self.device)
+                    for dev in devs:
+                        ret = self.Mounts.has_mount(dev, self.mountPoint)
+                        if ret:
+                            return True
+            except:
+                self.log.debug("can not stat %s" % self.device)
+                return False
 
         return False
 
@@ -173,6 +174,8 @@ class Mount(Res.Mount):
                 mps |= set([dev])
             elif devmap:
                 syspath = '/sys/block/' + dm + '/slaves'
+                if not os.path.exists(syspath):
+                    continue
                 slaves = os.listdir(syspath)
                 mps |= self._mplist(map(self.devname_to_dev, slaves))
         return mps
@@ -257,18 +260,22 @@ class Mount(Res.Mount):
             if the file has already been binded to a loop re-use
             the loopdev to avoid allocating another one
         """
-        try:
-            mode = os.stat(self.device)[ST_MODE]
-        except:
-            self.log.debug("can not stat %s" % self.device)
-            return False
-        if S_ISREG(mode):
-            devs = file_to_loop(self.device)
-            if len(devs) > 0:
-                self.device = devs[0]
-                mntopt_l = self.mntOpt.split(',')
-                mntopt_l.remove("loop")
-                self.mntOpt = ','.join(mntopt_l)
+        if self.fsType in ("nfs", "nfs4"):
+            # TODO showmount -e
+            pass
+        else:
+            try:
+                mode = os.stat(self.device)[ST_MODE]
+                if S_ISREG(mode):
+                    devs = file_to_loop(self.device)
+                    if len(devs) > 0:
+                        self.device = devs[0]
+                        mntopt_l = self.mntOpt.split(',')
+                        mntopt_l.remove("loop")
+                        self.mntOpt = ','.join(mntopt_l)
+            except:
+                self.log.debug("can not stat %s" % self.device)
+                return False
 
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
