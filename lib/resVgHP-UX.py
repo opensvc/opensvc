@@ -106,8 +106,8 @@ class Vg(resDg.Dg):
                 continue
             instance[l[0].replace('0x', '')] = l[1]
 
+        r = 0
         with open(self.mkfsfile_name(), 'r') as f:
-            err = 0
             for line in f.readlines():
                 a = line.replace('\n', '').split(':')
                 if len(a) == 0:
@@ -116,14 +116,14 @@ class Vg(resDg.Dg):
                     continue
                 if a[1] not in instance.keys():
                     self.log.error("expected lun %s not present on node %s"%(a[1], rcEnv.nodename))
-                    err += 1
+                    r += 1
                     continue
                 cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
                 (ret, buff, err) = self.vcall(cmd)
                 if ret != 0:
-                    err += 1
+                    r += 1
                     continue
-        if err > 0:
+        if r > 0:
             raise ex.excError
 
     def presync(self):
