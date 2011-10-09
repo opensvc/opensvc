@@ -1,0 +1,42 @@
+
+
+
+assigned=Christophe Varoqui <christophe.varoqui@opensvc.com>
+
+
+
+
+
+
+creator=Christophe Varoqui <christophe.varoqui@opensvc.com>
+
+
+
+
+
+
+severity=minor
+
+
+
+
+
+
+status=closed
+
+
+
+
+
+
+summary=nodemgr fs_u check should not report osvc_sync_* snapshots
+
+
+
+
+
+
+time=Sun, 09 Oct 2011 12:51:53 +0000
+
+
+
