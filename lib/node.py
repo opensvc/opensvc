@@ -61,13 +61,13 @@ class Node(Svc, Freezer):
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.config_defaults = {
           'host_mode': 'TST',
-          'push_interval': 1439,
+          'push_interval': 121,
           'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'push_period': '["04:00", "06:00"]',
-          'sync_interval': 1439,
+          'sync_interval': 121,
           'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'sync_period': '["04:00", "06:00"]',
-          'comp_check_interval': 10072,
+          'comp_check_interval': 61,
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["05:00", "06:00"]',
         }
