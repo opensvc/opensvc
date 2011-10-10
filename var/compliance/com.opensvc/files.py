@@ -259,8 +259,8 @@ if __name__ == "__main__":
         print >>sys.stderr, "wrong number of arguments"
         print >>sys.stderr, syntax
         sys.exit(RET_ERR)
-    o = CompFiles(sys.argv[1])
     try:
+        o = CompFiles(sys.argv[1])
         if sys.argv[2] == 'check':
             RET = o.check()
         elif sys.argv[2] == 'fix':
