@@ -66,7 +66,7 @@ class CompAuthKeys(object):
         if len(key) < 50:
             return key
         else:
-            return "'"+key[0:17] + "..." + key[-30:-1]+"'"
+            return "'"+key[0:17] + "..." + key[-30:]+"'"
 
     def get_installed_keys(self, user):
         if user in self.installed_keys_d:
