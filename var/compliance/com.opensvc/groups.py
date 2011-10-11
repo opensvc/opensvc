@@ -75,11 +75,11 @@ class CompGroup(object):
     def check_item(self, group, item, target, current, verbose=False):
         if target == current:
             if verbose:
-                print 'OK: group:', group, item+':', current
+                print 'group', group, item+':', current
             return RET_OK
         else:
             if verbose:
-                print >>sys.stderr, 'group:', group, item+':', current, 'target:', target
+                print >>sys.stderr, 'group', group, item+':', current, 'target:', target
             return RET_ERR 
 
     def try_create_group(self, props):
@@ -131,7 +131,7 @@ class CompGroup(object):
             if self.try_create_group(props):
                 return self.create_group(group, props)
             else:
-                print 'group', group, 'does not exist'
+                print >>sys.stderr, 'group', group, 'does not exist'
                 return RET_OK
         for prop in self.grt:
             if prop in props and \

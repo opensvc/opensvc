@@ -109,11 +109,11 @@ class CompGroupMembership(object):
     def check_item(self, group, item, target, current, verbose=False):
         if (isinstance(current, list) and set(target) == set(current)) or target == current:
             if verbose:
-                print 'OK: group:', group, item+':', current
+                print 'group', group, item+':', current
             return RET_OK
         else:
             if verbose:
-                print >>sys.stderr, 'group:', group, item+':', current, 'target:', target
+                print >>sys.stderr, 'group', group, item+':', current, 'target:', target
             return RET_ERR
 
     def check_group(self, group, props):

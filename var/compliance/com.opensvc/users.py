@@ -77,11 +77,11 @@ class CompUser(object):
     def check_item(self, user, item, target, current, verbose=False):
         if target == current:
             if verbose:
-                print 'OK: user:', user, item+':', current
+                print 'user', user, item+':', current
             return RET_OK
         else:
             if verbose:
-                print >>sys.stderr, 'user:', user, item+':', current, 'target:', target
+                print >>sys.stderr, 'user', user, item+':', current, 'target:', target
             return RET_ERR
 
     def check_user(self, user, props):
