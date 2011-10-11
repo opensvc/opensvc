@@ -38,7 +38,7 @@ class CompPackages(object):
         if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
             self.fix_pkg = self.apt_fix_pkg
-        elif vendor in ['CentOS', 'Redhat']:
+        elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
             self.get_installed_packages = self.rpm_get_installed_packages
             self.fix_pkg = self.yum_fix_pkg
         else:
