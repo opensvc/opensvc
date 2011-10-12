@@ -20,6 +20,7 @@ import os
 import sys
 import json
 import pwd
+import spwd
 from subprocess import Popen, list2cmdline
 
 sys.path.append(os.path.dirname(__file__))
@@ -35,6 +36,10 @@ class CompUser(object):
             'uid': 'pw_uid',
             'gid': 'pw_gid',
             'gecos': 'pw_gecos',
+            'password': 'pw_passwd',
+        }
+        self.spwt = {
+            'spassword': 'sp_pwd',
         }
         self.usermod_p = {
             'shell': '-s',
@@ -42,6 +47,8 @@ class CompUser(object):
             'uid': '-u',
             'gid': '-g',
             'gecos': '-c',
+            'password': '-p',
+            'spassword': '-p',
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
@@ -69,6 +76,10 @@ class CompUser(object):
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
+        p = Popen([pwconv])
+        p.communicate()
+        p = Popen([grpconv])
+        p.communicate()
         if r == 0:
             return RET_OK
         else:
@@ -93,11 +104,24 @@ class CompUser(object):
                 print >>sys.stderr, 'user', user, 'does not exist'
                 return RET_ERR
             else:
-                print 'user', user, 'does not exist and not enough info to create it'
-                return RET_OK
+                print >>sys.stderr, 'user', user, 'does not exist and not enough info to create it'
+                return RET_ERR
+
+        try:
+            usersinfo=spwd.getspnam(user)
+        except KeyError:
+            if "spassword" in props:
+                print >>sys.stderr, user, "not declared in /etc/shadow"
+                r |= RET_ERR
+            usersinfo = None
+
         for prop in self.pwt:
             if prop in props:
                 r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
+        if usersinfo is not None:
+            for prop in self.spwt:
+                if prop in props:
+                    r |= self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop]), verbose=True)
         return r
 
     def try_create_user(self, props):
@@ -107,13 +131,11 @@ class CompUser(object):
         #
         if 'db' in props and props['db'] != 'files':
             return False
-        if set(self.pwt.keys()) <= set(props.keys()):
-            return True
-        return False
+        return True
 
     def create_user(self, user, props):
         cmd = ['useradd']
-        for item in self.pwt:
+        for item in props:
             prop = str(props[item])
             if len(prop) == 0:
                 continue
@@ -131,17 +153,30 @@ class CompUser(object):
     def fix_user(self, user, props):
         r = 0
         try:
-            userinfo=pwd.getpwnam(user)
+            userinfo = pwd.getpwnam(user)
         except KeyError:
             if self.try_create_user(props):
                 return self.create_user(user, props)
             else:
                 print 'user', user, 'does not exist and not enough info to create it'
                 return RET_OK
+        try:
+            usersinfo = spwd.getspnam(user)
+        except KeyError:
+            if "spassword" in props:
+                self.fix_item(user, "spassword", props["spassword"])
+                usersinfo = spwd.getspnam(user)
+            else:
+                usersinfo = None
         for prop in self.pwt:
             if prop in props and \
                self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop])) != RET_OK:
                 r |= self.fix_item(user, prop, props[prop])
+        if usersinfo is not None:
+            for prop in self.spwt:
+                if prop in props and \
+                    self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop])) != RET_OK:
+                    r |= self.fix_item(user, prop, props[prop])
         return r
 
     def check(self):
