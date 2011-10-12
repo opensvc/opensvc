@@ -72,7 +72,6 @@ class Xinetd(object):
                 val = l[1].strip()
                 self.cf_d[svc][var] = val
 
-        print self.cf_d[svc]
         return self.cf_d[svc]
 
     def fix_item(self, svc, item, target):
