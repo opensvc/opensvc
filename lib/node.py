@@ -113,10 +113,15 @@ class Node(Svc, Freezer):
     def build_services(self, *args, **kwargs):
         if self.svcs is not None:
             return
+        autopush = True
+        if 'autopush' in kwargs:
+            if not kwargs['autopush']:
+                autopush = False
+            del kwargs['autopush']
         self.svcs = svcBuilder.build_services(*args, **kwargs)
         for svc in self.svcs:
              svc.node = self
-        if ('autopush' not in kwargs or kwargs['autopush']):
+        if autopush:
             for svc in self.svcs:
                 if svc.collector_outdated():
                     svc.action('push')
