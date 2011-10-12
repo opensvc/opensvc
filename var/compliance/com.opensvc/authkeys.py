@@ -122,7 +122,6 @@ class CompAuthKeys(object):
 
     def add_authkey(self, ak):
         if self.check_authkey(ak, verbose=False) == RET_OK:
-            print 'key', self.truncate_key(ak['key']), 'is already installed for user', ak['user']
             return RET_OK
 
         base = os.path.join(os.path.expanduser("~"+ak['user']), '.ssh')
@@ -131,7 +130,7 @@ class CompAuthKeys(object):
         try:
             userinfo=pwd.getpwnam(ak['user'])
         except KeyError:
-            print 'user', ak['user'], 'does not exist'
+            print >>sys.stderr, 'user', ak['user'], 'does not exist'
             return RET_ERR
 
         if not os.path.exists(base):
