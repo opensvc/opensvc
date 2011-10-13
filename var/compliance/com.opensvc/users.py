@@ -20,7 +20,12 @@ import os
 import sys
 import json
 import pwd
-import spwd
+try:
+    import spwd
+    cap_shadow = True
+except:
+    cap_shadow = False
+
 from subprocess import Popen, list2cmdline
 
 sys.path.append(os.path.dirname(__file__))
@@ -52,7 +57,7 @@ class CompUser(object):
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['SunOS', 'Linux']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -66,6 +71,13 @@ class CompUser(object):
         if len(self.users) == 0:
             print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
+
+        if not cap_shadow:
+            for user, d in self.users.items():
+                if "spassword" in d and len(d["spassword"]) > 0 and \
+                   ("password" not in d or len(d["password"]) == 0):
+                    self.users[user]["password"] = self.users[user]["spassword"]
+                    del self.users[user]["spassword"]
 
     def fixable(self):
         return RET_NA
@@ -107,6 +119,13 @@ class CompUser(object):
                 print >>sys.stderr, 'user', user, 'does not exist and not enough info to create it'
                 return RET_ERR
 
+        for prop in self.pwt:
+            if prop in props:
+                r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
+
+        if not cap_shadow:
+            return r
+
         try:
             usersinfo=spwd.getspnam(user)
         except KeyError:
@@ -115,9 +134,6 @@ class CompUser(object):
                 r |= RET_ERR
             usersinfo = None
 
-        for prop in self.pwt:
-            if prop in props:
-                r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
         if usersinfo is not None:
             for prop in self.spwt:
                 if prop in props:
@@ -160,6 +176,15 @@ class CompUser(object):
             else:
                 print 'user', user, 'does not exist and not enough info to create it'
                 return RET_OK
+
+        for prop in self.pwt:
+            if prop in props and \
+               self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop])) != RET_OK:
+                r |= self.fix_item(user, prop, props[prop])
+
+        if not cap_shadow:
+            return r
+
         try:
             usersinfo = spwd.getspnam(user)
         except KeyError:
@@ -168,10 +193,7 @@ class CompUser(object):
                 usersinfo = spwd.getspnam(user)
             else:
                 usersinfo = None
-        for prop in self.pwt:
-            if prop in props and \
-               self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop])) != RET_OK:
-                r |= self.fix_item(user, prop, props[prop])
+
         if usersinfo is not None:
             for prop in self.spwt:
                 if prop in props and \
