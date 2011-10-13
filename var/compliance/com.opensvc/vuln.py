@@ -85,7 +85,7 @@ class CompVuln(object):
     def yum_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
-        r = call(['yum', 'install', '-y', pkg])
+        r = call(['yum', 'install', '-y', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
         return RET_OK
@@ -93,7 +93,7 @@ class CompVuln(object):
     def apt_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
-        r = call(['apt-get', 'install', '-y', pkg])
+        r = call(['apt-get', 'install', '-y', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
         return RET_OK
