@@ -71,6 +71,8 @@ class CompFiles(object):
             fmt = fmt.replace(m, v)
         fmt = fmt.replace('%%HOSTNAME%%', self.nodename)
         fmt = fmt.replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
+        if not fmt.endswith('\n'):
+            fmt += '\n'
         d['fmt'] = fmt
         return [d]
 
@@ -108,6 +110,8 @@ class CompFiles(object):
         return RET_NA
 
     def check_file_fmt(self, f, verbose=False):
+        if not os.path.exists(f['path']):
+            return RET_ERR
         if verbose:
             cmd = ['diff', '-u', f['path'], '-']
         else:
@@ -185,8 +189,8 @@ class CompFiles(object):
         r |= self.check_file_mode(f, verbose)
         r |= self.check_file_uid(f, verbose)
         r |= self.check_file_gid(f, verbose)
-        if r == 0:
-            print "OK:", f['path']
+        if r == 0 and verbose:
+            print f['path'], "is ok"
         return r
 
     def fix_file_mode(self, f):
@@ -195,7 +199,7 @@ class CompFiles(object):
         if self.check_file_mode(f) == RET_OK:
             return RET_OK
         try:
-            print "set %s mode to %s"%(f['path'], f['mode'])
+            print "%s mode set to %s"%(f['path'], f['mode'])
             os.chmod(f['path'], int(f['mode'], 8))
         except:
             return RET_ERR
@@ -235,6 +239,7 @@ class CompFiles(object):
                 fi.write(f['fmt'])
         except:
             return RET_ERR
+        print f['path'], "rewritten"
         return RET_OK
 
     def check(self):
