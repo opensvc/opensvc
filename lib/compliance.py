@@ -238,6 +238,8 @@ class Compliance(object):
         else:
             self.moduleset = self.options.moduleset.split(',')
             self.module = self.options.module.split(',')
+        if len(self.moduleset) > 0 and hasattr(self.options, "attach") and self.options.attach:
+            self._compliance_attach_moduleset(self.moduleset)
         self.module = self.merge_moduleset_modules()
         self.ruleset = self.get_ruleset()
         self.setup_env()
@@ -412,8 +414,11 @@ class Compliance(object):
         if not hasattr(self.options, 'moduleset') or \
            len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
+        self._compliance_attach_moduleset(self.options.moduleset.split(','))
+
+    def _compliance_attach_moduleset(self, modulesets):
         err = False
-        for moduleset in self.options.moduleset.split(','):
+        for moduleset in modulesets:
             if self.svcname is not None:
                 d = self.collector.call('comp_attach_svc_moduleset', self.svcname, moduleset)
             else:
