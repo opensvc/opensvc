@@ -58,6 +58,11 @@ class Apps(Res.Resource):
             return False
         return True
 
+    def info_checks(self):
+        if not os.path.exists(self.svc.initd):
+            return False
+        return True
+
     def start_checks(self):
         if not os.path.exists(self.svc.initd):
             self.log.error("%s is not present"%self.svc.initd)
@@ -235,7 +240,7 @@ class Apps(Res.Resource):
         """Execute each startup script (S* files) info method.
         """
         try:
-            if not self.start_checks():
+            if not self.info_checks():
                 return []
         except ex.excNotAvailable:
             return []
