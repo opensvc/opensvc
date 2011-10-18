@@ -171,7 +171,7 @@ class Svc(Resource, Freezer):
 
     def svclock(self, action=None, timeout=30, delay=5):
         if action in ['push', 'print_status', 'status', 'freeze', 'frozen',
-                      'thaw', 'freezestop']:
+                      'thaw', 'freezestop', 'json_status']:
             # no need to serialize this action
             return
         if self.lockfd is not None:
@@ -255,6 +255,7 @@ class Svc(Resource, Freezer):
         """
         blacklist_actions = ["status",
                    "print_status",
+                   "json_status",
                    "group_status",
                    "presync",
                    "postsync",
@@ -1025,7 +1026,7 @@ class Svc(Resource, Freezer):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status'] and 'compliance' not in action:
+        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status', 'json_status'] and 'compliance' not in action:
             if self.frozen():
                 self.log.info("Abort action for frozen service")
                 return 1
@@ -1038,7 +1039,7 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action:
+        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'json_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}
