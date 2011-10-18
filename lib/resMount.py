@@ -48,6 +48,9 @@ class Mount(Res.Resource):
     def start(self):
         if self.fsType == "zfs" :
 	    return None
+        if not os.path.exists(self.device):
+            self.log.error("device does not exist %s" % self.device)
+            raise ex.excError
         if not os.path.exists(self.mountPoint):
             try:
                 os.makedirs(self.mountPoint)
