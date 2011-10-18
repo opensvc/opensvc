@@ -369,7 +369,7 @@ class Svc(Resource, Freezer):
             }
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources]:
-                rid, status, label, log, monitor = r.status_quad()
+                rid, status, label, log, monitor, disable, optional = r.status_quad()
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log':log,
