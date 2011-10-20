@@ -1,0 +1,8 @@
+this new ack service action inserts a unavailability
+range acknowledgement.
+
+it should support params:
+--comment
+--author
+--duration or/and --begin + --end
+
