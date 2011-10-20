@@ -777,11 +777,10 @@ class Collector(object):
             vals = []
             for key in sym.keys:
                 vals.append(getattr(sym, 'get_'+key)())
-            sym_proxy = ServerProxy(rcEnv.dbopensvc)
             args = [sym.sid, sym.keys, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            sym_proxy.update_sym_xml(*args)
+            self.proxy.update_sym_xml(*args)
     
     def push_all(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]
