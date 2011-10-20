@@ -94,6 +94,18 @@ parser.add_option("--param", default=None,
 parser.add_option("--value", default=None,
                   action="store", dest="value",
                   help="set a service configuration parameter value for the 'set --param' action")
+parser.add_option("--duration", default=None, action="store", dest="duration", type="int",
+                  help="a duration expressed in minutes. used with the 'collector ack unavailability' action")
+parser.add_option("--account", default=False, action="store_true", dest="account",
+                  help="decides that the unavailabity period should be deduced from the service availability anyway. used with the 'collector ack unavailability' action")
+parser.add_option("--begin", default=None, action="store", dest="begin",
+                  help="a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action")
+parser.add_option("--end", default=None, action="store", dest="end",
+                  help="a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action")
+parser.add_option("--comment", default=None, action="store", dest="comment",
+                  help="a comment to log when used with the 'collector ack unavailability' action")
+parser.add_option("--author", default=None, action="store", dest="author",
+                  help="the acker name to log when used with the 'collector ack unavailability' action")
 
 
 cluster = False
@@ -174,11 +186,10 @@ if node.svcs is None:
 if len(args) is 0:
     node.close()
     parser.error("Missing action")
+
 if action is None:
-    if args[0] == 'compliance':
-        action = '_'.join(args)
-    else:
-        action = args[0]
+    action = '_'.join(args)
+
 if not action in rcOptParser.action_desc.keys():
     node.close()
     parser.error("unsupported action")

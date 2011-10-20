@@ -168,6 +168,8 @@ class Collector(object):
                 through 127.0.0.1 == dbopensvc
             """
             pass
+        except AttributeError:
+            print fn, "function does not exist in Collector() object"
         except socket.timeout:
             print "connection to collector timed out"
         except:
@@ -899,6 +901,12 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_log_action(*args)
+
+    def collector_ack_unavailability(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_ack_unavailability(*args)
 
 
 if __name__ == "__main__":

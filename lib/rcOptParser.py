@@ -21,7 +21,7 @@ from rcGlobalEnv import *
 
 action_desc = {
 	'printsvc':	'display service live configuration',
-	'boot':	        'start a service if executed on the primary node, startstandby if not',
+	'boot':	        'start a service if executed on the primary node (or one of the primary nodes in case of a flex service), startstandby if not',
 	'shutdown':     'stop a service, disabling the background database logging',
 	'start':	'start a service, chaining startip-diskstart-startapp',
 	'startstandby':	'start service resources marked always_on',
@@ -90,17 +90,26 @@ action_desc = {
         'compliance_show_ruleset': 'show compliance rules applying to this node',
         'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
         'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
+        'collector_ack_unavailability': 'acknowledge an unavailability period. the period is specified by --begin/--end or --begin/--duration. omitting --begin defaults to now. an acknowlegment can be completed by --author (defaults to root@nodename), --account (default to 1) and --comment',
 }
 
 def format_desc(svc=False):
-        from textwrap import TextWrapper
-        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
-	desc = "Supported commands:\n"
-	for a in sorted(action_desc):
-		if svc and not hasattr(svc, a):
-			continue
-		text = "  %-16s %s\n"%(a, action_desc[a])
-                desc += wrapper.fill(text)
-                desc += '\n'
-	return desc
+    from textwrap import TextWrapper
+    wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
+    desc = "Supported commands:\n"
+    for a in sorted(action_desc):
+        if svc and not hasattr(svc, a):
+            continue
+        fancya = a.replace('_', ' ')
+        if len(a) < 16:
+            text = "  %-16s %s\n"%(fancya, action_desc[a])
+            desc += wrapper.fill(text)
+        else:
+            text = "  %-16s"%(fancya)
+            desc += wrapper.fill(text)
+            desc += '\n'
+            text = "%19s%s"%(" ", action_desc[a])
+            desc += wrapper.fill(text)
+        desc += '\n\n'
+    return desc
 

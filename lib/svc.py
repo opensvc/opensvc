@@ -1029,7 +1029,7 @@ class Svc(Resource, Freezer):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status', 'json_status'] and 'compliance' not in action:
+        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status', 'json_status'] and 'compliance' not in action and 'collector' not in action:
             if self.frozen():
                 self.log.info("Abort action for frozen service")
                 return 1
@@ -1042,7 +1042,7 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'json_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action:
+        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'json_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action or 'collector' in action:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}
@@ -1070,6 +1070,10 @@ class Svc(Resource, Freezer):
             if action.startswith("compliance_"):
                 from compliance import Compliance
                 o = Compliance(self.node.skip_action, self.options, self.node.collector, self.svcname)
+                getattr(o, action)()
+            elif action.startswith("collector_"):
+                from collector import Collector
+                o = Collector(self.options, self.node.collector, self.svcname)
                 getattr(o, action)()
             elif hasattr(self, action):
                 getattr(self, action)()
