@@ -106,6 +106,8 @@ parser.add_option("--comment", default=None, action="store", dest="comment",
                   help="a comment to log when used with the 'collector ack unavailability' action")
 parser.add_option("--author", default=None, action="store", dest="author",
                   help="the acker name to log when used with the 'collector ack unavailability' action")
+parser.add_option("--id", default=0, action="store", dest="id", type="int",
+                  help="specify an id to act on")
 
 
 cluster = False

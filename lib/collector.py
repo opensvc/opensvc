@@ -94,4 +94,25 @@ class Collector(object):
         from rcPrintTable import print_table
         print_table(d['data'])
 
+    def collector_ack_action(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        if self.options.author is not None:
+            opts['author'] = self.options.author
+        if self.options.comment is not None:
+            opts['comment'] = self.options.comment
+        if self.options.id == 0:
+            raise ex.excError("--id is not set")
+        else:
+            opts['id'] = self.options.id
+
+        d = self.collector.call('collector_ack_action', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
 
