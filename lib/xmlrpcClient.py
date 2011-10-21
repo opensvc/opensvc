@@ -926,6 +926,24 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_ack_action(*args)
 
+    def collector_status(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_status(*args)
+
+    def collector_checks(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_checks(*args)
+
+    def collector_alerts(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_alerts(*args)
+
 
 if __name__ == "__main__":
     x = Collector()

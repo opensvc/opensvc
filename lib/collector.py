@@ -7,6 +7,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
+from rcPrintTable import print_table
 
 class Collector(object):
     def __init__(self, options=None, collector=None, svcname=None):
@@ -69,7 +70,6 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        from rcPrintTable import print_table
         print_table(d['data'])
 
     def collector_list_actions(self):
@@ -91,7 +91,6 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        from rcPrintTable import print_table
         print_table(d['data'])
 
     def collector_ack_action(self):
@@ -114,5 +113,47 @@ class Collector(object):
             raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
+
+    def collector_status(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        d = self.collector.call('collector_status', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        print_table(d['data'])
+
+    def collector_checks(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        d = self.collector.call('collector_checks', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        print_table(d['data'])
+
+    def collector_alerts(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        d = self.collector.call('collector_alerts', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        print_table(d['data'], width=30)
 
 

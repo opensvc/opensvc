@@ -72,7 +72,11 @@ def wrap_always(text, width):
     return '\n'.join([ text[width*i:width*(i+1)] \
                        for i in xrange(int(math.ceil(1.*len(text)/width))) ])
     
-def print_table(data):
+def print_table(data, width=20):
+    if isinstance(data, list):
+        print indent(data, hasHeader=True, wrapfunc=lambda x: wrap_onspace_strict(x,width))
+        return
+
     lines = data.splitlines()
     if len(lines) < 2:
         print "no data"
@@ -107,7 +111,7 @@ def print_table(data):
                 if i<l-1 and line[i+1] == '"':
                     incell = True
         rows.append(row)
-    print indent([labels]+rows, hasHeader=True, wrapfunc=lambda x: wrap_onspace_strict(x,20))
+    print indent([labels]+rows, hasHeader=True, wrapfunc=lambda x: wrap_onspace_strict(x,width))
 
 if __name__ == '__main__':
     labels = ('First Name', 'Last Name', 'Age', 'Position')
