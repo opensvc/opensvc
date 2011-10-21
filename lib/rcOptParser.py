@@ -91,6 +91,7 @@ action_desc = {
         'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
         'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
         'collector_ack_unavailability': 'acknowledge an unavailability period. the period is specified by --begin/--end or --begin/--duration. omitting --begin defaults to now. an acknowlegment can be completed by --author (defaults to root@nodename), --account (default to 1) and --comment',
+        'collector_list_unavailability_ack': 'list acknowledged periods for the service. the periods can be filtered by --begin/--end. omitting --end defaults to now. the wildcartd for --comment and --author is %',
 }
 
 def format_desc(svc=False):

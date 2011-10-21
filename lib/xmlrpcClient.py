@@ -908,6 +908,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_ack_unavailability(*args)
 
+    def collector_list_unavailability_ack(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_list_unavailability_ack(*args)
+
 
 if __name__ == "__main__":
     x = Collector()

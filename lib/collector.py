@@ -42,4 +42,34 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
+    def collector_list_unavailability_ack(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        if self.options.begin is not None:
+            opts['begin'] = self.options.begin
+        if self.options.end is not None:
+            opts['end'] = self.options.end
+        if self.options.author is not None:
+            opts['author'] = self.options.author
+        if self.options.comment is not None:
+            opts['comment'] = self.options.comment
+        if self.options.duration is not None:
+            opts['duration'] = self.options.duration
+        if self.options.account:
+            opts['account'] = "1"
+        else:
+            opts['account'] = "0"
+
+        d = self.collector.call('collector_list_unavailability_ack', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        from rcPrintTable import print_table
+        print_table(d['data'])
+
 
