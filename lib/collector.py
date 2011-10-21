@@ -72,4 +72,26 @@ class Collector(object):
         from rcPrintTable import print_table
         print_table(d['data'])
 
+    def collector_list_actions(self):
+        if self.svcname is None:
+            return
+
+        opts = {}
+        opts['svcname'] = self.svcname
+        if self.options.begin is not None:
+            opts['begin'] = self.options.begin
+        if self.options.end is not None:
+            opts['end'] = self.options.end
+        if self.options.duration is not None:
+            opts['duration'] = self.options.duration
+
+        d = self.collector.call('collector_list_actions', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        from rcPrintTable import print_table
+        print_table(d['data'])
+
 
