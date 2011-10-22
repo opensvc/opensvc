@@ -101,7 +101,7 @@ def print_table(data, width=20):
                         cell = line[cell_begin:].replace('""', '"')
                 else:
                     cell = ""
-                if cell[0] == '"' and cell[-1] == '"':
+                if len(cell) > 1 and cell[0] == '"' and cell[-1] == '"':
                     if len(cell) > 2:
                         cell = cell[1:-1]
                     else:

@@ -94,6 +94,7 @@ action_desc = {
         'collector_list_unavailability_ack': 'list acknowledged periods for the service. the periods can be filtered by --begin/--end. omitting --end defaults to now. the wildcartd for --comment and --author is %',
         'collector_list_actions': 'list actions on the service, whatever the node, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
         'collector_ack_action': 'acknowledge an action error on the service. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
+        'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
         'collector_status': 'display service status on all nodes, according to the collector.',
         'collector_checks': 'display service checks',
         'collector_alerts': 'display service alerts',

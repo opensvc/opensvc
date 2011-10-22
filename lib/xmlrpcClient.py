@@ -944,6 +944,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_alerts(*args)
 
+    def collector_show_actions(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_show_actions(*args)
+
 
 if __name__ == "__main__":
     x = Collector()
