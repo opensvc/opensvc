@@ -98,6 +98,7 @@ action_desc = {
         'collector_status': 'display service status on all nodes, according to the collector.',
         'collector_checks': 'display service checks',
         'collector_alerts': 'display service alerts',
+        'collector_events': 'display service events',
 }
 
 def format_desc(svc=False):

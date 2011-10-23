@@ -101,6 +101,7 @@ class Node(Svc, Freezer):
           'compliance_show_ruleset': 'show compliance rules applying to this node',
           'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
+          'collector_events': 'display node events',
           'collector_alerts': 'display node alerts',
           'collector_checks': 'display node checks',
           'collector_status': 'display node services status according to the collector',

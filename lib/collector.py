@@ -146,6 +146,22 @@ class Collector(object):
 
         print_table(d['data'], width=30)
 
+    def collector_events(self):
+        opts = {}
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
+        if self.options.begin is not None:
+            opts['begin'] = self.options.begin
+        if self.options.end is not None:
+            opts['end'] = self.options.end
+        d = self.collector.call('collector_events', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        print_table(d['data'], width=50)
+
     def collector_show_actions(self):
         opts = {}
         if self.svcname is not None:
