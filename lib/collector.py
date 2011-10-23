@@ -73,11 +73,9 @@ class Collector(object):
         print_table(d['data'])
 
     def collector_list_actions(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         if self.options.begin is not None:
             opts['begin'] = self.options.begin
         if self.options.end is not None:
@@ -94,11 +92,9 @@ class Collector(object):
         print_table(d['data'])
 
     def collector_ack_action(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         if self.options.author is not None:
             opts['author'] = self.options.author
         if self.options.comment is not None:
@@ -115,11 +111,9 @@ class Collector(object):
             raise ex.excError(d['msg'])
 
     def collector_status(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_status', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -129,11 +123,9 @@ class Collector(object):
         print_table(d['data'])
 
     def collector_checks(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_checks', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -143,11 +135,9 @@ class Collector(object):
         print_table(d['data'])
 
     def collector_alerts(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_alerts', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -157,11 +147,9 @@ class Collector(object):
         print_table(d['data'], width=30)
 
     def collector_show_actions(self):
-        if self.svcname is None:
-            return
-
         opts = {}
-        opts['svcname'] = self.svcname
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
         if self.options.id != 0:
             opts['id'] = self.options.id
         if self.options.begin is not None:

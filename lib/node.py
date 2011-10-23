@@ -86,6 +86,10 @@ class Node(Svc, Freezer):
           'pushsym':        'push symmetrix configuration to collector',
           'prkey':          'show persistent reservation key of this node',
           'checks':         'run node sanity checks, push results to collector',
+          'get': 'get the value of the node configuration parameter pointed by --param',
+          'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
+          'unset': 'unset a node configuration parameter (pointed by --param)',
+          'register': 'obtain a registration number from the collector, used to authenticate the node',
           'compliance_check': 'run compliance checks',
           'compliance_fix':   'run compliance fixes',
           'compliance_fixable': 'verify compliance fixes prerequisites',
@@ -97,10 +101,12 @@ class Node(Svc, Freezer):
           'compliance_show_ruleset': 'show compliance rules applying to this node',
           'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
           'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
-          'get': 'get the value of the node configuration parameter pointed by --param',
-          'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
-          'unset': 'unset a node configuration parameter (pointed by --param)',
-          'register': 'obtain a registration number from the collector, used to authenticate the node',
+          'collector_alerts': 'display node alerts',
+          'collector_checks': 'display node checks',
+          'collector_status': 'display node services status according to the collector',
+        'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
+        'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
+        'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
         }
         self.collector = xmlrpcClient.Collector()
         self.cmdworker = rcCommandWorker.CommandWorker()
@@ -221,11 +227,16 @@ class Node(Svc, Freezer):
     def format_desc(self):
         from textwrap import TextWrapper
         from compliance import Compliance
-        o = Compliance(self.skip_action, self.options, self.collector)
+        from collector import Collector
         wrapper = TextWrapper(subsequent_indent="%29s"%"", width=78)
         desc = "Supported commands:\n"
         for a in sorted(self.action_desc):
             if a.startswith("compliance_"):
+                o = Compliance(self.skip_action, self.options, self.collector)
+                if not hasattr(o, a):
+                    continue
+            elif a.startswith("collector_"):
+                o = Collector(self.options, self.collector)
                 if not hasattr(o, a):
                     continue
             elif not hasattr(self, a):
@@ -246,6 +257,10 @@ class Node(Svc, Freezer):
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
+            return getattr(o, a)()
+        elif a.startswith("collector_"):
+            from collector import Collector
+            o = Collector(self.options, self.collector)
             return getattr(o, a)()
         else:
             return getattr(self, a)()

@@ -89,6 +89,18 @@ parser.add_option("--param", default=None,
 parser.add_option("--value", default=None,
 		  action="store", dest="value",
                   help="set a node configuration parameter value for the 'set --param' action")
+parser.add_option("--duration", default=None, action="store", dest="duration", type="int",
+                  help="a duration expressed in minutes. used with the 'collector ack action' action")
+parser.add_option("--begin", default=None, action="store", dest="begin",
+                  help="a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' action")
+parser.add_option("--end", default=None, action="store", dest="end",
+                  help="a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' action")
+parser.add_option("--comment", default=None, action="store", dest="comment",
+                  help="a comment to log when used with the 'collector ack action' action")
+parser.add_option("--author", default=None, action="store", dest="author",
+                  help="the acker name to log when used with the 'collector ack action' action")
+parser.add_option("--id", default=0, action="store", dest="id", type="int",
+                  help="specify an id to act on")
 
 (options, args) = parser.parse_args()
 
