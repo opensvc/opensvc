@@ -189,7 +189,7 @@ class CompCron(object):
         if cron_file is None:
             raise Unfixable("no crontab usual location found (%s)"%str(self.crontab_locs))
 
-        s = format_entry(cron_file, e)
+        s = self.format_entry(cron_file, e)
 
         new = False
         if os.path.exists(cron_file):
