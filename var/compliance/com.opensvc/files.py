@@ -112,11 +112,14 @@ class CompFiles(object):
     def check_file_fmt(self, f, verbose=False):
         if not os.path.exists(f['path']):
             return RET_ERR
-        if verbose:
+        if "OSVC_COMP_OS_VENDOR" in os.environ and os.environ['OSVC_COMP_OS_VENDOR'] in ("Linux"):
             cmd = ['diff', '-u', f['path'], '-']
         else:
-            cmd = ['diff', '-q', f['path'], '-']
-        p = Popen(cmd, stdin=PIPE)
+            cmd = ['diff', f['path'], '-']
+        if verbose:
+            p = Popen(cmd, stdin=PIPE)
+        else:
+            p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate(input=f['fmt'])
         return p.returncode
 
