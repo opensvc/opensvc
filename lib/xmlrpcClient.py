@@ -335,9 +335,14 @@ class Collector(object):
         if self.worker is None:
             self.log.debug("worker already stopped (worker is None)")
             return
-        if not self.worker.is_alive():
-            self.log.debug("worker already stopped (not alive)")
+        try:
+            if not self.worker.is_alive():
+                self.log.debug("worker already stopped (not alive)")
+                return
+        except AssertionError:
+            self.log.debug("don't stop worker (not a child of this process)")
             return
+            
         self.log.debug("give poison pill to worker")
         self.queue.put(None)
         self.worker.join()
