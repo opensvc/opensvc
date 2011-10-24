@@ -1497,6 +1497,17 @@ def toggle_one(svcname, rids=[], disable=True):
     except:
         print >>sys.stderr, "failed to open", envfile, "for writing"
         return 1
+
+    #
+    # if we set DEFAULT.disable = True,
+    # we don't want res#n.disable = False
+    #
+    if len(rids) == 0 and disable:
+        for s in conf.sections():
+            if conf.has_option(s, "disable") and \
+               conf.getboolean(s, "disable") == False:
+                conf.remove_option(s, "disable")
+
     conf.write(f)
     return 0
 
