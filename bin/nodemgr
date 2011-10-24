@@ -121,7 +121,7 @@ if len(args) is 0:
     n.close()
     parser.error("Missing action")
 action = '_'.join(args)
-if not action in n.action_desc:
+if not action in n.supported_actions():
     n.close()
     parser.error("unsupported action: %s"%action)
 

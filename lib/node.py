@@ -129,6 +129,12 @@ class Node(Svc, Freezer):
             rcos = __import__('rcOs')
         self.os = rcos.Os()
 
+    def supported_actions(self):
+        a = []
+        for s in self.action_desc:
+            a += self.action_desc[s].keys()
+        return a
+
     def build_services(self, *args, **kwargs):
         if self.svcs is not None:
             return

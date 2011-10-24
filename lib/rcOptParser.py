@@ -134,3 +134,8 @@ def format_desc(svc=False):
             desc += '\n\n'
     return desc[0:-2]
 
+def supported_actions():
+    a = []
+    for s in action_desc:
+        a += action_desc[s].keys()
+    return a

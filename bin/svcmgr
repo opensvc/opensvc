@@ -145,8 +145,7 @@ else:
             action = "stonith"
     else:
         svcname = cmd
-    svcnames = [svcname]
-    node.build_services(svcnames=svcnames)
+    node.build_services(svcnames=svcname)
 
 (options, args) = parser.parse_args()
 if action is not None:
@@ -185,6 +184,9 @@ if node.svcs is None:
                         onlyprimary=onlyprimary,
                         onlysecondary=onlysecondary)
 
+if node.svcs is not None:
+    svcnames = map(lambda x: x.svcname, node.svcs)
+
 if len(args) is 0:
     node.close()
     parser.error("Missing action")
@@ -192,7 +194,7 @@ if len(args) is 0:
 if action is None:
     action = '_'.join(args)
 
-if not action in rcOptParser.action_desc.keys():
+if not action in rcOptParser.supported_actions():
     node.close()
     parser.error("unsupported action")
 
