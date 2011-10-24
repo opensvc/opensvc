@@ -76,38 +76,50 @@ class Node(Svc, Freezer):
         self.svcs = None
         Freezer.__init__(self, '')
         self.action_desc = {
-          'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
-          'updateservices': 'refresh var files associated with services',
-          'pushasset':      'push asset information to collector',
-          'pushservices':   'push service configuration to collector',
-          'pushstats':      'push performance metrics to collector',
-          'pushpkg':        'push package/version list to collector',
-          'pushpatch':      'push patch/version list to collector',
-          'pushsym':        'push symmetrix configuration to collector',
-          'prkey':          'show persistent reservation key of this node',
-          'checks':         'run node sanity checks, push results to collector',
-          'get': 'get the value of the node configuration parameter pointed by --param',
-          'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
-          'unset': 'unset a node configuration parameter (pointed by --param)',
-          'register': 'obtain a registration number from the collector, used to authenticate the node',
-          'compliance_check': 'run compliance checks',
-          'compliance_fix':   'run compliance fixes',
-          'compliance_fixable': 'verify compliance fixes prerequisites',
-          'compliance_show_moduleset': 'show compliance rules applying to this node',
-          'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
-          'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
-          'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
-          'compliance_list_ruleset': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
-          'compliance_show_ruleset': 'show compliance rules applying to this node',
-          'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
-          'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
-          'collector_events': 'display node events',
-          'collector_alerts': 'display node alerts',
-          'collector_checks': 'display node checks',
-          'collector_status': 'display node services status according to the collector',
-        'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
-        'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
-        'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
+          'Service actions': {
+            'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
+            'updateservices': 'refresh var files associated with services',
+          },
+          'Node configuration edition': {
+            'register': 'obtain a registration number from the collector, used to authenticate the node',
+            'get': 'get the value of the node configuration parameter pointed by --param',
+            'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
+            'unset': 'unset a node configuration parameter (pointed by --param)',
+          },
+          'Push data to the collector': {
+            'pushasset':      'push asset information to collector',
+            'pushservices':   'push service configuration to collector',
+            'pushstats':      'push performance metrics to collector',
+            'pushpkg':        'push package/version list to collector',
+            'pushpatch':      'push patch/version list to collector',
+            'pushsym':        'push symmetrix configuration to collector',
+            'checks':         'run node sanity checks, push results to collector',
+          },
+          'Misc': {
+            'prkey':          'show persistent reservation key of this node',
+          },
+          'Compliance': {
+            'compliance_check': 'run compliance checks',
+            'compliance_fix':   'run compliance fixes',
+            'compliance_fixable': 'verify compliance fixes prerequisites',
+            'compliance_show_moduleset': 'show compliance rules applying to this node',
+            'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
+            'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
+            'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
+            'compliance_list_ruleset': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
+            'compliance_show_ruleset': 'show compliance rules applying to this node',
+            'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
+            'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
+          },
+          'Collector management': {
+            'collector_events': 'display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
+            'collector_alerts': 'display node alerts',
+            'collector_checks': 'display node checks',
+            'collector_status': 'display node services status according to the collector',
+            'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
+            'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
+            'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
+          },
         }
         self.collector = xmlrpcClient.Collector()
         self.cmdworker = rcCommandWorker.CommandWorker()
@@ -229,24 +241,37 @@ class Node(Svc, Freezer):
         from textwrap import TextWrapper
         from compliance import Compliance
         from collector import Collector
-        wrapper = TextWrapper(subsequent_indent="%29s"%"", width=78)
-        desc = "Supported commands:\n"
-        for a in sorted(self.action_desc):
-            if a.startswith("compliance_"):
-                o = Compliance(self.skip_action, self.options, self.collector)
-                if not hasattr(o, a):
+        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
+        desc = ""
+        for s in sorted(self.action_desc):
+            l = len(s)
+            desc += s+'\n'
+            for i in range(0, l):
+                desc += '-'
+            desc += "\n\n"
+            for a in sorted(self.action_desc[s]):
+                if a.startswith("compliance_"):
+                    o = Compliance(self.skip_action, self.options, self.collector)
+                    if not hasattr(o, a):
+                        continue
+                elif a.startswith("collector_"):
+                    o = Collector(self.options, self.collector)
+                    if not hasattr(o, a):
+                        continue
+                elif not hasattr(self, a):
                     continue
-            elif a.startswith("collector_"):
-                o = Collector(self.options, self.collector)
-                if not hasattr(o, a):
-                    continue
-            elif not hasattr(self, a):
-                continue
-            text = "  %-26s %s\n"%(a.replace('_', ' '),
-                                   self.action_desc[a])
-            desc += wrapper.fill(text)
-            desc += '\n'
-        return desc
+                fancya = a.replace('_', ' ')
+                if len(a) < 16:
+                    text = "  %-16s %s\n"%(fancya, self.action_desc[s][a])
+                    desc += wrapper.fill(text)
+                else:
+                    text = "  %-16s"%(fancya)
+                    desc += wrapper.fill(text)
+                    desc += '\n'
+                    text = "%19s%s"%(" ", self.action_desc[s][a])
+                    desc += wrapper.fill(text)
+                desc += '\n\n'
+        return desc[0:-2]
 
     def __iadd__(self, s):
         if not isinstance(s, Svc):
