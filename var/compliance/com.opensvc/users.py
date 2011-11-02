@@ -88,9 +88,9 @@ class CompUser(object):
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
-        p = Popen([pwconv])
+        p = Popen(['pwconv'])
         p.communicate()
-        p = Popen([grpconv])
+        p = Popen(['grpconv'])
         p.communicate()
         if r == 0:
             return RET_OK
