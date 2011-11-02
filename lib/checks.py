@@ -38,6 +38,7 @@ class checks(check):
         self.register('checkFsUsage')
         self.register('checkFsInode')
         self.register('checkVgUsage')
+        self.register('checkMpath')
         self.register_local_checkers()
 
     def __iadd__(self, c):
