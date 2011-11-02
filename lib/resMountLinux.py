@@ -99,7 +99,7 @@ class Mount(Res.Mount):
             if ret:
                 return True
 
-        if self.fsType not in ("nfs", "nfs4"):
+        if self.fsType not in self.netfs:
             # might be a loopback mount
             try:
                 mode = os.stat(self.device)[ST_MODE]
@@ -260,7 +260,7 @@ class Mount(Res.Mount):
             if the file has already been binded to a loop re-use
             the loopdev to avoid allocating another one
         """
-        if self.fsType in ("nfs", "nfs4"):
+        if self.fsType in self.netfs:
             # TODO showmount -e
             pass
         else:

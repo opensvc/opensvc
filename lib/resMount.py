@@ -44,6 +44,7 @@ class Mount(Res.Resource):
         self.label = device + '@' + mountPoint
         self.fsck_h = {}
         self.testfile = os.path.join(mountPoint, '.opensvc')
+        self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
     def start(self):
         if self.fsType == "zfs" :
@@ -88,7 +89,7 @@ class Mount(Res.Resource):
     def need_check_writable(self):
         if 'ro' in self.mntOpt.split(','):
             return False
-        if 'nfs' in self.fsType:
+        if self.fsType in self.netfs:
             return False
         return True
 
