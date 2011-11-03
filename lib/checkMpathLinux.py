@@ -56,7 +56,8 @@ class check(checks.check):
                     wwid = l[1][2:-1]
                 else:
                     wwid = l[0][1:]
-            if "[active][ready]" in line:
+            if "[active][ready]" in line or \
+               "active ready" in line:
                 n += 1
                 dev = "/dev/"+line.split()[2]
         return r
