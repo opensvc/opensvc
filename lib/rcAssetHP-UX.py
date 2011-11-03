@@ -40,7 +40,7 @@ class Asset(rcAsset.Asset):
 
         self.parse_memory()
 
-    def get_mem_bytes(self):
+    def _get_mem_bytes(self):
         cmd = ['swapinfo', '-Mq']
         (out, err, ret) = justcall(cmd)
         if ret != 0:
@@ -102,22 +102,22 @@ class Asset(rcAsset.Asset):
                 if not '--' in e[9]:
                     self.banks += 1
 
-    def get_mem_banks(self):
+    def _get_mem_banks(self):
         return str(self.banks)
 
-    def get_mem_slots(self):
+    def _get_mem_slots(self):
         return str(self.slots)
 
-    def get_os_vendor(self):
+    def _get_os_vendor(self):
         return 'HP'
 
-    def get_os_release(self):
+    def _get_os_release(self):
         (out, err, ret) = justcall(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0].strip()
 
-    def get_os_kernel(self):
+    def _get_os_kernel(self):
         (out, err, ret) = justcall(['swlist', '-l', 'bundle', 'QPKBASE'])
         if ret != 0:
             return 'Unknown'
@@ -126,13 +126,13 @@ class Asset(rcAsset.Asset):
                 return line.split()[1]
         return 'Unknown'
 
-    def get_os_arch(self):
+    def _get_os_arch(self):
         (out, err, ret) = justcall(['uname', '-m'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0].strip()
 
-    def get_cpu_freq(self):
+    def _get_cpu_freq(self):
         process = Popen(['adb', '/stand/vmunix', '/dev/kmem'], stdin=PIPE, stdout=PIPE, stderr=None)
         (out, err) = process.communicate(input='itick_per_usec/2d')
         if process.returncode != 0:
@@ -145,13 +145,13 @@ class Asset(rcAsset.Asset):
             return 'Unknown'
         return lines[1].strip()
 
-    def get_cpu_cores(self):
+    def _get_cpu_cores(self):
         for line in self.manifest:
             if 'Processors:' in line:
                 return line.split()[-1]
         return '0'
 
-    def get_cpu_dies(self):
+    def _get_cpu_dies(self):
         marker = False
         for line in self.manifest:
             if 'Processors:' in line:
@@ -161,7 +161,7 @@ class Asset(rcAsset.Asset):
                 return line.split()[0]
         return '0'
 
-    def get_cpu_model(self):
+    def _get_cpu_model(self):
         marker = False
         for line in self.manifest:
             if 'Processors:' in line:
@@ -172,13 +172,13 @@ class Asset(rcAsset.Asset):
                 return ' '.join(e[1:]).replace('processors','').replace('processor','')
         return 'Unknown'
 
-    def get_serial(self):
+    def _get_serial(self):
         (out, err, ret) = justcall(['getconf', 'MACHINE_SERIAL'])
         if ret != 0:
             return 'Unknown'
         return out
 
-    def get_model(self):
+    def _get_model(self):
         (out, err, ret) = justcall(['getconf', 'MACHINE_MODEL'])
         if ret != 0:
             return 'Unknown'

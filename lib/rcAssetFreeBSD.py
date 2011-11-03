@@ -22,7 +22,7 @@ from rcGlobalEnv import rcEnv
 import rcAssetLinux
 
 class Asset(rcAssetLinux.Asset):
-    def get_mem_bytes(self):
+    def _get_mem_bytes(self):
         cmd = ['sysctl', 'hw.realmem']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -36,13 +36,13 @@ class Asset(rcAssetLinux.Asset):
         mb = int(line[-1])
         return str(mb/1024/1024)
 
-    def get_os_vendor(self):
+    def _get_os_vendor(self):
         return 'FreeBSD'
 
-    def get_os_release(self):
-        return self.get_os_kernel()
+    def _get_os_release(self):
+        return self._get_os_kernel()
 
-    def get_os_arch(self):
+    def _get_os_arch(self):
         cmd = ['sysctl', 'hw.machine_arch']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -55,7 +55,7 @@ class Asset(rcAssetLinux.Asset):
             return 'Unknown'
         return line[-1]
 
-    def get_cpu_model(self):
+    def _get_cpu_model(self):
         cmd = ['sysctl', 'hw.model']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -68,7 +68,7 @@ class Asset(rcAssetLinux.Asset):
             return 'Unknown'
         return " ".join(line[1:])
 
-    def get_cpu_cores(self):
+    def _get_cpu_cores(self):
         cmd = ['sysctl', 'hw.ncpu']
         (ret, out, err) = call(cmd)
         if ret != 0:

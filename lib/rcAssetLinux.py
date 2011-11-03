@@ -46,7 +46,7 @@ class Asset(rcAsset.Asset):
             else:
                 self.dmidecode = out.split('\n')
 
-    def get_mem_bytes_esx(self):
+    def _get_mem_bytes_esx(self):
         cmd = ['vmware-cmd', '-s', 'getresource', 'system.mem.totalMem']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -60,7 +60,7 @@ class Asset(rcAsset.Asset):
             size = '0'
         return size
 
-    def get_mem_bytes_hv(self):
+    def _get_mem_bytes_hv(self):
         cmd = ['virsh', 'nodeinfo']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -75,7 +75,7 @@ class Asset(rcAsset.Asset):
             return l[-2]
         return '0'
 
-    def get_mem_bytes_phy(self):
+    def _get_mem_bytes_phy(self):
         cmd = ['free', '-m']
         (ret, out, err) = call(cmd)
         if ret != 0:
@@ -100,15 +100,15 @@ class Asset(rcAsset.Asset):
     def is_esx_hv(self):
         return which('vmware-cmd')
 
-    def get_mem_bytes(self):
+    def _get_mem_bytes(self):
         if self.is_xen_hv():
-            return self.get_mem_bytes_hv()
+            return self._get_mem_bytes_hv()
         elif self.is_esx_hv():
-            return self.get_mem_bytes_esx()
+            return self._get_mem_bytes_esx()
         else:
-            return self.get_mem_bytes_phy()
+            return self._get_mem_bytes_phy()
 
-    def get_mem_banks(self):
+    def _get_mem_banks(self):
         if self.container:
             return 'n/a'
         banks =  0
@@ -126,7 +126,7 @@ class Asset(rcAsset.Asset):
                          pass
         return str(banks)
 
-    def get_mem_slots(self):
+    def _get_mem_slots(self):
         if self.container:
             return 'n/a'
         for l in self.dmidecode:
@@ -134,7 +134,7 @@ class Asset(rcAsset.Asset):
                 return l.split()[-1]
         return '0'
 
-    def get_os_vendor(self):
+    def _get_os_vendor(self):
         if os.path.exists('/etc/lsb-release'):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
@@ -157,7 +157,7 @@ class Asset(rcAsset.Asset):
                     return 'Redhat'
         return 'Unknown'
 
-    def get_os_release(self):
+    def _get_os_release(self):
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
                  '/etc/redhat-release']
@@ -175,23 +175,23 @@ class Asset(rcAsset.Asset):
                 for line in f.readlines():
                     if 'DISTRIB_DESCRIPTION' in line:
                         r = line.split('=')[-1].replace('\n','').strip('"')
-                        r = r.replace(self.get_os_vendor(), '').strip()
+                        r = r.replace(self._get_os_vendor(), '').strip()
                         return r
         for f in files:
             if os.path.exists(f):
                 (ret, out, err) = call(['cat', f])
                 if ret != 0:
                     return 'Unknown'
-                return out.split('\n')[0].replace(self.get_os_vendor(), '').strip()
+                return out.split('\n')[0].replace(self._get_os_vendor(), '').strip()
         return 'Unknown'
 
-    def get_os_kernel(self):
+    def _get_os_kernel(self):
         (ret, out, err) = call(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
-    def get_os_arch(self):
+    def _get_os_arch(self):
         if which('arch') is not None:
             cmd = ['arch']
         else:
@@ -201,7 +201,7 @@ class Asset(rcAsset.Asset):
             return 'Unknown'
         return out.split('\n')[0]
 
-    def get_cpu_freq(self):
+    def _get_cpu_freq(self):
         p = '/proc/cpuinfo'
         if not os.path.exists(p):
             return 'Unknown'
@@ -211,7 +211,7 @@ class Asset(rcAsset.Asset):
                     return line.split(':')[1].strip().split('.')[0]
         return 'Unknown'
 
-    def get_cpu_cores(self):
+    def _get_cpu_cores(self):
         if self.is_esx_hv():
             return '0'
         with open('/proc/cpuinfo') as f:
@@ -224,7 +224,7 @@ class Asset(rcAsset.Asset):
             return str(c)
         return '0'
 
-    def get_cpu_dies_dmi(self):
+    def _get_cpu_dies_dmi(self):
         if self.container:
             return 'n/a'
         n = 0
@@ -233,7 +233,7 @@ class Asset(rcAsset.Asset):
                 n += 1
         return str(n)
 
-    def get_cpu_dies_cpuinfo(self):
+    def _get_cpu_dies_cpuinfo(self):
         if self.container:
             return 'n/a'
         c = 0
@@ -242,12 +242,12 @@ class Asset(rcAsset.Asset):
                 c += 1
         return str(c)
 
-    def get_cpu_dies(self):
+    def _get_cpu_dies(self):
         if self.is_esx_hv():
-            return self.get_cpu_dies_dmi()
-        return self.get_cpu_dies_cpuinfo()
+            return self._get_cpu_dies_dmi()
+        return self._get_cpu_dies_cpuinfo()
 
-    def get_cpu_model(self):
+    def _get_cpu_model(self):
         (ret, out, err) = call(['grep', 'model name', '/proc/cpuinfo'])
         if ret != 0:
             return 'Unknown'
@@ -255,7 +255,7 @@ class Asset(rcAsset.Asset):
         l = lines[0].split(':')
         return l[1].strip()
 
-    def get_serial(self):
+    def _get_serial(self):
         if self.container:
             return 'n/a'
         for l in self.dmidecode:
@@ -263,7 +263,7 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
-    def get_model(self):
+    def _get_model(self):
         if self.container:
             return 'container'
         for l in self.dmidecode:

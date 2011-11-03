@@ -32,7 +32,7 @@ class Asset(rcAsset.Asset):
                 if len(l) != 2: continue
                 self.sphw[l[0].strip()] = l[1].strip()
 
-    def get_mem_bytes(self):
+    def _get_mem_bytes(self):
         if 'Memory' not in self.sphw:
             return '0'
         m = self.sphw['Memory'].split()
@@ -46,57 +46,57 @@ class Asset(rcAsset.Asset):
             raise
         return str(size)
 
-    def get_mem_banks(self):
+    def _get_mem_banks(self):
         return '0'
 
-    def get_mem_slots(self):
+    def _get_mem_slots(self):
         return '0'
 
-    def get_os_vendor(self):
+    def _get_os_vendor(self):
         return 'Apple'
 
-    def get_os_release(self):
+    def _get_os_release(self):
         (ret, out, err) = call(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split()[0]
 
-    def get_os_kernel(self):
-        return self.get_os_release()
+    def _get_os_kernel(self):
+        return self._get_os_release()
 
-    def get_os_arch(self):
+    def _get_os_arch(self):
         cmd = ['uname', '-m']
         (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
-    def get_cpu_freq(self):
+    def _get_cpu_freq(self):
         if 'Processor Speed' not in self.sphw:
             return '0'
         return self.sphw['Processor Speed']
 
-    def get_cpu_cores(self):
+    def _get_cpu_cores(self):
         if 'Total Number of Cores' not in self.sphw:
             return '0'
         return self.sphw['Total Number of Cores']
 
-    def get_cpu_dies(self):
+    def _get_cpu_dies(self):
         if 'Number of Processors' not in self.sphw:
             return '0'
         return self.sphw['Number of Processors']
 
-    def get_cpu_model(self):
+    def _get_cpu_model(self):
         if 'Processor Name' not in self.sphw:
             return '0'
         return self.sphw['Processor Name']
 
-    def get_serial(self):
+    def _get_serial(self):
         if 'Hardware UUID' not in self.sphw:
             return '0'
         return self.sphw['Hardware UUID']
 
-    def get_model(self):
+    def _get_model(self):
         if 'Model Name' not in self.sphw:
             return '0'
         return self.sphw['Model Name']

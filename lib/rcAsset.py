@@ -22,42 +22,146 @@ class Asset(object):
         self.node = node
 
     def get_mem_bytes(self):
+        try:
+            return self.node.config.get('node', 'mem_bytes')
+        except:
+            pass
+        try:
+            return self._get_mem_bytes()
+        except:
+            pass
         return '0'
 
     def get_mem_banks(self):
+        try:
+            return self.node.config.get('node', 'mem_banks')
+        except:
+            pass
+        try:
+            return self._get_mem_banks()
+        except:
+            pass
         return '0'
 
     def get_mem_slots(self):
+        try:
+            return self.node.config.get('node', 'mem_slots')
+        except:
+            pass
+        try:
+            return self._get_mem_slots()
+        except:
+            pass
         return '0'
 
     def get_os_vendor(self):
+        try:
+            return self.node.config.get('node', 'os_vendor')
+        except:
+            pass
+        try:
+            return self._get_os_vendor()
+        except:
+            pass
         return 'Unknown'
 
     def get_os_release(self):
+        try:
+            return self.node.config.get('node', 'os_release')
+        except:
+            pass
+        try:
+            return self._get_os_release()
+        except:
+            pass
         return 'Unknown'
 
     def get_os_kernel(self):
+        try:
+            return self.node.config.get('node', 'os_kernel')
+        except:
+            pass
+        try:
+            return self._get_os_kernel()
+        except:
+            pass
         return 'Unknown'
 
     def get_os_arch(self):
+        try:
+            return self.node.config.get('node', 'os_arch')
+        except:
+            pass
+        try:
+            return self._get_os_arch()
+        except:
+            pass
         return 'Unknown'
 
     def get_cpu_freq(self):
+        try:
+            return self.node.config.get('node', 'cpu_freq')
+        except:
+            pass
+        try:
+            return self._get_cpu_freq()
+        except:
+            pass
         return 'Unknown'
 
     def get_cpu_cores(self):
+        try:
+            return self.node.config.get('node', 'cpu_cores')
+        except:
+            pass
+        try:
+            return self._get_cpu_cores()
+        except:
+            pass
         return '0'
 
     def get_cpu_dies(self):
+        try:
+            return self.node.config.get('node', 'cpu_dies')
+        except:
+            pass
+        try:
+            return self._get_cpu_dies()
+        except:
+            pass
         return '0'
 
     def get_cpu_model(self):
+        try:
+            return self.node.config.get('node', 'cpu_model')
+        except:
+            pass
+        try:
+            return self._get_cpu_model()
+        except:
+            pass
         return 'Unknown'
 
     def get_serial(self):
+        try:
+            return self.node.config.get('node', 'serial')
+        except:
+            pass
+        try:
+            return self._get_serial()
+        except:
+            pass
         return 'Unknown'
 
     def get_model(self):
+        try:
+            return self.node.config.get('node', 'model')
+        except:
+            pass
+        try:
+            return self._get_model()
+        except:
+            pass
         return 'Unknown'
 
     def get_environnement(self):
