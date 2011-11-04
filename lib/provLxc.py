@@ -204,13 +204,16 @@ ONBOOT=yes
     def setup_ip_debian(self, r):
         r.getaddr()
         buff = """
+auto lo
+iface lo inet loopback
+
 auto %(ipdev)s
 iface %(ipdev)s inet static
     address %(ipaddr)s
     netmask %(netmask)s
 
 """%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
-        with open(self.interfaces, 'a') as f:
+        with open(self.interfaces, 'w') as f:
             f.write(buff)
 
     def setup_ips(self):
