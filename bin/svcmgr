@@ -184,9 +184,6 @@ if node.svcs is None:
                         onlyprimary=onlyprimary,
                         onlysecondary=onlysecondary)
 
-if node.svcs is not None:
-    svcnames = map(lambda x: x.svcname, node.svcs)
-
 if len(args) is 0:
     node.close()
     parser.error("Missing action")
@@ -197,6 +194,12 @@ if action is None:
 if not action in rcOptParser.supported_actions():
     node.close()
     parser.error("unsupported action")
+
+if node.svcs is not None:
+    svcnames = map(lambda x: x.svcname, node.svcs)
+
+if action == "create" and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+    svcnames = options.parm_svcs.split(',')
 
 if cmd == 'svcmgr' and len(svcnames) == 0:
     sys.stderr.write("""No service specified. Try:
