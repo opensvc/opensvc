@@ -649,12 +649,6 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_service(*args)
     
-    def delete_services(self, sync=True):
-        args = [hostid]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.delete_services(*args)
-    
     def push_disks(self, svc, sync=True):
         def disk_dg(dev, svc):
             for rset in svc.get_res_sets("disk.vg"):
@@ -793,7 +787,6 @@ class Collector(object):
         args = [[svc.svcname for svc in svcs]]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.delete_service_list(*args)
         for svc in svcs:
             self.push_service(svc, sync=sync)
             self.push_appinfo(svc, sync=sync)
