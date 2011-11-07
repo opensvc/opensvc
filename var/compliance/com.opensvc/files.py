@@ -202,8 +202,8 @@ class CompFiles(object):
         if self.check_file_mode(f) == RET_OK:
             return RET_OK
         try:
-            print "%s mode set to %s"%(f['path'], f['mode'])
-            os.chmod(f['path'], int(f['mode'], 8))
+            print "%s mode set to %s"%(f['path'], str(f['mode']))
+            os.chmod(f['path'], int(str(f['mode']), 8))
         except:
             return RET_ERR
         return RET_OK
