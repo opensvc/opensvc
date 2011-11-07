@@ -46,7 +46,7 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
 
     def start(self):
-        if self.fsType == "zfs" :
+        if self.fsType in ["zfs"] + self.netfs:
 	    return None
         if not os.path.exists(self.device):
             self.log.error("device does not exist %s" % self.device)
