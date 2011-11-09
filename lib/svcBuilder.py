@@ -410,6 +410,7 @@ def add_vdisks(svc, conf):
         r = vdisk.Vdisk(**kwargs)
         add_triggers(r, conf, s)
         svc += r
+        add_scsireserv(svc, r, conf, s)
 
 def add_stoniths(svc, conf):
     for s in conf.sections():
