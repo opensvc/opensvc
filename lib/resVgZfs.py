@@ -25,6 +25,7 @@ from rcGlobalEnv import rcEnv
 import resDg
 from rcUtilities import qcall
 import os
+import rcExceptions as ex
 
 import re
 
@@ -40,6 +41,20 @@ class Pool(resDg.Dg):
                           always_on=always_on,
                           optional=optional, disabled=disabled, tags=tags,
                           monitor=monitor)
+
+    def disklist_name(self):
+        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
+
+    def files_to_sync(self):
+        return [self.disklist_name()]
+
+    def presync(self):
+        """ this one is exported as a service command line arg
+        """
+        dl = self._disklist()
+        import json
+        with open(self.disklist_name(), 'w') as f:
+            f.write(json.dumps(list(dl)))
 
     def has_it(self):
         """Returns True if the pool is present
@@ -77,6 +92,26 @@ class Pool(resDg.Dg):
         return ret
 
     def disklist(self):
+        if not os.path.exists(self.disklist_name()):
+            s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+            import rcStatus
+            if s['overall'].status == rcStatus.UP:
+                self.log.debug("no disklist cache file and service up ... refresh disklist cache")
+                self.presync()
+            else:
+                self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
+                return []
+        with open(self.disklist_name(), 'r') as f:
+            buff = f.read()
+        import json
+        try:
+            dl = set(json.loads(buff))
+        except:
+            self.log.error("corrupted disklist cache file %s"%self.disklist_name())
+            raise ex.excError
+        return dl
+
+    def _disklist(self):
         """disklist() search zpool vdevs from
         output of : zpool status poolname if status cmd == 0
         else
@@ -84,55 +119,35 @@ class Pool(resDg.Dg):
 
         disklist(self) update self.disks[]
         """
+
+        # return cache if initialized
         if len(self.disks) > 0 :
             return self.disks
 
         disks = set([])
         cmd = [ 'zpool', 'status', self.name ]
-        (ret, out, err) = self.call(cmd, errlog=False)
-        if ret != 0 :
-            matchedPool=False
-            cmd = [ 'zpool', 'import' ]
-            (ret, out, err) = self.call(cmd)
-            if ret != 0 :
-                self.disks = disks
-                return disks
-            for line in out.split('\n'):
-                if re.match('^  pool: ', line) is not None:
-                    # This is pool: xxxx
-                    # set watchNext if it is serached pool
-                    # else disable watchNext
-                    if line == '  pool: ' + self.name :
-                        if matchedPool == True :
-                            raise Exception("duplicated pools available")
-                        matchedPool = True
-                        watchNext = True
-                    else :
-                        watchNext = False
-                elif watchNext == True :
-                    # only look for 'tab  c*d vdev entries
-                    if re.match('^\t  ', line) is not None:
-                        if re.match('^\t  mirror', line) is not None:
-                            continue
-                        if re.match('^\t  raid', line) is not None:
-                            continue
-                        disk = line.split()[0]
-                        disks.add("/dev/rdsk/" + disk)
-        else :
-            for line in out.split('\n'):
-                if re.match('^\t  ', line) is not None:
-                    if re.match('^\t  mirror', line) is not None:
-                        continue
-                    if re.match('^\t  raid', line) is not None:
-                        continue
-                    # vdev entry
-                    disk=line.split()[0]
-                    if re.match("^.*", disk) is not None :
-                        disks.add("/dev/rdsk/" + disk )
+        (ret, out, err) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError
+
+        for line in out.split('\n'):
+            if re.match('^\t  ', line) is not None:
+                if re.match('^\t  mirror', line) is not None:
+                    continue
+                if re.match('^\t  raid', line) is not None:
+                    continue
+                # vdev entry
+                disk=line.split()[0]
+                if re.match("^.*", disk) is not None :
+                    disks.add("/dev/rdsk/" + disk )
+
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         for d in disks:
-            if re.match('^.*s[0-9]$', d) is None:
-                    d += "s2"
+            if re.match('^.*s[0-9]*$', d) is None:
+                d += "s2"
+            else:
+                regex = re.compile('s[0-9]*$', re.UNICODE)
+                d = regex.sub('s2', d)
             self.disks.add(d)
 
         return self.disks
@@ -141,6 +156,8 @@ if __name__ == "__main__":
     for c in (Pool,) :
         help(c)
 
+
+        # return cache if initialized
     print """p=Pool("svczfs1")"""
     p=Pool("svczfs1")
     print "show p", p
