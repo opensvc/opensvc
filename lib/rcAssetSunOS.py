@@ -24,6 +24,11 @@ import rcAsset
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
+        (ret, out, err) = call(['prtdiag'])
+        if ret != 0:
+            self.prtdiag = []
+        else:
+            self.prtdiag = out.split('\n')
         (ret, out, err) = call(['prtconf'])
         if ret != 0:
             self.prtconf = []
@@ -37,10 +42,12 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_mem_banks(self):
-        return '0'
+        l = [e for e in self.prtdiag if 'DIMM' in e and 'in use' in e]
+        return str(len(l))
 
     def _get_mem_slots(self):
-        return '0'
+        l = [e for e in self.prtdiag if 'DIMM' in e]
+        return str(len(l))
 
     def _get_os_vendor(self):
         return 'Oracle'
@@ -108,13 +115,17 @@ class Asset(rcAsset.Asset):
         return lines[2].strip()
 
     def _get_serial(self):
-        (ret, out, err) = call(['hostid'])
+        if which("sneep"):
+            cmd = ['sneep']
+        else:
+            cmd = ['hostid']
+        (ret, out, err) = call(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
     def _get_model(self):
-        for l in self.prtconf:
+        for l in self.prtdiag:
             if 'System Configuration:' in l:
                 return l.split(':')[-1].strip()
         return 'Unknown'
