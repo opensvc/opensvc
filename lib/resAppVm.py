@@ -73,12 +73,23 @@ class Apps(resApp.Apps):
         return self.checks(verbose=verbose)
 
     def sorted_app_list(self, pattern):
-        cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern.replace('*','\*'), '-maxdepth 1']
+        cmd = self.prefix + ['/usr/bin/find', self.app_d, '-name', pattern.replace('*', '\*')]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
+            self.log.debug("failed to fetch container startup scripts list")
             return []
-        return sorted(buff[0].split('\n'))
+
+        l = buff[0].split('\n')
+
+        # most unix find commands don't support maxdepth.
+        # discard manually the startup scripts found in subdirs of app_d
+        n = self.app_d.count("/")
+        if not self.app_d.endswith("/"):
+            n += 1
+        l = [e for e in l if e.count("/") == n]
+
+        return sorted(l)
 
     def app_exist(self, name):
         """ verify app_exists inside Vm
