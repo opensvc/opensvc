@@ -84,7 +84,10 @@ class StatsProvider(rcStats.StatsProvider):
             if l[0] == 'Average':
                 continue
 
-            freemem = int(l[1])*self.pagesize/1024
+            try:
+                freemem = int(l[1])*self.pagesize/1024
+            except:
+                continue
             x = ['%s %s'%(d, l[0]), str(freemem), self.nodename]
             lines.append(x)
         return cols, lines
@@ -130,7 +133,10 @@ class StatsProvider(rcStats.StatsProvider):
             if l[0] == 'Average':
                 continue
 
-            freeswap = int(l[2])/2
+            try:
+                freeswap = int(l[2])/2
+            except:
+                continue
             x = ['%s %s'%(d, l[0]), str(freeswap), self.nodename]
             lines.append(x)
         return cols, lines
