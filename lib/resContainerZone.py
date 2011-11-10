@@ -284,6 +284,43 @@ class Zone(resContainer.Container):
         m = __import__("provZone")
         m.ProvisioningZone(self).provisioner()
 
+    def get_container_info(self):
+        vcpus = "0"
+        vmem = "0"
+        cmd = [ZONECFG, "-z", self.name, "info", "rctl", "name=zone.cpu-cap"]
+        (out, err, status) = justcall(cmd)
+        if status == 0:
+            lines = out.split('\n')
+            for line in lines:
+                if "value:" not in line:
+                    continue
+                l = line.split("limit=")
+                if len(l) == 2:
+                    vcpus = l[-1][:l[-1].index(',')]
+                    vcpus = str(float(vcpus)/100)
+                    break
+                
+        cmd = [ZONECFG, "-z", self.name, "info", "capped-memory"]
+        (out, err, status) = justcall(cmd)
+        if status == 0:
+            lines = out.split('\n')
+            for line in lines:
+                if "physical:" not in line:
+                    continue
+                l = line.split(": ")
+                if len(l) == 2:
+                    vmem = l[-1].strip()
+                    if vmem.endswith('T'):
+                        vmem = str(float(vmem[:-1])*1024*1024)
+                    elif vmem.endswith('G'):
+                        vmem = str(float(vmem[:-1])*1024)
+                    elif vmem.endswith('M'):
+                        vmem = vmem[:-1]
+                    elif vmem.endswith('K'):
+                        vmem = str(float(vmem[:-1])/1024)
+                    break
+                
+        return {'vcpus': vcpus, 'vmem': vmem}
 
 
 if __name__ == "__main__":
