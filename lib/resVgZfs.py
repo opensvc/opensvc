@@ -100,7 +100,7 @@ class Pool(resDg.Dg):
                 self.presync()
             else:
                 self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
-                return []
+                return set([])
         with open(self.disklist_name(), 'r') as f:
             buff = f.read()
         import json
