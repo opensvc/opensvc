@@ -43,9 +43,11 @@ class CompVuln(object):
         if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
             self.fix_pkg = self.apt_fix_pkg
+            self.fixable_pkg = self.apt_fixable_pkg
         elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
             self.get_installed_packages = self.rpm_get_installed_packages
             self.fix_pkg = self.yum_fix_pkg
+            self.fixable_pkg = self.yum_fixable_pkg
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
@@ -82,9 +84,39 @@ class CompVuln(object):
             l[v[0]] = [(v[1], "")]
         return l
 
+    def apt_fixable_pkg(self, pkg, version):
+        # TODO
+        return RET_NA
+
+    def yum_fixable_pkg(self, pkg):
+        if self.check_pkg(pkg, verbose=False) == RET_OK:
+            return RET_OK
+        cmd = ['yum', 'list', 'available', pkg['pkgname']]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        (out, err) = p.communicate()
+        if p.returncode != 0:
+            if "No matching Packages" in err:
+                print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            else:
+                print >>sys.stderr, 'can not fetch available packages list'
+            return RET_ERR
+        highest_avail_version = "0"
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) != 3:
+                continue
+            if V(l[1]) > V(highest_avail_version):
+                highest_avail_version = l[1]
+        if V(highest_avail_version) < V(pkg['minver']):
+            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            return RET_ERR
+        return RET_OK
+
     def yum_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
+        if self.fixable_pkg(pkg) == RET_ERR:
+            return RET_ERR
         r = call(['yum', 'install', '-y', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
@@ -98,21 +130,19 @@ class CompVuln(object):
             return RET_ERR
         return RET_OK
 
-    def fixable(self):
-        return RET_NA
-
     def check_pkg(self, pkg, verbose=True):
         if not pkg["pkgname"] in self.installed_packages:
             return RET_OK
         r = RET_OK
         for vers, arch in self.installed_packages[pkg["pkgname"]]:
-            target = V(pkg["pkgname"])
+            target = V(pkg["minver"])
             actual = V(vers)
             if target > actual:
                 name = pkg["pkgname"]
                 if arch != "":
                     name += "."+arch
-                print 'package', name, vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s)"%pkg["rule"]
+                if verbose:
+                    print 'package', name, vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s)"%pkg["rule"]
                 r |= RET_ERR
         return r
 
@@ -126,6 +156,12 @@ class CompVuln(object):
         r = 0
         for pkg in self.packages:
             r |= self.fix_pkg(pkg)
+        return r
+
+    def fixable(self):
+        r = 0
+        for pkg in self.packages:
+            r |= self.fixable_pkg(pkg)
         return r
 
 if __name__ == "__main__":
