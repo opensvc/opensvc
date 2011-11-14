@@ -44,11 +44,6 @@ def initLogger(name):
     streamhandler.setFormatter(streamformatter)
     log.addHandler(streamhandler)
 
-    try:
-        log.setLevel(rcEnv.loglevel)
-    except:
-        pass
-
     if '--debug' in sys.argv:
             rcEnv.loglevel = logging.DEBUG
             log.setLevel(logging.DEBUG)

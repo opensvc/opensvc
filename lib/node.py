@@ -32,6 +32,8 @@ import json
 from rcGlobalEnv import rcEnv
 import rcCommandWorker
 import socket
+import rcLogger
+import rcUtilities
 
 class Options(object):
     def __init__(self):
@@ -76,6 +78,10 @@ class Node(Svc, Freezer):
         self.svcs = None
         Freezer.__init__(self, '')
         self.action_desc = {
+          'Node actions': {
+            'shutdown': 'shutdown the node to powered off state',
+            'reboot': 'reboot the node',
+          },
           'Service actions': {
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
             'updateservices': 'refresh var files associated with services',
@@ -128,6 +134,28 @@ class Node(Svc, Freezer):
         except ImportError:
             rcos = __import__('rcOs')
         self.os = rcos.Os()
+        rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
+        self.log = rcLogger.initLogger(rcEnv.nodename)
+
+    def call(self, cmd=['/bin/false'], cache=False, info=False,
+             errlog=True, err_to_warn=False, err_to_info=False,
+             outlog=False):
+        """Use subprocess module functions to do a call
+        """
+        return rcUtilities.call(cmd, log=self.log,
+                                cache=cache,
+                                info=info, errlog=errlog,
+                                err_to_warn=err_to_warn,
+                                err_to_info=err_to_info,
+                                outlog=outlog)
+
+    def vcall(self, cmd, err_to_warn=False, err_to_info=False):
+        """Use subprocess module functions to do a call and
+        log the command line using the resource logger
+        """
+        return rcUtilities.vcall(cmd, log=self.log,
+                                 err_to_warn=err_to_warn,
+                                 err_to_info=err_to_info)
 
     def supported_actions(self):
         a = []
@@ -539,6 +567,12 @@ class Node(Svc, Freezer):
                     continue
             l.append(self.config.get(s, 'svcname'))
         return l
+
+    def shutdown(self):
+        print "TODO"
+
+    def reboot(self):
+        print "TODO"
 
     def syncservices(self):
         self.setup_sync_conf()

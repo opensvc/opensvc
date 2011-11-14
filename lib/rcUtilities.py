@@ -22,6 +22,16 @@ import logging
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
+def ximport(base):
+    mod = base + rcEnv.sysname
+    try:
+        m = __import__(mod)
+        return m
+    except:
+        pass
+
+    return __import__(base)
+
 def fork(fn, kwargs):
     if os.fork() > 0:
         """ return to parent execution

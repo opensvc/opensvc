@@ -33,7 +33,9 @@ action = None
 import svcBuilder
 import rcStatus
 import rcOptParser
-import node
+from rcUtilities import ximport
+node_mod = ximport('node')
+
 try:
     from version import version
 except:
@@ -43,7 +45,7 @@ def _exit(r):
     node.close()
     sys.exit(r)
 
-node = node.Node()
+node = node_mod.Node()
 
 __ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
