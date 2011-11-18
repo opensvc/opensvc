@@ -651,7 +651,7 @@ class Collector(object):
     
     def push_disks(self, svc, sync=True):
         def disk_dg(dev, svc):
-            for rset in svc.get_res_sets("disk.vg"):
+            for rset in svc.get_res_sets("disk.vg") + svc.get_res_sets("disk.zpool"):
                 for vg in rset.resources:
                     if vg.is_disabled():
                         continue
