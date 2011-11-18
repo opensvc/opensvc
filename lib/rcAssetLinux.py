@@ -218,7 +218,7 @@ class Asset(rcAsset.Asset):
             lines = f.readlines()
             lines = [l for l in lines if 'core id' in l]
             if len(lines) == 0:
-                return '1'
+                return self._get_cpu_dies()
             c = lines[-1].split(':')[-1].replace('\n','').strip()
             c = int(c) + 1
             return str(c)
