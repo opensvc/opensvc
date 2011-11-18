@@ -236,11 +236,13 @@ class Asset(rcAsset.Asset):
     def _get_cpu_dies_cpuinfo(self):
         if self.container:
             return 'n/a'
-        c = 0
-        for l in self.dmidecode:
-            if 'Processor Information' in l:
-                c += 1
-        return str(c)
+	(ret, out, err) = call(['grep', 'processor', '/proc/cpuinfo'])
+	if ret != 0:
+	    return '1'
+	lines = out.split('\n')
+	c = lines[-2].split(':')[-1].replace('\n','').strip()
+	c = int(c) + 1
+	return str(c)
 
     def _get_cpu_dies(self):
         if self.is_esx_hv():
