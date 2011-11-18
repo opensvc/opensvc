@@ -52,7 +52,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                     n2 = int(line.split()[1])
                 if "cylinders" in line:
                     n3 = int(line.split()[1])
-                size = n1 * n2 * n3 / 1024 /1024
+                size = n1 * n2 * n3 / 1024 / 1024 / 1024
             except:
                 pass
 
