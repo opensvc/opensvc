@@ -7,9 +7,8 @@ NAWK=nawk;
 PKGNAME=opensvc
 ARCH=${ARCH:-all}
 BASE=/opt/opensvc
-REV=$(date +%y%m%d.%H%M)
-IPSREV=$(date +%y%m%d%H%M)
-P=${PKGNAME}-$VERSION-$REV.SunOS.pkg
+IPSREV=$(echo $RELEASE|sed s/\.//)
+P=${PKGNAME}-$VERSION-$RELEASE.SunOS.pkg
 IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
 #IPSP=pkgname@osrev,osrev,version[:timestampiso8601]
 REPODIR=$(cd $(dirname $0);pwd)
@@ -155,16 +154,16 @@ cat > $REPODIR/postinstall <<EOF
 su - root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=/opt/opensvc/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin $BASE/bin/postinstall"
 EOF
 
-echo "----- Creating $PKGNAME build-$REV ..."
+echo "----- Creating $PKGNAME build-$RELEASE ..."
 create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
 
-opensvc Service Manager for logical servers v${VERSION}-$REV
+opensvc Service Manager for logical servers v${VERSION}-$RELEASE
 $ARCH
 $VERSION
 
 http://www.opensvc.com
 support@opensvc.com
-OPENSVC-${VERSION}-${REV}
+OPENSVC-${VERSION}-${RELEASE}
 $TMPROOT=$BASE
 
 EOF
