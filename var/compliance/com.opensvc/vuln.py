@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import pwd
+import sys
 from subprocess import *
 from distutils.version import LooseVersion as V
 
@@ -17,11 +18,14 @@ sys.path.append(os.path.dirname(__file__))
 from comp import *
 
 class CompVuln(object):
-    def __init__(self, prefix='OSVC_COMP_VULN_'):
+    def __init__(self, prefix='OSVC_COMP_VULN_', uri=None):
+        self.uri = uri
         self.prefix = prefix.upper()
+        self.highest_avail_version = "0"
+        self.fix_list = []
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['Linux']:
+        if self.sysname not in ['Linux', 'HP-UX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -39,20 +43,97 @@ class CompVuln(object):
             print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
+        if 'OSVC_COMP_NODES_OS_VENDOR' not in os.environ:
+            print >>sys.stderr, "OS_VENDOR is not set. Check your asset"
+            raise NotApplicable()
+
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
         if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
             self.fix_pkg = self.apt_fix_pkg
             self.fixable_pkg = self.apt_fixable_pkg
+            self.fix_all = None
         elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
             self.get_installed_packages = self.rpm_get_installed_packages
             self.fix_pkg = self.yum_fix_pkg
             self.fixable_pkg = self.yum_fixable_pkg
+            self.fix_all = None
+        elif vendor in ['HP']:
+            if self.uri is None:
+                print >>sys.stderr, "URI is not set"
+                raise NotApplicable()
+            self.get_installed_packages = self.hp_get_installed_packages
+            self.fix_pkg = self.hp_fix_pkg
+            self.fixable_pkg = self.hp_fixable_pkg
+            self.fix_all = self.hp_fix_all
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
         self.installed_packages = self.get_installed_packages()
+
+    def hp_fix_pkg(self, pkg):
+        if self.check_pkg(pkg, verbose=False) == RET_OK:
+            return RET_OK
+        if self.fixable_pkg(pkg) == RET_ERR:
+            return RET_ERR
+        if self.highest_avail_version == "0":
+            return RET_ERR
+        self.fix_list.append(pkg["pkgname"]+',r='+self.highest_avail_version)
+        return RET_OK
+
+    def hp_fix_all(self):
+        r = call(['swinstall', '-x', 'autoreboot=true', '-x', 'mount_all_filesystems=false', '-s', self.uri] + self.fix_list)
+        if r != 0:
+            return RET_ERR
+        return RET_OK
+
+    def hp_fixable_pkg(self, pkg):
+        self.highest_avail_version = "0"
+        if self.check_pkg(pkg, verbose=False) == RET_OK:
+            return RET_OK
+        cmd = ['swlist', '-l', 'product', '-s', self.uri, pkg['pkgname']]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        (out, err) = p.communicate()
+        if p.returncode != 0:
+            if "not found on host" in err:
+                print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            else:
+                print >>sys.stderr, 'can not fetch available packages list'
+            return RET_ERR
+        l = self.hp_parse_swlist(out)
+        if len(l) == 0:
+            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            return RET_ERR
+        for v in map(lambda x: x[0], l.values()[0]):
+            if V(v) > V(self.highest_avail_version):
+                self.highest_avail_version = v
+        if V(self.highest_avail_version) < V(pkg['minver']):
+            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            return RET_ERR
+        return RET_OK
+
+    def hp_get_installed_packages(self):
+        p = Popen(['swlist', '-l', 'product'], stdout=PIPE)
+        (out, err) = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, 'can not fetch installed packages list'
+            return {}
+        return self.hp_parse_swlist(out)
+
+    def hp_parse_swlist(self, out):
+        l = {}
+        for line in out.split('\n'):
+            if line.startswith('#') or len(line) == 0:
+                continue
+            v = line.split()
+            if len(v) < 2:
+                continue
+            if v[0] in l:
+                l[v[0]] += [(v[1], "")]
+            else:
+                l[v[0]] = [(v[1], "")]
+        return l
 
     def rpm_get_installed_packages(self):
         p = Popen(['rpm', '-qa', '--qf', '%{n} %{v}-%{r} %{arch}\n'], stdout=PIPE)
@@ -179,6 +260,8 @@ class CompVuln(object):
         r = 0
         for pkg in self.packages:
             r |= self.fix_pkg(pkg)
+        if self.fix_all is not None and len(self.fix_list) > 0:
+            self.fix_all()
         return r
 
     def fixable(self):
@@ -189,13 +272,16 @@ class CompVuln(object):
 
 if __name__ == "__main__":
     syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
+      %s PREFIX check|fixable|fix [uri]"""%sys.argv[0]
+    if len(sys.argv) not in (3, 4):
         print >>sys.stderr, "wrong number of arguments"
         print >>sys.stderr, syntax
         sys.exit(RET_ERR)
     try:
-        o = CompVuln(sys.argv[1])
+        if len(sys.argv) == 4:
+            o = CompVuln(sys.argv[1], sys.argv[3])
+        else:
+            o = CompVuln(sys.argv[1])
         if sys.argv[2] == 'check':
             RET = o.check()
         elif sys.argv[2] == 'fix':
