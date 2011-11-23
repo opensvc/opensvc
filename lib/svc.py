@@ -567,6 +567,8 @@ class Svc(Resource, Freezer):
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
                     raise self.exMonitorAction
+                else:
+                    self.log.info("Would TOC but no (or unknown) resource monitor action set.")
                 return
 
         self.log.debug("monitored resources are up")
