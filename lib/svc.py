@@ -567,6 +567,8 @@ class Svc(Resource, Freezer):
                    hasattr(self, self.monitor_action):
                     self.log.info("monitored resource %s is in state %s"%(r.rid, rcStatus.status_str(r.rstatus)))
                     raise self.exMonitorAction
+                else:
+                    self.log.info("Would TOC but no (or unknown) resource monitor action set.")
                 return
 
         self.log.debug("monitored resources are up")
