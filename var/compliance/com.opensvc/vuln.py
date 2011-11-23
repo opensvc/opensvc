@@ -67,7 +67,8 @@ class CompVuln(object):
                 continue
             if v[0] in l:
                 l[v[0]] += [(v[1], v[2])]
-            l[v[0]] = [(v[1], v[2])]
+            else:
+                l[v[0]] = [(v[1], v[2])]
         return l
 
     def deb_get_installed_packages(self):
@@ -130,21 +131,43 @@ class CompVuln(object):
             return RET_ERR
         return RET_OK
 
+    def get_kver(self):
+        return os.uname()[2].replace('xen', '')
+
     def check_pkg(self, pkg, verbose=True):
         if not pkg["pkgname"] in self.installed_packages:
             return RET_OK
+        name = pkg["pkgname"]
         r = RET_OK
+        max = "0"
+        max_v = V(max)
+        ok = []
         for vers, arch in self.installed_packages[pkg["pkgname"]]:
             target = V(pkg["minver"])
             actual = V(vers)
-            if target > actual:
-                name = pkg["pkgname"]
-                if arch != "":
-                    name += "."+arch
+            if actual > max_v or max == "0":
+                max = vers
+                max_v = actual
+            if target <= actual:
+                ok.append(vers)
+
+        if max == "0":
+            # not installed
+            return RET_OK
+
+        if len(ok) > 0:
+            kver = self.get_kver()
+            if name.startswith("kernel") and kver not in ok:
                 if verbose:
-                    print 'package', name, vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s)"%pkg["rule"]
-                r |= RET_ERR
-        return r
+                    print >>sys.stderr, "kernel", ', '.join(ok), "installed and not vulnerable but vulnerable kernel", kver, "booted"
+                return RET_ERR
+            return RET_OK
+
+        if arch != "":
+            name += "."+arch
+        if verbose:
+            print >>sys.stderr, 'package', name, vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s)"%pkg["rule"]
+        return RET_ERR
 
     def check(self):
         r = 0
