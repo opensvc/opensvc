@@ -40,6 +40,7 @@ class checks(check):
         self.register('checkVgUsage')
         self.register('checkMpath')
         self.register('checkZfsUsage')
+        self.register('checkRaidSmartArray')
         self.register_local_checkers()
 
     def __iadd__(self, c):
