@@ -35,7 +35,8 @@ n = node.Node()
 n.options.cron = True
 
 for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
-               "pushasset", "checks", "syncservices", "compliance_check"]:
+               "pushasset", "checks", "syncservices", "compliance_check",
+               "push_appinfo"]:
     try:
         n.action(action)
     except:

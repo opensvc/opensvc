@@ -67,6 +67,7 @@ action_desc = {
       'syncverify':	'trigger a one-time checksum-based verify of the volume and its target',
       'syncall':	'combo action, chaining syncnodes-syncdrp-syncupdate',
       'push':         'push service configuration to database',
+      'push_appinfo': 'push service application launchers appinfo key/value pairs to database',
       'disklist':     'construct disklist',
       'switch':       'stop the service on the local node and start on the remote node',
       'migrate':      'live migrate the service to the remote node',

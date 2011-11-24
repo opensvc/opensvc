@@ -981,6 +981,9 @@ class Svc(Resource, Freezer):
         self.syncupdate()
         self.remote_postsync()
 
+    def push_appinfo(self):
+        self.node.collector.call('push_appinfo', [self])
+
     def push(self):
         self.node.collector.call('push_all', [self])
         import time

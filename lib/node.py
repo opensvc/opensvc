@@ -94,11 +94,12 @@ class Node(Svc, Freezer):
           },
           'Push data to the collector': {
             'pushasset':      'push asset information to collector',
-            'pushservices':   'push service configuration to collector',
+            'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector',
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
+            'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
             'checks':         'run node sanity checks, push results to collector',
           },
           'Misc': {
@@ -617,6 +618,19 @@ class Node(Svc, Freezer):
         for svc in self.svcs:
             svc.cron = self.options.cron
             svc.action('push')
+
+    def push_appinfo(self):
+        if self.skip_action('appinfo', 'push_interval', 'last_appinfo_push',
+                            period_option='push_period',
+                            days_option='push_days',
+                            force=self.options.force):
+            return
+
+        if self.svcs is None:
+            self.build_services()
+        for svc in self.svcs:
+            svc.cron = self.options.cron
+            svc.action('push_appinfo')
 
     def prkey(self):
         from rcGlobalEnv import rcEnv

@@ -547,7 +547,7 @@ class Collector(object):
             else:
                 self.submit("resmon_update", *args)
     
-    def push_appinfo(self, svc, sync=True):
+    def _push_appinfo(self, svc, sync=True):
         if 'update_appinfo' not in self.proxy_methods:
             return
 
@@ -787,8 +787,14 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         for svc in svcs:
             self.push_service(svc, sync=sync)
-            self.push_appinfo(svc, sync=sync)
             self.push_disks(svc, sync=sync)
+
+    def push_appinfo(self, svcs, sync=True):
+        args = [[svc.svcname for svc in svcs]]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        for svc in svcs:
+            self._push_appinfo(svc, sync=sync)
     
     def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:
