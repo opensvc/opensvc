@@ -546,10 +546,25 @@ def add_vgs(svc, conf):
         kwargs = {}
 
         try:
+            vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
+            if len(vgtype) > 2:
+                vgtype = vgtype[0].upper() + vgtype[1:].lower()
+        except ex.OptNotFound:
+            vgtype = rcEnv.sysname
+
+        try:
+            vgtype = conf_get_string_scope(svc, conf, s, 'type')
+            if len(vgtype) > 2:
+                vgtype = vgtype[0].upper() + vgtype[1:].lower()
+        except ex.OptNotFound:
+            vgtype = rcEnv.sysname
+
+        try:
             kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
         except ex.OptNotFound:
-            svc.log.error("vgname must be set in section %s"%s)
-            return
+            if vgtype != "Raw":
+                svc.log.error("vgname must be set in section %s"%s)
+                return
 
         try:
             kwargs['dsf'] = conf_get_boolean_scope(svc, conf, s, 'dsf')
@@ -557,11 +572,11 @@ def add_vgs(svc, conf):
             pass
 
         try:
-            vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
-            if len(vgtype) > 2:
-                vgtype = vgtype[0].upper() + vgtype[1:].lower()
+            kwargs['devs'] = set(conf_get_string_scope(svc, conf, s, 'devs').split())
         except ex.OptNotFound:
-            vgtype = rcEnv.sysname
+            if vgtype == "Raw":
+                svc.log.error("devs must be set in section %s"%s)
+                return
 
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['rid'] = s
