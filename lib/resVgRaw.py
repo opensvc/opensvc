@@ -17,6 +17,7 @@
 #
 import resDg
 import os
+import rcStatus
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, devs=set([]), type=None,
@@ -34,12 +35,12 @@ class Vg(resDg.Dg):
     def has_it(self):
         """Returns True if the volume is present
         """
-        ret = 0
+        l = []
         for dev in self.devs:
             if not os.path.exists(dev):
-                self.log.error("%s not found"%dev)
-                ret += 1
-        if ret > 0:
+                l.append(dev)
+        if len(l) > 0:
+            self.status_log("%s not found"%', '.join(l))
             return False
         return True
 
@@ -47,6 +48,12 @@ class Vg(resDg.Dg):
         """Returns True if the volume group is present and activated
         """
         return self.has_it()
+
+    def _status(self, verbose=False):
+        if self.is_up():
+            return rcStatus.NA
+        else:
+            return rcStatus.WARN
 
     def do_start(self):
         pass
