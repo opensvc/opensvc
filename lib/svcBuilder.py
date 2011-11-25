@@ -1216,6 +1216,11 @@ def build(name):
                 return None
             vmname = defaults["vm_name"]
             kwargs['vmname'] = vmname
+        if "vm_uuid" in defaults:
+            if svcmode != "ovm":
+                log.error("can not set 'vm_uuid' with '%s' mode in %s env"%(svcmode, name))
+                return None
+            kwargs['vmuuid'] = defaults["vm_uuid"]
         if "guest_os" in defaults and \
            len(defaults["guest_os"]) > 0:
             if svcmode not in rcEnv.vt_supported:

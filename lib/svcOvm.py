@@ -26,13 +26,14 @@ from rcGlobalEnv import rcEnv
 class SvcOvm(svc.Svc):
     """ Define Ovm (xen) services"""
 
-    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False, tags=set([])):
+    def __init__(self, svcname, vmname=None, vmuuid=None, guestos=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
         if vmname is None:
             vmname = svcname
+        self.vmuuid = vmuuid
         self.vmname = vmname
         self.guestos = guestos
-        self += ovm.Ovm(vmname, disabled=disabled)
+        self += ovm.Ovm(vmname, vmuuid, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
     def _migrate(self):

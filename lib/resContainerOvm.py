@@ -27,12 +27,13 @@ class Ovm(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
+    def __init__(self, name, uuid, optional=False, disabled=False, monitor=False,
                  tags=set([])):
         resContainer.Container.__init__(self, rid="ovm", name=name,
                                         type="container.ovm",
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags)
+        self.uuid = uuid
         self.xen_d = os.path.join(os.sep, 'etc', 'xen')
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')
 
@@ -40,7 +41,7 @@ class Ovm(resContainer.Container):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def list_conffiles(self):
-        cf = os.path.join(self.xen_d, self.name)
+        cf = os.path.join(self.xen_d, self.uuid)
         if os.path.exists(cf):
             return [cf]
         return []
@@ -61,7 +62,7 @@ class Ovm(resContainer.Container):
 
     def find_vmcf(self):
         import glob
-        l = glob.glob('/var/ovs/mount/*/running_pool/'+self.name+'/vm.cfg')+glob.glob(os.path.join(self.xen_d, self.name))
+        l = glob.glob('/var/ovs/mount/*/running_pool/'+self.uuid+'/vm.cfg')+glob.glob(os.path.join(self.xen_d, self.uuid))
         if len(l) > 1:
             self.log.warning("%d configuration files found in repositories (%s)"%(len(l), str(l)))
         elif len(l) == 0:
@@ -69,7 +70,7 @@ class Ovm(resContainer.Container):
         return l[0]
 
     def _migrate(self):
-        cmd = ['xm', 'migrate', '-l', self.name, self.svc.destination_node]
+        cmd = ['xm', 'migrate', '-l', self.uuid, self.svc.destination_node]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -82,13 +83,13 @@ class Ovm(resContainer.Container):
             raise ex.excError
 
     def container_stop(self):
-        cmd = ['xm', 'shutdown', self.name]
+        cmd = ['xm', 'shutdown', self.uuid]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def container_forcestop(self):
-        cmd = ['xm', 'destroy', self.name]
+        cmd = ['xm', 'destroy', self.uuid]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -102,12 +103,12 @@ class Ovm(resContainer.Container):
             l = line.split()
             if len(l) < 4:
                 continue
-            if self.name == l[0]:
+            if self.uuid == l[0]:
                 return True
         return False
 
     def get_container_info(self):
-        cmd = ['xm', 'list', self.name]
+        cmd = ['xm', 'list', self.uuid]
         (ret, out, err) = self.call(cmd, errlog=False, cache=True)
         self.info = {'vcpus': '0', 'vmem': '0'}
         if ret != 0:
@@ -116,17 +117,17 @@ class Ovm(resContainer.Container):
             l = line.split()
             if len(l) < 4:
                 continue
-            if self.name != l[0]:
+            if self.uuid != l[0]:
                 continue
             self.info['vcpus'] = l[3]
             self.info['vmem'] = l[2]
             return self.info           
-        self.log.error("malformed 'xm list %s' output: %s"%(self.name, line))
+        self.log.error("malformed 'xm list %s' output: %s"%(self.uuid, line))
         self.info = {'vcpus': '0', 'vmem': '0'}
         return self.info           
 
     def check_manual_boot(self):
-        f = os.path.join(self.xen_auto_d, self.name)
+        f = os.path.join(self.xen_auto_d, self.uuid)
         if os.path.exists(f):
             return False
         return True
