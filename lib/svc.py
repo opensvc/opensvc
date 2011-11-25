@@ -171,7 +171,7 @@ class Svc(Resource, Freezer):
         return self
 
     def svclock(self, action=None, timeout=30, delay=5):
-        if action in ['push', 'print_status', 'status', 'freeze', 'frozen',
+        if action in ['push', 'push_appinfo', 'print_status', 'status', 'freeze', 'frozen',
                       'thaw', 'freezestop', 'json_status']:
             # no need to serialize this action
             return
@@ -254,14 +254,19 @@ class Svc(Resource, Freezer):
     def set_action(self, sets=[], action=None, tags=set([])):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
-        blacklist_actions = ["status",
-                   "print_status",
-                   "json_status",
-                   "group_status",
-                   "presync",
-                   "postsync",
-                   "freezestop",
-                   "resource_monitor"]
+        list_actions_no_pre_action = [
+          "status",
+          "print_status",
+          "push_appinfo",
+          "push",
+          "json_status",
+          "group_status",
+          "presync",
+          "postsync",
+          "freezestop",
+          "resource_monitor"
+        ]
+        list_actions_no_post_action = list_actions_no_pre_action
 
         ns = self.need_snap_trigger(sets, action)
 
@@ -274,7 +279,7 @@ class Svc(Resource, Freezer):
                 raise ex.excError
 
         for r in sets:
-            if action in blacklist_actions:
+            if action in list_actions_no_pre_action:
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
@@ -314,7 +319,7 @@ class Svc(Resource, Freezer):
                     break
 
         for r in sets:
-            if action in blacklist_actions:
+            if action in list_actions_no_post_action:
                 break
             try:
                 r.post_action(r, action)
@@ -1034,7 +1039,23 @@ class Svc(Resource, Freezer):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ['get', 'set', 'enable', 'disable', 'delete', 'thaw', 'status', 'frozen', 'push', 'print_status', 'json_status'] and 'compliance' not in action and 'collector' not in action:
+        actions_list_allow_on_frozen = [
+          'get',
+          'set',
+          'enable',
+          'disable',
+          'delete',
+          'thaw',
+          'status',
+          'frozen',
+          'push',
+          'push_appinfo',
+          'print_status',
+          'json_status'
+        ]
+        if action not in actions_list_allow_on_frozen and \
+           'compliance' not in action and \
+           'collector' not in action:
             if self.frozen():
                 self.log.info("Abort action for frozen service")
                 return 1
@@ -1047,7 +1068,23 @@ class Svc(Resource, Freezer):
         self.setup_environ()
         self.setup_signal_handlers()
         self.disable_resources(keeprid=rid, keeptags=tags)
-        if action in ['get', 'set', 'enable', 'disable', 'delete', 'print_status', 'json_status', 'status', 'group_status', 'resource_monitor'] or 'compliance' in action or 'collector' in action:
+        actions_list_no_log = [
+          'get',
+          'set',
+          'push',
+          'push_appinfo',
+          'enable',
+          'disable',
+          'delete',
+          'print_status',
+          'json_status',
+          'status',
+          'group_status',
+          'resource_monitor'
+        ]
+        if action in actions_list_no_log or \
+           'compliance' in action or \
+           'collector' in action:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}
