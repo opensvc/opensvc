@@ -203,7 +203,7 @@ class Rsync(resSync.Sync):
            sync their system files to all drpnodes regardless of the service
            state
         """
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
             if s['overall'].status == rcStatus.WARN:
@@ -355,7 +355,7 @@ class Rsync(resSync.Sync):
 
         """ sync state on nodes where the service is not UP
         """
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status != rcStatus.UP or \
            (self.svc.clustertype in ['flex', 'autoflex'] and \
             rcEnv.nodename != self.svc.flex_primary and \
