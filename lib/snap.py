@@ -101,7 +101,7 @@ class Snap(Res.Resource):
                 ex.syncSnapCreateError, ex.syncSnapDestroyError):
                 """Clean up the mess
                 """
-                self.snap_cleanup(self.snaps)
+                self.snap_cleanup(rset)
                 raise ex.excError
             except:
                 raise
@@ -120,14 +120,15 @@ class Snap(Res.Resource):
                 snap_mnt = self.snaps[mnt]['snap_mnt']
                 rset.resources[i].alt_src[j] = src.replace(os.path.join(mnt), os.path.join(snap_mnt), 1)
 
-    def snap_cleanup(self, rset):
+    def snap_cleanup(self, rset=None):
         if not hasattr(self, 'snaps'):
             return
-        snaps = self.snaps
-        if len(snaps) == 0 :
+        if len(self.snaps) == 0 :
             return
-        for s in snaps.keys():
+        for s in self.snaps.keys():
             self.snapdestroykey(s)
+        if rset is None:
+            return
         for i, r in enumerate(rset.resources):
             if hasattr(rset.resources[i], 'alt_src'):
                 delattr(rset.resources[i], 'alt_src')
