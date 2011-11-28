@@ -249,6 +249,17 @@ class KeywordVmName(Keyword):
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
+class KeywordVmUuid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="vm_uuid",
+                  order=11,
+                  depends=[('mode', "ovm")],
+                  text="The virtual machine unique identifier used to pass commands on the VM."
+                )
+
 class KeywordClusterType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1462,6 +1473,7 @@ class KeyDict(KeywordStore):
         self += KeywordRootfs()
         self += KeywordTemplate()
         self += KeywordVmName()
+        self += KeywordVmUuid()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
