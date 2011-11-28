@@ -23,8 +23,22 @@ class CompBios(object):
             f = open(p, 'r')
             ver = f.read().strip()
             f.close()
+            return ver
         except:
-            print >>sys.stderr, 'can not fetch bios version from %s'%p
+            pass
+
+        try:
+            cmd = ['dmidecode', '-t', 'bios']
+            p = Popen(cmd, stdout=PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                raise
+            for line in out.split('\n'):
+                if 'Version:' in line:
+                    return line.split(':')[-1].strip()
+            raise
+        except:
+            print >>sys.stderr, 'can not fetch bios version'
             return None
         return ver
 
