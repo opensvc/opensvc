@@ -24,7 +24,14 @@ class Vg(resDg.Dg):
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([]), monitor=False):
         self.label = "raw"
-        self.devs = devs
+        self.devs = set([])
+        self.devs_not_found = set([])
+        for dev in devs:
+            if os.path.exists(dev):
+                self.devs.add(dev)
+            else:
+                self.devs_not_found.add(dev)
+
         resDg.Dg.__init__(self, rid=rid, name="raw",
                           type='disk.vg',
                           always_on=always_on,
@@ -33,14 +40,10 @@ class Vg(resDg.Dg):
                           monitor=monitor)
 
     def has_it(self):
-        """Returns True if the volume is present
+        """Returns True if all devices are present
         """
-        l = []
-        for dev in self.devs:
-            if not os.path.exists(dev):
-                l.append(dev)
-        if len(l) > 0:
-            self.status_log("%s not found"%', '.join(l))
+        if len(self.devs_not_found) > 0:
+            self.status_log("%s not found"%', '.join(self.devs_not_found))
             return False
         return True
 
