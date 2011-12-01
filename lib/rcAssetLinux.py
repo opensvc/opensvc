@@ -244,9 +244,10 @@ class Asset(rcAsset.Asset):
 	return str(c)
 
     def _get_cpu_dies(self):
-        if self.is_esx_hv():
+        try:
             return self._get_cpu_dies_dmi()
-        return self._get_cpu_dies_cpuinfo()
+        except:
+            return self._get_cpu_dies_cpuinfo()
 
     def _get_cpu_model(self):
         (out, err, ret) = justcall(['grep', 'model name', '/proc/cpuinfo'])
