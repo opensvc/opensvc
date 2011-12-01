@@ -17,7 +17,7 @@
 #
 import os
 import datetime
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset
 
@@ -25,7 +25,7 @@ class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
         self.sphw = {}
-        (ret, out, err) = call(['system_profiler', 'SPHardwareDataType'])
+        (out, err, ret) = justcall(['system_profiler', 'SPHardwareDataType'])
         if ret == 0:
             for line in out.split('\n'):
                 l = line.split(':')
@@ -56,7 +56,7 @@ class Asset(rcAsset.Asset):
         return 'Apple'
 
     def _get_os_release(self):
-        (ret, out, err) = call(['uname', '-r'])
+        (out, err, ret) = justcall(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split()[0]
@@ -66,7 +66,7 @@ class Asset(rcAsset.Asset):
 
     def _get_os_arch(self):
         cmd = ['uname', '-m']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]

@@ -17,19 +17,19 @@
 #
 import os
 import datetime
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
-        (ret, out, err) = call(['prtdiag'])
+        (out, err, ret) = justcall(['prtdiag'])
         if ret != 0:
             self.prtdiag = []
         else:
             self.prtdiag = out.split('\n')
-        (ret, out, err) = call(['prtconf'])
+        (out, err, ret) = justcall(['prtconf'])
         if ret != 0:
             self.prtconf = []
         else:
@@ -55,7 +55,7 @@ class Asset(rcAsset.Asset):
     def _get_os_name(self):
         f = '/etc/release'
         if os.path.exists(f):
-            (ret, out, err) = call(['cat', f])
+            (out, err, ret) = justcall(['cat', f])
             if ret != 0:
                 return 'Unknown'
             if 'OpenSolaris' in out:
@@ -65,26 +65,26 @@ class Asset(rcAsset.Asset):
     def _get_os_release(self):
         f = '/etc/release'
         if os.path.exists(f):
-            (ret, out, err) = call(['cat', f])
+            (out, err, ret) = justcall(['cat', f])
             if ret != 0:
                 return 'Unknown'
             return out.split('\n')[0].replace('OpenSolaris','').strip()
         return 'Unknown'
 
     def _get_os_kernel(self):
-        (ret, out, err) = call(['uname', '-v'])
+        (out, err, ret) = justcall(['uname', '-v'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
     def _get_os_arch(self):
-        (ret, out, err) = call(['uname', '-m'])
+        (out, err, ret) = justcall(['uname', '-m'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
 
     def _get_cpu_freq(self):
-        (ret, out, err) = call(['psrinfo', '-pv'])
+        (out, err, ret) = justcall(['psrinfo', '-pv'])
         if ret != 0:
             return '0'
         for w in out.split():
@@ -94,19 +94,19 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_cpu_cores(self):
-        (ret, out, err) = call(['psrinfo'])
+        (out, err, ret) = justcall(['psrinfo'])
         if ret != 0:
             return '0'
         return str(len(out.split('\n'))-1)
 
     def _get_cpu_dies(self):
-        (ret, out, err) = call(['psrinfo', '-p'])
+        (out, err, ret) = justcall(['psrinfo', '-p'])
         if ret != 0:
             return '0'
         return out.split('\n')[0]
 
     def _get_cpu_model(self):
-        (ret, out, err) = call(['psrinfo', '-pv'])
+        (out, err, ret) = justcall(['psrinfo', '-pv'])
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -119,7 +119,7 @@ class Asset(rcAsset.Asset):
             cmd = ['sneep']
         else:
             cmd = ['hostid']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]

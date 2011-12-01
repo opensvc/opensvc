@@ -17,14 +17,14 @@
 #
 import os
 import datetime
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAssetLinux
 
 class Asset(rcAssetLinux.Asset):
     def _get_mem_bytes(self):
         cmd = ['sysctl', 'hw.realmem']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -44,7 +44,7 @@ class Asset(rcAssetLinux.Asset):
 
     def _get_os_arch(self):
         cmd = ['sysctl', 'hw.machine_arch']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -57,7 +57,7 @@ class Asset(rcAssetLinux.Asset):
 
     def _get_cpu_model(self):
         cmd = ['sysctl', 'hw.model']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
@@ -70,7 +70,7 @@ class Asset(rcAssetLinux.Asset):
 
     def _get_cpu_cores(self):
         cmd = ['sysctl', 'hw.ncpu']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')

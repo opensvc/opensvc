@@ -17,7 +17,7 @@
 #
 import os
 import datetime
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 import rcAsset
 
 def is_container():
@@ -40,7 +40,7 @@ class Asset(rcAsset.Asset):
         if self.container:
             self.dmidecode = []
         else:
-            (ret, out, err) = call(['dmidecode'])
+            (out, err, ret) = justcall(['dmidecode'])
             if ret != 0:
                 self.dmidecode = []
             else:
@@ -48,7 +48,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_esx(self):
         cmd = ['vmware-cmd', '-s', 'getresource', 'system.mem.totalMem']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return '0'
         l = out.split(' = ')
@@ -62,7 +62,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_hv(self):
         cmd = ['virsh', 'nodeinfo']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -77,7 +77,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_phy(self):
         cmd = ['free', '-m']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -179,14 +179,14 @@ class Asset(rcAsset.Asset):
                         return r
         for f in files:
             if os.path.exists(f):
-                (ret, out, err) = call(['cat', f])
+                (out, err, ret) = justcall(['cat', f])
                 if ret != 0:
                     return 'Unknown'
                 return out.split('\n')[0].replace(self._get_os_vendor(), '').strip()
         return 'Unknown'
 
     def _get_os_kernel(self):
-        (ret, out, err) = call(['uname', '-r'])
+        (out, err, ret) = justcall(['uname', '-r'])
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
@@ -196,7 +196,7 @@ class Asset(rcAsset.Asset):
             cmd = ['arch']
         else:
             cmd = ['uname', '-m']
-        (ret, out, err) = call(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
@@ -236,7 +236,7 @@ class Asset(rcAsset.Asset):
     def _get_cpu_dies_cpuinfo(self):
         if self.container:
             return 'n/a'
-	(ret, out, err) = call(['grep', 'processor', '/proc/cpuinfo'])
+	(out, err, ret) = justcall(['grep', 'processor', '/proc/cpuinfo'])
 	if ret != 0:
 	    return '1'
 	lines = out.split('\n')
@@ -250,7 +250,7 @@ class Asset(rcAsset.Asset):
         return self._get_cpu_dies_cpuinfo()
 
     def _get_cpu_model(self):
-        (ret, out, err) = call(['grep', 'model name', '/proc/cpuinfo'])
+        (out, err, ret) = justcall(['grep', 'model name', '/proc/cpuinfo'])
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
