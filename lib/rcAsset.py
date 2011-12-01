@@ -224,6 +224,18 @@ class Asset(object):
         except:
             return None
 
+    def get_team_integ(self):
+        try:
+            return self.node.config.get('node', 'team_integ')
+        except:
+            return None
+
+    def get_project(self):
+        try:
+            return self.node.config.get('node', 'project')
+        except:
+            return None
+
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
@@ -269,4 +281,10 @@ class Asset(object):
         team_responsible = self.get_team_responsible()
         if team_responsible is not None:
             d['team_responsible'] = team_responsible
+        team_integ = self.get_team_integ()
+        if team_integ is not None:
+            d['team_integ'] = team_integ
+        project = self.get_project()
+        if project is not None:
+            d['project'] = project
         return d
