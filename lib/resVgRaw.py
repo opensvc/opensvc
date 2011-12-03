@@ -29,11 +29,11 @@ class Vg(resDg.Dg):
         self.devs_not_found = set([])
         
         for dev in devs:
-            if re.match("^.*/c[0-9]*t[0-9]*.*$", dev) is not None:
+            if re.match("^.*/c[0-9]*d[0-9]*.*$", dev) is not None:
                 # solaris device (base or partition)
-                if re.match("^.*s[0-9]*$", dev) is not None:
+                if re.match("^.*[sp][0-9]*$", dev) is not None:
                     # solaris partition, substitute s2 to given part
-                    regex = re.compile("s[0-9]*$", re.UNICODE)
+                    regex = re.compile("[sp][0-9]*$", re.UNICODE)
                     dev = regex.sub("s2", dev)
                 else:
                     # solaris base device, append s2
