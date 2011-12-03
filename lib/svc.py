@@ -168,6 +168,9 @@ class Svc(Resource, Freezer):
         if r.type.startswith("hb"):
             self.ha = True
 
+        if hasattr(r, "on_add"):
+            r.on_add()
+
         return self
 
     def svclock(self, action=None, timeout=30, delay=5):
