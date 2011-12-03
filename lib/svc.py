@@ -174,8 +174,20 @@ class Svc(Resource, Freezer):
         return self
 
     def svclock(self, action=None, timeout=30, delay=5):
-        if action in ['push', 'push_appinfo', 'print_status', 'status', 'freeze', 'frozen',
-                      'thaw', 'freezestop', 'json_status']:
+        list_actions_no_pre_action = [
+          'push',
+          'push_appinfo',
+          'print_status',
+          'status',
+          'freeze',
+          'frozen',
+          'thaw',
+          'freezestop',
+          'print_disklist',
+          'json_status',
+          'json_disklist'
+        ]
+        if action in list_actions_no_pre_action:
             # no need to serialize this action
             return
         if self.lockfd is not None:
@@ -260,9 +272,11 @@ class Svc(Resource, Freezer):
         list_actions_no_pre_action = [
           "status",
           "print_status",
+          "print_disklist",
           "push_appinfo",
           "push",
           "json_status",
+          "json_disklist",
           "group_status",
           "presync",
           "postsync",
@@ -663,6 +677,13 @@ class Svc(Resource, Freezer):
         self.group_status_cache = status
         return status
 
+    def print_disklist(self):
+        print '\n'.join(self.disklist())
+
+    def json_disklist(self):
+        import json
+        print json.dumps(self.disklist()) 
+
     def disklist(self):
         """List all disks held by all resources of this service
         """
@@ -1054,7 +1075,9 @@ class Svc(Resource, Freezer):
           'push',
           'push_appinfo',
           'print_status',
+          'print_disklist',
           'json_status'
+          'json_disklist'
         ]
         if action not in actions_list_allow_on_frozen and \
            'compliance' not in action and \
@@ -1080,7 +1103,9 @@ class Svc(Resource, Freezer):
           'disable',
           'delete',
           'print_status',
+          'print_disklist',
           'json_status',
+          'json_disklist',
           'status',
           'group_status',
           'resource_monitor'
