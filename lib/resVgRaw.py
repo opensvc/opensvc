@@ -18,6 +18,7 @@
 import resDg
 import os
 import rcStatus
+import re
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, devs=set([]), type=None,
@@ -26,7 +27,18 @@ class Vg(resDg.Dg):
         self.label = "raw"
         self.devs = set([])
         self.devs_not_found = set([])
+        
         for dev in devs:
+            if re.match("^.*/c[0-9]*t[0-9]*.*$", dev) is not None:
+                # solaris device (base or partition)
+                if re.match("^.*s[0-9]*$", dev) is not None:
+                    # solaris partition, substitute s2 to given part
+                    regex = re.compile("s[0-9]*$", re.UNICODE)
+                    dev = regex.sub("s2", dev)
+                else:
+                    # solaris base device, append s2
+                    dev += 's2'
+
             if os.path.exists(dev):
                 self.devs.add(dev)
             else:
@@ -38,6 +50,12 @@ class Vg(resDg.Dg):
                           optional=optional,
                           disabled=disabled, tags=tags,
                           monitor=monitor)
+    def on_add(self):
+        try:
+            n = self.rid.split('#')[1]
+        except:
+            n = "0"
+        self.label = self.svc.svcname+".raw"+n
 
     def has_it(self):
         """Returns True if all devices are present
