@@ -29,7 +29,7 @@ class Vg(resDg.Dg):
         self.devs_not_found = set([])
         
         for dev in devs:
-            if re.match("^.*/c[0-9]*d[0-9]*.*$", dev) is not None:
+            if re.match("^.*dsk/c[0-9]*.*$", dev) is not None:
                 # solaris device (base or partition)
                 if re.match("^.*[sp][0-9]*$", dev) is not None:
                     # solaris partition, substitute s2 to given part
@@ -50,12 +50,14 @@ class Vg(resDg.Dg):
                           optional=optional,
                           disabled=disabled, tags=tags,
                           monitor=monitor)
+
     def on_add(self):
         try:
             n = self.rid.split('#')[1]
         except:
             n = "0"
-        self.label = self.svc.svcname+".raw"+n
+        self.name = self.svc.svcname+".raw"+n
+        self.label = self.name
 
     def has_it(self):
         """Returns True if all devices are present
