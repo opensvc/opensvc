@@ -559,10 +559,13 @@ def add_vgs(svc, conf):
         except ex.OptNotFound:
             vgtype = rcEnv.sysname
 
+        if vgtype == 'Raw':
+            vgtype += rcEnv.sysname
+
         try:
             kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
         except ex.OptNotFound:
-            if vgtype != "Raw":
+            if not vgtype.startswith("Raw"):
                 svc.log.error("vgname must be set in section %s"%s)
                 return
 

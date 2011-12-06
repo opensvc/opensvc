@@ -15,65 +15,39 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import resDg
+import resVgRaw
 import os
 import rcStatus
 import re
 
-class Vg(resDg.Dg):
+class Vg(resVgRaw.Vg):
     def __init__(self, rid=None, devs=set([]), type=None,
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([]), monitor=False):
-        self.label = "raw"
+        
+        resVgRaw.Vg.__init__(self, rid=rid,
+                             devs=devs,
+                             type=type,
+                             optional=optional,
+                             disabled=disabled,
+                             tags=tags,
+                             always_on=always_on,
+                             monitor=monitor)
+
         self.devs = set([])
         self.devs_not_found = set([])
-        
+
         for dev in devs:
+            if re.match("^.*[sp][0-9]*$", dev) is not None:
+                # partition, substitute s2 to given part
+                regex = re.compile("[sp][0-9]*$", re.UNICODE)
+                dev = regex.sub("s2", dev)
+            else:
+                # base device, append s2
+                dev += 's2'
+
             if os.path.exists(dev):
                 self.devs.add(dev)
             else:
                 self.devs_not_found.add(dev)
-
-        resDg.Dg.__init__(self, rid=rid, name="raw",
-                          type='disk.vg',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor)
-
-    def on_add(self):
-        try:
-            n = self.rid.split('#')[1]
-        except:
-            n = "0"
-        self.name = self.svc.svcname+".raw"+n
-        self.label = self.name
-
-    def has_it(self):
-        """Returns True if all devices are present
-        """
-        if len(self.devs_not_found) > 0:
-            self.status_log("%s not found"%', '.join(self.devs_not_found))
-            return False
-        return True
-
-    def is_up(self):
-        """Returns True if the volume group is present and activated
-        """
-        return self.has_it()
-
-    def _status(self, verbose=False):
-        if self.is_up():
-            return rcStatus.NA
-        else:
-            return rcStatus.WARN
-
-    def do_start(self):
-        pass
-
-    def do_stop(self):
-        pass
-
-    def disklist(self):
-        return self.devs
 
