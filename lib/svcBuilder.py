@@ -561,7 +561,19 @@ def add_vgs(svc, conf):
 
         if vgtype == 'Raw':
             vgtype += rcEnv.sysname
-
+            try:
+                kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+            except ex.OptNotFound:
+                pass
+            try:
+                kwargs['group'] = conf_get_string_scope(svc, conf, s, 'user')
+            except ex.OptNotFound:
+                pass
+            try:
+                kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+            except ex.OptNotFound:
+                pass
+ 
         try:
             kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
         except ex.OptNotFound:

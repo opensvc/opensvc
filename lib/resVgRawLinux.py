@@ -23,12 +23,16 @@ import rcExceptions as ex
 from rcGlobalEnv import *
 
 class Vg(resVgRaw.Vg):
-    def __init__(self, rid=None, devs=set([]), type=None,
+    def __init__(self, rid=None, devs=set([]), user="root",
+                 group="root", perm="660", type=None,
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([]), monitor=False):
         
         resVgRaw.Vg.__init__(self, rid=rid,
                              devs=devs,
+                             user=user,
+                             group=group,
+                             perm=perm,
                              type=type,
                              optional=optional,
                              disabled=disabled,
@@ -178,6 +182,12 @@ class Vg(resVgRaw.Vg):
             elif '/dev/raw/'+self.raws[raw]['rdevname'] != self.devname_to_rdevname(dev):
                 self.status_log("%s raw device is named %s, expected %s"%(dev, '/dev/raw/'+self.raws[raw]['rdevname'], self.devname_to_rdevname(dev)))
                 r |= True
+            elif not self.check_uid('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
+                r |= True
+            elif not self.check_gid('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
+                r |= True
+            elif not self.check_perm('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
+                r |= True
         return not r
 
     def _status(self, verbose=False):
@@ -221,6 +231,17 @@ class Vg(resVgRaw.Vg):
                 if ret != 0:
                     self.unlock()
                     raise ex.excError
+
+            rdevname = self.raws[raw]['rdevname']
+            if not self.check_uid(rdevname) or not self.check_gid(rdevname):
+                self.vcall(['chown', ':'.join((str(self.uid),str(self.gid))), rdevname])
+            else:
+                self.log.info("%s has correct ownership"%rdevname)
+            if not self.check_perm(rdevname):
+                self.vcall(['chmod', self.perm, rdevname])
+            else:
+                self.log.info("%s has correct permissions"%rdevname)
+
         self.unlock()
 
     def do_stop(self):
