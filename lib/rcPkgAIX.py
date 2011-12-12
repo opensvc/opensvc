@@ -52,7 +52,7 @@ if which('dpkg') is not None:
     cmd = ['dpkg', '-l']
     listpkg = listpkg_deb
 elif which('rpm') is not None:
-    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch}\n']
+    cmd = ['rpm', '-qa', '--queryformat=%{name} %{version}-%{release} %{arch}\n']
     listpkg = listpkg_rpm
 else:
     cmd = ['true']
