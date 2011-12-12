@@ -239,6 +239,8 @@ def add_triggers(resource, conf, section):
         resource.post_syncnodes = conf.get(section, 'post_syncnodes').split()
     if conf.has_option(section, 'post_syncdrp'):
         resource.post_syncdrp = conf.get(section, 'post_syncdrp').split()
+    if conf.has_option(section, 'post_syncresync'):
+        resource.post_syncresync = conf.get(section, 'post_syncresync').split()
 
 def always_on_nodes_set(svc, conf, section):
     try:
@@ -806,6 +808,7 @@ def add_syncs(svc, conf):
     add_syncs_nexenta(svc, conf)
     add_syncs_symclone(svc, conf)
     add_syncs_evasnap(svc, conf)
+    add_syncs_dcssnap(svc, conf)
     add_syncs_dds(svc, conf)
     add_syncs_zfs(svc, conf)
 
@@ -905,6 +908,55 @@ def add_syncs_dds(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = dds.syncDds(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
+def add_syncs_dcssnap(svc, conf):
+    try:
+        sc = __import__('resSyncDcsSnap'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncDcsSnap')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+        elif conf.get(s, 'type') != 'dcssnap':
+            continue
+
+        kwargs = {}
+
+        try:
+            kwargs['dcs'] = set(conf_get_string(svc, conf, s, 'dcs').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'dcs' set" % s)
+            continue
+
+        try:
+            kwargs['manager'] = set(conf_get_string(svc, conf, s, 'manager').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'manager' set" % s)
+            continue
+
+        try:
+            kwargs['snapname'] = set(conf_get_string(svc, conf, s, 'snapname').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'snapname' set" % s)
+            continue
+
+        try:
+            kwargs['dcs'] = set(conf_get_string(svc, conf, s, 'dcs').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'dcs' set" % s)
+            continue
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs.update(get_sync_args(conf, s, svc))
+        r = sc.syncDcsSnap(**kwargs)
         add_triggers(r, conf, s)
         svc += r
 

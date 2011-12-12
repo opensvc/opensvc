@@ -101,6 +101,7 @@ class Svc(Resource, Freezer):
                              "sync.rsync",
                              "sync.symclone",
                              "sync.evasnap",
+                             "sync.dcssnap",
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
@@ -962,6 +963,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.nexenta", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
         self.sub_set_action("sync.evasnap", "syncresync")
+        self.sub_set_action("sync.dcssnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
 
     def syncbreak(self):
