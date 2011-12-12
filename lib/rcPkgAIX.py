@@ -16,47 +16,25 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 
-def listpkg_dummy():
-    print "pushpkg supported on this system"
-    return []
-
-def listpkg_rpm():
-    (ret, out, err) = call(cmd, errlog=False, cache=True)
+def listpkg():
+    cmd = ['lslpp', '-Lc']
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        return []
     lines = []
     for line in out.split('\n'):
-        l = line.split()
-        if len(l) != 3:
+        l = line.split(':')
+        if len(l) < 5:
             continue
-        x = [rcEnv.nodename] + l
+        pkgvers = l[2]
+        pkgname = l[1].replace('-'+pkgvers, '')
+        x = [rcEnv.nodename, pkgname, pkgvers, '']
         lines.append(x)
     return lines
-
-def listpkg_deb():
-    (ret, out, err) = call(cmd, errlog=False, cache=True)
-    lines = []
-    arch = ""
-    for line in out.split('\n'):
-        l = line.split()
-        if len(l) < 4:
-            continue
-        if l[0] != "ii":
-            continue
-        x = [rcEnv.nodename] + l[1:3] + [arch]
-        lines.append(x)
-    return lines
-
-if which('dpkg') is not None:
-    cmd = ['dpkg', '-l']
-    listpkg = listpkg_deb
-elif which('rpm') is not None:
-    cmd = ['rpm', '-qa', '--queryformat=%{name} %{version}-%{release} %{arch}\n']
-    listpkg = listpkg_rpm
-else:
-    cmd = ['true']
-    listpkg = listpkg_dummy
 
 def listpatch():
-    return [] 
+    return []
+
