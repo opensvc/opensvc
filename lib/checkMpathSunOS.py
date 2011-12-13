@@ -59,5 +59,10 @@ class check(checks.check):
                 wwid = line[line.index('t')+1:line.rindex('d')]
             if "Operational Path Count:" in line:
                 n = int(line.split(':')[-1].strip())
+        if dev is not None:
+            r.append({'chk_instance': wwid,
+                      'chk_value': str(n),
+                      'chk_svcname': self.find_svc(dev),
+                     })
         return r
 
