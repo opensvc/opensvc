@@ -28,6 +28,7 @@ class check(checks.check):
     chk_type = "fs_u"
 
     def convert(self, s):
+        s = s.replace(',', '.')
         if len(s) < 2:
             raise
         if s.endswith('T'):
