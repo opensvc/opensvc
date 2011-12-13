@@ -25,7 +25,7 @@ class CompVuln(object):
         self.fix_list = []
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['Linux', 'HP-UX']:
+        if self.sysname not in ['Linux', 'HP-UX', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -66,11 +66,48 @@ class CompVuln(object):
             self.fix_pkg = self.hp_fix_pkg
             self.fixable_pkg = self.hp_fixable_pkg
             self.fix_all = self.hp_fix_all
+        elif vendor in ['IBM']:
+            self.get_installed_packages = self.aix_get_installed_packages
+            self.fix_pkg = self.aix_fix_pkg
+            self.fixable_pkg = self.aix_fixable_pkg
+            self.fix_all = self.aix_fix_all
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
         self.installed_packages = self.get_installed_packages()
+
+    def aix_fix_pkg(self, pkg):
+        return RET_NA
+
+    def aix_fixable_pkg(self, pkg):
+        return RET_ERR
+
+    def aix_fix_all(self):
+        return RET_NA
+
+    def aix_get_installed_packages(self):
+        p = Popen(['lslpp', '-L', '-c'], stdout=PIPE)
+        (out, err) = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, 'can not fetch installed packages list'
+            return {}
+        return self.aix_parse_lslpp(out)
+
+    def aix_parse_lslpp(self, out):
+        l = {}
+        for line in out.split('\n'):
+            if line.startswith('#') or len(line) == 0:
+                continue
+            v = line.split(':')
+            if len(v) < 3:
+                continue
+            pkgname = v[1].replace('-'+v[2], '')
+            if pkgname in l:
+                l[pkgname] += [(v[2], "")]
+            else:
+                l[pkgname] = [(v[2], "")]
+        return l
 
     def hp_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
