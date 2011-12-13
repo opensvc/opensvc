@@ -36,8 +36,14 @@ class check(checks.check):
             return f.split(" = ")[-1].strip('"')
         return None
 
-    def disk_id(self, dev):
+    def disk_wwid(self, dev):
         return self.odmget(dev, 'wwid')
+
+    def disk_id(self, dev, typ):
+        if typ.startswith("vscsi"):
+            return 'vscsi.'+dev
+        else:
+            return self.disk_wwid(dev)
 
     def do_check(self):
         cmd = ['lspath']
@@ -58,7 +64,8 @@ class check(checks.check):
                 continue
             if dev is None:
                 dev = l[1]
-                wwid = self.disk_id(dev)
+                typ = l[2]
+                wwid = self.disk_id(dev, typ)
                 n = 1
             elif dev is not None and wwid is not None and dev != l[1]:
                 r.append({'chk_instance': wwid,
@@ -66,7 +73,8 @@ class check(checks.check):
                           'chk_svcname': self.find_svc(dev),
                          })
                 dev = l[1]
-                wwid = self.disk_id(dev)
+                typ = l[2]
+                wwid = self.disk_id(dev, typ)
                 n = 1
             else:
                 n += 1
