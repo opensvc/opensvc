@@ -93,7 +93,7 @@ class CompFiles(object):
             print >>sys.stderr, 'path should be in the dict:', d
             RET = RET_ERR
             return []
-        if 'fmt' not in d and 'ref' not in d:
+        if 'fmt' not in d and 'ref' not in d and not d['path'].endswith("/"):
             print >>sys.stderr, 'fmt or ref should be in the dict:', d
             RET = RET_ERR
             return []
@@ -105,6 +105,7 @@ class CompFiles(object):
             return self.parse_fmt(d)
         if 'ref' in d:
             return self.parse_ref(d)
+        return [d]
 
     def fixable(self):
         return RET_NA
@@ -112,6 +113,9 @@ class CompFiles(object):
     def check_file_fmt(self, f, verbose=False):
         if not os.path.exists(f['path']):
             return RET_ERR
+        if f['path'].endswith('/'):
+            # don't check content if it's a directory
+            return RET_OK
         if "OSVC_COMP_OS_VENDOR" in os.environ and os.environ['OSVC_COMP_OS_VENDOR'] in ("Linux"):
             cmd = ['diff', '-u', f['path'], '-']
         else:
@@ -217,17 +221,26 @@ class CompFiles(object):
         if 'uid' in f and self.check_file_uid(f) != RET_OK:
             uid = self.get_uid(f['uid'])
         if 'gid' in f and self.check_file_gid(f) != RET_OK:
-            gid = self.get_uid(f['gid'])
+            gid = self.get_gid(f['gid'])
         if uid == -1 and gid == -1:
             return RET_OK
         try:
-            print "set %s ownership to %d:%d"%(f['path'], uid, gid)
             os.chown(f['path'], uid, gid)
         except:
+            print >>sys.stderr, "failed to set %s ownership to %d:%d"%(f['path'], uid, gid)
             return RET_ERR
+        print "%s ownership set to %d:%d"%(f['path'], uid, gid)
         return RET_OK
 
     def fix_file_fmt(self, f):
+        if f['path'].endswith("/") and not os.path.exists(f['path']):
+            try:
+                os.makedirs(f['path'])
+                print >>sys.stderr, "failed to create", f['path']
+            except:
+                return RET_ERR
+            print f['path'], "created"
+            return RET_OK
         if self.check_file_fmt(f) == RET_OK:
             return RET_OK
         d = os.path.dirname(f['path'])

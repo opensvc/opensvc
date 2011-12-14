@@ -20,6 +20,8 @@ import os
 import sys
 import json
 import pwd
+from utilities import which
+
 try:
     import spwd
     cap_shadow = True
@@ -80,7 +82,10 @@ class CompUser(object):
                     del self.users[user]["spassword"]
 
     def fixable(self):
-        return RET_NA
+        if not which('usermod'):
+            print >>sys.stderr, "usermod program not found"
+            return RET_ERR
+        return RET_OK
 
     def fix_item(self, user, item, target):
         cmd = ['usermod'] + self.usermod_p[item].split() + [str(target), user]
@@ -88,10 +93,12 @@ class CompUser(object):
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
-        p = Popen(['pwconv'])
-        p.communicate()
-        p = Popen(['grpconv'])
-        p.communicate()
+        if which('pwconv'):
+            p = Popen(['pwconv'])
+            p.communicate()
+        if which('grpconv'):
+            p = Popen(['grpconv'])
+            p.communicate()
         if r == 0:
             return RET_OK
         else:
