@@ -94,7 +94,8 @@ class ifconfig(rcIfconfig.ifconfig):
                 continue
             if 'IPv4:' in line or 'IPv6' in line:
                 continue
-            intf_list += [line.split()[0]]
+            intf = line.split()[0]
+            intf_list.append(intf.replace('*', ''))
         for intf in intf_list:
             p = Popen(['ifconfig', intf], stdout=PIPE, stderr=PIPE)
             out = p.communicate()
