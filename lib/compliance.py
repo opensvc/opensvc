@@ -126,6 +126,8 @@ class Module(object):
         import time
         fo = tempfile.NamedTemporaryFile()
         fe = tempfile.NamedTemporaryFile()
+        _fo = None
+        _fe = None
 
         def poll_out():
             fop = _fo.tell()
@@ -172,11 +174,15 @@ class Module(object):
                     log = poll_pipes(log)
                     break
         except OSError, e:
-            _fo.close()
-            _fe.close()
+            if _fo is not None:
+                _fo.close()
+            if _fe is not None:
+                _fe.close()
             fo.close()
             fe.close()
-            if e.errno == 8:
+            if e.errno == 2:
+                raise ex.excError("%s execution error (File not found or bad interpreter)"%self.executable)
+            elif e.errno == 8:
                 raise ex.excError("%s execution error (Exec format error)"%self.executable)
             else:
                 raise
