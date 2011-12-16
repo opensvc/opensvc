@@ -809,6 +809,7 @@ def add_syncs(svc, conf):
     add_syncs_symclone(svc, conf)
     add_syncs_evasnap(svc, conf)
     add_syncs_dcssnap(svc, conf)
+    add_syncs_dcsckpt(svc, conf)
     add_syncs_dds(svc, conf)
     add_syncs_zfs(svc, conf)
 
@@ -911,6 +912,55 @@ def add_syncs_dds(svc, conf):
         add_triggers(r, conf, s)
         svc += r
 
+def add_syncs_dcsckpt(svc, conf):
+    try:
+        sc = __import__('resSyncDcsCkpt'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncDcsCkpt')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+        elif conf.get(s, 'type') != 'dcsckpt':
+            continue
+
+        kwargs = {}
+
+        try:
+            kwargs['dcs'] = set(conf_get_string_scope(svc, conf, s, 'dcs').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'dcs' set" % s)
+            continue
+
+        try:
+            kwargs['manager'] = set(conf_get_string_scope(svc, conf, s, 'manager').split())
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have 'manager' set" % s)
+            continue
+
+        import json
+        pairs = []
+        if 'pairs' in conf.options(s):
+            try:
+                pairs = json.loads(conf.get(s, 'pairs'))
+                if len(pairs) == 0:
+                    svc.log.error("config file section %s must have 'pairs' set" % s)
+                    continue
+            except:
+                svc.log.error("json error parsing 'pairs' in section %s" % s)
+        kwargs['pairs'] = pairs
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs.update(get_sync_args(conf, s, svc))
+        r = sc.syncDcsCkpt(**kwargs)
+        add_triggers(r, conf, s)
+        svc += r
+
 def add_syncs_dcssnap(svc, conf):
     try:
         sc = __import__('resSyncDcsSnap'+rcEnv.sysname)
@@ -943,12 +993,6 @@ def add_syncs_dcssnap(svc, conf):
             kwargs['snapname'] = set(conf_get_string(svc, conf, s, 'snapname').split())
         except ex.OptNotFound:
             svc.log.error("config file section %s must have 'snapname' set" % s)
-            continue
-
-        try:
-            kwargs['dcs'] = set(conf_get_string(svc, conf, s, 'dcs').split())
-        except ex.OptNotFound:
-            svc.log.error("config file section %s must have 'dcs' set" % s)
             continue
 
         kwargs['rid'] = s

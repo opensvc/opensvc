@@ -102,6 +102,7 @@ class Svc(Resource, Freezer):
                              "sync.symclone",
                              "sync.evasnap",
                              "sync.dcssnap",
+                             "sync.dcsckpt",
                              "sync.dds",
                              "sync.zfs",
                              "sync.netapp",
@@ -781,6 +782,7 @@ class Svc(Resource, Freezer):
 
     def startdisk(self):
         self.sub_set_action("sync.netapp", "start")
+        self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("disk.loop", "start")
@@ -947,6 +949,7 @@ class Svc(Resource, Freezer):
 
     def syncresume(self):
         self.sub_set_action("sync.netapp", "syncresume")
+        self.sub_set_action("sync.dcsckpt", "syncresume")
         self.sub_set_action("sync.nexenta", "syncresume")
 
     def syncquiesce(self):
@@ -974,6 +977,7 @@ class Svc(Resource, Freezer):
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.nexenta", "syncupdate")
+        self.sub_set_action("sync.dcsckpt", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
         self.sub_set_action("sync.zfs", "syncnodes")
 
