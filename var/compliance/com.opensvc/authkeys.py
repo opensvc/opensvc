@@ -70,9 +70,10 @@ class CompAuthKeys(object):
 
     def _get_authkey_file(self, key):
         if key == "authorized_keys":
-            key = "AuthorizedKeysFile"
+            # default
+            return ".ssh/authorized_keys"
         elif key == "authorized_keys2":
-            key = "AuthorizedKeysFile2"
+            key = "AuthorizedKeysFile"
         else:
             print >>sys.stderr, "unknown key", key
             return None
@@ -88,13 +89,17 @@ class CompAuthKeys(object):
                 continue
             if l[0].strip() == key:
                 return l[1]
-        return None
+        # not found, return default
+        return ".ssh/authorized_keys2"
 
     def get_authkey_file(self, key, user):
         p = self._get_authkey_file(key)
         if p is None:
             return None
         p = p.replace('%u', user)
+        p = p.replace('%H', os.path.expanduser(user))
+        if not p.startswith('/'):
+            p = os.path.join(os.path.expanduser('~'+user), p)
         return p
 
     def get_authkey_files(self, user):
