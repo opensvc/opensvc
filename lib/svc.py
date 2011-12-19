@@ -973,6 +973,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.netapp", "syncbreak")
         self.sub_set_action("sync.nexenta", "syncbreak")
         self.sub_set_action("sync.symclone", "syncbreak")
+        self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
