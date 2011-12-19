@@ -38,8 +38,8 @@ class CompAuthKeys(object):
             raise NotApplicable()
 
         self.installed_keys_d = {}
-        if authfile not in ("authorized_key", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_key or authorized_keys2)"
+        if authfile not in ("authorized_keys", "authorized_keys2"):
+            print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_keys or authorized_keys2)"
             raise NotApplicable()
         self.authfile = authfile
 
@@ -54,7 +54,7 @@ class CompAuthKeys(object):
             ak['action'] = 'add'
         if 'authfile' not in ak:
             ak['authfile'] = self.authfile
-        if ak['authfile'] not in ("authorized_key", "authorized_keys2"):
+        if ak['authfile'] not in ("authorized_keys", "authorized_keys2"):
             print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.authfile+")"
             ak['authfile'] = self.authfile
         return ak
@@ -68,15 +68,52 @@ class CompAuthKeys(object):
         else:
             return "'"+key[0:17] + "..." + key[-30:]+"'"
 
+    def _get_authkey_file(self, key):
+        if key == "authorized_keys":
+            key = "AuthorizedKeysFile"
+        elif key == "authorized_keys2":
+            key = "AuthorizedKeysFile2"
+        else:
+            print >>sys.stderr, "unknown key", key
+            return None
+        cf = os.path.join(os.sep, 'etc', 'ssh', 'sshd_config')
+        if not os.path.exists(cf):
+            print >>sys.stderr, cf, "not found"
+            return None
+        with open(cf, 'r') as f:
+            buff = f.read()
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) != 2:
+                continue
+            if l[0].strip() == key:
+                return l[1]
+        return None
+
+    def get_authkey_file(self, key, user):
+        p = self._get_authkey_file(key)
+        if p is None:
+            return None
+        p = p.replace('%u', user)
+        return p
+
+    def get_authkey_files(self, user):
+        l = []
+        p = self.get_authkey_file('authorized_keys', user)
+        if p is not None:
+            l.append(p)
+        p = self.get_authkey_file('authorized_keys2', user)
+        if p is not None:
+            l.append(p)
+        return l
+
     def get_installed_keys(self, user):
         if user in self.installed_keys_d:
             return self.installed_keys_d[user]
         else:
             self.installed_keys_d[user] = []
 
-        base = os.path.join(os.path.expanduser("~"+user), '.ssh')
-        ps = [os.path.join(base, 'authorized_keys'),
-              os.path.join(base, 'authorized_keys2')]
+        ps = self.get_authkey_files(user)
         for p in ps:
             if not os.path.exists(p):
                 continue
@@ -124,23 +161,27 @@ class CompAuthKeys(object):
         if self.check_authkey(ak, verbose=False) == RET_OK:
             return RET_OK
 
-        base = os.path.join(os.path.expanduser("~"+ak['user']), '.ssh')
-        p = os.path.join(base, 'authorized_keys2')
-
         try:
             userinfo=pwd.getpwnam(ak['user'])
         except KeyError:
             print >>sys.stderr, 'user', ak['user'], 'does not exist'
             return RET_ERR
 
+        p = self.get_authkey_file(ak['authfile'], ak['user'])
+        if p is None:
+            print >>sys.stderr, "could not determine", ak['authfile'], "location"
+            return RET_ERR
+        base = os.path.basename(p)
+
         if not os.path.exists(base):
             os.makedirs(base, 0700)
-            os.chown(base, userinfo.pw_uid, userinfo.pw_gid)
+            if p.startswith(os.path.expanduser('~'+ak['user'])):
+                os.chown(base, userinfo.pw_uid, userinfo.pw_gid)
 
         if not os.path.exists(p):
             with open(p, 'w') as f:
                 f.write("")
-                print p, "directory created"
+                print p, "created"
                 os.chmod(p, 0600)
                 print p, "mode set to 0600"
                 os.chown(p, userinfo.pw_uid, userinfo.pw_gid)
@@ -159,11 +200,10 @@ class CompAuthKeys(object):
             print 'key', self.truncate_key(ak['key']), 'is already not installed for user', ak['user']
             return RET_OK
 
-        base = os.path.join(os.path.expanduser("~"+ak['user']), '.ssh')
-        ps = [os.path.join(base, 'authorized_keys'),
-              os.path.join(base, 'authorized_keys2')]
+        ps = self.get_authkey_files(ak['user'])
 
         for p in ps:
+            base = os.basename(p)
             if not os.path.exists(base):
                 return RET_OK
 
