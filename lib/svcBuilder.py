@@ -1830,6 +1830,13 @@ def update(svcname, resources=[], interactive=False, provision=False):
     defaults = conf.defaults()
     for section in conf.sections():
         sections[section] = {}
+        l = section.split('#')
+        if len(l) == 2:
+            rtype = l[0]
+            ridx = l[1]
+            if rtype not in rtypes:
+                rtypes[rtype] = set([])
+            rtypes[rtype].add(ridx)
         for o, v in conf.items(section):
             if o in defaults.keys() + ['rtype']:
                 continue
@@ -1851,19 +1858,25 @@ def update(svcname, resources=[], interactive=False, provision=False):
             if len(l) != 2:
                 print >>sys.stderr, section, "must be formatted as 'rtype#n'"
                 return 1
-            rtype = l[0]
-            if rtype in rtypes:
-                rtypes[rtype] += 1
-            else:
-                rtypes[rtype] = 0
             del(d['rid'])
             if section in sections:
                 sections[section].update(d)
             else:
                 sections[section] = d
         elif 'rtype' in d:
-            print >>sys.stderr, section, "'rtype' can not be used with the 'update' command"
-            return 1
+            # new resource allocation, auto-allocated rid index
+            if d['rtype'] in rtypes:
+                ridx = 1
+                while str(ridx) in rtypes[d['rtype']]:
+                    ridx += 1
+                ridx = str(ridx)
+                rtypes[d['rtype']].add(ridx)
+            else:
+                ridx = '1'
+                rtypes[d['rtype']] = set([ridx])
+            section = '#'.join((d['rtype'], ridx))
+            del(d['rtype'])
+            sections[section] = d
         else:
             defaults.update(d)
 
