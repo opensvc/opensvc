@@ -110,9 +110,10 @@ class Asset(rcAsset.Asset):
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
-        if len(lines) < 3:
+        lines = [line for line in lines if len(line) > 0]
+        if len(lines) == 0:
             return 'Unknown'
-        return lines[2].strip()
+        return lines[-1].strip()
 
     def _get_serial(self):
         if which("sneep"):
