@@ -41,8 +41,8 @@ class ScsiReserv(Res.Resource):
         self.disks = disks
         if len(disks) == 0:
             self.label = 'preserv 0 scsi disk'
-        elif len(', '.join(disks)) > 48:
-            self.label = 'preserv '+', '.join(disks)[0:48]
+        elif len(', '.join(disks)) > 248:
+            self.label = 'preserv '+', '.join(disks)[0:248]
             self.label += " ..."
         else:
             self.label = ', '.join(disks)
