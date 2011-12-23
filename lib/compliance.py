@@ -37,6 +37,8 @@ class Module(object):
             if not c.isdigit():
                break
         self.ordering = int(base[0:i])
+        regex2 = re.compile("^S*[0-9]+-*", re.UNICODE)
+        self.name = regex2.sub("", match[0])
 
         locations = []
         locations.append(os.path.join(comp_dir, match[0]))
