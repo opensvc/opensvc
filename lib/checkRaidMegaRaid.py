@@ -63,7 +63,7 @@ class check(checks.check):
         for line in lines:
             if line.startswith('Adapter'):
                 l = line.split('#')
-                if slot != "" and errs > 0:
+                if slot != "":
                     r.append({
                              'chk_instance': slot,
                               'chk_value': str(errs),
@@ -74,7 +74,7 @@ class check(checks.check):
             if (line.startswith('State:') and 'Optimal' not in line) or \
                (line.startswith('Firmware state:') and 'Online' not in line):
                 errs += 1
-        if slot != "" and errs > 0:
+        if slot != "":
             r.append({
                  'chk_instance': slot,
                   'chk_value': str(errs),
