@@ -20,6 +20,7 @@
 import rcDiskInfo
 from rcUtilities import justcall
 import math
+from rcGlobalEnv import rcEnv
 
 class diskInfo(rcDiskInfo.diskInfo):
     def get_val(self, line):
@@ -42,6 +43,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         *   16065 sectors/cylinder
         *   19581 cylinders
         *   19579 accessible cylinders
+        **  OR:
+        *   188743612 accessible sectors
         """
         for line in out.split('\n'):
             if not line.startswith('*'):
@@ -57,7 +60,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                     n2 = int(line.split()[1])
                 if "cylinders" in line:
                     n3 = int(line.split()[1])
-                    size = math.ceil(n1 * n2 * n3 / 1024 / 1024 / 1024)
+                size = math.ceil(n1 * n2 * n3 / 1024 / 1024 / 1024)
             except:
                 pass
 
@@ -65,7 +68,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def __init__(self):
         self.h = {}
-        cmd = ["mpathadm", "list", "lu"]
+        cmd = ["/usr/bin/find", "/dev/rdsk", "-name", "c*s2"]
         (out, err, ret) = justcall(cmd)
         if ret != 0:
             return
@@ -80,22 +83,28 @@ class diskInfo(rcDiskInfo.diskInfo):
             (out, err, ret) = justcall(cmd)
             if ret != 0:
                 continue
+            if "Error: Logical-unit " + dev + " is not found" in err:
+                dsk = dev.replace("/dev/rdsk/", "")
+                dsk = dsk.replace("s2", "")
+                wwid = rcEnv.nodename + "." + dsk
+                vid = "LOCAL"
+                pid = ""
+                size = 0
+            else:
+                wwid = ""
+                vid = ""
+                pid = ""
+                size = 0
 
-            wwid = ""
-            vid = ""
-            pid = ""
-            size = 0
-
-            for line in out.split('\n'):
-                if line.startswith("\tVendor:"):
-                    vid = self.get_val(line)
-                elif line.startswith("\tProduct:"):
-                    pid = self.get_val(line)
-                elif line.startswith("\tName:"):
-                    wwid = self.get_val(line)
+                for line in out.split('\n'):
+                    if line.startswith("\tVendor:"):
+                        vid = self.get_val(line)
+                    elif line.startswith("\tProduct:"):
+                        pid = self.get_val(line)
+                    elif line.startswith("\tName:"):
+                        wwid = self.get_val(line)
 
             size = self.get_size(dev)
-
             self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
     def get(self, dev, type):
