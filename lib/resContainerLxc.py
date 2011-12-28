@@ -152,20 +152,22 @@ class Lxc(resContainer.Container):
             return False
         return True
 
+    def find_prefix(self):
+        prefixes = [os.path.join(os.sep),
+                    os.path.join(os.sep, 'usr'),
+                    os.path.join(os.sep, 'usr', 'local')]
+        for prefix in prefixes:
+             if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
+                 return prefix
+        return None
+
     def __init__(self, name, optional=False, disabled=False, monitor=False,
                  tags=set([])):
         resContainer.Container.__init__(self, rid="lxc", name=name,
                                         type="container.lxc",
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags)
-        self.prefix = None
-        hint = os.path.join(os.sep, 'usr', 'bin', 'lxc-start')
-        if os.path.exists(hint):
-            self.prefix = os.sep
-        else:
-            hint = os.path.join(os.sep, 'usr', 'local', 'bin', 'lxc-start')
-            if os.path.exists(hint):
-                self.prefix = os.path.join(os.sep, 'usr', 'local')
+        self.prefix = self.find_prefix()
         if self.prefix is None:
             print >>sys.stderr, "lxc install prefix not found"
             raise ex.excInitError
