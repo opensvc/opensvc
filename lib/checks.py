@@ -41,6 +41,7 @@ class checks(check):
         self.register('checkMpath')
         self.register('checkZfsUsage')
         self.register('checkRaidSmartArray')
+        self.register('checkRaidMegaRaid')
         self.register_local_checkers()
 
     def __iadd__(self, c):
@@ -70,7 +71,7 @@ class checks(check):
     def register(self, chk_name):
         try:
             m = __import__(chk_name+rcEnv.sysname)
-        except:
+        except ImportError:
             print '%s not implemented on %s'%(chk_name,rcEnv.sysname)
             return
         self += m.check(svcs=self.svcs)
