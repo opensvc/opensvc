@@ -20,6 +20,7 @@
 import os
 from rcUtilities import call, which
 import rcStats
+import datetime
 
 class StatsProvider(rcStats.StatsProvider):
     def __init__(self, interval=2880, stats_dir=None,
@@ -32,11 +33,63 @@ class StatsProvider(rcStats.StatsProvider):
         (ret, pagesize, err) = call(cmd)
         self.pagesize = int(pagesize)
 
+    def zsfile(self, day):
+        f = os.path.join(os.sep, 'var', 'adm', 'zonestat', 'zs'+day)
+        if os.path.exists(f):
+            return f
+        return None
+
     def sarfile(self, day):
         f = os.path.join(os.sep, 'var', 'adm', 'sa', 'sa'+day)
         if os.path.exists(f):
             return f
         return None
+
+    def svc(self, d, day, start, end):
+        cols = ['date',
+                'svcname',
+                'swap',
+                'rss',
+                'cap',
+                'at',
+                'avgat',
+                'pg',
+                'avgpg',
+                'nproc',
+                'mem',
+                'cpu',
+                'nodename']
+        f = self.zsfile(day)
+        lines = []
+        if f is None:
+            return cols, lines
+        try:
+            with open(f, 'r') as f:
+                buff = f.read()
+        except:
+            return cols, lines
+        _start = datetime.datetime.strptime(start, "%H:%M:%S")
+        _start = _start.hour * 3600 + _start.minute * 60 + _start.second
+        _end = datetime.datetime.strptime(end, "%H:%M:%S")
+        _end = _end.hour * 3600 + _end.minute * 60 + _end.second
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) != 17:
+                continue
+            _d = datetime.datetime.strptime(" ".join(l[0:2]), "%Y-%m-%d %H:%M:%S")
+            _d = _d.hour * 3600 + _d.minute * 60 + _d.second
+            if _d < _start or _d > _end:
+                continue
+            for i, e in enumerate(l):
+                if e.endswith('T'):
+                    l[i] = str(int(e[0:-2]) * 1024 * 1024)
+                elif e.endswith('G'):
+                    l[i] = str(int(e[0:-2]) * 1024)
+                elif e.endswith('M'):
+                    l[i] = e.rstrip('M')
+            l = [" ".join(l[0:2])] + l[2:-4] + [self.nodename]
+            lines.append(l)
+        return cols, lines
 
     def cpu(self, d, day, start, end):
         cols = ['date',

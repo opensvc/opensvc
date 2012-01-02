@@ -60,6 +60,9 @@ class StatsProvider(object):
     def get(self, fname):
         lines = []
         cols = []
+        if not hasattr(self, fname):
+            print fname, 'is not implemented'
+            return cols, lines
         for start, end in self.ranges:
             date = start.strftime("%Y-%m-%d")
             day = start.strftime("%d")

@@ -740,7 +740,7 @@ class Collector(object):
                              stats_end=stats_end)
         h = {}
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
-                     'blockdev', 'netdev', 'netdev_err']:
+                     'blockdev', 'netdev', 'netdev_err', 'svc']:
             h[stat] = sp.get(stat)
         import cPickle
         args = [cPickle.dumps(h)]
