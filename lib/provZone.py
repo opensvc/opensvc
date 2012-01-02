@@ -81,7 +81,8 @@ class ProvisioningZone(Provisioning):
         try:
             self.r.log.info("creating zone sysidcfg file")
             ns = self.get_ns()
-            if ns is None:
+            #if ns is None:
+            if True:
                 name_service = "name_service=NONE\n"
             else:
                 (domain, nameservers) = ns
