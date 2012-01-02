@@ -24,24 +24,19 @@ rcIfconfig = __import__("rcIfconfigHP-UX")
 from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
-    def __init__(self, hostname):
+    def __init__(self, svc):
         self.intf = []
-        cmd = rcEnv.rsh.split(' ') + [hostname, 'netstat', '-win']
-        p = Popen(cmd, stdout=PIPE)
-        buff = p.communicate()[0]
-        if p.returncode != 0:
+        ret, out, err = svc.vmcmd("netstat -win", r=svc)
+        if ret != 0:
             raise ex.excError
-        intf_list = buff
+        intf_list = out
         for line in intf_list.split('\n'):
             if len(line) == 0:
                 continue
             intf = line.split()[0].replace('*', '')
-            cmd = rcEnv.rsh.split(' ') + [hostname, 'env', 'LANG=C', 'ifconfig', intf]
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out = p.communicate()
-            if "no such interface" in out[1]:
+            ret, out, err = svc.vmcmd("env LANG=C /sbin/ifconfig %s"%intf, r=svc)
+            if "no such interface" in err:
                 continue
-            elif p.returncode != 0:
+            elif ret != 0:
                 raise ex.excError
-            self.parse(out[0])
-                
+            self.parse(out)

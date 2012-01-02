@@ -24,6 +24,16 @@ import rcAsset
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
+        self.zone = True
+        if not which('zonename'):
+            self.zone = False
+        else:
+            (out, err, ret) = justcall(['zonename'])
+            if ret != 0:
+                self.zone = False
+            elif out.strip() == 'global':
+                self.zone = False
+
         (out, err, ret) = justcall(['prtdiag'])
         if ret != 0:
             self.prtdiag = []
@@ -126,6 +136,8 @@ class Asset(rcAsset.Asset):
         return out.split('\n')[0]
 
     def _get_model(self):
+        if self.zone:
+            return "Solaris Zone"
         for l in self.prtdiag:
             if 'System Configuration:' in l:
                 return l.split(':')[-1].strip()

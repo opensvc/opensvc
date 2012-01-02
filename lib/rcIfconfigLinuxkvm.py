@@ -24,11 +24,9 @@ rcIfconfig = __import__("rcIfconfigLinux")
 from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
-    def __init__(self, hostname):
+    def __init__(self, svc):
         self.intf = []
-        cmd = rcEnv.rsh.split(' ') + [hostname, 'env', 'LANG=C', 'ifconfig', '-a']
-        p = Popen(cmd, stdout=PIPE)
-        buff = p.communicate()[0]
-        if p.returncode != 0:
+        ret, out, err = svc.vmcmd("env LANG=C /sbin/ifconfig -a", r=svc)
+        if ret != 0:
             raise ex.excError
-        self.parse(buff)
+        self.parse(out)

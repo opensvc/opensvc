@@ -32,7 +32,9 @@ class SvcEsx(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += esx.Esx(vmname, disabled=disabled)
-        self.runmethod = rcEnv.rsh.split() + [vmname]
+
+    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
+        return sshcmd(cmd, verbose, timeout, r)
 
     def _migrate(self):
         self.sub_set_action("container.esx", "_migrate")

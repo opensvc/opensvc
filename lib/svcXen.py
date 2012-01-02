@@ -33,6 +33,7 @@ class SvcXen(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += xen.Xen(vmname, disabled=disabled)
-        self.runmethod = rcEnv.rsh.split() + [vmname]
 
+    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
+        return sshcmd(cmd, verbose, timeout, r)
 

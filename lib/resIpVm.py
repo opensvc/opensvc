@@ -40,7 +40,7 @@ class Ip(Res.Ip):
             print "rcIfconfig"+self.svc.guestos+self.svc.svcmode
             raise ex.excNotSupported
         try:
-            ifconfig = rcIfconfig.ifconfig(self.svc.vmname)
+            ifconfig = rcIfconfig.ifconfig(self.svc)
         except ex.excError, e:
             self.log.debug(str(e))
             self.status_log(str(e))
