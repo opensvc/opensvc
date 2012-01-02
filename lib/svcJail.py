@@ -38,10 +38,7 @@ class SvcJail(svc.Svc):
         """ jail names cannot have dots
         """
         self.basevmname = vmname.split('.')[0]
-
-    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
-        runmethod = ['jexec', self.basevmname]
-        return self.call(runmethod+[cmd], verbose=verbose, log=r.log)
+        self.runmethod = ['jexec', self.basevmname]
 
 if __name__ == "__main__":
     for c in (SvcJail,) :

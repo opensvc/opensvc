@@ -30,10 +30,9 @@ class SvcVz(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += vz.Vz(vmname, disabled=disabled)
+        self.runmethod = ['vzctl', 'exec', vmname]
 
-    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
-        runmethod = ['vzctl', 'exec', vmname]
-        return self.call(runmethod+[cmd], verbose=verbose, log=r.log)
+
 
 if __name__ == "__main__":
     for c in (SvcVz,) :

@@ -17,7 +17,6 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os, sys
-import ssh
 import select
 import logging
 from subprocess import *
@@ -218,67 +217,6 @@ def protected_mount(path):
     if getmount(path) in ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']:
         return True
     return False
-
-def sshcmd(cmd, verbose=False, timeout=10, r=None, hostname=None):
-    if hasattr(r, 'svc'):
-        svc = r.svc
-    else:
-        svc = r
-
-    if hostname is None:
-        hostname = svc.vmname
-
-    def init_ssh():
-        svc.ssh = ssh.SSHClient()
-        svc.ssh.load_system_host_keys()
-        svc.ssh.set_missing_host_key_policy(ssh.AutoAddPolicy())
-        svc.ssh.connect(hostname)
-        svc.trans = svc.ssh.get_transport()
-
-    if svc.ssh is None or not hasattr(svc, 'ssh'):
-        try:
-            init_ssh()
-        except:
-            #import traceback
-            #traceback.print_exc()
-            return 1, "", "failed to connect to %s (%s)"%(hostname, sys.exc_value)
-
-    if verbose:
-        r.log.info("ssh %s -- %s"%(hostname, cmd))
-    else:
-        r.log.debug("ssh %s -- %s"%(hostname, cmd))
-
-    try:
-        from Crypto import Random
-        Random.atfork()
-        try:
-            chan = svc.trans.open_session()
-        except ssh.SSHException:
-            init_ssh()
-            chan = svc.trans.open_session()
-        chan.settimeout(timeout)
-        chan.exec_command(cmd)
-        chan.shutdown_write()
-        out = chan.recv(100000)
-        err = chan.recv_stderr(100000)
-        ret = chan.recv_exit_status()
-        if verbose:
-            if len(out) > 0:
-                r.log.info(out)
-            if len(err) > 0:
-                r.log.error(err)
-        else:
-            if len(out) > 0:
-                r.log.debug(out)
-            if len(err) > 0:
-                r.log.debug(err)
-    except:
-        import traceback
-        traceback.print_exc()
-        out = ""
-        err = ""
-        ret = 1
-    return ret, out, err
 
 
 if __name__ == "__main__":

@@ -81,7 +81,8 @@ class Vz(resContainer.Container):
         raise ex.excError
 
     def operational(self):
-        ret, out, err = self.vmcmd(['/sbin/ifconfig', '-a'])
+        cmd = self.svc.runmethod + ['/sbin/ifconfig', '-a']
+        ret = qcall(cmd)
         if ret == 0:
             return True
         return False
