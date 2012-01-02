@@ -19,12 +19,17 @@
 
 import sys
 import os
+import re
 from rcUtilities import call, which
 import rcDiskInfo
 import math
+from rcGlobalEnv import rcEnv
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
+
+    def prefix_local(self, id):
+        return '.'.join((rcEnv.nodename, id))
 
     def disk_id(self, dev):
         if dev in self.disk_ids:
@@ -38,20 +43,30 @@ class diskInfo(rcDiskInfo.diskInfo):
         cmd = [scsi_id, '-g', '-u', '-d', dev]
         (ret, out, err) = call(cmd)
         if ret == 0:
-            id = out.split('\n')[0][1:]
+            id = out.split('\n')[0]
+            if id.startswith('3'):
+                id = id[1:]
+            else:
+                id = self.prefix_local(id)
             self.disk_ids[dev] = id
             return id
         sdev = dev.replace("/dev/", "/block/")
         cmd = [scsi_id, '-g', '-u', '-s', sdev]
         (ret, out, err) = call(cmd, errlog=False)
         if ret == 0:
-            id = out.split('\n')[0][1:]
+            id = out.split('\n')[0]
+            if id.startswith('3'):
+                id = id[1:]
+            else:
+                id = self.prefix_local(id)
             self.disk_ids[dev] = id
             return id
         return ""
 
     def disk_vendor(self, dev):
         s = ''
+        dev = re.sub("[0-9]+$", "", dev)
+        dev = dev.replace("cciss/", "cciss!")
         path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
         if not os.path.exists(path):
             return ""
@@ -62,6 +77,8 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def disk_model(self, dev):
         s = ''
+        dev = re.sub("[0-9]+$", "", dev)
+        dev = dev.replace("cciss/", "cciss!")
         path = dev.replace('/dev/', '/sys/block/')+'/device/model'
         if not os.path.exists(path):
             return ""
