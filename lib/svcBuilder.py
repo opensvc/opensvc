@@ -1448,6 +1448,8 @@ def build_services(status=None, svcnames=[],
     If no status is specified, returns all services
     """
     services = {}
+    if type(svcnames) == str:
+        svcnames = [svcnames]
     for name in list_services():
         if len(svcnames) > 0 and name not in svcnames:
             continue
