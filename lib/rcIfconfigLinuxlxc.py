@@ -23,18 +23,12 @@ import rcIfconfigLinux
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import os
+import rcExceptions as ex
 
 class ifconfig(rcIfconfigLinux.ifconfig):
-    def __init__(self, hostname):
+    def __init__(self, svc):
         self.intf = []
-
-        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
-            self.rsh = ['lxc-attach', '-n', hostname]
-            cmd = ['echo', '/sbin/ifconfig', '-a']
-            p1 = Popen(cmd, stdout=PIPE)
-            out = Popen(self.rsh, stdout=PIPE, stdin=p1.stdout).communicate()[0]
-        else:
-            self.rsh = rcEnv.rsh.split() + [hostname, '--', 'env', 'LANG=C']
-            cmd = self.rsh + ['/sbin/ifconfig', '-a']
-            out = Popen(cmd, stdout=PIPE).communicate()[0]
+        ret, out, err = svc.vmcmd("env LANG=C /sbin/ifconfig -a", r=svc)
+        if ret != 0:
+            raise ex.excError(err)
         self.parse(out)

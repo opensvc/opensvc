@@ -1273,7 +1273,6 @@ def add_apps(svc, conf):
         resApp = __import__('resApp')
 
     kwargs = {}
-    kwargs['runmethod'] = svc.runmethod
 
     s = 'app'
     kwargs['disabled'] = get_disabled(conf, s, svc)
