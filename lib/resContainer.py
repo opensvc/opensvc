@@ -39,9 +39,6 @@ class Container(Res.Resource):
         self.name = name
         self.label = name
 
-    def vmcmd(self, cmd, verbose=False, timeout=10):
-        return self.svc.vmcmd(cmd, verbose, timeout, r=self)
-
     def getaddr(self):
         if hasattr(self, 'addr'):
             return
@@ -63,7 +60,13 @@ class Container(Res.Resource):
             """
             return True
         timeout = 1
-        ret, out, err = self.vmcmd("pwd", timeout=timeout)
+        cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
+                                '-o', 'ForwardX11=no',
+                                '-o', 'BatchMode=yes',
+                                '-n',
+                                '-o', 'ConnectTimeout='+repr(timeout),
+                                self.name, 'pwd']
+        ret = qcall(cmd)
         if ret == 0:
             return True
         return False

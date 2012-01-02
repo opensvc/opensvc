@@ -24,9 +24,11 @@ rcIfconfig = __import__("rcIfconfigFreeBSD")
 from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
-    def __init__(self, svc):
+    def __init__(self, hostname):
         self.intf = []
-        ret, out, err = svc.vmcmd("env LANG=C /sbin/ifconfig -a", r=svc)
-        if ret != 0:
+        cmd = rcEnv.rsh.split(' ') + [hostname, 'ifconfig', '-a']
+        p = Popen(cmd, stdout=PIPE)
+        buff = p.communicate()[0]
+        if p.returncode != 0:
             raise ex.excError
-        self.parse(out)
+        self.parse(buff)

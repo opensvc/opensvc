@@ -22,12 +22,9 @@
 import svc
 import resContainerLxc as lxc
 import rcStatus
-import sys
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, sshcmd
+from rcUtilities import which
 import os
-import ssh
-import rcExceptions as ex
 
 class SvcLxc(svc.Svc):
     """ Define Lxc services"""
@@ -39,14 +36,12 @@ class SvcLxc(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += lxc.Lxc(vmname, disabled=disabled)
-        self.ssh = None
-        self.trans = None
-
-    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
-            runmethod = ['lxc-attach', '-n', vmname, '--']
-            return self.call(runmethod+[cmd], verbose=verbose, log=r.log)
-        return sshcmd(cmd, verbose, timeout, r)
+            self.runmethod = ['lxc-attach', '-n', vmname, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [vmname]
+
+
 
 if __name__ == "__main__":
     for c in (SvcLxc,) :

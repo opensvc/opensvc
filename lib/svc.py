@@ -37,7 +37,6 @@ def signal_handler(signum, frame):
     raise ex.excSignal
 
 def dblogger(self, action, begin, end, actionlogfile, sync=False):
-    self.log.debug("start dblogger: push action logs, refresh and push status")
     self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=sync)
     g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
     self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=sync)
@@ -119,6 +118,7 @@ class Svc(Resource, Freezer):
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
+        self.runmethod = []
         self.resources_by_id = {}
         self.rset_status_cache = None
         self.print_status_fmt = "%-14s %-8s %s"
@@ -1350,19 +1350,6 @@ class Svc(Resource, Freezer):
         except:
             return 1
         return 0
-
-    def vmcmd(self, cmd, verbose=False, timeout=5):
-        if not hasattr(self, "vmname"):
-            raise ex.excError("vmcmd() not allowed on non virtual services")
-        if type(cmd) == str:
-            cmd = cmd.split()
-        cmd = [self.sshbin, '-o', 'StrictHostKeyChecking=no',
-                            '-o', 'ForwardX11=no',
-                            '-o', 'BatchMode=yes',
-                            '-n',
-                            '-o', 'ConnectTimeout='+repr(timeout),
-                            self.vmname, cmd]
-        return call(cmd, verbose=verbose)
 
 if __name__ == "__main__" :
     for c in (Svc,) :

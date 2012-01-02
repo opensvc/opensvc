@@ -32,7 +32,5 @@ class SvcVbox(svc.Svc):
         self.vmname = vmname
         self.guestos = guestos
         self += vbox.Vbox(vmname, disabled=disabled)
-
-    def vmcmd(self, cmd, verbose=False, timeout=10, r=None):
-        return sshcmd(cmd, verbose, timeout, r)
+        self.runmethod = rcEnv.rsh.split() + [vmname]
 
