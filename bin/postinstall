@@ -312,7 +312,7 @@ def install_rc():
     activate()
 
 def gen_keys():
-    home = os.environ['HOME']
+    home = os.path.expanduser("~root")
     priv = os.path.join(home, ".ssh", "id_dsa")
     pub = os.path.join(home, ".ssh", "id_dsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
