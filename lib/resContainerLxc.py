@@ -163,7 +163,6 @@ class Lxc(resContainer.Container):
                     os.path.join(os.sep, 'usr', 'local')]
         for prefix in [self.prefix] + [p for p in prefixes if p != self.prefix]:
             cf = os.path.join(prefix, d_lxc, self.name, 'config')
-            print "try", cf
             if os.path.exists(cf):
                 cf_d = os.path.dirname(cf)
                 if not os.path.exists(cf_d):
