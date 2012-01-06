@@ -73,7 +73,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         with open(path, 'r') as f:
             s = f.read()
             f.close()
-        return s
+        return s.strip()
 
     def disk_model(self, dev):
         s = ''
@@ -85,7 +85,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         with open(path, 'r') as f:
             s = f.read()
             f.close()
-        return s
+        return s.strip()
 
     def disk_size(self, dev):
         size = 0

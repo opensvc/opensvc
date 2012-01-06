@@ -85,5 +85,8 @@ def devs_to_disks(self, devs=set([])):
             pass
         else:
             disks.add(dev)
+    _disks = list(disks)
+    for i, disk in enumerate(_disks):
+        _disks[i] = re.sub("^(/dev/[vhs]d[a-z]*)[0-9]*$", r"\1", disk)
     return disks
 
