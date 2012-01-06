@@ -152,6 +152,25 @@ class Lxc(resContainer.Container):
             return False
         return True
 
+    def find_cf(self):
+        d_lxc = os.path.join('var', 'lib', 'lxc')
+
+        # seen on debian squeeze : prefix is /usr, but containers'
+        # config files paths are /var/lib/lxc/$name/config
+        # try prefix first, fallback to other know prefixes
+        prefixes = [os.path.join(os.sep),
+                    os.path.join(os.sep, 'usr'),
+                    os.path.join(os.sep, 'usr', 'local')]
+        for prefix in [self.prefix] + [p for p in prefixes if p != self.prefix]:
+            cf = os.path.join(prefix, d_lxc, self.name, 'config')
+            print "try", cf
+            if os.path.exists(cf):
+                cf_d = os.path.dirname(cf)
+                if not os.path.exists(cf_d):
+                    os.makedirs(cf_d)
+                return cf
+        return None
+
     def find_prefix(self):
         prefixes = [os.path.join(os.sep),
                     os.path.join(os.sep, 'usr'),
@@ -171,10 +190,10 @@ class Lxc(resContainer.Container):
         if self.prefix is None:
             print >>sys.stderr, "lxc install prefix not found"
             raise ex.excInitError
-        self.d_lxc = os.path.join(self.prefix, 'var', 'lib', 'lxc')
-        self.cf = os.path.join(self.d_lxc, name, 'config')
-        if not os.path.exists(self.d_lxc):
-            os.makedirs(self.d_lxc)
+        self.cf = self.find_cf()
+        if self.cf is None:
+            print >>sys.stderr, "lxc container config file not found"
+            raise ex.excInitError
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
