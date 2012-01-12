@@ -106,10 +106,10 @@ class diskInfo(rcDiskInfo.diskInfo):
                 (ret, out, err) = call(cmd)
                 if ret != 0:
                     return 0
-                return int(math.ceil(int(out)/2097152))
+                return int(math.ceil(1.*int(out)/2097152))
 
         with open(path, 'r') as f:
             size = f.read()
             f.close()
-        return int(math.ceil(int(size)/2097152))
+        return int(math.ceil(1.*int(size)/2097152))
 
