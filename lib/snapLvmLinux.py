@@ -19,7 +19,7 @@
 import os
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, protected_mount
+from rcUtilities import protected_mount, justcall
 from rcUtilitiesLinux import lv_info, lv_exists
 import rcExceptions as ex
 import snap
@@ -76,7 +76,20 @@ class Snap(snap.Snap):
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         cmd = ['umount', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
+
         cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
-        (ret, buff, err) = self.vcall(cmd)
+        self.log.info(' '.join(cmd))
+        for i in range(1, 30):
+            out, err, ret = justcall(cmd)
+            if ret == 0:
+                break
+        if len(out) > 0:
+            self.log.info(out)
+        if len(err) > 0:
+            self.log.error(err)
+        if ret != 0:
+            self.log.error("failed to remove snapshot %s (attempts: %d)"%(self.snaps[s]['snap_dev'], i))
+        elif i > 1:
+            self.log.info("successfully removed snapshot %s (attempts: %d)"%(self.snaps[s]['snap_dev'], i))
         del(self.snaps[s])
 
