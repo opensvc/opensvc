@@ -152,6 +152,8 @@ parser.add_option("--verbose", default=False, action="store_true", dest="verbose
                   help="display per-resource status for each selected service")
 parser.add_option("--maxdelaydb", default=0, action="store", type="int", dest="delay",
                   help="introduce a random delay before pushing to database to level the load on the collector")
+parser.add_option("--debug", default=False, action="store_true", dest="debug",
+                  help="debug mode")
 
 (options, args) = parser.parse_args()
 
@@ -159,6 +161,9 @@ if len(options.parm_svcs) > 0:
     node.build_services(svcnames=options.parm_svcs.split(','))
 else:
     node.build_services()
+
+for s in node.svcs:
+    s.options.debug = options.debug
 
 if options.verbose:
     svcmon_verbose(node.svcs)
