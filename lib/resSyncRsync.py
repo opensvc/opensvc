@@ -106,7 +106,7 @@ def sync_timestamp(self, node):
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
     shutil.copy2(sync_timestamp_f, sched_timestamp_f)
     cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, 'root@'+node+':/']
-    self.vcall(cmd)
+    self.call(cmd)
 
 def get_timestamp(self, node):
     ts = None
