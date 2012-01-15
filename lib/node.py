@@ -352,12 +352,6 @@ class Node(Svc, Freezer):
         return True
 
     def timestamp(self, timestamp_f, interval):
-        if not self.check_timestamp(timestamp_f, 'more', interval):
-            return False
-        if self.options.force:
-            # don't update the timestamp in force mode
-            # to not perturb the schedule
-            return True
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d ,0755)
@@ -366,9 +360,66 @@ class Node(Svc, Freezer):
             f.close()
         return True
 
-    def in_period(self, period):
+    def skip_action_interval(self, timestamp_f, interval):
+        if self.check_timestamp(timestamp_f, 'more', interval):
+            return True
+        return False
+
+    def skip_probabilistic(self, period):
         if len(period) == 0:
             return True
+
+        try:
+            start, end, now = self.get_period_minutes(period)
+        except:
+            return False
+
+        if start > end:
+            end += 1440
+        if now < start:
+            now += 1440
+
+        length = end - start
+        elapsed = now - start
+        elapsed_pct = int(100.0 * elapsed / length)
+        """
+            proba
+              ^
+        100%  |
+         75%  |X
+         50%  |XX
+         25%  |XXX
+          0%  ----|----|-> elapsed
+             0%  50%  100%
+
+        The idea is to skip 75% of actions in period's first run,
+        skip none after half the interval is consumed, and decrease
+        skip probabilty linearly in-between.
+
+        This algo is meant to level collector's load which peaks
+        when all daily cron trigger at the same minute.
+        """
+        p = 75.0 * (100.0 - min(elapsed_pct * 2, 100)) / 100
+        import random
+        r = random.random()*100.0
+
+        """
+        print "start:", start
+        print "end:", end
+        print "now:", now
+        print "length:", length
+        print "elapsed:", elapsed
+        print "elapsed_pct:", elapsed_pct
+        print "p:", p
+        print "r:", r
+        """
+
+        if r >= p:
+            return True
+
+        return False
+
+    def get_period_minutes(self, period):
         if isinstance(period[0], list):
             r = False
             for p in period:
@@ -386,19 +437,29 @@ class Node(Svc, Freezer):
             end = end_t.tm_hour * 60 + end_t.tm_min
         except:
             print >>sys.stderr, "malformed time string: %s"%str(period)
-            return False
+            raise Exception("malformed time string: %s"%str(period))
         now = datetime.datetime.now()
         now_m = now.hour * 60 + now.minute
+        return start, end, now_m
+
+    def in_period(self, period):
+        if len(period) == 0:
+            return True
+        try:
+            start, end, now = self.get_period_minutes(period)
+        except:
+            return False
+
         if start <= end:
-            if now_m >= start and now_m <= end:
+            if now >= start and now <= end:
                 return True
         elif start > end:
             """
                   XXXXXXXXXXXXXXXXX
                   23h     0h      1h
             """
-            if (now_m >= start and now_m <= 1440) or \
-               (now_m >= 0 and now_m <= end):
+            if (now >= start and now <= 1440) or \
+               (now >= 0 and now <= end):
                 return True
         return False
 
@@ -408,6 +469,29 @@ class Node(Svc, Freezer):
         if today in map(lambda x: x.lower(), days):
             return True
         return False
+
+    def skip_action_probabilistic(self, section, option):
+        if option is None:
+            return False
+
+        if self.config.has_section(section) and \
+           self.config.has_option(section, 'period'):
+            period_s = self.config.get(section, 'period')
+        elif self.config.has_option('DEFAULT', option):
+            period_s = self.config.get('DEFAULT', option)
+        else:
+            return False
+
+        try:
+            period = json.loads(period_s)
+        except:
+            print >>sys.stderr, "malformed parameter value: %s.period"%section
+            return True
+
+        if self.skip_probabilistic(period):
+            return False
+
+        return True
 
     def skip_action_period(self, section, option):
         if option is None:
@@ -455,6 +539,22 @@ class Node(Svc, Freezer):
 
         return True
 
+    def get_interval(self, section, option, cmdline_parm):
+        # get interval from config file
+        if self.config.has_section(section) and \
+           self.config.has_option(section, 'interval'):
+            interval = self.config.getint(section, 'interval')
+        else:
+            interval = self.config.getint('DEFAULT', option)
+
+        # override with command line
+        if cmdline_parm is not None:
+            v = getattr(self.options, cmdline_parm)
+            if v is not None:
+                interval = v
+
+        return interval
+
     def skip_action(self, section, option, fname,
                     cmdline_parm=None,
                     period_option=None,
@@ -477,24 +577,25 @@ class Node(Svc, Freezer):
             err('out of allowed days')
             return True
 
-        # get interval from config file
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'interval'):
-            interval = self.config.getint(section, 'interval')
-        else:
-            interval = self.config.getint('DEFAULT', option)
-
-        # override with command line
-        if cmdline_parm is not None:
-            v = getattr(self.options, cmdline_parm)
-            if v is not None:
-                interval = v
-
-        # do we need to run
+        interval = self.get_interval(section, option, cmdline_parm)
         timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
-        if not self.options.force and not self.timestamp(timestamp_f, interval):
+
+        # check if we are in allowed days of week
+        if self.skip_action_interval(timestamp_f, interval):
             err('last run < interval')
             return True
+
+        # probabilistic skip
+        if '#sync#' not in section and \
+           self.options.cron and \
+           self.skip_action_probabilistic(section, period_option):
+            err('checks passed but skip to level collector load')
+            return True
+
+        # don't update the timestamp in force mode
+        # to not perturb the schedule
+        if not self.options.force:
+            self.timestamp(timestamp_f, interval)
 
         return False
 
