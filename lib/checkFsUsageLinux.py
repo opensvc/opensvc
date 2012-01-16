@@ -43,6 +43,9 @@ class check(checks.check):
             l = line.split()
             if len(l) != 6:
                 continue
+            # discard bind mounts: we get metric from the source anyway
+            if l[0].startswith('/') and not l[0].startswith('/dev') and not l[0].startswith('//'):
+                continue
             if l[5].startswith('/Volumes'):
                 continue
             if "osvc_sync_" in l[0]:

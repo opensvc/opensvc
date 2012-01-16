@@ -43,6 +43,14 @@ class check(checks.check):
             l = line.split()
             if len(l) != 6:
                 continue
+            # discard bind mounts: we get metric from the source anyway
+            if l[0].startswith('/') and not l[0].startswith('/dev') and not l[0].startswith('//'):
+                continue
+            if l[5].startswith('/Volumes'):
+                continue
+            if "osvc_sync_" in l[0]:
+                # do not report osvc sync snapshots fs usage
+                continue
             r.append({
                       'chk_instance': l[5],
                       'chk_value': l[4],
