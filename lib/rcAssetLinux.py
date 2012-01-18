@@ -273,3 +273,12 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
+    def _get_hba(self):
+        l = []
+        import glob
+        paths = glob.glob('/sys/class/fc_host/host*/port_name')
+        for path in paths:
+            with open(path, 'r') as f:
+                l.append(f.read().strip('0x').strip('\n'))
+        return l
+

@@ -758,6 +758,18 @@ class Collector(object):
             print "'update_asset' method is not exported by the collector"
             return
         d = m.Asset(node).get_asset_dict()
+
+        if 'hba' in d:
+            vars = ['nodename', 'hba_id']
+            vals = []
+            for hba_id in d['hba']:
+               vals.append([rcEnv.nodename, hba_id])
+            del(d['hba'])
+            args = [{'hba': [vars, vals]}]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.insert_generic(*args)
+
         args = [d.keys(), d.values()]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]

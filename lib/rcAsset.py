@@ -236,6 +236,13 @@ class Asset(object):
         except:
             return None
 
+    def get_hba(self):
+        try:
+            return self._get_hba()
+        except:
+            pass
+        return []
+
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
@@ -287,4 +294,7 @@ class Asset(object):
         project = self.get_project()
         if project is not None:
             d['project'] = project
+        hba = self.get_hba()
+        if hba is not None:
+            d['hba'] = hba
         return d
