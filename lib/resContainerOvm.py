@@ -62,7 +62,7 @@ class Ovm(resContainer.Container):
 
     def find_vmcf(self):
         import glob
-        l = glob.glob('/var/ovs/mount/*/running_pool/'+self.uuid+'/vm.cfg')+glob.glob(os.path.join(self.xen_d, self.uuid))
+        l = glob.glob('/OVS/Repositories/*/VirtualMachines/'+self.uuid+'/vm.cfg')+glob.glob(os.path.join(self.xen_d, self.uuid))
         if len(l) > 1:
             self.log.warning("%d configuration files found in repositories (%s)"%(len(l), str(l)))
         elif len(l) == 0:
