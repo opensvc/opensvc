@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2012 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2012 Lucien Hercaud <lucien@hercaud.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +18,10 @@
 #
 import checks
 from rcUtilities import justcall, which
+import os
+
+path_list = os.environ['PATH'].split(':') + ['/opt/HPQacucli/sbin']
+os.environ['PATH'] = ':'.join(path_list)
 
 class check(checks.check):
     chk_type = "raid"
@@ -76,12 +81,17 @@ class check(checks.check):
         for line in lines:
             if ' Slot ' in line:
                 l = line.split()
-                slot = 'slot '+l[-1]
+                if '(Embedded)' in line:
+                    slot = 'slot ' + l[-2]
+                    uslot = l[-2]
+                else:
+                    slot = 'slot ' + l[-1]
+                    uslot = l[-1]
                 value = 0
-                value += self.check_controller(l[-1])
-                value += self.check_array(l[-1])
-                value += self.check_logicaldrive(l[-1])
-                value += self.check_physicaldrive(l[-1])
+                value += self.check_controller(uslot)
+                value += self.check_array(uslot)
+                value += self.check_logicaldrive(uslot)
+                value += self.check_physicaldrive(uslot)
                 r.append({
                           'chk_instance': slot,
                           'chk_value': str(value),
