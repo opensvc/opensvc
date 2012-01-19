@@ -17,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-from rcUtilities import call
+from rcUtilities import call, justcall
 import rcDiskInfo
 
 class diskInfo(rcDiskInfo.diskInfo):
@@ -40,7 +40,13 @@ class diskInfo(rcDiskInfo.diskInfo):
             if "Machine Type and Model" in f:
                 pid = f.split('.')[-1]
 
-        size = str(int(self.odmget(lname, 'size_in_mb'))//1024)
+        cmd = ['bootinfo', '-s', lname]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            size = str(int(out.split()[-1])//1024)
+        else:
+            size = '0'
+        
         wwid = self.odmget(lname, 'ww_name').replace('0x', '')
 
         self.h[lname] = dict(vid=vid, pid=pid, wwid=wwid, size=size)
