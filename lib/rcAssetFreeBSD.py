@@ -80,3 +80,16 @@ class Asset(rcAssetLinux.Asset):
         if len(line) < 2:
             return 'Unknown'
         return line[-1]
+
+    def _get_cpu_freq(self):
+        cmd = ['sysctl', 'hw.clockrate']
+        (out, err, ret) = justcall(cmd)
+        if ret != 0:
+            return 'Unknown'
+        lines = out.split('\n')
+        if len(lines) < 1:
+            return 'Unknown'
+        line = lines[0].split()
+        if len(line) < 2:
+            return 'Unknown'
+        return line[-1]
