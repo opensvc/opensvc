@@ -278,7 +278,13 @@ class Asset(rcAsset.Asset):
         import glob
         paths = glob.glob('/sys/class/fc_host/host*/port_name')
         for path in paths:
+            host_link = '/'.join(path.split('/')[0:5])
+            if '/eth' in os.path.realpath(host_link):
+                hba_type = 'fcoe'
+            else:
+                hba_type = 'fc'
             with open(path, 'r') as f:
-                l.append(f.read().strip('0x').strip('\n'))
+                hba_id = f.read().strip('0x').strip('\n')
+            l.append((hba_id, hba_type))
         return l
 

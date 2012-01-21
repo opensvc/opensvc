@@ -440,7 +440,7 @@ class Asset(object):
     def print_hba(self, hba):
         print "hba (probe)"
         for h in hba:
-            print "  %s\n"%h
+            print "  %-5s %s\n"%(h[1], h[0])
 
     def get_asset_dict(self):
         d = {}

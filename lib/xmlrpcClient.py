@@ -770,10 +770,10 @@ class Collector(object):
         d = m.Asset(node).get_asset_dict()
 
         if 'hba' in d:
-            vars = ['nodename', 'hba_id']
+            vars = ['nodename', 'hba_id', 'hba_type']
             vals = []
-            for hba_id in d['hba']:
-               vals.append([rcEnv.nodename, hba_id])
+            for hba_id, hba_type in d['hba']:
+               vals.append([rcEnv.nodename, hba_id, hba_type])
             del(d['hba'])
             args = [{'hba': [vars, vals]}]
             if self.auth_node:
