@@ -440,7 +440,20 @@ class Asset(object):
     def print_hba(self, hba):
         print "hba (probe)"
         for h in hba:
-            print "  %-5s %s\n"%(h[1], h[0])
+            print "  %-5s %s"%(h[1], h[0])
+
+    def get_targets(self):
+        try:
+            s = self._get_targets()
+        except:
+            s = []
+        self.print_targets(s)
+        return s
+
+    def print_targets(self, targets):
+        print "paths to targets (probe)"
+        for t in targets:
+            print "  %s - %s"%t
 
     def get_asset_dict(self):
         d = {}
@@ -499,4 +512,7 @@ class Asset(object):
         hba = self.get_hba()
         if hba is not None:
             d['hba'] = hba
+        targets = self.get_targets()
+        if targets is not None:
+            d['targets'] = targets
         return d

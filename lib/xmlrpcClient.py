@@ -769,13 +769,24 @@ class Collector(object):
             return
         d = m.Asset(node).get_asset_dict()
 
+        gen = {}
         if 'hba' in d:
             vars = ['nodename', 'hba_id', 'hba_type']
             vals = []
             for hba_id, hba_type in d['hba']:
                vals.append([rcEnv.nodename, hba_id, hba_type])
             del(d['hba'])
-            args = [{'hba': [vars, vals]}]
+            gen.update({'hba': [vars, vals]})
+
+        if 'targets' in d:
+            import copy
+            vars = ['hba_id', 'tgt_id']
+            vals = copy.copy(d['targets'])
+            del(d['targets'])
+            gen.update({'targets': [vars, vals]})
+
+        if len(gen) > 0:
+            args = [gen]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.insert_generic(*args)
