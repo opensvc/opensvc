@@ -796,6 +796,24 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
     
+    def push_eva(self, sync=True):
+        if 'update_eva_xml' not in self.proxy_methods:
+    	    print "'update_eva_xml' method is not exported by the collector"
+    	    return
+        m = __import__('rcEva')
+        try:
+            evas = m.Evas()
+        except:
+            return
+        for eva in evas:
+            vals = []
+            for key in eva.keys:
+                vals.append(getattr(eva, 'get_'+key)())
+            args = [eva.name, eva.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_eva_xml(*args)
+    
     def push_sym(self, sync=True):
         if 'update_sym_xml' not in self.proxy_methods:
     	    print "'update_sym_xml' method is not exported by the collector"
