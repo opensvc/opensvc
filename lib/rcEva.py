@@ -75,17 +75,28 @@ class Eva(object):
         self.manager = manager
         self.username = username
         self.password = password
-        #self.keys = ['controller']
-        self.keys = ['controller', 'vdisk', 'lun']
+        #self.keys = ['disk_group']
+        self.keys = ['controller', 'disk_group', 'vdisk', 'lun']
 
     def sssu(self, cmd):
         return sssu(cmd, self.manager, self.username, self.password, array=self.name)
 
     def stripxml(self, buff):
-        return buff[buff.index("<object>"):]
+        buff = buff[buff.index("<object>"):]
+        lines = buff.split('\n')
+        for i, line in enumerate(lines):
+            if line.startswith("\\"):
+                del lines[i]
+        lines = ['<main>'] + lines + ['</main>']
+        return '\n'.join(lines)
 
     def get_controller(self):
         cmd = 'ls controller full xml'
+        buff = self.sssu(cmd)[0]
+        return self.stripxml(buff)
+
+    def get_disk_group(self):
+        cmd = 'ls disk_group full xml'
         buff = self.sssu(cmd)[0]
         return self.stripxml(buff)
 
