@@ -184,3 +184,57 @@ class Asset(rcAsset.Asset):
             return 'Unknown'
         return out
 
+    def __get_hba(self):
+        if hasattr(self, "hba"):
+            return self.hba
+        self.hba = []
+        cmd = ['ioscan', '-FunC', 'fc']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return self.hba
+        lines = out.split('\n')
+        if len(lines) < 2:
+            return self.hba
+        for line in lines:
+            if '/dev/' not in line:
+                continue
+            dev = line.strip()
+            hba_type = 'fc'
+
+            cmd = ['fcmsutil', dev]
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                continue
+            for _line in out.split('\n'):
+                if not 'N_Port Port World Wide Name' in _line:
+                    continue
+                hba_id = _line.split('=')[-1].strip().lstrip("0x")
+
+            cmd = ['fcmsutil', dev, 'get', 'remote', 'all']
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                continue
+            targets = []
+            for _line in out.split('\n'):
+                if not 'Target Port World Wide Name' in _line:
+                    continue
+                targets.append(_line.split('=')[-1].strip().lstrip("0x"))
+
+            self.hba.append((hba_id, hba_type, targets))
+        return self.hba
+
+    def _get_hba(self):
+        hba = self.__get_hba()
+        l = []
+        for hba_id, hba_type, targets in hba:
+            l.append((hba_id, hba_type))
+        return l
+
+    def _get_targets(self):
+        hba = self.__get_hba()
+        l = []
+        for hba_id, hba_type, targets in hba:
+            for target in targets:
+                l.append((hba_id, target))
+        return l
+
