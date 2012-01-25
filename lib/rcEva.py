@@ -76,7 +76,7 @@ class Eva(object):
         self.username = username
         self.password = password
         #self.keys = ['disk_group']
-        self.keys = ['controller', 'disk_group', 'vdisk', 'lun']
+        self.keys = ['controller', 'disk_group', 'vdisk']
 
     def sssu(self, cmd):
         return sssu(cmd, self.manager, self.username, self.password, array=self.name)
