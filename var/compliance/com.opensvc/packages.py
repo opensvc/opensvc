@@ -19,7 +19,7 @@ class CompPackages(object):
         self.prefix = prefix.upper()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['Linux']:
+        if self.sysname not in ['Linux', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -41,11 +41,34 @@ class CompPackages(object):
         elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
             self.get_installed_packages = self.rpm_get_installed_packages
             self.fix_pkg = self.yum_fix_pkg
+        elif vendor in ['IBM']:
+            self.get_installed_packages = self.aix_get_installed_packages
+            self.fix_pkg = self.aix_fix_pkg
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
         self.installed_packages = self.get_installed_packages()
+
+    def aix_fix_pkg(self):
+        print "TODO: aix_fix_pkg"
+
+    def aix_get_installed_packages(self):
+        cmd = ['lslpp', '-Lc']
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, 'can not fetch installed packages list'
+            return []
+        pkgs = []
+        for line in out.split('\n'):
+            l = line.split(':')
+            if len(l) < 5:
+                continue
+            pkgvers = l[2]
+            pkgname = l[1].replace('-'+pkgvers, '')
+            pkgs.append(pkgname)
+        return pkgs
 
     def rpm_get_installed_packages(self):
         p = Popen(['rpm', '-qa', '--qf', '%{n}\n'], stdout=PIPE)
