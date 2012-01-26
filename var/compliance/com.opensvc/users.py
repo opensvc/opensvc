@@ -105,6 +105,8 @@ class CompUser(object):
             return RET_ERR
 
     def check_item(self, user, item, target, current, verbose=False):
+        if type(current) == int and current < 0:
+            current += 4294967296
         if target == current:
             if verbose:
                 print 'user', user, item+':', current
