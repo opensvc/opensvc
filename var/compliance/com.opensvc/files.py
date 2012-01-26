@@ -120,11 +120,11 @@ class CompFiles(object):
             cmd = ['diff', '-u', f['path'], '-']
         else:
             cmd = ['diff', f['path'], '-']
-        if verbose:
-            p = Popen(cmd, stdin=PIPE)
-        else:
-            p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate(input=f['fmt'])
+        if verbose and len(out) > 0:
+            print >>sys.stderr, " ".join(cmd)
+            print >>sys.stderr, out
         return p.returncode
 
     def check_file_mode(self, f, verbose=False):
