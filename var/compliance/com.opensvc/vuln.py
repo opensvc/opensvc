@@ -291,7 +291,10 @@ class CompVuln(object):
         return RET_OK
 
     def get_kver(self):
-        return os.uname()[2].replace('xen', '')
+        s = os.uname()[2]
+        s = s.replace('xen', '')
+        s = s.replace('PAE', '')
+        return s
 
     def check_pkg(self, pkg, verbose=True):
         if not pkg["pkgname"] in self.installed_packages:
