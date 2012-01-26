@@ -29,6 +29,8 @@ from comp import *
 class CompGroup(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
         self.prefix = prefix.upper()
+        self.groupmod = 'groupmod'
+        self.groupadd = 'groupadd'
         self.grt = {
             'gid': 'gr_gid',
         }
@@ -39,7 +41,14 @@ class CompGroup(object):
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX']:
+        if self.sysname == 'AIX':
+            self.groupmod = 'chgroup'
+            self.groupadd = 'mkgroup'
+            self.groupmod_p = {
+                'gid': 'id',
+            }
+
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
 
@@ -57,9 +66,23 @@ class CompGroup(object):
     def fixable(self):
         return RET_NA
 
+    def fmt_opt_gen(self, item, target):
+        return [item, target]
+
+    def fmt_opt_aix(self, item, target):
+        return ['='.join((item, target))]
+
+    def fmt_opt(self, item, target):
+        if self.sysname == 'AIX':
+            return self.fmt_opt_aix(item, target)
+        else:
+            return self.fmt_opt_gen(item, target)
+        
     def fix_item(self, group, item, target):
         if item in self.groupmod_p:
-            cmd = ['groupmod', self.groupmod_p[item], str(target), group]
+            cmd = [getattr(self, 'groupmod')]
+            cmd += self.fmt_opt(self.groupmod_p[item], str(target))
+            cmd += [group]
             print ' '.join(cmd)
             p = Popen(cmd)
             out, err = p.communicate()
@@ -110,9 +133,9 @@ class CompGroup(object):
         return r
 
     def create_group(self, group, props):
-        cmd = ['groupadd']
+        cmd = [getattr(self, 'groupadd')]
         for item in self.grt:
-            cmd += [self.groupmod_p[item], str(props[item])]
+            cmd += self.fmt_opt(self.groupmod_p[item], str(props[item]))
         cmd += [group]
         print ' '.join(cmd)
         p = Popen(cmd)
