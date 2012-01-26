@@ -288,3 +288,18 @@ class Asset(rcAsset.Asset):
             l.append((hba_id, hba_type))
         return l
 
+    def _get_targets(self):
+        l = []
+        import glob
+        paths = glob.glob('/sys/class/fc_host/host*/port_name')
+        for path in paths:
+            with open(path, 'r') as f:
+                hba_id = f.read().strip('0x').strip('\n')
+            host = path.replace('/sys/class/fc_host/host', '')
+            host = host[0:host.index('/')]
+            for target in glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host):
+                with open(target, 'r') as f:
+                    tgt_id = f.read().strip('0x').strip('\n')
+                l.append((hba_id, tgt_id))
+        return l
+

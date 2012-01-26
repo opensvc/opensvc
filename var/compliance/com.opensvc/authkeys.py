@@ -176,12 +176,14 @@ class CompAuthKeys(object):
         if p is None:
             print >>sys.stderr, "could not determine", ak['authfile'], "location"
             return RET_ERR
-        base = os.path.basename(p)
+        base = os.path.dirname(p)
 
         if not os.path.exists(base):
             os.makedirs(base, 0700)
+            print base, "created"
             if p.startswith(os.path.expanduser('~'+ak['user'])):
                 os.chown(base, userinfo.pw_uid, userinfo.pw_gid)
+                print base, "ownership set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid)
 
         if not os.path.exists(p):
             with open(p, 'w') as f:

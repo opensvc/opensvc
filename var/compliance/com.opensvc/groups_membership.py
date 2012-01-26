@@ -33,7 +33,7 @@ class CompGroupMembership(object):
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
 
