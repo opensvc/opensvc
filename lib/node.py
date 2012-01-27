@@ -327,7 +327,7 @@ class Node(Svc, Freezer):
         else:
             return getattr(self, a)()
 
-    def check_timestamp(self, timestamp_f, comp='more', delay=10):
+    def need_action_interval(self, timestamp_f, delay=10):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
@@ -341,15 +341,15 @@ class Node(Svc, Freezer):
                 d = f.read()
                 last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
                 limit = last + datetime.timedelta(minutes=delay)
-                if comp == "more" and datetime.datetime.now() < limit:
-                    return False
-                elif comp == "less" and datetime.datetime.now() < limit:
+                if datetime.datetime.now() < limit:
                     return False
                 else:
                     return True
                 f.close()
         except:
             return True
+
+        # never reach here
         return True
 
     def timestamp(self, timestamp_f, interval):
@@ -362,9 +362,7 @@ class Node(Svc, Freezer):
         return True
 
     def skip_action_interval(self, timestamp_f, interval):
-        if self.check_timestamp(timestamp_f, 'more', interval):
-            return True
-        return False
+        return not self.need_action_interval(timestamp_f, interval)
 
     def skip_probabilistic(self, period):
         if len(period) == 0:
@@ -583,6 +581,7 @@ class Node(Svc, Freezer):
 
         # check if we are in allowed days of week
         if self.skip_action_interval(timestamp_f, interval):
+            print "doo"
             err('last run < interval')
             return True
 
