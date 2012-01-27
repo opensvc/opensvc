@@ -273,7 +273,16 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
+    def get_iscsi_hba_id(self):
+        path = os.path.join(os.sep, 'etc', 'iscsi', 'initiatorname.iscsi')
+        hba_id = None
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                hba_id = f.read().split('=')[-1].strip()
+        return hba_id
+ 
     def _get_hba(self):
+        # fc / fcoe
         l = []
         import glob
         paths = glob.glob('/sys/class/fc_host/host*/port_name')
@@ -286,9 +295,19 @@ class Asset(rcAsset.Asset):
             with open(path, 'r') as f:
                 hba_id = f.read().strip('0x').strip('\n')
             l.append((hba_id, hba_type))
+
+        # iscsi
+        l = []
+        path = os.path.join(os.sep, 'etc', 'iscsi', 'initiatorname.iscsi')
+        hba_type = 'iscsi'
+        hba_id = self.get_iscsi_hba_id()
+        if hba_id is not None:
+            l.append((hba_id, hba_type))
+
         return l
 
     def _get_targets(self):
+        # fc / fcoe
         l = []
         import glob
         paths = glob.glob('/sys/class/fc_host/host*/port_name')
@@ -301,5 +320,21 @@ class Asset(rcAsset.Asset):
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
                 l.append((hba_id, tgt_id))
+
+        # iscsi
+        hba_id = self.get_iscsi_hba_id()
+        if hba_id is not None:
+           cmd = ['iscsiadm', '-m', 'session']
+           out, err, ret = justcall(cmd)
+           if ret == 0:
+               """
+               tcp: [1] 192.168.231.141:3260,1 iqn.2000-08.com.datacore:sds1-1
+               tcp: [2] 192.168.231.142:3260,1 iqn.2000-08.com.datacore:sds2-1
+               """
+               for line in out.split('\n'):
+                   if len(line) == 0:
+                       continue
+                   l.append((hba_id, line.split()[-1]))
+
         return l
 
