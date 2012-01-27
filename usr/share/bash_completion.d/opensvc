@@ -1,16 +1,12 @@
 svcs=$(ls /opt/opensvc/etc/*env 2>/dev/null|xargs -n1 basename 2>/dev/null|sed -e "s/.env//")
-
-service_opts="configure create disklist freeze frozen mount postsync presync print_status printsvc prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount --force --waitlock --debug --rid --tags compliance"
-
-svcmgr_opts="$service_opts --service"
-
+svcmgr_opts="--force --debug --waitlock --rid --tags --service"
 nodemgr_opts="--force --debug --cron"
 
 _svcmgr() 
 {
-    local cur prev base
+    local a b c d prev
     COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
+    a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     #
@@ -19,46 +15,150 @@ _svcmgr()
     case "${prev}" in
 	--tags)
 	    local tags=$(grep -h "tag" /opt/opensvc/etc/*env|cut -d= -f2)
-	    COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+	    COMPREPLY=( $(compgen -W "${tags}" -- ${a}) )
             return 0
             ;;
         --rid)
 	    local rid=$(grep -h "\[.*\]" /opt/opensvc/etc/*env|sed -e "s/\[//"|sed -e "s/\]//")
-	    COMPREPLY=( $(compgen -W "${rid}" -- ${cur}) )
+	    COMPREPLY=( $(compgen -W "${rid}" -- ${a}) )
             return 0
             ;;
         --service)
-	    COMPREPLY=( $(compgen -W "${svcs}" -- ${cur}) )
+	    COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
             return 0
             ;;
         *)
         ;;
     esac
 
-   COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
-   return 0
+    if [ $COMP_CWORD -eq 1 ]; then
+        local opts="configure create disklist freeze frozen mount postsync presync print_status printsvc prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance"
+    elif [ $COMP_CWORD -eq 2 ]; then
+        b="${COMP_WORDS[COMP_CWORD-1]}"
+        case "${b}" in
+            collector)
+		local opts="ack alerts checks events status list show"
+		;;
+	    compliance)
+		local opts="check fixable fix show list attach detach"
+		;;
+	    push)
+		local opts="appinfo"
+		;;
+	    set)
+		local opts="--param --value"
+		;;
+	    get|unset)
+		local opts="--param"
+		;;
+	    resource)
+		local opts="monitor"
+		;;
+	    print|json)
+		local opts="disklist status"
+		;;
+            *)
+                ;;
+        esac
+    elif [ $COMP_CWORD -eq 3 ]; then
+        b="${COMP_WORDS[COMP_CWORD-1]}"
+        c="${COMP_WORDS[COMP_CWORD-2]}"
+        case "${c} ${b}" in
+            "collector ack")
+		local opts="action"
+		;;
+            "collector list")
+		local opts="actions"
+		;;
+            "collector show")
+		local opts="actions"
+		;;
+            "collector events")
+		local opts="--begin --end"
+		;;
+            "compliance list")
+		local opts="ruleset moduleset"
+		;;
+            "compliance show")
+		local opts="ruleset moduleset"
+		;;
+            "compliance fixable")
+		local opts="--module --moduleset"
+		;;
+            "compliance fix")
+		local opts="--module --moduleset --attach"
+		;;
+            "compliance check")
+		local opts="--module --moduleset"
+		;;
+            "compliance attach")
+		local opts="moduleset ruleset"
+		;;
+            "compliance detach")
+		local opts="moduleset ruleset"
+		;;
+            *)
+                ;;
+        esac
+    elif [ $COMP_CWORD -eq 4 ]; then
+        b="${COMP_WORDS[COMP_CWORD-1]}"
+        c="${COMP_WORDS[COMP_CWORD-2]}"
+        d="${COMP_WORDS[COMP_CWORD-3]}"
+        case "${d} ${c} ${b}" in
+            "collector ack action")
+		local opts="--comment --author --duration"
+		;;
+            "collector list actions")
+		local opts="--begin --end"
+		;;
+            "collector show action")
+		local opts="--id --begin --end"
+		;;
+            "compliance detach moduleset")
+		local opts="--moduleset"
+		;;
+            "compliance detach ruleset")
+		local opts="--ruleset"
+		;;
+            "compliance attach moduleset")
+		local opts="--moduleset"
+		;;
+            "compliance attach ruleset")
+		local opts="--ruleset"
+		;;
+            "compliance list moduleset")
+		local opts="--moduleset"
+		;;
+            "compliance list ruleset")
+		local opts="--ruleset"
+		;;
+        esac
+     fi
+
+     COMPREPLY=($(compgen -W "${opts}" -- ${a}))  
+     return 0
 }
 
 _nodemgr() 
 {
-    local a b c
+    local a b c d prev
     COMPREPLY=()
     a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
+    #
+    #  Complete the arguments to some of the basic commands.
+    #
     case "${prev}" in
 	--module)
-	    local opts=$(ls /opt/opensvc/var/compliance/[0-9]* | xargs basename | sed "s/^[0-9]*[-]//")
-	    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	    local opts=$(ls /opt/opensvc/var/compliance/[0-9]* | xargs -n1 basename | sed "s/^[0-9]*[-]//")
+	    COMPREPLY=( $(compgen -W "${opts}" -- ${a}) )
             return 0
             ;;
         *)
         ;;
     esac
 
-    #
-    #  Complete the arguments to some of the basic commands.
-    #
     if [ $COMP_CWORD -eq 1 ]; then
         local opts="compliance collector pushasset pusheva pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown prkey updateservices"
     elif [ $COMP_CWORD -eq 2 ]; then
@@ -170,7 +270,7 @@ _nodemgr()
 opts=$svcmgr_opts
 complete -F _svcmgr svcmgr
 
-opts=$service_opts
+opts=$svcmgr_opts
 for s in ${svcs} ; do
     complete -F _svcmgr $s
 done
