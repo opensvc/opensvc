@@ -581,7 +581,6 @@ class Node(Svc, Freezer):
 
         # check if we are in allowed days of week
         if self.skip_action_interval(timestamp_f, interval):
-            print "doo"
             err('last run < interval')
             return True
 
