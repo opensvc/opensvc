@@ -590,7 +590,11 @@ class Svc(Resource, Freezer):
             if r.rstatus != rcStatus.UP:
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
-                    self.log.info("monitored resource %s is in state %s"%(r.rid, rcStatus.status_str(r.rstatus)))
+                    if len(r.status_log_str) > 0:
+                        rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
+                    else:
+                        rstatus_log = ''
+                    self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
                     raise self.exMonitorAction
                 else:
                     self.log.info("Would TOC but no (or unknown) resource monitor action set.")
