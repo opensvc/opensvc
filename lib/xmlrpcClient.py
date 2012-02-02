@@ -277,17 +277,17 @@ class Collector(object):
             a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
             if len(a) == 0:
                 raise Exception
+            dbopensvc_ip = a[0][-1][0]
         except:
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc_host)
-        dbopensvc_ip = a[0][-1][0]
 
         try:
             a = socket.getaddrinfo(rcEnv.dbcompliance_host, None)
             if len(a) == 0:
                 raise Exception
+            dbcompliance_ip = a[0][-1][0]
         except:
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
-        dbcompliance_ip = a[0][-1][0]
 
         socket.setdefaulttimeout(120)
 
