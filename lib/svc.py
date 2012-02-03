@@ -689,7 +689,7 @@ class Svc(Resource, Freezer):
 
     def json_disklist(self):
         import json
-        print json.dumps(self.disklist()) 
+        print json.dumps(list(self.disklist()))
 
     def disklist(self):
         """List all disks held by all resources of this service
