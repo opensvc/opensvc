@@ -100,6 +100,7 @@ class Node(Svc, Freezer):
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
+            'pushibmsvc':     'push IBM SVC configuration to collector',
             'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
             'checks':         'run node sanity checks, push results to collector',
           },
@@ -645,13 +646,22 @@ class Node(Svc, Freezer):
         self.collector.call('push_asset', self)
 
     def pusheva(self):
-        if self.skip_action('eva', 'push_interval', 'last_sym_push',
+        if self.skip_action('eva', 'push_interval', 'last_eva_push',
                             period_option='push_period',
                             days_option='push_days',
                             force=self.options.force):
             return
 
         self.collector.call('push_eva')
+
+    def pushibmsvc(self):
+        if self.skip_action('ibmsvc', 'push_interval', 'last_ibmsvc_push',
+                            period_option='push_period',
+                            days_option='push_days',
+                            force=self.options.force):
+            return
+
+        self.collector.call('push_ibmsvc')
 
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',

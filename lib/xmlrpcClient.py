@@ -159,6 +159,7 @@ class Collector(object):
             print >>sys.stderr, "to disable this warning, set 'dbopensvc = None' in node.conf"
             rcEnv.warned = True
             return
+        buff = getattr(self, fn)(*args, **kwargs)
         try:
             buff = getattr(self, fn)(*args, **kwargs)
             self.log.debug("call %s done"%fn)
@@ -795,6 +796,24 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
+    
+    def push_ibmsvc(self, sync=True):
+        if 'update_ibmsvc' not in self.proxy_methods:
+    	    print "'update_ibmsvc' method is not exported by the collector"
+    	    return
+        m = __import__('rcIbmSvc')
+        try:
+            ibmsvcs = m.IbmSvcs()
+        except:
+            return
+        for ibmsvc in ibmsvcs:
+            vals = []
+            for key in ibmsvc.keys:
+                vals.append(getattr(ibmsvc, 'get_'+key)())
+            args = [ibmsvc.name, ibmsvc.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_ibmsvc(*args)
     
     def push_eva(self, sync=True):
         if 'update_eva_xml' not in self.proxy_methods:
