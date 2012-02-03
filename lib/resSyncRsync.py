@@ -403,8 +403,11 @@ class Rsync(resSync.Sync):
             else:
                 self.label = "rsync svc config to %s"%(', '.join(target.keys()))
         else:
-            self.label = "rsync %s to %s"%(', '.join(src),
-                                        ', '.join(target.keys()))
+            _src = ', '.join(src)
+            if len(_src) > 300:
+                _src = _src[0:300]
+            _dst = ', '.join(target.keys())
+            self.label = "rsync %s to %s"%(_src, _dst)
         self.src = src
         self.dst = dst
         self.dstfs = dstfs
