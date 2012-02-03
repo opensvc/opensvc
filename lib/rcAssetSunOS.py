@@ -143,3 +143,62 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
+    def __get_hba(self):
+        # fc / fcoe
+        """
+        # cfgadm -s match="exact,select=type(fc-fabric)"
+        Ap_Id      Type         Receptacle   Occupant     Condition
+        c5         fc-fabric    connected    configured   unknown
+        """
+        l = []
+        if not which('cfgadm'):
+            print "no cfgadm"
+            return []
+        if not which('luxadm'):
+            print "no luxadm"
+            return []
+        cmd = ['cfgadm', '-lv', '-s', 'match=exact,select=type(fc-fabric)']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            print out, err, ret
+            return []
+        words = out.split()
+        hba_names = [word for word in words if word.startswith("/devices/")]
+
+        if len(hba_names) == 0:
+            return []
+
+        hba_type = 'fc'
+        for hba_name in hba_names:
+            targets = []
+            cmd = ['luxadm', '-e', 'dump_map', hba_name]
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                continue
+            lines = out.split('\n')
+            if len(lines) < 2:
+                continue
+            for line in lines[1:]:
+                words = line.split()
+                if len(words) < 5:
+                    continue
+                if 'Host Bus' in line:
+                    hba_id = words[3]
+                else:
+                    targets.append(words[3])
+            l.append((hba_id, hba_type, targets))
+
+        return l
+
+    def _get_hba(self):
+        l = self.__get_hba()
+        return map(lambda x: (x[0], x[1]), l)
+
+    def _get_targets(self):
+        l = self.__get_hba()
+        m = []
+        for hba_id, hba_type, targets in l:
+             for target in targets:
+                 m.append((hba_id, target))
+        return m
+
