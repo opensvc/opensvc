@@ -61,7 +61,7 @@ class IbmSvc(object):
         self.username = username
         self.key = key
         #self.keys = ['lsvdisk']
-        self.keys = ['lsvdisk', 'lsmdiskgrp', 'lsnode', 'lscluster', 'svc_product_id']
+        self.keys = ['lsvdisk', 'lsmdiskgrp', 'lsnode', 'lscluster', 'svc_product_id', 'lsfabric']
 
     def rcmd(self, cmd):
         return rcmd(cmd, self.name, self.username, self.key)
@@ -83,6 +83,11 @@ class IbmSvc(object):
 
     def get_lscluster(self):
         cmd = 'lscluster -delim :'
+        print "%s: %s"%(self.name, cmd)
+        return self.rcmd(cmd)[0]
+
+    def get_lsfabric(self):
+        cmd = 'lsfabric -delim :'
         print "%s: %s"%(self.name, cmd)
         return self.rcmd(cmd)[0]
 
