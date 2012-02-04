@@ -180,7 +180,7 @@ _nodemgr()
 		local opts="--param"
 		;;
 	    pushstats)
-		local opts="--stats-dir --stats-start --stats-end"
+		local opts="--stats-dir --begin --end"
 		;;
 	    pushsym)
 		local opts="--symcli-db-file"
