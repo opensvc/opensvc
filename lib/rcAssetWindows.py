@@ -113,9 +113,52 @@ class Asset(rcAsset.Asset):
 	compname = get_registry_value(*key)
         return compname
 
+    def _get_fc_hbas(self):
+        hbas = []
+        if not which('fcinfo'):
+	    print '  fcinfo is not installed'
+	    return []
+	cmd = ['fcinfo']
+	out, err, ret = justcall(cmd)
+	if ret != 0:
+	    print 'error executing fcinfo', out, err, ret
+	    return []
+	for line in out.split('\n'):
+	    if 'PortWWN' not in line:
+	        continue
+            l = line.split()
+	    i = l.index('PortWWN:')
+	    if len(l) < i+2:
+	        continue
+	    index = l[0].split('-')[-1].strip(':')
+            portwwn = l[i+1].replace(':', '')
+	    hbas.append((index, portwwn))
+        return hbas
+
     def _get_hba(self):
-        return []
+        hbas = []
+	for index, portwwn in self._get_fc_hbas():
+	    hbas.append((portwwn, 'fc'))
+        return hbas
 
     def _get_targets(self):
-        return []
+        maps = []
+        if not which('fcinfo'):
+	    print '  fcinfo is not installed'
+	    return []
+	for index, portwwn in self._get_fc_hbas():
+	    cmd = ['fcinfo', '/mapping', '/ai:'+index]
+	    out, err, ret = justcall(cmd)
+	    if ret != 0:
+	        print 'error executing', ' '.join(cmd), out, err, ret
+	        continue
+            for line in out.split('\n'):
+	        if not line.startswith('(x'):
+		    continue
+                l = line.split()
+		if len(l) < 3:
+		    continue
+		tgtportwwn = l[2].strip(',').replace(':', '')
+		maps.append((portwwn, tgtportwwn))
+        return maps
 
