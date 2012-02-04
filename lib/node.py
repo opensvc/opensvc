@@ -41,8 +41,8 @@ class Options(object):
         self.force = False
         self.debug = False
         self.stats_dir = None
-        self.stats_start = None
-        self.stats_end = None
+        self.begin = None
+        self.end = None
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
@@ -95,7 +95,7 @@ class Node(Svc, Freezer):
           'Push data to the collector': {
             'pushasset':      'push asset information to collector',
             'pushservices':   'push services configuration to collector',
-            'pushstats':      'push performance metrics to collector',
+            'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
@@ -606,17 +606,29 @@ class Node(Svc, Freezer):
                             force=self.options.force):
             return
 
-        # get interval from config file
         if self.config.has_section('stats'):
-            interval = self.config.getint('stats', 'push_interval')
+            period = self.config.get('stats', 'push_period')
         else:
-            interval = self.config.getint('DEFAULT', 'push_interval')
+            period = self.config.get('DEFAULT', 'push_period')
+        try:
+            period = json.loads(period)
+        except:
+            return
+
+        try:
+            start, end, now = self.get_period_minutes(period)
+        except:
+            return
+
+        # set interval to grab from the begining of the last allowed period
+        # to now
+        interval = 1440 + now - start
 
         self.collector.call('push_stats', force=self.options.force,
                                 stats_dir=self.options.stats_dir,
-                                stats_start=self.options.stats_start,
-                                stats_end=self.options.stats_end,
-                                interval=2*interval)
+                                stats_start=self.options.begin,
+                                stats_end=self.options.end,
+                                interval=interval)
 
     def pushpkg(self):
         if self.skip_action('packages', 'push_interval', 'last_pkg_push',
