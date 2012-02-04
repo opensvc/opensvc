@@ -558,13 +558,15 @@ class Node(Svc, Freezer):
     def skip_action(self, section, option, fname,
                     cmdline_parm=None,
                     period_option=None,
-                    days_option=None,
-                    force=False):
+                    days_option=None):
 
         def err(msg):
             print '%s: skip:'%section, msg, '(--force to bypass)'
 
-        if force:
+        if not self.options.cron:
+            return False
+
+        if self.options.force:
             return False
 
         # check if we are in allowed period
@@ -587,7 +589,6 @@ class Node(Svc, Freezer):
 
         # probabilistic skip
         if '#sync#' not in section and \
-           self.options.cron and \
            self.skip_action_probabilistic(section, period_option):
             err('checks passed but skip to level collector load')
             return True
@@ -602,8 +603,7 @@ class Node(Svc, Freezer):
     def pushstats(self):
         if self.skip_action('stats', 'push_interval', 'last_stats_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         if self.config.has_section('stats'):
@@ -633,8 +633,7 @@ class Node(Svc, Freezer):
     def pushpkg(self):
         if self.skip_action('packages', 'push_interval', 'last_pkg_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_pkg')
@@ -642,8 +641,7 @@ class Node(Svc, Freezer):
     def pushpatch(self):
         if self.skip_action('patches', 'push_interval', 'last_patch_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_patch')
@@ -651,8 +649,7 @@ class Node(Svc, Freezer):
     def pushasset(self):
         if self.skip_action('asset', 'push_interval', 'last_asset_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_asset', self)
@@ -660,8 +657,7 @@ class Node(Svc, Freezer):
     def pusheva(self):
         if self.skip_action('eva', 'push_interval', 'last_eva_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_eva')
@@ -669,8 +665,7 @@ class Node(Svc, Freezer):
     def pushibmsvc(self):
         if self.skip_action('ibmsvc', 'push_interval', 'last_ibmsvc_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_ibmsvc')
@@ -678,8 +673,7 @@ class Node(Svc, Freezer):
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_sym')
@@ -694,8 +688,7 @@ class Node(Svc, Freezer):
                            self.config.get(s, 'rid')))
             if self.skip_action(s, 'sync_interval', ts,
                                 period_option='sync_period',
-                                days_option='sync_days',
-                                force=self.options.force):
+                                days_option='sync_days'):
                     continue
             l.append(self.config.get(s, 'svcname'))
         return l
@@ -740,8 +733,7 @@ class Node(Svc, Freezer):
     def pushservices(self):
         if self.skip_action('svcconf', 'push_interval', 'last_svcconf_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         if self.svcs is None:
@@ -753,8 +745,7 @@ class Node(Svc, Freezer):
     def push_appinfo(self):
         if self.skip_action('appinfo', 'push_interval', 'last_appinfo_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         if self.svcs is None:
@@ -771,8 +762,7 @@ class Node(Svc, Freezer):
     def checks(self):
         if self.skip_action('checks', 'push_interval', 'last_checks_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         import checks

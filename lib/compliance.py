@@ -224,8 +224,7 @@ class Compliance(object):
         if self.skip_action is not None and \
            self.skip_action("compliance", 'comp_check_interval', flag,
                             period_option='comp_check_period',
-                            days_option='comp_check_days',
-                            force=self.options.force):
+                            days_option='comp_check_days'):
             return
         self.do_checks()
 
