@@ -29,6 +29,7 @@ from rcUtilities import *
 import rcLogger
 import resSyncRsync
 import rcExceptions as ex
+import platform
 
 check_privs()
 
@@ -43,7 +44,7 @@ rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
 rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
 rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
 rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
-rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine = os.uname()
+rcEnv.sysname, rcEnv.nodename, x, x, rcEnv.machine, x = platform.uname()
 rcEnv.nodename = socket.gethostname()
 
 os.environ['LANG'] = 'C'

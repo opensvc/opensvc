@@ -28,18 +28,19 @@
 """
 import sys
 import os
+import platform
 
 class rcEnv:
     """Class to store globals
     """
 
     allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
-    platform = sys.platform
-    sysname, nodename, x, x, machine = os.uname()
+    _platform = sys.platform
+    sysname, nodename, x, x, machine, x = platform.uname()
 
     """program used to execute remote command on other nodes or virtual hosts
     """
-    if platform == "sunos5" :
+    if _platform == "sunos5" :
         if os.path.exists('/usr/local/bin/ssh'):
             rsh = "/usr/local/bin/ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
             rcp = "/usr/local/bin/scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"

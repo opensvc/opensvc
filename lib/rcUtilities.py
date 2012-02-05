@@ -55,6 +55,8 @@ def fork(fn, kwargs):
     os._exit(0)
 
 def check_privs():
+    if os.name == 'nt':
+        return
     if os.getuid() != 0:
         print 'Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv)
         sys.exit(1)
@@ -72,16 +74,22 @@ def is_exe(fpath):
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
 def which(program):
-    """Returns True if program is in PATH and executable, False
-    otherwize
-    """
+    def ext_candidates(fpath):
+        yield fpath
+        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
+            yield fpath + ext
+
     fpath, fname = os.path.split(program)
-    if fpath and is_exe(program):
-        return program
-    for path in os.environ["PATH"].split(os.pathsep):
-        exe_file = os.path.join(path, program)
-        if is_exe(exe_file):
-            return exe_file
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            for candidate in ext_candidates(exe_file):
+                if is_exe(candidate):
+                    return candidate
+
     return None
 
 def justcall(argv=['/bin/false']):
@@ -89,7 +97,11 @@ def justcall(argv=['/bin/false']):
     """
     if which(argv[0]) is None:
         return ("", "", 1)
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
+    if os.name == 'nt':
+        close_fds = False
+    else:
+        close_fds = True
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     (stdout, stderr)=process.communicate(input=None)
     return (stdout, stderr, process.returncode)
 
