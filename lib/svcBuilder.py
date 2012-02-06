@@ -1574,6 +1574,14 @@ def list_services():
     if not os.path.exists(rcEnv.pathetc):
         print "create dir %s"%rcEnv.pathetc
         os.makedirs(rcEnv.pathetc)
+
+    if os.name == 'nt':
+	import glob
+        s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+	s = map(lambda x: os.path.basename(x).replace('.env',''), s)
+	return s
+
+    # posix
     s = []
     for name in os.listdir(rcEnv.pathetc):
         if not is_service(os.path.join(rcEnv.pathetc, name)):
@@ -1802,14 +1810,14 @@ def create(svcname, resources=[], interactive=False, provision=False):
     os.chdir(rcEnv.pathetc)
     if os.path.exists(svcname) and not os.path.islink(svcname):
         os.unlink(svcname)
-    if not os.path.exists(svcname):
+    if os.name == 'posix' and not os.path.exists(svcname):
         os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
     initdir = svcname+'.dir'
     if not os.path.exists(initdir):
         os.makedirs(initdir)
     if not os.path.islink(svcname+'.d') and os.path.exists(svcname+'.d'):
         os.unlink(svcname+'.d')
-    if not os.path.exists(svcname+'.d'):
+    if os.name == 'posix' and not os.path.exists(svcname+'.d'):
         os.symlink(initdir, svcname+'.d')
 
 def update(svcname, resources=[], interactive=False, provision=False):
@@ -1902,14 +1910,14 @@ def update(svcname, resources=[], interactive=False, provision=False):
     os.chdir(rcEnv.pathetc)
     if not os.path.islink(svcname):
         os.unlink(svcname)
-    if not os.path.exists(svcname):
+    if os.name == 'posix' and not os.path.exists(svcname):
         os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
     initdir = svcname+'.dir'
     if not os.path.exists(initdir):
         os.makedirs(initdir)
     if not os.path.islink(svcname+'.d'):
         os.unlink(svcname+'.d')
-    if not os.path.exists(svcname+'.d'):
+    if os.name == 'posix' and not os.path.exists(svcname+'.d'):
         os.symlink(initdir, svcname+'.d')
 
 def _fix_default_section(svcname):
