@@ -236,10 +236,10 @@ class CompFiles(object):
         if f['path'].endswith("/") and not os.path.exists(f['path']):
             try:
                 os.makedirs(f['path'])
-                print >>sys.stderr, "failed to create", f['path']
+                print f['path'], "created"
             except:
+                print >>sys.stderr, "failed to create", f['path']
                 return RET_ERR
-            print f['path'], "created"
             return RET_OK
         if self.check_file_fmt(f) == RET_OK:
             return RET_OK
