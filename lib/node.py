@@ -100,6 +100,7 @@ class Node(Svc, Freezer):
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
+            'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
             'checks':         'run node sanity checks, push results to collector',
@@ -653,6 +654,15 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_asset', self)
+
+    def pushdcs(self):
+        if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
+                            period_option='push_period',
+                            days_option='push_days',
+                            force=self.options.force):
+            return
+
+        self.collector.call('push_dcs')
 
     def pusheva(self):
         if self.skip_action('eva', 'push_interval', 'last_eva_push',

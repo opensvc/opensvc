@@ -814,6 +814,24 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_ibmsvc(*args)
     
+    def push_dcs(self, sync=True):
+        if 'update_dcs' not in self.proxy_methods:
+           print "'update_dcs' method is not exported by the collector"
+           return
+        m = __import__('rcDcs')
+        try:
+            dcss = m.Dcss()
+        except:
+            return
+        for dcs in dcss:
+            vals = []
+            for key in dcs.keys:
+                vals.append(getattr(dcs, 'get_'+key)())
+            args = [dcs.name, dcs.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_dcs(*args)
+
     def push_eva(self, sync=True):
         if 'update_eva_xml' not in self.proxy_methods:
     	    print "'update_eva_xml' method is not exported by the collector"
