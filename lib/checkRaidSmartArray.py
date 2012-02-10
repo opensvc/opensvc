@@ -81,12 +81,9 @@ class check(checks.check):
         for line in lines:
             if ' Slot ' in line:
                 l = line.split()
-                if '(Embedded)' in line:
-                    slot = 'slot ' + l[-2]
-                    uslot = l[-2]
-                else:
-                    slot = 'slot ' + l[-1]
-                    uslot = l[-1]
+                idx = l.index('Slot')
+                uslot = l[idx+1]
+                slot = 'slot ' + uslot
                 value = 0
                 value += self.check_controller(uslot)
                 value += self.check_array(uslot)
