@@ -1284,6 +1284,7 @@ def add_apps(svc, conf):
     kwargs['monitor'] = get_monitor(conf, s, svc)
        
     r = resApp.Apps(**kwargs)
+    add_triggers(r, conf, s)
     svc += r
 
 def setup_logging():
