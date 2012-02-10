@@ -1168,6 +1168,13 @@ class Svc(Resource, Freezer):
                 s += ": %s"%str(e)
             self.log.error(s)
             err = 1
+            if 'start' in action:
+                try:
+                    self.log.info("trying to rollback %s"%action)
+                    getattr(self, action.replace('start', 'stop'))()
+                except:
+                    self.log.error("rollback %s failed"%action)
+                    pass
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
