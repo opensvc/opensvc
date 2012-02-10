@@ -25,6 +25,7 @@ u = __import__('rcUtilitiesHP-UX')
 
 class Ip(Res.Ip):
     def check_ping(self):
+        self.log.info("checking %s availability"%self.addr)
         return u.check_ping(self.addr)
 
     def arp_announce(self):

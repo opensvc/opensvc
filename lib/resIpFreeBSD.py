@@ -26,6 +26,7 @@ from rcUtilitiesFreeBSD import check_ping
 
 class Ip(Res.Ip):
     def check_ping(self):
+        self.log.info("checking %s availability"%self.addr)
         return check_ping(self.addr)
 
     def arp_announce(self):

@@ -23,6 +23,7 @@
 import resIp as Res
 from subprocess import *
 from rcUtilitiesSunOS import check_ping
+import rcExceptions as ex
 
 class Ip(Res.Ip):
     """ define ip SunOS start/stop doAction """
@@ -32,7 +33,13 @@ class Ip(Res.Ip):
         return
 
     def check_ping(self):
+        self.log.info("checking %s availability"%self.addr)
         return check_ping(self.addr, timeout=2)
+
+    def check_not_ping_raise(self):
+        self.log.info("checking %s availability"%self.addr)
+        if check_ping(self.addr, timeout=2):
+            raise ex.excError
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
