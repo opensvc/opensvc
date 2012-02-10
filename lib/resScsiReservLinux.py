@@ -117,7 +117,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
-    def disk_preempt_reservation(self, disk, oldkey):
+    def _disk_preempt_reservation(self, disk, oldkey):
         m = __import__("rcDiskInfo"+rcEnv.sysname)
         if m.diskInfo().disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = '--preempt'

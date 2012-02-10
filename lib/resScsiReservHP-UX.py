@@ -148,7 +148,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
-    def disk_preempt_reservation(self, disk, oldkey):
+    def _disk_preempt_reservation(self, disk, oldkey):
         cmd = [ 'scu', '-f', disk, 'preserve', 'preempt', 'key', self.hostid, 'skey', oldkey, 'type', self.prtype ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
