@@ -58,6 +58,7 @@ class check(checks.check):
             elif line.startswith('key'):
                 lag = l[1]
                 i = 0
+                continue
             elif l[0] == 'device':
                 continue
             val = l[2]
@@ -89,6 +90,7 @@ class check(checks.check):
             elif line.startswith('key'):
                 lag = l[1]
                 i = 0
+                continue
             elif l[0] == 'device':
                 continue
             else:
