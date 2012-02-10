@@ -82,7 +82,7 @@ class ScsiReserv(Res.Resource):
         if not hasattr(self, '_disk_preempt_reservation'):
             raise ex.notImplemented
         if not self.svc.force and not self.svc.cluster:
-            self.log.error("%s il already reserved. use --force to override this safety net"%disk)
+            self.log.error("%s is already reserved. use --force to override this safety net"%disk)
             raise ex.excError
         return self._disk_preempt_reservation(disk, oldkey)
 
