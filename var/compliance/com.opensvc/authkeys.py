@@ -210,12 +210,9 @@ class CompAuthKeys(object):
         ps = self.get_authkey_files(ak['user'])
 
         for p in ps:
-            base = os.basename(p)
-            if not os.path.exists(base):
-                return RET_OK
-
+            base = os.path.basename(p)
             if not os.path.exists(p):
-                return RET_OK
+                continue
 
             with open(p, 'r') as f:
                 l = f.read().split('\n')
