@@ -226,6 +226,15 @@ class Compliance(object):
                             period_option='comp_check_period',
                             days_option='comp_check_days'):
             return
+
+        if self.options.cron:
+            # level database load
+            import random
+            import time
+            delay = int(random.random()*300)
+            print "delay compliance check for %d secs to level database load"%delay
+            time.sleep(delay)
+
         self.do_checks()
 
     def __iadd__(self, o):
