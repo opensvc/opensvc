@@ -57,6 +57,7 @@ class Node(Svc, Freezer):
         return s
 
     def __init__(self):
+        self.delay_done = False
         self.nodename = socket.gethostname()
         self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
@@ -598,6 +599,19 @@ class Node(Svc, Freezer):
         # to not perturb the schedule
         if not self.options.force:
             self.timestamp(timestamp_f, interval)
+
+        # ok. we have some action to perform.
+        # now wait for a random delay <5min to not overload the
+        # collector listeners at 10 minutes intervals.
+        # only delay for the first action of this Node() object
+        # lifespan
+        if not self.delay_done:
+            import random
+            import time
+            delay = int(random.random()*300)
+            print "delay action for %d secs to level database load"%delay
+            time.sleep(delay)
+            self.delay_done = True
 
         return False
 
