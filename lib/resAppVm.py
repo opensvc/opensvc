@@ -41,15 +41,20 @@ class Apps(resApp.Apps):
         if ret != 0:
             self.vcall(self.prefix+['chmod', '+x', rc])
 
+    def check_reachable(self, container):
+        cmd = self.prefix + ['/bin/pwd']
+        ret = qcall(cmd)
+        if ret != 0:
+            return False
+        return True
+
     def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
         if container.status(refresh=True) != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%rcStatus.status_str(container.status()))
             self.status_log("container is %s"%rcStatus.status_str(container.status()))
             raise ex.excNotAvailable
-        cmd = self.prefix + ['/bin/pwd']
-        ret = qcall(cmd)
-        if ret != 0:
+        if self.svc.guestos == 'Windows' or not self.check_reachable(container):
             self.log.debug("abort resApp action because container is unreachable")
             self.status_log("container is unreachable")
             return False
