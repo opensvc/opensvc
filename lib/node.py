@@ -72,7 +72,7 @@ class Node(Svc, Freezer):
           'sync_period': '["04:00", "06:00"]',
           'comp_check_interval': 61,
           'comp_check_days': '["sunday"]',
-          'comp_check_period': '["05:00", "06:00"]',
+          'comp_check_period': '["02:00", "06:00"]',
         }
         self.load_config()
         self.options = Options()
