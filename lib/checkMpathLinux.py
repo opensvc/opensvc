@@ -50,6 +50,8 @@ class check(checks.check):
                              })
                 n = 0
                 l = line.split()
+                if l[0] == 'create:':
+                    l = l[1:]
                 if len(l) < 2:
                     continue
                 if l[1].startswith('('):
