@@ -68,27 +68,29 @@ class Sync(Res.Resource):
             return True
         return True
 
-    def in_period(self):
-        if len(self.sync_period) == 0:
+    def in_period(self, period=None):
+        if period is None:
+            period = self.sync_period
+        if len(period) == 0:
             return True
-        if isinstance(self.sync_period[0], list):
+        if isinstance(period[0], list):
             r = False
-            for p in self.sync_period:
+            for p in period:
                  r |= self.in_period(p)
             return r
-        elif (not isinstance(self.sync_period[0], unicode) and \
-              not isinstance(self.sync_period[0], str)) or \
-             len(self.sync_period) != 2 or \
-             (not isinstance(self.sync_period[1], unicode) and \
-              not isinstance(self.sync_period[1], str)):
-            self.log.error("malformed period: %s"%str(self.sync_period))
+        elif (not isinstance(period[0], unicode) and \
+              not isinstance(period[0], str)) or \
+             len(period) != 2 or \
+             (not isinstance(period[1], unicode) and \
+              not isinstance(period[1], str)):
+            self.log.error("malformed period: %s"%str(period))
             return False
-        start_s, end_s = self.sync_period
+        start_s, end_s = period
         try:
             start_t = time.strptime(start_s, "%H:%M")
             end_t = time.strptime(end_s, "%H:%M")
         except ValueError:
-            self.log.error("malformed period: %s"%str(self.sync_period))
+            self.log.error("malformed period: %s"%str(period))
             return False
         start = start_t.tm_hour * 60 + start_t.tm_min
         end = end_t.tm_hour * 60 + end_t.tm_min
@@ -98,7 +100,7 @@ class Sync(Res.Resource):
             start = start_t.tm_hour * 60 + start_t.tm_min
             end = end_t.tm_hour * 60 + end_t.tm_min
         except:
-            self.log.error("malformed time string: %s"%str(self.sync_period))
+            self.log.error("malformed time string: %s"%str(period))
             return False
         now = datetime.datetime.now()
         now_m = now.hour * 60 + now.minute
