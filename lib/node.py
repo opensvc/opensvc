@@ -430,15 +430,6 @@ class Node(Svc, Freezer):
         return True
 
     def get_period_minutes(self, period):
-        if isinstance(period[0], list):
-            r = False
-            for p in period:
-                 r |= self.in_period(p)
-            return r
-        elif not isinstance(period[0], unicode) or len(period) != 2 or \
-             not isinstance(period[1], unicode):
-            print >>sys.stderr, "malformed period: %s"%str(period)
-            return False
         start_s, end_s = period
         try:
             start_t = time.strptime(start_s, "%H:%M")
@@ -453,6 +444,17 @@ class Node(Svc, Freezer):
         return start, end, now_m
 
     def in_period(self, period):
+        if isinstance(period[0], list):
+            r = False
+            for p in period:
+                 if self.in_period(p):
+                     return True
+            return False
+        elif not isinstance(period[0], unicode) or len(period) != 2 or \
+             not isinstance(period[1], unicode):
+            print >>sys.stderr, "malformed period: %s"%str(period)
+            return False
+
         if len(period) == 0:
             return True
         try:
