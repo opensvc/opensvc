@@ -70,7 +70,7 @@ class Node(Svc, Freezer):
           'sync_interval': 121,
           'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'sync_period': '["04:00", "06:00"]',
-          'comp_check_interval': 61,
+          'comp_check_interval': 241,
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["02:00", "06:00"]',
         }
