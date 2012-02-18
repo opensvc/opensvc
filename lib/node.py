@@ -367,9 +367,9 @@ class Node(Svc, Freezer):
     def skip_action_interval(self, timestamp_f, interval):
         return not self.need_action_interval(timestamp_f, interval)
 
-    def skip_probabilistic(self, period):
+    def skip_probabilistic(self, period, interval):
         if len(period) == 0:
-            return True
+            return False
 
         try:
             start, end, now = self.get_period_minutes(period)
@@ -382,8 +382,15 @@ class Node(Svc, Freezer):
             now += 1440
 
         length = end - start
+
+        if interval <= length:
+            # don't skip if interval <= period length, because the user
+            # expects the action to run multiple times in the period
+            return False
+
         elapsed = now - start
         elapsed_pct = int(100.0 * elapsed / length)
+
         """
             proba
               ^
@@ -417,9 +424,10 @@ class Node(Svc, Freezer):
         """
 
         if r >= p:
-            return True
+            print "win probabilistic challenge: %d, over %d"%(r, p)
+            return False
 
-        return False
+        return True
 
     def get_period_minutes(self, period):
         if isinstance(period[0], list):
@@ -472,7 +480,7 @@ class Node(Svc, Freezer):
             return True
         return False
 
-    def skip_action_probabilistic(self, section, option):
+    def skip_action_probabilistic(self, section, option, interval):
         if option is None:
             return False
 
@@ -490,10 +498,17 @@ class Node(Svc, Freezer):
             print >>sys.stderr, "malformed parameter value: %s.period"%section
             return True
 
-        if self.skip_probabilistic(period):
-            return False
+        if isinstance(period[0], list):
+            matching_period = None
+            for p in period:
+                if self.in_period(p):
+                    matching_period = p
+                    break
+            if matching_period is None:
+                return True
+            period = matching_period
 
-        return True
+        return self.skip_probabilistic(period, interval)
 
     def skip_action_period(self, section, option):
         if option is None:
@@ -591,7 +606,7 @@ class Node(Svc, Freezer):
 
         # probabilistic skip
         if '#sync#' not in section and \
-           self.skip_action_probabilistic(section, period_option):
+           self.skip_action_probabilistic(section, period_option, interval):
             err('checks passed but skip to level collector load')
             return True
 
