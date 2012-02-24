@@ -87,7 +87,11 @@ class syncEvasnap(resSync.Sync):
                 policy = 'demand'
             if policy not in ['demand', 'fully']:
                 policy = 'demand'
-            cmd += ['add snapshot %s vdisk="%s" allocation_policy=%s world_wide_lun_name=%s'%(snapname(info), info['objectname'], policy, self.convert_wwid(pair['dst']))]
+            if 'vraid' in pair and pair['vraid'] in ['vraid6', 'vraid5', 'vraid0', 'vraid1']:
+                force_vraid = "redundancy=%s"%pair['vraid']
+            else:
+                force_vraid = ""
+            cmd += ['add snapshot %s vdisk="%s" allocation_policy=%s world_wide_lun_name=%s %s'%(snapname(info), info['objectname'], policy, self.convert_wwid(pair['dst']), force_vraid)]
         self.sssu(cmd, verbose=True)
 
         cmd = []
