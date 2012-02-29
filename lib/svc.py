@@ -176,6 +176,7 @@ class Svc(Resource, Freezer):
         return self
 
     def svclock(self, action=None, timeout=30, delay=5):
+        suffix = None
         list_actions_no_pre_action = [
           'push',
           'push_appinfo',
@@ -192,10 +193,19 @@ class Svc(Resource, Freezer):
         if action in list_actions_no_pre_action:
             # no need to serialize this action
             return
+        if action.startswith("collector"):
+            # no need to serialize collector gets
+            return
+        if action.startswith("compliance"):
+            # compliance modules are allowed to execute actions on the service
+            # so give them their own lock
+            suffix = "compliance"
         if self.lockfd is not None:
             # already acquired
             return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
+        if suffix is not None:
+            lockfile = ".".join((lockfile, suffix))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
