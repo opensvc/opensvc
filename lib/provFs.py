@@ -49,23 +49,11 @@ class ProvisioningFs(Provisioning):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
-        # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... use /dev/dm-$minor
+        # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
+        self.r.vcall(["dmsetup", "mknodes"])
         mapname = "%s-%s"%(self.section['vg'].replace('-','--'),
                            dev.replace('-','--'))
-        cmd = ['dmsetup', 'info', mapname]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            self.r.log.error("failed to find logical volume device mapper info")
-            raise ex.excError
-        l = out.split('\n')
-        minor = None
-        for line in l:
-            if line.startswith('Major'):
-                minor = line.split()[-1]
-        if minor is None:
-            self.r.log.error("failed to find logical volume device mapper info")
-            raise ex.excError
-        self.dev = '/dev/dm-'+minor
+        self.dev = '/dev/mapper/'+mapname
         import time
         for i in range(3, 0, -1):
             if os.path.exists(self.dev):
