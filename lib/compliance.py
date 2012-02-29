@@ -458,7 +458,10 @@ class Compliance(object):
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = self.collector.call('comp_attach_ruleset', ruleset)
+            if self.svcname is not None:
+                d = self.collector.call('comp_attach_svc_ruleset', self.svcname, ruleset)
+            else:
+                d = self.collector.call('comp_attach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']
@@ -471,7 +474,10 @@ class Compliance(object):
             raise ex.excError('no ruleset specified. use --ruleset')
         err = False
         for ruleset in self.options.ruleset.split(','):
-            d = self.collector.call('comp_detach_ruleset', ruleset)
+            if self.svcname is not None:
+                d = self.collector.call('comp_detach_svc_ruleset', self.svcname, ruleset)
+            else:
+                d = self.collector.call('comp_detach_ruleset', ruleset)
             if not d['status']:
                 err = True
             print d['msg']

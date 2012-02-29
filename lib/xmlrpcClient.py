@@ -955,6 +955,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_dated_ruleset(*args)
     
+    def comp_attach_svc_ruleset(self, svcname, ruleset, sync=True):
+        args = [svcname, ruleset]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_attach_svc_ruleset(*args)
+    
     def comp_attach_ruleset(self, ruleset, sync=True):
         args = [rcEnv.nodename, ruleset]
         if self.auth_node:
