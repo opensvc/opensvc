@@ -1,0 +1,610 @@
+#!/opt/opensvc/bin/python
+""" 
+Verify file content. The collector provides the format with
+wildcards. The module replace the wildcards with contextual
+values.
+
+The variable format is json-serialized:
+
+[{
+ "dev": "lv_applisogm",
+ "size": "1024M",
+ "mnt": "/%%ENV:SVCNAME%%/applis/ogm",
+ "vg": ["%%ENV:SVCNAME%%", "vgAPPLIS", "vgCOMMUN01", "vgLOCAL"]
+}]
+
+Wildcards:
+%%ENV:VARNAME%%		Any environment variable value
+
+Toggle:
+%%ENV:FS_STRIP_SVCNAME_FROM_DEV_IF_IN_VG%%
+
+"""
+
+import os
+import sys
+import json
+import stat
+import re
+from subprocess import *
+from stat import *
+
+sys.path.append(os.path.dirname(__file__))
+
+from comp import *
+
+class CompFs(object):
+    def __init__(self, prefix='OSVC_COMP_FS_'):
+        self.prefix = prefix.upper()
+        self.sysname, self.nodename, x, x, self.machine = os.uname()
+        self.sysname = self.sysname.replace('-', '')
+        self.fs = []
+        self.res = {}
+
+        if 'OSVC_COMP_SERVICES_SVC_NAME' in os.environ:
+            self.svcname = os.environ['OSVC_COMP_SERVICES_SVC_NAME']
+        else:
+            os.environ['OSVC_COMP_SERVICES_SVC_NAME'] = ""
+            self.svcname = None
+        self.vglist()
+
+        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
+            try:
+                self.fs += self.add_fs(os.environ[k])
+            except ValueError:
+                print >>sys.stderr, 'failed to parse variable', os.environ[k]
+
+        if len(self.fs) == 0:
+            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            raise NotApplicable()
+
+        self.fs.sort(lambda x, y: cmp(x['mnt'], y['mnt']))
+
+
+    def vglist_HPUX(self):
+        import glob
+        l = glob.glob("/dev/*/group")
+        l = map(lambda x: x.split('/')[2], l)
+        self.vg = l
+
+    def vglist_Linux(self):
+        cmd = ['vgs', '-o', 'vg_name', '--noheadings']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            raise
+        self.vg = out.split()
+
+    def vglist(self):
+        if not hasattr(self, 'vglist_'+self.sysname):
+            print >>sys.stderr, self.sysname, 'not supported'
+            raise NotApplicable()
+        getattr(self, 'vglist_'+self.sysname)()
+        
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
+
+    def add_fs(self, v):
+        if type(v) == str or type(v) == unicode:
+            d = json.loads(v)
+        else:
+            d = v
+        l = []
+
+        # recurse if multiple fs are specified in a list of dict
+        if type(d) == list:
+            for _d in d:
+                l += self.add_fs(_d)
+            return l
+
+        if type(d) != dict:
+            print >>sys.stderr, "not a dict:", d
+            return l
+
+        if 'dev' not in d:
+            print >>sys.stderr, 'dev should be in the dict:', d
+            return l
+        if 'mnt' not in d:
+            print >>sys.stderr, 'mnt should be in the dict:', d
+            return l
+        if 'size' not in d:
+            print >>sys.stderr, 'size should be in the dict:', d
+            return l
+        if 'vg' not in d:
+            print >>sys.stderr, 'vg should be in the dict:', d
+            return l
+        if 'type' not in d:
+            print >>sys.stderr, 'type should be in the dict:', d
+            return l
+        if 'opts' not in d:
+            print >>sys.stderr, 'opts should be in the dict:', d
+            return l
+        if type(d['vg']) != list:
+            d['vg'] = [d['vg']]
+
+        d['vg_orig'] = d['vg']
+        d['vg'] = self.subst(d['vg'])
+        d['prefvg'] = self.prefvg(d)
+        d['dev'] = self.strip_svcname(d)
+
+        for k in ('dev', 'mnt', 'size', 'type', 'opts'):
+            d[k] = self.subst(d[k])
+
+        d['mnt'] = self.normpath(d['mnt'])
+        d['devpath'] = self.devpath(d)
+        d['rdevpath'] = self.rdevpath(d)
+        d['size'] = self.size_to_mb(d)
+
+        return [d]
+
+    def strip_svcname(self, fs):
+        key = "OSVC_COMP_FS_STRIP_SVCNAME_FROM_DEV_IF_IN_VG"
+        if key not in os.environ or os.environ[key] != "true":
+            return fs['dev']
+        if "%%ENV:SERVICES_SVC_NAME%%" not in fs['vg_orig'][fs['prefvg_idx']]:
+            return fs['dev']
+
+        # the vg is dedicated to the service. no need to embed
+        # the service name in the lv name too
+        return fs['dev'].replace("%%ENV:SERVICES_SVC_NAME%%", "")
+
+    def normpath(self, p):
+        l = p.split('/')
+        p = os.path.normpath(os.path.join(os.sep, *l))
+        return p
+
+    def rdevpath(self, d):
+        return '/dev/%s/r%s'%(d['prefvg'], d['dev'])
+
+    def devpath(self, d):
+        return '/dev/%s/%s'%(d['prefvg'], d['dev'])
+
+    def prefvg(self, d):
+        for i, vg in enumerate(d['vg']):
+            if vg in self.vg:
+                d['prefvg_idx'] = i
+                return vg
+        print >>sys.stderr, "no candidate vg is available on this node for dev %s"%d['dev']
+        raise NotApplicable()
+
+    def check_fs_mnt(self, fs, verbose=False):
+        if not os.path.exists(fs['mnt']):
+            if verbose:
+                print >>sys.stderr, "mount point", fs['mnt'], "does not exist"
+            return 1
+        if verbose:
+            print "mount point", fs['mnt'], "exists"
+        return 0
+
+    def check_fs_dev_exists(self, fs, verbose=False):
+        if not os.path.exists(fs['devpath']):
+            if verbose:
+                print >>sys.stderr, "device", fs['devpath'], "does not exist"
+            return 1
+        if verbose:
+            print "device", fs['devpath'], "exists"
+        return 0
+
+    def check_fs_dev_stat(self, fs, verbose=False):
+        mode = os.stat(fs['devpath'])[ST_MODE]
+        if not S_ISBLK(mode):
+            if verbose:
+                print >>sys.stderr, "device", fs['devpath'], "is not a block device"
+            return 1
+        if verbose:
+            print "device", fs['devpath'], "is a block device"
+        return 0
+
+    def check_fs_dev(self, fs, verbose=False):
+        if self.check_fs_dev_exists(fs, verbose) == 1:
+            return 1
+        if self.check_fs_dev_stat(fs, verbose) == 1:
+            return 1
+        return 0
+
+    def fix_fs_dev(self, fs):
+        if self.check_fs_dev(fs, False) == 0:
+            return 0
+        if self.check_fs_dev_exists(fs, False) == 0:
+            print >>sys.stderr, "device", fs['devpath'], "already exists. won't fix."
+            return 1
+        return self.createlv(fs)
+
+    def createlv(self, fs):
+        if not hasattr(self, 'createlv_'+self.sysname):
+            print >>sys.stderr, self.sysname, 'not supported'
+            raise NotApplicable()
+        return getattr(self, 'createlv_'+self.sysname)(fs)
+
+    def size_to_mb(self, fs):
+        s = fs['size']
+        unit = s[-1]
+        size = int(s[:-1])
+        if unit == 'T':
+            s = str(size*1024*1024)
+        elif unit == 'G':
+            s = str(size*1024)
+        elif unit == 'M':
+            s = str(size)
+        elif unit == 'K':
+            s = str(size//1024)
+        else:
+            print >>sys.stderr, "unknown size unit in rule: %s (use T, G, M or K)"%s
+            raise CompError()
+        return s
+
+    def createlv_HPUX(self, fs):
+        cmd = ['lvcreate', '-n', fs['dev'], '-L', fs['size'], fs['prefvg']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print err
+        if p.returncode != 0:
+            return 1
+        return 0
+
+    def createlv_Linux(self, fs):
+        cmd = ['lvcreate', '-n', fs['dev'], '-L', fs['size']+'M', fs['prefvg']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print err
+        if p.returncode != 0:
+            return 1
+        return 0
+
+    def fix_fs_mnt(self, fs, verbose=False):
+        if self.check_fs_mnt(fs, False) == 0:
+            return 0
+        print "create", fs['mnt'], "mount point"
+        os.makedirs(fs['mnt'])
+        return 0
+
+    def check_fs_fmt_HPUX_vxfs(self, fs, verbose=False):
+        cmd = ['fstyp', fs['devpath']]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0 or "vxfs" not in out:
+            if verbose:
+                print >>sys.stderr, fs['devpath'], "is not formatted"
+            return 1
+        if verbose:
+            print fs['devpath'], "is correctly formatted"
+        return 0
+
+    def check_fs_fmt_HPUX(self, fs, verbose=False):
+        if fs['type'] == 'vxfs':
+            return self.check_fs_fmt_HPUX_vxfs(fs, verbose)
+        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        return 1
+
+    def check_fs_fmt_Linux(self, fs, verbose=False):
+        if fs['type'] in ('ext2', 'ext3', 'ext4'):
+            return self.check_fs_fmt_Linux_ext(fs, verbose)
+        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        return 1
+
+    def check_fs_fmt_Linux_ext(self, fs, verbose=False):
+        cmd = ['tune2fs', '-l', fs['devpath']]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            if verbose:
+                print >>sys.stderr, fs['devpath'], "is not formatted"
+            return 1
+        if verbose:
+            print fs['devpath'], "is correctly formatted"
+        return 0
+
+    def fix_fs_fmt_Linux_ext(self, fs):
+        cmd = ['mkfs.'+fs['type'], '-q', '-b', '4096', fs['devpath']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print err
+        if p.returncode != 0:
+            return 1
+
+        cmd = ['tune2fs', '-m', '0', '-c', '0', '-i', '0', fs['devpath']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print err
+        if p.returncode != 0:
+            return 1
+
+        return 0
+
+    def fix_fs_fmt_Linux(self, fs):
+        if fs['type'] in ('ext2', 'ext3', 'ext4'):
+            return self.fix_fs_fmt_Linux_ext(fs)
+        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        return 1
+
+    def check_fs_fmt(self, fs, verbose=False):
+        if not hasattr(self, 'check_fs_fmt_'+self.sysname):
+            print >>sys.stderr, self.sysname, 'not supported'
+            raise NotApplicable()
+        return getattr(self, 'check_fs_fmt_'+self.sysname)(fs, verbose)
+
+    def fix_fs_fmt_HPUX_vxfs(self, fs):
+        cmd = ['newfs', '-F', 'vxfs', '-b', '8192', fs['rdevpath']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print err
+        if p.returncode != 0:
+            return 1
+        return 0
+
+    def fix_fs_fmt_HPUX(self, fs):
+        if fs['type'] == 'vxfs':
+            return self.fix_fs_fmt_HPUX_vxfs(fs)
+        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        return 1
+
+        if not hasattr(self, 'check_fs_fmt_'+self.sysname):
+            print >>sys.stderr, self.sysname, 'not supported'
+            raise NotApplicable()
+        return getattr(self, 'check_fs_fmt_'+self.sysname)(fs, verbose)
+
+    def fix_fs_fmt(self, fs):
+        if self.check_fs_fmt(fs) == 0:
+            return 0
+        if not hasattr(self, 'fix_fs_fmt_'+self.sysname):
+            print >>sys.stderr, self.sysname, 'not supported'
+            raise NotApplicable()
+        return getattr(self, 'fix_fs_fmt_'+self.sysname)(fs)
+
+    def get_res_item(self, rid, item):
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'get', '--param', '.'.join((rid, item))]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, ' '.join(cmd), 'failed'
+            return 1
+        return out.strip()
+ 
+    def get_res(self, rid):
+        if rid in self.res:
+            return self.res[rid]
+        d = {}
+        d['mnt'] = self.get_res_item(rid, 'mnt')
+        d['dev'] = self.get_res_item(rid, 'dev')
+        self.res[rid] = d
+        return d
+
+    def get_fs_rids(self, refresh=False):
+        if not refresh and hasattr(self, 'rids'):
+            return self.rids
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_status']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "unable to fetch %s json status"%self.svcname
+            return []
+        d = json.loads(out)
+        self.rids = [ k for k in d['resources'].keys() if k.startswith('fs#') ]
+        return self.rids
+
+    def find_rid(self, fs):
+        found = False
+        for rid in self.rids:
+            d = self.get_res(rid)
+            if d['mnt'] == fs['mnt'] and d['dev'] == fs['devpath']:
+                return rid
+        return None
+
+    def fix_fs_local(self, fs):
+        if self.svcname is not None:
+            return 0
+        if self.check_fs_local(fs, False) == 0:
+            return 0
+        with open("/etc/fstab", "r") as f:
+            lines = f.read().split('\n')
+        if len(lines[-1]) == 0:
+            del(lines[-1])
+        p = re.compile(r'\s*%s\s+'%(fs['devpath']))
+        newline = "%s %s %s %s 0 2"%(fs['devpath'], fs['mnt'], fs['type'], fs['opts'])
+        for i, line in enumerate(lines):
+            if line == newline:
+                return 0
+            if re.match(p, line) is not None:
+                print "remove '%s' from fstab"%line
+                del lines[i]
+        lines.append(newline)
+        print "append '%s' to fstab"%newline
+        try:
+            with open("/etc/fstab", "w") as f:
+                f.write("\n".join(lines)+'\n')
+        except:
+            print >>sys.stderr, "failed to rewrite fstab"
+            return 1
+        print "fstab rewritten"
+        return 0
+
+    def check_fs_local(self, fs, verbose=False):
+        if self.svcname is not None:
+            return 0
+        p = re.compile(r'\s*%s\s+%s'%(fs['devpath'], fs['mnt']))
+        with open("/etc/fstab", "r") as f:
+            buff = f.read()
+        if re.search(p, buff) is not None:
+            if verbose:
+                print "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
+                return 0
+        if verbose:
+            print >>sys.stderr, "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
+        return 1
+
+    def check_fs_svc(self, fs, verbose=False):
+        if self.svcname is None:
+            return 0
+        rids = self.get_fs_rids()
+        rid = self.find_rid(fs)
+        if rid is None:
+            if verbose:
+                print >>sys.stderr, "%s@%s resource not found in service %s"%(fs['mnt'], fs['devpath'], self.svcname)
+            return 1
+        if verbose:
+            print "%s@%s resource correctly set in service %s"%(fs['mnt'], fs['devpath'], self.svcname)
+        return 0
+            
+    def fix_fs_svc(self, fs):
+        if self.check_fs_svc(fs, False) == 0:
+            return 0
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'update', '--resource',
+               '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mntopt": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'])]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "unable to fetch %s json status"%self.svcname
+            return 1
+        return 0
+
+    def check_fs_mounted(self, fs, verbose=False):
+        if os.path.ismount(fs['mnt']):
+            if verbose:
+                print fs['mnt'], "is mounted"
+            return 0
+        if verbose:
+            print >>sys.stderr, fs['mnt'], "is not mounted"
+        return 1
+
+    def fix_fs_mounted(self, fs):
+        if self.check_fs_mounted(fs, False) == 0:
+            return 0
+        if self.svcname is None:
+            return self.fix_fs_mounted_local(fs)
+        else:
+            return self.fix_fs_mounted_svc(fs)
+
+    def fix_fs_mounted_svc(self, fs):
+        rids = self.get_fs_rids(refresh=True)
+        rid = self.find_rid(fs)
+        if rid is None:
+            print >>sys.stderr, "fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname)
+            return 1
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'mount']
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "unable to mount %s"%fs['mnt']
+            return 1
+        return 0
+
+    def fix_fs_mounted_local(self, fs):
+        cmd = ['mount', fs['mnt']]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "unable to mount %s"%fs['mnt']
+            return 1
+        return 0
+
+    def check_fs(self, fs, verbose=False):
+        r = 0
+        r |= self.check_fs_mnt(fs, verbose)
+        r |= self.check_fs_dev(fs, verbose)
+        r |= self.check_fs_fmt(fs, verbose)
+        r |= self.check_fs_svc(fs, verbose)
+        r |= self.check_fs_local(fs, verbose)
+        r |= self.check_fs_mounted(fs, verbose)
+        return r
+
+    def fix_fs(self, fs):
+        if self.fix_fs_mnt(fs) != 0:
+            return 1
+        if self.fix_fs_dev(fs) != 0:
+            return 1
+        if self.fix_fs_fmt(fs) != 0:
+            return 1
+        if self.fix_fs_svc(fs) != 0:
+            return 1
+        if self.fix_fs_local(fs) != 0:
+            return 1
+        if self.fix_fs_mounted(fs) != 0:
+            return 1
+        return 0
+
+    def fixable(self):
+        return RET_NA
+
+    def check(self):
+        r = 0
+        for f in self.fs:
+            r |= self.check_fs(f, verbose=True)
+        return r
+
+    def fix(self):
+        r = 0
+        for f in self.fs:
+            r |= self.fix_fs(f)
+        return r
+
+
+if __name__ == "__main__":
+    syntax = """syntax:
+      %s PREFIX check|fixable|fix"""%sys.argv[0]
+    if len(sys.argv) != 3:
+        print >>sys.stderr, "wrong number of arguments"
+        print >>sys.stderr, syntax
+        sys.exit(RET_ERR)
+    try:
+        o = CompFs(sys.argv[1])
+        if sys.argv[2] == 'check':
+            RET = o.check()
+        elif sys.argv[2] == 'fix':
+            RET = o.fix()
+        elif sys.argv[2] == 'fixable':
+            RET = o.fixable()
+        else:
+            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
+            print >>sys.stderr, syntax
+            RET = RET_ERR
+    except NotApplicable:
+        sys.exit(RET_NA)
+    except:
+        import traceback
+        traceback.print_exc()
+        sys.exit(RET_ERR)
+
+    sys.exit(RET)
+
