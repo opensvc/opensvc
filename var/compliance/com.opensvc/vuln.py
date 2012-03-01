@@ -161,7 +161,7 @@ class CompVuln(object):
         return RET_OK
 
     def hp_fix_all(self):
-        r = call(['swinstall', '-x', 'autoreboot=true', '-x', 'mount_all_filesystems=false', '-s', self.uri] + self.fix_list)
+        r = call(['swinstall', '-x', 'allow_downdate=true', '-x', 'autoreboot=true', '-x', 'mount_all_filesystems=false', '-s', self.uri] + self.fix_list)
         if r != 0:
             return RET_ERR
         return RET_OK
@@ -294,6 +294,7 @@ class CompVuln(object):
         s = os.uname()[2]
         s = s.replace('xen', '')
         s = s.replace('PAE', '')
+	s = s.replace('.x86_64','')
         return s
 
     def check_pkg(self, pkg, verbose=True):
