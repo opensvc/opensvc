@@ -77,9 +77,15 @@ class CompAuthKeys(object):
         else:
             print >>sys.stderr, "unknown key", key
             return None
-        cf = os.path.join(os.sep, 'etc', 'ssh', 'sshd_config')
-        if not os.path.exists(cf):
-            print >>sys.stderr, cf, "not found"
+        cfs = [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
+               os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config')]
+        cf = None
+        for _cf in cfs:
+            if os.path.exists(_cf):
+                cf = _cf
+                break
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
             return None
         with open(cf, 'r') as f:
             buff = f.read()
