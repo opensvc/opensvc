@@ -20,6 +20,7 @@ import os
 import sys
 import json
 import pwd
+import re
 from utilities import which
 
 try:
@@ -73,6 +74,22 @@ class CompUser(object):
         if len(self.users) == 0:
             print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
+
+        p = re.compile('%%ENV:\w+%%')
+        for user, d in self.users.items():
+            for k in d:
+                if type(d[k]) not in [str, unicode]:
+                    continue
+                for m in p.findall(d[k]):
+                    s = m.strip("%").replace('ENV:', '')
+                    if s in os.environ:
+                        v = os.environ[s]
+                    elif 'OSVC_COMP_'+s in os.environ:
+                        v = os.environ['OSVC_COMP_'+s]
+                    else:
+                        print >>sys.stderr, s, 'is not an env variable'
+                        raise NotApplicable()
+                    d[k] = d[k].replace(m, v)
 
         if not cap_shadow:
             for user, d in self.users.items():
