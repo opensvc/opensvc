@@ -43,6 +43,9 @@ class CompFiles(object):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         self.files = []
 
+        if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
+            os.environ["OSVC_COMP_SERVICES_SVC_NAME"] = ""
+
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
                 self.files += self.add_file(os.environ[k])
@@ -53,22 +56,31 @@ class CompFiles(object):
             print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
+
     def parse_fmt(self, d):
         if isinstance(d['fmt'], int):
             d['fmt'] = str(d['fmt'])+'\n'
-        fmt = d['fmt']
-        p = re.compile('%%ENV:.+%%')
-        for m in p.findall(fmt):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                RET = RET_ERR
-                return []
-            fmt = fmt.replace(m, v)
         fmt = fmt.replace('%%HOSTNAME%%', self.nodename)
         fmt = fmt.replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
         if not fmt.endswith('\n'):
@@ -87,6 +99,26 @@ class CompFiles(object):
         f.close()
         return self.parse_fmt(d)
 
+    def get_env_item(self, d, item):
+        if item not in d:
+            return d
+        if type(d[item]) != str and type(d[item]) != unicode:
+            return d
+        if not d[item].startswith("%%"):
+            return d
+        s = d[item].strip('%').replace('ENV:', '')
+        if not s.startswith('OSVC_COMP_'):
+            s = 'OSVC_COMP_'+s
+        if s not in os.environ:
+            print >>sys.stderr, "%s is not set"%s
+            raise
+        d[item] = os.environ[s]
+        try:
+            d[item] = int(d[item])
+        except:
+            pass
+        return d
+
     def add_file(self, v):
         d = json.loads(v)
         if 'path' not in d:
@@ -101,6 +133,14 @@ class CompFiles(object):
             print >>sys.stderr, 'fmt and ref are exclusive:', d
             RET = RET_ERR
             return []
+        try:
+            d = self.get_env_item(d, 'uid')
+            d = self.get_env_item(d, 'gid')
+        except:
+            return []
+        for k in ('ref', 'path', 'uid', 'gid', 'fmt'):
+            if k in d:
+                d[k] = self.subst(d[k])
         if 'fmt' in d:
             return self.parse_fmt(d)
         if 'ref' in d:
@@ -151,7 +191,8 @@ class CompFiles(object):
                 tuid = info[2]
                 self._usr[uid] = tuid
             except:
-                pass
+                print >>sys.stderr, "user %s does not exist"%uid
+                raise ComplianceError()
         return tuid
 
     def get_gid(self, gid):
@@ -164,7 +205,8 @@ class CompFiles(object):
                 tgid = info[2]
                 self._grp[gid] = tgid
             except:
-                pass
+                print >>sys.stderr, "group %s does not exist"%gid
+                raise ComplianceError()
         return tgid
 
     def check_file_uid(self, f, verbose=False):
@@ -292,6 +334,8 @@ if __name__ == "__main__":
             print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
             print >>sys.stderr, syntax
             RET = RET_ERR
+    except ComplianceError:
+        sys.exit(RET_ERR)
     except NotApplicable:
         sys.exit(RET_NA)
     except:
