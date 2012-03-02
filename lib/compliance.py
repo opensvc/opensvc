@@ -490,6 +490,8 @@ class Compliance(object):
             l = self.collector.call('comp_list_ruleset')
         else:
             l = self.collector.call('comp_list_ruleset', self.options.ruleset)
+        if l is None:
+            return
         print '\n'.join(l)
 
     def compliance_list_moduleset(self):
