@@ -273,7 +273,7 @@ class Asset(object):
         print "model (%s)"%source
         print "  %s"%s
 
-    def get_environnement(self):
+    def get_host_mode(self):
         s = 'TST'
         source = self.s_default
         try:
@@ -281,10 +281,27 @@ class Asset(object):
             source = self.s_config
         except:
             pass
+        self.print_host_mode(s, source)
+        return s
+
+    def print_host_mode(self, s, source):
+        print "host mode (%s)"%source
+        print "  %s"%s
+
+    def get_environnement(self):
+        s = None
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'environment')
+            source = self.s_config
+        except:
+            pass
         self.print_environnement(s, source)
         return s
 
     def print_environnement(self, s, source):
+        if s is None:
+            return
         print "environment (%s)"%source
         print "  %s"%s
 
@@ -472,7 +489,10 @@ class Asset(object):
         d['cpu_model'] = self.get_cpu_model()
         d['serial'] = self.get_serial()
         d['model'] = self.get_model()
-        d['environnement'] = self.get_environnement()
+        d['host_mode'] = self.get_host_mode()
+        environnement = self.get_environnement()
+        if environnement is not None:
+            d['environnement'] = environnement
         loc_country = self.get_loc_country()
         if loc_country is not None:
             d['loc_country'] = loc_country
