@@ -1088,6 +1088,7 @@ class Svc(Resource, Freezer):
         actions_list_allow_on_frozen = [
           'get',
           'set',
+          'update',
           'enable',
           'disable',
           'delete',
@@ -1098,8 +1099,14 @@ class Svc(Resource, Freezer):
           'push_appinfo',
           'print_status',
           'print_disklist',
-          'json_status'
+          'json_status',
           'json_disklist'
+        ]
+        actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
+          'resource_monitor',
+          'presync',
+          'postsync',
+          'syncall'
         ]
         if action not in actions_list_allow_on_frozen and \
            'compliance' not in action and \
@@ -1108,7 +1115,7 @@ class Svc(Resource, Freezer):
                 self.log.info("Abort action for frozen service")
                 return 1
             try:
-                if action not in ["resource_monitor", "presync", "postsync", "syncall"]:
+                if action not in actions_list_allow_on_cluster:
                     self.cluster_mode_safety_net()
             except ex.excError:
                 return 1
