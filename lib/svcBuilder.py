@@ -1808,18 +1808,11 @@ def create(svcname, resources=[], interactive=False, provision=False):
 
     conf.write(f)
 
-    os.chdir(rcEnv.pathetc)
-    if os.path.exists(svcname) and not os.path.islink(svcname):
-        os.unlink(svcname)
-    if os.name == 'posix' and not os.path.exists(svcname):
-        os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
     initdir = svcname+'.dir'
     if not os.path.exists(initdir):
         os.makedirs(initdir)
-    if not os.path.islink(svcname+'.d') and os.path.exists(svcname+'.d'):
-        os.unlink(svcname+'.d')
-    if os.name == 'posix' and not os.path.exists(svcname+'.d'):
-        os.symlink(initdir, svcname+'.d')
+    fix_app_link(svcname)
+    fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
 
 def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
@@ -1908,18 +1901,34 @@ def update(svcname, resources=[], interactive=False, provision=False):
 
     conf.write(f)
 
+    fix_app_link(svcname)
+    fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+
+def fix_app_link(svcname):
     os.chdir(rcEnv.pathetc)
-    if not os.path.islink(svcname):
-        os.unlink(svcname)
-    if os.name == 'posix' and not os.path.exists(svcname):
-        os.symlink(os.path.join('..', 'bin', 'svcmgr'), svcname)
-    initdir = svcname+'.dir'
-    if not os.path.exists(initdir):
-        os.makedirs(initdir)
-    if not os.path.islink(svcname+'.d'):
-        os.unlink(svcname+'.d')
-    if os.name == 'posix' and not os.path.exists(svcname+'.d'):
-        os.symlink(initdir, svcname+'.d')
+    src = svcname+'.d'
+    dst = svcname+'.dir'
+    if os.name != 'posix':
+        return
+    try:
+        p = os.readlink(src)
+    except:
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        os.symlink(dst, src)
+
+def fix_exe_link(dst, src):
+    if os.name != 'posix':
+        return
+    os.chdir(rcEnv.pathetc)
+    try:
+        p = os.readlink(src)
+    except:
+        os.symlink(dst, src)
+        p = dst
+    if p != dst:
+        os.unlink(src)
+        os.symlink(dst, src)
 
 def _fix_default_section(svcname):
     """ [default] section is not returned by ConfigParser.defaults()
