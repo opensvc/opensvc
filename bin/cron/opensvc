@@ -36,7 +36,7 @@ n.options.cron = True
 
 for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
                "pushasset", "checks", "syncservices", "compliance_check",
-               "push_appinfo"]:
+               "push_appinfo", "pushdisks"]:
     try:
         n.action(action)
     except:

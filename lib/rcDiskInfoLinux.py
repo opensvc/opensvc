@@ -32,6 +32,31 @@ class diskInfo(rcDiskInfo.diskInfo):
         return '.'.join((rcEnv.nodename, id))
 
     def disk_id(self, dev):
+        if 'cciss' in dev:
+            return self.cciss_id(dev)
+        else:
+            return self.scsi_id(dev)
+
+    def cciss_id(self, dev):
+        if dev in self.disk_ids:
+            return self.disk_ids[dev]
+        if which('cciss_id'):
+            cciss_id = 'cciss_id'
+        else:
+            return ""
+        cmd = [cciss_id, dev]
+        (ret, out, err) = call(cmd)
+        if ret == 0:
+            id = out.split('\n')[0]
+            if id.startswith('3'):
+                id = id[1:]
+            else:
+                id = self.prefix_local(id)
+            self.disk_ids[dev] = id
+            return id
+        return ""
+
+    def scsi_id(self, dev):
         if dev in self.disk_ids:
             return self.disk_ids[dev]
         if which('scsi_id'):
@@ -64,9 +89,10 @@ class diskInfo(rcDiskInfo.diskInfo):
         return ""
 
     def disk_vendor(self, dev):
+        if 'cciss' in dev:
+            return 'HP'
         s = ''
         dev = re.sub("[0-9]+$", "", dev)
-        dev = dev.replace("cciss/", "cciss!")
         path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
         if not os.path.exists(path):
             return ""
@@ -76,9 +102,10 @@ class diskInfo(rcDiskInfo.diskInfo):
         return s.strip()
 
     def disk_model(self, dev):
+        if 'cciss' in dev:
+            return 'VOLUME'
         s = ''
         dev = re.sub("[0-9]+$", "", dev)
-        dev = dev.replace("cciss/", "cciss!")
         path = dev.replace('/dev/', '/sys/block/')+'/device/model'
         if not os.path.exists(path):
             return ""

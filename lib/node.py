@@ -97,6 +97,7 @@ class Node(Svc, Freezer):
             'pushasset':      'push asset information to collector',
             'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
+            'pushdisks':      'push package/version list to collector',
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
@@ -719,6 +720,17 @@ class Node(Svc, Freezer):
 
         self.collector.call('push_sym')
 
+    def pushdisks(self):
+        if self.skip_action('sym', 'push_interval', 'last_disks_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        if self.svcs is None:
+            self.build_services()
+
+        self.collector.call('push_disks', self)
+
     def need_sync(self):
         l = []
         for s in self.config.sections():
@@ -899,6 +911,16 @@ class Node(Svc, Freezer):
         r = s.action(**kwargs)
         self.close()
         sys.exit(r)
+
+    def disklist(self):
+        try:
+            m = __import__("rcDevTree"+rcEnv.sysname)
+        except ImportError:
+            return
+        tree = m.DevTree()
+        tree.load()
+        return map(lambda x: x.devpath, tree.get_top_devs())
+
 
 if __name__ == "__main__" :
     for n in (Node,) :

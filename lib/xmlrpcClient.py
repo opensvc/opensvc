@@ -659,7 +659,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_service(*args)
     
-    def push_disks(self, svc, sync=True):
+    def push_disks(self, node, sync=True):
         def disk_dg(dev, svc):
             for rset in svc.get_res_sets("disk.vg") + svc.get_res_sets("disk.zpool"):
                 for vg in rset.resources:
@@ -675,34 +675,56 @@ class Collector(object):
         disks = di.diskInfo()
         disklist_cache = {}
     
-        args = [svc.svcname, rcEnv.nodename]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.delete_disks(*args)
-    
-        for d in svc.disklist():
+        l = []
+        vars = ['disk_id',
+                'disk_svcname',
+                'disk_size',
+                'disk_vendor',
+                'disk_model',
+                'disk_dg',
+                'disk_nodename']
+        vals = []
+        for svc in node.svcs:
+            for d in svc.disklist():
+                if disks.disk_id(d) is None or disks.disk_id(d) == "":
+                    """ no point pushing to db an empty entry
+                    """
+                    continue
+                l.append(disks.disk_id(d))
+                print svc.svcname, "disk", disks.disk_id(d)
+                vals.append([
+                     repr(disks.disk_id(d)),
+                     repr(svc.svcname),
+                     repr(disks.disk_size(d)),
+                     repr(disks.disk_vendor(d)),
+                     repr(disks.disk_model(d)),
+                     repr(disk_dg(d, svc)),
+                     repr(rcEnv.nodename)
+                ])
+        for d in node.disklist():
             if disks.disk_id(d) is None or disks.disk_id(d) == "":
                 """ no point pushing to db an empty entry
                 """
                 continue
-            args = [['disk_id',
-                 'disk_svcname',
-                 'disk_size',
-                 'disk_vendor',
-                 'disk_model',
-                 'disk_dg',
-                 'disk_nodename'],
-                [repr(disks.disk_id(d)),
-                 repr(svc.svcname),
+            if disks.disk_id(d) in l:
+                # disk is already in a service
+                continue
+            print rcEnv.nodename, "disk", disks.disk_id(d)
+            vals.append([
+                 repr(disks.disk_id(d)),
+                 "",
                  repr(disks.disk_size(d)),
                  repr(disks.disk_vendor(d)),
                  repr(disks.disk_model(d)),
-                 repr(disk_dg(d, svc)),
-                 repr(rcEnv.nodename)]
-            ]
-            if self.auth_node:
-                args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.register_disk(*args)
+                 "",
+                 repr(rcEnv.nodename)
+            ])
+
+
+        args = [vars, vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.register_disks(*args)
     
     def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
@@ -874,7 +896,6 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         for svc in svcs:
             self.push_service(svc, sync=sync)
-            self.push_disks(svc, sync=sync)
 
     def push_appinfo(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]
