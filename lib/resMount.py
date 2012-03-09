@@ -107,6 +107,11 @@ class Mount(Res.Resource):
             f = open(self.testfile, 'w')
             f.write(' ')
             f.close()
+        except IOError, e:
+            if e.errno == 28:
+                self.log.error('No space left on device. Invalidate writable test.')
+                return True
+            return False
         except:
             return False
         return True
