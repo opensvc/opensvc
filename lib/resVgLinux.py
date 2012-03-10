@@ -142,6 +142,22 @@ class Vg(resDg.Dg):
             self.log.error("deactivation failed to release all logical volumes")
             raise ex.excError
 
+    def devlist(self):
+        if not self.has_it():
+            return set()
+        if self.devs != set():
+            return self.devs
+
+        self.devs = set()
+
+        cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
+        (ret, out, err) = self.call(cmd, cache=True)
+        if ret != 0:
+            return self.devs
+        self.devs = set(out.split())
+        self.log.debug("found devs %s held by vg %s" % (self.devs, self.name))
+        return self.devs
+
     def disklist(self):
         if not self.has_it():
             return set()
@@ -150,11 +166,7 @@ class Vg(resDg.Dg):
 
         self.disks = set()
 
-        cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
-        (ret, out, err) = self.call(cmd, cache=True)
-        if ret != 0:
-            return self.disks
-	pvs = set(out.split())
+	pvs = self.devlist()
         self.disks = devs_to_disks(self, pvs)
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks

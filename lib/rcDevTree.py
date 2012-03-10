@@ -1,3 +1,16 @@
+"""
+Top devices are bare disks or multipath paths.
+
+Bottom devices are formatted devices or devices given to
+applications like raw database devices.
+
+A relation describes a parent-child link. A 'used' size can
+be arbitrarily set on a relation : DevRelation.set_used()
+
+A logical volume lv0 with segments on pv1 pv2 has two parent
+relations : lv0-pv1 and lv0-pv2
+
+"""
 class DevRelation(object):
     def __init__(self, parent, child, used=0):
         self.child = child
@@ -9,6 +22,32 @@ class DevRelation(object):
         self.used_set = True
         self.used = used
         
+    def get_used(self, used):
+        #
+        # logical volumes and concatset need to set explicitly
+        # the 'used' size the child consumes on the parent.
+        #
+        if self.used_set:
+            return self.used
+        child = self.tree.get_dev(self.child)
+        if used == 0:
+            used = child.size
+        if child.devtype in ("linear", "partition"):
+            return used
+        elif child.devtype in ("raid0"):
+            n = len(d.parents)
+            return used/n
+        elif child.devtype in ("raid1", "raid10"):
+            n = len(d.parents)
+            return used*2/n
+        elif child.devtype in ("raid5"):
+            n = len(d.parents)
+            return used/(n-1)
+        elif child.devtype in ("raid6"):
+            n = len(d.parents)
+            return used/(n-2)
+        raise Exception("unknown devtype %s for %s"%(child.devtype, child.devname))
+
     def get_size(self, chain):
         if self.used_set:
             return self.used
@@ -18,45 +57,10 @@ class DevRelation(object):
             self.used = chain[-2].used
         return self.used
 
-class DevRelationRaid1(DevRelation):
-     pass
-
-class DevRelationRaid10(DevRelation):
-    def get_size(self, chain):
-        DevRelation.get_size(self, chain)
-        d = self.tree.get_dev(self.child)
-        n = len(d.parents)
-        self.used = self.used*2/n
-        return self.used
-
-class DevRelationRaid0(DevRelation):
-    def get_size(self, chain):
-        DevRelation.get_size(self, chain)
-        d = self.tree.get_dev(self.child)
-        n = len(d.parents)
-        self.used = self.used/n
-        return self.used
-
-class DevRelationRaid5(DevRelation):
-    def get_size(self, chain):
-        DevRelation.get_size(self, chain)
-        d = self.tree.get_dev(self.child)
-        n = len(d.parents)
-        self.used = self.used/(n-1)
-        return self.used
-
-class DevRelationRaid6(DevRelation):
-    def get_size(self, chain):
-        DevRelation.get_size(self, chain)
-        d = self.tree.get_dev(self.child)
-        n = len(d.parents)
-        self.used = self.used/(n-2)
-        return self.used
-
 class Dev(object):
     def __init__(self, devname, size, devtype):
         self.devname = devname
-        self.devpath = devname
+        self.devpath = []
         self.alias = devname
         self.size = size
         self.devtype = devtype
@@ -77,8 +81,11 @@ class Dev(object):
     def get_size(self):
         return self.size
 
+    def set_devtype(self, devtype):
+        self.devtype = devtype
+
     def set_devpath(self, devpath):
-        self.devpath = devpath
+        self.devpath.append(devpath)
 
     def print_dev(self, level=0, relation=None):
         if relation is None:
@@ -148,6 +155,15 @@ class Dev(object):
             d |= dev.get_top_devs()
         return d
 
+    def get_top_devs_chain(self, chain=[]):
+        if len(self.parents) == 0:
+            return [[self, chain]]
+        d = []
+        for parent in self.parents:
+            dev = self.get_dev(parent.parent)
+            d += dev.get_top_devs_chain(chain+[parent])
+        return d
+
     def print_dev_bottom_up(self, level=0, chain=[]):
         if len(chain) == 0:
             used = self.size
@@ -157,6 +173,7 @@ class Dev(object):
         for i in range(level+1):
             s += " "
         s += "%s %s %d %d"%(self.alias, self.devtype, self.size, used)
+        s += " %s"%self.devpath
         print s
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
@@ -205,6 +222,12 @@ class DevTree(object):
             return None
         return self.dev[devname]
 
+    def get_dev_by_devpath(self, devpath):
+        for dev in self.dev.values():
+            if devpath in dev.devpath:
+                return dev
+        return None
+
     def blacklist(self, dev):
         """ overload this fn with os specific implementation
         """
@@ -234,6 +257,25 @@ class DevTree(object):
         for dev in self.get_bottom_devs():
             d |= dev.get_top_devs()
         return list(d)
+
+    def get_used(self, chain):
+        used = 0
+        for rel in chain:
+            used = rel.get_used(used)
+        return used
+
+    def get_top_devs_usage_for_devpath(self, devpath):
+        dev = self.get_dev_by_devpath(devpath)
+        if dev is None:
+            return []
+        l = []
+        for d, chain in dev.get_top_devs_chain():
+            if len(chain) == 0:
+                used = self.size
+            else:
+                used = self.get_used(chain)
+            l.append((d.devpath[0], used))
+        return l
 
 if __name__ == "__main__":
     tree = DevTree()

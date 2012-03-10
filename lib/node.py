@@ -912,14 +912,18 @@ class Node(Svc, Freezer):
         self.close()
         sys.exit(r)
 
-    def disklist(self):
+    def devlist(self):
         try:
             m = __import__("rcDevTree"+rcEnv.sysname)
         except ImportError:
             return
         tree = m.DevTree()
         tree.load()
-        return map(lambda x: x.devpath, tree.get_top_devs())
+        l = []
+        for dev in tree.get_top_devs():
+            if len(dev.devpath) > 0:
+                l.append(dev.devpath[0])
+        return l
 
 
 if __name__ == "__main__" :

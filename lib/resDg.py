@@ -40,6 +40,7 @@ class Dg(Res.Resource):
         self.name = name
         self.always_on = always_on
         self.disks = set()
+        self.devs = set()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

@@ -168,8 +168,8 @@ class Collector(object):
                 through 127.0.0.1 == dbopensvc
             """
             pass
-        except AttributeError:
-            print fn, "function does not exist in Collector() object"
+        #except AttributeError:
+        #    print fn, "function does not exist in Collector() object"
         except socket.timeout:
             print "connection to collector timed out"
         except:
@@ -674,46 +674,70 @@ class Collector(object):
         di = __import__('rcDiskInfo'+rcEnv.sysname)
         disks = di.diskInfo()
         disklist_cache = {}
+        try:
+            m = __import__("rcDevTree"+rcEnv.sysname)
+        except ImportError:
+            return
+        tree = m.DevTree()
+        tree.load()
     
-        l = []
         vars = ['disk_id',
                 'disk_svcname',
                 'disk_size',
+                'disk_used',
                 'disk_vendor',
                 'disk_model',
                 'disk_dg',
                 'disk_nodename']
         vals = []
+        dh = {}
         for svc in node.svcs:
-            for d in svc.disklist():
-                if disks.disk_id(d) is None or disks.disk_id(d) == "":
-                    """ no point pushing to db an empty entry
-                    """
-                    continue
-                l.append(disks.disk_id(d))
-                print svc.svcname, "disk", disks.disk_id(d)
-                vals.append([
-                     repr(disks.disk_id(d)),
-                     repr(svc.svcname),
-                     repr(disks.disk_size(d)),
-                     repr(disks.disk_vendor(d)),
-                     repr(disks.disk_model(d)),
-                     repr(disk_dg(d, svc)),
-                     repr(rcEnv.nodename)
-                ])
-        for d in node.disklist():
-            if disks.disk_id(d) is None or disks.disk_id(d) == "":
+            for rs in svc.resSets:
+                for r in rs.resources:
+                    if r.is_disabled():
+                        continue
+                    for devpath in r.devlist():
+                        for d, used in tree.get_top_devs_usage_for_devpath(devpath):
+                            disk_id = disks.disk_id(d)
+                            used /= 1024
+                            if disk_id is None or disk_id == "":
+                                """ no point pushing to db an empty entry
+                                """
+                                continue
+                            if disk_id in dh:
+                                dh[disk_id] += used
+                            else:
+                                dh[disk_id] = used
+                            print svc.svcname, "disk", disk_id, "%d/%dG"%(used, disks.disk_size(d))
+                            vals.append([
+                                 repr(disk_id),
+                                 repr(svc.svcname),
+                                 repr(disks.disk_size(d)),
+                                 repr(used),
+                                 repr(disks.disk_vendor(d)),
+                                 repr(disks.disk_model(d)),
+                                 repr(disk_dg(d, svc)),
+                                 repr(rcEnv.nodename)
+                            ])
+
+        for d in node.devlist():
+            disk_id = disks.disk_id(d)
+            if disk_id is None or disk_id == "":
                 """ no point pushing to db an empty entry
                 """
                 continue
-            if disks.disk_id(d) in l:
-                # disk is already in a service
+            if disks.disk_id(d) in dh:
+                left = disks.disk_size(d) - dh[disk_id]
+            else:
+                left = disks.disk_size(d)
+            if left == 0:
                 continue
-            print rcEnv.nodename, "disk", disks.disk_id(d)
+            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dG"%(left, disks.disk_size(d))
             vals.append([
                  repr(disks.disk_id(d)),
                  "",
                  repr(disks.disk_size(d)),
+                 repr(left),
                  repr(disks.disk_vendor(d)),
                  repr(disks.disk_model(d)),
                  "",

@@ -3,6 +3,7 @@ import glob
 import os
 import re
 from subprocess import *
+from rcUtilities import which
 
 class DevTree(rcDevTree.DevTree):
     dev_h = {}
@@ -38,6 +39,8 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'wwid_h'):
             return self.wwid_h
         self.wwid_h = {}
+        if not which("multipath"):
+            return self.wwid_h
         cmd = ['multipath', '-l']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -47,7 +50,10 @@ class DevTree(rcDevTree.DevTree):
             if 'dm-' not in line:
                 continue
             devname = line[line.index('dm-'):].split()[0]
-            wwid = line[line.index('(')+2:line.index(')')]
+            try:
+                wwid = line[line.index('(')+2:line.index(')')]
+            except ValueError:
+                wwid = line.split()[0]
             self.wwid_h[devname] = wwid
         return self.wwid_h
 
@@ -127,11 +133,6 @@ class DevTree(rcDevTree.DevTree):
             return "multipath"
         return t
 
-    def is_path(self, dev):
-        if self.dev_type(dev.devname) == "multipath":
-            return True
-        return False
-
     def load_dev(self, devname, devpath):
         mp_h = self.get_mp()
         wwid_h = self.get_wwid()
@@ -170,6 +171,7 @@ class DevTree(rcDevTree.DevTree):
         if devname in self._dm_h:
             d.set_alias(self._dm_h[devname])
             d.set_devpath('/dev/mapper/'+self._dm_h[devname])
+            d.set_devpath('/dev/'+devname)
 
         # add slaves
         slavepaths = glob.glob("%s/slaves/*"%devpath)

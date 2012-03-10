@@ -218,6 +218,9 @@ class Resource(object):
                                  err_to_warn=err_to_warn,
                                  err_to_info=err_to_info)
 
+    def devlist(self):
+        return self.disklist()
+
     def disklist(self):
         """List disks the resource holds. Some resource have none,
         and can leave this function as is.

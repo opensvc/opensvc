@@ -51,12 +51,11 @@ class Vg(resVg.Dg):
     def do_stop(self):
         pass
 
-    def disklist(self):
-        if self.disks != set():
-            return self.disks
+    def devlist(self):
+        if self.devs != set():
+            return self.devs
 
-        self.disks = set()
-        devps = set()
+        self.devs = set()
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
@@ -69,8 +68,11 @@ class Vg(resVg.Dg):
             if len(il) != 1:
                  continue
             attr, devp = il[0]
-            devps |= set([devp])
+            self.devs |= set([devp])
+        return self.devs
 
+    def disklist(self):
+        devps = self.devs
         try:
 	    u = __import__('rcUtilities'+rcEnv.sysname)
             self.disks = u.devs_to_disks(self, devps)

@@ -134,6 +134,9 @@ class Mount(Res.Resource):
             else:
                 return rcStatus.DOWN
 
+    def devlist(self):
+        return set([self.device])
+
     def __str__(self):
         return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
                 self.mountPoint, self.device, self.fsType, self.mntOpt)
