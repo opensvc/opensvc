@@ -59,7 +59,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         (wwid, foo, vid, pid, size) = out.split(':')
         wwid = wwid.replace('0x', '')
         if len(size) != 0:
-            size = int(size)/2097152
+            size = int(size)/2048
         vid = vid.strip('" ')
         pid = pid.strip('" ')
         self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)

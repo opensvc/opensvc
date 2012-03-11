@@ -43,7 +43,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         cmd = ['bootinfo', '-s', lname]
         out, err, ret = justcall(cmd)
         if ret == 0:
-            size = str(int(out.split()[-1])//1024)
+            size = str(int(out.split()[-1]))
         else:
             size = '0'
         

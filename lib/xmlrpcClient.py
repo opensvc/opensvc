@@ -690,8 +690,13 @@ class Collector(object):
                 'disk_dg',
                 'disk_nodename']
         vals = []
+
+        # hash to add up disk usage across all services
         dh = {}
+
         for svc in node.svcs:
+            # hash to add up disk usage inside a service
+            valsh = {}
             for rs in svc.resSets:
                 for r in rs.resources:
                     if r.is_disabled():
@@ -699,7 +704,6 @@ class Collector(object):
                     for devpath in r.devlist():
                         for d, used in tree.get_top_devs_usage_for_devpath(devpath):
                             disk_id = disks.disk_id(d)
-                            used /= 1024
                             if disk_id is None or disk_id == "":
                                 """ no point pushing to db an empty entry
                                 """
@@ -708,17 +712,26 @@ class Collector(object):
                                 dh[disk_id] += used
                             else:
                                 dh[disk_id] = used
-                            print svc.svcname, "disk", disk_id, "%d/%dG"%(used, disks.disk_size(d))
-                            vals.append([
-                                 repr(disk_id),
-                                 repr(svc.svcname),
-                                 repr(disks.disk_size(d)),
-                                 repr(used),
-                                 repr(disks.disk_vendor(d)),
-                                 repr(disks.disk_model(d)),
-                                 repr(disk_dg(d, svc)),
-                                 repr(rcEnv.nodename)
-                            ])
+                            if dh[disk_id] > disks.disk_size(d):
+                                dh[disk_id] = disks.disk_size(d)
+                            if disk_id in valsh:
+                                valsh[disk_id][3] += used
+                            else:
+                                valsh[disk_id] = [
+                                 disk_id,
+                                 svc.svcname,
+                                 disks.disk_size(d),
+                                 used,
+                                 disks.disk_vendor(d),
+                                 disks.disk_model(d),
+                                 disk_dg(d, svc),
+                                 rcEnv.nodename
+                                ]
+                            if valsh[disk_id][3] > disks.disk_size(d):
+                                valsh[disk_id][3] = disks.disk_size(d)
+            for l in valsh.values():
+                vals += [map(lambda x: repr(x), l)]
+                print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2])
 
         for d in node.devlist():
             disk_id = disks.disk_id(d)
@@ -732,7 +745,7 @@ class Collector(object):
                 left = disks.disk_size(d)
             if left == 0:
                 continue
-            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dG"%(left, disks.disk_size(d))
+            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d))
             vals.append([
                  repr(disks.disk_id(d)),
                  "",

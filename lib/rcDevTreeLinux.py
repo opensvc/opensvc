@@ -142,6 +142,10 @@ class DevTree(rcDevTree.DevTree):
         if size in [0, 2, 30]:
             return
 
+        # discard cdroms
+        if devname.startswith('sr') or devname.startswith('scd'):
+            return
+
         devtype = self.dev_type(devname)
         d = self.add_dev(devname, size, devtype)
 

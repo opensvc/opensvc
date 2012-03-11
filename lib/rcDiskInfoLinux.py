@@ -33,9 +33,12 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def disk_id(self, dev):
         if 'cciss' in dev:
-            return self.cciss_id(dev)
+            id = self.cciss_id(dev)
         else:
-            return self.scsi_id(dev)
+            id = self.scsi_id(dev)
+        if len(id) == 0:
+            return self.prefix_local(dev.replace('/dev/','').replace('/','!'))
+        return id
 
     def cciss_id(self, dev):
         if dev in self.disk_ids:
@@ -133,10 +136,10 @@ class diskInfo(rcDiskInfo.diskInfo):
                 (ret, out, err) = call(cmd)
                 if ret != 0:
                     return 0
-                return int(math.ceil(1.*int(out)/2097152))
+                return int(math.ceil(1.*int(out)/2048))
 
         with open(path, 'r') as f:
             size = f.read()
             f.close()
-        return int(math.ceil(1.*int(size)/2097152))
+        return int(math.ceil(1.*int(size)/2048))
 

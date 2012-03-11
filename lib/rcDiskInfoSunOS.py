@@ -54,13 +54,13 @@ class diskInfo(rcDiskInfo.diskInfo):
                     n1 = int(line.split()[1])
                 if "accessible sectors" in line:
                     s0 = int(line.split()[1])
-                    size = math.ceil(1. * s0 * n1 / 1024 / 1024 / 1024)
+                    size = math.ceil(1. * s0 * n1 / 1024 / 1024)
                     break
                 if "sectors/cylinder" in line:
                     n2 = int(line.split()[1])
                 if "cylinders" in line:
                     n3 = int(line.split()[1])
-                size = math.ceil(1. * n1 * n2 * n3 / 1024 / 1024 / 1024)
+                size = math.ceil(1. * n1 * n2 * n3 / 1024 / 1024)
             except:
                 pass
 

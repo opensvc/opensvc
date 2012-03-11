@@ -271,7 +271,7 @@ class DevTree(object):
         l = []
         for d, chain in dev.get_top_devs_chain():
             if len(chain) == 0:
-                used = self.size
+                used = d.size
             else:
                 used = self.get_used(chain)
             l.append((d.devpath[0], used))
