@@ -4,6 +4,7 @@ import os
 import re
 from subprocess import *
 from rcUtilities import which
+from rcGlobalEnv import rcEnv
 
 class DevTree(rcDevTree.DevTree):
     dev_h = {}
@@ -133,6 +134,33 @@ class DevTree(rcDevTree.DevTree):
             return "multipath"
         return t
 
+    def add_drbd_relations(self):
+        if not which("drbdadm") or not os.path.exists('/proc/drbd'):
+            return
+        cmd = ["drbdadm", "dump-xml"]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        from xml.etree import ElementTree as etree
+        tree = etree.fromstring(out)
+        for res in tree.getiterator('resource'):
+            for host in res.findall('host'):
+                if host.attrib['name'] != rcEnv.nodename:
+                    continue
+                edisk = host.find('disk')
+                edev = host.find('device')
+                if edisk is None or edev is None:
+                    continue
+                devname = 'drbd'+edev.attrib['minor']
+                parentpath = edisk.text
+                d = self.get_dev_by_devpath(parentpath)
+                if d is None:
+                    continue
+                d.add_child(devname)
+                c = self.get_dev(devname)
+                c.add_parent(d.devname)
+
     def load_dev(self, devname, devpath):
         mp_h = self.get_mp()
         wwid_h = self.get_wwid()
@@ -140,10 +168,6 @@ class DevTree(rcDevTree.DevTree):
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
         if size in [0, 2, 30]:
-            return
-
-        # discard cdroms
-        if devname.startswith('sr') or devname.startswith('scd'):
             return
 
         devtype = self.dev_type(devname)
@@ -175,7 +199,8 @@ class DevTree(rcDevTree.DevTree):
         if devname in self._dm_h:
             d.set_alias(self._dm_h[devname])
             d.set_devpath('/dev/mapper/'+self._dm_h[devname])
-            d.set_devpath('/dev/'+devname)
+            s = self._dm_h[devname].replace('--', ':').replace('-', '/').replace(':','-')
+            d.set_devpath('/dev/'+s)
 
         # add slaves
         slavepaths = glob.glob("%s/slaves/*"%devpath)
@@ -222,8 +247,10 @@ class DevTree(rcDevTree.DevTree):
                 else:
                     r.set_used(length)
 
+        self.add_drbd_relations()
+
     def blacklist(self, devname):
-        bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*']
+        bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
         for b in bl:
             if re.match(b, devname):
                 return True
