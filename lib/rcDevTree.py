@@ -32,7 +32,7 @@ class DevRelation(object):
         child = self.tree.get_dev(self.child)
         if used == 0:
             used = child.size
-        if child.devtype in ("linear", "partition"):
+        if child.devtype in ("multipath", "linear", "partition"):
             return used
         elif child.devtype in ("raid0"):
             n = len(d.parents)
