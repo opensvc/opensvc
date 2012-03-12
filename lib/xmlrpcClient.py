@@ -734,12 +734,20 @@ class Collector(object):
                 vals += [map(lambda x: repr(x), l)]
                 print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2])
 
+        done = []
         for d in node.devlist():
             disk_id = disks.disk_id(d)
             if disk_id is None or disk_id == "":
                 """ no point pushing to db an empty entry
                 """
                 continue
+
+            # Linux Node:devlist() reports paths, so we can have duplicate
+            # disks here.
+            if disk_id in done:
+                continue
+            done.append(disk_id)
+
             if disks.disk_id(d) in dh:
                 left = disks.disk_size(d) - dh[disk_id]
             else:
