@@ -7,6 +7,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
+from rcPrintTable import print_table
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -483,6 +484,20 @@ class Compliance(object):
             print d['msg']
         if err:
             raise ex.excError()
+
+    def compliance_show_status(self):
+        args = ['comp_show_status']
+        if self.svcname is None:
+           args.append('')
+        else:
+           args.append(self.svcname)
+        if hasattr(self.options, 'module') and \
+           len(self.options.module) > 0:
+            args.append(self.options.module)
+        l = self.collector.call(*args)
+        if l is None:
+            return
+        print_table(l, width=50)
 
     def compliance_list_ruleset(self):
         if not hasattr(self.options, 'ruleset') or \

@@ -204,6 +204,7 @@ class Collector(object):
                          'comp_detach_svc_ruleset',
                          'comp_list_ruleset',
                          'comp_list_moduleset',
+                         'comp_show_status',
                          'comp_log_action']
         self.method_cache = os.path.join(pathosvc, "var", "collector")
         self.auth_node = True
@@ -1054,6 +1055,12 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_log_action(*args)
+
+    def comp_show_status(self, svcname, pattern='%', sync=True):
+        args = [svcname, pattern]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_show_status(*args)
 
     def collector_ack_unavailability(self, opts, sync=True):
         args = [opts]
