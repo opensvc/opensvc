@@ -31,7 +31,7 @@ class CompPackages(object):
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to package list'
 
         if len(self.packages) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
@@ -48,6 +48,7 @@ class CompPackages(object):
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
+        self.packages = map(lambda x: x.strip(), self.packages)
         self.installed_packages = self.get_installed_packages()
 
     def aix_fix_pkg(self):
@@ -94,8 +95,13 @@ class CompPackages(object):
     def yum_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
-        r = call(['yum', 'install', '-y', pkg])
-        if r != 0:
+        cmd = ['yum', 'install', '-y', pkg]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            if len(err) > 0:
+                print err
             return RET_ERR
         return RET_OK
 

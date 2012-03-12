@@ -95,8 +95,8 @@ class CompGroupMembership(object):
             if user in self.member_of and group in self.member_of[user]:
                 continue
             r += self.add_member(group, user)
-        for user in [u for u in self.member_of if group in self.member_of[u] and u not in target]:
-            r += self.del_member(group, user)
+        #for user in [u for u in self.member_of if group in self.member_of[u] and u not in target]:
+        #    r += self.del_member(group, user)
         return r
 
     def fix_item(self, group, item, target):
@@ -107,7 +107,9 @@ class CompGroupMembership(object):
             return RET_ERR
 
     def check_item(self, group, item, target, current, verbose=False):
-        if (isinstance(current, list) and set(target) == set(current)) or target == current:
+        if not isinstance(current, list):
+            current = [current]
+        if set(target) <= set(current):
             if verbose:
                 print 'group', group, item+':', current
             return RET_OK

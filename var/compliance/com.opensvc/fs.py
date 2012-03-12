@@ -40,12 +40,15 @@ class CompFs(object):
         self.sysname = self.sysname.replace('-', '')
         self.fs = []
         self.res = {}
+        self.res_status = {}
 
         if 'OSVC_COMP_SERVICES_SVC_NAME' in os.environ:
             self.svcname = os.environ['OSVC_COMP_SERVICES_SVC_NAME']
+            self.osvc_service = True
         else:
             os.environ['OSVC_COMP_SERVICES_SVC_NAME'] = ""
             self.svcname = None
+            self.osvc_service = False
         self.vglist()
 
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
@@ -55,7 +58,7 @@ class CompFs(object):
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.fs) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         self.fs.sort(lambda x, y: cmp(x['mnt'], y['mnt']))
@@ -101,7 +104,7 @@ class CompFs(object):
                 print >>sys.stderr, s, 'is not an env variable'
                 raise NotApplicable()
             v = v.replace(m, _v)
-        return v
+        return v.strip()
 
     def add_fs(self, v):
         if type(v) == str or type(v) == unicode:
@@ -165,7 +168,10 @@ class CompFs(object):
 
         # the vg is dedicated to the service. no need to embed
         # the service name in the lv name too
-        return fs['dev'].replace("%%ENV:SERVICES_SVC_NAME%%", "")
+        s = fs['dev'].replace("%%ENV:SERVICES_SVC_NAME%%", "")
+        if s == "lv_":
+            s = "root"
+        return s
 
     def normpath(self, p):
         l = p.split('/')
@@ -179,10 +185,13 @@ class CompFs(object):
         return '/dev/%s/%s'%(d['prefvg'], d['dev'])
 
     def prefvg(self, d):
-        for i, vg in enumerate(d['vg']):
-            if vg in self.vg:
+        lc_candidate_vg = map(lambda x: x.lower(), d['vg'])
+        lc_existing_vg = map(lambda x: x.lower(), self.vg)
+        for i, vg in enumerate(lc_candidate_vg):
+            if vg in lc_existing_vg:
                 d['prefvg_idx'] = i
-                return vg
+                # return capitalized vg name
+                return self.vg[lc_existing_vg.index(vg)]
         print >>sys.stderr, "no candidate vg is available on this node for dev %s"%d['dev']
         raise NotApplicable()
 
@@ -214,7 +223,28 @@ class CompFs(object):
             print "device", fs['devpath'], "is a block device"
         return 0
 
+    def find_vg_rid(self, vgname):
+        rids = [ rid for rid in self.res_status.keys() if rid.startswith('vg#') ]
+        for rid in rids:
+            if self.get_res_item(rid, 'vgname') == vgname:
+                return rid
+        return None
+
+    def private_svc_vg_down(self, fs):
+        if self.svcname is None or not self.osvc_service:
+            return False
+        rid = self.find_vg_rid(fs['prefvg'])
+        if rid is None:
+            # vg is not driven by the service
+            return False
+        if self.res_status[rid] not in ('up', 'stdby up'):
+            return False
+        return True
+
     def check_fs_dev(self, fs, verbose=False):
+        if self.private_svc_vg_down(fs):
+            # don't report error on passive node with private svc prefvg
+            return 0
         if self.check_fs_dev_exists(fs, verbose) == 1:
             return 1
         if self.check_fs_dev_stat(fs, verbose) == 1:
@@ -266,6 +296,7 @@ class CompFs(object):
         return 0
 
     def createlv_Linux(self, fs):
+        os.environ["LVM_SUPPRESS_FD_WARNINGS"] = "1"
         cmd = ['lvcreate', '-n', fs['dev'], '-L', fs['size']+'M', fs['prefvg']]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -415,10 +446,11 @@ class CompFs(object):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "unable to fetch %s json status"%self.svcname
-            return []
-        d = json.loads(out)
-        self.rids = [ k for k in d['resources'].keys() if k.startswith('fs#') ]
+            self.rids = []
+            self.osvc_service = False
+            return self.rids
+        self.res_status = json.loads(out)['resources']
+        self.rids = [ k for k in self.res_status.keys() if k.startswith('fs#') ]
         return self.rids
 
     def find_rid(self, fs):
@@ -430,7 +462,7 @@ class CompFs(object):
         return None
 
     def fix_fs_local(self, fs):
-        if self.svcname is not None:
+        if self.svcname is not None and self.osvc_service:
             return 0
         if self.check_fs_local(fs, False) == 0:
             return 0
@@ -458,7 +490,7 @@ class CompFs(object):
         return 0
 
     def check_fs_local(self, fs, verbose=False):
-        if self.svcname is not None:
+        if self.svcname is not None and self.osvc_service:
             return 0
         p = re.compile(r'\s*%s\s+%s'%(fs['devpath'], fs['mnt']))
         with open("/etc/fstab", "r") as f:
@@ -475,6 +507,8 @@ class CompFs(object):
         if self.svcname is None:
             return 0
         rids = self.get_fs_rids()
+        if not self.osvc_service:
+            return 0
         rid = self.find_rid(fs)
         if rid is None:
             if verbose:
@@ -485,7 +519,7 @@ class CompFs(object):
         return 0
             
     def fix_fs_svc(self, fs):
-        if self.check_fs_svc(fs, False) == 0:
+        if not self.osvc_service or self.check_fs_svc(fs, False) == 0:
             return 0
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'update', '--resource',
                '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mntopt": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'])]
@@ -509,7 +543,7 @@ class CompFs(object):
     def fix_fs_mounted(self, fs):
         if self.check_fs_mounted(fs, False) == 0:
             return 0
-        if self.svcname is None:
+        if self.svcname is None or not self.osvc_service:
             return self.fix_fs_mounted_local(fs)
         else:
             return self.fix_fs_mounted_svc(fs)
@@ -520,7 +554,7 @@ class CompFs(object):
         if rid is None:
             print >>sys.stderr, "fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname)
             return 1
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'mount']
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'mount', '--cluster']
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -534,6 +568,10 @@ class CompFs(object):
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print >>sys.stderr, err
         if p.returncode != 0:
             print >>sys.stderr, "unable to mount %s"%fs['mnt']
             return 1

@@ -72,7 +72,7 @@ class CompUser(object):
                 print >>sys.stderr, 'user syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.users) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         p = re.compile('%%ENV:\w+%%')
@@ -91,8 +91,13 @@ class CompUser(object):
                         raise NotApplicable()
                     d[k] = d[k].replace(m, v)
 
-        if not cap_shadow:
-            for user, d in self.users.items():
+        for user, d in self.users.items():
+            if cap_shadow:
+                if "password" in d and len(d["password"]) > 0 and \
+                   ("spassword" not in d or len(d["spassword"]) == 0):
+                    self.users[user]["spassword"] = self.users[user]["password"]
+                    del self.users[user]["password"]
+            else:
                 if "spassword" in d and len(d["spassword"]) > 0 and \
                    ("password" not in d or len(d["password"]) == 0):
                     self.users[user]["password"] = self.users[user]["spassword"]
@@ -104,18 +109,39 @@ class CompUser(object):
             return RET_ERR
         return RET_OK
 
+    def grpconv(self):
+        if not cap_shadow or not os.path.exists('/etc/gshadow'):
+            return
+        if not which('grpconv'):
+            return
+        with open('/etc/group', 'r') as f:
+            buff = f.read()
+        l = []
+        for line in buff.split('\n'):
+            u = line.split(':')[0]
+            if u in l:
+                print >>sys.stderr, "duplicate group %s in /etc/group. skip grpconv (grpconv bug workaround)"%u
+                return
+            l.append(u)
+        p = Popen(['grpconv'])
+        p.communicate()
+
+    def pwconv(self):
+        if not cap_shadow or not os.path.exists('/etc/shadow'):
+            return
+        if not which('pwconv'):
+            return
+        p = Popen(['pwconv'])
+        p.communicate()
+
     def fix_item(self, user, item, target):
         cmd = ['usermod'] + self.usermod_p[item].split() + [str(target), user]
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
-        if which('pwconv'):
-            p = Popen(['pwconv'])
-            p.communicate()
-        if which('grpconv'):
-            p = Popen(['grpconv'])
-            p.communicate()
+        self.pwconv()
+        self.grpconv()
         if r == 0:
             return RET_OK
         else:

@@ -29,7 +29,7 @@ class EtcSystem(object):
                 print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.keys) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
     def fixable(self):

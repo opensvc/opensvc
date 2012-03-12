@@ -53,7 +53,7 @@ class CompFiles(object):
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.files) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
     def subst(self, v):
@@ -81,11 +81,10 @@ class CompFiles(object):
     def parse_fmt(self, d):
         if isinstance(d['fmt'], int):
             d['fmt'] = str(d['fmt'])+'\n'
-        fmt = fmt.replace('%%HOSTNAME%%', self.nodename)
-        fmt = fmt.replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
-        if not fmt.endswith('\n'):
-            fmt += '\n'
-        d['fmt'] = fmt
+        d['fmt'] = d['fmt'].replace('%%HOSTNAME%%', self.nodename)
+        d['fmt'] = d['fmt'].replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
+        if not d['fmt'].endswith('\n'):
+            d['fmt'] += '\n'
         return [d]
 
     def parse_ref(self, d):

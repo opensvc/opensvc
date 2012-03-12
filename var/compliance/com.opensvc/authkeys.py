@@ -34,7 +34,7 @@ class CompAuthKeys(object):
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to authkey list'
 
         if len(self.authkeys) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         self.installed_keys_d = {}

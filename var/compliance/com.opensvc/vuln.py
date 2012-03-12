@@ -40,7 +40,7 @@ class CompVuln(object):
             self.packages += o
 
         if len(self.packages) == 0:
-            print >>sys.stderr, "no applicable variable found in rulesets", self.prefix
+            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         if 'OSVC_COMP_NODES_OS_VENDOR' not in os.environ:
