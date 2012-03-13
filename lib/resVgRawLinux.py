@@ -57,6 +57,11 @@ class Vg(resVgRaw.Vg):
                 self.rdevs_t[(os.major(d.st_rdev), os.minor(d.st_rdev))] = filename
 
     def modprobe(self):
+        cmd = ["raw", "-qa"]
+        ret, out, err = self.call(cmd)
+        if ret == 0:
+            # no need to load (already loaded or compiled-in)
+            return
         cmd = ["lsmod"]
         ret, out, err = self.call(cmd)
         if ret != 0:
@@ -129,7 +134,7 @@ class Vg(resVgRaw.Vg):
 
     def find_raw(self, dev):
         for raw, d in self.raws.items():
-            if dev == d['devname']:
+            if 'devname' in d and dev == d['devname']:
                 return raw
         return None
 

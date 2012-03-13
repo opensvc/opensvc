@@ -51,3 +51,16 @@ class Vg(resVgRaw.Vg):
             else:
                 self.devs_not_found.add(dev)
 
+    def disklist(self):
+        l = set([])
+        for dev in self.devs:
+            if re.match("^/dev/rdsk/c[0-9]*", dev) is not None:
+                if os.path.exists(dev):
+                    if re.match('^.*s[0-9]*$', dev) is None:
+                        dev += "s2"
+                    else:
+                        regex = re.compile('s[0-9]*$', re.UNICODE)
+                        dev = regex.sub('s2', dev)
+                    l.add(dev)
+        return l
+

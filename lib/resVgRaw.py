@@ -29,6 +29,13 @@ class Vg(resDg.Dg):
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([]), monitor=False):
         self.label = "raw"
+        resDg.Dg.__init__(self, rid=rid, name="raw",
+                          type='disk.vg',
+                          always_on=always_on,
+                          optional=optional,
+                          disabled=disabled, tags=tags,
+                          monitor=monitor)
+
         self.devs = set([])
         self.devs_not_found = set([])
         self.user = user
@@ -43,13 +50,6 @@ class Vg(resDg.Dg):
 
         self.get_uid()
         self.get_gid()
-
-        resDg.Dg.__init__(self, rid=rid, name="raw",
-                          type='disk.vg',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor)
 
     def on_add(self):
         try:
@@ -138,14 +138,4 @@ class Vg(resDg.Dg):
         pass
 
     def disklist(self):
-        l = set([])
-        for dev in self.devs:
-            if re.match("^/dev/rdsk/c[0-9]*", dev) is not None:
-                if os.path.exists(dev):
-                    if re.match('^.*s[0-9]*$', dev) is None:
-                        dev += "s2"
-                    else:
-                        regex = re.compile('s[0-9]*$', re.UNICODE)
-                        dev = regex.sub('s2', dev)
-                    l.add(dev)
-        return l
+        return self.devs
