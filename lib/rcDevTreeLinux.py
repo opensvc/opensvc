@@ -124,6 +124,16 @@ class DevTree(rcDevTree.DevTree):
                 self.lv_linear[mapname] = [(devt, length)]
         return self.lv_linear
 
+    def is_cdrom(self, devname):
+        p = '/sys/block/%s/device/media'%devname
+        if not os.path.exists(p):
+            return False
+        with open(p, 'r') as f:
+            buff = f.read()
+        if buff.strip() == "cdrom":
+            return True
+        return False
+
     def dev_type(self, devname):
         t = "linear"
         md_h = self.get_md()
@@ -162,12 +172,15 @@ class DevTree(rcDevTree.DevTree):
                 c.add_parent(d.devname)
 
     def load_dev(self, devname, devpath):
+        if self.is_cdrom(devname):
+            return
+
         mp_h = self.get_mp()
         wwid_h = self.get_wwid()
         size = self.get_size(devpath)
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
-        if size in [0, 2, 30]:
+        if size in [0, 2, 45]:
             return
 
         devtype = self.dev_type(devname)
