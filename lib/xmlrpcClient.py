@@ -713,23 +713,24 @@ class Collector(object):
                                 dh[disk_id] += used
                             else:
                                 dh[disk_id] = used
-                            if dh[disk_id] > disks.disk_size(d):
-                                dh[disk_id] = disks.disk_size(d)
+                            disk_size = disks.disk_size(d)
+                            if dh[disk_id] > disk_size:
+                                dh[disk_id] = disk_size
                             if disk_id in valsh:
                                 valsh[disk_id][3] += used
                             else:
                                 valsh[disk_id] = [
                                  disk_id,
                                  svc.svcname,
-                                 disks.disk_size(d),
+                                 disk_size,
                                  used,
                                  disks.disk_vendor(d),
                                  disks.disk_model(d),
                                  disk_dg(d, svc),
                                  rcEnv.nodename
                                 ]
-                            if valsh[disk_id][3] > disks.disk_size(d):
-                                valsh[disk_id][3] = disks.disk_size(d)
+                            if valsh[disk_id][3] > disk_size:
+                                valsh[disk_id][3] = disk_size
             for l in valsh.values():
                 vals += [map(lambda x: repr(x), l)]
                 print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2])
