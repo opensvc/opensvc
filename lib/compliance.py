@@ -266,7 +266,6 @@ class Compliance(object):
         self.ordered_module = self.module_o.keys()
         self.ordered_module.sort(lambda x, y: cmp(self.module_o[x].ordering,
                                                   self.module_o[y].ordering))
-        print self
 
     def __str__(self):
         print banner('run context')
