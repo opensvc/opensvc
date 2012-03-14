@@ -76,13 +76,14 @@ class Module(object):
     def log_action(self, out, ret, action):
         ruleset = ','.join(self.ruleset)
         vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
-                'run_ruleset', 'run_action']
+                'run_ruleset', 'run_action', 'rset_md5']
         vals = [rcEnv.nodename,
                 self.name,
                 str(ret),
                 self.strip_unprintable(out),
                 ruleset,
-                action]
+                action,
+                self.rset_md5]
         if self.svcname is not None:
             vars.append('run_svcname')
             vals.append(self.svcname)
@@ -235,7 +236,13 @@ class Compliance(object):
         o.ruleset = self.ruleset
         o.options = self.options
         o.collector = self.collector
+        o.rset_md5 = self.rset_md5
         return self
+
+    def set_rset_md5(self):
+        self.rset_md5 = ""
+        if 'OSVC_COMP_RULESET_MD5' in os.environ:
+            self.rset_md5 = os.environ['OSVC_COMP_RULESET_MD5']
 
     def init(self):
         if self.options.moduleset != "" and self.options.module != "":
@@ -251,6 +258,7 @@ class Compliance(object):
         self.module = self.merge_moduleset_modules()
         self.ruleset = self.get_ruleset()
         self.setup_env()
+        self.set_rset_md5()
 
         if not os.path.exists(comp_dir):
             os.makedirs(comp_dir, 0755)
