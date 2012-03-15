@@ -86,9 +86,9 @@ action_desc = {
       'unset': 'unset a node configuration parameter pointed by --param',
      },
     'Compliance': {
-      'compliance_check': 'run compliance checks',
-      'compliance_fix':   'run compliance fixes',
-      'compliance_fixable': 'verify compliance fixes prerequisites',
+      'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+      'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+      'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
       'compliance_show_status': 'show compliance modules status',
       'compliance_show_moduleset': 'show compliance rules applying to this service',
       'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',

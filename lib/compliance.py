@@ -316,9 +316,9 @@ class Compliance(object):
         return moduleset
 
     def get_ruleset(self):
-        if hasattr(self.options, 'ruleset_date') and \
-           len(self.options.ruleset_date) > 0:
-            return self.get_dated_ruleset(self.options.ruleset_date)
+        if hasattr(self.options, 'ruleset') and \
+           len(self.options.ruleset) > 0:
+            return self.get_ruleset_md5(self.options.ruleset)
         return self.get_current_ruleset()
 
     def get_current_ruleset(self):
@@ -330,11 +330,8 @@ class Compliance(object):
             raise ex.excError('could not fetch ruleset')
         return ruleset
 
-    def get_dated_ruleset(self, date):
-        if self.svcname is not None:
-            ruleset = self.collector.call('comp_get_dated_ruleset', self.options.ruleset_date)
-        else:
-            ruleset = self.collector.call('comp_get_dated_svc_ruleset', self.svcname, self.options.ruleset_date)
+    def get_ruleset_md5(self, rset_md5):
+        ruleset = self.collector.call('comp_get_ruleset_md5', rset_md5)
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset

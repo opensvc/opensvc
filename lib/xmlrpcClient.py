@@ -196,8 +196,7 @@ class Collector(object):
                          'comp_detach_svc_moduleset',
                          'comp_get_ruleset',
                          'comp_get_svc_ruleset',
-                         'comp_get_dated_ruleset',
-                         'comp_get_dated_svc_ruleset',
+                         'comp_get_ruleset_md5',
                          'comp_attach_ruleset',
                          'comp_attach_svc_ruleset',
                          'comp_detach_ruleset',
@@ -1017,17 +1016,11 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_ruleset(*args)
     
-    def comp_get_dated_ruleset(self, date, sync=True):
-        args = [rcEnv.nodename, date]
+    def comp_get_ruleset_md5(self, rset_md5, sync=True):
+        args = [rset_md5]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_dated_ruleset(*args)
-    
-    def comp_attach_svc_ruleset(self, svcname, ruleset, sync=True):
-        args = [svcname, ruleset]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_attach_svc_ruleset(*args)
+        return self.comp_proxy.comp_get_ruleset_md5(*args)
     
     def comp_attach_ruleset(self, ruleset, sync=True):
         args = [rcEnv.nodename, ruleset]

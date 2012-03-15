@@ -111,9 +111,9 @@ class Node(Svc, Freezer):
             'prkey':          'show persistent reservation key of this node',
           },
           'Compliance': {
-            'compliance_check': 'run compliance checks',
-            'compliance_fix':   'run compliance fixes',
-            'compliance_fixable': 'verify compliance fixes prerequisites',
+            'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+            'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+            'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_show_moduleset': 'show compliance rules applying to this node',
             'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
             'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
