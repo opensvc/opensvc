@@ -188,7 +188,7 @@ class Asset(rcAsset.Asset):
         if hasattr(self, "hba"):
             return self.hba
         self.hba = []
-        cmd = ['ioscan', '-FunC', 'fc']
+        cmd = ['/usr/sbin/ioscan', '-FunC', 'fc']
         out, err, ret = justcall(cmd)
         if ret != 0:
             return self.hba
@@ -201,7 +201,7 @@ class Asset(rcAsset.Asset):
             dev = line.strip()
             hba_type = 'fc'
 
-            cmd = ['fcmsutil', dev]
+            cmd = ['/opt/fcms/bin/fcmsutil', dev]
             out, err, ret = justcall(cmd)
             if ret != 0:
                 continue
@@ -210,7 +210,7 @@ class Asset(rcAsset.Asset):
                     continue
                 hba_id = _line.split('=')[-1].strip().lstrip("0x")
 
-            cmd = ['fcmsutil', dev, 'get', 'remote', 'all']
+            cmd = ['/opt/fcms/bin/fcmsutil', dev, 'get', 'remote', 'all']
             out, err, ret = justcall(cmd)
             if ret != 0:
                 continue

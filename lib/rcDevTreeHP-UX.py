@@ -51,9 +51,9 @@ class DevTree(rcDevTree.DevTree):
         return d
 
     def load_ioscan(self):
-        if not which("ioscan"):
+        if not which("/usr/sbin/ioscan"):
             return
-        cmd = ["ioscan", "-FunNC", "disk"]
+        cmd = ["/usr/sbin/ioscan", "-FunNC", "disk"]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode:
