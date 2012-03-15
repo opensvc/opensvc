@@ -297,7 +297,6 @@ class Asset(rcAsset.Asset):
             l.append((hba_id, hba_type))
 
         # iscsi
-        l = []
         path = os.path.join(os.sep, 'etc', 'iscsi', 'initiatorname.iscsi')
         hba_type = 'iscsi'
         hba_id = self.get_iscsi_hba_id()
