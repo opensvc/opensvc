@@ -208,7 +208,7 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_cores(s, source)
+        self.print_cpu_dies(s, source)
         return s
 
     def print_cpu_dies(self, s, source):
