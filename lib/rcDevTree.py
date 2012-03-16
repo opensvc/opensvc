@@ -35,16 +35,16 @@ class DevRelation(object):
         if child.devtype in ("multipath", "linear", "partition"):
             return used
         elif child.devtype in ("raid0"):
-            n = len(d.parents)
+            n = len(child.parents)
             return used/n
         elif child.devtype in ("raid1", "raid10"):
-            n = len(d.parents)
+            n = len(child.parents)
             return used*2/n
         elif child.devtype in ("raid5"):
-            n = len(d.parents)
+            n = len(child.parents)
             return used/(n-1)
         elif child.devtype in ("raid6"):
-            n = len(d.parents)
+            n = len(child.parents)
             return used/(n-2)
         raise Exception("unknown devtype %s for %s"%(child.devtype, child.devname))
 
