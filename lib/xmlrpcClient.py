@@ -693,6 +693,7 @@ class Collector(object):
 
         # hash to add up disk usage across all services
         dh = {}
+        blacklist = []
 
         for svc in node.svcs:
             # hash to add up disk usage inside a service
@@ -702,6 +703,9 @@ class Collector(object):
                     if r.is_disabled():
                         continue
                     for devpath in r.devlist():
+                        if hasattr(r, 'devmap'):
+                            devmap = r.devmap()
+                            blacklist += map(lambda x: '.'.join((r.svc.vm_hostname(), x[1])), devmap)
                         for d, used in tree.get_top_devs_usage_for_devpath(devpath):
                             disk_id = disks.disk_id(d)
                             if disk_id is None or disk_id == "":
@@ -772,6 +776,16 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.register_disks(*args)
     
+        blacklist = set(blacklist)
+        for disk_id in blacklist:
+            print "blacklist", disk_id
+        vars = ['disk_id']
+        vals = map(lambda x: [x], blacklist)
+        args = [vars, vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.register_disk_blacklist(*args)
+
     def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
         if self.auth_node:

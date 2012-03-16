@@ -55,20 +55,8 @@ class Vg(resVg.Dg):
         if self.devs != set():
             return self.devs
 
-        self.devs = set()
-
-        from xml.etree.ElementTree import ElementTree, SubElement
-        tree = ElementTree()
-        tree.parse(self.svc.resources_by_id['container'].cf)
-        for dev in tree.getiterator('disk'):
-            s = dev.find('source')
-            if s is None:
-                 continue
-            il = s.items()
-            if len(il) != 1:
-                 continue
-            attr, devp = il[0]
-            self.devs |= set([devp])
+        devmapping = self.devmap()
+        self.devs = map(lambda x: x[0], devmapping)
         return self.devs
 
     def disklist(self):
@@ -80,3 +68,30 @@ class Vg(resVg.Dg):
             self.disks = devps
 
         return self.disks
+
+    def devmap(self):
+        if hasattr(self, "devmapping"):
+            return self.devmapping
+
+        self.devmapping = []
+
+        from xml.etree.ElementTree import ElementTree, SubElement
+        tree = ElementTree()
+        tree.parse(self.svc.resources_by_id['container'].cf)
+        for dev in tree.getiterator('disk'):
+            s = dev.find('source')
+            if s is None:
+                 continue
+            if 'dev' not in s.attrib:
+                 continue
+            src = s.attrib['dev']
+            s = dev.find('target')
+            if s is None:
+                 continue
+            if 'dev' not in s.attrib:
+                 continue
+            dst = s.attrib['dev']
+            self.devmapping.append((src, dst))
+        return self.devmapping
+
+

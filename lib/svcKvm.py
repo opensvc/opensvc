@@ -24,6 +24,7 @@ import resContainerKvm as kvm
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from subprocess import *
 
 class SvcKvm(svc.Svc):
     """ Define kvm services"""
@@ -37,4 +38,17 @@ class SvcKvm(svc.Svc):
         self += kvm.Kvm(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
-
+    def vm_hostname(self):
+        if hasattr(self, 'vmhostname'):
+            return self.vmhostname
+        if self.guestos == "windows":
+            self.vmhostname = self.vmname
+            return self.vmhostname
+        cmd = self.runmethod + ['hostname']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            self.vmhostname = self.vmname
+        else:
+            self.vmhostname = out.strip()
+        return self.vmhostname
