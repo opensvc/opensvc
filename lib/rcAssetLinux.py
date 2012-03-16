@@ -146,13 +146,13 @@ class Asset(rcAsset.Asset):
             return 'SuSE'
         if os.path.exists('/etc/vmware-release'):
             return 'VMware'
+        if os.path.exists('/etc/oracle-release'):
+            return 'Oracle'
         if os.path.exists('/etc/redhat-release'):
             with open('/etc/redhat-release', 'r') as f:
                 buff = f.read()
                 if 'CentOS' in buff:
                     return 'CentOS'
-                elif 'Oracle' in buff:
-                    return 'Oracle'
                 else:
                     return 'Redhat'
         return 'Unknown'
@@ -160,6 +160,7 @@ class Asset(rcAsset.Asset):
     def _get_os_release(self):
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
+                 '/etc/oracle-release',
                  '/etc/redhat-release']
         if os.path.exists('/etc/SuSE-release'):
             v = []
