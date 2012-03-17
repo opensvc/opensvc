@@ -168,6 +168,12 @@ class Lxc(resContainer.Container):
                 if not os.path.exists(cf_d):
                     os.makedirs(cf_d)
                 return cf
+
+        # on Oracle Linux, config is in /etc/lxc
+        cf = os.path.join(os.sep, 'etc', 'lxc', self.name, 'config')
+        if os.path.exists(cf):
+            return cf
+
         return None
 
     def find_prefix(self):
