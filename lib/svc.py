@@ -715,7 +715,11 @@ class Svc(Resource, Freezer):
 
     def boot(self):
         if rcEnv.nodename in self.autostart_node:
-            self.start()
+            try:
+                self.start()
+            except ex.excError:
+                self.log.info("start failed. try to start standby")
+                self.startstandby()
         else:
             self.cluster = True
             self.startstandby()
