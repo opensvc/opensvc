@@ -22,6 +22,7 @@
 import svc
 import resContainerOvm as ovm
 from rcGlobalEnv import rcEnv
+from subprocess import *
 
 class SvcOvm(svc.Svc):
     """ Define Ovm (xen) services"""
@@ -38,4 +39,19 @@ class SvcOvm(svc.Svc):
 
     def _migrate(self):
         self.sub_set_action("container.ovm", "_migrate")
+
+    def vm_hostname(self):
+        if hasattr(self, 'vmhostname'):
+            return self.vmhostname
+        if self.guestos == "windows":
+            self.vmhostname = self.vmname
+            return self.vmhostname
+        cmd = self.runmethod + ['hostname']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            self.vmhostname = self.vmname
+        else:
+            self.vmhostname = out.strip()
+        return self.vmhostname
 
