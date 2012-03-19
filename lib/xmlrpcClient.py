@@ -688,7 +688,8 @@ class Collector(object):
                 'disk_vendor',
                 'disk_model',
                 'disk_dg',
-                'disk_nodename']
+                'disk_nodename',
+                'disk_region']
         vals = []
 
         # hash to add up disk usage across all services
@@ -706,7 +707,7 @@ class Collector(object):
                         if hasattr(r, 'devmap'):
                             devmap = r.devmap()
                             blacklist += map(lambda x: '.'.join((r.svc.vm_hostname(), x[1])), devmap)
-                        for d, used in tree.get_top_devs_usage_for_devpath(devpath):
+                        for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
                             disk_id = disks.disk_id(d)
                             if disk_id is None or disk_id == "":
                                 """ no point pushing to db an empty entry
@@ -730,15 +731,17 @@ class Collector(object):
                                  disks.disk_vendor(d),
                                  disks.disk_model(d),
                                  disk_dg(d, svc),
-                                 rcEnv.nodename
+                                 rcEnv.nodename,
+                                 region
                                 ]
                             if valsh[disk_id][3] > disk_size:
                                 valsh[disk_id][3] = disk_size
             for l in valsh.values():
                 vals += [map(lambda x: repr(x), l)]
-                print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2])
+                print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region
 
         done = []
+        region = 0
         for d in node.devlist():
             disk_id = disks.disk_id(d)
             if disk_id is None or disk_id == "":
@@ -758,7 +761,7 @@ class Collector(object):
                 left = disks.disk_size(d)
             if left == 0:
                 continue
-            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d))
+            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d)), "region", region
             vals.append([
                  repr(disks.disk_id(d)),
                  "",
@@ -767,7 +770,8 @@ class Collector(object):
                  repr(disks.disk_vendor(d)),
                  repr(disks.disk_model(d)),
                  "",
-                 repr(rcEnv.nodename)
+                 repr(rcEnv.nodename),
+                 repr(region)
             ])
 
 

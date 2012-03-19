@@ -69,6 +69,14 @@ class Dev(object):
         self.parents = []
         self.children = []
 
+    def child_relation_index(self, relation):
+        for i, r in enumerate(self.children):
+            if relation.parent == r.parent and \
+               relation.child == r.child:
+                return i
+        print "relation not found %s-%s"%(relation.parent,relation.child)
+        return 0
+        
     def __iadd__(self, o):
         pass
 
@@ -272,9 +280,11 @@ class DevTree(object):
         for d, chain in dev.get_top_devs_chain():
             if len(chain) == 0:
                 used = d.size
+                region = 0
             else:
                 used = self.get_used(chain)
-            l.append((d.devpath[0], used))
+                region = d.child_relation_index(chain[-1]) + 1
+            l.append((d.devpath[0], used, region))
         return l
 
 if __name__ == "__main__":
