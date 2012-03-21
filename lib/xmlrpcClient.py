@@ -660,20 +660,8 @@ class Collector(object):
         self.proxy.update_service(*args)
     
     def push_disks(self, node, sync=True):
-        def disk_dg(dev, svc):
-            for rset in svc.get_res_sets("disk.vg") + svc.get_res_sets("disk.zpool"):
-                for vg in rset.resources:
-                    if vg.is_disabled():
-                        continue
-                    if not vg.name in disklist_cache:
-                        disklist_cache[vg.name] = vg.disklist()
-                    if dev in disklist_cache[vg.name]:
-                        return vg.name
-            return ""
-    
         di = __import__('rcDiskInfo'+rcEnv.sysname)
         disks = di.diskInfo()
-        disklist_cache = {}
         try:
             m = __import__("rcDevTree"+rcEnv.sysname)
         except ImportError:
@@ -703,6 +691,14 @@ class Collector(object):
                 for r in rs.resources:
                     if r.is_disabled():
                         continue
+
+                    if hasattr(r, "name"):
+                        disk_dg = r.name
+                    elif hasattr(r, "dev"):
+                        disk_dg = r.dev
+                    else:
+                        disk_dg = r.rid
+
                     for devpath in r.devlist():
                         if hasattr(r, 'devmap'):
                             devmap = r.devmap()
@@ -730,7 +726,7 @@ class Collector(object):
                                  used,
                                  disks.disk_vendor(d),
                                  disks.disk_model(d),
-                                 disk_dg(d, svc),
+                                 disk_dg,
                                  rcEnv.nodename,
                                  region
                                 ]
