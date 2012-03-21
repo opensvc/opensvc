@@ -11,6 +11,8 @@ A logical volume lv0 with segments on pv1 pv2 has two parent
 relations : lv0-pv1 and lv0-pv2
 
 """
+from hashlib import md5
+
 class DevRelation(object):
     def __init__(self, parent, child, used=0):
         self.child = child
@@ -69,14 +71,6 @@ class Dev(object):
         self.parents = []
         self.children = []
 
-    def child_relation_index(self, relation):
-        for i, r in enumerate(self.children):
-            if relation.parent == r.parent and \
-               relation.child == r.child:
-                return i
-        print "relation not found %s-%s"%(relation.parent,relation.child)
-        return 0
-        
     def __iadd__(self, o):
         pass
 
@@ -283,7 +277,12 @@ class DevTree(object):
                 region = 0
             else:
                 used = self.get_used(chain)
-                region = d.child_relation_index(chain[-1]) + 1
+                if len(chain) == 0:
+                    region = 0
+                else:
+                    o = md5()
+                    o.update(chain[0].child)
+                    region = o.hexdigest()
             l.append((d.devpath[0], used, region))
         return l
 
