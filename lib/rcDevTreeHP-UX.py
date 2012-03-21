@@ -40,7 +40,7 @@ class DevTree(rcDevTree.DevTree):
         size = self.disk_size(devpath.replace('/disk/', '/rdisk/'))
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
-        if size in [0, 2, 45]:
+        if size in [0, 2, 30, 45]:
             return
 
         d = self.add_dev(devname, size, devtype)
