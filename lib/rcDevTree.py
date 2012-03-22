@@ -124,8 +124,10 @@ class Dev(object):
     def add_child(self, devname, size=0, devtype=None):
         r = self.get_child(devname)
         if r is None:
-            r = DevRelation(parent=self.devname, child=devname, used=size)
-            r.tree = self.tree
+            r = self.tree.get_relation(self.devname, devname)
+            if r is None:
+                r = DevRelation(parent=self.devname, child=devname, used=size)
+                r.tree = self.tree
             self.children.append(r)
         self.tree.add_dev(devname, size, devtype)
         return r
@@ -133,8 +135,10 @@ class Dev(object):
     def add_parent(self, devname, size=0, devtype=None):
         r = self.get_parent(devname)
         if r is None:
-            r = DevRelation(parent=devname, child=self.devname, used=size)
-            r.tree = self.tree
+            r = self.tree.get_relation(devname, self.devname)
+            if r is None:
+                r = DevRelation(parent=devname, child=self.devname, used=size)
+                r.tree = self.tree
             self.parents.append(r)
         self.tree.add_dev(devname, size, devtype)
         return r
