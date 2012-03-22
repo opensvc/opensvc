@@ -22,6 +22,8 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'dm_h'):
             return self.dm_h
         self.dm_h = {}
+        if not os.path.exists("/dev/mapper"):
+            return self.dm_h
         devpaths = glob.glob("/dev/mapper/*")
         devpaths.remove('/dev/mapper/control')
         for devpath in devpaths:
@@ -62,6 +64,8 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'mp_h'):
             return self.mp_h
         self.mp_h = {}
+        if not which('dmsetup'):
+            return self.mp_h
         cmd = ['dmsetup', 'ls', '--target', 'multipath']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -102,6 +106,8 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'lv_linear'):
             return self.lv_linear
         self.lv_linear = {}
+        if not which('dmsetup'):
+            return self.lv_linear
         cmd = ['dmsetup', 'table', '--target', 'linear']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -228,7 +234,36 @@ class DevTree(rcDevTree.DevTree):
 
         return d
 
-    def load(self):
+    def load_fdisk(self):
+        p = Popen(["fdisk", "-l"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split("\n"):
+            if line.startswith("Disk "):
+                # disk
+                devpath = line.split()[1].strip(':')
+                size = int(line.split()[-2]) / 1024 / 1024
+                devname = devpath.replace('/dev/','').replace("/","!")
+                devtype = self.dev_type(devname)
+                d = self.add_dev(devname, size, devtype)
+                if d is None:
+                    continue
+                d.set_devpath(devpath)
+            elif line.startswith('/dev/'):
+                # partition
+                line = line.replace('*', '')
+                partpath = line.split()[0]
+                partsize = int(line.split()[3]) * 512 / 1024 / 1024
+                partname = partpath.replace('/dev/','').replace("/","!")
+                p = self.add_dev(partname, partsize, "linear")
+                if p is None:
+                    continue
+                p.set_devpath(partpath)
+                d.add_child(partname)
+                p.add_parent(devname)
+
+    def load_sysfs(self):
         devpaths = glob.glob("/sys/block/*")
         devnames = map(lambda x: os.path.basename(x), devpaths)
         for devname, devpath in zip(devnames, devpaths):
@@ -246,6 +281,12 @@ class DevTree(rcDevTree.DevTree):
                     continue
                 d.add_child(partname)
                 p.add_parent(devname)
+ 
+    def load(self):
+        if not os.path.exists("/sys/block"):
+            self.load_fdisk()
+        else:
+            self.load_sysfs()
 
         # tune relations
         dm_h = self.get_dm()
