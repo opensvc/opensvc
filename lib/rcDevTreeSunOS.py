@@ -1,0 +1,172 @@
+import rcDevTree
+import glob
+import os
+import re
+from subprocess import *
+from rcUtilities import which
+from rcGlobalEnv import rcEnv
+from rcDiskInfoSunOS import diskInfo
+
+class DevTree(rcDevTree.DevTree):
+    zpool_members = {}
+    zpool_used = {}
+    zpool_size = {}
+    zpool_datasets = {}
+    zpool_datasets_used = {}
+
+    def load_partitions(self, d):
+        """
+        *                          First     Sector    Last
+        * Partition  Tag  Flags    Sector     Count    Sector  Mount Directory
+               0      2    00   16779312  54281421  71060732
+               1      3    01          0  16779312  16779311
+               2      5    00          0  71127180  71127179
+               7      0    00   71060733     66447  71127179
+        """
+        p = Popen(["prtvtoc", d.devpath[0]], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split("\n"):
+            line = line.strip()
+            if line.startswith('*'):
+                continue
+            if line.startswith('2'):
+                continue
+            l = line.split()
+            if len(l) < 6:
+                continue
+            partname = d.devname + 's' + l[0]
+            partpath = d.devpath[0][:-1] + l[0]
+            partsize = self.di.get_size(partpath)
+            p = self.add_dev(partname, partsize, "linear")
+            p.set_devpath(partpath)
+            d.add_child(partname)
+            p.add_parent(d.devname)
+
+    def load_format(self):
+        """
+        0. c3t0d0 <SUN36G cyl 24620 alt 2 hd 27 sec 107>
+          /pci@1f,700000/scsi@2/sd@0,0
+        4. c5t600508B4000971CD00010000024A0000d0 <HP-HSV210-6200 cyl 61438 alt 2 hd 128 sec 128>  EVA_SAVE
+          /scsi_vhci/ssd@g600508b4000971cd00010000024a0000
+        """
+        p = Popen(["format", "-e"], stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        out, err = p.communicate(input=None)
+        for line in out.split("\n"):
+            line = line.strip()
+            if re.match(r"[0-9]+\. ", line) is None:
+                continue
+            l = line.split()
+            devname = l[1]
+            devpath = '/dev/rdsk/'+devname+'s2'
+            size = self.di.get_size(devpath)
+            d = self.add_dev(devname, size, "linear")
+            d.set_devpath(devpath)
+            self.load_partitions(d)
+
+    def load_zpool(self):
+        p = Popen(["zpool", "list", "-H"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) == 0:
+                continue
+            poolname = l[0]
+            self.load_zpool1(poolname)
+
+    def load_zpool1(self, poolname):
+        p = Popen(["zpool", "status", poolname], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        self.zpool_members[poolname] = []
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) != 5:
+                continue
+            if l[0] == 'NAME':
+                continue
+            if l[0] == poolname:
+                continue
+            devname = l[0]
+            d = self.get_dev(devname)
+            if d is None:
+                continue
+            self.zpool_members[poolname].append(d)
+
+        p = Popen(["zpool", "iostat", poolname], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        lines = out.split('\n')
+        lines = [l for l in lines if len(l) > 0]
+        self.zpool_used[poolname] = self.read_size(lines[-1].split()[1])
+        zpool_free = self.read_size(lines[-1].split()[2])
+        self.zpool_size[poolname] = self.zpool_used[poolname] + zpool_free
+
+        p = Popen(["zfs", "list", "-H", "-r", poolname], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        self.zpool_datasets[poolname] = []
+        self.zpool_datasets_used[poolname] = 0
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) == 0:
+                continue
+            zfsname = l[0]
+            size = self.read_size(l[1])
+            self.zpool_datasets[poolname].append((zfsname, size))
+            self.zpool_datasets_used[poolname] += size
+
+        ratio = 1.0 * self.zpool_used[poolname] / self.zpool_datasets_used[poolname]
+        for zfsname, size in self.zpool_datasets[poolname]:
+            used = int(size*ratio)
+            d = self.add_dev(zfsname, used, "zfs")
+            d.set_devpath(zfsname)
+            for m in self.zpool_members[poolname]:
+                member_ratio = 1.0 * m.size / self.zpool_size[poolname]
+                d.add_parent(m.devname)
+                m.add_child(zfsname)
+                self.set_relation_used(m.devname, zfsname, int(used*member_ratio))
+
+    def read_size(self, s):
+        unit = s[-1]
+        size = float(s[:-1].replace(',','.'))
+        if unit == 'K':
+            size = size / 1024
+        elif unit == 'M':
+            pass
+        elif unit == 'G':
+            size = size * 1024
+        elif unit == 'T':
+            size = size * 1024 * 1024
+        elif unit == 'P':
+            size = size * 1024 * 1024 * 1024
+        elif unit == 'Z':
+            size = size * 1024 * 1024 * 1024 * 1024
+        else:
+            raise Exception("unit not supported: %s"%unit)
+        return int(size)
+        
+    def load(self):
+        self.di = diskInfo()
+        self.load_format()
+        self.load_zpool()
+
+    def blacklist(self, devname):
+        bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
+        for b in bl:
+            if re.match(b, devname):
+                return True
+        return False
+
+if __name__ == "__main__":
+    tree = DevTree()
+    tree.load()
+    #print tree
+    tree.print_tree_bottom_up()
+    #print map(lambda x: x.alias, tree.get_top_devs())

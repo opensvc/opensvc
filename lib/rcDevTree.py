@@ -244,6 +244,12 @@ class DevTree(object):
         self += d
         return d
 
+    def set_relation_used(self, parent, child, used):
+        for d in self.dev.values():
+            for r in d.children + d.parents:
+                if parent == r.parent and child == r.child:
+                    r.set_used(used)
+
     def get_relation(self, parent, child):
         for d in self.dev.values():
             for r in d.children + d.parents:
@@ -277,12 +283,9 @@ class DevTree(object):
                 region = 0
             else:
                 used = self.get_used(chain)
-                if len(chain) == 0:
-                    region = 0
-                else:
-                    o = md5()
-                    o.update(chain[0].child)
-                    region = o.hexdigest()
+                o = md5()
+                o.update(chain[0].child)
+                region = o.hexdigest()
             l.append((d.devpath[0], used, region))
         return l
 
