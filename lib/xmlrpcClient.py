@@ -562,12 +562,17 @@ class Collector(object):
             return
 
         vars = ['app_svcname',
+                'app_nodename',
+                'cluster_type',
                 'app_launcher',
                 'app_key',
                 'app_value']
         vals = svc.resources_by_id['app'].info()
         if len(vals) == 0:
             return
+
+        for val in vals:
+            print "%s: %s"%(val[4], val[5])
 
         args = [vars, vals]
         if self.auth_node:

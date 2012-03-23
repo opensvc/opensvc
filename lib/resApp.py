@@ -258,7 +258,7 @@ class Apps(Res.Resource):
                 if len(v) < 2:
                     l.append([self.svc.svcname, name, "Error", "parsing: %s"%line])
                     continue
-                l.append([self.svc.svcname, name, v[0], ":".join(v[1:]).strip()])
+                l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, v[0], ":".join(v[1:]).strip()])
         return l
 
 if __name__ == "__main__":
