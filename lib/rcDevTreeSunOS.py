@@ -10,6 +10,7 @@ from rcDiskInfoSunOS import diskInfo
 class DevTree(rcDevTree.DevTree):
     zpool_members = {}
     zpool_used = {}
+    zpool_used_zfs = {}
     zpool_size = {}
     zpool_datasets = {}
     zpool_datasets_used = {}
@@ -119,8 +120,38 @@ class DevTree(rcDevTree.DevTree):
                 continue
             zfsname = l[0]
             size = self.read_size(l[1])
+            #refer = self.read_size(l[3])
+            mnt = l[4]
+            if mnt == "legacy":
+                continue
+            if zfsname == poolname:
+                self.zpool_used_zfs[poolname] = size
+                continue
             self.zpool_datasets[poolname].append((zfsname, size))
             self.zpool_datasets_used[poolname] += size
+
+        p = Popen(["zfs", "list", "-H", "-t", "snapshot"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) == 0:
+                continue
+            zfsname = l[0]
+            if not zfsname.startswith(poolname+'/') and \
+               not zfsname.startswith(poolname+'@'):
+                continue
+            size = self.read_size(l[1])
+            #refer = self.read_size(l[3])
+            self.zpool_datasets[poolname].append((zfsname, size))
+            self.zpool_datasets_used[poolname] += size
+
+        rest = self.zpool_used_zfs[poolname] - self.zpool_datasets_used[poolname]
+        if rest < 0:
+            rest = 0
+        self.zpool_datasets[poolname].append((poolname, rest))
+        self.zpool_datasets_used[poolname] += rest
 
         ratio = 1.0 * self.zpool_used[poolname] / self.zpool_datasets_used[poolname]
         for zfsname, size in self.zpool_datasets[poolname]:
@@ -134,6 +165,8 @@ class DevTree(rcDevTree.DevTree):
                 self.set_relation_used(m.devname, zfsname, int(used*member_ratio))
 
     def read_size(self, s):
+        if s == '0':
+            return 0
         unit = s[-1]
         size = float(s[:-1].replace(',','.'))
         if unit == 'K':
