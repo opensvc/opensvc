@@ -42,6 +42,7 @@ class checks(check):
         self.register('checkZfsUsage')
         self.register('checkRaidSmartArray')
         self.register('checkRaidMegaRaid')
+        self.register('checkRaidSas2')
         self.register_local_checkers()
 
     def __iadd__(self, c):
