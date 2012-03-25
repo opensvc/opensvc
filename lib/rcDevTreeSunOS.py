@@ -120,10 +120,9 @@ class DevTree(rcDevTree.DevTree):
                 continue
             zfsname = l[0]
             size = self.read_size(l[1])
-            #refer = self.read_size(l[3])
+            refer = self.read_size(l[3])
+            size -= refer
             mnt = l[4]
-            if mnt == "legacy":
-                continue
             if zfsname == poolname:
                 self.zpool_used_zfs[poolname] = size
                 continue
