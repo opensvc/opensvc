@@ -40,6 +40,7 @@ class checks(check):
         self.register('checkFsInode')
         self.register('checkVgUsage')
         self.register('checkMpath')
+        self.register('checkMpathPowerpath')
         self.register('checkZfsUsage')
         self.register('checkRaidSmartArray')
         self.register('checkRaidMegaRaid')
