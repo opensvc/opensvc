@@ -108,7 +108,7 @@ class DevTree(rcDevTree.DevTree):
         zpool_free = self.read_size(lines[-1].split()[2])
         self.zpool_size[poolname] = self.zpool_used[poolname] + zpool_free
 
-        p = Popen(["zfs", "list", "-H", "-r", poolname], stdout=PIPE, stderr=PIPE)
+        p = Popen(["zfs", "list", "-H", "-r", "-t", "filesystem", poolname], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             return
