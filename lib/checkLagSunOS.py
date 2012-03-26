@@ -29,6 +29,7 @@ key: 1 (0x0001) policy: L4      address: 0:15:17:bb:82:d2 (auto)
 
 class check(checks.check):
     chk_type = "lag"
+    chk_name = "Solaris network interface lag"
 
     def do_check(self):
         if not which("dladm"):

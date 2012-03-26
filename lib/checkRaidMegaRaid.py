@@ -24,6 +24,7 @@ class check(checks.check):
     prefixes = [os.path.join(os.sep, "usr", "local", "admin")]
     megacli = "MegaCli"
     chk_type = "raid"
+    chk_name = "MegaCli"
 
     def find_megacli(self):
         if which(self.megacli):

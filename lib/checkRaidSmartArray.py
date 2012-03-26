@@ -25,6 +25,7 @@ os.environ['PATH'] = ':'.join(path_list)
 
 class check(checks.check):
     chk_type = "raid"
+    chk_name = "HP SmartArray"
 
     def parse_errors(self, out):
         r = 0

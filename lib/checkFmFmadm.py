@@ -24,6 +24,7 @@ class check(checks.check):
     prefixes = [os.path.join(os.sep, "usr", "sbin")]
     fmadm = "fmadm"
     chk_type = "fm"
+    chk_name = "Solaris fmadm"
 
     def find_fmadm(self):
         if which(self.fmadm):

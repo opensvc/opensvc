@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 from rcGlobalEnv import rcEnv
+import os
 
 class check(object):
     undef = [{
@@ -71,11 +72,9 @@ class checks(check):
                 print >>sys.stderr, 'Could not import check:', cname
 
     def register(self, chk_name):
-        try:
-            m = __import__(chk_name+rcEnv.sysname)
-        except ImportError:
-            print '%s not implemented on %s'%(chk_name,rcEnv.sysname)
+        if not os.path.exists(os.path.join(rcEnv.pathlib, chk_name+rcEnv.sysname+'.py')):
             return
+        m = __import__(chk_name+rcEnv.sysname)
         self += m.check(svcs=self.svcs)
 
     def do_checks(self):
@@ -92,6 +91,12 @@ class checks(check):
         vals = []
 
         for chk in self.check_list:
+            # print header
+            s = chk.chk_type
+            if hasattr(chk, "chk_name"):
+                s += ' (' + chk.chk_name + ')'
+            print s
+
             d = chk.do_check()
             if len(d) == 0:
                 continue
@@ -108,6 +113,14 @@ class checks(check):
                     chk_svcname = i['chk_svcname']
                 else:
                     chk_svcname = ""
+
+                # print instance
+                s = "  " + i['chk_instance']
+                if len(chk_svcname) > 0:
+                    s += '@' + chk_svcname
+                s += ': ' + i['chk_value']
+                print s
+
                 vals.append([\
                     rcEnv.nodename,
                     chk_svcname,

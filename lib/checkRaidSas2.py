@@ -24,6 +24,7 @@ class check(checks.check):
     prefixes = [os.path.join(os.sep, "usr", "local", "admin")]
     sas2ircu = "sas2ircu"
     chk_type = "raid"
+    chk_name = "LSI SAS200"
 
     def find_sas2ircu(self):
         if which(self.sas2ircu):
