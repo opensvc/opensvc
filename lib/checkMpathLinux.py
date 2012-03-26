@@ -64,4 +64,9 @@ class check(checks.check):
                "active ready" in line:
                 n += 1
                 dev = "/dev/"+line.split()[2]
+        if wwid is not None:
+            r.append({'chk_instance': wwid,
+                      'chk_value': str(n),
+                      'chk_svcname': self.find_svc(dev),
+                     })
         return r
