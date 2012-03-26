@@ -49,6 +49,8 @@ class check(checks.check):
                               'chk_svcname': self.find_svc(dev),
                              })
                 n = 0
+                if line.startswith(": "):
+                    line = line.replace(": ", "")
                 l = line.split()
                 if l[0] == 'create:':
                     l = l[1:]
