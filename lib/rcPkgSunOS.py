@@ -44,7 +44,8 @@ def listpkg():
         l = line.split(':')
         if len(l) != 2:
             continue
-        f = l[0].strip()
+        l = map(lambda x: x.strip(), l)
+        f = l[0]
         if f == "PKGINST":
             x = [rcEnv.nodename, l[1], "", ""]
         elif f == "VERSION":
