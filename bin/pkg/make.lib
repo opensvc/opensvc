@@ -3,14 +3,10 @@ function changelog {
 }
 
 function date_to_release {
-        if [ "$(uname -s)" == "FreeBSD" ] ; then
-		date -f "%a, %d %b %Y %H:%M:%S %z" "$*" +%y%m%d.%H%M
-	else
-		date -d "$*" +%y%m%d.%H%M
-	fi
+	/opt/opensvc/bin/python -c "import datetime ; print datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M')"
 }
 
-HEAD=$(git log -1 --pretty=format:%aD || exit 1)
+HEAD=$(git log -1 --pretty=format:%at || exit 1)
 VERSION=$(git describe --tags --abbrev=0)
 MASTER=0
 git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1
