@@ -107,7 +107,7 @@ function create_pkg {
 	pkgproto $RULES >> $PROTOTYPE
 
 	my_log "creating pkginfo file : $PKGINFO"
-	echo "PKG=$PKG\nNAME=$NAME\nARCH=$ARCH\nVERSION=$VERSION\nCATEGORY=$CATEGORY" > $PKGINFO
+	echo "PKG=$PKG\nNAME=$NAME\nARCH=$ARCH\nVERSION=$VERSION-$RELEASE\nCATEGORY=$CATEGORY" > $PKGINFO
 	echo "VENDOR=$VENDOR\nEMAIL=$EMAIL\nPSTAMP=$PSTAMP\nCLASSES=$CLASSES" >> $PKGINFO
 
 	my_log "running pkgmk to create /var/spool/pkg/$PKG : pkgmk -o -f $PROTOTYPE"
@@ -159,7 +159,7 @@ create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
 
 opensvc Service Manager for logical servers v${VERSION}-$RELEASE
 $ARCH
-$VERSION
+$VERSION-$RELEASE
 
 http://www.opensvc.com
 support@opensvc.com
