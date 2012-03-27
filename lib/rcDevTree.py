@@ -287,8 +287,9 @@ class DevTree(object):
                 region = 0
             else:
                 used = self.get_used(chain)
+                ref = self.get_dev(chain[0].child).alias
                 o = md5()
-                o.update(chain[0].child)
+                o.update(ref)
                 region = o.hexdigest()
             l.append((d.devpath[0], used, region))
         return l
