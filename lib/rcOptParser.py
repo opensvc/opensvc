@@ -78,7 +78,7 @@ action_desc = {
       'stonith':      'command provided to the heartbeat daemon to fence peer node in case of split brain',
      },
     'Service configuration': {
-      'create':	'create a new service configuration file',
+      'create':	'create a new service configuration file. --interactive triggers the interactive mode',
       'update':	'update definitions in an existing service configuration file',
       'delete':	'delete resources passed through --rid in services passed through --service',
       'set': 'set a service configuration parameter (pointed by --param) value (pointed by --value)',
