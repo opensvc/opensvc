@@ -152,7 +152,11 @@ class DevTree(rcDevTree.DevTree):
         self.zpool_datasets[poolname].append((poolname, rest))
         self.zpool_datasets_used[poolname] += rest
 
-        ratio = 1.0 * self.zpool_used[poolname] / self.zpool_datasets_used[poolname]
+        if self.zpool_datasets_used[poolname] == 0:
+            ratio = 0
+        else:
+            ratio = 1.0 * self.zpool_used[poolname] / self.zpool_datasets_used[poolname]
+
         for zfsname, size in self.zpool_datasets[poolname]:
             used = int(size*ratio)
             d = self.add_dev(zfsname, used, "zfs")
