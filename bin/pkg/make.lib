@@ -41,6 +41,7 @@ function prepare_chroot {
 
 	# install tracked files
 	EXCL=
+	EXCL="$EXCL --exclude=.be/"
 	EXCL="$EXCL --exclude=bin/pkg"
 	EXCL="$EXCL --exclude=bin/sssu"
 	EXCL="$EXCL --exclude=bin/python"
