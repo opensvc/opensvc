@@ -97,7 +97,7 @@ class Node(Svc, Freezer):
             'pushasset':      'push asset information to collector',
             'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
-            'pushdisks':      'push package/version list to collector',
+            'pushdisks':      'push disks usage information to collector',
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
