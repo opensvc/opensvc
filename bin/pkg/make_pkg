@@ -159,11 +159,11 @@ create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
 
 opensvc Service Manager for logical servers v${VERSION}-$RELEASE
 $ARCH
-$VERSION-$RELEASE
+$VERSION,REV=$RELEASE
 
 http://www.opensvc.com
 support@opensvc.com
-OPENSVC-${VERSION}
+OPENSVC-${VERSION},REV=${RELEASE}
 $TMPROOT=$BASE
 
 EOF
