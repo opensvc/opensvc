@@ -87,6 +87,8 @@ class StatsProvider(rcStats.StatsProvider):
                     l[i] = str(int(e[0:-2]) * 1024)
                 elif e.endswith('M'):
                     l[i] = e.rstrip('M')
+                elif e.endswith('K'):
+                    l[i] = str(1.0 * int(e[0:-2]) / 1024)
             l = [" ".join(l[0:2])] + l[2:-4] + [self.nodename]
             lines.append(l)
         return cols, lines
