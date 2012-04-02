@@ -39,7 +39,7 @@ class DevTree(rcDevTree.DevTree):
                 continue
             partname = d.devname + 's' + l[0]
             partpath = d.devpath[0][:-1] + l[0]
-            partsize = self.di.get_size(partpath)
+            partsize = self.di.get_part_size(partpath)
             p = self.add_dev(partname, partsize, "linear")
             p.set_devpath(partpath)
             d.add_child(partname)
@@ -65,6 +65,45 @@ class DevTree(rcDevTree.DevTree):
             d = self.add_dev(devname, size, "linear")
             d.set_devpath(devpath)
             self.load_partitions(d)
+
+    def load_sds(self):
+        p = Popen(["metastat", "-p"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        lines = out.split('\n')
+        lines.reverse()
+        
+        """
+        # metastat -p
+        d11 -m d2 d3 1
+        d2 1 1 c3t0d0s1
+        d3 1 1 c3t1d0s1
+        """
+        for line in lines:
+            l = line.split()
+            if len(l) < 3:
+                continue
+            childname = l[0]
+            childpath = "/dev/md/dsk/"+childname
+            childsize = self.di.get_size(childpath)
+            if l[1] == "-m":
+                childtype = "raid1"
+            else:
+                childtype = "linear"
+            childdev = self.add_dev(childname, childsize, childtype)
+            childdev.set_devpath(childpath)
+            if l[1] == "-m":
+                parentnames = l[2:-1]
+            else:
+                parentnames = [l[-1]]
+
+            for parentname in parentnames:
+                parentpath = "/dev/md/dsk/"+parentname
+                parentsize = self.di.get_size(parentpath)
+                parentdev = self.add_dev(parentname, parentsize, "linear")
+                childdev.add_parent(parentname)
+                parentdev.add_child(childname)
 
     def load_zpool(self):
         p = Popen(["zpool", "list", "-H"], stdout=PIPE, stderr=PIPE)
@@ -192,6 +231,7 @@ class DevTree(rcDevTree.DevTree):
         self.di = diskInfo()
         self.load_format()
         self.load_zpool()
+        self.load_sds()
 
     def blacklist(self, devname):
         bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
