@@ -29,6 +29,39 @@ class diskInfo(rcDiskInfo.diskInfo):
             return
         return l[-1].strip()
 
+    def get_part_size(self, dev):
+        part = dev[-1]
+        size = 0
+        cmd = ['prtvtoc', dev]
+        (out, err, ret) = justcall(cmd)
+        if ret != 0:
+            return size
+
+        bytes_per_sect = 0
+        for line in out.split('\n'):
+            if not line.startswith('*'):
+                continue
+            if "bytes/sector" in line:
+                bytes_per_sect = int(line.split()[1])
+
+        if bytes_per_sect == 0:
+            return 0
+
+        for line in out.split('\n'):
+            if line.startswith('*'):
+                continue
+
+            l = line.split()
+            if len(l) != 6:
+                continue
+
+            if l[0] != part:
+                continue
+
+            return math.ceil(1.*int(l[4])*bytes_per_sect/1024/1024)
+
+        return 0
+
     def get_size(self, dev):
         size = 0
         cmd = ['prtvtoc', dev]
