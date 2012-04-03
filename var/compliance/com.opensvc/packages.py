@@ -18,6 +18,7 @@ class CompPackages(object):
     def __init__(self, prefix='OSVC_COMP_PACKAGES_'):
         self.prefix = prefix.upper()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
+        self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch']
 
         if self.sysname not in ['Linux', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
@@ -49,7 +50,63 @@ class CompPackages(object):
             raise NotApplicable()
 
         self.packages = map(lambda x: x.strip(), self.packages)
+        self.expand_pkgnames()
         self.installed_packages = self.get_installed_packages()
+
+    def expand_pkgnames(self):
+        """ Expand wildcards and implicit arch
+        """
+        l = []
+        for pkgname in self.packages:
+            l += self.expand_pkgname(pkgname)
+        self.packages = l
+
+    def expand_pkgname(self, pkgname):
+        vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
+        if vendor in ['CentOS', 'Redhat', 'Red Hat']:
+            return self.yum_expand_pkgname(pkgname)
+        return [pkgname]
+
+    def yum_expand_pkgname(self, pkgname):
+        arch_specified = False
+        for arch in self.known_archs:
+            if pkgname.endswith(arch):
+                arch_specified = True
+        cmd = ['yum', 'list', pkgname]
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, 'can not expand', pkgname
+            return []
+        lines = out.split('\n')
+        if len(lines) < 2:
+            print >>sys.stderr, 'can not expand', pkgname
+            return []
+        lines = lines[1:]
+        l = []
+        for line in lines:
+            words = line.split()
+            if len(words) != 3:
+                continue
+            if words[0] in ("Installed", "Available", "Loaded"):
+                continue
+            l.append(words[0])
+
+        if arch_specified or len(l) == 1:
+            return l
+
+        if os.environ['OSVC_COMP_NODES_OS_ARCH'] in ('i386', 'i586', 'i686', 'ia32'):
+            archs = ('i386', 'i586', 'i686', 'ia32', 'noarch')
+        else:
+            archs = (os.environ['OSVC_COMP_NODES_OS_ARCH'], 'noarch')
+
+        ll = []
+        for pkgname in l:
+            if pkgname.split('.')[-1] in archs:
+                # keep only packages matching the arch
+                ll.append(pkgname)
+
+        return ll
 
     def aix_fix_pkg(self):
         print "TODO: aix_fix_pkg"
@@ -72,7 +129,7 @@ class CompPackages(object):
         return pkgs
 
     def rpm_get_installed_packages(self):
-        p = Popen(['rpm', '-qa', '--qf', '%{n}\n'], stdout=PIPE)
+        p = Popen(['rpm', '-qa', '--qf', '%{n}.%{ARCH}\n'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
             print >>sys.stderr, 'can not fetch installed packages list'

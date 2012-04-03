@@ -29,6 +29,18 @@ class CompVuln(object):
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
+        if 'OSVC_COMP_VULN_STRICT' in os.environ and \
+           os.environ['OSVC_COMP_VULN_STRICT'] == "true":
+            self.strict = True
+        else:
+            self.strict = False
+
+        if 'OSVC_COMP_VULN_PKG_TYPE' in os.environ and \
+           os.environ['OSVC_COMP_VULN_PKG_TYPE'] == "bundle":
+            self.pkg_type = 'bundle'
+        else:
+            self.pkg_type = 'product'
+
         self.packages = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:
@@ -157,7 +169,10 @@ class CompVuln(object):
             return RET_ERR
         if self.highest_avail_version == "0":
             return RET_ERR
-        self.fix_list.append(pkg["pkgname"]+',r='+self.highest_avail_version)
+        if self.strict:
+            self.fix_list.append(pkg["pkgname"]+',r='+pkg["minver"])
+        else:
+            self.fix_list.append(pkg["pkgname"]+',r='+self.highest_avail_version)
         return RET_OK
 
     def hp_fix_all(self):
@@ -170,7 +185,7 @@ class CompVuln(object):
         self.highest_avail_version = "0"
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
-        cmd = ['swlist', '-l', 'product', '-s', self.uri, pkg['pkgname']]
+        cmd = ['swlist', '-l', self.pkg_type, '-s', self.uri, pkg['pkgname']]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
@@ -192,7 +207,7 @@ class CompVuln(object):
         return RET_OK
 
     def hp_get_installed_packages(self):
-        p = Popen(['swlist', '-l', 'product'], stdout=PIPE)
+        p = Popen(['swlist', '-l', self.pkg_type], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
             print >>sys.stderr, 'can not fetch installed packages list'
@@ -293,6 +308,7 @@ class CompVuln(object):
     def get_kver(self):
         s = os.uname()[2]
         s = s.replace('xen', '')
+        s = s.replace('hugemem', '')
         s = s.replace('PAE', '')
 	s = s.replace('.x86_64','')
         return s

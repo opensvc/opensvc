@@ -17,6 +17,7 @@ import os
 import sys
 import json
 import pwd
+import codecs
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -57,6 +58,8 @@ class CompAuthKeys(object):
         if ak['authfile'] not in ("authorized_keys", "authorized_keys2"):
             print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.authfile+")"
             ak['authfile'] = self.authfile
+        for key in ('user', 'key', 'action', 'authfile'):
+            ak[key] = ak[key].strip()
         return ak
 
     def fixable(self):
@@ -64,9 +67,10 @@ class CompAuthKeys(object):
 
     def truncate_key(self, key):
         if len(key) < 50:
-            return key
+            s = key
         else:
-            return "'"+key[0:17] + "..." + key[-30:]+"'"
+            s = "'"+key[0:17] + "..." + key[-30:]+"'"
+        return s.encode('utf8')
 
     def _get_authkey_file(self, key):
         if key == "authorized_keys":
@@ -128,7 +132,7 @@ class CompAuthKeys(object):
         for p in ps:
             if not os.path.exists(p):
                 continue
-            with open(p, 'r') as f:
+            with codecs.open(p, 'r', encoding="utf8") as f:
                 self.installed_keys_d[user] += f.read().split('\n')
         return self.installed_keys_d[user]
 
@@ -201,7 +205,7 @@ class CompAuthKeys(object):
                 print p, "ownetship set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid)
 
         with open(p, 'a') as f:
-            f.write(ak['key'])
+            f.write(ak['key'].encode('utf8'))
             if not ak['key'].endswith('\n'):
                 f.write('\n')
             print 'key', self.truncate_key(ak['key']), 'installed for user', ak['user']
