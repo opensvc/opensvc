@@ -70,7 +70,7 @@ class EtcSystem(object):
         newline = 'set %s = %s'%(keyname, str(target))
         if keyname not in self.data:
             print "add '%s' to /etc/system"%newline
-            self.lines.append(newline)
+            self.lines.insert(-1, newline + " * added by opensvc")
         else:
             ok = 0
             for value, ref in self.data[keyname]:
@@ -82,11 +82,11 @@ class EtcSystem(object):
                     ok += 1
             if ok == 0:
                 print "add '%s' to /etc/system"%newline
-                self.lines.append(newline)
+                self.lines.insert(-1, newline + " * added by opensvc")
 
     def get_val(self, keyname):
         if keyname not in self.data:
-            return None
+            return []
         return self.data[keyname]
 
     def _check_key(self, keyname, target, op, value, ref, verbose=True):
@@ -133,18 +133,26 @@ class EtcSystem(object):
         else:
             op = key['op']
         target = key['value']
+
         if op not in ('>=', '<=', '='):
             if verbose:
                 print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
             return RET_NA
+
         keyname = key['key']
         data = self.get_val(keyname)
+
+        if len(data) == 0:
+            print >>sys.stderr, "%s key is not set"%keyname
+            return RET_ERR
+
         r = RET_OK
         ok = 0
         for value, ref in data:
             r |= self._check_key(keyname, target, op, value, ref, verbose)
             if r == RET_OK:
                 ok += 1
+
         if ok > 1:
             print >>sys.stderr, "duplicate lines for key %s"%keyname
             r |= RET_ERR
