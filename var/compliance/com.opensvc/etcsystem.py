@@ -1,7 +1,7 @@
 #!/opt/opensvc/bin/python
 
 """
-OSVC_COMP_ETCSYSTEM='[{"key": "fcp:fcp_offline_delay", "value": [">=", 21]}, {"key": "ssd:ssd_io_time", "value": ["=", "0x3C"]}]' ./etcsystem.py OSVC_COMP_ETCSYSTEM check
+OSVC_COMP_ETCSYSTEM='[{"key": "fcp:fcp_offline_delay", "op": ">=", "value": 21}, {"key": "ssd:ssd_io_time", "op": "=", "value": "0x3C"}]' ./etcsystem.py OSVC_COMP_ETCSYSTEM check
 """
 
 import os
@@ -128,16 +128,11 @@ class EtcSystem(object):
             if verbose:
                 print >>sys.stderr, "'value' not set in rule %s"%str(key)
             return RET_NA
-        if type(key['value']) != list:
-            if verbose:
-                print >>sys.stderr, "'value' is not a list: %s"%str(key)
-            return RET_NA
-        if len(key['value']) != 2:
-            if verbose:
-                print >>sys.stderr, "'value' list must have 2 members: %s"%str(key)
-            return RET_NA
-        op = key['value'][0]
-        target = key['value'][1]
+        if 'op' not in key:
+            op = "="
+        else:
+            op = key['op']
+        target = key['value']
         if op not in ('>=', '<=', '='):
             if verbose:
                 print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
@@ -156,7 +151,7 @@ class EtcSystem(object):
         return r
 
     def fix_key(self, key):
-        self.set_val(key['key'], key['value'][1], key['value'][0])
+        self.set_val(key['key'], key['value'], key['op'])
 
     def check(self):
         r = 0
