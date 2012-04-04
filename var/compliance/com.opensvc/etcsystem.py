@@ -7,7 +7,6 @@ OSVC_COMP_ETCSYSTEM='[{"key": "fcp:fcp_offline_delay", "value": [">=", 21]}, {"k
 import os
 import sys
 import json
-import pwd
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -17,6 +16,7 @@ from comp import *
 class EtcSystem(object):
     def __init__(self, prefix='OSVC_COMP_FILELINE_'):
         self.prefix = prefix.upper()
+        self.data = {}
 
         self.cf = os.path.join(os.sep, 'etc', 'system')
         self.keys = []
@@ -42,55 +42,82 @@ class EtcSystem(object):
         with open(p, 'r') as f:
             buff = f.read()
         self.lines = buff.split('\n')
-        self.lines = map(lambda x: ' '.join(x.split()), self.lines)
-
-    def set_val(self, keyname, value):
-        done = False
         for i, line in enumerate(self.lines):
+            line = line.strip()
             if line.startswith('*'):
                 continue
+            if len(line) == 0:
+                continue
             l = line.split()
-            if len(l) != 2:
+            if l[0] != "set":
                 continue
-            if l[0] != 'set':
+            if len(l) < 2:
                 continue
-            v = l[1].split('=')
-            if len(v) != 2:
-                continue
-            if keyname == v[0]:
-                if done:
-                    self.lines[i] = '* '+line
-                else:
-                    v[1] = str(value)
-                    newline = 'set %s=%s'%(keyname, str(value))
-                    print "modify '%s' in /etc/system"%newline
-                    self.lines[i] = newline
-                    done = True
-        if not done:
-            newline = 'set %s=%s'%(keyname, str(value))
+            line = ' '.join(l[1:])
+            var, val = line.split('=')
+            var = var.strip()
+            val = val.strip()
+            try:
+                val = int(val)
+            except:
+                pass
+            if var in self.data:
+                self.data[var].append([val, i])
+            else:
+                self.data[var] = [[val, i]]
+
+    def set_val(self, keyname, target, op):
+        newline = 'set %s = %s'%(keyname, str(target))
+        if keyname not in self.data:
             print "add '%s' to /etc/system"%newline
             self.lines.append(newline)
+        else:
+            ok = 0
+            for value, ref in self.data[keyname]:
+                r = self._check_key(keyname, target, op, value, ref, verbose=False)
+                if r == RET_ERR:
+                    print "comment out line %d: %s"%(ref, self.lines[ref])
+                    self.lines[ref] = '* '+self.lines[ref]+' * commented out by opensvc'
+                else:
+                    ok += 1
+            if ok == 0:
+                print "add '%s' to /etc/system"%newline
+                self.lines.append(newline)
 
     def get_val(self, keyname):
-        for line in self.lines:
-            if line.startswith('*'):
-                continue
-            l = line.split()
-            if len(l) != 2:
-                continue
-            if l[0] != 'set':
-                continue
-            v = l[1].split('=')
-            if len(v) != 2:
-                continue
-            if keyname == v[0]:
-                val = v[1]
-                try:
-                    val = int(val)
-                except:
-                    pass
-                return val
-        return None
+        if keyname not in self.data:
+            return None
+        return self.data[keyname]
+
+    def _check_key(self, keyname, target, op, value, ref, verbose=True):
+        r = RET_OK
+        if value is None:
+            if verbose:
+                print >>sys.stderr, "%s not set"%keyname
+            r |= RET_ERR
+        if op == '=':
+            if str(value) != str(target):
+                if verbose:
+                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                r |= RET_ERR
+            elif verbose:
+                print "%s=%s on target"%(keyname, str(value))
+        else:
+            if type(value) != int:
+                if verbose:
+                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                r |= RET_ERR
+            elif op == '<=' and value > target:
+                if verbose:
+                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                r |= RET_ERR
+            elif op == '>=' and value < target:
+                if verbose:
+                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                r |= RET_ERR
+            elif verbose:
+                print "%s=%s on target"%(keyname, str(value))
+        return r
 
     def check_key(self, key, verbose=True):
         if 'key' not in key:
@@ -116,35 +143,20 @@ class EtcSystem(object):
                 print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
             return RET_NA
         keyname = key['key']
-        value = self.get_val(keyname)
-        if value is None:
-            if verbose:
-                print >>sys.stderr, "%s not set"%keyname
-            return RET_ERR
-        if op == '=':
-            if str(value) != str(target):
-                if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
-                return RET_ERR
-        else:
-            if type(value) != int:
-                if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
-                return RET_ERR
-            elif op == '<=' and value > target:
-                if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
-                return RET_ERR
-            elif op == '>=' and value < target:
-                if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
-                return RET_ERR
-        if verbose:
-            print "%s=%s on target"%(keyname, str(value))
-        return RET_OK
+        data = self.get_val(keyname)
+        r = RET_OK
+        ok = 0
+        for value, ref in data:
+            r |= self._check_key(keyname, target, op, value, ref, verbose)
+            if r == RET_OK:
+                ok += 1
+        if ok > 1:
+            print >>sys.stderr, "duplicate lines for key %s"%keyname
+            r |= RET_ERR
+        return r
 
     def fix_key(self, key):
-        self.set_val(key['key'], key['value'][1])
+        self.set_val(key['key'], key['value'][1], key['value'][0])
 
     def check(self):
         r = 0
