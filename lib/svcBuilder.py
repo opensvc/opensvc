@@ -477,7 +477,7 @@ def add_hbs(svc, conf):
         kwargs = {}
 
         try:
-            hbtype = conf_get_string(svc, conf, s, 'type')
+            hbtype = conf_get_string(svc, conf, s, 'type').lower()
         except ex.OptNotFound:
             svc.log.error("type must be set in section %s"%s)
             return
@@ -485,15 +485,18 @@ def add_hbs(svc, conf):
         try:
             kwargs['name'] = conf_get_string(svc, conf, s, 'name')
         except ex.OptNotFound:
-            if hbtype == 'openha':
-                svc.log.error("name must be set in section %s"%s)
-                return
+            pass
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s, svc)
+
+        if hbtype == 'openha':
+            hbtype = 'OpenHA'
+        elif hbtype == 'linuxha':
+            hbtype = 'LinuxHA'
 
         try:
             hb = __import__('resHb'+hbtype)
