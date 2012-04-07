@@ -213,10 +213,18 @@ def add_scsireserv(svc, resource, conf, section):
     except ImportError:
         sr = __import__('resScsiReserv')
 
+    try:
+        pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
+    except ex.OptNotFound:
+        defaults = conf.defaults()
+        if 'no_preempt_abort' in defaults:
+            pa = bool(defaults['no_preempt_abort'])
+
     kwargs = {}
     kwargs['rid'] = resource.rid
     kwargs['tags'] = resource.tags
     kwargs['disks'] = resource.disklist()
+    kwargs['no_preempt_abort'] = pa
     kwargs['disabled'] = resource.is_disabled()
     kwargs['optional'] = resource.is_optional()
 
