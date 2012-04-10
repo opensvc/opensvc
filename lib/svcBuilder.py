@@ -455,6 +455,15 @@ def add_stoniths(svc, conf):
             if 'name' not in kwargs:
                 svc.log.error("target must be set in section %s"%s)
                 return
+        elif _type in ('Callout'):
+            try:
+                kwargs['cmd'] = conf_get_string_scope(svc, conf, s, 'cmd')
+            except ex.OptNotFound:
+                pass
+    
+            if 'cmd' not in kwargs:
+                svc.log.error("cmd must be set in section %s"%s)
+                return
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
