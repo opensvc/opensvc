@@ -794,11 +794,15 @@ class Collector(object):
 
         for dev_id, vdisk_id in served_disks:
             disk_id = disks.disk_id(dev_id)
+            try:
+                disk_size = disks.disk_size(dev_id)
+            except:
+                continue
             vals.append([
               vdisk_id,
               rcEnv.nodename,
               disk_id,
-              str(disks.disk_size(dev_id)),
+              str(disk_size),
               "virtual",
               "virtual"
             ])

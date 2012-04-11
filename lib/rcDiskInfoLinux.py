@@ -125,8 +125,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             try:
                 statinfo = os.stat(dev)
             except:
-                self.log.error("can not stat %s" % dev)
-                raise
+                raise Exception("can not stat %s" % dev)
             dm = 'dm-' + str(os.minor(statinfo.st_rdev))
             path = '/sys/block/' + dm + '/size'
             if not os.path.exists(path):
