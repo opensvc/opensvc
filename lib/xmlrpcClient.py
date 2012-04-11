@@ -687,7 +687,7 @@ class Collector(object):
 
         # hash to add up disk usage across all services
         dh = {}
-        blacklist = []
+        served_disks = []
 
         for svc in node.svcs:
             # hash to add up disk usage inside a service
@@ -704,10 +704,10 @@ class Collector(object):
                     else:
                         disk_dg = r.rid
 
+                    if hasattr(r, 'devmap'):
+                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1]), r.devmap())
+
                     for devpath in r.devlist():
-                        if hasattr(r, 'devmap'):
-                            devmap = r.devmap()
-                            blacklist += map(lambda x: '.'.join((r.svc.vm_hostname(), x[1])), devmap)
                         for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
                             disk_id = disks.disk_id(d)
                             if disk_id is None or disk_id == "":
@@ -780,16 +780,34 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.register_disks(*args)
-    
-        blacklist = set(blacklist)
-        for disk_id in blacklist:
-            print "blacklist", disk_id
-        vars = ['disk_id']
-        vals = map(lambda x: [x], blacklist)
+
+        #
+        # register disks this node provides to its VM
+        #
+        vars = ['disk_id',
+                'disk_arrayid',
+                'disk_devid',
+                'disk_size',
+                'disk_raid',
+                'disk_group']
+        vals = []
+
+        for dev_id, vdisk_id in served_disks:
+            disk_id = disks.disk_id(dev_id)
+            vals.append([
+              vdisk_id,
+              rcEnv.nodename,
+              disk_id,
+              str(disks.disk_size(dev_id)),
+              "virtual",
+              "virtual"
+            ])
+            print "register served disk", disk_id, "as", vdisk_id
+
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.register_disk_blacklist(*args)
+        self.proxy.register_diskinfo(*args)
 
     def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
