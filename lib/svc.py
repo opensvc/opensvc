@@ -626,6 +626,7 @@ class Svc(Resource, Freezer):
 
     def stonith(self):
         self.sub_set_action('stonith.ilo', 'start')
+        self.sub_set_action('stonith.callout', 'start')
         
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)

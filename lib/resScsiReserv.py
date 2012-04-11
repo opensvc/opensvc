@@ -35,8 +35,9 @@ class ScsiReserv(Res.Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on disks held by a service
     """
-    def __init__(self, rid=None, disks=set([]),
+    def __init__(self, rid=None, disks=set([]), no_preempt_abort=False,
                  disabled=False, tags=set([]), optional=False):
+        self.no_preempt_abort = no_preempt_abort
         self.hostid = '0x'+hostId.hostid()
         self.disks = disks
         if len(disks) == 0:

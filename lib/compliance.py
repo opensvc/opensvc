@@ -523,4 +523,15 @@ class Compliance(object):
             return
         print '\n'.join(l)
 
+    def compliance_list_module(self):
+        import glob
+        regex2 = re.compile("^S*[0-9]+-*", re.UNICODE)
+        for path in glob.glob(os.path.join(comp_dir, '*')):
+            name = regex2.sub("", os.path.basename(path))
+            try:
+                m = Module(name)
+                print m.name
+            except:
+                continue
+
 

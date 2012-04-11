@@ -81,6 +81,24 @@ class syncSymclone(resSync.Sync):
             self.symld[ld['symid'],ld['symdev']] = ld
 
     def is_active(self):
+        for pair in self._pairs:
+            if pair in self.active_pairs:
+                continue
+            cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+pair
+            (ret, out, err) = self.call(cmd)
+            if ret == 0:
+                self.active_pairs.append(pair)
+                continue
+            cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copyinprog']+pair
+            (ret, out, err) = self.call(cmd)
+            if ret == 0:
+                self.active_pairs.append(pair)
+                continue
+        if len(self.active_pairs) == len(self._pairs):
+            return True
+        return False
+
+    def is_copied(self):
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+self.pairs
         (ret, out, err) = self.call(cmd)
         if ret == 0:
@@ -103,18 +121,25 @@ class syncSymclone(resSync.Sync):
             else:
                 self.log.error("device %s not a clone target"%(dev))
                 raise ex.excError
-            self.pairs += [srcld, 'sym', 'ld', tgtld]
+            pair = [srcld, 'sym', 'ld', tgtld]
+            self.pairs += pair
+            self._pairs += [pair]
 
     def wait_for_active(self):
         delay = 20
         timeout = 300
+        self.active_pairs = []
         for i in range(timeout/delay):
             if self.is_active():
                 return
             if i == 0:
-                self.log.info("waiting for copied state (max %i secs)"%timeout)
+                self.log.info("waiting for copied or copyinprog state (max %i secs)"%timeout)
             time.sleep(delay)
-        self.log.error("timed out waiting for copied state (%i secs)"%timeout)
+        self.log.error("timed out waiting for copied or copyinprog state (%i secs)"%timeout)
+        ina = set(self._pairs) - set(self.active_pairs)
+        ina = map(lambda x: ' '.join(x), ina)
+        ina = ", ".join(ina)
+        self.log.error("%s still not in copied or copyinprod state"%ina)
         raise ex.excError
 
     def wait_for_activable(self):
@@ -157,8 +182,8 @@ class syncSymclone(resSync.Sync):
         if self.svcstatus['overall'].status != rcStatus.DOWN:
             self.log.error("the service (sync excluded) is in '%s' state. Must be in 'down' state"%self.svcstatus['overall'])
             raise ex.excError
-        if not self.is_active():
-            self.log.info("symclone dg %s is not active"%self.symdg)
+        if not self.is_copied():
+            self.log.info("symclone dg %s is not fully copied"%self.symdg)
             return
         cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'recreate', '-precopy', '-i', '20', '-c', '30']+self.pairs
         (ret, out, err) = self.vcall(cmd)
@@ -229,6 +254,8 @@ class syncSymclone(resSync.Sync):
         self.svcstatus = {}
         self.symld = {}
         self.pairs = []
+        self._pairs = []
+        self.active_pairs = []
         self.last = None
 
     def __str__(self):

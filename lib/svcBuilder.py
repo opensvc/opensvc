@@ -213,10 +213,18 @@ def add_scsireserv(svc, resource, conf, section):
     except ImportError:
         sr = __import__('resScsiReserv')
 
+    try:
+        pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
+    except ex.OptNotFound:
+        defaults = conf.defaults()
+        if 'no_preempt_abort' in defaults:
+            pa = bool(defaults['no_preempt_abort'])
+
     kwargs = {}
     kwargs['rid'] = resource.rid
     kwargs['tags'] = resource.tags
     kwargs['disks'] = resource.disklist()
+    kwargs['no_preempt_abort'] = pa
     kwargs['disabled'] = resource.is_disabled()
     kwargs['optional'] = resource.is_optional()
 
@@ -447,6 +455,15 @@ def add_stoniths(svc, conf):
             if 'name' not in kwargs:
                 svc.log.error("target must be set in section %s"%s)
                 return
+        elif _type in ('Callout'):
+            try:
+                kwargs['cmd'] = conf_get_string_scope(svc, conf, s, 'cmd')
+            except ex.OptNotFound:
+                pass
+    
+            if 'cmd' not in kwargs:
+                svc.log.error("cmd must be set in section %s"%s)
+                return
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
@@ -477,7 +494,7 @@ def add_hbs(svc, conf):
         kwargs = {}
 
         try:
-            hbtype = conf_get_string(svc, conf, s, 'type')
+            hbtype = conf_get_string(svc, conf, s, 'type').lower()
         except ex.OptNotFound:
             svc.log.error("type must be set in section %s"%s)
             return
@@ -485,15 +502,18 @@ def add_hbs(svc, conf):
         try:
             kwargs['name'] = conf_get_string(svc, conf, s, 'name')
         except ex.OptNotFound:
-            if hbtype == 'openha':
-                svc.log.error("name must be set in section %s"%s)
-                return
+            pass
 
         kwargs['rid'] = s
         kwargs['tags'] = get_tags(conf, s)
         kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
         kwargs['disabled'] = get_disabled(conf, s, svc)
         kwargs['optional'] = get_optional(conf, s, svc)
+
+        if hbtype == 'openha':
+            hbtype = 'OpenHA'
+        elif hbtype == 'linuxha':
+            hbtype = 'LinuxHA'
 
         try:
             hb = __import__('resHb'+hbtype)

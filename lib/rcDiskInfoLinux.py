@@ -34,6 +34,8 @@ class diskInfo(rcDiskInfo.diskInfo):
     def disk_id(self, dev):
         if 'cciss' in dev:
             id = self.cciss_id(dev)
+        elif dev.startswith('/dev/mapper/3'):
+            id = dev.replace('/dev/mapper/3', '')
         else:
             id = self.scsi_id(dev)
         if len(id) == 0:
@@ -123,8 +125,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             try:
                 statinfo = os.stat(dev)
             except:
-                self.log.error("can not stat %s" % dev)
-                raise
+                raise Exception("can not stat %s" % dev)
             dm = 'dm-' + str(os.minor(statinfo.st_rdev))
             path = '/sys/block/' + dm + '/size'
             if not os.path.exists(path):
