@@ -228,6 +228,10 @@ class Vg(resDg.Dg):
         if self.is_active():
             self.log.info("%s is already available" % self.name)
             return
+        cmd = ['vgchange', '-c', 'n', self.name]
+        (ret, out, err) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
         cmd = ['vgchange', '-a', 'y', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
