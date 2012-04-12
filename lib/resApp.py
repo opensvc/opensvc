@@ -181,7 +181,17 @@ class Apps(Res.Resource):
                 raise ex.excError
         except ex.excNotAvailable:
             return
-        for name in self.sorted_app_list('S*.standby@'+rcEnv.nodename):
+
+        if rcEnv.nodename in self.svc.drpnodes:
+            pool = 'drpnodes'
+        else:
+            pool = 'nodes'
+
+        l = self.sorted_app_list('S*.standby@'+rcEnv.nodename)
+        l += self.sorted_app_list('S*.standby@'+pool)
+        l = sorted(l)
+
+        for name in l:
             self.app(name, 'start')
 
     def containerize(self):
