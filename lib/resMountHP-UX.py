@@ -65,7 +65,6 @@ class Mount(Res.Mount):
                  snap_size=None, always_on=set([]),
                  disabled=False, tags=set([]), optional=False,
                  monitor=False):
-        self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt,
                            snap_size, always_on,
                            disabled=disabled, tags=tags, optional=optional,
@@ -75,7 +74,7 @@ class Mount(Res.Mount):
         } 
 
     def is_up(self):
-        return self.Mounts.has_mount(self.device, self.mountPoint)
+        return rcMounts.Mounts().has_mount(self.device, self.mountPoint)
 
     def start(self):
         Res.Mount.start(self)

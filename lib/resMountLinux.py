@@ -84,6 +84,7 @@ class Mount(Res.Mount):
             'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
             'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
         }
+        self.loopdevice = None
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
@@ -269,7 +270,7 @@ class Mount(Res.Mount):
                 if S_ISREG(mode):
                     devs = file_to_loop(self.device)
                     if len(devs) > 0:
-                        self.device = devs[0]
+                        self.loopdevice = devs[0]
                         mntopt_l = self.mntOpt.split(',')
                         mntopt_l.remove("loop")
                         self.mntOpt = ','.join(mntopt_l)
@@ -293,7 +294,11 @@ class Mount(Res.Mount):
             mntopt = ['-o', self.mntOpt]
         else:
             mntopt = []
-        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
+        if self.loopdevice is None:
+            device = self.device
+        else:
+            device = self.loopdevice
+        cmd = ['mount']+fstype+mntopt+[device, self.mountPoint]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError

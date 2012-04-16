@@ -25,7 +25,7 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify='left',
     # columns of physical rows
     columns = map(None,*reduce(operator.add,logicalRows))
     # get the maximum of each column by the string length of its items
-    maxWidths = [max([len(str(item)) for item in column]) for column in columns]
+    maxWidths = [max([len(unicode(item)) for item in column]) for column in columns]
     rowSeparator = headerChar * (len(prefix) + len(postfix) + sum(maxWidths) + \
                                  len(delim)*(len(maxWidths)-1))
     # select the appropriate justify method
@@ -36,7 +36,7 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify='left',
         for row in physicalRows:
             print >> output, \
                 prefix \
-                + delim.join([justify(str(item),width) for (item,width) in zip(row,maxWidths)]) \
+                + delim.join([justify(str(unicode(item).encode('ascii', 'replace')),width) for (item,width) in zip(row,maxWidths)]) \
                 + postfix
         if separateRows or hasHeader: print >> output, rowSeparator; hasHeader=False
     return output.getvalue()
