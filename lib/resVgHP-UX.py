@@ -178,8 +178,10 @@ class Vg(resDg.Dg):
             dsfflag = ''
         cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', dsfflag, self.name ]
         self.log.info(' '.join(cmd))
+        self.lock()
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
+        self.unlock()
 
         # we will modify buff[1], so convert from tuple to list
         buff = list(buff)
@@ -288,3 +290,37 @@ class Vg(resDg.Dg):
         if need_export:
             self.do_export()
         return self.disks
+
+    def lock(self, timeout=30, delay=1):
+        import lock
+        lockfile = os.path.join(rcEnv.pathlock, 'vgimport')
+        lockfd = None
+        try:
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except lock.lockTimeout:
+            self.log.error("timed out waiting for lock (%s)"%lockfile)
+            raise ex.excError
+        except lock.lockNoLockFile:
+            self.log.error("lock_nowait: set the 'lockfile' param")
+            raise ex.excError
+        except lock.lockCreateError:
+            self.log.error("can not create lock file %s"%lockfile)
+            raise ex.excError
+        except lock.lockAcquire as e:
+            self.log.warn("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            raise ex.excError
+        except:
+            self.log.error("unexpected locking error")
+            import traceback
+            traceback.print_exc()
+            raise ex.excError
+        self.lockfd = lockfd
+
+    def unlock(self):
+        import lock
+        lock.unlock(self.lockfd)
+
+
