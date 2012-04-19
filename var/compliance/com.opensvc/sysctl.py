@@ -21,6 +21,7 @@ from comp import *
 class Sysctl(object):
     def __init__(self, prefix='OSVC_COMP_XINETD_'):
         self.prefix = prefix.upper()
+        self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
         if not os.path.exists(self.cf):
             print >>sys.stderr, self.cf, 'does not exist'
@@ -70,11 +71,14 @@ class Sysctl(object):
             self.cache[key] = val
 
     def set_live_key(self, key, val):
+        if " " in val:
+            val = '"'+val+'"'
         cmd = ['sysctl', '-w', key+'='+val]
         print "sysctl:", " ".join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            print >>sys.stderr, "failed"
             raise
 
     def get_live_key(self, key):
@@ -148,7 +152,10 @@ class Sysctl(object):
         with open(self.cf, 'w') as f:
             f.write('\n'.join(lines))
 
-        self.set_live_key(key['key'], " ".join(map(str, val)))
+        try:
+            self.set_live_key(key['key'], " ".join(map(str, val)))
+        except:
+            return RET_ERR
         return RET_OK
 
     def check_key(self, key, verbose=False):
@@ -171,7 +178,7 @@ class Sysctl(object):
                 continue
             op = v[0]
             target = v[1]
-            if op == "=" and current_value[i] != target:
+            if op == "=" and str(current_value[i]) != str(target):
                 if verbose:
                     print >>sys.stderr, "sysctl err: %s[%d] = %s, target: %s"%(keyname, i, str(current_value[i]), str(target))
                 r |= RET_ERR
@@ -189,6 +196,7 @@ class Sysctl(object):
         if r == RET_OK and current_live_value is not None and current_value != current_live_value:
             if verbose:
                 print >>sys.stderr, "sysctl err: %s on target in sysctl.conf but kernel value is different"%(keyname)
+            self.need_reload = True
             r |= RET_ERR
         return r
 
@@ -198,11 +206,24 @@ class Sysctl(object):
             r |= self.check_key(key, verbose=True)
         return r
 
+    def reload_sysctl(self):
+        cmd = ['sysctl', '-p']
+        print "sysctl:", " ".join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "reload failed"
+            return RET_ERR
+        return RET_OK
+
     def fix(self):
         r = 0
         for key in self.keys:
             if self.check_key(key, verbose=False) == RET_ERR:
+                self.need_reload = True
                 r |= self.fix_key(key)
+        if self.need_reload:
+            r |= self.reload_sysctl()
         return r
 
 if __name__ == "__main__":

@@ -41,13 +41,7 @@ class CompGroupMembership(object):
         # initialize a hash to store all group membership
         # of users
         #
-        self.member_of = {}
-        for group in grp.getgrall():
-            for user in group.gr_mem:
-                if user in self.member_of:
-                    self.member_of[user].append(group.gr_name)
-                else:
-                    self.member_of[user] = [group.gr_name]
+        self.load_member_of()
 
         self.groups = {}
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
@@ -60,6 +54,15 @@ class CompGroupMembership(object):
             print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable
 
+    def load_member_of(self):
+        self.member_of = {}
+        for group in grp.getgrall():
+            for user in group.gr_mem:
+                if user in self.member_of:
+                    self.member_of[user].append(group.gr_name)
+                else:
+                    self.member_of[user] = [group.gr_name]
+
     def fixable(self):
         return RET_NA
 
@@ -71,6 +74,9 @@ class CompGroupMembership(object):
         return self.fix_member(g, user)
 
     def add_member(self, group, user):
+        if 0 != self._check_member_accnt(user):
+            print >>sys.stderr, 'group', group+':', 'cannot add inexistant user "%s"'%user
+            return RET_ERR
         if user in self.member_of:
             g = set(self.member_of[user]) | set([group])
             g = ','.join(g)
@@ -84,6 +90,7 @@ class CompGroupMembership(object):
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
+        self.load_member_of()
         if r == 0:
             return RET_OK
         else:
@@ -106,17 +113,37 @@ class CompGroupMembership(object):
             print >>sys.stderr, 'no fix implemented for', item
             return RET_ERR
 
+    def _check_member_accnt(self, user):
+        xcmd = ['getent', 'passwd', user]
+        xp = Popen(xcmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        xout, xerr = xp.communicate()
+        return xp.returncode
+
+    def _check_members_accnts(self, group, list, which, verbose):
+        r = RET_OK
+        for user in list:
+            rc = self._check_member_accnt(user)
+            if rc != 0:
+                r |= RET_ERR
+                if verbose:
+                    print >>sys.stderr, 'group', group, 'inexistant user "%s" which is %s'%(user, which)
+        return r
+
     def check_item(self, group, item, target, current, verbose=False):
+        r = RET_OK
+        if item == 'members':
+            r |= self._check_members_accnts(group, current, 'INCLUDED', verbose)
+            r |= self._check_members_accnts(group, target, 'REQUIRED', verbose)
         if not isinstance(current, list):
             current = [current]
         if set(target) <= set(current):
             if verbose:
                 print 'group', group, item+':', current
-            return RET_OK
+            return r
         else:
             if verbose:
                 print >>sys.stderr, 'group', group, item+':', current, 'target:', target
-            return RET_ERR
+            return r|RET_ERR
 
     def check_group(self, group, props):
         r = 0

@@ -21,10 +21,6 @@ class CompRc(object):
         self.prefix = prefix.upper()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['Linux']:
-            print >>sys.stderr, 'module not supported on', self.sysname
-            raise NotApplicable()
-
         self.services = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:
@@ -36,6 +32,10 @@ class CompRc(object):
 
         if len(self.services) == 0:
             print "no applicable variable found in rulesets", self.prefix
+            raise NotApplicable()
+
+        if self.sysname not in ['Linux']:
+            print >>sys.stderr, __file__, 'module not supported on', self.sysname
             raise NotApplicable()
 
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']

@@ -26,6 +26,9 @@ class CompProcess(object):
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
+        if self.sysname == 'HP-UX' and 'UNIX95' not in os.environ:
+            os.environ['UNIX95'] = ""
+
         self.process = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:

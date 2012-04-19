@@ -445,11 +445,13 @@ class CompFs(object):
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_status']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
-        if p.returncode != 0:
+        try:
+            # json_status returns 0, even when it outs no data
+            self.res_status = json.loads(out)['resources']
+        except:
             self.rids = []
             self.osvc_service = False
             return self.rids
-        self.res_status = json.loads(out)['resources']
         self.rids = [ k for k in self.res_status.keys() if k.startswith('fs#') ]
         return self.rids
 
