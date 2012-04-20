@@ -231,25 +231,16 @@ def add_scsireserv(svc, resource, conf, section):
     r = sr.ScsiReserv(**kwargs)
     svc += r
 
-def add_triggers(resource, conf, section):
-    if conf.has_option(section, 'pre_stop'):
-        resource.pre_stop = conf.get(section, 'pre_stop').split()
-    if conf.has_option(section, 'pre_start'):
-        resource.pre_start = conf.get(section, 'pre_start').split()
-    if conf.has_option(section, 'pre_syncnodes'):
-        resource.pre_syncnodes = conf.get(section, 'pre_syncnodes').split()
-    if conf.has_option(section, 'pre_syncdrp'):
-        resource.pre_syncdrp = conf.get(section, 'pre_syncdrp').split()
-    if conf.has_option(section, 'post_stop'):
-        resource.post_stop = conf.get(section, 'post_stop').split()
-    if conf.has_option(section, 'post_start'):
-        resource.post_start = conf.get(section, 'post_start').split()
-    if conf.has_option(section, 'post_syncnodes'):
-        resource.post_syncnodes = conf.get(section, 'post_syncnodes').split()
-    if conf.has_option(section, 'post_syncdrp'):
-        resource.post_syncdrp = conf.get(section, 'post_syncdrp').split()
-    if conf.has_option(section, 'post_syncresync'):
-        resource.post_syncresync = conf.get(section, 'post_syncresync').split()
+def add_triggers(svc, resource, conf, section):
+    triggers = ['pre_stop', 'pre_start', 'pre_syncnodes', 'pre_syncdrp',
+                'post_stop', 'post_start', 'post_syncnodes', 'post_syncdrp',
+                'post_syncresync', 'pre_syncresync']
+    for trigger in triggers:
+        try:
+            s = conf_get_string_scope(svc, conf, resource.rid, trigger)
+        except ex.OptNotFound:
+            continue
+        setattr(resource, trigger, s.split())
 
 def always_on_nodes_set(svc, conf, section):
     try:
@@ -364,7 +355,7 @@ def add_ips(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs['monitor'] = get_monitor(conf, s, svc)
         r = ip.Ip(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_drbds(svc, conf):
@@ -391,7 +382,7 @@ def add_drbds(svc, conf):
         kwargs['monitor'] = get_monitor(conf, s, svc)
         drbd = __import__('resDrbd')
         r = drbd.Drbd(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_vdisks(svc, conf):
@@ -419,7 +410,7 @@ def add_vdisks(svc, conf):
         kwargs['monitor'] = get_monitor(conf, s, svc)
         vdisk = __import__('resVdisk')
         r = vdisk.Vdisk(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -479,7 +470,7 @@ def add_stoniths(svc, conf):
             continue
 
         r = st.Stonith(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_hbs(svc, conf):
@@ -522,7 +513,7 @@ def add_hbs(svc, conf):
             continue
 
         r = hb.Hb(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_loops(svc, conf):
@@ -555,7 +546,7 @@ def add_loops(svc, conf):
             continue
 
         r = loop.Loop(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_vgs(svc, conf):
@@ -630,7 +621,7 @@ def add_vgs(svc, conf):
             continue
 
         r = vg.Vg(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -657,7 +648,7 @@ def add_vmdg(svc, conf):
     kwargs['monitor'] = get_monitor(conf, 'vmdg', svc)
 
     r = vg.Vg(**kwargs)
-    add_triggers(r, conf, 'vmdg')
+    add_triggers(svc, r, conf, 'vmdg')
     svc += r
     add_scsireserv(svc, r, conf, 'vmdg')
 
@@ -687,7 +678,7 @@ def add_pools(svc, conf):
         kwargs['monitor'] = get_monitor(conf, s, svc)
 
         r = pool.Pool(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -757,7 +748,7 @@ def add_filesystems(svc, conf):
         kwargs['monitor'] = get_monitor(conf, s, svc)
 
         r = mount.Mount(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
         add_scsireserv(svc, r, conf, s)
 
@@ -878,7 +869,7 @@ def add_syncs_zfs(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = zfs.SyncZfs(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_dds(svc, conf):
@@ -932,7 +923,7 @@ def add_syncs_dds(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = dds.syncDds(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_dcsckpt(svc, conf):
@@ -981,7 +972,7 @@ def add_syncs_dcsckpt(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncDcsCkpt(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_dcssnap(svc, conf):
@@ -1024,7 +1015,7 @@ def add_syncs_dcssnap(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncDcsSnap(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_evasnap(svc, conf):
@@ -1065,7 +1056,7 @@ def add_syncs_evasnap(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncEvasnap(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_symclone(svc, conf):
@@ -1107,7 +1098,7 @@ def add_syncs_symclone(svc, conf):
         kwargs['optional'] = get_optional(conf, s, svc)
         kwargs.update(get_sync_args(conf, s, svc))
         r = sc.syncSymclone(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_nexenta(svc, conf):
@@ -1168,7 +1159,7 @@ def add_syncs_nexenta(svc, conf):
 
         import resSyncNexenta
         r = resSyncNexenta.syncNexenta(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_netapp(svc, conf):
@@ -1224,7 +1215,7 @@ def add_syncs_netapp(svc, conf):
 
         import resSyncNetapp
         r = resSyncNetapp.syncNetapp(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_syncs_rsync(svc, conf):
@@ -1286,7 +1277,7 @@ def add_syncs_rsync(svc, conf):
         kwargs.update(get_sync_args(conf, s, svc))
 
         r = resSyncRsync.Rsync(**kwargs)
-        add_triggers(r, conf, s)
+        add_triggers(svc, r, conf, s)
         svc += r
 
 def add_apps(svc, conf):
@@ -1304,7 +1295,7 @@ def add_apps(svc, conf):
     kwargs['monitor'] = get_monitor(conf, s, svc)
        
     r = resApp.Apps(**kwargs)
-    add_triggers(r, conf, s)
+    add_triggers(svc, r, conf, s)
     svc += r
 
 def setup_logging():
