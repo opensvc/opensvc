@@ -35,6 +35,9 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
+class InitError(Exception):
+    pass
+
 class CompFiles(object):
     def __init__(self, prefix='OSVC_COMP_FILES_'):
         self.prefix = prefix.upper()
@@ -49,6 +52,8 @@ class CompFiles(object):
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
                 self.files += self.add_file(os.environ[k])
+            except InitError:
+                continue
             except ValueError:
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
@@ -90,10 +95,16 @@ class CompFiles(object):
     def parse_ref(self, d):
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
-        fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+        try:
+            fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+        except IOError:
+            import traceback
+            e = sys.exc_info()
+            print >>sys.stderr, "can not download", d['ref'], ":", e[1]
+            raise InitError()
         if 'invalid file' in headers.values():
             print >>sys.stderr, d['ref'], "not found on collector"
-            return RET_ERR
+            raise InitError()
         d['fmt'] = f.read()
         f.close()
         return self.parse_fmt(d)

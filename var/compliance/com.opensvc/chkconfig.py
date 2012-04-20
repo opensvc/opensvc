@@ -62,7 +62,10 @@ class Chkconfig(object):
 
     def get_state(self, service, level):
         if service not in self.services:
-            self.load_one(service)
+            try:
+                self.load_one(service)
+            except InitError:
+                pass
 
         if service not in self.services:
             raise UnknownService()
@@ -76,7 +79,12 @@ class Chkconfig(object):
                 level = int(level)
             except:
                 continue
-            curstate = self.get_state(service, level)
+            try:
+                curstate = self.get_state(service, level)
+            except UnknownService:
+                if verbose:
+                    print >>sys.stderr, "can not get service", service, "runlevels"
+                return 1
             if curstate != state:
                 if verbose:
                     print >>sys.stderr, "service", service, "at runlevel", level, "is in state", curstate, "! target state is", state
