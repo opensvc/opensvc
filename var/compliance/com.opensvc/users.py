@@ -67,7 +67,14 @@ class CompUser(object):
         self.users = {}
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
-                self.users.update(json.loads(os.environ[k]))
+                d = json.loads(os.environ[k])
+                for user in d:
+                    if user not in self.users:
+                        self.users[user] = d[user]
+                    else:
+                        for key in self.usermod_p.keys():
+                            if key in d and key not in self.users[user]:
+                                self.users[user][key] = d[key]
             except ValueError:
                 print >>sys.stderr, 'user syntax error on var[', k, '] = ',os.environ[k]
 
