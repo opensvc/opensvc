@@ -294,11 +294,6 @@ class Compliance(object):
             val = repr(val).strip("'")
         else:
             val = str(val)
-        illegal_chars = """`;$"""
-        for c in illegal_chars:
-            if c in val:
-                print "illegal char %s in variable value: %s"%(c,val)
-                return "suppressed"
         return val
 
     def setup_env(self):
