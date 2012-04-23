@@ -104,6 +104,7 @@ class Node(Svc, Freezer):
             'pusheva':        'push HP EVA configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
+            'pushvioserver':  'push IBM VIO server configuration to collector',
             'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
             'checks':         'run node sanity checks, push results to collector',
           },
@@ -713,6 +714,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_ibmsvc')
+
+    def pushvioserver(self):
+        if self.skip_action('ibmsvc', 'push_interval', 'last_vioserver_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_vioserver')
 
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',

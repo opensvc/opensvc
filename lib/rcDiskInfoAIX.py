@@ -19,6 +19,7 @@
 
 from rcUtilities import call, justcall
 import rcDiskInfo
+import re
 
 class diskInfo(rcDiskInfo.diskInfo):
 
@@ -61,7 +62,10 @@ class diskInfo(rcDiskInfo.diskInfo):
         l = out.split()
         if len(l) < 2:
             return 'unknown'
-        return l[1]
+        d = l[1]
+        regex = re.compile(r'-C[0-9]+-T[0-9]+')
+        d = regex.sub('', d)
+        return d
 
     def odmget(self, lname, attr):
         cmd = ['odmget', '-q', 'name='+lname+' AND attribute='+attr, 'CuAt']

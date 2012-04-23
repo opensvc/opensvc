@@ -905,6 +905,24 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
     
+    def push_vioserver(self, sync=True):
+        if 'update_vioserver' not in self.proxy_methods:
+            print "'update_vioserver' method is not exported by the collector"
+            return
+        m = __import__('rcVioServer')
+        try:
+            vioservers = m.VioServers()
+        except:
+            return
+        for vioserver in vioservers:
+            vals = []
+            for key in vioserver.keys:
+                vals.append(getattr(vioserver, 'get_'+key)())
+            args = [vioserver.name, vioserver.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_vioserver(*args)
+
     def push_ibmsvc(self, sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
     	    print "'update_ibmsvc' method is not exported by the collector"
