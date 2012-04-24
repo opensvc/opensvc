@@ -219,6 +219,8 @@ def add_scsireserv(svc, resource, conf, section):
         defaults = conf.defaults()
         if 'no_preempt_abort' in defaults:
             pa = bool(defaults['no_preempt_abort'])
+        else:
+            pa = False
 
     kwargs = {}
     kwargs['rid'] = resource.rid
