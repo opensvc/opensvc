@@ -102,6 +102,7 @@ class Node(Svc, Freezer):
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
+            'pushnecism':     'push NEC ISM configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
@@ -698,6 +699,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_dcs')
+
+    def pushnecism(self):
+        if self.skip_action('necism', 'push_interval', 'last_necism_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_necism')
 
     def pusheva(self):
         if self.skip_action('eva', 'push_interval', 'last_eva_push',

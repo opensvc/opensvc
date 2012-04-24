@@ -923,6 +923,24 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_vioserver(*args)
 
+    def push_necism(self, sync=True):
+        if 'update_necism' not in self.proxy_methods:
+    	    print "'update_necism' method is not exported by the collector"
+    	    return
+        m = __import__('rcNecIsm')
+        try:
+            necisms = m.NecIsms()
+        except:
+            return
+        for necism in necisms:
+            vals = []
+            for key in necism.keys:
+                vals.append(getattr(necism, 'get_'+key)())
+            args = [necism.name, necism.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_necism(*args)
+
     def push_ibmsvc(self, sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
     	    print "'update_ibmsvc' method is not exported by the collector"
