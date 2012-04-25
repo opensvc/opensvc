@@ -33,10 +33,12 @@ def is_container():
             return True
     return False
 
+
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
         self.container = is_container()
+        self.detect_xen()
         if self.container:
             self.dmidecode = []
         else:
@@ -61,6 +63,14 @@ class Asset(rcAsset.Asset):
         return size
 
     def _get_mem_bytes_hv(self):
+        if which('virsh'):
+            return self._get_mem_bytes_virsh()
+        if which('xm'):
+            return self._get_mem_bytes_xm()
+        else:
+            return '0'
+
+    def _get_mem_bytes_virsh(self):
         cmd = ['virsh', 'nodeinfo']
         (out, err, ret) = justcall(cmd)
         if ret != 0:
@@ -73,6 +83,21 @@ class Asset(rcAsset.Asset):
             if len(l) < 2:
                 continue
             return l[-2]
+        return '0'
+
+    def _get_mem_bytes_xm(self):
+        cmd = ['xm', 'info']
+        (out, err, ret) = justcall(cmd)
+        if ret != 0:
+            return '0'
+        lines = out.split('\n')
+        for line in lines:
+            if 'total_mem' not in line:
+                continue
+            l = line.split(':')
+            if len(l) < 2:
+                continue
+            return l[-1]
         return '0'
 
     def _get_mem_bytes_phy(self):
@@ -88,20 +113,23 @@ class Asset(rcAsset.Asset):
             return '0'
         return line[1]
 
-    def is_xen_hv(self):
-        c = os.path.join(os.sep, 'proc', 'capabilities')
+    def detect_xen(self):
+        c = os.path.join(os.sep, 'proc', 'xen', 'capabilities')
+        self.xenguest = False
+        self.xenhv = False
         if not os.path.exists(c):
-            return False
+            return
         with open(c, 'r') as f:
             if 'control_d' in f.read():
-                return True
-        return False
+                self.xenhv = True
+            else:
+                self.xenguest = True
 
     def is_esx_hv(self):
         return which('vmware-cmd')
 
     def _get_mem_bytes(self):
-        if self.is_xen_hv():
+        if self.xenhv:
             return self._get_mem_bytes_hv()
         elif self.is_esx_hv():
             return self._get_mem_bytes_esx()
@@ -154,7 +182,7 @@ class Asset(rcAsset.Asset):
                 if 'CentOS' in buff:
                     return 'CentOS'
                 else:
-                    return 'Redhat'
+                    return 'Red Hat'
         return 'Unknown'
 
     def _get_os_release(self):
@@ -269,6 +297,8 @@ class Asset(rcAsset.Asset):
     def _get_model(self):
         if self.container:
             return 'container'
+        elif self.xenguest:
+            return "Xen Virtual Machine (PVM)"
         for l in self.dmidecode:
             if 'Product Name:' in l:
                 return l.split(':')[-1].strip()
