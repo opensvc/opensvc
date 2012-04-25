@@ -176,13 +176,13 @@ class Asset(rcAsset.Asset):
         (out, err, ret) = justcall(['getconf', 'MACHINE_SERIAL'])
         if ret != 0:
             return 'Unknown'
-        return out
+        return out.strip()
 
     def _get_model(self):
         (out, err, ret) = justcall(['getconf', 'MACHINE_MODEL'])
         if ret != 0:
             return 'Unknown'
-        return out
+        return out.strip()
 
     def __get_hba(self):
         if hasattr(self, "hba"):
