@@ -21,8 +21,47 @@ import os
 import datetime
 from rcUtilities import justcall, which
 import rcStats
+from rcGlobalEnv import rcEnv
 
 class StatsProvider(rcStats.StatsProvider):
+    def xentopfile(self, day):
+        f = os.path.join(rcEnv.pathlog, 'xentop', 'xentop'+day)
+        if os.path.exists(f):
+            return f
+        return None
+
+    def svc(self, d, day, start, end):
+        cols = ['date',
+                'svcname',
+                'cpu',
+                'mem',
+                'cap',
+                'nodename']
+        f = self.xentopfile(day)
+        lines = []
+        if f is None:
+            return cols, lines
+        try:
+            with open(f, 'r') as f:
+                buff = f.read()
+        except:
+            return cols, lines
+        _start = datetime.datetime.strptime(start, "%H:%M:%S")
+        _start = _start.hour * 3600 + _start.minute * 60 + _start.second
+        _end = datetime.datetime.strptime(end, "%H:%M:%S")
+        _end = _end.hour * 3600 + _end.minute * 60 + _end.second
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) != 21:
+                continue
+            _d = datetime.datetime.strptime(" ".join(l[0:2]), "%Y-%m-%d %H:%M:%S")
+            _d = _d.hour * 3600 + _d.minute * 60 + _d.second
+            if _d < _start or _d > _end:
+                continue
+            l = [" ".join((l[0], l[1]))] + [l[2], l[5], l[7], l[8], self.nodename]
+            lines.append(l)
+        return cols, lines
+
     def cpu(self, d, day, start, end):
         f = self.sarfile(day)
         if f is None:
