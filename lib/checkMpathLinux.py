@@ -52,7 +52,8 @@ class check(checks.check):
                 if line.startswith(": "):
                     line = line.replace(": ", "")
                 l = line.split()
-                if l[0] == 'create:':
+                if l[0].endswith(":"):
+                    # skip prefix: create, swithpg, reload, ...
                     l = l[1:]
                 if len(l) < 2:
                     continue
