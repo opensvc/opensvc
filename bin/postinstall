@@ -388,6 +388,31 @@ def move_usr_to_opt():
     if os.path.islink(linksvc) and os.path.realpath(linksvc) == old_pathsvc:
         os.unlink(linksvc)
 
+def install_etc_path():
+    p = os.path.join(os.sep, 'etc', 'PATH')
+    if not os.path.exists(p):
+        return
+    try:
+        f = open(p, "r")
+        buff = f.read()
+        f.close()
+    except:
+        return
+    l = buff.strip().split(":")
+    n = len(l)
+    for op in ('/opt/opensvc/bin', '/opt/opensvc/etc'):
+        if op in l:
+            continue
+        l.append(op)
+    if len(l) == n:
+        return
+    try:
+        f = open(p, "w")
+        f.write(":".join(l)+'\n')
+        f.close()
+    except:
+        return
+
 def install_profile():
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
@@ -556,6 +581,7 @@ try:
     install_rc()
     gen_keys()
     install_profile()
+    install_etc_path()
     install_user()
     install_bash_completion()
     move_host_mode()
