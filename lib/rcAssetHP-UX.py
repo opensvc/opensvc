@@ -133,6 +133,27 @@ class Asset(rcAsset.Asset):
         return out.split('\n')[0].strip()
 
     def _get_cpu_freq(self):
+        freq = self._get_cpu_freq_manifest()
+        if freq == "Unknown":
+            freq = self._get_cpu_freq_adb()
+        return freq
+
+    def _get_cpu_freq_manifest(self):
+        m = self._get_cpu_model()
+        if '(' not in m:
+            return "Unknown"
+        s = m.split('(')[-1]
+        s = s.split(',')[0]
+        freq, unit = s.split()
+        if unit == 'GHz':
+            try:
+                freq = float(freq)
+            except:
+                return "Unknown"
+            freq = str(int(freq * 1000))
+        return freq
+
+    def _get_cpu_freq_adb(self):
         process = Popen(['adb', '/stand/vmunix', '/dev/kmem'], stdin=PIPE, stdout=PIPE, stderr=None)
         (out, err) = process.communicate(input='itick_per_usec/2d')
         if process.returncode != 0:
@@ -141,9 +162,9 @@ class Asset(rcAsset.Asset):
         if process.returncode != 0:
             return 'Unknown'
         lines = out.split('\n')
-        if len(lines) != 2:
+        if len(lines) < 2:
             return 'Unknown'
-        return lines[1].strip()
+        return lines[1].split()[0]
 
     def _get_cpu_cores(self):
         for line in self.manifest:
