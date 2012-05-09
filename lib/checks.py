@@ -39,6 +39,7 @@ class checks(check):
         self.register('checkFsUsage')
         self.register('checkFsInode')
         self.register('checkVgUsage')
+        self.register('checkLag')
         self.register('checkMpath')
         self.register('checkMpathPowerpath')
         self.register('checkZfsUsage')
