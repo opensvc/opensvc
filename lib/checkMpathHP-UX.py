@@ -55,6 +55,6 @@ class check(checks.check):
                 dev = l[-1]
             if "World Wide Identifier" in line:
                 wwid = line.split()[-1].replace("0x","")
-            if "State" in line and ("ACTIVE" in line or "UNOPEN" in line):
+            if "State" in line and ("ACTIVE" in line or "UNOPEN" in line or 'STANDBY' in line):
                 n += 1
         return r
