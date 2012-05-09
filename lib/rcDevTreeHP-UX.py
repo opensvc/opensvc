@@ -79,6 +79,8 @@ class DevTree(rcDevTree.DevTree):
                 continue
             if '_p' in w:
                 self.add_part(disk, w)
+            else:
+                d.set_devpath(w)
 
     def get_lunmap(self):
         if hasattr(self, "lunmap"):

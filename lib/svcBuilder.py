@@ -128,7 +128,7 @@ def svcmode_mod_name(svcmode=''):
         return ('svcOvm', 'SvcOvm')
     elif svcmode == 'vbox':
         return ('svcVbox', 'SvcVbox')
-    raise
+    raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
     if conf.has_option(section, 'tags'):
