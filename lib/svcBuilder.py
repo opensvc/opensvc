@@ -128,6 +128,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcOvm', 'SvcOvm')
     elif svcmode == 'vbox':
         return ('svcVbox', 'SvcVbox')
+    elif svcmode == 'sg':
+        return ('svcSg', 'SvcSg')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
@@ -1370,6 +1372,12 @@ def build(name):
             kwargs['jailroot'] = jailroot
         kwargs['disabled'] = get_disabled(conf, "", "")
 
+        if "pkg_name" in defaults:
+            if svcmode != "sg":
+                log.error("can not set 'pkg_name' with '%s' mode in %s env"%(svcmode, name))
+                return None
+            kwargs['pkg_name'] = defaults["pkg_name"]
+
     #
     # dynamically import the module matching the service mode
     # and instanciate a service
@@ -1412,24 +1420,27 @@ def build(name):
     # Setup service properties from config file content
     #
 
-    if "nodes" in defaults:
-        svc.nodes = set(defaults["nodes"].split())
-        svc.nodes -= set([''])
-    else:
-        svc.nodes = set([])
+    if not hasattr(svc, "nodes"):
+        if "nodes" in defaults:
+            svc.nodes = set(defaults["nodes"].split())
+            svc.nodes -= set([''])
+        else:
+            svc.nodes = set([])
 
-    if "drpnodes" in defaults:
-        svc.drpnodes = set(defaults["drpnodes"].split())
-        svc.drpnodes -= set([''])
-    else:
-        svc.drpnodes = set([])
+    if not hasattr(svc, "drpnodes"):
+        if "drpnodes" in defaults:
+            svc.drpnodes = set(defaults["drpnodes"].split())
+            svc.drpnodes -= set([''])
+        else:
+            svc.drpnodes = set([])
 
-    if "drpnode" in defaults:
-        svc.drpnode = defaults["drpnode"]
-        svc.drpnodes |= set([svc.drpnode])
-        svc.drpnodes -= set([''])
-    else:
-        svc.drpnode = ''
+    if not hasattr(svc, "drpnode"):
+        if "drpnode" in defaults:
+            svc.drpnode = defaults["drpnode"]
+            svc.drpnodes |= set([svc.drpnode])
+            svc.drpnodes -= set([''])
+        else:
+            svc.drpnode = ''
 
     """ prune not managed service
     """
@@ -1438,10 +1449,12 @@ def build(name):
         del(svc)
         return None
 
-    if "cluster_type" in defaults:
-        svc.clustertype = defaults["cluster_type"]
-    else:
-        svc.clustertype = 'failover'
+    if not hasattr(svc, "clustertype"):
+        if "cluster_type" in defaults:
+            svc.clustertype = defaults["cluster_type"]
+        else:
+            svc.clustertype = 'failover'
+
     if 'flex' in svc.clustertype:
         svc.ha = True
     allowed_clustertype = ['failover', 'allactive', 'flex', 'autoflex']
@@ -1504,13 +1517,14 @@ def build(name):
         del(svc)
         return None
 
-    if "service_type" in defaults:
-        svc.svctype = defaults["service_type"]
-    else:
-        svc.svctype = ''
+    if not hasattr(svc, "service_type"):
+        if "service_type" in defaults:
+            svc.svctype = defaults["service_type"]
+        else:
+            svc.svctype = ''
 
     if svc.svctype not in rcEnv.allowed_svctype:
-        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(allowed_svctype)))
+        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(rcEnv.allowed_svctype)))
         del(svc)
         return None
 
