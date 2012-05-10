@@ -163,7 +163,7 @@ class Vg(resDg.Dg):
         """Returns True if the volume group is present and activated
         """
         if not os.path.exists(self.mapfile_name()):
-            self.do_export()
+            self.do_export(force_preview=True)
         if not self.is_imported():
             return False
         if not self.is_active():
@@ -223,7 +223,7 @@ class Vg(resDg.Dg):
         if process.returncode != 0:
             raise ex.excError
 
-    def do_export(self):
+    def do_export(self, force_preview=False):
         preview = False
         if os.path.exists(self.mapfile_name()):
             if not self.is_imported():
@@ -231,7 +231,7 @@ class Vg(resDg.Dg):
                 return
         elif self.is_active():
             preview = True
-        if preview:
+        if preview or force_preview:
             cmd = [ 'vgexport', '-p', '-m', self.mapfile_name(), '-s', self.name ]
         else:
             cmd = [ 'vgexport', '-m', self.mapfile_name(), '-s', self.name ]
