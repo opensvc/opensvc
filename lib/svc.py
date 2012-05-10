@@ -109,6 +109,7 @@ class Svc(Resource, Freezer):
                              "sync.nexenta",
                              "app",
                              "hb.openha",
+                             "hb.sg",
                              "hb.ovm",
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
@@ -187,8 +188,10 @@ class Svc(Resource, Freezer):
           'thaw',
           'freezestop',
           'print_disklist',
+          'print_devlist',
           'json_status',
           'json_disklist'
+          'json_devlist'
         ]
         if action in list_actions_no_pre_action:
             # no need to serialize this action
@@ -285,6 +288,9 @@ class Svc(Resource, Freezer):
           "status",
           "print_status",
           "print_disklist",
+          "print_devlist",
+          "json_disklist",
+          "json_devlist",
           "push_appinfo",
           "push",
           "json_status",
@@ -574,7 +580,7 @@ class Svc(Resource, Freezer):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         has_hb = False
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
             for r in rs.resources:
                 if not r.disabled:
                     has_hb = True
@@ -698,9 +704,16 @@ class Svc(Resource, Freezer):
     def print_disklist(self):
         print '\n'.join(self.disklist())
 
+    def print_devlist(self):
+        print '\n'.join(self.devlist())
+
     def json_disklist(self):
         import json
         print json.dumps(list(self.disklist()))
+
+    def json_devlist(self):
+        import json
+        print json.dumps(list(self.devlist()))
 
     def disklist(self):
         """List all disks held by all resources of this service
@@ -713,6 +726,18 @@ class Svc(Resource, Freezer):
                 disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
+
+    def devlist(self):
+        """List all devs held by all resources of this service
+        """
+        devs = set()
+        for rs in self.resSets:
+            for r in rs.resources:
+                if r.is_disabled():
+                    continue
+                devs |= r.devlist()
+        self.log.debug("found devs %s held by service" % devs)
+        return devs
 
     def boot(self):
         if rcEnv.nodename in self.autostart_node:
@@ -749,10 +774,10 @@ class Svc(Resource, Freezer):
         self.stopip()
 
     def cluster_mode_safety_net(self):
-        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
             return
         all_disabled = True
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha']):
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
             for r in rs.resources:
                 if not r.disabled:
                     all_disabled = False
@@ -766,11 +791,13 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.ovm", "start")
         self.sub_set_action("hb.openha", "start")
         self.sub_set_action("hb.linuxha", "start")
+        self.sub_set_action("hb.sg", "start")
 
     def stophb(self):
         self.sub_set_action("hb.ovm", "stop")
         self.sub_set_action("hb.openha", "stop")
         self.sub_set_action("hb.linuxha", "stop")
+        self.sub_set_action("hb.sg", "stop")
 
     def startdrbd(self):
         self.sub_set_action("disk.drbd", "start")
@@ -1104,8 +1131,10 @@ class Svc(Resource, Freezer):
           'push_appinfo',
           'print_status',
           'print_disklist',
+          'print_devlist',
           'json_status',
           'json_disklist'
+          'json_devlist'
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
           'resource_monitor',
@@ -1138,8 +1167,10 @@ class Svc(Resource, Freezer):
           'delete',
           'print_status',
           'print_disklist',
+          'print_devlist',
           'json_status',
           'json_disklist',
+          'json_devlist',
           'status',
           'group_status',
           'resource_monitor'
