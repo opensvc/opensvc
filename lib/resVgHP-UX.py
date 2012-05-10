@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2012 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -151,8 +151,10 @@ class Vg(resDg.Dg):
         else:
             dsfflag = ''
         cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', '-p', dsfflag, self.name ]
+        self.lock()
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
+        self.unlock()
         if not "already exists" in buff[1]:
             return False
         return True
@@ -168,6 +170,16 @@ class Vg(resDg.Dg):
             return False
         return True
 
+    def clean_group(self):
+        gp = os.path.join(os.sep, "dev", self.name, "group")
+        if not os.path.exists(gp):
+            return
+        cmd = ["rmsf", gp]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            self.log.error("failed to remove pre-existing %s"%gp)
+            raise ex.excError
+
     def do_import(self):
         if self.is_imported():
             self.log.info("%s is already imported" % self.name)
@@ -176,9 +188,10 @@ class Vg(resDg.Dg):
             dsfflag = '-N'
         else:
             dsfflag = ''
+        self.lock()
+        self.clean_group()
         cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', dsfflag, self.name ]
         self.log.info(' '.join(cmd))
-        self.lock()
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
         self.unlock()
