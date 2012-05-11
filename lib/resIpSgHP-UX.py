@@ -19,31 +19,8 @@
 # and open the template in the editor.
 
 Res = __import__("resIpHP-UX")
-from rcGlobalEnv import rcEnv
-import rcStatus
 
 class Ip(Res.Ip):
-    def get_cntl_subnet(self, ip):
-        for i in self.svc.cntl['ip']:
-            data = self.svc.cntl['ip'][i]
-            if data['IP'] == ip:
-                return data['SUBNET']
-        return None
-
-    def _status(self, verbose=False):
-        subnet = self.get_cntl_subnet(self.ipName)
-        if subnet is None:
-            return Res.Ip._status(self, verbose)
-        if 'subnet' in self.svc.cmviewcl and \
-           subnet in self.svc.cmviewcl['subnet'] and \
-           ('status', rcEnv.nodename) in self.svc.cmviewcl['subnet'][subnet]:
-            state = self.svc.cmviewcl['subnet'][subnet][('status', rcEnv.nodename)]
-            if state == "up":
-                return rcStatus.UP
-            else:
-                return rcStatus.DOWN
-        else:
-            return Res.Ip._status(self, verbose)
 
     def start(self):
         return 0
