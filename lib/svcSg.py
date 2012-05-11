@@ -183,7 +183,8 @@ class SvcSg(svc.Svc):
         rid = 'ip#sg%d'%n
         m = __import__("resIpSg"+rcEnv.sysname)
         r = m.Ip(rid, "", ipname, mask)
-        if ipname in self.cmviewcl['ip_address']:
+        if 'ip_address' in self.cmviewcl and \
+           ipname in self.cmviewcl['ip_address']:
             r.monitor = True
         self += r
         self.n_ip_address += 1
@@ -206,7 +207,8 @@ class SvcSg(svc.Svc):
         m = __import__("resMountSg"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt)
         r.mon_name = '/vg/%s/lv/status/%s'%(vgname, lvname)
-        if r.mon_name in self.cmviewcl['resource']:
+        if 'resource' in self.cmviewcl and \
+           r.mon_name in self.cmviewcl['resource']:
             r.monitor = True
         self += r
         self.n_resource += 1
