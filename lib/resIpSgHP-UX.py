@@ -23,7 +23,8 @@ Res = __import__("resIpHP-UX")
 
 class Ip(Res.Ip):
     def check_ping(self):
-        if self.ipName in self.svc.cmviewcl['ip_address']:
+        if 'ip_address' in self.svc.cmviewcl and \
+           self.ipName in self.svc.cmviewcl['ip_address']:
             state = self.svc.cmviewcl['ip_address'][self.ipName][('status', rcEnv.nodename)]
             if state == "up":
                 return True

@@ -33,7 +33,8 @@ class Mount(Res.Mount):
                            monitor=monitor)
 
     def is_up(self):
-        if self.mon_name in self.svc.cmviewcl['resource']:
+        if 'resource' in self.svc.cmviewcl and \
+           self.mon_name in self.svc.cmviewcl['resource']:
             state = self.svc.cmviewcl['resource'][self.mon_name][('status', rcEnv.nodename)]
             if state == "up":
                 return True
