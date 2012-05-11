@@ -17,21 +17,33 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement Linux specific ip management"
 
 Res = __import__("resIpHP-UX")
+from rcGlobalEnv import rcEnv
+import rcStatus
 
 class Ip(Res.Ip):
-    def check_ping(self):
-        if 'ip_address' in self.svc.cmviewcl and \
-           self.ipName in self.svc.cmviewcl['ip_address']:
-            state = self.svc.cmviewcl['ip_address'][self.ipName][('status', rcEnv.nodename)]
+    def get_cntl_subnet(self, ip):
+        for i in self.svc.cntl['ip']:
+            data = self.svc.cntl['ip'][i]
+            if data['IP'] == ip:
+                return data['SUBNET']
+        return None
+
+    def _status(self, verbose=False):
+        subnet = self.get_cntl_subnet(self.ipName)
+        if subnet is None:
+            return Res.Ip._status(self, verbose)
+        if 'subnet' in self.svc.cmviewcl and \
+           subnet in self.svc.cmviewcl['subnet'] and \
+           ('status', rcEnv.nodename) in self.svc.cmviewcl['subnet'][subnet]:
+            state = self.svc.cmviewcl['subnet'][subnet][('status', rcEnv.nodename)]
             if state == "up":
-                return True
+                return rcStatus.UP
             else:
-                return False
+                return rcStatus.DOWN
         else:
-            return Res.Ip.check_ping(self)
+            return Res.Ip._status(self, verbose)
 
     def start(self):
         return 0
