@@ -43,7 +43,7 @@ class check(checks.check):
                 # new mpath
                 # - store previous
                 # - reset path counter
-                if dev is not None and not dev.startswith('/dev/pt/pt'):
+                if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=':
                     r.append({'chk_instance': wwid,
                               'chk_value': str(n),
                               'chk_svcname': self.find_svc(dev),
