@@ -43,7 +43,7 @@ class check(checks.check):
                 # new mpath
                 # - store previous
                 # - reset path counter
-                if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=':
+                if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=' and "Virtual" not in proto:
                     r.append({'chk_instance': wwid,
                               'chk_value': str(n),
                               'chk_svcname': self.find_svc(dev),
@@ -55,6 +55,8 @@ class check(checks.check):
                 dev = l[-1]
             if "World Wide Identifier" in line:
                 wwid = line.split()[-1].replace("0x","")
+            if "SCSI transport protocol" in line:
+                proto = line.split("=")[-1]
             if "State" in line and ("ACTIVE" in line or "UNOPEN" in line or 'STANDBY' in line):
                 n += 1
         return r
