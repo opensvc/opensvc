@@ -144,20 +144,15 @@ class Vg(resDg.Dg):
         return True
 
     def is_imported(self):
-        if not os.path.exists(self.mapfile_name()):
-            return False
-        if self.dsf:
-            dsfflag = '-N'
-        else:
-            dsfflag = ''
-        cmd = [ 'vgimport', '-m', self.mapfile_name(), '-s', '-p', dsfflag, self.name ]
-        self.lock()
+        cmd = ['strings', '/etc/lvmtab']
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        buff = process.communicate()
-        self.unlock()
-        if not "already exists" in buff[1]:
-            return False
-        return True
+        out, err = process.communicate()
+        l = out.split('\n')
+        map(lambda x: x.strip(), l)
+        s = '/dev/'+self.name
+        if s in l:
+            return True
+        return False
 
     def is_up(self):
         """Returns True if the volume group is present and activated
