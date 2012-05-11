@@ -178,13 +178,13 @@ class SvcSg(svc.Svc):
 
     def load_ip_address(self, data):
         ipname = data['IP']
-        mask = data['SUBNET']
+        subnet = data['SUBNET']
         n = self.n_ip_address
         rid = 'ip#sg%d'%n
         m = __import__("resIpSg"+rcEnv.sysname)
-        r = m.Ip(rid, "", ipname, mask)
-        if 'ip_address' in self.cmviewcl and \
-           ipname in self.cmviewcl['ip_address']:
+        r = m.Ip(rid, "", ipname, "")
+        if 'subnet' in self.cmviewcl and \
+           subnet in self.cmviewcl['subnet']:
             r.monitor = True
         self += r
         self.n_ip_address += 1
