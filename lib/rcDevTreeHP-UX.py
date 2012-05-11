@@ -72,14 +72,14 @@ class DevTree(rcDevTree.DevTree):
                 new = False
                 d = self.add_disk(disk)
                 continue
-            if '/pt/' in w:
+            if d is None or '/rdisk/' in w:
+                continue
+            elif '/pt/' in w:
                 d.set_devpath(w)
-                continue
-            if '/rdisk/' in w:
-                continue
-            if '_p' in w:
+            elif '_p' in w:
                 self.add_part(disk, w)
             else:
+                # arbitrary dsf alias
                 d.set_devpath(w)
 
     def get_lunmap(self):
