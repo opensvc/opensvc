@@ -75,6 +75,7 @@ class Svc(Resource, Freezer):
         self.resSets = []
         self.type2resSets = {}
         self.disks = set([])
+        self.devs = set([])
         self.cron = False
         self.force = False
         self.cluster = False
@@ -716,6 +717,11 @@ class Svc(Resource, Freezer):
         print json.dumps(list(self.devlist()))
 
     def disklist(self):
+        if len(self.disks) == 0:
+            self.disks = self._disklist()
+        return self.disks
+
+    def _disklist(self):
         """List all disks held by all resources of this service
         """
         disks = set()
@@ -728,6 +734,11 @@ class Svc(Resource, Freezer):
         return disks
 
     def devlist(self):
+        if len(self.devs) == 0:
+            self.devs = self._devlist()
+        return self.devs
+
+    def _devlist(self):
         """List all devs held by all resources of this service
         """
         devs = set()
