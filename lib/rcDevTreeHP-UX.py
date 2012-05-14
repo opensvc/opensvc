@@ -159,8 +159,6 @@ Last Open or Close state      = ACTIVE
         cmd = ["vgdisplay", "-v"]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
-        if p.returncode:
-            return
         for line in out.split('\n'):
             if 'VG Name' in line:
                 vgname = line.split()[-1].replace('/dev/','')
