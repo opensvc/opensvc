@@ -64,7 +64,30 @@ class diskInfo(rcDiskInfo.diskInfo):
             return id
         return ""
 
+    def mpath_id(self, dev):
+        if not which('multipath'):
+            return None
+        cmd = ['multipath', '-l', dev]
+        (ret, out, err) = call(cmd)
+        if ret != 0:
+            return None
+        lines = out.split('\n')
+        if len(lines) == 0:
+            return None
+        line = lines[0]
+        if '(' not in line:
+            return None
+        if ')' not in line:
+            return None
+        wwid = line[line.index('(')+2:line.index(')')]
+        if len(wwid) == 0:
+            return None
+        return wwid
+
     def scsi_id(self, dev):
+        wwid = self.mpath_id(dev)
+        if wwid is not None:
+            return wwid
         if dev in self.disk_ids:
             return self.disk_ids[dev]
         if which('scsi_id'):

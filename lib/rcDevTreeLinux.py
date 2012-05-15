@@ -2,6 +2,7 @@ import rcDevTree
 import glob
 import os
 import re
+import math
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
@@ -38,6 +39,27 @@ class DevTree(rcDevTree.DevTree):
 
         return self.dm_h
 
+    def get_map_wwid(self, map):
+        if not which("multipath"):
+            return None
+        if not hasattr(self, 'multipath_l'):
+            self.multipath_l = []
+            cmd = ['multipath', '-l']
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                return None
+            self.multipath_l = out.split('\n')
+        for line in self.multipath_l:
+            if not line.startswith(map):
+                continue
+            try:
+                wwid = line[line.index('(')+2:line.index(')')]
+            except ValueError:
+                wwid = line.split()[0]
+            return wwid
+        return None
+
     def get_wwid(self):
         if hasattr(self, 'wwid_h'):
             return self.wwid_h
@@ -48,7 +70,7 @@ class DevTree(rcDevTree.DevTree):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            return self.mp_h
+            return self.wwid_h
         for line in out.split('\n'):
             if 'dm-' not in line:
                 continue
@@ -101,6 +123,71 @@ class DevTree(rcDevTree.DevTree):
                 continue
             self.md_h[l[0]] = l[3]
         return self.md_h
+
+    def load_dm_dev_t(self):
+        table = {}
+        if not which('dmsetup'):
+            return
+        cmd = ['dmsetup', 'ls']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) == 0:
+                continue
+            mapname = l[0]
+            major = l[1].strip('(,')
+            minor = l[2].strip(' )')
+            dev_t = ':'.join((major, minor))
+            self.dev_h[dev_t] = mapname
+
+    def load_dm(self):
+        table = {}
+        self.load_dm_dev_t()
+        if not which('dmsetup'):
+            return
+        cmd = ['dmsetup', 'table']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) < 5:
+                continue
+            mapname = l[0].strip(':')
+            size = int(math.ceil(1.*int(l[2])*512/1024/1024))
+            maptype = l[3]
+
+            if maptype == "multipath" and size in [0, 2, 3, 30, 45]:
+                continue
+
+            for w in l[4:]:
+                if ':' not in w:
+                    continue
+                if mapname not in table:
+                    table[mapname] = {"devs": [], "size": 0, "type": "linear"}
+                table[mapname]["devs"].append(w)
+                table[mapname]["size"] += size
+                table[mapname]["type"] = maptype
+        for mapname in table:
+            d = self.add_dev(mapname, table[mapname]["size"])
+            d.set_devtype(table[mapname]["type"])
+
+            d.set_devpath('/dev/mapper/'+mapname)
+            s = mapname.replace('--', ':').replace('-', '/').replace(':','-')
+            if "/" in s:
+                d.set_devpath('/dev/'+s)
+            wwid = self.get_map_wwid(mapname)
+            if wwid is not None:
+                d.set_alias(wwid)
+            for dev in table[mapname]["devs"]:
+                d.add_parent(self.dev_h[dev])
+                parentdev = self.get_dev(self.dev_h[dev])
+                parentdev.add_child(mapname)
+
 
     def get_lv_linear(self):
         if hasattr(self, 'lv_linear'):
@@ -234,18 +321,40 @@ class DevTree(rcDevTree.DevTree):
 
         return d
 
+    def get_dev_t(self, dev):
+        major, minor = self._get_dev_t(dev)
+        return ":".join((str(major), str(minor)))
+
+    def _get_dev_t(self, dev):
+        try:
+            s = os.stat(dev)
+            minor = os.minor(s.st_rdev)
+            major = os.major(s.st_rdev)
+        except:
+            return 0, 0
+        return major, minor
+
     def load_fdisk(self):
+        os.environ["LANG"] = "C"
         p = Popen(["fdisk", "-l"], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             return
         for line in out.split("\n"):
-            if line.startswith("Disk "):
+            if line.startswith('/dev/dm-'):
+                continue
+            elif line.startswith("Disk "):
                 # disk
                 devpath = line.split()[1].strip(':')
+                if devpath.startswith('/dev/dm-'):
+                    continue
                 size = int(line.split()[-2]) / 1024 / 1024
+                if size in [2, 3, 30, 45]:
+                    continue
                 devname = devpath.replace('/dev/','').replace("/","!")
                 devtype = self.dev_type(devname)
+                dev_t = self.get_dev_t(devpath)
+                self.dev_h[dev_t] = devname
                 d = self.add_dev(devname, size, devtype)
                 if d is None:
                     continue
@@ -254,8 +363,10 @@ class DevTree(rcDevTree.DevTree):
                 # partition
                 line = line.replace('*', '')
                 partpath = line.split()[0]
-                partsize = int(line.split()[3]) * 512 / 1024 / 1024
+                partsize = int(line.split()[3].replace('+','')) * 512 / 1024 / 1024
                 partname = partpath.replace('/dev/','').replace("/","!")
+                dev_t = self.get_dev_t(partpath)
+                self.dev_h[dev_t] = partname
                 p = self.add_dev(partname, partsize, "linear")
                 if p is None:
                     continue
@@ -282,24 +393,23 @@ class DevTree(rcDevTree.DevTree):
                 d.add_child(partname)
                 p.add_parent(devname)
  
-    def load(self):
-        if not os.path.exists("/sys/block"):
-            self.load_fdisk()
-        else:
-            self.load_sysfs()
-
-        # tune relations
+    def tune_lv_relations(self):
         dm_h = self.get_dm()
         for lv, segments in self.get_lv_linear().items():
             for devt, length in segments:
                 child = dm_h[lv]
                 parent = self.dev_h[devt]
                 r = self.get_relation(parent, child)
-                if r is None:
-                    print "no %s-%s relation found"%(parent, child)
-                    continue
-                else:
+                if r is not None:
                     r.set_used(length)
+
+    def load(self):
+        if len(glob.glob("/sys/block/*/slaves")) == 0:
+            self.load_fdisk()
+            self.load_dm()
+        else:
+            self.load_sysfs()
+            self.tune_lv_relations()
 
         self.add_drbd_relations()
 
