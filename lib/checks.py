@@ -46,6 +46,7 @@ class checks(check):
         self.register('checkRaidMegaRaid')
         self.register('checkRaidSas2')
         self.register('checkFmFmadm')
+        self.register('checkMce')
         self.register_local_checkers()
 
     def __iadd__(self, c):
