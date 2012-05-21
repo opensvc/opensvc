@@ -105,12 +105,12 @@ class SvcSg(svc.Svc):
             int(index)
         except:
             return
-        value = s[i+2:]
+        value = s[i+2:].strip('"')
 
         if param in ["VG", "CVM_DG", "VXVM_DG"]:
             if index not in self.cntl['vg']:
                 self.cntl['vg'][index] = {}
-            self.cntl['vg'][index][param] = value
+            self.cntl['vg'][index][param] = value.replace('/dev/', '')
 
         if param in ["IP", "SUBNET"]:
             if index not in self.cntl['ip']:
