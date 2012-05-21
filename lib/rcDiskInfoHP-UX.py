@@ -23,6 +23,11 @@ import rcDiskInfo
 class diskInfo(rcDiskInfo.diskInfo):
 
     def __init__(self):
+        self.load_cache()
+
+    def load_cache(self):
+        self.load_aliases()
+
         self.h = {}
         cmd = ["scsimgr", "-p", "get_attr", "all_lun", "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         (ret, out, err) = call(cmd)
@@ -30,19 +35,34 @@ class diskInfo(rcDiskInfo.diskInfo):
             if len(e) == 0:
                 continue
             (wwid, dev, vid, pid, size) = e.split(':')
-            dev = self.devkey(dev)
             wwid = wwid.replace('0x', '')
             if len(size) != 0:
-                size = int(size)/2097152
+                size = int(size)/2048
             vid = vid.strip('" ')
             pid = pid.strip('" ')
-            self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
+            if dev in self.aliases:
+                aliases = self.aliases[dev]
+            else:
+                aliases = [dev]
+            for alias in aliases:
+                self.h[alias] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
-    def devkey(self, dev):
-        dev = dev.replace("/dev/rdisk/", "")
-        dev = dev.replace("/dev/disk/", "")
-        dev = dev.replace("/dev/dsk/", "")
-        return dev
+    def load_aliases(self):
+        self.aliases = {}
+        cmd = ['/usr/sbin/ioscan', '-FunNC', 'disk']
+        (ret, out, err) = call(cmd)
+        if ret != 0:
+            return
+        l = []
+        for line in out.split('\n')+[':']:
+            if ':' in line:
+                if len(l) > 0:
+                    for name in l:
+                         self.aliases[name] = l
+                l = []
+                continue
+            for w in line.split():
+                l.append(w)
 
     def dev2char(self, dev):
         dev = dev.replace("/dev/disk/", "/dev/rdisk/")
@@ -52,7 +72,6 @@ class diskInfo(rcDiskInfo.diskInfo):
     def scan(self, dev):
         cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         (ret, out, err) = call(cmd, errlog=False)
-        dev = self.devkey(dev)
         if ret != 0:
             self.h[dev] = dict(wwid="", vid="", pid="", size="")
             return
@@ -67,7 +86,6 @@ class diskInfo(rcDiskInfo.diskInfo):
     def get(self, dev, type):
         if dev not in self.h:
             self.scan(dev)
-        dev = self.devkey(dev)
         return self.h[dev][type]
 
     def disk_id(self, dev):
