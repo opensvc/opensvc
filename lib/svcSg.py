@@ -18,6 +18,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+import os
 import svc
 import rcExceptions as ex
 from rcUtilities import justcall
@@ -28,12 +29,21 @@ class SvcSg(svc.Svc):
     def __init__(self, svcname, pkg_name=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, "ServiceGuard", optional=optional, disabled=disabled, tags=tags)
         self.pkg_name = pkg_name
+        self.load_paths()
         self.builder()
+
+    def load_paths(self):
+        p = '/usr/local/cmcluster/bin/'
+        if os.path.exists(p):
+            self.prefix = p
+        else:
+            self.prefix = ''
+        self.cmviewcl_bin = p + 'cmviewcl'
 
     def load_cmviewcl(self):
         self.cmviewcl = {}
 
-        cmd = ["cmviewcl", "-p", self.pkg_name, "-v", "-f", "line"]
+        cmd = [self.cmviewcl_bin, "-p", self.pkg_name, "-v", "-f", "line"]
         out, err, ret = justcall(cmd)
         for line in out.split("\n"):
             if "=" not in line:
