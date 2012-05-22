@@ -72,7 +72,6 @@ class check(checks.check):
             if line.startswith('Slave Interface:'):
                 slave = line.split()[-1]
                 inst = '.'.join((lag, slave))
-                print inst
             elif line.startswith('MII Status:'):
                 val = line.split()[-1]
                 if val == "up":
