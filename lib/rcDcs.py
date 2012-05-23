@@ -18,11 +18,12 @@ def dcscmd(cmd, manager, username, password, dcs=None):
                  cmd+ " ; disconnect-dcsserver"]
     else:
         _cmd += [cmd]
+    #print ' '.join(_cmd)
     out, err, ret = justcall(_cmd)
     if "ErrorId" in err:
         print _cmd
         print out
-        raise ex.excError("sssu command execution error")
+        raise ex.excError("dcs command execution error")
     return out, err, ret
 
 class Dcss(object):
@@ -57,6 +58,8 @@ class Dcss(object):
         for manager, v in m.items():
             dcs, username, password = v
             for name in dcs:
+                if name in done:
+                    continue
                 self.arrays.append(Dcs(name, manager, username, password))
                 done.append(name)
 
@@ -75,38 +78,86 @@ class Dcs(object):
         self.manager = manager
         self.username = username
         self.password = password
-        #self.keys = ['disk_group']
-        self.keys = ['dcsserver', 'dcspool', 'dcslogicaldisk', 'dcsvirtualdisk']
+        self.keys = ['dcsservergroup',
+                     'dcsserver',
+                     'dcspool',
+                     'dcspoolperf',
+                     'dcslogicaldisk',
+                     'dcslogicaldiskperf',
+                     'dcsvirtualdisk',
+                     'dcsphysicaldisk',
+                     'dcsdiskpath',
+                     'dcsport',
+                     'dcspoolmember']
 
     def dcscmd(self, cmd):
         return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name)
 
-    def stripxml(self, buff):
+    def get_dcsservergroup(self):
+        cmd = 'get-dcsservergroup'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsserver(self):
-        cmd = 'get-dcsserver -server %s'%self.name
+        cmd = 'get-dcsserver'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
-        return self.stripxml(buff)
+        return buff
 
     def get_dcspool(self):
-        cmd = 'get-dcspool -server %s'%self.name
+        cmd = 'get-dcspool'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
-        return self.stripxml(buff)
+        return buff
 
     def get_dcslogicaldisk(self):
-        cmd = 'get-dcslogicaldisk -server %s'%self.name
+        cmd = 'get-dcslogicaldisk'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
-        return self.stripxml(buff)
+        return buff
 
     def get_dcsvirtualdisk(self):
-        cmd = 'get-dcsvirtualdisk -server %s'%self.name
+        cmd = 'get-dcsvirtualdisk'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
-        return self.stripxml(buff)
+        return buff
+
+    def get_dcsphysicaldisk(self):
+        cmd = 'get-dcsphysicaldisk'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
+
+    def get_dcsdiskpath(self):
+        cmd = 'get-dcsdiskpath'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
+
+    def get_dcspoolmember(self):
+        cmd = 'get-dcspoolmember'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
+
+    def get_dcspoolperf(self):
+        cmd = 'get-dcspool | get-dcsperformancecounter'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
+
+    def get_dcslogicaldiskperf(self):
+        cmd = 'get-dcslogicaldisk | get-dcsperformancecounter'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
+
+    def get_dcsport(self):
+        cmd = 'get-dcsport'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.dcscmd(cmd)[0]
+        return buff
 
 if __name__ == "__main__":
     o = Dcss()
