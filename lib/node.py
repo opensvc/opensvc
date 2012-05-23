@@ -694,8 +694,7 @@ class Node(Svc, Freezer):
     def pushdcs(self):
         if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
                             period_option='push_period',
-                            days_option='push_days',
-                            force=self.options.force):
+                            days_option='push_days'):
             return
 
         self.collector.call('push_dcs')
