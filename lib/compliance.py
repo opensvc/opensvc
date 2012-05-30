@@ -71,7 +71,7 @@ class Module(object):
 
 
     def strip_unprintable(self, s):
-        return regex.sub('', s)
+        return regex.sub('', s).decode('utf8', 'ignore')
 
     def log_action(self, out, ret, action):
         ruleset = ','.join(self.ruleset)
