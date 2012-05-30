@@ -73,12 +73,12 @@ class Apps(Res.Resource):
         return True
 
     def startstandby_checks(self):
-        if not os.path.exists(self.svc.initd):
-            self.log.info("%s is not present, no apps to start for standby"%self.svc.initd)
-            return False
-        elif not os.path.islink(self.svc.initd):
+        if not os.path.islink(self.svc.initd):
             self.log.error("%s is not a link"%self.svc.initd)
             return False
+        elif not os.path.exists(self.svc.initd):
+            self.log.info("%s is not present, no apps to start for standby"%self.svc.initd)
+            return True
         return True
 
     def status_checks(self, verbose=False):
