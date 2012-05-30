@@ -70,17 +70,6 @@ class Sysctl(object):
             val = self.parse_val(l[1])
             self.cache[key] = val
 
-    def set_live_key(self, key, val):
-        if " " in val:
-            val = '"'+val+'"'
-        cmd = ['sysctl', '-w', key+'='+val]
-        print "sysctl:", " ".join(cmd)
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
-            print >>sys.stderr, "failed"
-            raise
-
     def get_live_key(self, key):
         p = Popen(['sysctl', key], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -149,13 +138,13 @@ class Sysctl(object):
             print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
             lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
 
-        with open(self.cf, 'w') as f:
-            f.write('\n'.join(lines))
-
         try:
-            self.set_live_key(key['key'], " ".join(map(str, val)))
+            with open(self.cf, 'w') as f:
+                f.write('\n'.join(lines))
         except:
+            print >>sys.stderr, "failed to write sysctl.conf"
             return RET_ERR
+
         return RET_OK
 
     def check_key(self, key, verbose=False):

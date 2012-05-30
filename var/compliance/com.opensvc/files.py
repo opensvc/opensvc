@@ -88,6 +88,7 @@ class CompFiles(object):
             d['fmt'] = str(d['fmt'])+'\n'
         d['fmt'] = d['fmt'].replace('%%HOSTNAME%%', self.nodename)
         d['fmt'] = d['fmt'].replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
+        d['fmt'] = self.subst(d['fmt'])
         if not d['fmt'].endswith('\n'):
             d['fmt'] += '\n'
         return [d]

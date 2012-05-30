@@ -524,7 +524,7 @@ class CompFs(object):
         if not self.osvc_service or self.check_fs_svc(fs, False) == 0:
             return 0
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'update', '--resource',
-               '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mntopt": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'])]
+               '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mnt_opt": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'])]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()

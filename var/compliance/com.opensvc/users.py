@@ -14,6 +14,10 @@ supported dictionnary keys:
 - gecos
 - home
 - shell
+
+supported toggles:
+- OSVC_COMP_USERS_INITIAL_PASSWD=true|false
+
 """
 
 import os
@@ -51,7 +55,7 @@ class CompUser(object):
         }
         self.usermod_p = {
             'shell': '-s',
-            'home': '-m -d',
+            'home': '-d',
             'uid': '-u',
             'gid': '-g',
             'gecos': '-c',
@@ -59,6 +63,12 @@ class CompUser(object):
             'spassword': '-p',
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
+
+        if "OSVC_COMP_USERS_INITIAL_PASSWD" in os.environ and \
+           os.environ["OSVC_COMP_USERS_INITIAL_PASSWD"] == "true":
+            self.initial_passwd = True
+        else:
+            self.initial_passwd = False
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
@@ -73,8 +83,8 @@ class CompUser(object):
                         self.users[user] = d[user]
                     else:
                         for key in self.usermod_p.keys():
-                            if key in d and key not in self.users[user]:
-                                self.users[user][key] = d[key]
+                            if key in d[user] and key not in self.users[user]:
+                                self.users[user][key] = d[user][key]
             except ValueError:
                 print >>sys.stderr, 'user syntax error on var[', k, '] = ',os.environ[k]
 
@@ -104,11 +114,15 @@ class CompUser(object):
                    ("spassword" not in d or len(d["spassword"]) == 0):
                     self.users[user]["spassword"] = self.users[user]["password"]
                     del self.users[user]["password"]
+                if "spassword" not in d:
+                    self.users[user]["spassword"] = "x"
             else:
                 if "spassword" in d and len(d["spassword"]) > 0 and \
                    ("password" not in d or len(d["password"]) == 0):
                     self.users[user]["password"] = self.users[user]["spassword"]
                     del self.users[user]["spassword"]
+                if "password" not in d:
+                    self.users[user]["password"] = "x"
 
     def fixable(self):
         if not which('usermod'):
@@ -142,7 +156,16 @@ class CompUser(object):
         p.communicate()
 
     def fix_item(self, user, item, target):
-        cmd = ['usermod'] + self.usermod_p[item].split() + [str(target), user]
+        if item in ["password", "spassword"]:
+            if self.initial_passwd:
+                print "skip", user, "password modification in initial_passwd mode"
+                return RET_OK
+            if target == "x":
+                return RET_OK
+        cmd = ['usermod', self.usermod_p[item], str(target)]
+        if item == 'home':
+            cmd.append('-m')
+        cmd.append(user)
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -180,6 +203,12 @@ class CompUser(object):
 
         for prop in self.pwt:
             if prop in props:
+                if prop == "password":
+                    if self.initial_passwd:
+                        print "skip", user, "passwd checking in initial_passwd mode"
+                        continue
+                    if props[prop] == "x":
+                        continue
                 r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
 
         if not cap_shadow:
@@ -196,6 +225,12 @@ class CompUser(object):
         if usersinfo is not None:
             for prop in self.spwt:
                 if prop in props:
+                    if prop == "spassword":
+                        if self.initial_passwd:
+                            print "skip", user, "spasswd checking in initial_passwd mode"
+                            continue
+                        if props[prop] == "x":
+                            continue
                     r |= self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop]), verbose=True)
         return r
 
@@ -269,7 +304,8 @@ class CompUser(object):
     def fix(self):
         r = 0
         for user, props in self.users.items():
-            r |= self.fix_user(user, props)
+            if self.check_user(user, props) == RET_ERR:
+                r |= self.fix_user(user, props)
         return r
 
 if __name__ == "__main__":

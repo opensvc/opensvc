@@ -20,6 +20,7 @@ import sys
 import json
 import grp
 from subprocess import *
+from utilities import which
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -27,6 +28,7 @@ from comp import *
 
 class CompGroupMembership(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
+        self.member_of_h = {}
         self.prefix = prefix.upper()
         self.grt = {
             'members': 'gr_mem',
@@ -36,12 +38,6 @@ class CompGroupMembership(object):
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
-
-        #
-        # initialize a hash to store all group membership
-        # of users
-        #
-        self.load_member_of()
 
         self.groups = {}
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
@@ -54,22 +50,43 @@ class CompGroupMembership(object):
             print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable
 
-    def load_member_of(self):
-        self.member_of = {}
-        for group in grp.getgrall():
-            for user in group.gr_mem:
-                if user in self.member_of:
-                    self.member_of[user].append(group.gr_name)
-                else:
-                    self.member_of[user] = [group.gr_name]
+    def member_of(self, user, refresh=False):
+        if not refresh and user in self.member_of_h:
+            # cache hit
+            return self.member_of_h[user]
+
+        if os.path.exists('/usr/xpg4/bin/id'):
+            id_bin = '/usr/xpg4/bin/id'
+        else:
+            id_bin = 'id'
+
+        cmd = [id_bin, "-gn", user]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            self.member_of_h[user] = []
+            return self.member_of_h[user]
+        eg = out.strip()
+
+        cmd = [id_bin, "-Gn", user]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            self.member_of_h[user] = []
+            return self.member_of_h[user]
+        ag = set(out.strip().split())
+        ag -= set([eg])
+        self.member_of_h[user] = ag
+        return self.member_of_h[user]
 
     def fixable(self):
         return RET_NA
 
     def del_member(self, group, user):
-        if user not in self.member_of:
+        ag = self.member_of(user)
+        if len(ag) == 0:
             return 0
-        g = set(self.member_of[user]) - set([group])
+        g = ag - set([group])
         g = ','.join(g)
         return self.fix_member(g, user)
 
@@ -77,11 +94,9 @@ class CompGroupMembership(object):
         if 0 != self._check_member_accnt(user):
             print >>sys.stderr, 'group', group+':', 'cannot add inexistant user "%s"'%user
             return RET_ERR
-        if user in self.member_of:
-            g = set(self.member_of[user]) | set([group])
-            g = ','.join(g)
-        else:
-            g = group
+        ag = self.member_of(user)
+        g = ag | set([group])
+        g = ','.join(g)
         return self.fix_member(g, user)
 
     def fix_member(self, g, user):
@@ -90,7 +105,7 @@ class CompGroupMembership(object):
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
-        self.load_member_of()
+        ag = self.member_of(user, refresh=True)
         if r == 0:
             return RET_OK
         else:
@@ -99,11 +114,9 @@ class CompGroupMembership(object):
     def fix_members(self, group, target):
         r = 0
         for user in target:
-            if user in self.member_of and group in self.member_of[user]:
+            if group in self.member_of(user):
                 continue
             r += self.add_member(group, user)
-        #for user in [u for u in self.member_of if group in self.member_of[u] and u not in target]:
-        #    r += self.del_member(group, user)
         return r
 
     def fix_item(self, group, item, target):
@@ -114,7 +127,12 @@ class CompGroupMembership(object):
             return RET_ERR
 
     def _check_member_accnt(self, user):
-        xcmd = ['getent', 'passwd', user]
+        if which('getent'):
+            xcmd = ['getent', 'passwd', user]
+        elif which('pwget'):
+            xcmd = ['pwget', '-n', user]
+        else:
+            return 0
         xp = Popen(xcmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         xout, xerr = xp.communicate()
         return xp.returncode
