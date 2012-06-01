@@ -43,7 +43,6 @@ class Brocades(object):
             except:
                 print "error parsing section", s
                 pass
-        print m
         del(conf)
         for name, username, key in m:
             self.switchs.append(Brocade(name, username, key))
