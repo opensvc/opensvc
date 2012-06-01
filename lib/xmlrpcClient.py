@@ -905,6 +905,24 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
     
+    def push_brocade(self, sync=True):
+        if 'update_brocade' not in self.proxy_methods:
+            print "'update_brocade' method is not exported by the collector"
+            return
+        m = __import__('rcBrocade')
+        try:
+            brocades = m.Brocades()
+        except:
+            return
+        for brocade in brocades:
+            vals = []
+            for key in brocade.keys:
+                vals.append(getattr(brocade, 'get_'+key)())
+            args = [brocade.name, brocade.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_brocade(*args)
+
     def push_vioserver(self, sync=True):
         if 'update_vioserver' not in self.proxy_methods:
             print "'update_vioserver' method is not exported by the collector"
