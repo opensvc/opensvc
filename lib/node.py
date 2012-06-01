@@ -107,7 +107,8 @@ class Node(Svc, Freezer):
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
-            'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
+            'pushbrocade':    'push Brocade switch configuration to collector',
+            'push_appinfo':   'push services application launchers appinfo key/value pairs to collector',
             'checks':         'run node sanity checks, push results to collector',
           },
           'Misc': {
@@ -739,6 +740,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_sym')
+
+    def pushbrocade(self):
+        if self.skip_action('brocade', 'push_interval', 'last_brocade_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_brocade')
 
     def pushdisks(self):
         if self.skip_action('sym', 'push_interval', 'last_disks_push',
