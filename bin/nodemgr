@@ -95,6 +95,9 @@ parser.add_option("--author", default=None, action="store", dest="author",
                   help="the acker name to log when used with the 'collector ack action' action")
 parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
+parser.add_option("--resource", default=[], action="append",
+                  help="a resource definition in json dictionary format fed to the provision action")
+
 
 (options, args) = parser.parse_args()
 

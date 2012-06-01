@@ -82,6 +82,7 @@ class Node(Svc, Freezer):
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'provision': 'provision the resources described in --resource arguments',
           },
           'Service actions': {
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -943,6 +944,38 @@ class Node(Svc, Freezer):
             if len(dev.devpath) > 0:
                 l.append(dev.devpath[0])
         return l
+
+    def provision(self):
+        self.provision_resource = []
+        for rs in self.options.resource:
+            try:
+                d = json.loads(rs)
+            except:
+                print >>sys.stderr, "JSON read error: %s", rs
+                return 1
+            if 'rtype' not in d:
+                print >>sys.stderr, "'rtype' key must be set in resource dictionary: %s", rs
+                return 1
+
+            rtype = d['rtype']
+            if len(rtype) < 2:
+                print >>sys.stderr, "invalid 'rtype' value: %s", rs
+                return 1
+            rtype = rtype[0].upper() + rtype[1:]
+            modname = 'prov' + rtype
+            try:
+                m = __import__(modname)
+            except ImportError:
+                print >>sys.stderr, "provisioning is not available for resource type:", d['rtype']
+                return 1
+            if not hasattr(m, "d_provisioner"):
+                print >>sys.stderr, "provisioning with nodemgr is not available for this resource type:", d['rtype']
+                return 1
+
+            self.provision_resource.append((m, d))
+
+        for o, d in self.provision_resource:
+            getattr(m, "d_provisioner")(d)
 
 
 if __name__ == "__main__" :
