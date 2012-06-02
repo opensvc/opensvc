@@ -152,15 +152,13 @@ class Asset(rcAsset.Asset):
         """
         l = []
         if not which('cfgadm'):
-            print "no cfgadm"
             return []
         if not which('luxadm'):
-            print "no luxadm"
             return []
         cmd = ['cfgadm', '-lv', '-s', 'match=exact,select=type(fc-fabric)']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            print out, err, ret
+            #print out, err, ret
             return []
         words = out.split()
         hba_names = [word for word in words if word.startswith("/devices/")]
