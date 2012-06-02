@@ -472,6 +472,39 @@ class Asset(object):
         for t in targets:
             print "  %s - %s"%t
 
+    def get_lan(self):
+        rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+        ifconfig = rcIfconfig.ifconfig()
+        lan = {}
+        for intf in ifconfig.intf:
+            if len(intf.hwaddr) == 0:
+                continue
+            if intf.hwaddr not in lan:
+                lan[intf.hwaddr] = []
+            if intf.ipaddr != '':
+                d = {'type': 'ipv4',
+                     'intf': intf.name,
+                     'addr': intf.ipaddr,
+                     'mask': intf.mask,
+                    }
+                lan[intf.hwaddr] += [d]
+            for i, ip6 in enumerate(intf.ip6addr):
+                d = {'type': 'ipv6',
+                     'intf': intf.name,
+                     'addr': intf.ip6addr[i],
+                     'mask': intf.ip6mask[i],
+                    }
+                lan[intf.hwaddr] += [d]
+                
+        self.print_lan(lan)
+        return lan
+
+    def print_lan(self, lan):
+        print "lan (probe)"
+        for h, l in lan.items():
+            for d in l:
+                print "  %s %-8s %-5s %s/%s"%(h, d['intf'], d['type'], d['addr'], d['mask'])
+
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
@@ -535,4 +568,7 @@ class Asset(object):
         targets = self.get_targets()
         if targets is not None:
             d['targets'] = targets
+        lan = self.get_lan()
+        if lan is not None:
+            d['lan'] = lan
         return d
