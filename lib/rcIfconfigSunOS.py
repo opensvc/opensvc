@@ -28,10 +28,20 @@ class ifconfig(rcIfconfig.ifconfig):
         out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
 
+    def set_hwaddr(self, i):
+        if i is not None and i.hwaddr == '' and ':' in i.name:
+            base_ifname, index = i.name.split(':')
+            base_intf = self.interface(base_ifname)
+            if base_intf is not None:
+                i.hwaddr = base_intf.hwaddr
+        return i
+
     def parse(self, out):
+        i = None
         for l in out.split("\n"):
             if l == '' : break
             if l[0]!='\t' :
+                i = self.set_hwaddr(i)
                 (ifname,ifstatus)=l.split(': ')
 
                 i=rcIfconfig.interface(ifname)
@@ -69,11 +79,13 @@ class ifconfig(rcIfconfig.ifconfig):
                     if p == 'inet' : i.ipaddr=v
                     elif p == 'netmask' : i.mask=v
                     elif p == 'broadcast' : i.bcast=v
+                    elif p == 'ether' : i.hwaddr=v
                     elif p == 'inet6' :
                         (a, m) = v.split('/')
                         i.ip6addr += [a]
                         i.ip6mask += [m]
                     n+=2
+        i = self.set_hwaddr(i)
 
 
 if __name__ == "__main__":
