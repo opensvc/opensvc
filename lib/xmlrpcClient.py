@@ -898,8 +898,9 @@ class Collector(object):
             vars = ['mac', 'intf', 'type', 'addr', 'mask']
             vals = []
             for mac, l in d['lan'].items():
-                for d in l:
-                    vals.append([mac, d['intf'], d['type'], d['addr'], d['mask']])
+                for _d in l:
+                    vals.append([mac, _d['intf'], _d['type'], _d['addr'], _d['mask']])
+            del(d['lan'])
             gen.update({'lan': [vars, vals]})
 
         if len(gen) > 0:
