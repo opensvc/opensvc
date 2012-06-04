@@ -654,10 +654,15 @@ class Collector(object):
                 '1' if svc.ha else '0']
     
         if 'container' in svc.resources_by_id:
-            container_info = svc.resources_by_id['container'].get_container_info()
+            container = svc.resources_by_id['container']
+            container_info = container.get_container_info()
             vars += ['svc_vcpus', 'svc_vmem']
             vals += [container_info['vcpus'],
                      container_info['vmem']]
+
+            if hasattr(container, "zonepath"):
+                vars.append("svc_containerpath")
+                vals.append(container.zonepath)
     
         args = [vars, vals]
         if self.auth_node:
