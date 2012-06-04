@@ -83,6 +83,7 @@ class Node(Svc, Freezer):
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
             'provision': 'provision the resources described in --resource arguments',
+            'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
           },
           'Service actions': {
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -953,6 +954,40 @@ class Node(Svc, Freezer):
             if len(dev.devpath) > 0:
                 l.append(dev.devpath[0])
         return l
+
+    def updatepkg(self):
+        if not os.path.exists(os.path.join(rcEnv.pathlib, 'rcUpdatePkg'+rcEnv.sysname+'.py')):
+            print >>sys.stderr, "updatepkg not implemented on", rcEnv.sysname
+            return 1
+        m = __import__('rcUpdatePkg'+rcEnv.sysname)
+        if not self.config.has_option('node', 'repo'):
+            print >>sys.stderr, "node.repo must be set in node.conf"
+            return 1
+        pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
+        import tempfile
+        f = tempfile.NamedTemporaryFile()
+        tmpf = f.name
+        print "get %s (%s)"%(pkg_name, tmpf)
+        import urllib
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
+        except IOError:
+            import traceback
+            e = sys.exc_info()
+            print >>sys.stderr, "download failed", ":", e[1]
+        if 'invalid file' in headers.values():
+            print >>sys.stderr, "invalid file"
+            f.close()
+            return 1
+        if 'Not Found' in f.read():
+            print >>sys.stderr, "not found"
+            f.close()
+            return 1
+        print "updating opensvc"
+        m.update(tmpf)
+        print "clean up"
+        f.close()
+        return 0
 
     def provision(self):
         self.provision_resource = []
