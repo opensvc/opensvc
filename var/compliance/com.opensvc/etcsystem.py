@@ -53,7 +53,7 @@ class EtcSystem(object):
                 continue
             if len(l) < 2:
                 continue
-            line = ' '.join(l[1:])
+            line = ' '.join(l[1:]).split('*')[0]
             var, val = line.split('=')
             var = var.strip()
             val = val.strip()
