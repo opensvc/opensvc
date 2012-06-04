@@ -83,6 +83,7 @@ class Node(Svc, Freezer):
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
             'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
+            'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
           },
           'Service actions': {
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -927,6 +928,38 @@ class Node(Svc, Freezer):
             if len(dev.devpath) > 0:
                 l.append(dev.devpath[0])
         return l
+
+    def updatecomp(self):
+        if not self.config.has_option('node', 'repo'):
+            print >>sys.stderr, "node.repo must be set in node.conf"
+            return 1
+        pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
+        import tempfile
+        f = tempfile.NamedTemporaryFile()
+        tmpf = f.name
+        print "get %s (%s)"%(pkg_name, tmpf)
+        import urllib
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
+        except IOError:
+            import traceback
+            e = sys.exc_info()
+            print >>sys.stderr, "download failed", ":", e[1]
+        if 'invalid file' in headers.values():
+            print >>sys.stderr, "invalid file"
+            f.close()
+            return 1
+        if 'Not Found' in f.read():
+            print >>sys.stderr, "not found"
+            f.close()
+            return 1
+        print "extract compliance in", rcEnv.pathvar
+        import tarfile
+        tar = tarfile.open(tmpf)
+        os.chdir(rcEnv.pathvar)
+        tar.extractall()
+        tar.close()
+        f.close()
 
     def updatepkg(self):
         if not os.path.exists(os.path.join(rcEnv.pathlib, 'rcUpdatePkg'+rcEnv.sysname+'.py')):
