@@ -43,6 +43,8 @@ class ifconfig(rcIfconfig.ifconfig):
         i.ip6addr = []
         i.ip6mask = []
         i.hwaddr = ''
+        if i.name in self.hwaddr:
+            i.hwaddr = self.hwaddr[i.name]
         i.flag_up = False
         i.flag_broadcast = False
         i.flag_running = False
@@ -85,9 +87,23 @@ class ifconfig(rcIfconfig.ifconfig):
 
             prev = w
 
-    def __init__(self):
+    def __init__(self, hwaddr=False):
         self.intf = []
         intf_list = []
+        self.hwaddr = {}
+        if hwaddr:
+            lines = Popen(['lanscan', '-i', '-a'], stdout=PIPE).communicate()[0].split('\n')
+            for line in lines:
+                l = line.split()
+                if len(l) < 2:
+                    continue
+                mac = l[0].replace('0x','').lower()
+                if len(mac) < 11:
+                    continue
+                mac_l = list(mac)
+                for c in (10, 8, 6, 4, 2):
+                    mac_l.insert(c, ':')
+                self.hwaddr[l[1]] = ''.join(mac_l)
         out = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
         for line in out.split('\n'):
             if len(line) == 0:

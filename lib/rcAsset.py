@@ -473,8 +473,12 @@ class Asset(object):
             print "  %s - %s"%t
 
     def get_lan(self):
+        if rcEnv.sysname == 'HP-UX':
+            args = [True]
+        else:
+            args = []
         rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
-        ifconfig = rcIfconfig.ifconfig()
+        ifconfig = rcIfconfig.ifconfig(*args)
         lan = {}
         for intf in ifconfig.intf:
             if len(intf.hwaddr) == 0:
