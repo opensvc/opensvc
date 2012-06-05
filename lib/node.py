@@ -930,10 +930,13 @@ class Node(Svc, Freezer):
         return l
 
     def updatecomp(self):
-        if not self.config.has_option('node', 'repo'):
-            print >>sys.stderr, "node.repo must be set in node.conf"
+        if self.config.has_option('node', 'repocomp'):
+            pkg_name = self.config.get('node', 'repocomp').strip('/') + "/current"
+        elif not self.config.has_option('node', 'repo'):
+            pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
+        else:
+            print >>sys.stderr, "node.repo or node.repocomp must be set in node.conf"
             return 1
-        pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
@@ -945,31 +948,51 @@ class Node(Svc, Freezer):
             import traceback
             e = sys.exc_info()
             print >>sys.stderr, "download failed", ":", e[1]
+            return 1
         if 'invalid file' in headers.values():
             print >>sys.stderr, "invalid file"
             f.close()
             return 1
-        if 'Not Found' in f.read():
+        content = f.read()
+        if '404 Not Found' in content:
             print >>sys.stderr, "not found"
             f.close()
             return 1
-        print "extract compliance in", rcEnv.pathvar
+        tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
+        backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
+        compp = os.path.join(rcEnv.pathvar, 'compliance')
+        import shutil
+        try:
+            shutil.rmtree(backp)
+        except:
+            pass
+        print "extract compliance in", rcEnv.pathtmp
         import tarfile
         tar = tarfile.open(tmpf)
-        os.chdir(rcEnv.pathvar)
-        tar.extractall()
-        tar.close()
+        os.chdir(rcEnv.pathtmp)
+        try:
+            tar.extractall()
+            tar.close()
+        except:
+            print >>sys.stderr, "failed to unpack"
+            return 1
         f.close()
+        print "install new compliance"
+        shutil.move(compp, backp)
+        shutil.move(tmpp, compp)
 
     def updatepkg(self):
         if not os.path.exists(os.path.join(rcEnv.pathlib, 'rcUpdatePkg'+rcEnv.sysname+'.py')):
             print >>sys.stderr, "updatepkg not implemented on", rcEnv.sysname
             return 1
         m = __import__('rcUpdatePkg'+rcEnv.sysname)
-        if not self.config.has_option('node', 'repo'):
-            print >>sys.stderr, "node.repo must be set in node.conf"
+        if self.config.has_option('node', 'repopkg'):
+            pkg_name = self.config.get('node', 'repopkg').strip('/') + "/" + m.repo_subdir + '/current'
+        elif not self.config.has_option('node', 'repo'):
+            pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
+        else:
+            print >>sys.stderr, "node.repo or node.repopkg must be set in node.conf"
             return 1
-        pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
@@ -981,6 +1004,7 @@ class Node(Svc, Freezer):
             import traceback
             e = sys.exc_info()
             print >>sys.stderr, "download failed", ":", e[1]
+            return 1
         if 'invalid file' in headers.values():
             print >>sys.stderr, "invalid file"
             f.close()
