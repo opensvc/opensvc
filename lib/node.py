@@ -981,7 +981,7 @@ class Node(Svc, Freezer):
             f.close()
             return 1
         content = f.read()
-        if '404 Not Found' in content:
+        if content.startswith('<') and '404 Not Found' in content:
             print >>sys.stderr, "not found"
             f.close()
             return 1
@@ -1036,7 +1036,8 @@ class Node(Svc, Freezer):
             print >>sys.stderr, "invalid file"
             f.close()
             return 1
-        if 'Not Found' in f.read():
+        content = f.read()
+        if content.startswith('<') and '404 Not Found' in content:
             print >>sys.stderr, "not found"
             f.close()
             return 1
