@@ -932,7 +932,7 @@ class Node(Svc, Freezer):
     def updatecomp(self):
         if self.config.has_option('node', 'repocomp'):
             pkg_name = self.config.get('node', 'repocomp').strip('/') + "/current"
-        elif not self.config.has_option('node', 'repo'):
+        elif self.config.has_option('node', 'repo'):
             pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
         else:
             print >>sys.stderr, "node.repo or node.repocomp must be set in node.conf"
@@ -988,7 +988,7 @@ class Node(Svc, Freezer):
         m = __import__('rcUpdatePkg'+rcEnv.sysname)
         if self.config.has_option('node', 'repopkg'):
             pkg_name = self.config.get('node', 'repopkg').strip('/') + "/" + m.repo_subdir + '/current'
-        elif not self.config.has_option('node', 'repo'):
+        elif self.config.has_option('node', 'repo'):
             pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
         else:
             print >>sys.stderr, "node.repo or node.repopkg must be set in node.conf"
