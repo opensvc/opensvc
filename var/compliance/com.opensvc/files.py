@@ -106,7 +106,10 @@ class CompFiles(object):
         if 'invalid file' in headers.values():
             print >>sys.stderr, d['ref'], "not found on collector"
             raise InitError()
-        d['fmt'] = f.read()
+        d['fmt'] = unicode(f.read())
+        if '<title>404 Not Found</title>' in d['fmt']:
+            print >>sys.stderr, url, "not found on collector"
+            raise InitError()
         f.close()
         return self.parse_fmt(d)
 
