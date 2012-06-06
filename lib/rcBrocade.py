@@ -2,6 +2,7 @@ from rcUtilities import justcall, which
 import rcExceptions as ex
 import os
 import ConfigParser
+import telnetlib
 
 pathlib = os.path.dirname(__file__)
 pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
@@ -9,6 +10,18 @@ pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
 pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 if pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+pathbin
+
+def brocadetelnetcmd(cmd, switch, username, password):
+    tn = telnetlib.Telnet(switch)
+    tn.read_until("login: ")
+    tn.write(username + '\n')
+    tn.read_until("Password: ")
+    tn.write(password + '\n')
+    tn.read_until("> ")
+    tn.write(cmd + '\n')
+    tn.write('exit\n')
+    out = tn.read_all()
+    return out, "", 0
 
 def brocadecmd(cmd, switch, username, key):
     _cmd = ['ssh', '-l', username, '-i', key, switch, cmd]
@@ -39,17 +52,29 @@ class Brocades(object):
                 continue
             if stype != "brocade":
                 continue
+            name = s
+            key = None
+            password = None
             try:
-                name = s
                 username = conf.get(s, 'username')
-                key = conf.get(s, 'key')
-                m.append([name, username, key])
             except:
-                print "error parsing section", s
+                print "no 'username' parameter in %s section %s"%(cf, s)
+                continue
+            try:
+                key = conf.get(s, 'key')
+            except:
                 pass
+            try:
+                password = conf.get(s, 'password')
+            except:
+                pass
+            if key is None and password is None:
+                print "no 'key' nor 'password' parameter in %s section %s"%(cf, s)
+                continue
+            m.append([name, username, key, password])
         del(conf)
-        for name, username, key in m:
-            self.switchs.append(Brocade(name, username, key))
+        for name, username, key, password in m:
+            self.switchs.append(Brocade(name, username, key, password))
 
     def __iter__(self):
         return self
@@ -61,14 +86,20 @@ class Brocades(object):
         return self.switchs[self.index-1]
 
 class Brocade(object):
-    def __init__(self, name, username, key):
+    def __init__(self, name, username, key, password):
         self.name = name
         self.username = username
+        self.password = password
         self.key = key
         self.keys = ['brocadeswitchshow', 'brocadensshow']
 
     def brocadecmd(self, cmd):
-        return brocadecmd(cmd, self.name, self.username, self.key)
+        if self.key is not None:
+            return brocadecmd(cmd, self.name, self.username, self.key)
+        elif self.password is not None:
+            return brocadetelnetcmd(cmd, self.name, self.username, self.password)
+        else:
+            raise Exception("ssh nor telnet method available")
 
     def get_brocadeswitchshow(self):
         cmd = 'switchshow'
