@@ -13,6 +13,10 @@ if pathbin not in os.environ['PATH']:
 def brocadecmd(cmd, switch, username, key):
     _cmd = ['ssh', '-l', username, '-i', key, switch, cmd]
     out, err, ret = justcall(_cmd)
+    if "command not found" in err:
+        # bogus firmware syntax
+        _cmd = ['ssh', '-l', username, '-i', key, switch, 'bash --login -c '+cmd]
+        out, err, ret = justcall(_cmd)
     if ret != 0:
         raise ex.excError("brocade command execution error")
     return out, err, ret
@@ -61,13 +65,19 @@ class Brocade(object):
         self.name = name
         self.username = username
         self.key = key
-        self.keys = ['brocadeswitchshow']
+        self.keys = ['brocadeswitchshow', 'brocadensshow']
 
     def brocadecmd(self, cmd):
         return brocadecmd(cmd, self.name, self.username, self.key)
 
     def get_brocadeswitchshow(self):
         cmd = 'switchshow'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.brocadecmd(cmd)[0]
+        return buff
+
+    def get_brocadensshow(self):
+        cmd = 'nsshow'
         print "%s: %s"%(self.name, cmd)
         buff = self.brocadecmd(cmd)[0]
         return buff
