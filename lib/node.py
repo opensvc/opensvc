@@ -749,7 +749,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_brocade')
+        self.collector.call('push_brocade', self.options.objects)
 
     def pushdisks(self):
         if self.skip_action('sym', 'push_interval', 'last_disks_push',

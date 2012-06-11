@@ -919,13 +919,13 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_asset(*args)
     
-    def push_brocade(self, sync=True):
+    def push_brocade(self, objects=[], sync=True):
         if 'update_brocade' not in self.proxy_methods:
             print "'update_brocade' method is not exported by the collector"
             return
         m = __import__('rcBrocade')
         try:
-            brocades = m.Brocades()
+            brocades = m.Brocades(objects)
         except:
             return
         for brocade in brocades:

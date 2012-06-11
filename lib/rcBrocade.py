@@ -37,8 +37,13 @@ def brocadecmd(cmd, switch, username, key):
 class Brocades(object):
     switchs = []
 
-    def __init__(self):
+    def __init__(self, objects=[]):
         self.index = 0
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         cf = os.path.join(pathetc, "auth.conf")
         if not os.path.exists(cf):
             return
@@ -46,6 +51,8 @@ class Brocades(object):
         conf.read(cf)
         m = []
         for s in conf.sections():
+            if self.filtering and s not in self.objects:
+                continue
             try:
                 stype = conf.get(s, 'type')
             except:

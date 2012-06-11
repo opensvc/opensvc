@@ -97,6 +97,8 @@ parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
 parser.add_option("--resource", default=[], action="append",
                   help="a resource definition in json dictionary format fed to the provision action")
+parser.add_option("--object", default=[], action="append", dest="objects",
+                  help="an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line")
 
 
 (options, args) = parser.parse_args()
