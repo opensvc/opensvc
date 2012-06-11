@@ -91,7 +91,7 @@ class Brocade(object):
         self.username = username
         self.password = password
         self.key = key
-        self.keys = ['brocadeswitchshow', 'brocadensshow']
+        self.keys = ['brocadeswitchshow', 'brocadensshow', 'brocadezoneshow']
 
     def brocadecmd(self, cmd):
         if self.key is not None:
@@ -109,6 +109,12 @@ class Brocade(object):
 
     def get_brocadensshow(self):
         cmd = 'nsshow'
+        print "%s: %s"%(self.name, cmd)
+        buff = self.brocadecmd(cmd)[0]
+        return buff
+
+    def get_brocadezoneshow(self):
+        cmd = 'zoneshow'
         print "%s: %s"%(self.name, cmd)
         buff = self.brocadecmd(cmd)[0]
         return buff
