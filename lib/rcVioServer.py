@@ -21,7 +21,12 @@ def rcmd(cmd, manager, username, key):
     return out, err
 
 class VioServers(object):
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = []
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.arrays = []
         self.index = 0
         cf = os.path.join(pathetc, "auth.conf")
@@ -31,6 +36,8 @@ class VioServers(object):
         conf.read(cf)
         m = {}
         for s in conf.sections():
+            if self.filtering and s not in self.objects:
+                continue
             if not conf.has_option(s, "type") or \
                conf.get(s, "type") != "vioserver":
                 continue

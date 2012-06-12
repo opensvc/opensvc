@@ -5,7 +5,12 @@ import os
 
 class Syms(object):
     syms = []
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.index = 0
         if which('symcfg') is None:
             print 'Can not find symcli programs in PATH'
@@ -18,6 +23,8 @@ class Syms(object):
         for symm in tree.getiterator('Symm_Info'):
             model = symm.find('model').text
             sid = symm.find('symid').text
+            if filtering and sid not in self.objects:
+                continue
             if model in ['VMAX-1']:
                 self.syms.append(Vmax(sid))
             if 'DMX' in model or '3000-M' in model:

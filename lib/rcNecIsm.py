@@ -4,7 +4,12 @@ import os
 
 class NecIsms(object):
     arrays = []
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.index = 0
         if which('iSMview') is None:
             print 'Can not find iSMview programs in PATH'
@@ -31,6 +36,8 @@ D1-10             D1_10                             ready           running
                 continue
             l = line.split()
             if len(l) != 4:
+                continue
+            if filtering and l[1] not in self.objects:
                 continue
             self.arrays.append(NecIsm(l[1]))
 

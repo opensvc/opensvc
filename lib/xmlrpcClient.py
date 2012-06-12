@@ -937,13 +937,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_brocade(*args)
 
-    def push_vioserver(self, sync=True):
+    def push_vioserver(self, objects=[], sync=True):
         if 'update_vioserver' not in self.proxy_methods:
             print "'update_vioserver' method is not exported by the collector"
             return
         m = __import__('rcVioServer')
         try:
-            vioservers = m.VioServers()
+            vioservers = m.VioServers(objects)
         except:
             return
         for vioserver in vioservers:
@@ -955,13 +955,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_vioserver(*args)
 
-    def push_necism(self, sync=True):
+    def push_necism(self, objects=[], sync=True):
         if 'update_necism' not in self.proxy_methods:
     	    print "'update_necism' method is not exported by the collector"
     	    return
         m = __import__('rcNecIsm')
         try:
-            necisms = m.NecIsms()
+            necisms = m.NecIsms(objects)
         except:
             return
         for necism in necisms:
@@ -973,13 +973,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_necism(*args)
 
-    def push_ibmsvc(self, sync=True):
+    def push_ibmsvc(self, objects=[], sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
     	    print "'update_ibmsvc' method is not exported by the collector"
     	    return
         m = __import__('rcIbmSvc')
         try:
-            ibmsvcs = m.IbmSvcs()
+            ibmsvcs = m.IbmSvcs(objects)
         except:
             return
         for ibmsvc in ibmsvcs:
@@ -991,13 +991,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_ibmsvc(*args)
     
-    def push_dcs(self, sync=True):
+    def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print "'update_dcs' method is not exported by the collector"
            return
         m = __import__('rcDcs')
         try:
-            dcss = m.Dcss()
+            dcss = m.Dcss(objects)
         except:
             return
         for dcs in dcss:
@@ -1009,13 +1009,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_dcs(*args)
 
-    def push_eva(self, sync=True):
+    def push_eva(self, objects=[], sync=True):
         if 'update_eva_xml' not in self.proxy_methods:
     	    print "'update_eva_xml' method is not exported by the collector"
     	    return
         m = __import__('rcEva')
         try:
-            evas = m.Evas()
+            evas = m.Evas(objects)
         except:
             return
         for eva in evas:
@@ -1027,13 +1027,13 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_eva_xml(*args)
     
-    def push_sym(self, sync=True):
+    def push_sym(self, objects=[], sync=True):
         if 'update_sym_xml' not in self.proxy_methods:
     	    print "'update_sym_xml' method is not exported by the collector"
     	    return
         m = __import__('rcSymmetrix')
         try:
-            syms = m.Syms()
+            syms = m.Syms(objects)
         except:
             return
         for sym in syms:

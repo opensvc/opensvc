@@ -21,7 +21,12 @@ def rcmd(cmd, manager, username, key):
     return out, err
 
 class IbmSvcs(object):
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.arrays = []
         self.index = 0
         cf = os.path.join(pathetc, "auth.conf")
@@ -33,6 +38,8 @@ class IbmSvcs(object):
         for s in conf.sections():
             if not conf.has_option(s, "type") or \
                conf.get(s, "type") != "ibmsvc":
+                continue
+            if filtering and not s in self.objects:
                 continue
             try:
                 username = conf.get(s, 'username')

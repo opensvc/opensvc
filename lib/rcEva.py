@@ -28,7 +28,12 @@ def sssu(cmd, manager, username, password, array=None):
 class Evas(object):
     arrays = []
 
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.index = 0
         cf = os.path.join(pathetc, "sssu.conf")
         if not os.path.exists(cf):
@@ -58,6 +63,8 @@ class Evas(object):
                 if not _in:
                     continue
                 name = line.strip()
+                if self.filtering and name not in self.objects:
+                    continue
                 self.arrays.append(Eva(name, manager, username, password))
                 done.append(name)
 

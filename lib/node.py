@@ -701,7 +701,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_dcs')
+        self.collector.call('push_dcs', self.options.objects)
 
     def pushnecism(self):
         if self.skip_action('necism', 'push_interval', 'last_necism_push',
@@ -709,7 +709,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_necism')
+        self.collector.call('push_necism', self.options.objects)
 
     def pusheva(self):
         if self.skip_action('eva', 'push_interval', 'last_eva_push',
@@ -717,7 +717,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_eva')
+        self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
         if self.skip_action('ibmsvc', 'push_interval', 'last_ibmsvc_push',
@@ -725,7 +725,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_ibmsvc')
+        self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
         if self.skip_action('ibmsvc', 'push_interval', 'last_vioserver_push',
@@ -733,7 +733,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_vioserver')
+        self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
         if self.skip_action('sym', 'push_interval', 'last_sym_push',
@@ -741,7 +741,7 @@ class Node(Svc, Freezer):
                             days_option='push_days'):
             return
 
-        self.collector.call('push_sym')
+        self.collector.call('push_sym', self.options.objects)
 
     def pushbrocade(self):
         if self.skip_action('brocade', 'push_interval', 'last_brocade_push',

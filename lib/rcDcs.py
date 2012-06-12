@@ -29,7 +29,12 @@ def dcscmd(cmd, manager, username, password, dcs=None):
 class Dcss(object):
     arrays = []
 
-    def __init__(self):
+    def __init__(self, objects=[]):
+        self.objects = objects
+        if len(objects) > 0:
+            self.filtering = True
+        else:
+            self.filtering = False
         self.index = 0
         cf = os.path.join(pathetc, "auth.conf")
         if not os.path.exists(cf):
@@ -58,6 +63,8 @@ class Dcss(object):
         for manager, v in m.items():
             dcs, username, password = v
             for name in dcs:
+                if self.filtering and name not in self.objects:
+                    continue
                 if name in done:
                     continue
                 self.arrays.append(Dcs(name, manager, username, password))
