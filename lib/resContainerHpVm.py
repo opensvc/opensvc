@@ -107,3 +107,10 @@ class HpVm(resContainer.Container):
         if os.path.exists('/opt/hpvm/bin/hpvmstatus'):
             return True
         return False
+
+    def _migrate(self):
+        cmd = ['hpvmmigrate', '-o', '-P', self.name, '-h', self.svc.destination_node]
+        (ret, buff, err) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+

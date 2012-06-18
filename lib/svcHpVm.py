@@ -37,3 +37,6 @@ class SvcHpVm(svc.Svc):
         self += hpvm.HpVm(vmname, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
+    def _migrate(self):
+        self.sub_set_action("container.hpvm", "_migrate")
+
