@@ -45,7 +45,11 @@ log.addHandler(filehandler)
 log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 
-from multiprocessing import Queue, Process
+try:
+    from multiprocessing import Queue, Process
+    mp = True
+except:
+    mp = False
 from Queue import Empty
 
 def call_worker(q):
@@ -400,7 +404,7 @@ class Collector(object):
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        if sync:
+        if sync or not mp:
             self.proxy.begin_action(*args)
         else:
             self.submit("begin_action", *args)
@@ -490,7 +494,7 @@ class Collector(object):
             args = [vars, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync:
+            if sync or not mp:
                 self.proxy.res_action_batch(*args)
             else:
                 self.submit("res_action_batch", *args)
@@ -527,7 +531,7 @@ class Collector(object):
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        if sync:
+        if sync or not mp:
             self.proxy.end_action(*args)
         else:
             self.submit("end_action", *args)
@@ -537,7 +541,7 @@ class Collector(object):
             args = [g_vars, g_vals, r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync:
+            if sync or not mp:
                 self.proxy.svcmon_update_combo(*args)
             else:
                 self.submit("svcmon_update_combo", *args)
@@ -545,14 +549,14 @@ class Collector(object):
             args = [g_vars, g_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync:
+            if sync or not mp:
                 self.proxy.svcmon_update(*args)
             else:
                 self.submit("svcmon_update", *args)
             args = [r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync:
+            if sync or not mp:
                 self.proxy.resmon_update(*args)
             else:
                 self.submit("resmon_update", *args)

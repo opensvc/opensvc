@@ -485,13 +485,22 @@ class Asset(object):
                 continue
             if intf.hwaddr not in lan:
                 lan[intf.hwaddr] = []
-            if intf.ipaddr != '':
+            if type(intf.ipaddr) == str and intf.ipaddr != '':
                 d = {'type': 'ipv4',
                      'intf': intf.name,
                      'addr': intf.ipaddr,
                      'mask': intf.mask,
                     }
                 lan[intf.hwaddr] += [d]
+            elif type(intf.ipaddr) == list:
+                for i, ip in enumerate(intf.ipaddr):
+                    if ip != '':
+                        d = {'type': 'ipv4',
+                             'intf': intf.name,
+                             'addr': ip,
+                             'mask': intf.mask[i],
+                            }
+                    lan[intf.hwaddr] += [d]
             for i, ip6 in enumerate(intf.ip6addr):
                 d = {'type': 'ipv6',
                      'intf': intf.name,

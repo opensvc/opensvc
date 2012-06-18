@@ -6,6 +6,9 @@ import glob
 import sys
 
 python_names = ['python2.7', 'python2.6']
+python_paths = [
+  os.path.join(os.sep, "opt", "python-2.6.4", "bin", "python")
+]
 
 sysname, nodename, x, x, machine = os.uname()
 
@@ -13,6 +16,9 @@ def python_path():
     for n in python_names:
         p = _python_path(n)
         if p is not None:
+            return p
+    for p in python_paths:
+        if os.path.exists(p):
             return p
 
 def _python_path(python_exe):
@@ -228,6 +234,16 @@ def activate_AIX():
             os.symlink(rc, l)
     return True
 
+def activate_OSF1():
+    rc = "/sbin/init.d/opensvc"
+    links = ["/sbin/rc0.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
+    for l in links:
+	if not os.path.islink(l):
+	    if os.path.exists(l):
+	        os.unlink(l)
+	    os.symlink(rc, l)
+    return True
+
 def activate_SunOS():
     rc = "/etc/init.d/opensvc"
     links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
@@ -288,6 +304,10 @@ def install_rc():
         rc = '/etc/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
+    elif sysname == "OSF1":
+        rc = '/sbin/init.d/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.OSF1'
+        activate = activate_OSF1
     elif sysname == "FreeBSD":
         rc = '/etc/rc.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.FreeBSD'

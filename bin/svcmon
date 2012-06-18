@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
@@ -36,6 +36,11 @@ from rcUtilities import *
 from lock import *
 import node
 
+try:
+    from multiprocessing import Process, Queue
+    mp = True
+except:
+    mp = False
 
 try:
     from version import version
@@ -87,10 +92,13 @@ def svcmon_normal(svcs, upddb=False):
     print fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "app   ", "hb    ", "sync  ", "avail ", "overall", "      ")
     print fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status", "status", "status", "status ", "frozen")
     print fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "------", "------", "------", "-------", "------")
-    from multiprocessing import Process, Queue
     ps = []
     queues = {}
+
     for svc in svcs:
+        if not mp:
+            svcmon_normal1(svc, upddb, fmt, None)
+            continue
         try:
             queues[svc.svcname] = Queue()
         except:

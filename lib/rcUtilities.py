@@ -17,7 +17,6 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os, sys
-import select
 import logging
 from subprocess import *
 from rcGlobalEnv import rcEnv

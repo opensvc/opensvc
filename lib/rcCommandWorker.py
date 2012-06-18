@@ -1,8 +1,14 @@
 #!/opt/opensvc/bin/python
 
 import os
-from multiprocessing import Queue, Process
-from Queue import Empty
+
+try:
+    from multiprocessing import Queue, Process
+    from Queue import Empty
+    mp = True
+except:
+    mp = False
+
 from rcUtilities import justcall
 
 pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
@@ -49,16 +55,24 @@ class CommandWorker(object):
             self.name += "_"+name
 
     def start_worker(self):
+        if not mp:
+            return
         self.q = Queue()
         self.p = Process(target=worker, name=self.name, args=(self.q,))
         self.p.start()
 
     def enqueue(self, cmd):
+        if not mp:
+            out, err, ret = justcall(cmd)
+            log.info("ret: %d", ret)
+            return
         if self.p is None:
             self.start_worker()
         self.q.put(cmd, block=True)
 
     def stop_worker(self):
+        if not mp:
+            return
         if self.p is None or not self.p.is_alive():
             return
         log.debug("give poison pill to worker")

@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2012 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,11 @@ from rcGlobalEnv import rcEnv
 import resources as Res
 import rcStatus
 import rcExceptions as ex
+
+try:
+    from multiprocessing import Process, Queue
+except:
+    mp = False
 
 class Apps(Res.Resource):
     prefix = []
@@ -205,12 +210,14 @@ class Apps(Res.Resource):
         container.containerize(self)
 
     def start(self):
-        from multiprocessing import Process, Queue
-        p = Process(target=self.start_job, args=())
-        p.start()
-        p.join()
-        if p.exitcode != 0:
-            raise ex.excError
+        if mp:
+            p = Process(target=self.start_job, args=())
+            p.start()
+            p.join()
+            if p.exitcode != 0:
+                raise ex.excError
+        else:
+            self.start_job()
 
     def start_job(self):
         """Execute each startup script (S* files). Log the return code but
