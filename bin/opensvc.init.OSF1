@@ -1,0 +1,14 @@
+#!/usr/bin/ksh
+
+osvc_path=/opt/opensvc/bin
+osvc_opts="--parallel"
+allservices=${osvc_path}/allservices
+
+case $1 in
+start)
+	${allservices} ${osvc_opts} boot
+	;;
+stop)
+	${allservices} ${osvc_opts} shutdown
+	;;
+esac
