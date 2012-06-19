@@ -785,6 +785,8 @@ def add_mandatory_syncs(svc, conf):
     kwargs['src'] = src
     kwargs['dst'] = dst
     kwargs['options'] = ['-R']+exclude
+    if conf.has_option(kwargs['rid'], 'options'):
+        kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
     kwargs['target'] = targethash
     kwargs['internal'] = True
     kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
@@ -812,6 +814,8 @@ def add_mandatory_syncs(svc, conf):
         kwargs['src'] = src
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
+        if conf.has_option(kwargs['rid'], 'options'):
+            kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
         kwargs['target'] = targethash
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)

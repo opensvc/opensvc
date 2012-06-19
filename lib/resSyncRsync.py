@@ -35,6 +35,8 @@ def lookup_snap_mod():
         return __import__('snapJfs2AIX')
     elif rcEnv.sysname in ['SunOS', 'FreeBSD']:
         return __import__('snapZfsSunOS')
+    elif rcEnv.sysname in ['OSF1']:
+        return __import__('snapAdvfsOSF1')
     else:
         raise ex.excError
 
@@ -95,17 +97,18 @@ def sync_timestamp(self, node):
     sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
     sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
     sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
+    print sched_timestamp_f, sync_timestamp_f
     if not os.path.isdir(sync_timestamp_d):
-        os.makedirs(sync_timestamp_d ,0755)
+        os.makedirs(sync_timestamp_d, 0755)
     if not os.path.isdir(sync_timestamp_d_src):
-        os.makedirs(sync_timestamp_d_src ,0755)
+        os.makedirs(sync_timestamp_d_src, 0755)
     with open(sync_timestamp_f, 'w') as f:
         f.write(str(self.svc.action_start_date)+'\n')
-        f.close()
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
     shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-    cmd = ['rsync'] + self.options + bwlimit_option(self) + ['-R', sync_timestamp_f, sync_timestamp_f_src, 'root@'+node+':/']
+    cmd = ['rsync'] + self.options + bwlimit_option(self)
+    cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, 'root@'+node+':/']
     self.call(cmd)
 
 def get_timestamp(self, node):

@@ -47,7 +47,7 @@ class Mount(Res.Resource):
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
     def start(self):
-        if self.fsType in ["zfs"] + self.netfs:
+        if self.fsType in ["zfs", "advfs"] + self.netfs:
 	    return None
         if not os.path.exists(self.device):
             self.log.error("device does not exist %s" % self.device)

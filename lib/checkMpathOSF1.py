@@ -16,37 +16,25 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import checks
-import glob
-import re
-import os
 from rcUtilities import justcall
-import rcAdvfs
+from rcDiskInfoOSF1 import diskInfo
 
 class check(checks.check):
-    def __init__(self, svcs=[]):
-        checks.check.__init__(self, svcs)
+    chk_type = "mpath"
 
-    chk_type = "fs_u"
-
-    def find_svc(self, name):
+    def find_svc(self, dev):
+        devpath = '/dev/rdisk/'+dev
         for svc in self.svcs:
-            for rs in svc.get_res_sets('pool'):
-                for r in rs.resources:
-                    if r.poolname == name:
-                        return svc.svcname
+            if devpath in svc.disklist():
+                return svc.svcname
         return ''
 
     def do_check(self):
-        o = rcAdvfs.Fdmns()
+        di = diskInfo()
         r = []
-        for dom in o.list_fdmns():
-            try:
-                d = o.get_fdmn(dom)
-                r.append({
-                          'chk_instance': dom,
-                          'chk_value': str(d.used_pct),
-                          'chk_svcname': self.find_svc(dom),
-                         })
-            except rcAdvfs.ExInit:
-                pass
+        for dev, data in di.h.items():
+            r.append({'chk_instance': data['wwid'],
+                      'chk_value': str(data['path_count']),
+                      'chk_svcname': self.find_svc(dev),
+                     })
         return r

@@ -21,6 +21,7 @@ import rcDiskInfo
 import re
 
 regex = re.compile("^\W*[0-9]*:")
+regex_path = re.compile('\W*[0-9]*\W+')
 
 class diskInfo(rcDiskInfo.diskInfo):
 
@@ -32,26 +33,43 @@ class diskInfo(rcDiskInfo.diskInfo):
             return False
 	return True
 
+    def cache_add(self, id, dev, wwid, path_count):
+        d = self.devattr(id)
+        vid = d['manufacturer']
+        pid = d['model']
+        size = d['mb']
+        self.h[dev] = dict(
+          wwid=wwid,
+          vid=vid,
+          pid=pid,
+          size=size,
+          id=id,
+          path_count=path_count
+        )
+
     def load_cache(self):
         self.h = {}
         cmd = ["hwmgr", "show", "scsi", "-type", "disk", "-active", "-full"]
         out, err, ret = justcall(cmd)
+        path_count = -1
         for e in out.split('\n'):
             if len(e) == 0:
                 continue
             if self.is_id(e):
+                if path_count >= 0:
+                    self.cache_add(id, dev, wwid, path_count)
                 l = e.split()
                 if len(l) < 8:
                     continue
                 id = l[0].strip(':')
                 dev = l[7]
+                path_count = 0
             elif 'WWID' in e:
                 wwid = e.split(":")[-1].replace('-','').lower()
-                d = self.devattr(id)
-                vid = d['manufacturer']
-                pid = d['model']
-                size = d['mb']
-                self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size, id=id)
+            elif regex_path.match(e) is not None and 'valid' in e:
+                path_count += 1
+        if path_count >= 0:
+            self.cache_add(id, dev, wwid, path_count)
 
     def devattr(self, id):
         d = {'capacity': 0, 'block_size': 0, 'manufacturer': '', 'model': '', 'mb': 0}

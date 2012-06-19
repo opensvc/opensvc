@@ -58,7 +58,7 @@ drivedata: 0
             size = int(size)
             
             partname = devname+part
-            child_dev = self.add_dev(partname)
+            child_dev = self.add_dev(partname, size, "linear")
             child_dev.set_devpath('/dev/disk/'+partname)
             child_dev.set_devpath('/dev/rdisk/'+partname)
             if child_dev is None:
