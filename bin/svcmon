@@ -110,7 +110,7 @@ def svcmon_normal(svcs, upddb=False):
     for p in ps:
         p.join()
 
-    if upddb:
+    if upddb and mp:
         g_vals = []
         r_vals = []
         if options.delay > 0:
