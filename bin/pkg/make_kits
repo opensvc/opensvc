@@ -1,0 +1,39 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+. $PATH_SCRIPT/make.lib
+
+prepare_chroot || exit 1
+
+KITS_D=$CHROOT/kits
+KEYFILE=$CHROOT/OSV100.k
+MIFILE=$CHROOT/OSV100.mi
+V=$VERSION-$RELEASE
+SUBSET_V=100
+
+REMOTEHOST=${1:-10.6.65.37}
+
+cat - <<-EOF >$KEYFILE
+NAME='OpenSVC agent $V'
+CODE=OSV
+VERS=100
+MI=OSV100.mi
+ROOT=0
+COMPRESS=1
+#
+#	Subset definitions follow.
+#
+%%
+OPENSVC$SUBSET_V      .       0       'OpenSVC agent $V'
+
+EOF
+
+cd $CHROOT || exit 1
+(find . |grep -v opensvc.init | grep -v OSV100 ; echo "./opt/opensvc/bin/opensvc.init.OSF1")| awk -vV=$SUBSET_V '{if ($0=="."||$0=="./opt") {w="RESERVED"} else {w="OPENSVC"+V} ; print "0\t" $0 "\t" w}' | tee $MIFILE
+
+cd .. || exit 1
+tar cf - $CHROOT_BN | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
+ssh root@$REMOTEHOST "rm -rf /tmp/kits-$V && mkdir /tmp/kits-$V && cd /tmp/$CHROOT_BN && sort OSV100.mi > OSV100.mi && kits OSV100.k . /tmp/kits-$V"
+scp -r root@$REMOTEHOST:/tmp/kits-$V $OSVC/tmp/ || exit 1
+
+[ -x $PATH_SCRIPT/release_kits ] && $PATH_SCRIPT/release_kits $OSVC/tmp/kits-$V
