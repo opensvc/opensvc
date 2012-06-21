@@ -266,14 +266,14 @@ class Apps(Res.Resource):
             s = self.app(name, 'info', dedicated_log=False, return_out=True)
             name = os.path.basename(os.path.realpath(name))
             if type(s) != str or len(s) == 0:
-                l.append([self.svc.svcname, name, "Error", "info not implemented in launcher"])
+                l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, "Error", "info not implemented in launcher"])
                 continue
             for line in s.split('\n'):
                 if len(line) == 0:
                     continue
                 v = line.split(":")
                 if len(v) < 2:
-                    l.append([self.svc.svcname, name, "Error", "parsing: %s"%line])
+                    l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, "Error", "parsing: %s"%line])
                     continue
                 l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, v[0], ":".join(v[1:]).strip()])
         return l
