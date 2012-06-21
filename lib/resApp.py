@@ -30,6 +30,7 @@ import rcExceptions as ex
 
 try:
     from multiprocessing import Process, Queue
+    mp = True
 except:
     mp = False
 
