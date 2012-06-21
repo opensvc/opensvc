@@ -47,7 +47,8 @@ def remote_fs_mounted(self, node):
         """No check has been configured. Assume the admin knows better.
         """
         return True
-    cmd = rcEnv.rsh.split(' ')+[node, '--', 'df', self.dstfs]
+    ruser = self.svc.node.get_ruser(node)
+    cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'df', self.dstfs]
     (ret, out, err) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
@@ -67,10 +68,13 @@ def remote_node_type(self, node, target):
         self.log.error('unknown sync target: %s'%target)
         raise ex.excError
 
+    ruser = self.svc.node.get_ruser(node)
     rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
+    if ruser != "root":
+        rcmd = ['sudo'] + rcmd
 
     if node not in cache_remote_node_type:
-        cmd = rcEnv.rsh.split(' ')+[node, '--'] + rcmd
+        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
         (ret, out, err) = self.call(cmd, cache=True)
         if ret != 0:
             return False
@@ -91,6 +95,36 @@ def get_timestamp_filename(self, node):
     sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.rid)
     return sync_timestamp_f
 
+def add_sudo_rsync_path(options):
+    if "--rsync-path" not in " ".join(options):
+        options += ['--rsync-path', 'sudo rsync']
+        return options
+
+    new = []
+    skip = False
+    for i, w in enumerate(options):
+        if skip:
+            skip = False
+            continue
+        if w.startswith('--rsync-path'):
+            if "=" in w:
+                l = w.split("=")
+                if len(l) == 2:
+                    val = l[1]
+            elif len(options) > i+1:
+                val = options[i+1]
+                skip = True
+            else:
+                raise ex.excError("malformed --rsync-path value")
+            if not "sudo " in val:
+                val = val.strip("'")
+                val = val.strip('"')
+                val = "sudo "+val
+            new += ['--rsync-path', val]
+        else:
+            new.append(w)
+    return new
+
 def sync_timestamp(self, node):
     sync_timestamp_f = get_timestamp_filename(self, node)
     sync_timestamp_d = os.path.dirname(sync_timestamp_f)
@@ -107,9 +141,12 @@ def sync_timestamp(self, node):
     import shutil
     shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
     shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-    cmd = ['rsync'] + self.options + bwlimit_option(self)
-    cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, 'root@'+node+':/']
-    self.call(cmd)
+    ruser = self.svc.node.get_ruser(node)
+    if ruser != "root":
+        options = add_sudo_rsync_path(self.options)
+    cmd = ['rsync'] + options + bwlimit_option(self)
+    cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
+    self.vcall(cmd)
 
 def get_timestamp(self, node):
     ts = None
@@ -260,8 +297,11 @@ class Rsync(resSync.Sync):
         bwlimit = bwlimit_option(self)
 
         for node in targets:
-            dst = 'root@' + node + ':' + self.dst
-            cmd = ['rsync'] + self.options + bwlimit + src
+            ruser = self.svc.node.get_ruser(node)
+            dst = ruser + '@' + node + ':' + self.dst
+            if ruser != "root":
+                options = add_sudo_rsync_path(self.options)
+            cmd = ['rsync'] + options + bwlimit + src
             cmd.append(dst)
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:

@@ -1079,6 +1079,24 @@ class Node(Svc, Freezer):
         for o, d in self.provision_resource:
             getattr(m, "d_provisioner")(d)
 
+    def get_ruser(self, node):
+        default = "root"
+        if not self.config.has_option('node', "ruser"):
+            return default
+        h = {}
+        s = self.config.get('node', 'ruser').split()
+        for e in s:
+            l = e.split("@")
+            if len(l) == 1:
+                default = e
+            elif len(l) == 2:
+                _ruser, _node = l
+                h[_node] = _ruser
+            else:
+                continue
+        if node in h:
+            return h[node]
+        return default
 
 if __name__ == "__main__" :
     for n in (Node,) :
