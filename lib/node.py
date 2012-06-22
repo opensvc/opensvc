@@ -178,8 +178,21 @@ class Node(Svc, Freezer):
         return a
 
     def build_services(self, *args, **kwargs):
-        if self.svcs is not None:
+        if self.svcs is not None and \
+           ('svcnames' not in kwargs or \
+           (type(kwargs['svcnames']) == list and len(kwargs['svcnames'])==0)):
             return
+
+        if 'svcnames' in kwargs and \
+           type(kwargs['svcnames']) == list and \
+           len(kwargs['svcnames'])>0 and \
+           self.svcs is not None:
+            svcnames_request = set(kwargs['svcnames'])
+            svcnames_actual = set([s.svcname for s in self.svcs])
+            svcnames_request = list(svcnames_request-svcnames_actual)
+            if len(svcnames_request) == 0:
+                return
+
         autopush = True
         if 'autopush' in kwargs:
             if not kwargs['autopush']:
