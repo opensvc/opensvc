@@ -36,11 +36,6 @@ class Ip(Res.Ip):
         self.log.info("checking %s availability"%self.addr)
         return check_ping(self.addr, timeout=2)
 
-    def check_not_ping_raise(self):
-        self.log.info("checking %s availability"%self.addr)
-        if check_ping(self.addr, timeout=2):
-            raise ex.excError
-
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up']

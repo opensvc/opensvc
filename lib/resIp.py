@@ -109,6 +109,10 @@ class Ip(Res.Resource):
         self.log.info(' '.join(cmd))
         qcall(cmd)
 
+    def check_not_ping_raise(self):
+        if self.check_ping():
+            raise ex.excError
+
     def check_ping(self):
         raise ex.MissImpl('check_ping')
 
