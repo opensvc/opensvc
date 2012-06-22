@@ -144,6 +144,8 @@ def sync_timestamp(self, node):
     ruser = self.svc.node.get_ruser(node)
     if ruser != "root":
         options = add_sudo_rsync_path(self.options)
+    else:
+        options = self.options
     cmd = ['rsync'] + options + bwlimit_option(self)
     cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
     self.vcall(cmd)
@@ -301,6 +303,8 @@ class Rsync(resSync.Sync):
             dst = ruser + '@' + node + ':' + self.dst
             if ruser != "root":
                 options = add_sudo_rsync_path(self.options)
+            else:
+                options = self.options
             cmd = ['rsync'] + options + bwlimit + src
             cmd.append(dst)
             (ret, out, err) = self.vcall(cmd)
