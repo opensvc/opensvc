@@ -50,6 +50,7 @@ class Options(object):
     def __init__(self):
         self.cron = False
         self.force = False
+        self.ignore_affinity = False
         self.debug = False
         self.moduleset = ""
         self.module = ""
@@ -750,6 +751,19 @@ class Svc(Resource, Freezer):
         self.log.debug("found devs %s held by service" % devs)
         return devs
 
+    def get_non_affine_svc(self):
+        if not hasattr(self, "anti_affinity"):
+            return []
+        self.node.build_services(svcnames=self.anti_affinity)
+        running_af_svc = []
+        for svc in self.node.svcs:
+            if svc.svcname == self.svcname:
+                continue
+            avail = svc.group_status()['avail']
+            if str(avail) != "down":
+                running_af_svc.append(svc.svcname)
+        return running_af_svc
+
     def boot(self):
         if rcEnv.nodename in self.autostart_node:
             try:
@@ -768,6 +782,18 @@ class Svc(Resource, Freezer):
         self.stop()
 
     def start(self):
+        af_svc = self.get_non_affine_svc()
+        if len(af_svc) != 0:
+            try:
+                self.checkip()
+            except ex.excError:
+                self.log.error("ip address is already up on another host")
+                return
+            if self.options.ignore_affinity:
+                self.log.error("force start of %s on the same node as %s despite anti-affinity settings"%(self.svcname, ', '.join(af_svc)))
+            else:
+                self.log.error("refuse to start %s on the same node as %s"%(self.svcname, ', '.join(af_svc)))
+                return
         self.startip()
         self.mount()
         self.startcontainer()
@@ -857,6 +883,9 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
+
+    def checkip(self):
+        self.sub_set_action("ip", "check_not_ping_raise")
 
     def startip(self):
         self.sub_set_action("ip", "start")

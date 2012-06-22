@@ -1460,6 +1460,12 @@ def build(name):
     if not hasattr(svc, "drpnode"):
         svc.drpnode = drpnode
 
+    try:
+        anti_affinity = conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity')
+        svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
+    except ex.OptNotFound:
+        pass
+    
     """ prune not managed service
     """
     if rcEnv.nodename not in svc.nodes | svc.drpnodes:

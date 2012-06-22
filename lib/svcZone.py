@@ -52,6 +52,10 @@ class SvcZone(svc.Svc):
         start apps
         """
         self.sub_set_action("ip", "check_not_ping_raise")
+        af_svc = self.get_non_affine_svc()
+        if len(af_svc) != 0:
+            self.log.error("refuse to start %s on the same node as %s"%(self.svcname, ', '.join(af_svc)))
+            return
         self.sub_set_action("disk.scsireserv", "start", tags=set(['preboot']))
         self.sub_set_action("disk.vg", "start", tags=set(['preboot']))
         self.sub_set_action("disk.zpool", "start", tags=set(['preboot']))
