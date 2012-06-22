@@ -21,7 +21,10 @@
 "Module implement SunOS specific ip management"
 
 import resIpSunOS as Res
+import rcExceptions as ex
 from subprocess import *
+from rcGlobalEnv import rcEnv
+rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
     def __init__(self, rid=None, ipDev=None, ipName=None,
@@ -31,12 +34,83 @@ class Ip(Res.Ip):
                         mask=mask, always_on=always_on,
                         disabled=disabled, tags=tags, optional=optional,
                         monitor=monitor)
+        if 'exclusive' not in self.tags:
+            self.tags.add('preboot')
+
+    def get_ifconfig(self):
+        if 'exclusive' in self.tags:
+            out = Popen(['zlogin', self.svc.vmname, 'ifconfig', '-a'],
+                        stdin=None, stdout=PIPE, stderr=PIPE,
+                        close_fds=True).communicate()[0]
+            return rcIfconfig.ifconfig(out)
+        else:
+            return rcIfconfig.ifconfig()
 
     def startip_cmd(self):
+        if 'exclusive' in self.tags:
+            if 'actions' in self.tags:
+                return self.startip_cmd_exclusive()
+            else:
+                raise ex.excNotSupported()
+        else:
+            return self.startip_cmd_shared()
+
+    def stopip_cmd(self):
+        if 'exclusive' in self.tags:
+            if 'actions' in self.tags:
+                return self.stopip_cmd_exclusive()
+            else:
+                raise ex.excNotSupported()
+        else:
+            return Res.IpRes.Ip.stopip_cmd()
+
+    def stopip_cmd_exclusive(self):
+        cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'unplumb' ]
+        return self.vcall(cmd)
+
+    def startip_cmd_exclusive(self):
+        cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'plumb', self.addr, \
+            'netmask', '+', 'broadcast', '+', 'up' ]
+        return self.vcall(cmd)
+
+    def startip_cmd_shared(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.svc.vmname ]
         return self.vcall(cmd)
 
+    def allow_start(self):
+        if 'actions' not in self.tags:
+            raise ex.IpNoActions(self.addr)
+
+        if 'exclusive' in self.tags:
+            retry = 10
+            interval = 3
+        else:
+            retry = 1
+            interval = 0
+        import time
+        ok = False
+        if 'noalias' not in self.tags:
+            for i in range(retry):
+                if 'exclusive' in self.tags:
+                    ifconfig = self.get_ifconfig()
+                else:
+                    ifconfig = rcIfconfig.ifconfig()
+                intf = ifconfig.interface(self.ipDev)
+                if intf is not None and intf.flag_up:
+                    ok = True
+                    break
+                time.sleep(interval)
+            if not ok:
+                self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
+                raise ex.IpDevDown(self.ipDev)
+        if self.is_up() is True:
+            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
+            raise ex.IpAlreadyUp(self.addr)
+        if 'nonrouted' not in self.tags and self.check_ping():
+            self.log.error("%s is already up on another host" % (self.addr))
+            raise ex.IpConflict(self.addr)
+        return
 
 if __name__ == "__main__":
     for c in (Ip,) :

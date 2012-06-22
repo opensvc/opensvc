@@ -123,7 +123,7 @@ class Ip(Res.Resource):
         raise ex.MissImpl('stopip_cmd')
 
     def is_up(self):
-        ifconfig = rcIfconfig.ifconfig()
+        ifconfig = self.get_ifconfig()
         if ifconfig.has_param("ipaddr", self.addr) is not None or \
            ifconfig.has_param("ip6addr", self.addr) is not None:
             self.log.debug("%s@%s is up" % (self.addr, self.ipDev))
@@ -181,6 +181,9 @@ class Ip(Res.Resource):
         import lock
         lock.unlock(self.lockfd)
 
+    def get_ifconfig(self):
+        return rcIfconfig.ifconfig()
+
     def start(self):
         try:
             self.getaddr()
@@ -191,14 +194,18 @@ class Ip(Res.Resource):
             self.allow_start()
         except (ex.IpConflict, ex.IpDevDown):
             raise ex.excError
-        except ex.IpAlreadyUp:
+        except (ex.IpAlreadyUp, ex.IpNoActions):
             return
         self.log.debug('pre-checks passed')
 
         self.lock()
-        ifconfig = rcIfconfig.ifconfig()
+        ifconfig = self.get_ifconfig()
         if self.mask is None:
-            self.mask = ifconfig.interface(self.ipDev).mask
+            intf = ifconfig.interface(self.ipDev)
+            if intf is None:
+                self.log.error("netmask parameter is mandatory with 'noalias' tag")
+                raise ex.excError
+            self.mask = intf.mask
         if self.mask == '':
             self.log.error("No netmask set on parent interface %s" % self.ipDev)
             raise ex.excError
@@ -208,16 +215,30 @@ class Ip(Res.Resource):
             else:
                 self.log.error("No netmask set on parent interface %s" % self.ipDev)
                 raise ex.excError
-        self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
-                                                    self.addr,\
-                                                    self.log)
-        (ret, out, err) = self.startip_cmd()
+        if 'noalias' in self.tags:
+            self.stacked_dev = self.ipDev
+        else:
+            self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
+                                                        self.addr,\
+                                                        self.log)
+        arp_announce = True
+        try:
+            (ret, out, err) = self.startip_cmd()
+        except ex.excNotSupported:
+            self.log.info("start ip not supported")
+            ret = 0
+            out = ""
+            err = ""
+            arp_announce = False
+            pass
+
         self.unlock()
         if ret != 0:
             self.log.error("failed")
             raise ex.excError
 
-        self.arp_announce()
+        if arp_announce:
+            self.arp_announce()
 
     def stop(self):
         try:
@@ -228,11 +249,19 @@ class Ip(Res.Resource):
         if self.is_up() is False:
             self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
             return
-        ifconfig = rcIfconfig.ifconfig()
-        self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
-                                                    self.addr,\
-                                                    self.log)
-        (ret, out, err) = self.stopip_cmd()
+        ifconfig = self.get_ifconfig()
+        if 'noalias' in self.tags:
+            self.stacked_dev = self.ipDev
+        else:
+            self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
+                                                        self.addr,\
+                                                        self.log)
+        try:
+            (ret, out, err) = self.stopip_cmd()
+        except ex.excNotSupported:
+            self.log.info("stop ip not supported")
+            return
+
         if ret != 0:
             self.log.error("failed")
             raise ex.excError

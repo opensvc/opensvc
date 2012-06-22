@@ -23,9 +23,12 @@ import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
 
-    def __init__(self):
+    def __init__(self, ifconfig=None):
         self.intf = []
-        out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+        if ifconfig is not None:
+            out = ifconfig
+        else:
+            out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
 
     def set_hwaddr(self, i):
