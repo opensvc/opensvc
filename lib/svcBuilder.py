@@ -65,14 +65,18 @@ def conf_get(svc, conf, s, o, t, scope=False):
             return f(s, o)
         else:
             raise ex.OptNotFound
+    if type(svc) != dict:
+        d = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
+    else:
+        d = svc
 
     if conf.has_option(s, o+"@"+rcEnv.nodename):
         return f(s, o+"@"+rcEnv.nodename)
     elif conf.has_option(s, o+"@nodes") and \
-         rcEnv.nodename in svc.nodes:
+         rcEnv.nodename in d['nodes']:
         return f(s, o+"@nodes")
     elif conf.has_option(s, o+"@drpnodes") and \
-         rcEnv.nodename in svc.drpnodes:
+         rcEnv.nodename in d['drpnodes']:
         return f(s, o+"@drpnodes")
     elif conf.has_option(s, o):
         return f(s, o)
@@ -130,6 +134,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcVbox', 'SvcVbox')
     elif svcmode == 'sg':
         return ('svcSg', 'SvcSg')
+    elif svcmode == 'rhcs':
+        return ('svcRhcs', 'SvcRhcs')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
@@ -323,10 +329,6 @@ def add_ips(svc, conf):
             svc.log.debug('add_ips ipdev not found in ip section %s'%s)
             continue
 
-        if hasattr(svc, "vmname"):
-            vmname = svc.vmname
-        else:
-            vmname = svc.svcname
         try:
             kwargs['mask'] = conf_get_string_scope(svc, conf, s, 'netmask')
         except ex.OptNotFound:
@@ -1344,17 +1346,45 @@ def build(name):
         defaults = conf.defaults()
         if "mode" in defaults:
             svcmode = defaults["mode"]
-        if "vm_name" in defaults:
+
+        if "nodes" in defaults:
+            nodes = set(defaults["nodes"].split())
+            nodes -= set([''])
+        else:
+            nodes = set([])
+
+        if "drpnodes" in defaults:
+            drpnodes = set(defaults["drpnodes"].split())
+            drpnodes -= set([''])
+        else:
+            drpnodes = set([])
+
+        if "drpnode" in defaults:
+            drpnode = defaults["drpnode"]
+            drpnodes |= set([svc.drpnode])
+            drpnodes -= set([''])
+        else:
+            drpnode = ''
+
+        d_nodes = {'nodes': nodes, 'drpnodes': drpnodes}
+        try:
+            vmname = conf_get_string_scope(d_nodes, conf, 'DEFAULT', 'vm_name')
             if svcmode not in rcEnv.vt_supported:
                 log.error("can not set 'vm_name' with '%s' mode in %s env"%(svcmode, name))
                 return None
-            vmname = defaults["vm_name"]
             kwargs['vmname'] = vmname
-        if "vm_uuid" in defaults:
+        except ex.OptNotFound:
+            pass
+
+        try:
+            kwargs['vmuuid'] = conf_get_string_scope(d_nodes, conf, 'DEFAULT', 'vm_uuid')
             if svcmode != "ovm":
                 log.error("can not set 'vm_uuid' with '%s' mode in %s env"%(svcmode, name))
                 return None
             kwargs['vmuuid'] = defaults["vm_uuid"]
+        except ex.OptNotFound:
+            pass
+
         if "guest_os" in defaults and \
            len(defaults["guest_os"]) > 0:
             if svcmode not in rcEnv.vt_supported:
@@ -1377,7 +1407,7 @@ def build(name):
         kwargs['disabled'] = get_disabled(conf, "", "")
 
         if "pkg_name" in defaults:
-            if svcmode != "sg":
+            if svcmode not in ["sg", "rhcs"]:
                 log.error("can not set 'pkg_name' with '%s' mode in %s env"%(svcmode, name))
                 return None
             kwargs['pkg_name'] = defaults["pkg_name"]
@@ -1423,28 +1453,12 @@ def build(name):
     #
     # Setup service properties from config file content
     #
-
     if not hasattr(svc, "nodes"):
-        if "nodes" in defaults:
-            svc.nodes = set(defaults["nodes"].split())
-            svc.nodes -= set([''])
-        else:
-            svc.nodes = set([])
-
+        svc.nodes = nodes
     if not hasattr(svc, "drpnodes"):
-        if "drpnodes" in defaults:
-            svc.drpnodes = set(defaults["drpnodes"].split())
-            svc.drpnodes -= set([''])
-        else:
-            svc.drpnodes = set([])
-
+        svc.drpnodes = drpnodes
     if not hasattr(svc, "drpnode"):
-        if "drpnode" in defaults:
-            svc.drpnode = defaults["drpnode"]
-            svc.drpnodes |= set([svc.drpnode])
-            svc.drpnodes -= set([''])
-        else:
-            svc.drpnode = ''
+        svc.drpnode = drpnode
 
     """ prune not managed service
     """
