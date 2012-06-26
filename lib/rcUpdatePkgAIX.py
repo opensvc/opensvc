@@ -3,7 +3,7 @@ from subprocess import *
 repo_subdir = "rpms"
 
 def update(fpath):
-    cmd = ['rpm', '-Uvh', fpath, '--force']
+    cmd = ['rpm', '-Uvh', fpath, '--force', '--ignoreos', '--nodeps']
     print ' '.join(cmd)
     p = Popen(cmd)
     p.communicate()
