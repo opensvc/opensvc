@@ -79,10 +79,9 @@ class Ip(Res.Ip):
         return self.vcall(cmd)
 
     def allow_start(self):
-        if 'actions' not in self.tags:
-            raise ex.IpNoActions(self.addr)
-
         if 'exclusive' in self.tags:
+            if 'actions' not in self.tags:
+                raise ex.IpNoActions(self.addr)
             retry = 10
             interval = 3
         else:
