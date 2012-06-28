@@ -112,6 +112,7 @@ class Svc(Resource, Freezer):
                              "app",
                              "hb.openha",
                              "hb.sg",
+                             "hb.rhcs",
                              "hb.ovm",
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
@@ -582,7 +583,7 @@ class Svc(Resource, Freezer):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         has_hb = False
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
             for r in rs.resources:
                 if not r.disabled:
                     has_hb = True
@@ -811,10 +812,10 @@ class Svc(Resource, Freezer):
         self.stopip()
 
     def cluster_mode_safety_net(self):
-        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
+        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
             return
         all_disabled = True
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg']):
+        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
             for r in rs.resources:
                 if not r.disabled:
                     all_disabled = False
@@ -829,12 +830,14 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.openha", "start")
         self.sub_set_action("hb.linuxha", "start")
         self.sub_set_action("hb.sg", "start")
+        self.sub_set_action("hb.rhcs", "start")
 
     def stophb(self):
         self.sub_set_action("hb.ovm", "stop")
         self.sub_set_action("hb.openha", "stop")
         self.sub_set_action("hb.linuxha", "stop")
         self.sub_set_action("hb.sg", "stop")
+        self.sub_set_action("hb.rhcs", "stop")
 
     def startdrbd(self):
         self.sub_set_action("disk.drbd", "start")
