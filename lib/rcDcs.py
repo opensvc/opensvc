@@ -113,49 +113,49 @@ class Dcs(object):
         return buff
 
     def get_dcspool(self):
-        cmd = 'get-dcspool -server %s'%self.name
+        cmd = 'get-dcspool'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldisk(self):
-        cmd = 'get-dcslogicaldisk -server %s'%self.name
+        cmd = 'get-dcslogicaldisk'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsvirtualdisk(self):
-        cmd = 'get-dcsvirtualdisk -server %s'%self.name
+        cmd = 'get-dcsvirtualdisk'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsphysicaldisk(self):
-        cmd = 'get-dcsphysicaldisk -server %s'%self.name
+        cmd = 'get-dcsphysicaldisk'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsdiskpath(self):
-        cmd = 'get-dcsdiskpath -server %s'%self.name
+        cmd = 'get-dcsdiskpath'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolmember(self):
-        cmd = 'get-dcspoolmember -server %s'%self.name
+        cmd = 'get-dcspoolmember'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolperf(self):
-        cmd = 'get-dcspool -server %s | get-dcsperformancecounter'%self.name
+        cmd = 'get-dcspool | get-dcsperformancecounter'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldiskperf(self):
-        cmd = 'get-dcslogicaldisk -server %s | get-dcsperformancecounter'%self.name
+        cmd = 'get-dcslogicaldisk | get-dcsperformancecounter'
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
