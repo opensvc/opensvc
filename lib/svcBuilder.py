@@ -1361,7 +1361,7 @@ def build(name):
 
         if "drpnode" in defaults:
             drpnode = defaults["drpnode"]
-            drpnodes |= set([svc.drpnode])
+            drpnodes |= set([drpnode])
             drpnodes -= set([''])
         else:
             drpnode = ''
