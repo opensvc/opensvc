@@ -1076,12 +1076,15 @@ class Node(Svc, Freezer):
             if len(rtype) < 2:
                 print >>sys.stderr, "invalid 'rtype' value: %s", rs
                 return 1
-            rtype = rtype[0].upper() + rtype[1:]
+            rtype = rtype[0].upper() + rtype[1:].lower()
+
+            if 'type' in d:
+                rtype +=  d['type'][0].upper() + d['type'][1:].lower()
             modname = 'prov' + rtype
             try:
                 m = __import__(modname)
             except ImportError:
-                print >>sys.stderr, "provisioning is not available for resource type:", d['rtype']
+                print >>sys.stderr, "provisioning is not available for resource type:", d['rtype'], "(%s)"%modname
                 return 1
             if not hasattr(m, "d_provisioner"):
                 print >>sys.stderr, "provisioning with nodemgr is not available for this resource type:", d['rtype']
