@@ -48,6 +48,7 @@ class checks(check):
         self.register('checkRaidSas2')
         self.register('checkFmFmadm')
         self.register('checkMce')
+        self.register('checkZpool')
         self.register('checkAdvfsUsage')
         self.register_local_checkers()
 
