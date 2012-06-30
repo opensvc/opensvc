@@ -51,6 +51,9 @@ class check(checks.check):
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
+            if l[4] == '-':
+                # vfat, btrfs, ... have no inode counter in df -i
+                continue
             r.append({
                       'chk_instance': l[5],
                       'chk_value': l[4],
