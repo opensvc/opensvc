@@ -242,6 +242,16 @@ class Dcs(object):
         out, err, ret = self.dcscmd(cmd)
 
     def get_machines(self, ids):
+        for i, id in enumerate(ids):
+            if 'iqn' in id or ('-' in id and len(id) == 16):
+                # iscsi or already in correct format
+                continue
+            # convert to dcs portname format
+            id = list(id.upper())
+            for j in (14, 12, 10, 8, 6, 4, 2):
+                id.insert(j, '-')
+            id = ''.join(id)
+            ids[i] = id
         if not hasattr(self, "buff_dcsport"):
             self.buff_dcsport = self.get_dcsport()
         machines = set([])
