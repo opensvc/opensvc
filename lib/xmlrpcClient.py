@@ -714,7 +714,7 @@ class Collector(object):
                         disk_dg = r.rid
 
                     if hasattr(r, 'devmap'):
-                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1]), r.devmap())
+                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1], ','.join(sorted(list(svc.nodes)))), r.devmap())
 
                     for devpath in r.devlist():
                         for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
@@ -801,7 +801,7 @@ class Collector(object):
                 'disk_group']
         vals = []
 
-        for dev_id, vdisk_id in served_disks:
+        for dev_id, vdisk_id, cluster in served_disks:
             disk_id = disks.disk_id(dev_id)
             try:
                 disk_size = disks.disk_size(dev_id)
@@ -809,7 +809,7 @@ class Collector(object):
                 continue
             vals.append([
               vdisk_id,
-              rcEnv.nodename,
+              cluster,
               disk_id,
               str(disk_size),
               "virtual",
