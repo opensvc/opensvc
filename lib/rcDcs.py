@@ -189,13 +189,12 @@ class Dcs(object):
     def add_vdisk(self, data):
         if 'disk_name' not in data:
             raise ex.excError("'disk_name' key is mandatory")
-        if 'disk_name' not in data:
-            raise ex.excError("'disk_name' key is mandatory")
         if 'size' not in data:
             raise ex.excError("'size' key is mandatory")
         if 'paths' not in data:
             raise ex.excError("'paths' key is mandatory")
 
+        data['disk_name'] = data['disk_name'] + '.1'
         l = data['paths'].split(',')
         paths = []
         for path in l:
@@ -224,12 +223,23 @@ class Dcs(object):
               'pool2': _pool2[1],
             }
             cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
-            for machine in self.get_machines(map(lambda x: x[0], paths)):
-                cmd += " $v | Serve-DcsVirtualDisk -Machine %s -EnableRedundancy ;"""%machine
-            print cmd
-            out, err, ret = self.dcscmd(cmd)
+        elif len(pools) == 1:
+            _pool1 = pools[0].split(':')
+            if len(_pool1) != 2:
+                raise ex.excError("'dg_name' value is misformatted")
+            d = {
+              'disk_name': data['disk_name'],
+              'size': data['size'],
+              'sds1': _pool1[0],
+              'pool1': _pool1[1],
+            }
+            cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
         else:
             raise ex.excError("'dg_name' value is misformatted")
+        for machine in self.get_machines(map(lambda x: x[0], paths)):
+            cmd += " $v | Serve-DcsVirtualDisk -Machine %s -EnableRedundancy ;"""%machine
+        print cmd
+        out, err, ret = self.dcscmd(cmd)
 
     def get_machines(self, ids):
         if not hasattr(self, "buff_dcsport"):
