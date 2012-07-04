@@ -714,7 +714,11 @@ class Collector(object):
                         disk_dg = r.rid
 
                     if hasattr(r, 'devmap'):
-                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1], ','.join(sorted(list(svc.nodes)))), r.devmap())
+                        if hasattr(svc, "clustername"):
+                            cluster = svc.clustername
+                        else:
+                            cluster = ','.join(sorted(list(svc.nodes)))
+                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1], cluster), r.devmap())
 
                     for devpath in r.devlist():
                         for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
@@ -815,7 +819,7 @@ class Collector(object):
               "virtual",
               "virtual"
             ])
-            print "register served disk", disk_id, "as", vdisk_id
+            print "register served disk", disk_id, "as", vdisk_id, "from varray", cluster
 
         args = [vars, vals]
         if self.auth_node:

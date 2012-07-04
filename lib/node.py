@@ -63,6 +63,7 @@ class Node(Svc, Freezer):
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.config_defaults = {
+          'clusters': '',
           'host_mode': 'TST',
           'push_interval': 121,
           'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
@@ -75,6 +76,7 @@ class Node(Svc, Freezer):
           'comp_check_period': '["02:00", "06:00"]',
         }
         self.load_config()
+        self.clusters = list(set(self.config.get('node', 'clusters').split()))
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
@@ -198,9 +200,9 @@ class Node(Svc, Freezer):
             if not kwargs['autopush']:
                 autopush = False
             del kwargs['autopush']
-        self.svcs = svcBuilder.build_services(*args, **kwargs)
-        for svc in self.svcs:
-             svc.node = self
+        svcs = svcBuilder.build_services(*args, **kwargs)
+        for svc in svcs:
+            self += svc
         if autopush:
             for svc in self.svcs:
                 if svc.collector_outdated():
@@ -336,7 +338,12 @@ class Node(Svc, Freezer):
 
     def __iadd__(self, s):
         if not isinstance(s, Svc):
-                pass
+            return self
+        if self.svcs is None:
+            self.svcs = []
+        s.node = self
+        if not hasattr(s, "clustername") and len(self.clusters) == 1:
+            s.clustername = self.clusters[0]
         self.svcs.append(s)
         return self
 

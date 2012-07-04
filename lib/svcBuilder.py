@@ -1592,6 +1592,9 @@ def build(name):
     else:
         svc.bwlimit = None
 
+    if "cluster" in defaults:
+        svc.clustername = defaults["cluster"]
+
     #
     # instanciate resources
     #
