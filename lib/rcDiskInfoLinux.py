@@ -65,24 +65,45 @@ class diskInfo(rcDiskInfo.diskInfo):
         return ""
 
     def mpath_id(self, dev):
-        if not which('multipath'):
+        self.load_mpath()
+        if 'dev' not in self.mpath_h:
             return None
-        cmd = ['multipath', '-l', dev]
+        return self.mpath_h(dev)
+
+    def load_mpath_native(self):
+        cmd = ['multipath', '-l']
         (ret, out, err) = call(cmd)
         if ret != 0:
-            return None
+            return
         lines = out.split('\n')
         if len(lines) == 0:
-            return None
-        line = lines[0]
-        if '(' not in line:
-            return None
-        if ')' not in line:
-            return None
-        wwid = line[line.index('(')+2:line.index(')')]
-        if len(wwid) == 0:
-            return None
-        return wwid
+            return
+        self.mpath_h = {}
+        regex = re.compile('[(]*[0-9a-f]*[)]*')
+        for line in lines:
+            if " dm-" in line:
+                wwid = None
+                l = line.split()
+                for w in l:
+                    w = w.strip("()")
+                    if len(w) not in [17, 33]:
+                        continue
+                    if regex.match(w) is None:
+                        continue
+                    if w.startswith("3"):
+                        wwid = w[1:]
+            elif " sd" in line:
+                l = line.split()
+                for i, w in enumerate(l):
+                    if w.startswith('sd'):
+                        dev = "/dev/"+w
+                        self.mpath_h[dev] = wwid
+
+    def load_mpath(self):
+        if hasattr(self, "mpath_h"):
+            return self.mpath_h
+        if which('multipath'):
+            self.load_mpath_native()
 
     def scsi_id(self, dev):
         wwid = self.mpath_id(dev)
