@@ -87,6 +87,7 @@ class Node(Svc, Freezer):
             'provision': 'provision the resources described in --resource arguments',
             'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
             'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
+            'scanscsi': 'scan the scsi hosts in search of new disks',
           },
           'Service actions': {
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
@@ -1120,6 +1121,14 @@ class Node(Svc, Freezer):
         if node in h:
             return h[node]
         return default
+
+    def scanscsi(self):
+        try:
+            m = __import__("rcScanScsi"+rcEnv.sysname)
+        except ImportError:
+            print >>sys.stderr, "scanscsi is not supported on", rcEnv.sysname
+            return 1
+        return getattr(m, 'scanscsi')()
 
 if __name__ == "__main__" :
     for n in (Node,) :
