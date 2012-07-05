@@ -1124,11 +1124,15 @@ class Node(Svc, Freezer):
 
     def scanscsi(self):
         try:
-            m = __import__("rcScanScsi"+rcEnv.sysname)
+            m = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
             print >>sys.stderr, "scanscsi is not supported on", rcEnv.sysname
             return 1
-        return getattr(m, 'scanscsi')()
+        o = m.diskInfo()
+        if not hasattr(o, 'scanscsi'):
+            print >>sys.stderr, "scanscsi is not implemented on", rcEnv.sysname
+            return 1
+        return o.scanscsi()
 
 if __name__ == "__main__" :
     for n in (Node,) :
