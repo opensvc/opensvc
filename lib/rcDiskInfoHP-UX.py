@@ -19,6 +19,7 @@
 
 from rcUtilities import call
 import rcDiskInfo
+import os
 
 class diskInfo(rcDiskInfo.diskInfo):
 
@@ -46,6 +47,39 @@ class diskInfo(rcDiskInfo.diskInfo):
                 aliases = [dev]
             for alias in aliases:
                 self.h[alias] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
+
+    def load_ioscan(self, refresh=False):
+        if hasattr(self, "ioscan") and not refresh:
+            return self.ioscan
+        cmd = ['/usr/sbin/ioscan', '-FunNC', 'disk']
+        (ret, out, err) = call(cmd)
+        if ret != 0:
+            return
+        self.ioscan = []
+        """
+        virtbus:wsio:T:T:F:1:13:10:disk:esdisk:64000/0xfa00/0xa:0 0 4 50 0 0 0 0 51 248 164 14 250 83 253 237 :18:root.ext_virtroot.esvroot.esdisk:esdisk:CLAIMED:DEVICE:EMC     SYMMETRIX:-1:online
+                      /dev/disk/disk17            /dev/disk/disk17_p3         /dev/rdisk/disk17_p1      
+                      /dev/disk/disk17_p1         /dev/pt/x64lmwbieb9_system  /dev/rdisk/disk17_p2      
+                      /dev/disk/disk17_p2         /dev/rdisk/disk17           /dev/rdisk/disk17_p3      
+        """
+        for line in out.split('\n'):
+            if not line.startswith(' ') and not line.startswith('\t') and len(line) > 0:
+                l = line.split(":")
+                blk_major = l[5]
+                raw_major = l[6]
+                index = l[7]
+                vendor = l[17]
+                # mark ready for insertion as soon as we get a devname
+                devname = None
+            elif devname is None:
+                devname = line.split()[0]
+                self.ioscan.append({
+                  'devname': devname,
+                  'dev': ':'.join((blk_major, index)),
+                  'rdev': ':'.join((raw_major, index)),
+                  'vendor': vendor,
+                })
+        return self.ioscan
 
     def load_aliases(self):
         self.aliases = {}
@@ -99,4 +133,37 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def disk_size(self, dev):
         return self.get(dev, 'size')
+
+    def print_diskinfo(self, info):
+        info['size'] = self.disk_size(info['devname'])
+        info['hbtl'] = "#:#:#:#"
+        print self.print_diskinfo_fmt%(
+          info['hbtl'],
+          os.path.basename(info['devname']),
+          info['size'],
+          info['dev'],
+          info['vendor'],
+          '',
+        )
+
+    def scanscsi(self):
+        ioscan_before = self.load_ioscan()
+        disks_before = map(lambda x: x['devname'], ioscan_before)
+        
+        cmd = ['/usr/sbin/ioscan', '-fnC', 'disk']
+        (ret, out, err) = call(cmd)
+        if ret != 0:
+            return
+
+        ioscan_after = self.load_ioscan(refresh=True)
+        disks_after = map(lambda x: x['devname'], ioscan_after)
+        new_disks = set(disks_after) - set(disks_before)
+
+        self.print_diskinfo_header()
+        for info in ioscan_after:
+            if info['devname'] not in new_disks:
+                continue
+            self.print_diskinfo(info)
+
+        return 0
 
