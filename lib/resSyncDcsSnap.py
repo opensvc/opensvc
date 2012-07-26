@@ -90,7 +90,7 @@ class syncDcsSnap(resSyncDcs.SyncDcs):
                 errlog.append("snapshot %s does not exists"%snap)
                 err |= True
                 continue
-            if info['State'] not in ['Healthy']:
+            if info['State'] not in ['Healthy','Migrated']:
                 errlog.append("snapshot %s state is %s"%(snap, info['State']))
                 err |= True
             if info['Failure'] not in ['NoFailure']:
