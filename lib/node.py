@@ -76,7 +76,10 @@ class Node(Svc, Freezer):
           'comp_check_period': '["02:00", "06:00"]',
         }
         self.load_config()
-        self.clusters = list(set(self.config.get('node', 'clusters').split()))
+        try:
+            self.clusters = list(set(self.config.get('node', 'clusters').split()))
+        except:
+            pass
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
