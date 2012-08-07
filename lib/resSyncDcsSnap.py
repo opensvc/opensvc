@@ -73,6 +73,10 @@ class syncDcsSnap(resSyncDcs.SyncDcs):
                 info[var] = val
         if len(info) > 0:
             self._info[snap] = info
+        else:
+            # get-dcssnapshot does not return error when the snap does not exist
+            # an empty info dict is the tip
+            return None
         return info
 
     def _status(self, verbose=False, skip_prereq=False):
