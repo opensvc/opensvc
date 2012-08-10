@@ -54,10 +54,14 @@ class Asset(rcAsset.Asset):
         return str(self.memstat.ullTotalPhys // 1024 // 1024)
 
     def _get_mem_banks(self):
-        return '0'
+	md = len(self.w.WIN32_PhysicalMemory())
+        return str(md)
 
     def _get_mem_slots(self):
-        return '0'
+        n = 0
+	for a in self.w.WIN32_PhysicalMemoryArray():
+	    n += a.MemoryDevices
+	return str(n)
 
     def _get_os_vendor(self):
         return 'Microsoft'
@@ -86,13 +90,14 @@ class Asset(rcAsset.Asset):
         return platform.uname()[4]
 
     def _get_cpu_freq(self):
-        c = wmi.WMI()
-        for i in c.Win32_Processor():
+        for i in self.w.Win32_Processor():
             cpuspeed = i.MaxClockSpeed
         return str(cpuspeed)
 
     def _get_cpu_cores(self):
-	n = len(self.w.Win32_Processor())
+        n = 0
+        for p in self.w.Win32_Processor():
+	    n += p.NumberOfCores
         return str(n)
 
     def _get_cpu_dies(self):
