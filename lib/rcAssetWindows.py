@@ -24,6 +24,7 @@ from rcUtilitiesWindows import get_registry_value
 import rcAsset
 import ctypes
 import wmi
+from rcDiskInfoWindows import diskInfo
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),
@@ -113,31 +114,10 @@ class Asset(rcAsset.Asset):
 	compname = get_registry_value(*key)
         return compname
 
-    def _get_fc_hbas(self):
-        hbas = []
-        if not which('fcinfo'):
-	    print '  fcinfo is not installed'
-	    return []
-	cmd = ['fcinfo']
-	out, err, ret = justcall(cmd)
-	if ret != 0:
-	    print 'error executing fcinfo', out, err, ret
-	    return []
-	for line in out.split('\n'):
-	    if 'PortWWN' not in line:
-	        continue
-            l = line.split()
-	    i = l.index('PortWWN:')
-	    if len(l) < i+2:
-	        continue
-	    index = l[0].split('-')[-1].strip(':')
-            portwwn = l[i+1].replace(':', '')
-	    hbas.append((index, portwwn))
-        return hbas
-
     def _get_hba(self):
         hbas = []
-	for index, portwwn in self._get_fc_hbas():
+	self.di = diskInfo()
+	for index, portwwn, host in self.di._get_fc_hbas():
 	    hbas.append((portwwn, 'fc'))
         return hbas
 
@@ -146,7 +126,7 @@ class Asset(rcAsset.Asset):
         if not which('fcinfo'):
 	    print '  fcinfo is not installed'
 	    return []
-	for index, portwwn in self._get_fc_hbas():
+	for index, portwwn, host in self.di._get_fc_hbas():
 	    cmd = ['fcinfo', '/mapping', '/ai:'+index]
 	    out, err, ret = justcall(cmd)
 	    if ret != 0:
@@ -159,6 +139,8 @@ class Asset(rcAsset.Asset):
 		if len(l) < 3:
 		    continue
 		tgtportwwn = l[2].strip(',').replace(':', '')
+		if (portwwn, tgtportwwn) in maps:
+		    continue
 		maps.append((portwwn, tgtportwwn))
         return maps
 

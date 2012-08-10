@@ -698,7 +698,11 @@ class Collector(object):
         dh = {}
         served_disks = []
 
-        for svc in node.svcs:
+        svcs = node.svcs
+	if svcs is None:
+	    svcs = []
+
+        for svc in svcs:
             # hash to add up disk usage inside a service
             valsh = {}
             for rs in svc.resSets:
