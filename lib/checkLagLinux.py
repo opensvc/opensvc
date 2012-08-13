@@ -66,10 +66,12 @@ class check(checks.check):
             f.close()
         except:
             return r
+        n_slave = 0
         lag = os.path.basename(bond)
         inst = lag
         for line in buff.split('\n'):
             if line.startswith('Slave Interface:'):
+                n_slave += 1
                 slave = line.split()[-1]
                 inst = '.'.join((lag, slave))
             elif line.startswith('MII Status:'):
@@ -90,4 +92,9 @@ class check(checks.check):
                           'chk_value': val,
                           'chk_svcname': '',
                          })
+        r.append({
+                  'chk_instance': lag+'.paths',
+                  'chk_value': str(n_slave),
+                  'chk_svcname': '',
+                 })
         return r
