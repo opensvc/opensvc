@@ -27,6 +27,8 @@ class check(object):
              }]
     def __init__(self, svcs=[]):
         self.svcs = svcs
+        if self.svcs is None:
+            self.svcs = []
 
     def do_check(self):
         return []
