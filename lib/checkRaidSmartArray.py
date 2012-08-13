@@ -34,7 +34,7 @@ class check(checks.check):
             return r
         for line in lines:
             l = line.split(':')
-            if len(l) < 2:
+            if len(l) < 2 or not line.startswith('  '):
                 continue
             if l[-1].strip() != "OK":
                 r += 1
