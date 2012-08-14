@@ -13,3 +13,6 @@ bin/python
 .hg/
 .hgignore
 lib/rcLocalEnv.py
+*.wixobj
+*.wixpdb
+*.msi
