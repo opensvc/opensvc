@@ -199,6 +199,7 @@ class Node(Svc, Freezer):
             if len(svcnames_request) == 0:
                 return
 
+        self.svcs = []
         autopush = True
         if 'autopush' in kwargs:
             if not kwargs['autopush']:
@@ -207,7 +208,7 @@ class Node(Svc, Freezer):
         svcs = svcBuilder.build_services(*args, **kwargs)
         for svc in svcs:
             self += svc
-        if autopush and self.svcs is not None:
+        if autopush:
             for svc in self.svcs:
                 if svc.collector_outdated():
                     svc.action('push')
@@ -874,7 +875,8 @@ class Node(Svc, Freezer):
             return
 
         import checks
-        self.build_services()
+        if self.svcs is None:
+	    self.build_services()
         c = checks.checks(self.svcs)
         c.node = self
         c.do_checks()
