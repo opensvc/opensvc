@@ -207,6 +207,12 @@ class Asset(rcAsset.Asset):
                         r = line.split('=')[-1].replace('\n','').strip('"')
                         r = r.replace(self._get_os_vendor(), '').strip()
                         return r
+        if os.path.exists('/etc/oracle-release') and \
+           os.path.exists('/etc/redhat-release'):
+            with open('/etc/oracle-release') as f1:
+                if " VM " in f1.read():
+                    with open('/etc/redhat-release') as f2:
+                        return f2.read().split('\n')[0].replace(self._get_os_vendor(), '').strip()
         for f in files:
             if os.path.exists(f):
                 (out, err, ret) = justcall(['cat', f])
