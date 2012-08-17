@@ -1,5 +1,6 @@
 import os
 import re
+import glob
 from rcUtilities import call, qcall
 
 def major(driver):
@@ -62,6 +63,13 @@ def lv_info(self, device):
         ex.excError
     return (info[0], info[1], lv_size)
 
+def get_partition_parent(dev):
+    syspath = '/sys/block/*/' + os.path.basename(dev)
+    l = glob.glob(syspath)
+    if len(l) == 1:
+        return '/dev/'+l[0].split('/')[3]
+    return None
+
 def devs_to_disks(self, devs=set([])):
     """ If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
@@ -84,7 +92,11 @@ def devs_to_disks(self, devs=set([])):
             self.log.debug("skip loop device %s from disklist"%dev)
             pass
         else:
-            disks.add(dev)
+            parent = get_partition_parent(dev)
+            if parent is not None:
+                disks.add(parent)
+            else:
+                disks.add(dev)
     _disks = list(disks)
     for i, disk in enumerate(_disks):
         _disks[i] = re.sub("^(/dev/[vhs]d[a-z]*)[0-9]*$", r"\1", disk)
