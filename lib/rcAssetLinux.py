@@ -182,6 +182,8 @@ class Asset(rcAsset.Asset):
                 buff = f.read()
                 if 'CentOS' in buff:
                     return 'CentOS'
+                elif 'Oracle' in buff:
+                    return 'Oracle'
                 else:
                     return 'Red Hat'
         return 'Unknown'
