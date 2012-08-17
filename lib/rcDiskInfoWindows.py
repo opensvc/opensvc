@@ -69,7 +69,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             vid = str(drive.Manufacturer)
             pid = str(drive.Caption)
             serial = str(drive.SerialNumber)
-            size = int(drive.Size) // 1024
+            size = int(drive.Size) // 1024 // 1024
 	    host = drive.SCSIPort
 	    bus = drive.SCSIBus
 	    target = drive.SCSITargetId
