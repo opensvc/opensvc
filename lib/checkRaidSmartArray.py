@@ -28,7 +28,7 @@ class check(checks.check):
     chk_name = "HP SmartArray"
 
     def parse_errors(self, out):
-        r = 0
+        r = []
         lines = out.split('\n')
         if len(lines) == 0:
             return r
@@ -37,7 +37,7 @@ class check(checks.check):
             if len(l) < 2 or not line.startswith('  '):
                 continue
             if l[-1].strip() != "OK":
-                r += 1
+                r += [(l[0].strip().lower(), 1)]
         return r
 
     def check_logicaldrive(self, slot):
@@ -85,13 +85,14 @@ class check(checks.check):
                 idx = l.index('Slot')
                 uslot = l[idx+1]
                 slot = 'slot ' + uslot
-                value = 0
-                value += self.check_controller(uslot)
-                value += self.check_array(uslot)
-                value += self.check_logicaldrive(uslot)
-                value += self.check_physicaldrive(uslot)
-                r.append({
-                          'chk_instance': slot,
+                _r = []
+                _r += self.check_controller(uslot)
+                _r += self.check_array(uslot)
+                _r += self.check_logicaldrive(uslot)
+                _r += self.check_physicaldrive(uslot)
+                for inst, value in _r:
+                    r.append({
+                          'chk_instance': ".".join((slot, inst)),
                           'chk_value': str(value),
                           'chk_svcname': '',
                          })
