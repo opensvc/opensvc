@@ -74,44 +74,49 @@ class check(checks.check):
             return []
 
         inst = intf + ".speed"
-        val = ethtool.data["speed"].replace('Mb/s', '')
-        r.append({
+        val = ethtool.speed
+        if val is not None:
+            val.replace('Mb/s', '')
+            r.append({
                   'chk_instance': inst,
                   'chk_value': val,
                   'chk_svcname': '',
                  })
 
         inst = intf + ".autoneg"
-        val = ethtool.data["auto_negotiation"]
-        if val == 'on':
-            val = '1'
-        else:
-            val = '0'
-        r.append({
+        if val is not None:
+            val = ethtool.auto_negotiation
+            if val == 'on':
+                val = '1'
+            else:
+                val = '0'
+            r.append({
                   'chk_instance': inst,
                   'chk_value': val,
                   'chk_svcname': '',
                  })
 
         inst = intf + ".duplex"
-        val = ethtool.data["duplex"]
-        if val == 'Full':
-            val = '1'
-        else:
-            val = '0'
-        r.append({
+        val = ethtool.duplex
+        if val is not None:
+            if val == 'Full':
+                val = '1'
+            else:
+                val = '0'
+            r.append({
                   'chk_instance': inst,
                   'chk_value': val,
                   'chk_svcname': '',
                  })
 
         inst = intf + ".link"
-        val = ethtool.data["link_detected"]
-        if val == 'yes':
-            val = '1'
-        else:
-            val = '0'
-        r.append({
+        val = ethtool.link_detected
+        if val is not None:
+            if val == 'yes':
+                val = '1'
+            else:
+                val = '0'
+            r.append({
                   'chk_instance': inst,
                   'chk_value': val,
                   'chk_svcname': '',
