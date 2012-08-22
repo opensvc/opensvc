@@ -45,6 +45,8 @@ class SvcSg(svc.Svc):
 
         cmd = [self.cmviewcl_bin, "-p", self.pkg_name, "-v", "-f", "line"]
         out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excInitError(err)
         for line in out.split("\n"):
             if "=" not in line:
                 continue
@@ -137,6 +139,8 @@ class SvcSg(svc.Svc):
             self.error("pkg_name is not set")
             raise ex.excInitError()
         self.load_cmviewcl()
+        if len(self.cmviewcl) == 0:
+            raise ex.excInitError()
         self.load_cntl()
         self.nodes = set(self.cmviewcl['node'].keys())
         self.load_hb()
