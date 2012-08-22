@@ -46,11 +46,18 @@ class check(checks.check):
         r = []
         for line in lines[1:]:
             l = line.split()
-            if len(l) != 9:
-                continue
-            r.append({'chk_instance': l[0],
+            if len(l) == 9:
+                inst = ' '.join(l[8:])
+                r.append({'chk_instance': inst,
                       'chk_value': l[7],
-                      'chk_svcname': self.find_svc(l[8]),
+                      'chk_svcname': self.find_svc(inst),
+                     }
+                    )
+            elif len(l) == 8:
+                inst = ' '.join(l[7:])
+                r.append({'chk_instance': inst,
+                      'chk_value': l[6],
+                      'chk_svcname': self.find_svc(inst),
                      }
                     )
         return r
