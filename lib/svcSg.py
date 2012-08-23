@@ -38,7 +38,7 @@ class SvcSg(svc.Svc):
             self.prefix = p
         else:
             self.prefix = ''
-        self.cmviewcl_bin = p + 'cmviewcl'
+        self.cmviewcl_bin = self.prefix + 'cmviewcl'
 
     def load_cmviewcl(self):
         self.cmviewcl = {}
