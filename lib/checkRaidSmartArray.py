@@ -44,28 +44,28 @@ class check(checks.check):
         cmd = ['hpacucli', 'controller', 'slot='+slot, 'logicaldrive', 'all', 'show', 'status']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
-            return 0
+            return []
         return self.parse_errors(out)
 
     def check_physicaldrive(self, slot):
         cmd = ['hpacucli', 'controller', 'slot='+slot, 'physicaldrive', 'all', 'show', 'status']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
-            return 0
+            return []
         return self.parse_errors(out)
 
     def check_array(self, slot):
         cmd = ['hpacucli', 'controller', 'slot='+slot, 'array', 'all', 'show', 'status']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
-            return 0
+            return []
         return self.parse_errors(out)
 
     def check_controller(self, slot):
         cmd = ['hpacucli', 'controller', 'slot='+slot, 'show', 'status']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
-            return 0
+            return []
         return self.parse_errors(out)
 
     def do_check(self):
