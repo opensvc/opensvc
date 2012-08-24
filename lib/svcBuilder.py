@@ -1485,7 +1485,7 @@ def build(name):
     if "flex_max_nodes" in defaults:
         svc.flex_max_nodes = int(defaults["flex_max_nodes"])
     else:
-        svc.flex_max_nodes = 0
+        svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < 0:
         svc.log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
         del(svc)
