@@ -1472,8 +1472,8 @@ def build(name):
         svc.flex_min_nodes = int(defaults["flex_min_nodes"])
     else:
         svc.flex_min_nodes = 1
-    if svc.flex_min_nodes < 1:
-        svc.log.error("invalid flex_min_nodes '%d' (<1)."%svc.flex_min_nodes)
+    if svc.flex_min_nodes < 0:
+        svc.log.error("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
         del(svc)
         return None
     nb_nodes = len(svc.nodes)
@@ -1488,6 +1488,10 @@ def build(name):
         svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < 0:
         svc.log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
+        del(svc)
+        return None
+    if svc.flex_max_nodes < svc.flex_min_nodes:
+        svc.log.error("invalid flex_max_nodes '%d' (<flex_min_nodes)."%svc.flex_max_nodes)
         del(svc)
         return None
 
