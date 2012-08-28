@@ -35,7 +35,7 @@ class Dcss(object):
             return
         conf = ConfigParser.RawConfigParser()
         conf.read(cf)
-        m = {}
+        m = []
         for s in conf.sections():
             try:
                 stype = conf.get(s, 'type')
@@ -48,14 +48,13 @@ class Dcss(object):
                 dcs = conf.get(s, 'dcs').split()
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m[manager] = [dcs, username, password]
+                m += [(manager, dcs, username, password)]
             except:
                 print "error parsing section", s
                 pass
         del(conf)
         done = []
-        for manager, v in m.items():
-            dcs, username, password = v
+        for manager, dcs, username, password in m:
             for name in dcs:
                 self.arrays.append(Dcs(name, manager, username, password))
                 done.append(name)
