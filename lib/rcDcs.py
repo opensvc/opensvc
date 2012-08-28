@@ -24,6 +24,10 @@ def dcscmd(cmd, manager, username, password, dcs=None):
         print _cmd
         print out
         raise ex.excError("dcs command execution error")
+    try:
+        out = out.decode("latin1").encode("utf8")
+    except:
+        pass
     return out, err, ret
 
 class Dcss(object):
