@@ -312,7 +312,7 @@ class Asset(rcAsset.Asset):
                 hba_id = f.read().split('=')[-1].strip()
         return hba_id
  
-    def _get_hba(self):
+    def __get_hba(self):
         # fc / fcoe
         l = []
         import glob
@@ -325,27 +325,47 @@ class Asset(rcAsset.Asset):
                 hba_type = 'fc'
             with open(path, 'r') as f:
                 hba_id = f.read().strip('0x').strip('\n')
-            l.append((hba_id, hba_type))
+            host = path.replace('/sys/class/fc_host/host', '')
+            host = host[0:host.index('/')]
+
+            l.append((hba_id, hba_type, host))
+
+        # redhat 4 qla driver does not export hba portname in sysfs
+        paths = glob.glob("/proc/scsi/qla2xxx/*")
+        for path in paths:
+            with open(path, 'r') as f:
+                buff = f.read()
+                for line in buff.split("\n"):
+                    if "adapter-port" not in line:
+                        continue
+                    _l = line.split("=")
+                    if len(_l) != 2:
+                        continue
+                    host = os.path.basename(path)
+                    e = (_l[1].rstrip(";"), "fc", host)
+                    if e not in l:
+                        l.append(e)
 
         # iscsi
         path = os.path.join(os.sep, 'etc', 'iscsi', 'initiatorname.iscsi')
         hba_type = 'iscsi'
         hba_id = self.get_iscsi_hba_id()
         if hba_id is not None:
-            l.append((hba_id, hba_type))
+            l.append((hba_id, hba_type, ''))
 
         return l
 
+    def _get_hba(self):
+        return map(lambda x: (x[0], x[1]), self.__get_hba())
+
     def _get_targets(self):
+        import glob
         # fc / fcoe
         l = []
-        import glob
-        paths = glob.glob('/sys/class/fc_host/host*/port_name')
-        for path in paths:
-            with open(path, 'r') as f:
-                hba_id = f.read().strip('0x').strip('\n')
-            host = path.replace('/sys/class/fc_host/host', '')
-            host = host[0:host.index('/')]
+        hbas = self.__get_hba()
+        for hba_id, hba_type, host in hbas:
+            if not hba_type.startswith('fc'):
+                continue
             for target in glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host):
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
