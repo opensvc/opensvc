@@ -148,7 +148,7 @@ def sync_timestamp(self, node):
         options = self.options
     cmd = ['rsync'] + options + bwlimit_option(self)
     cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
-    self.vcall(cmd)
+    self.call(cmd)
 
 def get_timestamp(self, node):
     ts = None
@@ -307,7 +307,10 @@ class Rsync(resSync.Sync):
                 options = self.options
             cmd = ['rsync'] + options + bwlimit + src
             cmd.append(dst)
-            (ret, out, err) = self.vcall(cmd)
+            if self.rid.startswith("sync#i"):
+                (ret, out, err) = self.call(cmd)
+            else:
+                (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue
