@@ -270,6 +270,8 @@ class ResourceSet(Resource):
             if hasattr(r, 'post_action'):
                 r.log.debug("install post_action")
                 self.post_action = r.post_action
+            if hasattr(r, 'sort_rset'):
+                r.sort_rset(self)
         return (self)
 
     def __str__(self):
