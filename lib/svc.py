@@ -107,6 +107,7 @@ class Svc(Resource, Freezer):
                              "sync.dcsckpt",
                              "sync.dds",
                              "sync.zfs",
+                             "sync.btrfs",
                              "sync.netapp",
                              "sync.nexenta",
                              "app",
@@ -1023,6 +1024,7 @@ class Svc(Resource, Freezer):
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
         self.remote_postsync()
 
@@ -1030,6 +1032,7 @@ class Svc(Resource, Freezer):
         self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
+        self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
         self.remote_postsync()
 
@@ -1071,10 +1074,12 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dcsckpt", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
         self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.btrfs", "syncnodes")
 
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
         self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.btrfs", "syncnodes")
 
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")
@@ -1085,7 +1090,7 @@ class Svc(Resource, Freezer):
     def can_sync(self, target=None):
         ret = False
         rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
-                  "sync.rsync", "sync.zfs"]
+                  "sync.rsync", "sync.btrfs"]
         for rt in rtypes:
             for rs in self.get_res_sets(rt):
                 for r in rs.resources:
@@ -1100,9 +1105,11 @@ class Svc(Resource, Freezer):
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
+        self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
+        self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
         self.syncupdate()
         self.remote_postsync()

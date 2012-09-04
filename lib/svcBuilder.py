@@ -836,6 +836,52 @@ def add_syncs(svc, conf):
     add_syncs_dcsckpt(svc, conf)
     add_syncs_dds(svc, conf)
     add_syncs_zfs(svc, conf)
+    add_syncs_btrfs(svc, conf)
+
+def add_syncs_btrfs(svc, conf):
+    btrfs = __import__('resSyncBtrfs')
+    for s in conf.sections():
+        if re.match('sync#[0-9]', s, re.I) is None:
+            continue
+
+        if not conf.has_option(s, 'type'):
+            continue
+        elif conf.get(s, 'type') != 'btrfs':
+            continue
+
+        kwargs = {}
+
+        try:
+            kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src')
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have src set" % s)
+            continue
+
+        try:
+            kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have dst set" % s)
+            continue
+
+        try:
+            kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
+        except ex.OptNotFound:
+            svc.log.error("config file section %s must have target set" % s)
+            continue
+
+        try:
+            kwargs['recursive'] = conf_get_boolean(svc, conf, s, 'recursive')
+        except ex.OptNotFound:
+            pass
+
+        kwargs['rid'] = s
+        kwargs['tags'] = get_tags(conf, s)
+        kwargs['disabled'] = get_disabled(conf, s, svc)
+        kwargs['optional'] = get_optional(conf, s, svc)
+        kwargs.update(get_sync_args(conf, s, svc))
+        r = btrfs.SyncBtrfs(**kwargs)
+        add_triggers(svc, r, conf, s)
+        svc += r
 
 def add_syncs_zfs(svc, conf):
     zfs = __import__('resSyncZfs')
