@@ -1017,7 +1017,10 @@ class Collector(object):
             args = [dcs.name, dcs.keys, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.update_dcs(*args)
+            try:
+                self.proxy.update_dcs(*args)
+            except:
+                print "error pushing", dcs.name
 
     def push_eva(self, objects=[], sync=True):
         if 'update_eva_xml' not in self.proxy_methods:

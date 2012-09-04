@@ -24,6 +24,10 @@ def dcscmd(cmd, manager, username, password, dcs=None):
         print _cmd
         print out
         raise ex.excError("dcs command execution error")
+    try:
+        out = out.decode("latin1").encode("utf8")
+    except:
+        pass
     return out, err, ret
 
 class Dcss(object):
@@ -41,7 +45,7 @@ class Dcss(object):
             return
         conf = ConfigParser.RawConfigParser()
         conf.read(cf)
-        m = {}
+        m = []
         for s in conf.sections():
             try:
                 stype = conf.get(s, 'type')
@@ -54,14 +58,13 @@ class Dcss(object):
                 dcs = conf.get(s, 'dcs').split()
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m[manager] = [dcs, username, password]
+                m += [(manager, dcs, username, password)]
             except:
                 print "error parsing section", s
                 pass
         del(conf)
         done = []
-        for manager, v in m.items():
-            dcs, username, password = v
+        for manager, dcs, username, password in m:
             for name in dcs:
                 if self.filtering and name not in self.objects:
                     continue

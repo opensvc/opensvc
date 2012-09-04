@@ -19,7 +19,6 @@ import os
 import datetime
 from rcUtilities import justcall, which
 import rcAsset
-import glob
 
 def is_container():
     p = '/proc/1/cgroup'
@@ -182,8 +181,6 @@ class Asset(rcAsset.Asset):
                 buff = f.read()
                 if 'CentOS' in buff:
                     return 'CentOS'
-                elif 'Oracle' in buff:
-                    return 'Oracle'
                 else:
                     return 'Red Hat'
         return 'Unknown'
@@ -209,12 +206,6 @@ class Asset(rcAsset.Asset):
                         r = line.split('=')[-1].replace('\n','').strip('"')
                         r = r.replace(self._get_os_vendor(), '').strip()
                         return r
-        if os.path.exists('/etc/oracle-release') and \
-           os.path.exists('/etc/redhat-release'):
-            with open('/etc/oracle-release') as f1:
-                if " VM " in f1.read():
-                    with open('/etc/redhat-release') as f2:
-                        return f2.read().split('\n')[0].replace(self._get_os_vendor(), '').strip()
         for f in files:
             if os.path.exists(f):
                 (out, err, ret) = justcall(['cat', f])
@@ -321,33 +312,10 @@ class Asset(rcAsset.Asset):
                 hba_id = f.read().split('=')[-1].strip()
         return hba_id
  
-    def get_hba_old_qla(self):
-        paths = glob.glob('/proc/scsi/qla2xxx/*')
-        l = []
-        for p in paths:
-            with open(p, 'r') as f:
-                for line in f.readlines():
-                    if 'adapter-port' in line:
-                        hba_id = line.split('=')[1].strip().strip(';')
-                        l.append((hba_id, 'fc'))
-        return l
-
-    def get_targets_old_qla(self):
-        paths = glob.glob('/proc/scsi/qla2xxx/*')
-        l = []
-        for p in paths:
-            with open(p, 'r') as f:
-                for line in f.readlines():
-                    if 'adapter-port' in line:
-                        hba_id = line.split('=')[1].strip().strip(';')
-                    elif '-target-' in line:
-                        tgt_id = line.split('=')[1].strip().strip(';')
-                        l.append((hba_id, tgt_id))
-        return l
-
-    def _get_hba(self):
+    def __get_hba(self):
         # fc / fcoe
         l = []
+        import glob
         paths = glob.glob('/sys/class/fc_host/host*/port_name')
         for path in paths:
             host_link = '/'.join(path.split('/')[0:5])
@@ -357,39 +325,50 @@ class Asset(rcAsset.Asset):
                 hba_type = 'fc'
             with open(path, 'r') as f:
                 hba_id = f.read().strip('0x').strip('\n')
-            l.append((hba_id, hba_type))
+            host = path.replace('/sys/class/fc_host/host', '')
+            host = host[0:host.index('/')]
 
-        # old qlogic driver
-        for hba_id, hba_type in self.get_hba_old_qla():
-            if (hba_id, hba_type) not in l:
-                l.append((hba_id, hba_type))
+            l.append((hba_id, hba_type, host))
+
+        # redhat 4 qla driver does not export hba portname in sysfs
+        paths = glob.glob("/proc/scsi/qla2xxx/*")
+        for path in paths:
+            with open(path, 'r') as f:
+                buff = f.read()
+                for line in buff.split("\n"):
+                    if "adapter-port" not in line:
+                        continue
+                    _l = line.split("=")
+                    if len(_l) != 2:
+                        continue
+                    host = os.path.basename(path)
+                    e = (_l[1].rstrip(";"), "fc", host)
+                    if e not in l:
+                        l.append(e)
 
         # iscsi
         path = os.path.join(os.sep, 'etc', 'iscsi', 'initiatorname.iscsi')
         hba_type = 'iscsi'
         hba_id = self.get_iscsi_hba_id()
         if hba_id is not None:
-            l.append((hba_id, hba_type))
+            l.append((hba_id, hba_type, ''))
 
         return l
 
+    def _get_hba(self):
+        return map(lambda x: (x[0], x[1]), self.__get_hba())
+
     def _get_targets(self):
+        import glob
         # fc / fcoe
         l = []
-        paths = glob.glob('/sys/class/fc_host/host*/port_name')
-        for path in paths:
-            with open(path, 'r') as f:
-                hba_id = f.read().strip('0x').strip('\n')
-            host = path.replace('/sys/class/fc_host/host', '')
-            host = host[0:host.index('/')]
+        hbas = self.__get_hba()
+        for hba_id, hba_type, host in hbas:
+            if not hba_type.startswith('fc'):
+                continue
             for target in glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host):
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
-                l.append((hba_id, tgt_id))
-
-        # old qlogic driver
-        for hba_id, tgt_id in self.get_targets_old_qla():
-            if (hba_id, tgt_id) not in l:
                 l.append((hba_id, tgt_id))
 
         # iscsi
