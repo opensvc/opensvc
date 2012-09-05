@@ -3,6 +3,7 @@ from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
 import os
 import ConfigParser
+import uuid
 
 pathlib = os.path.dirname(__file__)
 pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
@@ -11,11 +12,22 @@ pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 if pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+pathbin
 
-def dcscmd(cmd, manager, username, password, dcs=None):
+def dcscmd(cmd, manager, username, password, dcs=None, conn=None):
+    if conn is None:
+        conn = uuid.uuid1().hex
+
+    if len(cmd) == 0:
+        return
+    if ' ' in cmd:
+        i = cmd.index(' ')
+        cmd = cmd[:i] + " -connection %s"%conn + cmd[i:]
+    else:
+        cmd += " -connection %s "%conn
+
     _cmd = ['ssh', manager]
     if dcs is not None:
-        _cmd += ["connect-dcsserver -server %s -username %s -password %s ; "%(dcs, username, password)+\
-                 cmd+ " ; disconnect-dcsserver"]
+        _cmd += ["connect-dcsserver -server %s -username %s -password %s -connection %s ; "%(dcs, username, password, conn)+\
+                 cmd+ " ; disconnect-dcsserver -connection %s"%conn]
     else:
         _cmd += [cmd]
     #print ' '.join(_cmd)
@@ -76,11 +88,14 @@ class Dcss(object):
         return self.arrays[self.index-1]
 
 class Dcs(object):
-    def __init__(self, name, manager, username, password):
+    def __init__(self, name, manager, username, password, conn=None):
         self.name = name
         self.manager = manager
         self.username = username
         self.password = password
+        self.conn = conn
+        if conn is None:
+            self.conn = uuid.uuid1().hex
         self.keys = ['dcsservergroup',
                      'dcsserver',
                      'dcspool',
@@ -94,7 +109,7 @@ class Dcs(object):
                      'dcspoolmember']
 
     def dcscmd(self, cmd):
-        return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name)
+        return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name, conn=self.conn)
 
     def get_dcsservergroup(self):
         cmd = 'get-dcsservergroup'
