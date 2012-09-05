@@ -32,7 +32,7 @@ class SyncDcs(resSync.Sync):
         for d in self.dcs:
             try:
                 self.log.debug("try dcs", d)
-                self.dcscmd("get-dcsserver", dcs=d)
+                self.dcscmd("get-dcsserver -connection %s"%self.conn, dcs=d)
                 self.active_dcs = d
                 self.log.debug("set active dcs", self.active_dcs)
                 return
@@ -66,11 +66,6 @@ class SyncDcs(resSync.Sync):
     def dcscmd(self, cmd="", verbose=False, check=True, dcs=None):
         if len(cmd) == 0:
             return
-        if ' ' in cmd:
-            i = cmd.index(' ')
-            cmd = cmd[:i] + " -connection %s"%self.conn + cmd[i:]
-        else:
-            cmd += " -connection %s "%self.conn
 
         self.get_active_manager()
         if dcs is None:

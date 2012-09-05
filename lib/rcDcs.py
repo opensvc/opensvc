@@ -18,11 +18,6 @@ def dcscmd(cmd, manager, username, password, dcs=None, conn=None):
 
     if len(cmd) == 0:
         return
-    if ' ' in cmd:
-        i = cmd.index(' ')
-        cmd = cmd[:i] + " -connection %s"%conn + cmd[i:]
-    else:
-        cmd += " -connection %s "%conn
 
     _cmd = ['ssh', manager]
     if dcs is not None:
@@ -139,67 +134,67 @@ class Dcs(object):
         return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name, conn=self.conn)
 
     def get_dcsservergroup(self):
-        cmd = 'get-dcsservergroup'
+        cmd = 'get-dcsservergroup -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsserver(self):
-        cmd = 'get-dcsserver'
+        cmd = 'get-dcsserver -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspool(self):
-        cmd = 'get-dcspool'
+        cmd = 'get-dcspool -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldisk(self):
-        cmd = 'get-dcslogicaldisk'
+        cmd = 'get-dcslogicaldisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsvirtualdisk(self):
-        cmd = 'get-dcsvirtualdisk'
+        cmd = 'get-dcsvirtualdisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsphysicaldisk(self):
-        cmd = 'get-dcsphysicaldisk'
+        cmd = 'get-dcsphysicaldisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsdiskpath(self):
-        cmd = 'get-dcsdiskpath'
+        cmd = 'get-dcsdiskpath -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolmember(self):
-        cmd = 'get-dcspoolmember'
+        cmd = 'get-dcspoolmember -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolperf(self):
-        cmd = 'get-dcspool | get-dcsperformancecounter'
+        cmd = 'get-dcspool | get-dcsperformancecounter'%(self.conn, self.conn)
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldiskperf(self):
-        cmd = 'get-dcslogicaldisk | get-dcsperformancecounter'
+        cmd = 'get-dcslogicaldisk -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsport(self):
-        cmd = 'get-dcsport'
+        cmd = 'get-dcsport -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
@@ -239,8 +234,9 @@ class Dcs(object):
               'sds2': _pool2[0],
               'pool1': _pool1[1],
               'pool2': _pool2[1],
+              'conn': self.conn,
             }
-            cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
+            cmd = """$v = Add-DcsVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
         elif len(pools) == 1:
             _pool1 = pools[0].split(':')
             if len(_pool1) != 2:
@@ -250,12 +246,13 @@ class Dcs(object):
               'size': data['size'],
               'sds1': _pool1[0],
               'pool1': _pool1[1],
+              'conn': self.conn,
             }
-            cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
+            cmd = """$v = Add-DcsVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
         else:
             raise ex.excError("'dg_name' value is misformatted")
         for machine in self.get_machines(map(lambda x: x[0], paths)):
-            cmd += " $v | Serve-DcsVirtualDisk -Machine %s -EnableRedundancy ;"""%machine
+            cmd += " $v | Serve-DcsVirtualDisk -connection %s -Machine %s -EnableRedundancy ;"""%(self.conn, machine)
         print cmd
         out, err, ret = self.dcscmd(cmd)
 

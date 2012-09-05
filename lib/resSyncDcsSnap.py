@@ -43,17 +43,17 @@ class syncDcsSnap(resSyncDcs.SyncDcs):
         cmd = ""
         vars = ""
         for i, snap in enumerate(self.snapname):
-            cmd += '$v%d=get-dcssnapshot -snapshot %s;'%(i, snap)
+            cmd += '$v%d=get-dcssnapshot -connection %s -snapshot %s;'%(i, self.conn, snap)
             vars += '$v%d '%i
 
-        cmd += "echo %s|update-dcssnapshot -Y"%vars
+        cmd += "echo %s|update-dcssnapshot -connection %s -Y"%(vars, self.conn)
         self.dcscmd(cmd, verbose=True)
 
     def get_snap(self, snap):
         if snap in self._info:
             return self._info[snap]
 
-        cmd = 'get-dcssnapshot -snapshot %s;'%snap
+        cmd = 'get-dcssnapshot -connection %s -snapshot %s;'%(self.conn, snap)
         try:
             ret, out, err = self.dcscmd(cmd)
         except:
