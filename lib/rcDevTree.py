@@ -11,7 +11,16 @@ A logical volume lv0 with segments on pv1 pv2 has two parent
 relations : lv0-pv1 and lv0-pv2
 
 """
-from hashlib import md5
+try:
+    from hashlib import md5
+    def hash(s):
+        o = md5()
+        o.update(s)
+        return o.hexdigest()
+except:
+    from rcMd5 import md5
+    def hash(s):
+        return md5(s).digest().encode('hex')
 
 class DevRelation(object):
     def __init__(self, parent, child, used=0):
@@ -288,9 +297,7 @@ class DevTree(object):
             else:
                 used = self.get_used(chain)
                 ref = self.get_dev(chain[0].child).alias
-                o = md5()
-                o.update(ref)
-                region = o.hexdigest()
+                region = hash(ref)
             l.append((d.devpath[0], used, region))
         return l
 
