@@ -131,7 +131,6 @@ def sync_timestamp(self, node):
     sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
     sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
     sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
-    print sched_timestamp_f, sync_timestamp_f
     if not os.path.isdir(sync_timestamp_d):
         os.makedirs(sync_timestamp_d, 0755)
     if not os.path.isdir(sync_timestamp_d_src):
