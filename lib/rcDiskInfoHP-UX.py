@@ -22,6 +22,8 @@ import rcDiskInfo
 import os
 
 class diskInfo(rcDiskInfo.diskInfo):
+    legacy_size_cache = {}
+    legacy_wwid_cache = {}
 
     def __init__(self):
         self.load_cache()
@@ -107,7 +109,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            self.h[dev] = dict(wwid="", vid="", pid="", size="")
+            self.h[dev] = dict(wwid="", vid="", pid="", size=0)
             return
         (wwid, foo, vid, pid, size) = out.split(':')
         wwid = wwid.replace('0x', '')
@@ -123,7 +125,10 @@ class diskInfo(rcDiskInfo.diskInfo):
         return self.h[dev][type]
 
     def disk_id(self, dev):
-        return self.get(dev, 'wwid')
+        id = self.get(dev, 'wwid')
+        if len(id) == 0:
+            id = self.get_legacy_wwid(dev)
+        return id
 
     def disk_vendor(self, dev):
         return self.get(dev, 'vid')
@@ -132,7 +137,10 @@ class diskInfo(rcDiskInfo.diskInfo):
         return self.get(dev, 'pid')
 
     def disk_size(self, dev):
-        return self.get(dev, 'size')
+        size = self.get(dev, 'size')
+        if size == 0:
+            size = self.get_legacy_size(dev)
+        return size
 
     def print_diskinfo(self, info):
         info['size'] = self.disk_size(info['devname'])
@@ -166,4 +174,38 @@ class diskInfo(rcDiskInfo.diskInfo):
             self.print_diskinfo(info)
 
         return 0
+
+    def get_legacy_wwid(self, devpath):
+        if devpath in self.legacy_wwid_cache:
+            self.legacy_wwid_cache[devpath]
+        if which("autopath"):
+            wwid = self.get_autopath_wwid(devpath)
+            self.legacy_wwid_cache[devpath] = wwid
+            return wwid
+        return ""
+
+    def get_autopath_wwid(self, devpath):
+        cmd = ["autopath", "display", devpath]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return ""
+        for line in out.split("\n"):
+            if "Lun WWN" in line:
+                return line.split(": ")[-1].replace("-","").lower()
+        return ""
+
+    def get_legacy_size(self, devpath):
+        """ return devpath size in megabytes
+        """
+        if devpath in self.legacy_size_cache:
+            return self.legacy_size_cache[devpath]
+        if not which("diskinfo"):
+            return 0
+        cmd = ["diskinfo", "-b", devpath.replace("dsk", "rdsk").replace("disk", "rdisk")]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return 0
+        size = int(out.strip())/1024
+        self.legacy_size_cache[devpath] = size
+        return size
 

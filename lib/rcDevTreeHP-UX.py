@@ -6,20 +6,11 @@ from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
 
+dim = __import__("rcDiskInfoHP-UX")
+di = dim.diskInfo()
+
 class DevTree(rcDevTree.DevTree):
     pe_size = {}
-
-    def disk_size(self, devpath):
-        """ return devpath size in megabytes
-        """
-        if not which("diskinfo"):
-            return 0
-        cmd = ["diskinfo", "-b", devpath]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode:
-            return 0
-        return int(out.strip())/1024
 
     def add_part(self, parent_devpath, child_devpath):
         child_dev = self.add_disk(child_devpath)
@@ -37,7 +28,7 @@ class DevTree(rcDevTree.DevTree):
             devtype = "multipath"
         else:
             devtype = "linear"
-        size = self.disk_size(devpath.replace('/disk/', '/rdisk/'))
+        size = di.disk_size(devpath)
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
         if size in [0, 2, 30, 45]:
@@ -45,9 +36,13 @@ class DevTree(rcDevTree.DevTree):
 
         d = self.add_dev(devname, size, devtype)
         d.set_devpath(devpath)
-        d.set_devpath(devpath.replace('/disk/', '/rdisk/'))
+        d.set_devpath(devpath.replace('/disk/', '/rdisk/').replace('/dsk/', '/rdsk/'))
         if devpath in self.lunmap:
             d.set_alias(self.lunmap[devpath]['wwid'])
+        else:
+            wwid = di.disk_id(devpath)
+            if wwid != "":
+                d.set_alias(wwid)
         return d
 
     def load_ioscan(self):
@@ -57,7 +52,13 @@ class DevTree(rcDevTree.DevTree):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode:
-            return
+            if "illegal option -- N" not in err:
+                return
+            cmd = ["/usr/sbin/ioscan", "-FunC", "disk"]
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+            if p.returncode:
+                return
         """
         scsi:wsio:T:T:F:31:188:0:disk:sdisk:0/2/1/0.0.0.0.0:0 0 5 18 0 0 0 0 195 124 63 185 173 253 214 203 :0:root.sba.lba.sasd.sasd_vbus.tgt.sdisk:sdisk:CLAIMED:DEVICE:HP      DG146BB976:0:
                       /dev/disk/disk11      /dev/disk/disk11_p2   /dev/rdisk/disk11     /dev/rdisk/disk11_p2
