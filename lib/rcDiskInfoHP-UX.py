@@ -17,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-from rcUtilities import call
+from rcUtilities import justcall, which
 import rcDiskInfo
 import os
 
@@ -31,7 +31,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
         self.h = {}
         cmd = ["scsimgr", "-p", "get_attr", "all_lun", "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         for e in out.split('\n'):
             if len(e) == 0:
                 continue
@@ -52,7 +52,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         if hasattr(self, "ioscan") and not refresh:
             return self.ioscan
         cmd = ['/usr/sbin/ioscan', '-FunNC', 'disk']
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return
         self.ioscan = []
@@ -84,7 +84,7 @@ class diskInfo(rcDiskInfo.diskInfo):
     def load_aliases(self):
         self.aliases = {}
         cmd = ['/usr/sbin/ioscan', '-FunNC', 'disk']
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return
         l = []
@@ -105,7 +105,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def scan(self, dev):
         cmd = ["scsimgr", "-p", "get_attr", "-D", self.dev2char(dev), "-a", "wwid", "-a", "device_file", "-a", "vid", "-a", "pid", "-a", "capacity"]
-        (ret, out, err) = call(cmd, errlog=False)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             self.h[dev] = dict(wwid="", vid="", pid="", size="")
             return
@@ -151,7 +151,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         disks_before = map(lambda x: x['devname'], ioscan_before)
         
         cmd = ['/usr/sbin/ioscan', '-fnC', 'disk']
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return
 
