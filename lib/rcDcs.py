@@ -91,8 +91,8 @@ class Dcss(object):
 
     def get_dcs(self, domain):
         for dcs in self.arrays:
-            domain = dcs.get_domain()
-            if dcs.domain == domain:
+            _domain = dcs.get_domain()
+            if _domain == domain:
                 return dcs
         return None
 
