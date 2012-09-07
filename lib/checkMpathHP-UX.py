@@ -59,4 +59,9 @@ class check(checks.check):
                 proto = line.split("=")[-1]
             if "State" in line and ("ACTIVE" in line or "UNOPEN" in line or 'STANDBY' in line):
                 n += 1
+        if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=' and "Virtual" not in proto:
+            r.append({'chk_instance': wwid,
+                      'chk_value': str(n),
+                      'chk_svcname': self.find_svc(dev),
+            })
         return r
