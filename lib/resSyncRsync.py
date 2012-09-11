@@ -131,7 +131,6 @@ def sync_timestamp(self, node):
     sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
     sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
     sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
-    print sched_timestamp_f, sync_timestamp_f
     if not os.path.isdir(sync_timestamp_d):
         os.makedirs(sync_timestamp_d, 0755)
     if not os.path.isdir(sync_timestamp_d_src):
@@ -148,7 +147,7 @@ def sync_timestamp(self, node):
         options = self.options
     cmd = ['rsync'] + options + bwlimit_option(self)
     cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
-    self.vcall(cmd)
+    self.call(cmd)
 
 def get_timestamp(self, node):
     ts = None
@@ -307,7 +306,10 @@ class Rsync(resSync.Sync):
                 options = self.options
             cmd = ['rsync'] + options + bwlimit + src
             cmd.append(dst)
-            (ret, out, err) = self.vcall(cmd)
+            if self.rid.startswith("sync#i"):
+                (ret, out, err) = self.call(cmd)
+            else:
+                (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue

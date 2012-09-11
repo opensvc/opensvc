@@ -3,6 +3,7 @@ from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
 import os
 import ConfigParser
+import uuid
 
 pathlib = os.path.dirname(__file__)
 pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
@@ -11,11 +12,17 @@ pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 if pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+pathbin
 
-def dcscmd(cmd, manager, username, password, dcs=None):
+def dcscmd(cmd, manager, username, password, dcs=None, conn=None):
+    if conn is None:
+        conn = uuid.uuid1().hex
+
+    if len(cmd) == 0:
+        return
+
     _cmd = ['ssh', manager]
     if dcs is not None:
-        _cmd += ["connect-dcsserver -server %s -username %s -password %s ; "%(dcs, username, password)+\
-                 cmd+ " ; disconnect-dcsserver"]
+        _cmd += ["connect-dcsserver -server %s -username %s -password %s -connection %s ; "%(dcs, username, password, conn)+\
+                 cmd+ " ; disconnect-dcsserver -connection %s"%conn]
     else:
         _cmd += [cmd]
     #print ' '.join(_cmd)
@@ -24,6 +31,10 @@ def dcscmd(cmd, manager, username, password, dcs=None):
         print _cmd
         print out
         raise ex.excError("dcs command execution error")
+    try:
+        out = out.decode("latin1").encode("utf8")
+    except:
+        pass
     return out, err, ret
 
 class Dcss(object):
@@ -41,7 +52,7 @@ class Dcss(object):
             return
         conf = ConfigParser.RawConfigParser()
         conf.read(cf)
-        m = {}
+        m = []
         for s in conf.sections():
             try:
                 stype = conf.get(s, 'type')
@@ -54,14 +65,13 @@ class Dcss(object):
                 dcs = conf.get(s, 'dcs').split()
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m[manager] = [dcs, username, password]
+                m += [(manager, dcs, username, password)]
             except:
                 print "error parsing section", s
                 pass
         del(conf)
         done = []
-        for manager, v in m.items():
-            dcs, username, password = v
+        for manager, dcs, username, password in m:
             for name in dcs:
                 if self.filtering and name not in self.objects:
                     continue
@@ -81,17 +91,20 @@ class Dcss(object):
 
     def get_dcs(self, domain):
         for dcs in self.arrays:
-            domain = dcs.get_domain()
-            if dcs.domain == domain:
+            _domain = dcs.get_domain()
+            if _domain == domain:
                 return dcs
         return None
 
 class Dcs(object):
-    def __init__(self, name, manager, username, password):
+    def __init__(self, name, manager, username, password, conn=None):
         self.name = name
         self.manager = manager
         self.username = username
         self.password = password
+        self.conn = conn
+        if conn is None:
+            self.conn = uuid.uuid1().hex
         self.keys = ['dcsservergroup',
                      'dcsserver',
                      'dcspool',
@@ -118,70 +131,70 @@ class Dcs(object):
         return "unknown"
 
     def dcscmd(self, cmd):
-        return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name)
+        return dcscmd(cmd, self.manager, self.username, self.password, dcs=self.name, conn=self.conn)
 
     def get_dcsservergroup(self):
-        cmd = 'get-dcsservergroup'
+        cmd = 'get-dcsservergroup -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsserver(self):
-        cmd = 'get-dcsserver'
+        cmd = 'get-dcsserver -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspool(self):
-        cmd = 'get-dcspool'
+        cmd = 'get-dcspool -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldisk(self):
-        cmd = 'get-dcslogicaldisk'
+        cmd = 'get-dcslogicaldisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsvirtualdisk(self):
-        cmd = 'get-dcsvirtualdisk'
+        cmd = 'get-dcsvirtualdisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsphysicaldisk(self):
-        cmd = 'get-dcsphysicaldisk'
+        cmd = 'get-dcsphysicaldisk -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsdiskpath(self):
-        cmd = 'get-dcsdiskpath'
+        cmd = 'get-dcsdiskpath -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolmember(self):
-        cmd = 'get-dcspoolmember'
+        cmd = 'get-dcspoolmember -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolperf(self):
-        cmd = 'get-dcspool | get-dcsperformancecounter'
+        cmd = 'get-dcspool -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldiskperf(self):
-        cmd = 'get-dcslogicaldisk | get-dcsperformancecounter'
+        cmd = 'get-dcslogicaldisk -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsport(self):
-        cmd = 'get-dcsport'
+        cmd = 'get-dcsport -connection %s'%self.conn
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
@@ -221,8 +234,9 @@ class Dcs(object):
               'sds2': _pool2[0],
               'pool1': _pool1[1],
               'pool2': _pool2[1],
+              'conn': self.conn,
             }
-            cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
+            cmd = """$v = Add-DcsVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
         elif len(pools) == 1:
             _pool1 = pools[0].split(':')
             if len(_pool1) != 2:
@@ -232,12 +246,13 @@ class Dcs(object):
               'size': data['size'],
               'sds1': _pool1[0],
               'pool1': _pool1[1],
+              'conn': self.conn,
             }
-            cmd = """$v = Add-DcsVirtualDisk -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
+            cmd = """$v = Add-DcsVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
         else:
             raise ex.excError("'dg_name' value is misformatted")
         for machine in self.get_machines(map(lambda x: x[0], paths)):
-            cmd += " $v | Serve-DcsVirtualDisk -Machine %s -EnableRedundancy ;"""%machine
+            cmd += " $v | Serve-DcsVirtualDisk -connection %s -Machine %s -EnableRedundancy ;"""%(self.conn, machine)
         print cmd
         out, err, ret = self.dcscmd(cmd)
 

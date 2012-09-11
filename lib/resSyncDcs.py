@@ -32,7 +32,7 @@ class SyncDcs(resSync.Sync):
         for d in self.dcs:
             try:
                 self.log.debug("try dcs", d)
-                self.dcscmd("get-dcsserver", dcs=d)
+                self.dcscmd("get-dcsserver -connection %s"%self.conn, dcs=d)
                 self.active_dcs = d
                 self.log.debug("set active dcs", self.active_dcs)
                 return
@@ -64,15 +64,18 @@ class SyncDcs(resSync.Sync):
         self.password = self.config.get(self.active_manager, "password")
  
     def dcscmd(self, cmd="", verbose=False, check=True, dcs=None):
+        if len(cmd) == 0:
+            return
+
         self.get_active_manager()
         if dcs is None:
             self.get_active_dcs()
             dcs = self.active_dcs
         self.get_auth()
         cmd = ['ssh', self.active_manager,
-               "connect-dcsserver -server %s -username %s -password %s ; "%(dcs, self.username, self.password)+\
+               "connect-dcsserver -server %s -username %s -password %s -connection %s ; "%(dcs, self.username, self.password, self.conn)+\
                cmd+\
-               " ; disconnect-dcsserver"]
+               " ; disconnect-dcsserver -connection %s"%self.conn]
         if verbose:
             import re
             from copy import copy
@@ -120,6 +123,17 @@ class SyncDcs(resSync.Sync):
         self.dcs = dcs
         self.manager = manager
         self.conf = os.path.join(rcEnv.pathetc, 'auth.conf')
+
+    def on_add(self):
+        self.get_conn()
+
+    def get_conn(self):
+        from hashlib import md5
+        import uuid
+        o = md5()
+        o.update(uuid.uuid1().hex)
+        o.update(self.svc.svcname)
+        self.conn = o.hexdigest()
 
     def __str__(self):
         return "%s dcs=%s manager=%s" % (
