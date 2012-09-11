@@ -1485,7 +1485,12 @@
             <ComponentRef Id="POSTINSTALL.CMD" />
         </Feature>
         <UI />
-        <CustomAction Execute="commit" FileKey="POSTINSTALL.CMD" Id="POSTINSTALL" ExeCommand="">
+        <CustomAction Id="POSTINSTALL" ExeCommand="/q /e:on /c &quot;c:\program files\opensvc\bin\postinstall.cmd&quot;" Property="CMD">
         </CustomAction>
+        <InstallExecuteSequence>
+            <Custom Action="POSTINSTALL" Before="InstallFinalize" />
+        </InstallExecuteSequence>
+        <CustomActionRef Id="POSTINSTALL" />
+        <Property Id="CMD" Value="cmd.exe" />
     </Product>
 </Wix>
