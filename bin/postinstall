@@ -10,7 +10,18 @@ python_paths = [
   os.path.join(os.sep, "opt", "python-2.6.4", "bin", "python")
 ]
 
-sysname, nodename, x, x, machine = os.uname()
+try:
+    sysname, nodename, x, x, machine = os.uname()
+except:
+    import platform
+    sysname, nodename, x, x, machine, x = platform.uname()
+
+pathbin = os.path.dirname(__file__)
+pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
+pathetc = os.path.join(pathsvc, 'etc')
+pathvar = os.path.join(pathsvc, 'var')
+pathtmp = os.path.join(pathsvc, 'tmp')
+pathlib = os.path.join(pathsvc, 'lib')
 
 def python_path():
     for n in python_names:
@@ -29,10 +40,36 @@ def _python_path(python_exe):
     return None
 
 def install_cron():
+    if sysname == 'Windows':
+        return install_cron_windows()
+    else:
+        return install_cron_unix()
+
+def install_cron_windows():
+    import win32api
+    import subprocess
+    rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'rcWinScheduler.py')+'"'
+    cmd = "@echo off\n"
+    cmd += rc
+    #cmd += ' --username '+nodename+'\\'+win32api.GetUserName()
+    cmd += ' --username LocalSystem'
+    cmd += ' --startup auto'
+    cmd += ' install\n'
+    cmd += rc
+    cmd += ' start\n'
+    import tempfile
+    fd, fname = tempfile.mkstemp(dir=pathtmp, suffix='.cmd')
+    f = os.fdopen(fd, 'w')
+    f.write(cmd)
+    f.close()
+    subprocess.call([fname])
+    os.unlink(fname)
+
+def install_cron_unix():
     """install opensvc cron jobs
     """
 
-    agt = '/opt/opensvc/bin/perfagt.'+sysname
+    agt = os.path.join(pathbin, 'perfagt.'+sysname)
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'reset_sched': False,
@@ -320,6 +357,8 @@ def install_rc():
         rc = '/System/Library/LaunchDaemons/opensvc.plist'
         src = '/opt/opensvc/bin/opensvc.init.Darwin'
         activate = activate_Darwin
+    elif sysname == 'Windows':
+        return False
     else:
         print "could not select an init script: unsupported operating system"
         return False
@@ -332,6 +371,8 @@ def install_rc():
     activate()
 
 def gen_keys():
+    if sysname == 'Windows':
+        return
     home = os.path.expanduser("~root")
     priv = os.path.join(home, ".ssh", "id_dsa")
     pub = os.path.join(home, ".ssh", "id_dsa.pub")
@@ -369,9 +410,6 @@ def convert_svclinks():
 
 def move_usr_to_opt():
     linksvc = os.path.join(os.sep, 'service')
-    pathsvc = os.path.join(os.sep, 'opt', 'opensvc')
-    pathvar = os.path.join(pathsvc, 'var')
-    pathetc = os.path.join(pathsvc, 'etc')
     old_pathsvc = os.path.join(os.sep, 'usr', 'local', 'opensvc')
     old_pathvar = os.path.join(old_pathsvc, 'var')
     old_pathetc = os.path.join(old_pathsvc, 'etc')
@@ -420,7 +458,7 @@ def install_etc_path():
         return
     l = buff.strip().split(":")
     n = len(l)
-    for op in ('/opt/opensvc/bin', '/opt/opensvc/etc'):
+    for op in (pathbin, pathetc):
         if op in l:
             continue
         l.append(op)
@@ -436,7 +474,7 @@ def install_etc_path():
 def install_profile():
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
-    buff = "export PATH=$PATH:/opt/opensvc/bin:/opt/opensvc/etc\n"
+    buff = "export PATH=$PATH:"+pathbin+":"+pathetc+"\n"
     if not os.path.exists(prof_d):
         return
     try:
@@ -453,6 +491,8 @@ def install_user_linux():
     ret = os.system(' '.join(cmd))
 
 def install_user():
+    if sysname == 'Windows':
+        return
     cmd = ['id', 'opensvc']
     ret = os.system(' '.join(cmd))
     if ret == 0:
@@ -462,7 +502,7 @@ def install_user():
         install_user_linux()
 
 def install_bash_completion():
-    src = '/opt/opensvc/usr/share/bash_completion.d/opensvc'
+    src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
     for d in ds:
@@ -487,16 +527,34 @@ def install_link(source, target):
     os.symlink(source,target)
 
 def install_pythonlink():
+    if sysname == 'Windows':
+        return install_pythonlink_windows()
+    else:
+        return install_pythonlink_unix()
+
+def install_pythonlink_windows():
+    for cmd in ('nodemgr', 'svcmgr', 'svcmon', 'cron'):
+        l = os.path.join(pathsvc, cmd+'.cmd')
+	cmdpath = os.path.join(pathbin, cmd)
+	if cmd == 'cron':
+	    cmdpath = os.path.join(pathbin, 'cron', 'opensvc')
+	content = '@echo off\n"'+sys.executable+'" "'+cmdpath+'" %*'
+        f = open(l, 'w')
+        f.write(content)
+        f.close()
+
+def install_pythonlink_unix():
     p = python_path()
     if p is None:
         print >>sys.stderr, "could not find a valid python installation"
         sys.exit(1)
-    target = '/opt/opensvc/bin/python'
+    target = os.path.join(pathbin, 'python')
     return install_link(source=p, target=target)
 
 def move_host_mode():
-    hm = '/opt/opensvc/var/host_mode'
-    cf = '/opt/opensvc/etc/node.conf'
+    hm = os.path.join(pathvar, 'host_mode')
+    cf = os.path.join(pathetc, 'node.conf')
+    nodemgr = os.path.join(pathbin, 'nodemgr')
     if not os.path.exists(hm):
         return
     try:
@@ -507,7 +565,7 @@ def move_host_mode():
         print 'failed to read old host_mode. renamed to', hm+'.old'
         shutil.move(hm, hm+'.old')
         return
-    cmd = ['/opt/opensvc/bin/nodemgr', 'set', '--param', 'node.host_mode', '--value', mode]
+    cmd = [nodemgr, 'set', '--param', 'node.host_mode', '--value', mode]
     ret = os.system(' '.join(cmd))
     if ret != 0:
         print 'failed to set host_mode in node.conf'
@@ -515,8 +573,8 @@ def move_host_mode():
     shutil.move(hm, hm+'.old')
  
 def nodeconf_params():
-    nodeconf = os.path.join(os.sep, 'opt', 'opensvc', 'etc', 'node.conf')
-    dotnodeconf = os.path.join(os.sep, 'opt', 'opensvc', 'etc', '.node.conf')
+    nodeconf = os.path.join(pathetc, 'node.conf')
+    dotnodeconf = os.path.join(pathetc, '.node.conf')
 
     # reset etc/.node.conf (autogenerated)
     if os.path.exists(dotnodeconf):
@@ -578,7 +636,6 @@ def save_exc():
         except:
             now =""
 
-        pathtmp = os.path.join(os.sep, 'opt', 'opensvc', 'tmp')
         try:
             f = tempfile.NamedTemporaryFile(dir=pathtmp, prefix='exc-'+now+'-')
         except:

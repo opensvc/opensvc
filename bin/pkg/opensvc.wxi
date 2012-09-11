@@ -5,9 +5,6 @@
         <Media Id="1" Cabinet="opensvc.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="OPENSVC" Name="opensvc">
-                <Component Id="NODEMGR.CMD" DiskId="1" Guid="F0FE724B-B3BD-49F9-8DD8-71C175CC1535">
-                    <File Id="NODEMGR.CMD" Name="nodemgr.cmd" Source="C:\Program Files\opensvc\nodemgr.cmd" />
-                </Component>
                 <Directory Id="BIN" Name="bin">
                     <Component Id="ALLDOWNSERVICES" DiskId="1" Guid="C0AB0E12-1299-4EAA-8B1C-C865E7AFC439">
                         <File Id="ALLDOWNSERVICES" Name="alldownservices" Source="C:\Program Files\opensvc\bin\alldownservices" />
@@ -83,6 +80,9 @@
                     </Component>
                     <Component Id="SVCTHAW" DiskId="1" Guid="75C1396F-E39D-4797-BD29-1F00722A7846">
                         <File Id="SVCTHAW" Name="svcthaw" Source="C:\Program Files\opensvc\bin\svcthaw" />
+                    </Component>
+                    <Component Id="POSTINSTALL.CMD" Guid="CB6DC294-D999-4BCE-91E1-31457FFDA03A" DiskId="1">
+                        <File Id="POSTINSTALL.CMD" Name="postinstall.cmd" Source="..\postinstall.cmd" />
                     </Component>
                     <Directory Id="CRON" Name="cron">
                         <Component Id="OPENSVC" DiskId="1" Guid="C397B61D-8AAB-430F-91C2-4150AE4E142E">
@@ -1121,7 +1121,6 @@
             </Directory>
         </Directory>
         <Feature Id="DefaultFeature" Title="Main Feature" Level="1">
-            <ComponentRef Id="NODEMGR.CMD" />
             <ComponentRef Id="ALLDOWNSERVICES" />
             <ComponentRef Id="ALLPRIMARYSERVICES" />
             <ComponentRef Id="ALLSECONDARYSERVICES" />
@@ -1483,7 +1482,10 @@
             <ComponentRef Id="UTILITIES.PY" />
             <ComponentRef Id="VULN.PY" />
             <ComponentRef Id="XINETD.PY" />
+            <ComponentRef Id="POSTINSTALL.CMD" />
         </Feature>
         <UI />
+        <CustomAction Execute="commit" FileKey="POSTINSTALL.CMD" Id="POSTINSTALL" ExeCommand="">
+        </CustomAction>
     </Product>
 </Wix>
