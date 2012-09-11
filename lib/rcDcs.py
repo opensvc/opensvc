@@ -182,7 +182,7 @@ class Dcs(object):
         return buff
 
     def get_dcspoolperf(self):
-        cmd = 'get-dcspool | get-dcsperformancecounter'%(self.conn, self.conn)
+        cmd = 'get-dcspool -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
         print "%s: %s"%(self.name, cmd)
         buff = self.dcscmd(cmd)[0]
         return buff
