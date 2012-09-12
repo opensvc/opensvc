@@ -62,7 +62,7 @@ class Ip(Res.Ip):
             else:
                 raise ex.excNotSupported()
         else:
-            return Res.IpRes.Ip.stopip_cmd()
+            return self.stopip_cmd_shared()
 
     def stopip_cmd_exclusive(self):
         cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'unplumb' ]
@@ -76,6 +76,10 @@ class Ip(Res.Ip):
     def startip_cmd_shared(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.svc.vmname ]
+        return self.vcall(cmd)
+
+    def stopip_cmd_shared(self):
+        cmd=['ifconfig', self.stacked_dev, 'unplumb']
         return self.vcall(cmd)
 
     def allow_start(self):
