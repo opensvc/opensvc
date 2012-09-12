@@ -104,6 +104,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             return self.mpath_h
         if which('multipath'):
             self.load_mpath_native()
+        else:
+            self.mpath_h = {}
 
     def scsi_id(self, dev):
         wwid = self.mpath_id(dev)
