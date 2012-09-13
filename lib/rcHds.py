@@ -80,7 +80,7 @@ class Hdss(object):
 
 class Hds(object):
     def __init__(self, serial, url, username, password):
-        self.keys = ['lu']
+        self.keys = ['lu', 'arraygroup']
         self.name = serial
         self.serial = serial
         self.url = url
@@ -96,8 +96,14 @@ class Hds(object):
         out, err, ret = self._cmd(cmd)
         return out
 
+    def get_arraygroup(self):
+        cmd = ['GetStorageArray', 'subtarget=ArrayGroup']
+        print ' '.join(cmd)
+        out, err, ret = self._cmd(cmd)
+        return out
+
 if __name__ == "__main__":
     o = Hdss()
-    for necism in o:
-        print necism.all()
+    for hds in o:
+        print hds.lu()
 
