@@ -80,7 +80,7 @@ class Hdss(object):
 
 class Hds(object):
     def __init__(self, serial, url, username, password):
-        self.keys = ['lu', 'arraygroup']
+        self.keys = ['lu', 'arraygroup', 'port']
         self.name = serial
         self.serial = serial
         self.url = url
@@ -98,6 +98,12 @@ class Hds(object):
 
     def get_arraygroup(self):
         cmd = ['GetStorageArray', 'subtarget=ArrayGroup']
+        print ' '.join(cmd)
+        out, err, ret = self._cmd(cmd)
+        return out
+
+    def get_port(self):
+        cmd = ['GetStorageArray', 'subtarget=Port']
         print ' '.join(cmd)
         out, err, ret = self._cmd(cmd)
         return out
