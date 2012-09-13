@@ -965,6 +965,24 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_vioserver(*args)
 
+    def push_hds(self, objects=[], sync=True):
+        if 'update_hds' not in self.proxy_methods:
+            print "'update_hds' method is not exported by the collector"
+            return
+        m = __import__('rcHds')
+        try:
+            hdss = m.Hdss(objects)
+        except:
+            return
+        for hds in hdss:
+            vals = []
+            for key in hds.keys:
+                vals.append(getattr(hds, 'get_'+key)())
+            args = [hds.name, hds.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_hds(*args)
+
     def push_necism(self, objects=[], sync=True):
         if 'update_necism' not in self.proxy_methods:
     	    print "'update_necism' method is not exported by the collector"
