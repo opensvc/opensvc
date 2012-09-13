@@ -112,6 +112,7 @@ class Node(Svc, Freezer):
             'pushsym':        'push symmetrix configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
             'pushnecism':     'push NEC ISM configuration to collector',
+            'pushhds':        'push HDS configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
@@ -727,6 +728,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_dcs', self.options.objects)
+
+    def pushhds(self):
+        if self.skip_action('hds', 'push_interval', 'last_hds_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
         if self.skip_action('necism', 'push_interval', 'last_necism_push',
