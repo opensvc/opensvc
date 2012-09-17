@@ -146,6 +146,8 @@ class Node(Svc, Freezer):
             'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
             'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
             'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
+            'collector_list_nodes': 'show the list of nodes matching the filterset pointed by --filterset',
+            'collector_list_services': 'show the list of services matching the filterset pointed by --filterset',
           },
         }
         self.collector = xmlrpcClient.Collector()

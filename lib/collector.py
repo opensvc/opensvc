@@ -180,4 +180,19 @@ class Collector(object):
 
         print_table(d['data'], width=50)
 
+    def collector_list_nodes(self):
+        opts = {'fset': self.options.filterset}
+        d = self.collector.call('collector_list_nodes', opts)
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+        for node in d['data']:
+            print node
+
+    def collector_list_services(self):
+        opts = {'fset': self.options.filterset}
+        d = self.collector.call('collector_list_services', opts)
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+        for service in d['data']:
+            print service
 

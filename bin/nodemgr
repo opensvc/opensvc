@@ -62,6 +62,9 @@ parser.add_option("--moduleset", default="",
 parser.add_option("--ruleset", default="",
 		  action="store", dest="ruleset",
                   help="compliance, set ruleset list. The 'all' value can be used in conjonction with detach.")
+parser.add_option("--filterset", default="",
+		  action="store", dest="filterset",
+                  help="set a filterset to limit collector extractions")
 parser.add_option("--ruleset-date", default="",
 		  action="store", dest="ruleset_date",
                   help="compliance, use rulesets valid on specified date")
