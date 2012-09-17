@@ -1276,6 +1276,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_list_services(*args)
 
+    def collector_list_filtersets(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_list_filtersets(*args)
+
 
 if __name__ == "__main__":
     x = Collector()

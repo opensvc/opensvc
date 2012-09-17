@@ -148,6 +148,7 @@ class Node(Svc, Freezer):
             'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
             'collector_list_nodes': 'show the list of nodes matching the filterset pointed by --filterset',
             'collector_list_services': 'show the list of services matching the filterset pointed by --filterset',
+            'collector_list_filtersets': 'show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>',
           },
         }
         self.collector = xmlrpcClient.Collector()

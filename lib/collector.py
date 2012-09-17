@@ -196,3 +196,11 @@ class Collector(object):
         for service in d['data']:
             print service
 
+    def collector_list_filtersets(self):
+        opts = {'fset': self.options.filterset}
+        d = self.collector.call('collector_list_filtersets', opts)
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+        for fset in d['data']:
+            print fset
+
