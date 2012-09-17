@@ -67,7 +67,7 @@ class VioServer(object):
         self.name = name
         self.username = username
         self.key = key
-        self.keys = ['lsmap', 'bootinfo', 'lsfware', 'lsdevattr']
+        self.keys = ['lsmap', 'bootinfo', 'lsfware', 'lsdevattr', 'lsdevvpd', 'devsize']
 
     def rcmd(self, cmd):
         return rcmd(cmd, self.name, self.username, self.key)
@@ -89,6 +89,16 @@ class VioServer(object):
 
     def get_lsdevattr(self):
         cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i $(ioscli lsdev -dev $i -attr|grep ww_name);done'
+        print "%s: %s"%(self.name, cmd)
+        return self.rcmd(cmd)[0]
+
+    def get_lsdevvpd(self):
+        cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i ; ioscli lsdev -dev $i -vpd;done'
+        print "%s: %s"%(self.name, cmd)
+        return self.rcmd(cmd)[0]
+
+    def get_devsize(self):
+        cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i $(bootinfo -s $i);done'
         print "%s: %s"%(self.name, cmd)
         return self.rcmd(cmd)[0]
 
