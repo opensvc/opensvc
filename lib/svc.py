@@ -182,7 +182,7 @@ class Svc(Resource, Freezer):
 
     def svclock(self, action=None, timeout=30, delay=5):
         suffix = None
-        list_actions_no_pre_action = [
+        list_actions_no_lock = [
           'push',
           'push_appinfo',
           'print_status',
@@ -190,14 +190,15 @@ class Svc(Resource, Freezer):
           'freeze',
           'frozen',
           'thaw',
+          'get',
           'freezestop',
           'print_disklist',
           'print_devlist',
           'json_status',
-          'json_disklist'
+          'json_disklist',
           'json_devlist'
         ]
-        if action in list_actions_no_pre_action:
+        if action in list_actions_no_lock:
             # no need to serialize this action
             return
         if action.startswith("collector"):
