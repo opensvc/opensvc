@@ -52,6 +52,9 @@ class CompPackages(object):
         elif vendor in ['IBM']:
             self.get_installed_packages = self.aix_get_installed_packages
             self.fix_pkg = self.aix_fix_pkg
+            if self.uri is None:
+                print >>sys.stderr, "resource must be set"
+                raise NotApplicable()
         elif vendor in ['HP']:
             self.get_installed_packages = self.hp_get_installed_packages
             self.fix_pkg = self.hp_fix_pkg
@@ -85,7 +88,41 @@ class CompPackages(object):
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
         if vendor in ['CentOS', 'Redhat', 'Red Hat']:
             return self.yum_expand_pkgname(pkgname)
+        elif vendor in ['IBM']:
+            return self.aix_expand_pkgname(pkgname)
         return [pkgname]
+
+    def aix_expand_pkgname(self, pkgname):
+        import fnmatch
+        l = []
+        """
+Java14.ext                                                         ALL  @@S:Java14.ext _all_filesets
+ + 1.4.2.0  Java SDK 32-bit Comm API Extension                          @@S:Java14.ext.commapi 1.4.2.0
+ + 1.4.2.0  Java SDK 32-bit Java3D                                      @@S:Java14.ext.java3d 1.4.2.0
+ + 1.4.2.0  Java SDK 32-bit JavaHelp                                    @@S:Java14.ext.javahelp 1.4.2.0
+
+        """
+        if not hasattr(self, "nimcache"):
+            cmd = ['nimclient', '-o', 'showres', '-a', 'resource=%s'%self.uri, '-a', 'installp_flags=L']
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                if 'not installed' not in err:
+                    print >>sys.stderr, 'can not expand (cmd error)', pkgname
+                return [pkgname]
+            self.nimcache = out.split('\n')
+        if len(self.nimcache) < 1:
+            print >>sys.stderr, 'can not expand (no match)', pkgname
+            return [pkgname]
+        for line in self.nimcache:
+            words = line.split(':')
+            if len(words) < 5:
+                continue
+            _pkgvers = words[2]
+            _pkgname = words[1].replace('-'+_pkgvers, '')
+            if fnmatch.fnmatch(_pkgname, pkgname) and _pkgname not in l:
+                l.append(_pkgname)
+        return l
 
     def yum_expand_pkgname(self, pkgname):
         arch_specified = False
@@ -169,7 +206,20 @@ class CompPackages(object):
         return self.hp_parse_swlist(out).keys()
 
     def aix_fix_pkg(self, pkg):
-        print "TODO: aix_fix_pkg"
+        cmd = ['nimclient', '-o', 'cust',
+               '-a', 'lpp_source=%s'%self.uri,
+               '-a', 'installp_flags=Y',
+               '-a', 'filesets=%s'%pkg]
+        print " ".join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(out) > 0:
+            print out
+        if len(err) > 0:
+            print >>sys.stderr, err
+        if p.returncode != 0:
+            return RET_ERR
+        return RET_OK
 
     def aix_get_installed_packages(self):
         cmd = ['lslpp', '-Lc']

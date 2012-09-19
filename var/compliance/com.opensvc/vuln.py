@@ -309,6 +309,7 @@ class CompVuln(object):
         s = os.uname()[2]
         s = s.replace('xen', '')
         s = s.replace('hugemem', '')
+        s = s.replace('smp', '')
         s = s.replace('PAE', '')
 	s = s.replace('.x86_64','')
         return s
