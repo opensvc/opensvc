@@ -32,6 +32,8 @@ class NodeConf(object):
         return RET_OK
 
     def set_val(self, keyname, target):
+        if type(target) == int:
+            target = str(target)
         cmd = ['/opt/opensvc/bin/nodemgr', 'set', '--param', keyname, '--value', target]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
