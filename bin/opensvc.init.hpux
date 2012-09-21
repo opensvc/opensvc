@@ -25,6 +25,7 @@ start)
 	if [ -x $agt ] ; then
 		$agt
 	fi
+        ${osvc_path}/nodemgr pushasset
 	${allservices} ${osvc_opts} boot
 	;;
 stop_msg)
