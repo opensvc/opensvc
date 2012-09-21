@@ -12,6 +12,7 @@ allservices=${osvc_path}/allservices
 
 case $1 in
 faststart)
+        ${osvc_path}/nodemgr pushasset
 	${allservices} ${osvc_opts} boot
 	;;
 faststop)
