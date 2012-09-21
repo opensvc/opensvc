@@ -33,11 +33,16 @@ class check(checks.check):
         if len(lines) == 0:
             return r
         for line in lines:
-            l = line.split(':')
+            l = line.split(': ')
             if len(l) < 2 or not line.startswith('  '):
                 continue
             if l[-1].strip() != "OK":
-                r += [(l[0].strip().lower(), 1)]
+                inst = line.strip().lower()
+                status = 1
+            else:
+                inst = l[0].strip().lower()
+                status = 0
+            r += [(inst, status)]
         return r
 
     def check_logicaldrive(self, slot):
