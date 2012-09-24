@@ -25,6 +25,7 @@ from rcGlobalEnv import rcEnv
 
 class ifconfig(rcIfconfig.ifconfig):
     def __init__(self, hostname):
+        self.hwaddr = {}
         self.intf = []
         cmd = rcEnv.rsh.split(' ') + [hostname, 'netstat', '-win']
         p = Popen(cmd, stdout=PIPE)
@@ -35,13 +36,14 @@ class ifconfig(rcIfconfig.ifconfig):
         for line in intf_list.split('\n'):
             if len(line) == 0:
                 continue
+            if line.startswith("Name"):
+                continue
             intf = line.split()[0].replace('*', '')
             cmd = rcEnv.rsh.split(' ') + [hostname, 'env', 'LANG=C', 'ifconfig', intf]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out = p.communicate()
+            if p.returncode != 0:
+                continue
             if "no such interface" in out[1]:
                 continue
-            elif p.returncode != 0:
-                raise ex.excError
             self.parse(out[0])
-                
