@@ -50,11 +50,13 @@ class Apps(resApp.Apps):
 
     def checks(self, verbose=False):
         container = self.svc.resources_by_id["container"]
+        if self.svc.guestos == 'Windows':
+            raise ex.excNotAvailable
         if container.status(refresh=True) != rcStatus.UP:
             self.log.debug("abort resApp action because container status is %s"%rcStatus.status_str(container.status()))
             self.status_log("container is %s"%rcStatus.status_str(container.status()))
             raise ex.excNotAvailable
-        if self.svc.guestos == 'Windows' or not self.check_reachable(container):
+        if not self.check_reachable(container):
             self.log.debug("abort resApp action because container is unreachable")
             self.status_log("container is unreachable")
             return False
