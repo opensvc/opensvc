@@ -18,6 +18,7 @@
 import checks
 import os
 from rcUtilities import justcall, which
+from rcUtilitiesSunOS import get_os_ver
 from rcGlobalEnv import rcEnv
 
 """
@@ -62,14 +63,7 @@ class check(checks.check):
     def do_check(self):
         if not which("dladm"):
             return self.undef
-        cmd = ['uname', '-v']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return self.undef
-        lines = out.split('\n')
-        if len(lines) == 0:
-            return self.undef
-        self.osver = float(lines[0])
+        self.osver = get_os_ver()
         if self.osver >= 11:
             cmd = ['dladm', 'show-phys', '-p', '-o', 'link,state,speed,duplex']
             out, err, ret = justcall(cmd)
