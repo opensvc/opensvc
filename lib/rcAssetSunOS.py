@@ -24,6 +24,7 @@ import rcAsset
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
+        self.osver = 0.
         self.zone = True
         if not which('zonename'):
             self.zone = False
@@ -35,12 +36,12 @@ class Asset(rcAsset.Asset):
                 self.zone = False
 
         (out, err, ret) = justcall(['prtdiag'])
-        if ret != 0:
+        if ret != 0 and len(out) < 4:
             self.prtdiag = []
         else:
             self.prtdiag = out.split('\n')
         (out, err, ret) = justcall(['prtconf'])
-        if ret != 0:
+        if ret != 0 and len(out) < 4:
             self.prtconf = []
         else:
             self.prtconf = out.split('\n')
@@ -85,7 +86,23 @@ class Asset(rcAsset.Asset):
         (out, err, ret) = justcall(['uname', '-v'])
         if ret != 0:
             return 'Unknown'
-        return out.split('\n')[0]
+        lines = out.split('\n')
+        if len(lines) == 0:
+            return 'Unknown'
+        try:
+            self.osver = float(lines[0])
+        except:
+            return lines[0]
+        if self.osver < 11.:
+            return lines[0]
+        else:
+            (out, err, ret) = justcall(['pkg', 'info', 'entire'])
+            if ret != 0:
+                return 'Unknown'
+            nfo = out.split('\n')
+            for l in nfo:
+                if 'Version:' in l and 'SRU' in l:
+                    return ' '.join([lines[0], 'SRU', l.split()[6].strip(')')])
 
     def _get_os_arch(self):
         (out, err, ret) = justcall(['uname', '-m'])
