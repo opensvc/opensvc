@@ -84,12 +84,12 @@ class IbmSvc(object):
         return self.rcmd(cmd)[0]
 
     def get_lsnode(self):
-        cmd = 'lsnode -delim !'
+        cmd = 'svcinfo lsnode -delim !'
         print "%s: %s"%(self.name, cmd)
         return self.rcmd(cmd)[0]
 
     def get_lscluster(self):
-        cmd = 'lscluster -delim :'
+        cmd = 'svcinfo lscluster -delim :'
         print "%s: %s"%(self.name, cmd)
         return self.rcmd(cmd)[0]
 
