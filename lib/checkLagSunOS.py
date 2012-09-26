@@ -126,7 +126,7 @@ class check(checks.check):
                             l = phy.split(':')
                             val = l[2]
                             r.append({
-                                      'chk_instance': 'lag %s.%s speed'%(lag, net),
+                                      'chk_instance': '%s.%s.speed'%(lag, net),
                                       'chk_value': str(val),
                                       'chk_svcname': '',
                                      })
@@ -143,7 +143,7 @@ class check(checks.check):
                 continue
             val = l[2]
             r.append({
-                      'chk_instance': 'lag %s.%d speed'%(lag, i),
+                      'chk_instance': '%s.%d.speed'%(lag, i),
                       'chk_value': str(val),
                       'chk_svcname': '',
                      })
@@ -185,7 +185,7 @@ class check(checks.check):
                             else:
                                val = 0
                             r.append({
-                                      'chk_instance': 'lag %s.%s %s'%(lag, net, key),
+                                      'chk_instance': '%s.%s.%s'%(lag, net, key),
                                       'chk_value': str(val),
                                       'chk_svcname': '',
                                      })
@@ -206,7 +206,7 @@ class check(checks.check):
                 else:
                     val = 0
                 r.append({
-                          'chk_instance': 'lag %s.%d %s'%(lag, i, key),
+                          'chk_instance': '%s.%d.%s'%(lag, i, key),
                           'chk_value': str(val),
                           'chk_svcname': '',
                          })

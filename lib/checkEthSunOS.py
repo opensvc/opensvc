@@ -187,7 +187,7 @@ class check(checks.check):
                             l = line.split(':')
                             val = l[2]
                             r.append({
-                                      'chk_instance': '%s/%s.speed'%(ifn,l[4]),
+                                      'chk_instance': '%s.%s.speed'%(ifn,l[4]),
                                       'chk_value': str(val),
                                       'chk_svcname': '',
                                      })
@@ -228,7 +228,7 @@ class check(checks.check):
                             else:
                                 val = 0
                             r.append({
-                                      'chk_instance': '%s/%s.duplex'%(ifn,l[4]),
+                                      'chk_instance': '%s.%s.duplex'%(ifn,l[4]),
                                       'chk_value': str(val),
                                       'chk_svcname': '',
                                      })
@@ -269,7 +269,7 @@ class check(checks.check):
                             else:
                                 val = 0
                             r.append({
-                                      'chk_instance': '%s/%s.link'%(ifn,l[4]),
+                                      'chk_instance': '%s.%s.link'%(ifn,l[4]),
                                       'chk_value': str(val),
                                       'chk_svcname': '',
                                      })
