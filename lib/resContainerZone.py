@@ -221,7 +221,14 @@ class Zone(resContainer.Container):
         (out,err,st) = justcall([ 'zoneadm', '-z', self.name, 'list', '-p' ])
 
         if st == 0 :
-            (zoneid,zonename,state,zonepath,uuid,brand,iptype)=out.split(':')
+            l = out.split(':')
+            n_fields = len(l)
+            if n_fields == 9:
+                (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp) = l
+            elif n_fields == 7:
+                (zoneid,zonename,state,zonepath,uuid,brand,iptype) = l
+            else:
+                raise excError("Unexpected zoneadm list output: %s"%out)
             if zonename == self.name :
                 self.state = state
                 self.zonepath = zonepath
