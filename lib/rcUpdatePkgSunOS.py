@@ -9,8 +9,12 @@ def update(fpath):
     p.communicate()
     if p.returncode != 0:
         return 1
-    cmd = "echo y | pkgadd -G -d %s all"%fpath
-    print cmd
-    p = Popen(cmd, shell=True)
-    p.communicate()
-    return p.returncode
+    cmd1 = ['yes']
+    cmd2 = ['pkgadd', '-G', '-d', fpath, 'all']
+    print ' '.join(cmd1) + '|' ' '.join(cmd2)
+    p1 = Popen(cmd1, stdout=PIPE)
+    p2 = Popen(cmd2, stdin=p1.stdout)
+    p2.communicate()
+    p1.terminate()
+    return p2.returncode
+
