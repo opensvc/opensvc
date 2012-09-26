@@ -67,6 +67,8 @@ class DevTree(rcDevTree.DevTree):
             self.load_partitions(d)
 
     def load_sds(self):
+        if not os.path.exists("/usr/sbin/metastat"):
+            return
         p = Popen(["metastat", "-p"], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
