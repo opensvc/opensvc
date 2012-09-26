@@ -17,6 +17,7 @@
 #
 import checks
 import os
+import re
 from rcUtilities import justcall
 from rcUtilitiesSunOS import get_os_ver
 from rcGlobalEnv import rcEnv
@@ -100,6 +101,7 @@ up:1000:full
 
 class check(checks.check):
     chk_type = "eth"
+    kstat = None
 
     def _findphys(self, netif):
         res = ""
@@ -134,6 +136,8 @@ class check(checks.check):
             if line.startswith(' '):
                 continue
             if line.startswith('lo'):
+                continue
+            if line.startswith('sppp'):
                 continue
             if self.osver < 11:
                 if line.startswith('aggr'):
@@ -187,21 +191,7 @@ class check(checks.check):
                                      })
             return r
         for ifn in self.ifs:
-            if ifn.startswith('ce'):
-                val = self._do_spec_check('ce',ifn,ifn[2:],'link_speed')
-            elif ifn.startswith('bge'):
-                val = self._do_spec_check('bge',ifn,ifn[3:],'link_speed')
-            else:
-                cmd = ['/usr/sbin/ndd', '-get', '/dev/'+ifn, 'link_speed']
-                out, err, ret = justcall(cmd)
-                if ret != 0:
-                    val = 0
-                else:
-                    lines = out.split('\n')
-                    if len(lines) == 0:
-                        val = 0
-                    else:
-                        val = lines[0]
+            val = self.get_param(ifn, 'link_speed')
             r.append({
                       'chk_instance': '%s.speed'%ifn,
                       'chk_value': str(val),
@@ -228,21 +218,7 @@ class check(checks.check):
                                      })
             return r
         for ifn in self.ifs:
-            if ifn.startswith('ce'):
-                val = self._do_spec_check('ce',ifn,ifn[2:],'link_duplex')
-            elif ifn.startswith('bge'):
-                val = self._do_spec_check('bge',ifn,ifn[3:],'link_duplex')
-            else:
-                cmd = ['/usr/sbin/ndd', '-get', '/dev/'+ifn, 'link_duplex']
-                out, err, ret = justcall(cmd)
-                if ret != 0:
-                    val = 0
-                else:
-                    lines = out.split('\n')
-                    if len(lines) == 0:
-                        val = 0
-                    else:
-                        val = lines[0]
+            val = self.get_param(ifn, 'link_duplex')
             r.append({
                       'chk_instance': '%s.duplex'%ifn,
                       'chk_value': str(val),
@@ -268,23 +244,8 @@ class check(checks.check):
                                       'chk_svcname': '',
                                      })
             return r
-        i = 0
         for ifn in self.ifs:
-            if ifn.startswith('ce'):
-                val = self._do_spec_check('ce',ifn,ifn[2:],'link_up')
-            elif ifn.startswith('bge'):
-                val = self._do_spec_check('bge',ifn,ifn[3:],'link_up')
-            else:
-                cmd = ['/usr/sbin/ndd', '-get', '/dev/'+ifn, 'link_status']
-                out, err, ret = justcall(cmd)
-                if ret != 0:
-                    val = 0
-                else:
-                    lines = out.split('\n')
-                    if len(lines) == 0:
-                        val = 0
-                    else:
-                        val = lines[0]
+            val = self.get_param(ifn, 'link_status')
             r.append({
                       'chk_instance': '%s.link'%ifn,
                       'chk_value': str(val),
@@ -292,19 +253,61 @@ class check(checks.check):
                      })
         return r
 
-    def _do_spec_check(self, gifn, ifn, inst, patt):
-        inst = ifn[2:]
-        cmd = ['/usr/bin/kstat', '-p']
+    def get_param(self, intf, param):
+        val = self.get_from_ndd(intf, param)
+        if val is None:
+            val = self.get_from_kstat(intf, param)
+        return val
+
+    def get_from_ndd(self, intf, param):
+        cmd = ['/usr/sbin/ndd', '-get', '/dev/'+intf, param]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            return 0
-        else:
-            lines = out.split('\n')
-            if len(lines) == 0:
-                return 0
-            else:
-                for line in lines:
-                    if line.startswith(gifn+':'+inst+':'+ifn+':'+patt):
-                        l = line.split()
-                        return l[1]
-        return 0
+            return
+        return out.strip()
+
+    def get_from_kstat(self, intf, param):
+        inst = re.sub(r"[a-zA-Z]+", "", intf)
+        drv = re.sub(r"[0-9]+", "", intf)
+        data = {
+          "ce": {
+            "link_status": ":"+intf+":link_up",
+            "link_duplex": ":"+intf+":link_duplex",
+            "link_speed": ":"+intf+":link_speed",
+          },
+          "nxge": {
+            "link_status": ":mac:link_up",
+            "link_duplex": ":mac:link_duplex",
+            "link_speed": ":Port Stats:link_speed",
+          },
+        }
+
+        if self.kstat is None:
+            cmd = ['/usr/bin/kstat', '-p']
+            out, err, ret = justcall(cmd)
+            if ret == 0:
+                self.kstat = out
+
+        if self.kstat is None:
+            return
+
+        lines = self.kstat.split('\n')
+
+        if len(lines) == 0:
+            return
+
+        prefix = ':'.join((drv, inst))
+        if drv not in data:
+            return
+        _data = data[drv]
+        if param not in _data:
+            return
+        _param = _data[param]
+        patt = prefix + _param
+
+        for line in lines:
+            if not line.startswith(patt):
+                continue
+            l = line.split()
+            return l[-1]
+        return
