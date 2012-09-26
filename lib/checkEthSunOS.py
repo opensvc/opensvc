@@ -67,24 +67,67 @@ bnx3:3: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 4
         zone frcp00vpd0179
         inet 55.16.202.98 netmask fffffc00 broadcast 55.16.203.255
 
+Solaris 10
+==========
 # ndd -get /dev/bnx3 link_speed
 1000
 # ndd -get /dev/bnx3 link_duplex
 1
 # ndd -get /dev/bnx3 link_status
 1
-kstat -p | grep link_ | grep  ce:0:ce0:link_
+kstat -p | grep link_ | grep  ce:0:ce0:link
 ce:0:ce0:link_asmpause  0
 ce:0:ce0:link_duplex    2
 ce:0:ce0:link_pause     0
 ce:0:ce0:link_speed     1000
 ce:0:ce0:link_up        1
+
+Solaris 11
+==========
+# dladm show-link -p -o link,class,over l226g0
+l226g0:vnic:aggr0
+# dladm show-link -p -o link,class,over aggr0
+aggr0:aggr:net0 net2
+# dladm show-link -p -o link,class,over net0
+net0:phys:
+# dladm show-phys -p -o state,speed,duplex net0
+up:1000:full
+# dladm show-link -p -o link,class,over net2
+# dladm show-phys -p -o state,speed,duplex net2
+up:1000:full
 """
 
 class check(checks.check):
     chk_type = "eth"
 
+    def _findphys(self, netif):
+        res = ""
+        cmd = ['/usr/sbin/dladm', 'show-link', '-p', '-o', 'link,class,over', netif]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return ""
+        lines = out.split('\n')
+        for line in lines:
+            if len(line) == 0:
+                break
+            v = line.split(':')
+            if v[1] == 'phys':
+                self.l[self.topif].add(v[0])
+            else:
+                ifs = v[2].split(' ')
+                for i in ifs:
+                    res = self._findphys(i)
+            return "OK"
+
     def do_check(self):
+        cmd = ['uname', '-v']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return self.undef
+        lines = out.split('\n')
+        if len(lines) == 0:
+            return self.undef
+        self.osver = float(lines[0])
         self.ifs = []
         cmd = ['/usr/sbin/ifconfig', '-a']
         out, err, ret = justcall(cmd)
@@ -98,8 +141,9 @@ class check(checks.check):
                 continue
             if line.startswith('lo'):
                 continue
-            if line.startswith('aggr'):
-                continue
+            if self.osver < 11:
+                if line.startswith('aggr'):
+                    continue
             if 'index' not in line:
                 continue
             l = line.split(':')
@@ -107,7 +151,26 @@ class check(checks.check):
                 continue
             if len(l[0]) < 3:
                 continue
-            self.ifs.append(l[0])
+            if l[0] in self.ifs:
+                continue
+            else:
+                self.ifs.append(l[0])
+        if self.osver >= 11:
+            self.l = {}
+            for ifn in self.ifs:
+                if ifn not in self.l:
+                    self.l[ifn] = set([])
+                    self.topif = ifn
+                    ret = self._findphys(ifn)
+            cmd = ['/usr/sbin/dladm', 'show-phys', '-p', '-o', 'link,state,speed,duplex,device']
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                return self.undef
+            lines = out.split('\n')
+            if len(lines) == 0:
+                return self.undef
+            self.phys = lines
+
         r = []
         r += self.do_check_speed()
         r += self.do_check_duplex()
@@ -116,6 +179,19 @@ class check(checks.check):
 
     def do_check_speed(self):
         r = []
+        if self.osver >= 11:
+            for ifn in self.ifs:
+                for phy in self.l[ifn]:
+                    for line in self.phys:
+                        if line.startswith(phy+':'):
+                            l = line.split(':')
+                            val = l[2]
+                            r.append({
+                                      'chk_instance': '%s/%s.speed'%(ifn,l[4]),
+                                      'chk_value': str(val),
+                                      'chk_svcname': '',
+                                     })
+            return r
         for ifn in self.ifs:
             if ifn.startswith('ce'):
                 val = self._do_spec_check('ce',ifn,ifn[2:],'link_speed')
@@ -141,6 +217,22 @@ class check(checks.check):
 
     def do_check_duplex(self):
         r = []
+        if self.osver >= 11:
+            for ifn in self.ifs:
+                for phy in self.l[ifn]:
+                    for line in self.phys:
+                        if line.startswith(phy+':'):
+                            l = line.split(':')
+                            if l[3] != 'full':
+                                val = 1
+                            else:
+                                val = 0
+                            r.append({
+                                      'chk_instance': '%s/%s.duplex'%(ifn,l[4]),
+                                      'chk_value': str(val),
+                                      'chk_svcname': '',
+                                     })
+            return r
         for ifn in self.ifs:
             if ifn.startswith('ce'):
                 val = self._do_spec_check('ce',ifn,ifn[2:],'link_duplex')
@@ -166,6 +258,22 @@ class check(checks.check):
 
     def do_check_link(self):
         r = []
+        if self.osver >= 11:
+            for ifn in self.ifs:
+                for phy in self.l[ifn]:
+                    for line in self.phys:
+                        if line.startswith(phy+':'):
+                            l = line.split(':')
+                            if l[1] != 'up':
+                                val = 1
+                            else:
+                                val = 0
+                            r.append({
+                                      'chk_instance': '%s/%s.link'%(ifn,l[4]),
+                                      'chk_value': str(val),
+                                      'chk_svcname': '',
+                                     })
+            return r
         i = 0
         for ifn in self.ifs:
             if ifn.startswith('ce'):
@@ -206,4 +314,3 @@ class check(checks.check):
                         l = line.split()
                         return l[1]
         return 0
-
