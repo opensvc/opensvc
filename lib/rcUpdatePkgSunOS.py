@@ -9,7 +9,7 @@ def update(fpath):
     p.communicate()
     if p.returncode != 0:
         return 1
-    cmd = "yes | pkgadd -G -d %s all"%fpath
+    cmd = "echo y | pkgadd -G -d %s all"%fpath
     print cmd
     p = Popen(cmd, shell=True)
     p.communicate()
