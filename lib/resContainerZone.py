@@ -55,19 +55,16 @@ class Zone(resContainer.Container):
         self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
         self.zone_refresh()
 
-    def zonecfg(self, zonecfg_args=None):
-        cmd = [ZONECFG, '-z', self.name, zonecfg_args ]
+    def zonecfg(self, zonecfg_args=[]):
+        cmd = [ZONECFG, '-z', self.name] + zonecfg_args
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
         if ret != 0:
-            msg = '%s "%s" failed status: %i - logs in %s' % (
-                " ".join(cmd[0:3]), "".join([c for c in zonecfg_args if c != ";"]),
-                ret, out)
+            msg = '%s failed status: %i\n%s' % (" ".join(cmd), ret, out)
             self.log.error(msg)
             raise excError(msg)
         else:
-            self.log.info('%s "%s" done status: %i - logs in %s' %
-                (" ".join(cmd[0:3]), "".join([c for c in zonecfg_args if c != ";"]),
-                ret, out))
+            msg = '%s done status: %i\n%s' % (" ".join(cmd), ret, out)
+            self.log.info(msg)
         self.zone_refresh()
         return ret
 

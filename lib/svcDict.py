@@ -762,7 +762,19 @@ class KeywordIpNetmask(Keyword):
                   section="ip",
                   keyword="netmask",
                   order=13,
-                  text="If an ip is already plumbed on the root interface (if which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64."
+                  text="If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64."
+                )
+
+class KeywordIpGateway(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="gateway",
+                  order=14,
+                  required=False,
+                  text="A zone ip provisioning parameter used in the sysidcfg formatting. The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
+                  provisioning=True
                 )
 
 class KeywordVgType(Keyword):
@@ -1518,6 +1530,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpIpname()
         self += KeywordIpIpdev()
         self += KeywordIpNetmask()
+        self += KeywordIpGateway()
         self += KeywordVgType()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
