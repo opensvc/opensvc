@@ -82,13 +82,13 @@ class StatsProvider(rcStats.StatsProvider):
                 continue
             for i, e in enumerate(l):
                 if e.endswith('T'):
-                    l[i] = str(int(e[0:-2]) * 1024 * 1024)
+                    l[i] = str(int(e[0:-1]) * 1024 * 1024)
                 elif e.endswith('G'):
-                    l[i] = str(int(e[0:-2]) * 1024)
+                    l[i] = str(int(e[0:-1]) * 1024)
                 elif e.endswith('M'):
                     l[i] = e.rstrip('M')
                 elif e.endswith('K'):
-                    l[i] = str(1.0 * int(e[0:-2]) / 1024)
+                    l[i] = str(1.0 * int(e[0:-1]) / 1024)
             l = [" ".join(l[0:2])] + l[2:-4] + [self.nodename]
             lines.append(l)
         return cols, lines
