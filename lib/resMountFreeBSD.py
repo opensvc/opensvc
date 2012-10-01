@@ -154,6 +154,7 @@ class Mount(Res.Mount):
         if ret != 0:
             raise ex.excError
         self.Mounts = None
+        self.can_rollback = True
 
     def stop(self):
         if self.Mounts is None:

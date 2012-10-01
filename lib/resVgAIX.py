@@ -111,9 +111,6 @@ class Vg(resDg.Dg):
     def do_stop(self):
         self.do_deactivate()
 
-    def start(self):
-        self.do_start()
-
     def disklist(self):
         cmd = ['lsvg', '-p', self.name]
         (ret, out, err) = self.call(cmd)

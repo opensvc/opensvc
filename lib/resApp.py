@@ -199,6 +199,7 @@ class Apps(Res.Resource):
 
         for name in l:
             self.app(name, 'start')
+        self.can_rollback = True
 
     def containerize(self):
         if self.svc.containerize:
@@ -219,6 +220,7 @@ class Apps(Res.Resource):
                 raise ex.excError
         else:
             self.start_job()
+        self.can_rollback = True
 
     def start_job(self):
         """Execute each startup script (S* files). Log the return code but

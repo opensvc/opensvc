@@ -103,6 +103,7 @@ class Mount(Res.Mount):
             self.Mounts = None
             raise ex.excError
         self.Mounts = None
+        self.can_rollback = True
 
     def try_umount(self):
         if self.fsType == 'zfs' :

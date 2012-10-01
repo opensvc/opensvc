@@ -70,6 +70,7 @@ class Loop(Res.Loop):
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
         self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
+        self.can_rollback = True
 
     def stop(self):
         if not self.is_up():

@@ -62,6 +62,7 @@ class Hb(resHb.Hb):
         except ex.excError, e:
             self.log.error(str(e))
             raise
+        self.can_rollback = True
 
     def __status(self, verbose=False):
         if not os.path.exists(self.ovsinit):

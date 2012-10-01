@@ -111,6 +111,7 @@ class Zone(resContainer.Container):
             self.zoneadm('attach')
         except excError:
             self.zoneadm('attach', ['-F'] )
+        self.can_rollback = True
 
     def detach(self):
         self.zone_refresh()
@@ -194,7 +195,10 @@ class Zone(resContainer.Container):
                     return 0
                 time.sleep(1)
             self.log.info("timeout out waiting for %s shutdown", self.name)
-        return self.zoneadm('halt')
+        ret = self.zoneadm('halt')
+        if ret != 0:
+            return ret
+        return self.detach()
 
     def container_start(self):
         return self.boot()

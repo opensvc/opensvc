@@ -97,6 +97,7 @@ class Mount(Res.Mount):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        self.can_rollback = True
 
     def stop(self):
         if self.is_up() is False:

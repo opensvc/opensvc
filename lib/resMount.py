@@ -63,6 +63,7 @@ class Mount(Res.Resource):
     def startstandby(self):
         if rcEnv.nodename in self.always_on:
              self.start()
+             self.can_rollback = True
 
     def fsck(self):
         if self.fsType not in self.fsck_h:

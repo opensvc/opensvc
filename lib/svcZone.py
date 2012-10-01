@@ -86,12 +86,31 @@ class SvcZone(svc.Svc):
         self.sub_set_action("disk.zpool", "stop", tags=set(['postboot']))
         self.sub_set_action("disk.scsireserv", "stop", tags=set(['postboot']))
         self.sub_set_action("container.zone", "stop")
-        self.sub_set_action("container.zone", "detach")
         self.sub_set_action("fs", "stop", tags=set(['preboot']))
         self.sub_set_action("disk.vg", "stop", tags=set(['preboot']))
         self.sub_set_action("disk.zpool", "stop", tags=set(['preboot']))
         self.sub_set_action("disk.scsireserv", "stop", tags=set(['preboot']))
         self.sub_set_action("ip", "stop")
+
+    def rollback(self):
+        """stop a zone:
+        stop apps
+        stop fs
+        stop VGs
+        stop zone
+        stop ips
+        """
+        self.sub_set_action("app", "rollback")
+        self.sub_set_action("fs", "rollback", tags=set(['postboot']))
+        self.sub_set_action("disk.vg", "rollback", tags=set(['postboot']))
+        self.sub_set_action("disk.zpool", "rollback", tags=set(['postboot']))
+        self.sub_set_action("disk.scsireserv", "rollback", tags=set(['postboot']))
+        self.sub_set_action("container.zone", "rollback")
+        self.sub_set_action("fs", "rollback", tags=set(['preboot']))
+        self.sub_set_action("disk.vg", "rollback", tags=set(['preboot']))
+        self.sub_set_action("disk.zpool", "rollback", tags=set(['preboot']))
+        self.sub_set_action("disk.scsireserv", "rollback", tags=set(['preboot']))
+        self.sub_set_action("ip", "rollback")
 
     def startip(self):
         self.sub_set_action("ip", "check_ping")

@@ -165,6 +165,7 @@ class Drbd(Res.Resource):
         if roles[0] == "Primary":
             return
         self.start_role('Secondary')
+        self.can_rollback = True
 
     def stopstandby(self):
         self.start_connection()
@@ -176,6 +177,7 @@ class Drbd(Res.Resource):
     def start(self):
         self.start_connection()
         self.start_role('Primary')
+        self.can_rollback = True
 
     def stop(self):
         self.drbdadm_down()

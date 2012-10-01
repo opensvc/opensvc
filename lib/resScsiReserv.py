@@ -206,6 +206,7 @@ class ScsiReserv(Res.Resource):
     def start(self):
         if not self.scsireserv_supported():
             return
+        self.can_rollback = True
         if self.scsireserv() != 0:
             raise ex.excError
 

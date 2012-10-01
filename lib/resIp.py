@@ -110,7 +110,7 @@ class Ip(Res.Resource):
         qcall(cmd)
 
     def check_not_ping_raise(self):
-        if self.check_ping():
+        if self.check_ping() and not self.is_up():
             raise ex.excError
 
     def check_ping(self):
@@ -148,6 +148,7 @@ class Ip(Res.Resource):
     def startstandby(self):
         if rcEnv.nodename in self.always_on:
              self.start()
+             self.can_rollback = True
 
     def lock(self, timeout=30, delay=1):
         import lock
@@ -233,6 +234,7 @@ class Ip(Res.Resource):
             pass
 
         self.unlock()
+        self.can_rollback = True
         if ret != 0:
             self.log.error("failed")
             raise ex.excError

@@ -803,6 +803,16 @@ class Svc(Resource, Freezer):
         self.startapp()
         self.starthb()
 
+    def rollback(self):
+        self.rollbackhb()
+        try:
+            self.rollbackapp()
+        except ex.excError:
+            pass
+        self.rollbackcontainer()
+        self.rollbackmount()
+        self.rollbackip()
+
     def stop(self):
         self.stophb()
         try:
@@ -840,6 +850,13 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.linuxha", "stop")
         self.sub_set_action("hb.sg", "stop")
         self.sub_set_action("hb.rhcs", "stop")
+
+    def rollbackhb(self):
+        self.sub_set_action("hb.ovm", "rollback")
+        self.sub_set_action("hb.openha", "rollback")
+        self.sub_set_action("hb.linuxha", "rollback")
+        self.sub_set_action("hb.sg", "rollback")
+        self.sub_set_action("hb.rhcs", "rollback")
 
     def startdrbd(self):
         self.sub_set_action("disk.drbd", "start")
@@ -889,6 +906,14 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
 
+    def rollbackdisk(self):
+        self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
+        self.sub_set_action("disk.vg", "rollback")
+        self.sub_set_action("disk.zpool", "rollback")
+        self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
+        self.sub_set_action("disk.scsireserv", "rollback")
+        self.sub_set_action("disk.loop", "rollback")
+
     def checkip(self):
         self.sub_set_action("ip", "check_not_ping_raise")
 
@@ -898,6 +923,9 @@ class Svc(Resource, Freezer):
     def stopip(self):
         self.sub_set_action("ip", "stop")
 
+    def rollbackip(self):
+        self.sub_set_action("ip", "rollback")
+
     def mount(self):
         self.startdisk()
         self.sub_set_action("fs", "start")
@@ -905,6 +933,10 @@ class Svc(Resource, Freezer):
     def umount(self):
         self.sub_set_action("fs", "stop")
         self.stopdisk()
+
+    def rollbackmount(self):
+        self.sub_set_action("fs", "rollback")
+        self.rollbackdisk()
 
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
@@ -940,6 +972,19 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.vz", "stop")
         self.refresh_ip_status()
 
+    def rollbackcontainer(self):
+        self.sub_set_action("container.vbox", "rollback")
+        self.sub_set_action("container.ldom", "rollback")
+        self.sub_set_action("container.hpvm", "rollback")
+        self.sub_set_action("container.xen", "rollback")
+        self.sub_set_action("container.esx", "rollback")
+        self.sub_set_action("container.ovm", "rollback")
+        self.sub_set_action("container.kvm", "rollback")
+        self.sub_set_action("container.jail", "rollback")
+        self.sub_set_action("container.lxc", "rollback")
+        self.sub_set_action("container.vz", "rollback")
+        self.refresh_ip_status()
+
     def provision(self):
         self.sub_set_action("disk.loop", "provision")
         self.sub_set_action("disk.vg", "provision")
@@ -956,6 +1001,9 @@ class Svc(Resource, Freezer):
 
     def stopapp(self):
         self.sub_set_action("app", "stop")
+
+    def rollbackapp(self):
+        self.sub_set_action("app", "rollback")
 
     def prstop(self):
         self.sub_set_action("disk.scsireserv", "scsirelease")
@@ -1275,7 +1323,7 @@ class Svc(Resource, Freezer):
             if 'start' in action:
                 try:
                     self.log.info("trying to rollback %s"%action)
-                    getattr(self, action.replace('start', 'stop'))()
+                    self.rollback()
                 except:
                     self.log.error("rollback %s failed"%action)
                     pass

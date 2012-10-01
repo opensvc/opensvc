@@ -112,6 +112,7 @@ class Container(Res.Resource):
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()
         self.container_start()
+        self.can_rollback = True
         self.wait_for_startup()
 
     def stop(self):

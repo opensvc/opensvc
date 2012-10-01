@@ -48,6 +48,7 @@ class Resource(object):
         self.always_on = set([])
         if self.label is None: self.label = type
         self.status_log_str = ""
+        self.can_rollback = False
 
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
@@ -238,6 +239,16 @@ class Resource(object):
 
     def files_to_sync(self):
         return []
+
+    def rollback(self):
+        if self.can_rollback:
+            self.stop()
+
+    def stop(self):
+        pass
+
+    def start(self):
+        pass
 
 class ResourceSet(Resource):
     """ Define Set of same type resources

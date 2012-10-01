@@ -266,6 +266,7 @@ class Vg(resDg.Dg):
 
     def start(self):
         self.do_mksf()
+        self.can_rollback = True
         self.do_start()
 
     def disklist(self):
