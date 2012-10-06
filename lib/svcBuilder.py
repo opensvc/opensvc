@@ -334,6 +334,11 @@ def add_ips(svc, conf):
         except ex.OptNotFound:
             pass
 
+        try:
+            kwargs['gateway'] = conf_get_string_scope(svc, conf, s, 'gateway')
+        except ex.OptNotFound:
+            pass
+
         if svc.svcmode == 'lxc':
             ip = __import__('resIp'+rcEnv.sysname+'Lxc')
         elif svc.svcmode == 'vz':

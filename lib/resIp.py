@@ -34,7 +34,7 @@ class Ip(Res.Resource):
     """
     def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+                 always_on=set([]), monitor=False, gateway=None):
         Res.Resource.__init__(self, rid, "ip", optional=optional,
                               disabled=disabled, tags=tags,
                               monitor=monitor)
@@ -43,6 +43,7 @@ class Ip(Res.Resource):
         self.mask=mask
         self.label = ipName + '@' + ipDev
         self.always_on = always_on
+        self.gateway = gateway
 
     def getaddr(self):
         if hasattr(self, 'addr'):
@@ -148,7 +149,6 @@ class Ip(Res.Resource):
     def startstandby(self):
         if rcEnv.nodename in self.always_on:
              self.start()
-             self.can_rollback = True
 
     def lock(self, timeout=30, delay=1):
         import lock
@@ -225,6 +225,7 @@ class Ip(Res.Resource):
         arp_announce = True
         try:
             (ret, out, err) = self.startip_cmd()
+            self.can_rollback = True
         except ex.excNotSupported:
             self.log.info("start ip not supported")
             ret = 0
@@ -234,7 +235,6 @@ class Ip(Res.Resource):
             pass
 
         self.unlock()
-        self.can_rollback = True
         if ret != 0:
             self.log.error("failed")
             raise ex.excError

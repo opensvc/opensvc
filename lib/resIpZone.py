@@ -20,20 +20,25 @@
 # and open the template in the editor.
 "Module implement SunOS specific ip management"
 
+import time
 import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
+from rcUtilitiesSunOS import get_os_ver
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
     def __init__(self, rid=None, ipDev=None, ipName=None,
                  mask=None, always_on=set([]), monitor=False,
-                 disabled=False, tags=set([]), optional=False):
+                 disabled=False, tags=set([]), optional=False, gateway=None):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
                         mask=mask, always_on=always_on,
                         disabled=disabled, tags=tags, optional=optional,
-                        monitor=monitor)
+                        monitor=monitor, gateway=gateway)
+        self.osver = get_os_ver()
+        if self.osver >= 11.0:
+            self.tags.add('noalias')
         if 'exclusive' not in self.tags:
             self.tags.add('preboot')
 
@@ -65,13 +70,102 @@ class Ip(Res.Ip):
             return self.stopip_cmd_shared()
 
     def stopip_cmd_exclusive(self):
+        if self.osver >= 11.0:
+            return self._stopip_cmd_exclusive_11()
+        else:
+            return self._stopip_cmd_exclusive_10()
+
+    def _stopip_cmd_exclusive_10(self):
         cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'unplumb' ]
         return self.vcall(cmd)
 
+    def _stopip_cmd_exclusive_11(self):
+        ret,out,err = (0, '', '')
+        if self.gateway is not None:
+            cmd=['zlogin', self.svc.vmname, 'route', '-q', 'delete', 'default', self.gateway, '>/dev/null', '2>&1' ]
+            r,o,e = self.vcall(cmd)
+            ret += r
+            out += o
+            err += e
+        objext = self.rid.replace('#', '')
+        cmd=['zlogin', self.svc.vmname, 'ipadm', 'delete-addr', self.stacked_dev+'/v4osvcres'+objext ]
+        r,o,e =  self.vcall(cmd)
+        ret += r
+        out += o
+        err += e
+        tst = Popen(['zlogin', self.svc.vmname, 'ipadm', 'show-addr', self.stacked_dev+'/' ],
+                        stdin=None, stdout=PIPE, stderr=None, close_fds=True).communicate()[0].split("\n")
+        if len(tst) >= 2:
+            return (ret,out,err)
+        cmd=['zlogin', self.svc.vmname, 'ipadm', 'delete-ip', self.stacked_dev ]
+        r,o,e =  self.vcall(cmd)
+        ret += r
+        out += o
+        err += e
+        return (ret,out,err)
+
     def startip_cmd_exclusive(self):
+        if self.osver >= 11.0:
+            return self._startip_cmd_exclusive_11()
+        else:
+            return self._startip_cmd_exclusive_10()
+
+    def _startip_cmd_exclusive_10(self):
         cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up' ]
         return self.vcall(cmd)
+
+    def _hexmask_to_str(self, mask):
+        mask = mask.replace('0x', '')
+        s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
+        return '.'.join(s)
+
+    def _dotted2cidr(self):
+        if self.mask is None:
+            return ''
+        cnt = 0
+        if '.' in self.mask:
+            l = self.mask.split(".")
+        else:
+            l = self._hexmask_to_str(self.mask).split(".")
+        for v in l:
+            b = int(v)
+            while b != 0:
+                if b % 2 == 1:
+                    cnt = cnt + 1
+                    b = b / 2
+        return '/'+str(cnt)
+        
+    def _startip_cmd_exclusive_11(self):
+        ret,out,err = (0, '', '')
+        tst = Popen(['zlogin', self.svc.vmname, 'ipadm', 'show-if', self.stacked_dev, '2>/dev/null' ],
+                        stdin=None, stdout=PIPE, stderr=None, close_fds=True).communicate()[0].split("\n")
+        if len(tst) < 2:
+            cmd=['zlogin', self.svc.vmname, 'ipadm', 'create-ip', '-t', self.stacked_dev ]
+            r,o,e = self.vcall(cmd)
+        objext = self.rid.replace('#', '')
+        n = 5
+        while n != 0:
+            cmd=['zlogin', self.svc.vmname, 'ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/v4osvcres'+objext ]
+            r,o,e = self.vcall(cmd)
+            if r == 0:
+                break
+            self.log.error("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
+            time.sleep(5)
+            n -= 1
+        if r != 0:
+            cmd=['zlogin', self.svc.vmname, 'ipadm', 'show-if' ]
+            self.vcall(cmd)
+        ret += r
+        out += o
+        err += e
+        if self.gateway is not None:
+            cmd=['zlogin', self.svc.vmname, 'route', '-q', 'add', 'default', self.gateway, '>/dev/null', '2>&1' ]
+            r,o,e = self.vcall(cmd)
+            ret += r
+            out += o
+            err += e
+        return (ret,out,err)
 
     def startip_cmd_shared(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
