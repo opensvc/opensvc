@@ -1557,6 +1557,8 @@ def build(name):
         del(svc)
         return None
     nb_nodes = len(svc.autostart_node)
+    if nb_nodes == 0:
+        nb_nodes = 1
     if nb_nodes > 0 and svc.flex_min_nodes > nb_nodes:
         svc.log.error("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
         del(svc)
