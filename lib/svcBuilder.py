@@ -1506,6 +1506,11 @@ def build(name):
     if not hasattr(svc, "drpnode"):
         svc.drpnode = drpnode
 
+    if "autostart_node" in defaults:
+        svc.autostart_node = defaults["autostart_node"].split()
+    else:
+        svc.autostart_node = []
+
     try:
         anti_affinity = conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity')
         svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
@@ -1546,7 +1551,7 @@ def build(name):
         svc.log.error("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
         del(svc)
         return None
-    nb_nodes = len(svc.nodes)
+    nb_nodes = len(svc.autostart_node)
     if nb_nodes > 0 and svc.flex_min_nodes > nb_nodes:
         svc.log.error("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
         del(svc)
@@ -1608,11 +1613,6 @@ def build(name):
         svc.log.error('service %s type %s is not allowed to run on this node (host mode %s)' % (svc.svcname, svc.svctype, rcEnv.host_mode))
         del(svc)
         return None
-
-    if "autostart_node" in defaults:
-        svc.autostart_node = defaults["autostart_node"].split()
-    else:
-        svc.autostart_node = []
 
     if "drp_type" in defaults:
         svc.drp_type = defaults["drp_type"]
