@@ -44,8 +44,6 @@ class check(checks.check):
         """
         cmd = ['multipath', '-l']
         (out, err, ret) = justcall(cmd)
-        if ret != 0:
-            return self.undef
         lines = out.split('\n')
         if len(lines) < 1:
             return self.undef
