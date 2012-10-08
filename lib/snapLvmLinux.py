@@ -50,7 +50,21 @@ class Snap(snap.Snap):
         else:
             snap_size = int(lv_size//10)
 
-        (ret, buff, err) = self.vcall(['lvcreate', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+        out, err, ret = justcall(['lvcreate', '-A', 'n', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+        err_l1 = err.split('\n')
+        err_l2 = []
+        out_l = out.split('\n')
+        for e in err_l1:
+            if 'WARN' in e:
+                out_l.append(e)
+            else:
+                err_l2.append(e)
+        err = '\n'.join(err_l2)
+        out = '\n'.join(out_l)
+        if len(out) > 0:
+            self.log.info(out)
+        if len(err) > 0:
+            self.log.error(err)
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = os.path.join(rcEnv.pathtmp,
@@ -77,12 +91,22 @@ class Snap(snap.Snap):
         cmd = ['umount', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
 
-        cmd = ['lvremove', '-f', self.snaps[s]['snap_dev']]
+        cmd = ['lvremove', '-A', 'n', '-f', self.snaps[s]['snap_dev']]
         self.log.info(' '.join(cmd))
         for i in range(1, 30):
             out, err, ret = justcall(cmd)
             if ret == 0:
                 break
+        err_l1 = err.split('\n')
+        err_l2 = []
+        out_l = out.split('\n')
+        for e in err_l1:
+            if 'WARN' in e:
+                out_l.append(e)
+            else:
+                err_l2.append(e)
+        err = '\n'.join(err_l2)
+        out = '\n'.join(out_l)
         if len(out) > 0:
             self.log.info(out)
         if len(err) > 0:
