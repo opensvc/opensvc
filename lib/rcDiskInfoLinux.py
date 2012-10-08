@@ -20,7 +20,7 @@
 import sys
 import os
 import re
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 import rcDiskInfo
 import math
 from rcGlobalEnv import rcEnv
@@ -53,7 +53,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         else:
             return ""
         cmd = [cciss_id, dev]
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
             if id.startswith('3'):
@@ -72,7 +72,7 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def load_mpath_native(self):
         cmd = ['multipath', '-l']
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return
         lines = out.split('\n')
@@ -108,6 +108,12 @@ class diskInfo(rcDiskInfo.diskInfo):
             self.mpath_h = {}
 
     def scsi_id(self, dev):
+        s = self._scsi_id(dev, ["-p", "0x83"])
+        if len(s) == 0:
+            s = self._scsi_id(dev, ["-p", "pre-spc3-83"])
+        return s
+
+    def _scsi_id(self, dev, args=[]):
         wwid = self.mpath_id(dev)
         if wwid is not None:
             return wwid
@@ -120,8 +126,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         else:
             return ""
         regex = re.compile(r'[0-9a-f]{17}')
-        cmd = [scsi_id, '-g', '-u', '-d', dev]
-        (ret, out, err) = call(cmd)
+        cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
+        out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
             if id.startswith('3'):
@@ -133,8 +139,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             self.disk_ids[dev] = id
             return id
         sdev = dev.replace("/dev/", "/block/")
-        cmd = [scsi_id, '-g', '-u', '-s', sdev]
-        (ret, out, err) = call(cmd, errlog=False)
+        cmd = [scsi_id, '-g', '-u'] + args + ['-s', sdev]
+        out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
             if id.startswith('3'):
@@ -188,7 +194,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             path = dev.replace('/dev/', '/sys/block/')+'/size'
             if not os.path.exists(path):
                 cmd = ['blockdev', '--getsize', dev]
-                (ret, out, err) = call(cmd)
+                out, err, ret = justcall(cmd)
                 if ret != 0:
                     return 0
                 return int(math.ceil(1.*int(out)/2048))
@@ -221,31 +227,31 @@ class diskInfo(rcDiskInfo.diskInfo):
           info['device/vendor'],
           info['device/model'],
         )
-    
+
     def scanscsi(self):
         if not os.path.exists('/sys') or not os.path.ismount('/sys'):
             print >>sys.stderr, "scanscsi is not supported without /sys mounted"
             return 1
-    
+
         import glob
 
         disks_before = glob.glob('/sys/block/sd*')
         hosts = glob.glob('/sys/class/scsi_hosts/host*')
-    
+
         for host in hosts:
             scan_f = host+'/scan'
             if not os.path.exists(scan_f):
                 continue
             print "scan", os.path.basename(host)
             os.command('echo - - - >'+scan_f)
-        
+
         disks_after = glob.glob('/sys/block/sd*')
         new_disks = set(disks_after) - set(disks_before)
-    
+
         self.print_diskinfo_header()
         #for disk in disks_before:
         for disk in new_disks:
             self.print_diskinfo(disk)
 
         return 0
-    
+

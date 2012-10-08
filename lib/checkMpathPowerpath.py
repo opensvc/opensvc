@@ -17,6 +17,9 @@
 #
 import checks
 from rcUtilities import justcall, which
+from rcGlobalEnv import rcEnv
+di = __import__("rcDiskInfo"+rcEnv.sysname)
+_di = di.diskInfo()
 
 class check(checks.check):
     chk_type = "mpath"
@@ -57,28 +60,38 @@ class check(checks.check):
         r = []
         dev = None
         name = None
+        paths = []
+        n = 0
         for line in lines:
-            if 'Pseudo name' in line:
+            if len(line) == 0:
                 # new mpath
                 # - store previous
                 # - reset path counter
                 if dev is not None:
+                    if len(paths) > 0:
+                        did = _di.disk_id(paths[0])
+                        if did is not None:
+                            name = did
                     r.append({'chk_instance': name,
                               'chk_value': str(n),
                               'chk_svcname': self.find_svc(dev),
                              })
-                n = 0
+                    paths = []
+                    dev = None
+                    n = 0
+            if 'Pseudo name' in line:
                 l = line.split('=')
                 if len(l) != 2:
                     continue
                 name = l[1]
                 dev = "/dev/"+name
-            if "active" in line and \
-               "alive" in line:
-                n += 1
-        if dev is not None:
-            r.append({'chk_instance': name,
-                      'chk_value': str(n),
-                      'chk_svcname': self.find_svc(dev),
-                     })
+            else:
+                l = line.split()
+                if len(l) < 3:
+                    continue
+                if l[2].startswith("sd"):
+                    paths.append("/dev/"+l[2])
+                if "active" in line and \
+                   "alive" in line:
+                    n += 1
         return r

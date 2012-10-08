@@ -6,6 +6,8 @@ import math
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
+di = __import__("rcDiskInfo"+rcEnv.sysname)
+_di = di.diskInfo()
 
 class DevTree(rcDevTree.DevTree):
     dev_h = {}
@@ -64,6 +66,11 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'wwid_h'):
             return self.wwid_h
         self.wwid_h = {}
+        self.wwid_h.update(self.get_wwid_native())
+        self.wwid_h.update(self.get_mp_powerpath())
+        return self.wwid_h
+
+    def get_wwid_native(self):
         if not which("multipath"):
             return self.wwid_h
         cmd = ['multipath', '-l']
@@ -86,13 +93,60 @@ class DevTree(rcDevTree.DevTree):
         if hasattr(self, 'mp_h'):
             return self.mp_h
         self.mp_h = {}
+        self.mp_h.update(self.get_mp_native())
+        self.mp_h.update(self.get_mp_powerpath())
+        return self.mp_h
+
+    def get_mp_powerpath(self):
+        self.powerpath = {}
+        if not which("powermt"):
+            return {}
+        cmd = ['powermt', 'display', 'dev=all']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return {}
+        lines = out.split('\n')
+        if len(lines) < 1:
+            return {}
+        dev = None
+        paths = []
+        mp_h = {}
+        for line in lines:
+            if len(line) == 0:
+                # new mpath
+                # - store previous
+                # - reset path counter
+                if dev is not None:
+                    if len(paths) > 0:
+                        did = _di.disk_id(paths[0])
+                    mp_h[name] = did
+                    self.powerpath[name] = paths
+                    dev = None
+                    paths = []
+            if 'Pseudo name' in line:
+                l = line.split('=')
+                if len(l) != 2:
+                    continue
+                name = l[1]
+                dev = "/dev/"+name
+            else:
+                l = line.split()
+                if len(l) < 3:
+                    continue
+                if l[2].startswith("sd"):
+                    paths.append("/dev/"+l[2])
+        return mp_h
+
+    def get_mp_native(self):
         if not which('dmsetup'):
-            return self.mp_h
+            return {}
         cmd = ['dmsetup', 'ls', '--target', 'multipath']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            return self.mp_h
+            return {}
+        mp_h = {}
         for line in out.split('\n'):
             l = line.split()
             if len(l) == 0:
@@ -100,8 +154,8 @@ class DevTree(rcDevTree.DevTree):
             mapname = l[0]
             major = l[1].strip('(,')
             minor = l[2].strip(' )')
-            self.mp_h['dm-'+minor] = mapname
-        return self.mp_h
+            mp_h['dm-'+minor] = mapname
+        return mp_h
 
     def get_md(self):
         if hasattr(self, 'md_h'):
@@ -335,6 +389,7 @@ class DevTree(rcDevTree.DevTree):
         return major, minor
 
     def load_fdisk(self):
+        self.get_wwid()
         os.environ["LANG"] = "C"
         p = Popen(["fdisk", "-l"], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -359,6 +414,13 @@ class DevTree(rcDevTree.DevTree):
                 if d is None:
                     continue
                 d.set_devpath(devpath)
+                if devname.startswith('emc') and devname in self.wwid_h:
+                    d.set_alias(self.wwid_h[devname])
+                    for path in self.powerpath[devname]:
+                        p = self.add_dev(path.replace('/dev/',''), size, "linear")
+                        p.set_devpath(path)
+                        p.add_child(devname)
+                        d.add_parent(path.replace('/dev/',''))
             elif line.startswith('/dev/'):
                 # partition
                 line = line.replace('*', '')
