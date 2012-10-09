@@ -254,6 +254,25 @@ class Asset(object):
         print "  %s"%s
 
 
+    def get_enclosure(self):
+        s = 'Unknown'
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'enclosure')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_enclosure()
+                source = self.s_probe
+            except:
+                pass
+        self.print_enclosure(s, source)
+        return s
+
+    def print_enclosure(self, s, source):
+        print "enclosure (%s)"%source
+        print "  %s"%s
+
     def get_model(self):
         s = 'Unknown'
         source = self.s_default
@@ -536,6 +555,7 @@ class Asset(object):
         d['serial'] = self.get_serial()
         d['model'] = self.get_model()
         d['host_mode'] = self.get_host_mode()
+        d['enclosure'] = self.get_enclosure()
         environnement = self.get_environnement()
         if environnement is not None:
             d['environnement'] = environnement

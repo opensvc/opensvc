@@ -302,6 +302,14 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
+    def _get_enclosure(self):
+        if self.container:
+            return 'n/a'
+        for l in self.dmidecode:
+            if 'Enclosure Name:' in l:
+                return l.split(':')[-1].strip()
+        return 'Unknown'
+
     def _get_model(self):
         if self.container:
             return 'container'
