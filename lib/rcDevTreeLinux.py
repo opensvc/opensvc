@@ -327,7 +327,7 @@ class DevTree(rcDevTree.DevTree):
         size = self.get_size(devpath)
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
-        if size in [0, 2, 30, 45]:
+        if devname in self.mp_h and size in [0, 2, 30, 45]:
             return
 
         devtype = self.dev_type(devname)
