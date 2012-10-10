@@ -46,38 +46,47 @@ class check(checks.check):
         return r
 
     def check_logicaldrive(self, slot):
-        cmd = ['hpacucli', 'controller', 'slot='+slot, 'logicaldrive', 'all', 'show', 'status']
-        (out,err,ret) = justcall(cmd)
+        cmd = ['controller', 'slot='+slot, 'logicaldrive', 'all', 'show', 'status']
+        out, err, ret = self.hpacucli(cmd)
         if ret != 0:
             return []
         return self.parse_errors(out)
 
     def check_physicaldrive(self, slot):
-        cmd = ['hpacucli', 'controller', 'slot='+slot, 'physicaldrive', 'all', 'show', 'status']
-        (out,err,ret) = justcall(cmd)
+        cmd = ['controller', 'slot='+slot, 'physicaldrive', 'all', 'show', 'status']
+        out, err, ret = self.hpacucli(cmd)
         if ret != 0:
             return []
         return self.parse_errors(out)
 
     def check_array(self, slot):
-        cmd = ['hpacucli', 'controller', 'slot='+slot, 'array', 'all', 'show', 'status']
-        (out,err,ret) = justcall(cmd)
+        cmd = ['controller', 'slot='+slot, 'array', 'all', 'show', 'status']
+        out, err, ret = self.hpacucli(cmd)
         if ret != 0:
             return []
         return self.parse_errors(out)
 
     def check_controller(self, slot):
-        cmd = ['hpacucli', 'controller', 'slot='+slot, 'show', 'status']
-        (out,err,ret) = justcall(cmd)
+        cmd = ['controller', 'slot='+slot, 'show', 'status']
+        out, err, ret = self.hpacucli(cmd)
         if ret != 0:
             return []
         return self.parse_errors(out)
 
+    def hpacucli(self, cmd):
+        cmd = ['hpacucli'] + cmd
+        try:
+            out, err, ret = justcall(cmd)
+        except OSError:
+            cmd = [os.environ['SHELL']] + cmd
+            out, err, ret = justcall(cmd)
+        return out, err, ret
+
     def do_check(self):
         if not which('hpacucli'):
             return self.undef
-        cmd = ['hpacucli', 'controller', 'all', 'show', 'status']
-        (out,err,ret) = justcall(cmd)
+        cmd = ['controller', 'all', 'show', 'status']
+        out, err, ret = self.hpacucli(cmd)
         if ret != 0:
             return self.undef
         lines = out.split('\n')
