@@ -1030,6 +1030,7 @@ class Svc(Resource, Freezer):
             syncnodes and syncdrp. Typically make use of files
             received in var/
         """
+        self.sync_dblogger = True
         self.all_set_action("postsync")
 
     def remote_postsync(self):
