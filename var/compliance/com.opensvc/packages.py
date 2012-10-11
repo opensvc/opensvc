@@ -271,7 +271,7 @@ Java14.ext                                                         ALL  @@S:Java
         return RET_OK
 
     def apt_fix_pkg(self, pkg):
-        r = call(['apt-get', 'install', '-y', pkg])
+        r = call(['apt-get', 'install', '--allow-unauthenticated', '-y', pkg])
         if r != 0:
             return RET_ERR
         return RET_OK
