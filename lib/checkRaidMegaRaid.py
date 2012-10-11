@@ -27,12 +27,13 @@ class check(checks.check):
     chk_name = "MegaCli"
 
     def find_megacli(self):
-        if which(self.megacli):
-            return self.megacli
-        for prefix in self.prefixes:
-            megacli = os.path.join(prefix, self.megacli)
-            if os.path.exists(megacli):
-                return megacli
+        for prog in self.megacli:
+            if which(prog):
+                return prog
+            for prefix in self.prefixes:
+                megacli = os.path.join(prefix, prog)
+                if os.path.exists(megacli):
+                    return megacli
         return
 
     def do_check(self):
