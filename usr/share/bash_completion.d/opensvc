@@ -160,7 +160,7 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="compliance collector pushasset pusheva pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown prkey updateservices"
+        local opts="compliance collector pushasset pusheva pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown prkey updateservices updatepkg updatecomp"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
