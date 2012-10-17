@@ -1246,6 +1246,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_checks(*args)
 
+    def collector_disks(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_disks(*args)
+
     def collector_alerts(self, opts, sync=True):
         args = [opts]
         if self.auth_node:

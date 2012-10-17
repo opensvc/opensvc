@@ -109,6 +109,7 @@ action_desc = {
       'collector_show_actions': 'show actions detailled log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
       'collector_status': 'display service status on all nodes, according to the collector.',
       'collector_checks': 'display service checks',
+      'collector_disks': 'display service disks',
       'collector_alerts': 'display service alerts',
       'collector_events': 'display service events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
     },

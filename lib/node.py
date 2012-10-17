@@ -142,6 +142,7 @@ class Node(Svc, Freezer):
             'collector_events': 'display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
             'collector_alerts': 'display node alerts',
             'collector_checks': 'display node checks',
+            'collector_disks': 'display node disks',
             'collector_status': 'display node services status according to the collector',
             'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
             'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',

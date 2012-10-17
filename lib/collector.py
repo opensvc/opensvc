@@ -134,6 +134,18 @@ class Collector(object):
 
         print_table(d['data'])
 
+    def collector_disks(self):
+        opts = {}
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
+        d = self.collector.call('collector_disks', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        print_table(d['data'], width=64)
+
     def collector_alerts(self):
         opts = {}
         if self.svcname is not None:
