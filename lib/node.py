@@ -79,7 +79,7 @@ class Node(Svc, Freezer):
         try:
             self.clusters = list(set(self.config.get('node', 'clusters').split()))
         except:
-            pass
+            self.clusters = []
         self.options = Options()
         self.svcs = None
         Freezer.__init__(self, '')
