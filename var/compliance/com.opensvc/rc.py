@@ -34,7 +34,7 @@ class CompRc(object):
             print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
-        if self.sysname not in ['Linux']:
+        if self.sysname not in ['Linux', 'HP-UX']:
             print >>sys.stderr, __file__, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -42,13 +42,16 @@ class CompRc(object):
         if vendor in ['CentOS', 'Redhat', 'Red Hat']:
             import chkconfig
             self.o = chkconfig.Chkconfig()
+        elif vendor in ['HP']:
+            import sysvinit
+            self.o = sysvinit.SysVInit()
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
     def validate_svcs(self):
         l = []
-        for svc in self.services:
+        for i, svc in enumerate(self.services):
             if self.validate_svc(svc) == RET_OK:
                 l.append(svc)
         self.svcs = l
@@ -63,12 +66,20 @@ class CompRc(object):
         return RET_OK
 
     def check_svc(self, svc, verbose=True):
-        return self.o.check_state(svc['service'], svc['level'], svc['state'], verbose=verbose)
+        if 'seq' in svc:
+            seq = svc['seq']
+        else:
+            seq = None
+        return self.o.check_state(svc['service'], svc['level'], svc['state'], seq=seq, verbose=verbose)
 
     def fix_svc(self, svc, verbose=True):
+        if 'seq' in svc:
+            seq = svc['seq']
+        else:
+            seq = None
         if self.check_svc(svc, verbose=False) == RET_OK:
             return RET_OK
-        return self.o.fix_state(svc['service'], svc['level'], svc['state'])
+        return self.o.fix_state(svc['service'], svc['level'], svc['state'], seq=seq)
 
     def check(self):
         r = 0

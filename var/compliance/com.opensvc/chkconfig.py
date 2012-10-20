@@ -72,7 +72,7 @@ class Chkconfig(object):
 
         return self.services[service][level]
 
-    def check_state(self, service, levels, state, verbose=False):
+    def check_state(self, service, levels, state, seq=None, verbose=False):
         r = 0
         for level in levels:
             try:
@@ -93,7 +93,7 @@ class Chkconfig(object):
                 print "service", service, "at runlevel", level, "is in state", curstate
         return r
             
-    def fix_state(self, service, levels, state):
+    def fix_state(self, service, levels, state, seq=None):
         cmd = ['chkconfig', '--level', levels, service, state]
         print "exec:", ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
