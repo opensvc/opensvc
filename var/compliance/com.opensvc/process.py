@@ -123,9 +123,11 @@ class CompProcess(object):
                 found = True
                 continue
         if found:
-            print 'process', comm, 'runs with uid', _uid, '... on target'
+            if verbose:
+                print 'process', comm, 'runs with uid', _uid, '... on target'
         else:
-            print >>sys.stderr, 'process', comm, 'does not run with uid', _uid, '... should be'
+            if verbose:
+                print >>sys.stderr, 'process', comm, 'does not run with uid', _uid, '... should be'
             return RET_ERR
         return RET_OK
 
@@ -136,9 +138,11 @@ class CompProcess(object):
                 found = True
                 continue
         if found:
-            print 'process', comm, 'runs with user', _user, '... on target'
+            if verbose:
+                print 'process', comm, 'runs with user', _user, '... on target'
         else:
-            print >>sys.stderr, 'process', comm, 'does not run with user', _user, '... should be'
+            if verbose:
+                print >>sys.stderr, 'process', comm, 'does not run with user', _user, '... should be'
             return RET_ERR
         return RET_OK
 
