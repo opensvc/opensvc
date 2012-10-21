@@ -28,4 +28,4 @@ class ifconfig(rcIfconfigLinux.ifconfig):
         ret, out, err = call(cmd)
         if ret != 0:
             raise ex.excError
-        self.parse(out)
+        self.parse_ifconfig(out)

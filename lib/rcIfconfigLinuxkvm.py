@@ -31,4 +31,4 @@ class ifconfig(rcIfconfig.ifconfig):
         buff = p.communicate()[0]
         if p.returncode != 0:
             raise ex.excError
-        self.parse(buff)
+        self.parse_ifconfig(buff)
