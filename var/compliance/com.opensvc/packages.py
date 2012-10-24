@@ -45,19 +45,23 @@ class CompPackages(object):
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
         if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
-            self.fix_pkg = self.apt_fix_pkg
+            self.pkg_add = self.apt_fix_pkg
+            self.pkg_del = self.apt_del_pkg
         elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
             self.get_installed_packages = self.rpm_get_installed_packages
-            self.fix_pkg = self.yum_fix_pkg
+            self.pkg_add = self.yum_fix_pkg
+            self.pkg_del = self.yum_del_pkg
         elif vendor in ['IBM']:
             self.get_installed_packages = self.aix_get_installed_packages
-            self.fix_pkg = self.aix_fix_pkg
+            self.pkg_add = self.aix_fix_pkg
+            self.pkg_del = self.aix_del_pkg
             if self.uri is None:
                 print >>sys.stderr, "resource must be set"
                 raise NotApplicable()
         elif vendor in ['HP']:
             self.get_installed_packages = self.hp_get_installed_packages
-            self.fix_pkg = self.hp_fix_pkg
+            self.pkg_add = self.hp_fix_pkg
+            self.pkg_del = self.hp_del_pkg
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
@@ -81,18 +85,23 @@ class CompPackages(object):
         """
         l = []
         for pkgname in self.packages:
-            l += self.expand_pkgname(pkgname)
+            if (pkgname.startswith('-') or pkgname.startswith('+')) and len(pkgname) > 1:
+                prefix = pkgname[0]
+                pkgname = pkgname[1:]
+            else:
+                prefix = ''
+            l += map(lambda x: prefix+x, self.expand_pkgname(pkgname, prefix))
         self.packages = l
 
-    def expand_pkgname(self, pkgname):
+    def expand_pkgname(self, pkgname, prefix):
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
         if vendor in ['CentOS', 'Redhat', 'Red Hat']:
-            return self.yum_expand_pkgname(pkgname)
+            return self.yum_expand_pkgname(pkgname, prefix)
         elif vendor in ['IBM']:
-            return self.aix_expand_pkgname(pkgname)
+            return self.aix_expand_pkgname(pkgname, prefix)
         return [pkgname]
 
-    def aix_expand_pkgname(self, pkgname):
+    def aix_expand_pkgname(self, pkgname, prefix=''):
         import fnmatch
         l = []
         """
@@ -111,7 +120,7 @@ Java14.ext                                                         ALL  @@S:Java
                     print >>sys.stderr, 'can not expand (cmd error)', pkgname
                 return [pkgname]
             self.nimcache = out.split('\n')
-        if len(self.nimcache) < 1:
+        if len(self.nimcache) < 1 and prefix != '-':
             print >>sys.stderr, 'can not expand (no match)', pkgname
             return [pkgname]
         for line in self.nimcache:
@@ -124,21 +133,27 @@ Java14.ext                                                         ALL  @@S:Java
                 l.append(_pkgname)
         return l
 
-    def yum_expand_pkgname(self, pkgname):
+    def yum_expand_pkgname(self, pkgname, prefix=''):
         arch_specified = False
         for arch in self.known_archs:
             if pkgname.endswith(arch):
                 arch_specified = True
         cmd = ['yum', 'list', pkgname]
-        p = Popen(cmd, stdout=PIPE)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not expand', pkgname
-            return []
+            if prefix != '-':
+                print >>sys.stderr, 'can not expand (cmd error)', pkgname, err
+                return []
+            else:
+                return [pkgname]
         lines = out.split('\n')
         if len(lines) < 2:
-            print >>sys.stderr, 'can not expand', pkgname
-            return []
+            if prefix != '-':
+                print >>sys.stderr, 'can not expand', pkgname
+                return []
+            else:
+                return [pkgname]
         lines = lines[1:]
         l = []
         for line in lines:
@@ -146,6 +161,8 @@ Java14.ext                                                         ALL  @@S:Java
             if len(words) != 3:
                 continue
             if words[0] in ("Installed", "Available", "Loaded", "Updating"):
+                continue
+            if words[0] in l:
                 continue
             l.append(words[0])
 
@@ -179,6 +196,10 @@ Java14.ext                                                         ALL  @@S:Java
                 l[v[0]] = [(v[1], "")]
         return l
 
+    def hp_del_pkg(self, pkg):
+        print >>sys.stderr, "TODO:", __fname__
+        return RET_ERR
+
     def hp_fix_pkg(self, pkg):
         if pkg in self.reloc:
             pkg = ':'.join((pkg, self.reloc[pkg]))
@@ -204,6 +225,10 @@ Java14.ext                                                         ALL  @@S:Java
             print >>sys.stderr, 'can not fetch installed packages list'
             return []
         return self.hp_parse_swlist(out).keys()
+
+    def aix_del_pkg(self, pkg):
+        print >>sys.stderr, "TODO:", __fname__
+        return RET_ERR
 
     def aix_fix_pkg(self, pkg):
         cmd = ['nimclient', '-o', 'cust',
@@ -259,6 +284,17 @@ Java14.ext                                                         ALL  @@S:Java
             l.append(line.split()[1])
         return l
 
+    def yum_del_pkg(self, pkg):
+        cmd = ['yum', 'remove', '-y', pkg]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            if len(err) > 0:
+                print err
+            return RET_ERR
+        return RET_OK
+
     def yum_fix_pkg(self, pkg):
         cmd = ['yum', 'install', '-y', pkg]
         print ' '.join(cmd)
@@ -267,6 +303,12 @@ Java14.ext                                                         ALL  @@S:Java
         if p.returncode != 0:
             if len(err) > 0:
                 print err
+            return RET_ERR
+        return RET_OK
+
+    def apt_del_pkg(self, pkg):
+        r = call(['apt-get', 'remove', '-y', pkg])
+        if r != 0:
             return RET_ERR
         return RET_OK
 
@@ -279,7 +321,32 @@ Java14.ext                                                         ALL  @@S:Java
     def fixable(self):
         return RET_NA
 
+    def fix_pkg(self, pkg):
+        if pkg.startswith('-') and len(pkg) > 1:
+            return self.pkg_del(pkg[1:])
+        if pkg.startswith('+') and len(pkg) > 1:
+            return self.pkg_add(pkg[1:])
+        else:
+            return self.pkg_add(pkg)
+
     def check_pkg(self, pkg, verbose=True):
+        if pkg.startswith('-') and len(pkg) > 1:
+            return self.check_pkg_del(pkg[1:], verbose)
+        if pkg.startswith('+') and len(pkg) > 1:
+            return self.check_pkg_add(pkg[1:], verbose)
+        else:
+            return self.check_pkg_add(pkg, verbose)
+
+    def check_pkg_del(self, pkg, verbose=True):
+        if pkg in self.installed_packages:
+            if verbose:
+                print >>sys.stderr, 'package', pkg, 'is installed'
+            return RET_ERR
+        if verbose:
+            print 'package', pkg, 'is not installed'
+        return RET_OK
+
+    def check_pkg_add(self, pkg, verbose=True):
         if not pkg in self.installed_packages:
             if verbose:
                 print >>sys.stderr, 'package', pkg, 'is not installed'
