@@ -941,7 +941,11 @@ class Collector(object):
         for brocade in brocades:
             vals = []
             for key in brocade.keys:
-                vals.append(getattr(brocade, 'get_'+key)())
+                try:
+                    vals.append(getattr(brocade, 'get_'+key)())
+                except:
+                    print "error fetching", key
+                    continue
             args = [brocade.name, brocade.keys, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
