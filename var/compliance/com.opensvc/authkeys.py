@@ -38,6 +38,9 @@ class CompAuthKeys(object):
             print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
+        for ak in self.authkeys:
+            ak['key'] = ak['key'].replace('\n', '')
+
         self.installed_keys_d = {}
         if authfile not in ("authorized_keys", "authorized_keys2"):
             print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_keys or authorized_keys2)"
@@ -132,7 +135,8 @@ class CompAuthKeys(object):
         for p in ps:
             if not os.path.exists(p):
                 continue
-            with codecs.open(p, 'r', encoding="utf8") as f:
+            with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
+                print p
                 self.installed_keys_d[user] += f.read().split('\n')
         return self.installed_keys_d[user]
 
@@ -224,7 +228,7 @@ class CompAuthKeys(object):
             if not os.path.exists(p):
                 continue
 
-            with open(p, 'r') as f:
+            with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
                 l = f.read().split('\n')
 
             n = len(l)

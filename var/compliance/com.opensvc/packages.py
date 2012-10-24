@@ -19,7 +19,7 @@ class CompPackages(object):
         self.uri = uri
         self.prefix = prefix.upper()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
-        self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch']
+        self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch', '*']
 
         if self.sysname not in ['Linux', 'AIX', 'HP-UX']:
             print >>sys.stderr, __file__, 'module not supported on', self.sysname
@@ -145,7 +145,7 @@ Java14.ext                                                         ALL  @@S:Java
             words = line.split()
             if len(words) != 3:
                 continue
-            if words[0] in ("Installed", "Available", "Loaded"):
+            if words[0] in ("Installed", "Available", "Loaded", "Updating"):
                 continue
             l.append(words[0])
 

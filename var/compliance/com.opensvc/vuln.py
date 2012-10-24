@@ -10,12 +10,21 @@ import sys
 import json
 import pwd
 import sys
+import re
 from subprocess import *
 from distutils.version import LooseVersion as V
+from utilities import which
+
 
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
+
+def repl(matchobj):
+    return '.0'+matchobj.group(0)[1:]
+
+class LiveKernVulnerable(Exception):
+    pass
 
 class CompVuln(object):
     def __init__(self, prefix='OSVC_COMP_VULN_', uri=None):
@@ -23,6 +32,7 @@ class CompVuln(object):
         self.prefix = prefix.upper()
         self.highest_avail_version = "0"
         self.fix_list = []
+        self.need_pushpkg = False
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['Linux', 'HP-UX', 'AIX', 'SunOS']:
@@ -65,7 +75,8 @@ class CompVuln(object):
             self.fix_pkg = self.apt_fix_pkg
             self.fixable_pkg = self.apt_fixable_pkg
             self.fix_all = None
-        elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
+        elif vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
+             (vendor == 'Oracle' and self.sysname == 'Linux'):
             self.get_installed_packages = self.rpm_get_installed_packages
             self.fix_pkg = self.yum_fix_pkg
             self.fixable_pkg = self.yum_fixable_pkg
@@ -173,6 +184,8 @@ class CompVuln(object):
             self.fix_list.append(pkg["pkgname"]+',r='+pkg["minver"])
         else:
             self.fix_list.append(pkg["pkgname"]+',r='+self.highest_avail_version)
+        self.need_pushpkg = True
+        self.installed_packages = self.get_installed_packages()
         return RET_OK
 
     def hp_fix_all(self):
@@ -264,8 +277,14 @@ class CompVuln(object):
         return RET_NA
 
     def yum_fixable_pkg(self, pkg):
-        if self.check_pkg(pkg, verbose=False) == RET_OK:
+        try:
+            r = self.check_pkg(pkg, verbose=False)
+        except LiveKernVulnerable:
+            r = RET_OK
+
+        if r == RET_OK:
             return RET_OK
+
         cmd = ['yum', 'list', 'available', pkg['pkgname']]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         (out, err) = p.communicate()
@@ -288,13 +307,19 @@ class CompVuln(object):
         return RET_OK
 
     def yum_fix_pkg(self, pkg):
-        if self.check_pkg(pkg, verbose=False) == RET_OK:
+        try:
+            r = self.check_pkg(pkg, verbose=False)
+        except LiveKernVulnerable:
+            r = RET_OK
+        if r == RET_OK:
             return RET_OK
         if self.fixable_pkg(pkg) == RET_ERR:
             return RET_ERR
         r = call(['yum', 'install', '-y', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
+        self.need_pushpkg = True
+        self.installed_packages = self.get_installed_packages()
         return RET_OK
 
     def apt_fix_pkg(self, pkg):
@@ -303,10 +328,15 @@ class CompVuln(object):
         r = call(['apt-get', 'install', '-y', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
+        self.need_pushpkg = True
+        self.installed_packages = self.get_installed_packages()
         return RET_OK
 
+    def get_raw_kver(self):
+        return os.uname()[2]
+
     def get_kver(self):
-        s = os.uname()[2]
+        s = self.get_raw_kver()
         s = s.replace('xen', '')
         s = s.replace('hugemem', '')
         s = s.replace('smp', '')
@@ -314,45 +344,86 @@ class CompVuln(object):
 	s = s.replace('.x86_64','')
         return s
 
+    def workaround_python_cmp(self, s):
+        """ python list cmp says a > 9, but rpm says z < 0, ie :
+            python says 2.6.18-238.el5 > 2.6.18-238.11.1.el5
+            which is wrong in the POV of the package manager.
+
+            replace .[a-z]* by .00000000[a-z] to force the desired behaviour
+        """
+        return re.sub("\.[a-zA-Z]+", repl, s)
+
     def check_pkg(self, pkg, verbose=True):
         if not pkg["pkgname"] in self.installed_packages:
+            if verbose:
+                print pkg["pkgname"], "is not installed (%s:not applicable)"%pkg["rule"]
             return RET_OK
+
         name = pkg["pkgname"]
+
+        if name.startswith("kernel"):
+            kver = self.get_raw_kver()
+            for i in ('xen', 'hugemem', 'smp', 'PAE'):
+                if kver.endswith(i) and name != "kernel-"+i:
+                    if verbose:
+                        print name, "bypassed :", i, "kernel booted", "(%s:not applicable)"%pkg["rule"]
+                    return RET_OK
+
         r = RET_OK
         max = "0"
         max_v = V(max)
         ok = []
-        for vers, arch in self.installed_packages[pkg["pkgname"]]:
-            target = V(pkg["minver"])
-            actual = V(vers)
+        minver = self.workaround_python_cmp(pkg['minver'])
+        target = V(minver)
+        candidates = map(lambda x: [name]+list(x), self.installed_packages[name])
+
+        for _name, vers, arch in candidates:
+            _vers = self.workaround_python_cmp(vers)
+            actual = V(_vers)
             if actual > max_v or max == "0":
                 max = vers
                 max_v = actual
             if target <= actual:
-                ok.append(vers)
+                ok.append((_name, vers, arch))
 
         if max == "0":
             # not installed
+            if verbose:
+                print name, "is not installed (%s:not applicable)"%pkg["rule"]
             return RET_OK
+
+        if name.startswith("kernel"):
+            kver = self.get_kver()
+            if len(ok) == 0:
+                if verbose:
+                    print >>sys.stderr, ', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], candidates)), 'installed and vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"]
+                return RET_ERR
+            elif kver not in map(lambda x: x[1], ok):
+                if verbose:
+                    print >>sys.stderr, ', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), "installed and not vulnerable but vulnerable kernel", self.get_raw_kver(), "booted", "(%s:need reboot)"%pkg["rule"]
+                raise LiveKernVulnerable()
+            else:
+                if verbose:
+                    print "kernel", self.get_raw_kver(), "installed, booted and not vulnerable", "(%s:not vulnerable)"%pkg["rule"]
+                return RET_OK
 
         if len(ok) > 0:
-            kver = self.get_kver()
-            if name.startswith("kernel") and kver not in ok:
-                if verbose:
-                    print >>sys.stderr, "kernel", ', '.join(ok), "installed and not vulnerable but vulnerable kernel", kver, "booted"
-                return RET_ERR
+            if verbose:
+                print "%s installed and not vulnerable (%s:not vulnerable)"%(', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), pkg["rule"])
             return RET_OK
 
-        if arch != "":
-            name += "."+arch
         if verbose:
-            print >>sys.stderr, 'package', name, vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s)"%pkg["rule"]
+            print >>sys.stderr, 'package', name+"-"+vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"]
         return RET_ERR
 
     def check(self):
         r = 0
         for pkg in self.packages:
-            r |= self.check_pkg(pkg)
+            try:
+                _r = self.check_pkg(pkg)
+                r |= _r
+            except LiveKernVulnerable:
+                r |= RET_ERR
         return r
 
     def fix(self):
@@ -361,7 +432,18 @@ class CompVuln(object):
             r |= self.fix_pkg(pkg)
         if self.fix_all is not None and len(self.fix_list) > 0:
             self.fix_all()
+        if self.need_pushpkg:
+            self.pushpkg()
         return r
+
+    def pushpkg(self):
+        bin = '/opt/opensvc/bin/nodemgr'
+        if which(bin) is None:
+            return
+        cmd = [bin, 'pushpkg']
+        print ' '.join(cmd)
+        p = Popen(cmd)
+        p.communicate()
 
     def fixable(self):
         r = 0
