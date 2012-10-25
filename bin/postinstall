@@ -18,6 +18,7 @@ except:
 
 pathbin = os.path.dirname(__file__)
 pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
+pathbin = os.path.join(pathsvc, 'bin')
 pathetc = os.path.join(pathsvc, 'etc')
 pathvar = os.path.join(pathsvc, 'var')
 pathtmp = os.path.join(pathsvc, 'tmp')
@@ -382,8 +383,9 @@ def gen_keys():
     ret = os.system(' '.join(cmd))
 
 def missing_dir(sub):
-    pathd = os.path.join(os.sep, 'opt', 'opensvc', sub)
+    pathd = os.path.join(pathsvc, sub)
     if not os.path.exists(pathd):
+	print "create dir", pathd
 	os.makedirs(pathd, 755)
 
 def missing_dirs():
@@ -538,6 +540,7 @@ def install_pythonlink_windows():
 	cmdpath = os.path.join(pathbin, cmd)
 	if cmd == 'cron':
 	    cmdpath = os.path.join(pathbin, 'cron', 'opensvc')
+	print "create", cmdpath
 	content = '@echo off\n"'+sys.executable+'" "'+cmdpath+'" %*'
         f = open(l, 'w')
         f.write(content)
