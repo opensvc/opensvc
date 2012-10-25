@@ -38,6 +38,7 @@ import rcUtilities
 class Options(object):
     def __init__(self):
         self.cron = False
+        self.syncrpc = False
         self.force = False
         self.debug = False
         self.stats_dir = None
