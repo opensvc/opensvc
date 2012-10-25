@@ -917,7 +917,10 @@ class Collector(object):
         args = [d.keys(), d.values()]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.update_asset(*args)
+        if node.options.syncrpc:
+            self.proxy.update_asset_sync(*args)
+        else:
+            self.proxy.update_asset(*args)
     
     def push_ibmsvc(self, sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:

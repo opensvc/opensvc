@@ -95,6 +95,8 @@ parser.add_option("--author", default=None, action="store", dest="author",
                   help="the acker name to log when used with the 'collector ack action' action")
 parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
+parser.add_option("--sync", default=False, action="store_true", dest="syncrpc",
+                  help="use synchronous collector rpc if available. to use with pushasset when chaining a compliance run, to make sure the node ruleset is up-to-date.")
 
 (options, args) = parser.parse_args()
 
