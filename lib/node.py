@@ -108,6 +108,7 @@ class Node(Svc, Freezer):
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'push_appinfo':   'push services application launchers appinfo key/value pairs to database',
+            'pushnsr':        'push EMC Networker index to collector',
             'checks':         'run node sanity checks, push results to collector',
           },
           'Misc': {
@@ -691,6 +692,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_asset', self)
+
+    def pushnsr(self):
+        if self.skip_action('nsr', 'push_interval', 'last_nsr_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_nsr')
 
     def pushdcs(self):
         if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
