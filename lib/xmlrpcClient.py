@@ -1026,6 +1026,26 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_ibmsvc(*args)
     
+    def push_nsr(self, sync=True):
+        if 'update_nsr' not in self.proxy_methods:
+           print "'update_nsr' method is not exported by the collector"
+           return
+        m = __import__('rcNsr')
+        try:
+            nsr = m.Nsr()
+        except:
+            return
+        vals = []
+        for key in nsr.keys:
+            vals.append(getattr(nsr, 'get_'+key)())
+        args = [rcEnv.nodename, nsr.keys, vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        try:
+            self.proxy.update_nsr(*args)
+        except:
+            print "error pushing nsr index"
+
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print "'update_dcs' method is not exported by the collector"
