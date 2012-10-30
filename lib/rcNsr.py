@@ -10,7 +10,7 @@ class Nsr(object):
         self.keys = ['mminfo']
 
     def get_mminfo(self):
-        os.environ["LANG"] = "en_DK"
+        os.environ["LC_TIME"] = "en_DK"
         cmd = ['mminfo', '-x', 'c;', '-q', 'savetime>=last day', '-r', 'client,name,group,totalsize,savetime(30),ssretent(30),volume,level']
         print ' '.join(cmd)
         lines = justcall(cmd)[0].split('\n')[1:]
@@ -31,7 +31,7 @@ class Nsr(object):
             else:
                 ip = client
             lines[li] = ip + line[i:]
-        return '\n'.join(lines)
+        return unicode('\n'.join(lines), errors='ignore')
 
 
 if __name__ == "__main__":
