@@ -49,7 +49,7 @@ class syncEvasnap(resSync.Sync):
 
     def recreate(self):
         def snapname(info):
-            return info['objectname'].split('\\')[-2]+'_'+self.svc.svcname
+            return info['objectname'].split('\\')[-2]+'_'+self.snap_name
 
         try:
             self.prereq()
@@ -268,7 +268,7 @@ class syncEvasnap(resSync.Sync):
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
         
 
-    def __init__(self, rid=None, pairs=[], eva_name="",
+    def __init__(self, rid=None, pairs=[], eva_name="", snap_name="",
                  sync_max_delay=None, sync_interval=None, sync_days=None,
                  sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
@@ -281,6 +281,7 @@ class syncEvasnap(resSync.Sync):
 
         self.label = "EVA snapshot %s"%(rid)
         self.eva_name = eva_name
+        self.snap_name = snap_name
         self.pairs = pairs
         self.sssubin = os.path.join(rcEnv.pathbin, 'sssu')
         self.conf = os.path.join(rcEnv.pathetc, 'sssu.conf')

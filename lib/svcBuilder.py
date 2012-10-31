@@ -1101,6 +1101,11 @@ def add_syncs_evasnap(svc, conf):
             svc.log.error("config file section %s must have eva_name set" % s)
             continue
 
+        try:
+            kwargs['snap_name'] = conf_get_string(svc, conf, s, 'snap_name')
+        except ex.OptNotFound:
+            kwargs['snap_name'] = svc.svcname
+
         import json
         pairs = []
         if 'pairs' in conf.options(s):
