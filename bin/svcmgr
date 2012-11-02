@@ -248,14 +248,8 @@ elif action in ['disable', 'enable', 'delete']:
     _exit(r)
 
 err = 0
-env_bkp = os.environ.copy()
 
 for s in node.svcs:
-    # reset env for each service, mostly
-    # to not inherit peer service compliance rulesets
-    os.environ.clear()
-    os.environ.update(env_bkp)
-
     s.options = options
     s.force = options.force
     s.cron = options.cron

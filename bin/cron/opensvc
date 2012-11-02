@@ -33,7 +33,6 @@ sys.path.append(pathlib)
 import node
 n = node.Node()
 n.options.cron = True
-env_bkp = os.environ.copy()
 
 for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
                "pushasset", "checks", "syncservices", "compliance_check",
@@ -44,9 +43,6 @@ for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
         import traceback
         traceback.print_exc()
 
-os.environ.clear()
-os.environ.update(env_bkp)
-
 for s in n.svcs:
     s.cron = True
     try:
@@ -54,7 +50,5 @@ for s in n.svcs:
     except:
         import traceback
         traceback.print_exc()
-    os.environ.clear()
-    os.environ.update(env_bkp)
 
 n.close()

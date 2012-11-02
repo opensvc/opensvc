@@ -297,9 +297,14 @@ class Compliance(object):
         return val
 
     def setup_env(self):
+        self.env_bkp = os.environ.copy()
         for rule in self.ruleset.values():
             for var, val in rule['vars']:
                 os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
+
+    def unsetup_env(self):
+        os.environ.clear()
+        os.environ.update(self.env_bkp)
 
     def get_moduleset(self):
         if self.svcname is not None:
@@ -396,6 +401,7 @@ class Compliance(object):
         self.ruleset = self.get_ruleset()
         self.setup_env()
         print self.str_ruleset()
+        self.unsetup_env()
 
     def do_run(self, action):
         err = {}
@@ -406,6 +412,7 @@ class Compliance(object):
         r = self.digest_errors(err)
         end = datetime.datetime.now()
         print "total duration: %s"%str(end-start)
+        self.unsetup_env()
         return r
 
     def do_checks(self):
