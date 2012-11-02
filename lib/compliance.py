@@ -168,7 +168,7 @@ class Module(object):
             return log
 
         try:
-            p = Popen(cmd, stdout=fo, stderr=fe)
+            p = Popen(cmd, stdout=fo, stderr=fe, env=os.environ)
             _fo = open(fo.name, 'r')
             _fe = open(fe.name, 'r')
             while True:
