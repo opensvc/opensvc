@@ -11,7 +11,7 @@ class Nsr(object):
 
     def get_mminfo(self):
         os.environ["LC_TIME"] = "en_DK"
-        cmd = ['mminfo', '-x', 'c;', '-q', 'savetime>=last day', '-r', 'client,name,group,totalsize,savetime(30),ssretent(30),volume,level']
+        cmd = ['mminfo', '-x', 'c;', '-q', 'savetime>=last day', '-r', 'client,name,group,totalsize,savetime(30),ssretent(30),volume,level,ssid(53)']
         print ' '.join(cmd)
         lines = justcall(cmd)[0].split('\n')[1:]
         for li, line in enumerate(lines):
