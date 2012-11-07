@@ -52,7 +52,19 @@ def remote_fs_mounted(self, node):
     (ret, out, err) = self.call(cmd, cache=True)
     if ret != 0:
         raise ex.excError
-    if self.dstfs not in out.split():
+
+    """
+    # df /zones
+    /zones             (rpool/zones       ):131578197 blocks 131578197 files
+           ^     
+           separator !
+
+    # df /zones/frcp03vrc0108/root
+    /zones/frcp03vrc0108/root(rpool/zones/frcp03vrc0108/rpool/ROOT/solaris-0):131578197 blocks 131578197 files
+                             ^
+                             no separator !
+    """
+    if self.dstfs+'(' not in out and self.dstfs not in out.split():
         self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
         return False
     return True
