@@ -34,6 +34,7 @@ import rcCommandWorker
 import socket
 import rcLogger
 import rcUtilities
+import rcExceptions as ex
 
 class Options(object):
     def __init__(self):
@@ -58,9 +59,11 @@ class Node(Svc, Freezer):
         return s
 
     def __init__(self):
+        self.auth_config = None
         self.delay_done = False
         self.nodename = socket.gethostname()
-        self.nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
+        self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
+        self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.config_defaults = {
@@ -94,6 +97,7 @@ class Node(Svc, Freezer):
             'scanscsi': 'scan the scsi hosts in search of new disks',
           },
           'Service actions': {
+            'discover': 'discover vservices accessible from this host, cloud nodes for example',
             'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
             'updateservices': 'refresh var files associated with services',
           },
@@ -278,6 +282,12 @@ class Node(Svc, Freezer):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
         self.config.read(self.dotnodeconf)
+
+    def load_auth_config(self):
+        if self.auth_config is not None:
+            return
+        self.auth_config = ConfigParser.ConfigParser()
+        self.auth_config.read(self.authconf)
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
@@ -1161,6 +1171,110 @@ class Node(Svc, Freezer):
             print >>sys.stderr, "scanscsi is not implemented on", rcEnv.sysname
             return 1
         return o.scanscsi()
+
+    def discover(self):
+        self.cloud_init()
+
+    def cloud_init(self):
+        r = 0
+        for s in self.config.sections():
+            try:
+                self.cloud_init_section(s)
+            except ex.excInitError, e:
+                print >>sys.stderr, str(e)
+                r |= 1
+        return r
+
+    def cloud_init_section(self, s):
+        if not s.startswith("cloud"):
+            return
+
+        if not s.startswith("cloud#"):
+            raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%self.nodeconf)
+
+        try:
+            cloud_type = self.config.get(s, 'type')
+        except:
+            raise ex.excInitError("type option is mandatory in cloud section in %s"%self.nodeconf)
+
+        # noop if already loaded
+        self.load_auth_config()
+        try:
+            auth_dict = {}
+            for key, val in self.auth_config.items(s):
+                auth_dict[key] = val
+        except:
+            raise ex.excInitError("%s must have a '%s' section"%(self.authconf, s))
+
+        if len(cloud_type) == 0:
+            raise ex.excInitError("invalid cloud type in %s"%self.nodeconf)
+
+        mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
+
+        try:
+            m = __import__(mod_name)
+        except ImportError:
+            raise ex.excInitError("cloud type '%s' is not supported"%cloud_type)
+
+        c = m.Cloud(s, auth_dict)
+
+        cloud_id = c.cloud_id()
+        svcnames = c.list_svcnames()
+
+        self.cloud_purge_services(cloud_id, svcnames)
+
+        for svcname in svcnames:
+            self.cloud_init_service(c, svcname)
+
+    def cloud_purge_services(self, suffix, svcnames):
+        import glob
+        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+        for env in envs:
+            svcname = os.path.basename(env).rstrip('.env')
+            if svcname.endswith(suffix) and svcname not in svcnames:
+                print "purge_service(svcname)", svcname
+
+    def cloud_init_service(self, c, svcname):
+        import glob
+        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+        env = os.path.join(rcEnv.pathetc, svcname+'.env')
+        if env in envs:
+            print svcname, "is already defined"
+        print "initialize", svcname
+
+        defaults = {
+          'app': c.app_id(svcname),
+          'mode': c.mode,
+          'nodes': c.cloud_id(),
+          'service_type': 'TST',
+        }
+        config = ConfigParser.RawConfigParser(defaults)
+
+        try:
+            fp = open(env, 'w')
+            config.write(fp)
+            fp.close()
+        except:
+            print >>sys.stderr, "failed to write %s"%env
+            raise Exception()
+
+        d = env.rstrip('.env')+'.dir'
+        s = env.rstrip('.env')+'.d'
+        x = os.path.join(rcEnv.pathbin, "svcmgr")
+        b = env.rstrip('.env')
+        try:
+            os.makedirs(d)
+        except:
+            pass
+        try:
+            os.symlink(d, s)
+        except:
+            pass
+        try:
+            os.symlink(x, b)
+        except:
+            pass
+
 
 if __name__ == "__main__" :
     for n in (Node,) :

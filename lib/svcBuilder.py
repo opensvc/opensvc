@@ -136,6 +136,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcSg', 'SvcSg')
     elif svcmode == 'rhcs':
         return ('svcRhcs', 'SvcRhcs')
+    elif svcmode == 'vcloud':
+        return ('svcVcloud', 'SvcVcloud')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
@@ -1529,7 +1531,7 @@ def build(name):
     
     """ prune not managed service
     """
-    if rcEnv.nodename not in svc.nodes | svc.drpnodes:
+    if svc.svcmode not in rcEnv.vt_cloud and rcEnv.nodename not in svc.nodes | svc.drpnodes:
         svc.log.error('service %s not managed here' % name)
         del(svc)
         return None

@@ -160,6 +160,7 @@ class rcEnv:
         [["/home/oracle", "/home/sybase", "/opt/oracle", "/opt/sybase"], drp_sync_excludes],
     ]
 
+    vt_cloud = ['vcloud', 'openstack']
     vt_libvirt = ['kvm', 'lxc', 'xen']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx']
     vt_container = ['zone', 'lxc', 'jail', 'vz']
