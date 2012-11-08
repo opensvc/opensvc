@@ -144,6 +144,14 @@ class Resource(object):
         if self is optional then return True
         else return do_action() return value
         """
+        if not self.rid == "app" and not self.svc.encap and 'encap' in self.tags:
+            self.log.debug('skip encap resource action: action=%s res=%s'%(action, self.rid))
+            return
+
+        if 'noaction' in self.tags:
+            self.log.debug('skip resource action (noaction tag): action=%s res=%s'%(action, self.rid))
+            return
+
         self.log.debug('action: action=%s res=%s'%(action, self.rid))
         if action == None:
             self.log.debug('action: action cannot be None')
@@ -191,13 +199,18 @@ class Resource(object):
 
     def status_quad(self):
         r = self.status(verbose=True)
+        if 'encap' in self.tags:
+            encap = True
+        else:
+            encap = False
         return (self.rid,
                 rcStatus.status_str(r),
                 self.label,
                 self.status_log_str,
                 self.monitor,
                 self.disabled,
-                self.optional)
+                self.optional,
+                encap)
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -304,6 +317,9 @@ class ResourceSet(Resource):
         for r in self.resources:
             if r.is_disabled():
                 continue
+            if not r.svc.encap and 'encap' in r.tags:
+                # don't evaluate encap service resources
+                continue
             try:
                 status = r.status()
             except:
@@ -325,6 +341,12 @@ class ResourceSet(Resource):
                 return True
         return False
 
+    def has_encap_resources(self):
+        resources = [r for r in self.resources if self.tag_match(r.tags, set(['encap']))]
+        if len(resources) == 0:
+            return False
+        return True
+        
     def action(self, action=None, tags=set([])):
         """Call action on each resource of the ResourceSet
         """

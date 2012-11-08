@@ -61,6 +61,8 @@ parser.add_option("-f", "--force", default=False, action="store_true", dest="for
                   help="force action, ignore sanity check warnings")
 parser.add_option("--cron", default=False, action="store_true", dest="cron",
                   help="used by cron'ed action to tell the collector to treat the log entries as such")
+parser.add_option("-e", "--encap", default=False, action="store_true", dest="encap",
+                  help="option to set when excuting a normally disabled action on an encapsulated service")
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="option to set when excuting from a clusterware to disable safety net")
 parser.add_option("-i", "--interactive", default=False, action="store_true", dest="interactive",
@@ -253,6 +255,7 @@ for s in node.svcs:
     s.options = options
     s.force = options.force
     s.cron = options.cron
+    s.options.encap = options.encap
     if cluster:
         s.cluster = cluster
     else:

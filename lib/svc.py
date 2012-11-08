@@ -23,6 +23,7 @@ from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -48,6 +49,7 @@ def dblogger(self, action, begin, end, actionlogfile, sync=False):
 
 class Options(object):
     def __init__(self):
+        self.encap = False
         self.cron = False
         self.force = False
         self.ignore_affinity = False
@@ -65,6 +67,7 @@ class Svc(Resource, Freezer):
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
+        self.encap = False
         self.options = Options()
         self.node = None
         self.ha = False
@@ -247,6 +250,22 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+    def get_resources(self, type=None):
+         if type is None:
+             rsets = self.resSets
+         else:
+             rsets = self.get_res_sets(type)
+
+         resources = []
+         for rs in rsets:
+             for r in rs.resources:
+                 if not self.encap and 'encap' in r.tags:
+                     continue
+                 if r.disabled:
+                     continue
+                 resources.append(r)
+         return resources
+
     def get_res_sets(self, type):
          if not isinstance(type, list):
              l = [type]
@@ -390,8 +409,10 @@ class Svc(Resource, Freezer):
         """
         ss = rcStatus.Status()
         for r in self.get_res_sets(self.status_types):
+            if not self.encap and 'encap' in r.tags:
+                continue
             if "sync." not in r.type:
-                 ss += r.status()
+                ss += r.status()
             else:
                 """ sync are expected to be up
                 """
@@ -413,15 +434,23 @@ class Svc(Resource, Freezer):
         d = {
               'resources': {},
             }
+        try:
+            encap_res_status = self.encap_json_status()['resources']
+        except:
+            encap_res_status = {}
+
         for rs in self.get_res_sets(self.status_types):
-            for r in [_r for _r in rs.resources]:
-                rid, status, label, log, monitor, disable, optional = r.status_quad()
+            for r in rs.resources:
+                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                if rid in encap_res_status:
+                    status = encap_res_status[rid]['status']
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log':log,
                                        'monitor':monitor,
                                        'disable': disable,
-                                       'optional': optional}
+                                       'optional': optional,
+                                       'encap': encap}
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
@@ -433,11 +462,12 @@ class Svc(Resource, Freezer):
         from textwrap import wrap
 
         def print_res(e, fmt, pfx):
-            rid, status, label, log, monitor, disabled, optional = e
+            rid, status, label, log, monitor, disabled, optional, encap = e
             flags = ''
             flags += 'M' if monitor else '.'
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
+            flags += 'E' if encap else '.'
             print fmt%(rid, flags, status, label)
             if len(log) > 0:
                 print '\n'.join(wrap(log,
@@ -453,10 +483,18 @@ class Svc(Resource, Freezer):
         fmt = "|- %-17s %4s %-8s %s"
         print fmt%("avail", '', str(self.group_status()['avail']), "\n"),
 
+        try:
+            encap_res_status = self.encap_json_status()['resources']
+        except:
+            encap_res_status = {}
+
         l = []
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
-                l.append(r.status_quad())
+                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                if rid in encap_res_status:
+                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+                l.append((rid, status, label, log, monitor, disable, optional, encap))
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -475,7 +513,10 @@ class Svc(Resource, Freezer):
         l = []
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
-                l.append(r.status_quad())
+                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                if rid in encap_res_status:
+                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+                l.append((rid, status, label, log, monitor, disable, optional, encap))
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -494,7 +535,10 @@ class Svc(Resource, Freezer):
         l = []
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
-                l.append(r.status_quad())
+                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                if rid in encap_res_status:
+                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+                l.append((rid, status, label, log, monitor, disable, optional, encap))
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -510,6 +554,11 @@ class Svc(Resource, Freezer):
     def svcmon_push_lists(self, status=None):
         if status is None:
             status = self.group_status()
+
+        try:
+            encap_res_status = self.encap_json_status(refresh=True)['resources']
+        except:
+            encap_res_status = {}
 
         if self.frozen():
             frozen = "1"
@@ -528,11 +577,15 @@ class Svc(Resource, Freezer):
         now = datetime.datetime.now()
         for rs in self.resSets:
             for r in rs.resources:
+                if r.rid in encap_res_status:
+                    rstatus = encap_res_status[r.rid]['status']
+                else:
+                    rstatus = rcStatus.status_str(r.rstatus)
                 r_vals.append([repr(self.svcname),
                              repr(rcEnv.nodename),
                              repr(r.rid),
                              repr(r.label),
-                             repr(rcStatus.status_str(r.rstatus)),
+                             repr(str(rstatus)),
                              repr(str(now)),
                              r.status_log_str])
 
@@ -585,10 +638,9 @@ class Svc(Resource, Freezer):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         has_hb = False
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
-            for r in rs.resources:
-                if not r.disabled:
-                    has_hb = True
+        for r in self.get_resources(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
+            if not r.disabled:
+                has_hb = True
         if not has_hb:
             self.log.debug("no active heartbeat resource. no need to check monitored resources.")
             return
@@ -598,10 +650,9 @@ class Svc(Resource, Freezer):
             return
 
         monitored_resources = []
-        for rs in self.resSets:
-            for r in rs.resources:
-                if r.monitor:
-                    monitored_resources.append(r)
+        for r in self.get_resources():
+            if r.monitor:
+                monitored_resources.append(r)
 
         if len(monitored_resources) == 0:
             self.log.debug("no monitored resource")
@@ -642,6 +693,75 @@ class Svc(Resource, Freezer):
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
         
+    def has_encap_resources(self):
+        for t in self.status_types:
+            for rs in self.get_res_sets(t):
+                if rs.has_encap_resources():
+                    return True
+        return False 
+
+    def encap_cmd(self, cmd, verbose=False):
+        if len(self.runmethod) == 0:
+            return None
+        if not self.has_encap_resources():
+            return None
+        cmd = self.runmethod + ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("failed to execute encap service command: %d\n%s\n%s"%(ret, out, err))
+        if verbose:
+            print out
+            if len(err) > 0:
+                print err
+        return out, err, ret
+
+    def encap_json_status(self, refresh=False):
+        if not refresh and hasattr(self, 'encap_json_status_cache'):
+            return self.encap_json_status_cache
+        container = self.resources_by_id["container"]
+        if self.guestos == 'Windows':
+            raise ex.excNotAvailable
+        if container.status() == rcStatus.DOWN:
+            """
+               passive node for the vservice => forge encap resource status
+                 - encap sync are n/a
+                 - other encap res are down
+            """
+            gs = {
+              'sync': 'n/a',
+              'resources': {},
+            }
+            groups = set(["container", "ip", "disk", "fs", "hb"])
+            for g in groups:
+                gs[g] = 'down'
+            for rs in self.get_res_sets(self.status_types):
+                g = rs.type.split('.')[0]
+                if g not in groups:
+                    continue
+                for r in rs.resources:
+                    if not self.encap and 'encap' in r.tags:
+                        gs['resources'][r.rid] = {'status': 'down'}
+            
+            groups = set(["app", "sync"])
+            for g in groups:
+                gs[g] = 'n/a'
+            for rs in self.get_res_sets(groups):
+                g = rs.type.split('.')[0]
+                if g not in groups:
+                    continue
+                for r in rs.resources:
+                    if not self.encap and 'encap' in r.tags:
+                        gs['resources'][r.rid] = {'status': 'n/a'}
+
+            return gs
+
+        cmd = ['json', 'status']
+        out, err, ret = self.encap_cmd(cmd)
+        import json
+        gs = json.loads(out)
+        self.encap_json_status_cache = gs
+        return gs
+        
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
                      excluded_groups=set([])):
@@ -649,20 +769,27 @@ class Svc(Resource, Freezer):
         """print each resource status for a service
         """
         status = {}
+        moregroups = groups | set(["overall", "avail"])
         groups = groups.copy() - excluded_groups
         rset_status = self.get_rset_status(groups)
-        moregroups = groups | set(["overall", "avail"])
 
         # initialise status of each group
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
+
+        try:
+            encap_rset_status = self.encap_json_status()
+        except:
+            encap_rset_status = {}
 
         for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
             for r in self.get_res_sets(t):
-                s = rset_status[r.type]
+                s = rcStatus.Status(rset_status[r.type])
+                if not self.encap and group in encap_rset_status:
+                    s += rcStatus.Status(rcStatus.status_value(encap_rset_status[group]))
                 status[group] += s
                 status["avail"] += s
 
@@ -684,7 +811,10 @@ class Svc(Resource, Freezer):
             if 'hb' not in groups:
                 continue
             for r in self.get_res_sets(t):
-                s = rset_status[r.type]
+                if not self.encap and 'encap' in r.tags and r.type in encap_rset_status:
+                    s = rcStatus.Status(rcStatus.status_value(encap_rset_status[r.type]))
+                else:
+                    s = rset_status[r.type]
                 status['hb'] += s
                 status["overall"] += s
 
@@ -694,7 +824,10 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t):
                 """ sync are expected to be up
                 """
-                s = rset_status[r.type]
+                if not self.encap and 'encap' in r.tags and r.type in encap_rset_status:
+                    s = rcStatus.Status(rcStatus.status_value(encap_rset_status[r.type]))
+                else:
+                    s = rset_status[r.type]
                 status['sync'] += s
                 if s == rcStatus.UP:
                     status["overall"] += rcStatus.UNDEF
@@ -729,11 +862,8 @@ class Svc(Resource, Freezer):
         """List all disks held by all resources of this service
         """
         disks = set()
-        for rs in self.resSets:
-            for r in rs.resources:
-                if r.is_disabled():
-                    continue
-                disks |= r.disklist()
+        for r in self.get_resources():
+            disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
@@ -746,11 +876,8 @@ class Svc(Resource, Freezer):
         """List all devs held by all resources of this service
         """
         devs = set()
-        for rs in self.resSets:
-            for r in rs.resources:
-                if r.is_disabled():
-                    continue
-                devs |= r.devlist()
+        for r in self.get_resources():
+            devs |= r.devlist()
         self.log.debug("found devs %s held by service" % devs)
         return devs
 
@@ -800,7 +927,8 @@ class Svc(Resource, Freezer):
         self.startip()
         self.mount()
         self.startcontainer()
-        self.startapp()
+        self._startapp()
+        self.encap_cmd(['start'], verbose=True)
         self.starthb()
 
     def rollback(self):
@@ -815,6 +943,7 @@ class Svc(Resource, Freezer):
 
     def stop(self):
         self.stophb()
+        self.encap_cmd(['stop'], verbose=True)
         try:
             self.stopapp()
         except ex.excError:
@@ -827,10 +956,9 @@ class Svc(Resource, Freezer):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
             return
         all_disabled = True
-        for rs in self.get_res_sets(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
-            for r in rs.resources:
-                if not r.disabled:
-                    all_disabled = False
+        for r in self.get_resources(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
+            if not r.disabled:
+                all_disabled = False
         if all_disabled:
             return
         if not self.cluster:
@@ -955,9 +1083,8 @@ class Svc(Resource, Freezer):
         """ Used after start/stop container because the ip resource
             status change after its own start/stop
         """
-        for rs in self.get_res_sets("ip"):
-            for r in rs.resources:
-                r.status(refresh=True)
+        for r in self.get_resources("ip"):
+            r.status(refresh=True)
 
     def stopcontainer(self):
         self.sub_set_action("container.vbox", "stop")
@@ -997,6 +1124,10 @@ class Svc(Resource, Freezer):
         self.push()
 
     def startapp(self):
+        self._startapp()
+        self.encap_cmd(['startapp'], verbose=True)
+
+    def _startapp(self):
         self.sub_set_action("app", "start")
 
     def stopapp(self):
@@ -1024,6 +1155,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
         self.sub_set_action("fs", "startstandby")
         self.sub_set_action("app", "startstandby")
+        self.encap_cmd(['startstandaby'], verbose=True)
 
     def postsync(self):
         """ action triggered by a remote master node after
@@ -1142,13 +1274,12 @@ class Svc(Resource, Freezer):
         rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
                   "sync.rsync", "sync.btrfs"]
         for rt in rtypes:
-            for rs in self.get_res_sets(rt):
-                for r in rs.resources:
-                    try:
-                        ret |= r.can_sync(target)
-                    except ex.excError:
-                        return False
-                    if ret: return True
+            for r in self.get_resources(rt):
+                try:
+                    ret |= r.can_sync(target)
+                except ex.excError:
+                    return False
+                if ret: return True
         return False
 
     def syncall(self):
@@ -1168,10 +1299,26 @@ class Svc(Resource, Freezer):
         self.node.collector.call('push_appinfo', [self])
 
     def push(self):
+        if self.encap:
+            return
+        self.push_encap_env()
         self.node.collector.call('push_all', [self])
-        import time
-        with open(self.push_flag, 'w') as f:
-            f.write(str(time.time()))
+        print "send %s to collector ... OK"%self.pathenv
+        try:
+            import time
+            with open(self.push_flag, 'w') as f:
+                f.write(str(time.time()))
+            ret = "OK"
+        except:
+            ret = "ERR"
+        print "update %s timestamp"%self.push_flag, "...", ret
+
+    def push_encap_env(self):
+        if self.encap or not self.has_encap_resources():
+            return
+        cmd = rcEnv.rcp.split() + [self.pathenv, self.vmname+':'+rcEnv.pathetc+'/']
+        out, err, ret = justcall(cmd)
+        print "send %s to %s ..."%(self.pathenv, self.vmname), "OK" if ret == 0 else "ERR\n%s"%err
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
@@ -1193,21 +1340,19 @@ class Svc(Resource, Freezer):
         if not tagsfilter and not ridfilter:
             return
 
-        for rs in self.resSets:
-            for r in rs.resources:
-                if ridfilter and r.rid in keeprid:
-                    continue
-                if tagsfilter and self.tag_match(r.tags, keeptags):
-                    continue
-                r.disable()
+        for r in self.get_resources():
+            if ridfilter and r.rid in keeprid:
+                continue
+            if tagsfilter and self.tag_match(r.tags, keeptags):
+                continue
+            r.disable()
 
     def setup_environ(self):
         """ Those are available to startup scripts and triggers
         """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
-        for rs in self.resSets:
-            for r in rs.resources:
-                r.setup_environ()
+        for r in self.get_resources():
+            r.setup_environ()
 
     def action(self, action, rid=[], tags=set([]), waitlock=60):
         if self.node is None:
