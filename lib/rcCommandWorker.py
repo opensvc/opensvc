@@ -10,6 +10,7 @@ except:
     mp = False
 
 from rcUtilities import justcall
+import rcExceptions as ex
 
 pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
