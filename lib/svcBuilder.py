@@ -138,6 +138,8 @@ def svcmode_mod_name(svcmode=''):
         return ('svcRhcs', 'SvcRhcs')
     elif svcmode == 'vcloud':
         return ('svcVcloud', 'SvcVcloud')
+    elif svcmode == 'openstack':
+        return ('svcOpenstack', 'SvcOpenstack')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):

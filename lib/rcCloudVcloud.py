@@ -1,5 +1,6 @@
 import rcCloud
 import rcExceptions as ex
+import socket
 
 try:
     from libcloud.compute.types import Provider
