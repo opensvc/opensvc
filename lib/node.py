@@ -1253,12 +1253,13 @@ class Node(Svc, Freezer):
         env = os.path.join(rcEnv.pathetc, svcname+'.env')
         if env in envs:
             print svcname, "is already defined"
+            return
         print "initialize", svcname
 
         defaults = {
           'app': c.app_id(svcname),
           'mode': c.mode,
-          'nodes': rcEnv.sysname,
+          'nodes': rcEnv.nodename,
           'service_type': 'TST',
           'vm_name': vmname,
           'cloud_id': c.cid,

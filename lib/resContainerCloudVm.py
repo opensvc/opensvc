@@ -73,16 +73,19 @@ class CloudVm(resContainer.Container):
         return check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
-        print "not implemented"
+        c = self.get_cloud()
         n = self.get_node()
+        c.driver.ex_start_node(n)
 
     def container_stop(self):
+        c = self.get_cloud()
         n = self.get_node()
-        raise ex.excError("not implemented")
+        c.driver.ex_shutdown_graceful(n)
 
     def container_forcestop(self):
+        c = self.get_cloud()
         n = self.get_node()
-        raise ex.excError("not implemented")
+        c.driver.ex_power_off(n)
 
     def is_up(self):
         n = self.get_node()
