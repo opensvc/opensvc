@@ -49,7 +49,8 @@ def dblogger(self, action, begin, end, actionlogfile, sync=False):
 
 class Options(object):
     def __init__(self):
-        self.encap = False
+        self.slave = False
+        self.master = False
         self.cron = False
         self.force = False
         self.ignore_affinity = False
@@ -710,6 +711,7 @@ class Svc(Resource, Freezer):
         if ret != 0:
             raise ex.excError("failed to execute encap service command: %d\n%s\n%s"%(ret, out, err))
         if verbose:
+            self.log.info('logs from %s child service:'%self.vmname)
             print out
             if len(err) > 0:
                 print err
@@ -911,6 +913,30 @@ class Svc(Resource, Freezer):
         self.force = True
         self.stop()
 
+    def _slave_action(fn):
+        def _fn(self):
+            if self.encap or not self.has_encap_resources():
+                return
+            if fn.__name__ not in ('start', 'stop', 'startstandby', 'stopstandby') and \
+               (not self.options.master and not self.options.slave):
+                raise ex.excAbortAction("specify either --master, --slave or both")
+            if self.options.slave or \
+               (not self.options.master and not self.options.slave):
+                fn(self)
+        return _fn
+
+    def _master_action(fn):
+        def _fn(self):
+            if not self.encap and \
+               fn.__name__ not in ('start', 'stop', 'startstandby', 'stopstandby') and \
+               self.has_encap_resources() and \
+               (not self.options.master and not self.options.slave):
+                raise ex.excAbortAction("specify either --master, --slave or both")
+            if self.options.master or \
+               (not self.options.master and not self.options.slave):
+                fn(self)
+        return _fn
+
     def start(self):
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -924,15 +950,16 @@ class Svc(Resource, Freezer):
             else:
                 self.log.error("refuse to start %s on the same node as %s"%(self.svcname, ', '.join(af_svc)))
                 return
-        self.startip()
-        self.mount()
+        self.master_startip()
+        self.master_mount()
         self.startcontainer()
-        self._startapp()
+        self.master_startapp()
         self.encap_cmd(['start'], verbose=True)
-        self.starthb()
+        self.master_starthb()
 
     def rollback(self):
         self.rollbackhb()
+        self.encap_cmd(['rollback'], verbose=True)
         try:
             self.rollbackapp()
         except ex.excError:
@@ -942,15 +969,15 @@ class Svc(Resource, Freezer):
         self.rollbackip()
 
     def stop(self):
-        self.stophb()
+        self.master_stophb()
         self.encap_cmd(['stop'], verbose=True)
         try:
-            self.stopapp()
+            self.master_stopapp()
         except ex.excError:
             pass
         self.stopcontainer()
-        self.umount()
-        self.stopip()
+        self.master_umount()
+        self.master_stopip()
 
     def cluster_mode_safety_net(self):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
@@ -966,6 +993,15 @@ class Svc(Resource, Freezer):
             raise ex.excError
 
     def starthb(self):
+        self.master_starthb()
+        self.slave_starthb()
+
+    @_slave_action
+    def slave_starthb(self):
+        self.encap_cmd(['starthb'], verbose=True)
+
+    @_master_action
+    def master_starthb(self):
         self.sub_set_action("hb.ovm", "start")
         self.sub_set_action("hb.openha", "start")
         self.sub_set_action("hb.linuxha", "start")
@@ -973,6 +1009,15 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.rhcs", "start")
 
     def stophb(self):
+        self.slave_stophb()
+        self.master_stophb()
+
+    @_slave_action
+    def slave_stophb(self):
+        self.encap_cmd(['stophb'], verbose=True)
+
+    @_master_action
+    def master_stophb(self):
         self.sub_set_action("hb.ovm", "stop")
         self.sub_set_action("hb.openha", "stop")
         self.sub_set_action("hb.linuxha", "stop")
@@ -987,34 +1032,115 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.rhcs", "rollback")
 
     def startdrbd(self):
+        self.master_startdrbd()
+        self.slave_startdrbd()
+
+    @_slave_action
+    def slave_startdrbd(self):
+        self.encap_cmd(['startdrbd'], verbose=True)
+
+    @_master_action
+    def master_startdrbd(self):
         self.sub_set_action("disk.drbd", "start")
 
     def stopdrbd(self):
+        self.slave_stopdrbd()
+        self.master_stopdrbd()
+
+    @_slave_action
+    def slave_stopdrbd(self):
+        self.encap_cmd(['stopdrbd'], verbose=True)
+
+    @_master_action
+    def master_stopdrbd(self):
         self.sub_set_action("disk.drbd", "stop")
 
     def startloop(self):
+        self.master_startloop()
+        self.slave_startloop()
+
+    @_slave_action
+    def slave_startloop(self):
+        self.encap_cmd(['startloop'], verbose=True)
+
+    @_master_action
+    def master_startloop(self):
         self.sub_set_action("disk.loop", "start")
 
     def stoploop(self):
+        self.slave_stoploop()
+        self.master_stoploop()
+
+    @_slave_action
+    def slave_stoploop(self):
+        self.encap_cmd(['stoploop'], verbose=True)
+
+    @_master_action
+    def master_stoploop(self):
         self.sub_set_action("disk.loop", "stop")
 
     def stopvg(self):
+        self.slave_stopvg()
+        self.master_stopvg()
+
+    @_slave_action
+    def slave_stopvg(self):
+        self.encap_cmd(['stopvg'], verbose=True)
+
+    @_master_action
+    def master_stopvg(self):
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.scsireserv", "stop")
 
     def startvg(self):
+        self.master_startvg()
+        self.slave_startvg()
+
+    @_slave_action
+    def slave_startvg(self):
+        self.encap_cmd(['startvg'], verbose=True)
+
+    @_master_action
+    def master_startvg(self):
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.vg", "start")
 
     def startpool(self):
+        self.master_startpool()
+        self.slave_startpool()
+
+    @_slave_action
+    def slave_startpool(self):
+        self.encap_cmd(['startpool'], verbose=True)
+
+    @_master_action
+    def master_startpool(self):
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.zpool", "start")
 
     def stoppool(self):
+        self.slave_stoppool()
+        self.master_stoppool()
+
+    @_slave_action
+    def slave_stoppool(self):
+        self.encap_cmd(['stoppool'], verbose=True)
+
+    @_master_action
+    def master_stoppool(self):
         self.sub_set_action("disk.zpool", "stop")
         self.sub_set_action("disk.scsireserv", "stop")
 
     def startdisk(self):
+        self.master_startdisk()
+        self.slave_startdisk()
+
+    @_slave_action
+    def slave_startdisk(self):
+        self.encap_cmd(['startdisk'], verbose=True)
+
+    @_master_action
+    def master_startdisk(self):
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
@@ -1027,6 +1153,15 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
 
     def stopdisk(self):
+        self.slave_stopdisk()
+        self.master_stopdisk()
+
+    @_slave_action
+    def slave_stopdisk(self):
+        self.encap_cmd(['stopdisk'], verbose=True)
+
+    @_master_action
+    def master_stopdisk(self):
         self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.zpool", "stop")
@@ -1046,21 +1181,57 @@ class Svc(Resource, Freezer):
         self.sub_set_action("ip", "check_not_ping_raise")
 
     def startip(self):
+        self.master_startip()
+        self.slave_startip()
+
+    @_slave_action
+    def slave_startip(self):
+        self.encap_cmd(['startip'], verbose=True)
+
+    @_master_action
+    def master_startip(self):
         self.sub_set_action("ip", "start")
 
     def stopip(self):
+        self.slave_stopip()
+        self.master_stopip()
+
+    @_slave_action
+    def slave_stopip(self):
+        self.encap_cmd(['stopip'], verbose=True)
+
+    @_master_action
+    def master_stopip(self):
         self.sub_set_action("ip", "stop")
 
     def rollbackip(self):
         self.sub_set_action("ip", "rollback")
 
     def mount(self):
-        self.startdisk()
+        self.master_mount()
+        self.slave_mount()
+
+    @_master_action
+    def master_mount(self):
+        self.master_startdisk()
         self.sub_set_action("fs", "start")
 
+    @_slave_action
+    def slave_mount(self):
+        self.encap_cmd(['mount'], verbose=True)
+
     def umount(self):
+        self.slave_umount()
+        self.master_umount()
+
+    @_master_action
+    def master_umount(self):
         self.sub_set_action("fs", "stop")
-        self.stopdisk()
+        self.master_stopdisk()
+
+    @_slave_action
+    def slave_umount(self):
+        self.encap_cmd(['umount'], verbose=True)
 
     def rollbackmount(self):
         self.sub_set_action("fs", "rollback")
@@ -1124,22 +1295,54 @@ class Svc(Resource, Freezer):
         self.push()
 
     def startapp(self):
-        self._startapp()
+        self.master_startapp()
+        self.slave_startapp()
+
+    @_slave_action
+    def slave_startapp(self):
         self.encap_cmd(['startapp'], verbose=True)
 
-    def _startapp(self):
+    @_master_action
+    def master_startapp(self):
         self.sub_set_action("app", "start")
 
     def stopapp(self):
+        self.slave_stopapp()
+        self.master_stopapp()
+
+    @_slave_action
+    def slave_stopapp(self):
+        self.encap_cmd(['stopapp'], verbose=True)
+
+    @_master_action
+    def master_stopapp(self):
         self.sub_set_action("app", "stop")
 
     def rollbackapp(self):
         self.sub_set_action("app", "rollback")
 
     def prstop(self):
+        self.slave_prstop()
+        self.master_prstop()
+
+    @_slave_action
+    def slave_prstop(self):
+        self.encap_cmd(['prstop'], verbose=True)
+
+    @_master_action
+    def master_prstop(self):
         self.sub_set_action("disk.scsireserv", "scsirelease")
 
     def prstart(self):
+        self.master_prstart()
+        self.slave_prstart()
+
+    @_slave_action
+    def slave_prstart(self):
+        self.encap_cmd(['prstart'], verbose=True)
+
+    @_master_action
+    def master_prstart(self):
         self.sub_set_action("disk.scsireserv", "scsireserv")
 
     def prstatus(self):
@@ -1460,6 +1663,12 @@ class Svc(Resource, Freezer):
             else:
                 self.log.error("unsupported action")
                 err = 1
+        except ex.excAbortAction, e:
+            s = "'%s' action stopped on execution error"%action
+            if len(str(e)) > 0:
+                s += ": %s"%str(e)
+            self.log.error(s)
+            err = 1
         except ex.excError, e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
