@@ -1185,12 +1185,15 @@ class Node(Svc, Freezer):
                 r |= 1
         return r
 
-    def cloud_init_section(self, s):
+    def cloud_get(self, s):
         if not s.startswith("cloud"):
             return
 
         if not s.startswith("cloud#"):
             raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%self.nodeconf)
+
+        if hasattr(self, "clouds") and s in self.clouds:
+            return
 
         try:
             cloud_type = self.config.get(s, 'type')
@@ -1216,15 +1219,25 @@ class Node(Svc, Freezer):
         except ImportError:
             raise ex.excInitError("cloud type '%s' is not supported"%cloud_type)
 
+        if not hasattr(self, "clouds"):
+            self.clouds = {}
         c = m.Cloud(s, auth_dict)
+        self.clouds[s] = c
+        return c
+
+    def cloud_init_section(self, s):
+        c = self.cloud_get(s)
+
+        if c is None:
+            return
 
         cloud_id = c.cloud_id()
         svcnames = c.list_svcnames()
 
         self.cloud_purge_services(cloud_id, svcnames)
 
-        for svcname in svcnames:
-            self.cloud_init_service(c, svcname)
+        for vmname, svcname in svcnames:
+            self.cloud_init_service(c, vmname, svcname)
 
     def cloud_purge_services(self, suffix, svcnames):
         import glob
@@ -1234,7 +1247,7 @@ class Node(Svc, Freezer):
             if svcname.endswith(suffix) and svcname not in svcnames:
                 print "purge_service(svcname)", svcname
 
-    def cloud_init_service(self, c, svcname):
+    def cloud_init_service(self, c, vmname, svcname):
         import glob
         envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
         env = os.path.join(rcEnv.pathetc, svcname+'.env')
@@ -1247,6 +1260,8 @@ class Node(Svc, Freezer):
           'mode': c.mode,
           'nodes': c.cloud_id(),
           'service_type': 'TST',
+          'vm_name': vmname,
+          'cloud_id': c.cid,
         }
         config = ConfigParser.RawConfigParser(defaults)
 

@@ -41,7 +41,7 @@ class Cloud(rcCloud.Cloud):
         return '.'.join(_id)
 
     def list_svcnames(self):
-        svcnames = []
+        l = []
         _id = self.app_cloud_id()
         try:
             vapps = self.driver.list_nodes()
@@ -51,6 +51,6 @@ class Cloud(rcCloud.Cloud):
             __id = '.'.join((vapp.name, _id))
             for vm in vapp.extra['vms']:
                 svcname = '.'.join((vm['name'], __id))
-                svcnames.append(svcname)
-        return svcnames
+                l.append((vm['name'], svcname))
+        return l
 

@@ -1348,6 +1348,9 @@ def build(name):
                 return None
             kwargs['pkg_name'] = defaults["pkg_name"]
 
+        if svcmode in rcEnv.vt_cloud and "cloud_id" in defaults:
+            kwargs['cloud_id'] = defaults["cloud_id"]
+
     #
     # dynamically import the module matching the service mode
     # and instanciate a service

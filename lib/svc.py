@@ -88,6 +88,8 @@ class Svc(Resource, Freezer):
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
+                             "container.openstack",
+                             "container.vcloud",
                              "container.xen",
                              "container.esx",
                              "container.ovm",
@@ -1242,6 +1244,8 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.vz", "start")
         self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
+        self.sub_set_action("container.openstack", "start")
+        self.sub_set_action("container.vcloud", "start")
         self.sub_set_action("container.xen", "start")
         self.sub_set_action("container.esx", "start")
         self.sub_set_action("container.ovm", "start")
@@ -1265,6 +1269,8 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.esx", "stop")
         self.sub_set_action("container.ovm", "stop")
         self.sub_set_action("container.kvm", "stop")
+        self.sub_set_action("container.openstack", "stop")
+        self.sub_set_action("container.vcloud", "stop")
         self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
         self.sub_set_action("container.vz", "stop")
@@ -1278,6 +1284,8 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.esx", "rollback")
         self.sub_set_action("container.ovm", "rollback")
         self.sub_set_action("container.kvm", "rollback")
+        self.sub_set_action("container.openstack", "rollback")
+        self.sub_set_action("container.vcloud", "rollback")
         self.sub_set_action("container.jail", "rollback")
         self.sub_set_action("container.lxc", "rollback")
         self.sub_set_action("container.vz", "rollback")
@@ -1289,6 +1297,8 @@ class Svc(Resource, Freezer):
         self.sub_set_action("fs", "provision")
         self.sub_set_action("container.lxc", "provision")
         self.sub_set_action("container.kvm", "provision")
+        self.sub_set_action("container.openstack", "provision")
+        self.sub_set_action("container.vcloud", "provision")
         self.sub_set_action("container.zone", "provision")
         self.sub_set_action("ip", "provision")
         self.sub_set_action("fs", "start", tags=set(['postboot']))

@@ -24,15 +24,17 @@ import rcStatus
 import rcCloudVcloud
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+import resContainerCloudVm as cloudvm
 
 class SvcVcloud(svc.Svc):
-    def __init__(self, svcname, vmname=None, guestos=None, optional=False, disabled=False, tags=set([])):
+    def __init__(self, svcname, vmname=None, cloud_id=None, guestos=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
         if vmname is None:
             vmname = svcname
+        self.cloud_id = cloud_id
         self.vmname = vmname
         self.guestos = guestos
-        #self += kvm.Kvm(vmname, disabled=disabled)
+        self += cloudvm.CloudVm(vmname, cloud_id, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
     def vm_hostname(self):
