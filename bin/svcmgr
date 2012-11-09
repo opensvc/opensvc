@@ -47,6 +47,58 @@ def _exit(r):
 
 node = node_mod.Node()
 
+def install_service(svcnames, src_env):
+    if len(svcnames) != 1:
+        print >>sys.stderr, "only one service must be specified"
+        return 1
+
+    if not os.path.exists(src_env):
+        print >>sys.stderr, "%s does not exists"%src_env
+        return 1
+
+    try:
+        _install_service(svcnames[0], src_env)
+    except:
+        print sys.exc_info()
+        return 1
+
+    return 0
+
+def _install_service(svcname, src_env):
+    import shutil
+
+    pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+    pathetc = os.path.join(pathsvc, 'etc')
+    pathbin = os.path.join(pathsvc, 'bin')
+
+    # install env file in etc/
+    dst_env = os.path.join(pathetc, svcname+'.env')
+    if dst_env != src_env:
+        shutil.copy2(src_env, dst_env)
+
+    # install .dir
+    d = os.path.join(pathetc, svcname+'.dir')
+    if not os.path.exists(d):
+        os.makedirs(d)
+
+    # install .d
+    ld = os.path.join(pathetc, svcname+'.d')
+    if not os.path.exists(ld):
+        os.symlink(d, ld)
+    elif os.path.realpath(d) != os.path.realpath(ld):
+        os.unlink(ld)
+        os.symlink(d, ld)
+
+    # install svcmgr link
+    ls = os.path.join(pathetc, svcname)
+    s = os.path.join(pathbin, 'svcmgr')
+    if not os.path.exists(ls):
+        os.symlink(s, ls)
+    elif os.path.realpath(s) != os.path.realpath(ls):
+        os.unlink(ls)
+        os.symlink(s, ls)
+
+
 __ver = prog + " version " + version
 __usage = "%prog [options] command\n\n" + rcOptParser.format_desc()
 parser = optparse.OptionParser(version=__ver, usage=__usage)
@@ -141,6 +193,8 @@ elif cmd == 'svcmgr':
               help="operate only on service flagged for autostart on this node")
     parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
               help="operate only on service not flagged for autostart on this node")
+    parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
+              help="the envfile to use when installing a service")
 else:
     svcname = cmd.split('.')
     if len(svcname) == 2:
@@ -206,7 +260,7 @@ if not action in rcOptParser.supported_actions():
 if node.svcs is not None:
     svcnames = map(lambda x: x.svcname, node.svcs)
 
-if action == "create" and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+if action in ("create", "install") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
     svcnames = options.parm_svcs.split(',')
 
 if cmd == 'svcmgr' and len(svcnames) == 0:
@@ -220,6 +274,10 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
  svcname
 """)
     _exit(1)
+
+if action == 'install':
+    r = install_service(svcnames, options.param_envfile)
+    sys.exit(r)
 
 if hasattr(options, "parm_rid") and options.parm_rid is not None:
    rid = options.parm_rid.split(',')

@@ -1519,9 +1519,18 @@ class Svc(Resource, Freezer):
     def push_encap_env(self):
         if self.encap or not self.has_encap_resources():
             return
+
         cmd = rcEnv.rcp.split() + [self.pathenv, self.vmname+':'+rcEnv.pathetc+'/']
         out, err, ret = justcall(cmd)
         print "send %s to %s ..."%(self.pathenv, self.vmname), "OK" if ret == 0 else "ERR\n%s"%err
+        if ret != 0:
+            raise ex.excError()
+
+        cmd = ['install', '--envfile', self.pathenv]
+        out, err, ret = self.encap_cmd(cmd)
+        print "install %s slave service ..."%self.vmname, "OK" if ret == 0 else "ERR\n%s"%err
+        if ret != 0:
+            raise ex.excError()
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
