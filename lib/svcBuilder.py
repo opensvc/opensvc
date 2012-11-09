@@ -1299,7 +1299,7 @@ def build(name):
             drpnodes = set([])
 
         if "drpnode" in defaults:
-            drpnode = set(conf_get_string_scope({}, conf, 'DEFAULT', "drpnode"))
+            drpnode = conf_get_string_scope({}, conf, 'DEFAULT', "drpnode")
             drpnodes |= set([drpnode])
             drpnodes -= set([''])
         else:
