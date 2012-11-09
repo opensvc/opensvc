@@ -32,7 +32,7 @@ class CloudVm(resContainer.Container):
 
     def __init__(self, name, cloud_id, optional=False, disabled=False, monitor=False,
                  tags=set([])):
-        resContainer.Container.__init__(self, rid="cloudvm", name=name,
+        resContainer.Container.__init__(self, rid="container", name=name,
                                         type="container.openstack",
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags)
@@ -91,9 +91,14 @@ class CloudVm(resContainer.Container):
         return False
 
     def get_container_info(self):
-        n = self.get_node()
-        # n.size is empty
         self.info = {'vcpus': '0', 'vmem': '0'}
+        c = self.get_cloud()
+        n = self.get_node()
+        try:
+            size = c.driver.ex_get_size(n.extra['flavorId'])
+            self.info['vmem'] = str(size.ram)
+        except:
+            pass
         return self.info
 
     def check_manual_boot(self):

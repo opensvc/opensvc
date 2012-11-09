@@ -1234,7 +1234,7 @@ class Node(Svc, Freezer):
         cloud_id = c.cloud_id()
         svcnames = c.list_svcnames()
 
-        self.cloud_purge_services(cloud_id, svcnames)
+        self.cloud_purge_services(cloud_id, map(lambda x: x[1], svcnames))
 
         for vmname, svcname in svcnames:
             self.cloud_init_service(c, vmname, svcname)
@@ -1258,7 +1258,7 @@ class Node(Svc, Freezer):
         defaults = {
           'app': c.app_id(svcname),
           'mode': c.mode,
-          'nodes': c.cloud_id(),
+          'nodes': rcEnv.sysname,
           'service_type': 'TST',
           'vm_name': vmname,
           'cloud_id': c.cid,
