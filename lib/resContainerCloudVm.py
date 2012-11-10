@@ -30,13 +30,24 @@ class CloudVm(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, cloud_id, optional=False, disabled=False, monitor=False,
+    def __init__(self, name, cloud_id=None, size="tiny", auth=None,
+                 optional=False, disabled=False, monitor=False,
                  tags=set([])):
         resContainer.Container.__init__(self, rid="container", name=name,
                                         type="container.openstack",
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags)
         self.cloud_id = cloud_id
+        self.save_name = name + '.save'
+        self.size_name = size
+        self.auth = auth
+
+    def get_size(self):
+        c = self.get_cloud()
+        for size in c.driver.list_sizes():
+            if size.name == self.size_name:
+                return size
+        raise ex.excError("%s size not found"%self.size_name)
 
     def get_cloud(self):
         if hasattr(self, 'cloud'):
@@ -53,6 +64,48 @@ class CloudVm(resContainer.Container):
                 return n
         return
 
+    def get_save_name(self):
+        import datetime
+        now = datetime.datetime.now()
+        save_name = self.save_name + now.strftime(".%Y-%m-%d.%H:%M:%S")
+        return save_name
+
+    def purge_saves(self):
+        c = self.get_cloud()
+        l = c.driver.list_images()
+        d = {}
+        for image in l:
+            if image.name.startswith(self.save_name):
+                d[image.name] = image
+        if len(d) == 0:
+             raise ex.excError("no save image found")
+        elif len(d) == 1:
+             self.log.info("no previous save image to delete")
+        for k in sorted(d.keys())[:-1]:
+             self.log.info("delete previous save image %s"%d[k].name)
+             c.driver.ex_delete_image(d[k])
+
+    def get_last_save(self):
+        c = self.get_cloud()
+        l = c.driver.list_images()
+        d = {}
+        for image in l:
+            if image.name.startswith(self.save_name):
+                d[image.name] = image
+        if len(d) == 0:
+             raise ex.excError("no save image found")
+        for k in sorted(d.keys()):
+             last = d[k]
+        return last
+
+    def has_image(self, name):
+        c = self.get_cloud()
+        l = c.driver.list_images()
+        for image in l:
+            if image.name == name:
+                return True
+        return False
+
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
@@ -60,7 +113,7 @@ class CloudVm(resContainer.Container):
         if hasattr(self, 'addr'):
             return
         n = self.get_node()
-        if len(n.public_ip) > 0:
+        if n is not None and len(n.public_ip) > 0:
             self.addr = n.public_ip
 
     def files_to_sync(self):
@@ -70,26 +123,49 @@ class CloudVm(resContainer.Container):
         return True
 
     def ping(self):
+        if not hasattr(self, "addr"):
+            return 0
         return check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         c = self.get_cloud()
-        n = self.get_node()
-        c.driver.ex_start_node(n)
+        image = self.get_last_save()
+        size = self.get_size()
+        self.log.info("create instance %s, size %s, image %s"%(self.name, size.name, image.name))
+        c.driver.create_node(name=self.name, size=size, image=image)
 
     def container_stop(self):
         c = self.get_cloud()
         n = self.get_node()
-        c.driver.ex_shutdown_graceful(n)
+        self.container_save()
+        c.driver.destroy_node(n)
+        self.purge_saves()
 
-    def container_forcestop(self):
+    def print_node(self, n):
+        for k in dir(n):
+            if '__' in k:
+                continue
+            print k, "=", getattr(n, k)
+
+    def container_save(self):
         c = self.get_cloud()
         n = self.get_node()
-        c.driver.ex_power_off(n)
+        save_name = self.get_save_name()
+        if self.has_image(save_name):
+            return
+        #self.print_node(n)
+        if n.state == 9999:
+            self.log.info("a save is already in progress")
+            return
+        self.log.info("save new image %s"%save_name)
+        c.driver.ex_save_image(n, save_name)
+
+    def container_forcestop(self):
+        pass
 
     def is_up(self):
         n = self.get_node()
-        if n.state == 0:
+        if n is not None and n.state == 0:
             return True
         return False
 
