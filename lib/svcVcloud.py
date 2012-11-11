@@ -24,7 +24,7 @@ import rcStatus
 import rcCloudVcloud
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-import resContainerCloudVm as cloudvm
+import resContainerVcloud as cloudvm
 
 class SvcVcloud(svc.Svc):
     def __init__(self, svcname, vmname=None, cloud_id=None, guestos=None, optional=False, disabled=False, tags=set([])):

@@ -24,17 +24,20 @@ import rcStatus
 import rcCloudOpenstack
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-import resContainerCloudVm as cloudvm
+import resContainerOpenstack as cloudvm
 
 class SvcOpenstack(svc.Svc):
-    def __init__(self, svcname, vmname=None, cloud_id=None, guestos=None, optional=False, disabled=False, tags=set([])):
+    def __init__(self, svcname, vmname=None, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None, guestos=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, optional=optional, disabled=disabled, tags=tags)
         if vmname is None:
             vmname = svcname
         self.vmname = vmname
         self.cloud_id = cloud_id
         self.guestos = guestos
-        self += cloudvm.CloudVm(vmname, cloud_id, disabled=disabled)
+        self.key_name = key_name
+        self.size = size
+        self.shared_ip_group = shared_ip_group
+        self += cloudvm.CloudVm(vmname, cloud_id=cloud_id, size=size, key_name=key_name, shared_ip_group=shared_ip_group, disabled=disabled)
         self.runmethod = rcEnv.rsh.split() + [vmname]
 
     def vm_hostname(self):

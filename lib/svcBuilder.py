@@ -1353,8 +1353,10 @@ def build(name):
                 kwargs['cloud_id'] = defaults["cloud_id"]
             if "size" in defaults:
                 kwargs['size'] = defaults["size"]
-            if "auth" in defaults:
-                kwargs['auth'] = defaults["auth"]
+            if "key_name" in defaults:
+                kwargs['key_name'] = defaults["key_name"]
+            if "shared_ip_group" in defaults:
+                kwargs['shared_ip_group'] = defaults["shared_ip_group"]
 
     #
     # dynamically import the module matching the service mode

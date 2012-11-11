@@ -249,6 +249,50 @@ class KeywordVmName(Keyword):
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
+class KeywordSharedIpGroup(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="shared_ip_group",
+                  order=11,
+                  depends=[('mode', rcEnv.vt_cloud)],
+                  text="The cloud shared ip group name to allocate a public ip from."
+                )
+
+class KeywordSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="size",
+                  order=11,
+                  depends=[('mode', rcEnv.vt_cloud)],
+                  text="The cloud vm size, as known to the cloud manager. Example: tiny."
+                )
+
+class KeywordKeyName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="key_name",
+                  order=11,
+                  depends=[('mode', rcEnv.vt_cloud)],
+                  text="The key name, as known to the cloud manager, to trust in the provisioned vm."
+                )
+
+class KeywordCloudId(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="cloud_id",
+                  order=11,
+                  depends=[('mode', rcEnv.vt_cloud)],
+                  text="The cloud id as configured in node.conf. Example: cloud#1."
+                )
+
 class KeywordVmUuid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1485,6 +1529,10 @@ class KeyDict(KeywordStore):
         self += KeywordRootfs()
         self += KeywordTemplate()
         self += KeywordVmName()
+        self += KeywordSharedIpGroup()
+        self += KeywordSize()
+        self += KeywordKeyName()
+        self += KeywordCloudId()
         self += KeywordVmUuid()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()

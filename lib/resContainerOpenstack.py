@@ -27,10 +27,11 @@ import resContainer
 import rcCloudOpenstack as rccloud
 
 class CloudVm(resContainer.Container):
-    startup_timeout = 180
+    startup_timeout = 240
     shutdown_timeout = 120
+    save_timeout = 240
 
-    def __init__(self, name, cloud_id=None, size="tiny", auth=None,
+    def __init__(self, name, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
                  optional=False, disabled=False, monitor=False,
                  tags=set([])):
         resContainer.Container.__init__(self, rid="container", name=name,
@@ -40,7 +41,8 @@ class CloudVm(resContainer.Container):
         self.cloud_id = cloud_id
         self.save_name = name + '.save'
         self.size_name = size
-        self.auth = auth
+        self.key_name = key_name
+        self.shared_ip_group = shared_ip_group
 
     def get_size(self):
         c = self.get_cloud()
@@ -86,14 +88,24 @@ class CloudVm(resContainer.Container):
              c.driver.ex_delete_image(d[k])
 
     def get_last_save(self):
+        return self.get_image(self.save_name)
+
+    def get_template(self):
+        template = self.svc.config.defaults()['template']
+        return self.get_image(template)
+
+    def get_image(self, name):
         c = self.get_cloud()
         l = c.driver.list_images()
         d = {}
         for image in l:
-            if image.name.startswith(self.save_name):
+            if image.name == name:
+                # exact match
+                return image
+            elif image.name.startswith(name):
                 d[image.name] = image
         if len(d) == 0:
-             raise ex.excError("no save image found")
+             raise ex.excError("image %s not found"%name)
         for k in sorted(d.keys()):
              last = d[k]
         return last
@@ -113,6 +125,7 @@ class CloudVm(resContainer.Container):
         if hasattr(self, 'addr'):
             return
         n = self.get_node()
+        #self.print_obj(n)
         if n is not None and len(n.public_ip) > 0:
             self.addr = n.public_ip
 
@@ -131,8 +144,14 @@ class CloudVm(resContainer.Container):
         c = self.get_cloud()
         image = self.get_last_save()
         size = self.get_size()
-        self.log.info("create instance %s, size %s, image %s"%(self.name, size.name, image.name))
-        c.driver.create_node(name=self.name, size=size, image=image)
+        self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
+        n = c.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        self.log.info("wait for container up status")
+        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+        #n = c.driver.ex_update_node(n, accessIPv4='46.231.128.84')
+
+    def wait_for_startup(self):
+        pass
 
     def container_stop(self):
         c = self.get_cloud()
@@ -141,7 +160,7 @@ class CloudVm(resContainer.Container):
         c.driver.destroy_node(n)
         self.purge_saves()
 
-    def print_node(self, n):
+    def print_obj(self, n):
         for k in dir(n):
             if '__' in k:
                 continue
@@ -153,12 +172,24 @@ class CloudVm(resContainer.Container):
         save_name = self.get_save_name()
         if self.has_image(save_name):
             return
-        #self.print_node(n)
+        #self.print_obj(n)
         if n.state == 9999:
             self.log.info("a save is already in progress")
             return
         self.log.info("save new image %s"%save_name)
-        c.driver.ex_save_image(n, save_name)
+        try:
+            image = c.driver.ex_save_image(n, save_name)
+        except Exception, e:
+            raise ex.excError(str(e))
+        import time
+        delay = 5
+        for i in range(self.save_timeout//delay):
+            img = c.driver.ex_get_image(image.id)
+            if img.extra['status'] != 'SAVING':
+                break
+            time.sleep(delay)
+        if img.extra['status'] != 'ACTIVE':
+            raise ex.excError("save failed, image status %s"%img.extra['status'])
 
     def container_forcestop(self):
         pass
@@ -187,7 +218,10 @@ class CloudVm(resContainer.Container):
         pass
 
     def provision(self):
-        m = __import__("provCloudOpenstack")
-        prov = m.ProvisioningCloudVm(self)
-        prov.provisioner()
+        c = self.get_cloud()
+        image = self.get_template()
+        size = self.get_size()
+        self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
+        c.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        self.wait_for_startup()
 

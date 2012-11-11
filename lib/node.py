@@ -1139,7 +1139,7 @@ class Node(Svc, Freezer):
             self.provision_resource.append((m, d))
 
         for o, d in self.provision_resource:
-            getattr(m, "d_provisioner")(d)
+            getattr(o, "d_provisioner")(d)
 
     def get_ruser(self, node):
         default = "root"
