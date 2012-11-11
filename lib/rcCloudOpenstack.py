@@ -61,13 +61,6 @@ class Cloud(rcCloud.Cloud):
         _id.append(self.cloud_id())
         return '.'.join(_id)
 
-    def list_nodes(self):
-        try:
-            nodes = self.driver.list_nodes()
-        except socket.error, e:
-            raise ex.excExecError("error connecting to %s cloud url"%s)
-        return nodes
-
     def list_svcnames(self):
         l = []
         _id = self.app_cloud_id()

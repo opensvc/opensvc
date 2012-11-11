@@ -21,7 +21,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall
+from rcUtilities import justcall
 from rcUtilitiesLinux import check_ping
 import resContainer
 import rcCloudOpenstack as rccloud
@@ -43,6 +43,42 @@ class CloudVm(resContainer.Container):
         self.size_name = size
         self.key_name = key_name
         self.shared_ip_group = shared_ip_group
+
+    def keyfile(self):
+        kf = [os.path.join(rcEnv.pathetc, self.key_name+'.pem'),
+              os.path.join(rcEnv.pathetc, self.key_name+'.pub'),
+              os.path.join(rcEnv.pathvar, self.key_name+'.pem'),
+              os.path.join(rcEnv.pathvar, self.key_name+'.pub')]
+        for k in kf:
+            if os.path.exists(k):
+                return k
+        raise ex.excError("key file for key name '%s' not found"%self.key_name)
+
+    def rcmd(self, cmd):
+        if self.svc.guestos == "Windows":
+            """ Windows has no sshd.
+            """
+            raise ex.excNotSupported("remote commands not supported on Windows")
+
+        self.getaddr()
+        if not hasattr(self, 'addr'):
+            raise ex.excError('no usable public ip to send command to')
+
+        if type(cmd) == str:
+            cmd = cmd.split(" ")
+
+        timeout = 5
+        cmd = [ 'ssh', '-o', 'StrictHostKeyChecking=no',
+                       '-o', 'ForwardX11=no',
+                       '-o', 'BatchMode=yes',
+                       '-n',
+                       '-o', 'ConnectTimeout='+str(timeout),
+                       '-i', self.keyfile(),
+                        self.addr] + cmd
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
 
     def get_size(self):
         c = self.get_cloud()
@@ -125,9 +161,19 @@ class CloudVm(resContainer.Container):
         if hasattr(self, 'addr'):
             return
         n = self.get_node()
-        #self.print_obj(n)
-        if n is not None and len(n.public_ip) > 0:
-            self.addr = n.public_ip
+        if n is None:
+            raise ex.excError("could not get node details")
+        ips = set(n.public_ips+n.private_ips)
+        if len(ips) == 0:
+            return 0
+
+        # find first pinging ip
+        for ip in ips:
+            if check_ping(ip, timeout=1, count=1):
+                self.addr = ip
+                break
+
+        return 0
 
     def files_to_sync(self):
         return []
@@ -141,11 +187,27 @@ class CloudVm(resContainer.Container):
         return check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
+        n = self.get_node()
+        if n is not None:
+            if n.state == 4:
+                self.log.info("reboot %s"%self.name)
+                self.container_reboot()
+            else:
+                raise ex.excError("abort reboot because vm is in state %d (!=4)"%n.state)
+        else:
+            self.container_restore()
+
+    def container_reboot(self):
+        c = self.get_cloud()
+        n = self.get_node()
+        c.driver.reboot_node(n)
+
+    def container_restore(self):
         c = self.get_cloud()
         image = self.get_last_save()
         size = self.get_size()
         self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
-        n = c.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        n = c.driver.create_node(name=self.name, size=size, image=image, ex_keyname=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
         self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 5)
         #n = c.driver.ex_update_node(n, accessIPv4='46.231.128.84')
@@ -154,6 +216,11 @@ class CloudVm(resContainer.Container):
         pass
 
     def container_stop(self):
+        cmd = "shutdown -h now"
+        self.log.info("remote command: %s"%cmd)
+        self.rcmd(cmd)
+
+    def container_forcestop(self):
         c = self.get_cloud()
         n = self.get_node()
         self.container_save()
@@ -191,9 +258,6 @@ class CloudVm(resContainer.Container):
         if img.extra['status'] != 'ACTIVE':
             raise ex.excError("save failed, image status %s"%img.extra['status'])
 
-    def container_forcestop(self):
-        pass
-
     def is_up(self):
         n = self.get_node()
         if n is not None and n.state == 0:
@@ -222,6 +286,7 @@ class CloudVm(resContainer.Container):
         image = self.get_template()
         size = self.get_size()
         self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
-        c.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
-        self.wait_for_startup()
+        c.driver.create_node(name=self.name, size=size, image=image, ex_keyname=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        #self.wait_for_startup()
+        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
 
