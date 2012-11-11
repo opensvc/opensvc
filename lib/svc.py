@@ -703,13 +703,19 @@ class Svc(Resource, Freezer):
                     return True
         return False 
 
-    def encap_cmd(self, cmd, verbose=False):
+    def encap_cmd(self, cmd, container=None, verbose=False):
         if len(self.runmethod) == 0:
             return None
         if not self.has_encap_resources():
             return None
-        cmd = self.runmethod + ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
-        out, err, ret = justcall(cmd)
+
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
+
+        if container is not None and hasattr(container, "rcmd"):
+            out, err, ret = container.rcmd(cmd)
+        else:
+            cmd = self.runmethod + cmd
+            out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to execute encap service command: %d\n%s\n%s"%(ret, out, err))
         if verbose:
@@ -760,7 +766,7 @@ class Svc(Resource, Freezer):
             return gs
 
         cmd = ['json', 'status']
-        out, err, ret = self.encap_cmd(cmd)
+        out, err, ret = self.encap_cmd(cmd, container=container)
         import json
         gs = json.loads(out)
         self.encap_json_status_cache = gs
@@ -1530,15 +1536,22 @@ class Svc(Resource, Freezer):
         if self.encap or not self.has_encap_resources():
             return
 
-        cmd = rcEnv.rcp.split() + [self.pathenv, self.vmname+':'+rcEnv.pathetc+'/']
-        out, err, ret = justcall(cmd)
-        print "send %s to %s ..."%(self.pathenv, self.vmname), "OK" if ret == 0 else "ERR\n%s"%err
+        for r in self.get_resources(map(lambda x: 'container.'+x, rcEnv.vt_supported)):
+            self._push_encap_env(r)
+
+    def _push_encap_env(self, r):
+        if hasattr(r, 'rcp'):
+            out, err, ret = r.rcp(self.pathenv, rcEnv.pathetc+'/')
+        else:
+            cmd = rcEnv.rcp.split() + [self.pathenv, self.vmname+':'+rcEnv.pathetc+'/']
+            out, err, ret = justcall(cmd)
+        print "send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err
         if ret != 0:
             raise ex.excError()
 
         cmd = ['install', '--envfile', self.pathenv]
-        out, err, ret = self.encap_cmd(cmd)
-        print "install %s slave service ..."%self.vmname, "OK" if ret == 0 else "ERR\n%s"%err
+        out, err, ret = self.encap_cmd(cmd, container=r)
+        print "install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err
         if ret != 0:
             raise ex.excError()
 
