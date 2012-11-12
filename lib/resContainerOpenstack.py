@@ -206,6 +206,16 @@ class CloudVm(resContainer.Container):
             return 0
         return check_ping(self.addr, timeout=1, count=1)
 
+    def start(self):
+        if self.is_up():
+            self.log.info("container %s already started" % self.name)
+            return
+        if rcEnv.nodename in self.svc.drpnodes:
+            self.install_drp_flag()
+        self.container_start()
+        self.can_rollback = True
+        self.wait_for_startup()
+
     def container_start(self):
         n = self.get_node()
         if n is not None:
@@ -220,7 +230,10 @@ class CloudVm(resContainer.Container):
     def container_reboot(self):
         c = self.get_cloud()
         n = self.get_node()
-        c.driver.reboot_node(n)
+        try:
+            c.driver.reboot_node(n)
+        except Exception, e:
+            raise ex.excError(str(e))
 
     def container_restore(self):
         c = self.get_cloud()
@@ -234,6 +247,17 @@ class CloudVm(resContainer.Container):
 
     def wait_for_startup(self):
         pass
+
+    def stop(self):
+        if self.is_down():
+            self.log.info("container %s already stopped" % self.name)
+            return
+        self.container_stop()
+        try:
+            self.wait_for_shutdown()
+        except ex.excError:
+            self.container_forcestop()
+            self.wait_for_shutdown()
 
     def container_stop(self):
         cmd = "shutdown -h now"

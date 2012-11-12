@@ -1615,7 +1615,10 @@ def build_services(status=None, svcnames=[],
         fix_default_section([name])
         try:
             svc = build(name)
-        except (ex.excError, ex.excInitError, ex.excAbortAction):
+        except (ex.excError, ex.excInitError), e:
+            log.error(str(e))
+            continue
+        except ex.excAbortAction:
             continue
         except:
             import traceback
