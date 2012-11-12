@@ -1,3 +1,5 @@
+import socket
+
 class Cloud(object):
     def __init__(self, s, auth):
         self.cid = s
