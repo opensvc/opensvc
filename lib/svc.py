@@ -711,6 +711,8 @@ class Svc(Resource, Freezer):
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
 
+        if container is None:
+            container = self.resources_by_id["container"]
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
         else:
@@ -1245,6 +1247,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("fs", "rollback")
         self.rollbackdisk()
 
+    @_master_action
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
         self.sub_set_action("container.vz", "start")
@@ -1267,6 +1270,7 @@ class Svc(Resource, Freezer):
         for r in self.get_resources("ip"):
             r.status(refresh=True)
 
+    @_master_action
     def stopcontainer(self):
         self.sub_set_action("container.vbox", "stop")
         self.sub_set_action("container.ldom", "stop")

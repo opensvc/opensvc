@@ -62,7 +62,7 @@ class CloudVm(resContainer.Container):
 
         self.getaddr()
         if not hasattr(self, 'addr'):
-            raise ex.excError('no usable public ip to send command to')
+            raise ex.excError('no usable public ip to send files to')
 
         timeout = 5
         cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
