@@ -19,7 +19,7 @@ import os
 
 import rcStatus
 import resources as Res
-from rcUtilities import which, qcall
+from rcUtilities import which, qcall, justcall
 import resContainer
 import rcExceptions as ex
 
@@ -44,7 +44,7 @@ class Vz(resContainer.Container):
                     continue
                 if l[0].strip() != param:
                     continue
-                value = ' '.join(l[1:]).strip()
+                value = ' '.join(l[1:]).strip().rstrip('/')
                 break
         return value
 
@@ -55,6 +55,17 @@ class Vz(resContainer.Container):
                     return line.strip('\n').split('=')[1].strip('"').replace('$VEID', self.name)
         self.log.error("could not determine lxc container rootfs")
         return ex.excError
+
+    def rcp(self, src, dst):
+        rootfs = self.get_rootfs()
+        if len(rootfs) == 0:
+            raise ex.excError()
+        dst = rootfs + dst
+        cmd = ['cp', src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
 
     def install_drp_flag(self):
         rootfs = self.get_rootfs()
@@ -81,7 +92,7 @@ class Vz(resContainer.Container):
         raise ex.excError
 
     def operational(self):
-        cmd = self.svc.runmethod + ['/sbin/ifconfig', '-a']
+        cmd = self.runmethod + ['/sbin/ifconfig', '-a']
         ret = qcall(cmd)
         if ret == 0:
             return True
@@ -93,7 +104,7 @@ class Vz(resContainer.Container):
         cmd = ['vzctl', 'status', self.name]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            return False
         l = out.split()
         if len(l) != 5:
             return False

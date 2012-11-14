@@ -102,10 +102,12 @@ class Jail(resContainer.Container):
     def __init__(self, rid, name, guestos="FreeBSD", optional=False, disabled=False,
                  monitor=False, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
-                                        guestos=guestos,
+                                        guestos=guestos, ips=[], ip6s=[],
                                         type="container.jail",
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags, always_on=always_on)
+        self.ips = ips
+        self.ip6s = ip6s
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

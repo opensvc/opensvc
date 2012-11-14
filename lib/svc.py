@@ -715,7 +715,7 @@ class Svc(Resource, Freezer):
         return False 
 
     def encap_cmd(self, cmd, verbose=False):
-        for container in self.get_ressources('container'):
+        for container in self.get_resources('container'):
             out, err, ret = self.encap_cmd(cmd, container, verbose=verbose)
 
     def _encap_cmd(self, cmd, container, verbose=False):
@@ -1556,6 +1556,8 @@ class Svc(Resource, Freezer):
             return
 
         for r in self.get_resources('container'):
+            if r.status() != rcStatus.UP:
+                continue
             self._push_encap_env(r)
 
     def _push_encap_env(self, r):

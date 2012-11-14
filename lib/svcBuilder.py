@@ -915,6 +915,16 @@ def add_containers_jail(svc, conf, s):
         svc.log.error("name must be set in section %s"%s)
         return
 
+    try:
+        kwargs['ips'] = conf_get_string_scope(svc, conf, s, 'ips').split()
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['ip6s'] = conf_get_string_scope(svc, conf, s, 'ip6s').split()
+    except ex.OptNotFound:
+        pass
+
     m = __import__('resContainerJail')
 
     kwargs['rid'] = s
