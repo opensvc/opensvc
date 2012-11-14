@@ -27,12 +27,13 @@ class Esx(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="esx", name=name,
+    def __init__(self, rid, name, guestos=None, optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
+                                        guestos=guestos,
                                         type="container.esx",
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
         self.vmx = None
 
     def __str__(self):

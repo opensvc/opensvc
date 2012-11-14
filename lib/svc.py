@@ -74,7 +74,6 @@ class Svc(Resource, Freezer):
         self.ha = False
         self.sync_dblogger = False
         self.svcname = svcname
-        self.vmname = ""
         self.containerize = True
         self.hostid = rcEnv.nodename
         self.resSets = []
@@ -129,7 +128,6 @@ class Svc(Resource, Freezer):
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
-        self.runmethod = []
         self.resources_by_id = {}
         self.rset_status_cache = None
         self.print_status_fmt = "%-14s %-8s %s"
@@ -167,9 +165,6 @@ class Svc(Resource, Freezer):
 
         if isinstance(r, Resource):
             self.resources_by_id[r.rid] = r
-
-        if r.rid in rcEnv.vt_supported:
-            self.resources_by_id["container"] = r
 
         r.svc = self
         import logging
@@ -253,11 +248,11 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resources(self, type=None):
-         if type is None:
+    def get_resources(self, _type=None):
+         if _type is None:
              rsets = self.resSets
          else:
-             rsets = self.get_res_sets(type)
+             rsets = self.get_res_sets(_type)
 
          resources = []
          for rs in rsets:
@@ -269,14 +264,26 @@ class Svc(Resource, Freezer):
                  resources.append(r)
          return resources
 
-    def get_res_sets(self, type):
-         if not isinstance(type, list):
-             l = [type]
+    def get_res_sets(self, _type):
+         if not isinstance(_type, list):
+             l = [_type]
          else:
-             l = type
+             l = _type
          rsets = []
          for t in l:
-             rsets += [ r for r in self.resSets if r.type == t ]
+             for rs in self.resSets:
+                 if '.' in t:
+                     # exact match
+                     if rs.type == t:
+                         rsets.append(rs)
+                 elif '.' in rs.type:
+                     # group match
+                     _t = rs.type.split('.')
+                     if _t[0] == t:
+                         rsets.append(rs)
+                 else:
+                     if rs.type == t:
+                         rsets.append(rs)
          return rsets
 
     def has_res_set(self, type):
@@ -486,10 +493,12 @@ class Svc(Resource, Freezer):
         fmt = "|- %-17s %4s %-8s %s"
         print fmt%("avail", '', str(self.group_status()['avail']), "\n"),
 
-        try:
-            encap_res_status = self.encap_json_status()['resources']
-        except:
-            encap_res_status = {}
+        encap_res_status = {}
+        for container in self.get_resources('container'):
+            try:
+                encap_res_status.update(self.encap_json_status(container)['resources'])
+            except Exception, e:
+                print e
 
         l = []
         for rs in self.get_res_sets(self.status_types):
@@ -558,10 +567,12 @@ class Svc(Resource, Freezer):
         if status is None:
             status = self.group_status()
 
-        try:
-            encap_res_status = self.encap_json_status(refresh=True)['resources']
-        except:
-            encap_res_status = {}
+        encap_res_status = {}
+        for container in self.get_resources('container'):
+            try:
+                encap_res_status.update(self.encap_json_status(container)['resources'])
+            except Exception, e:
+                print e
 
         if self.frozen():
             frozen = "1"
@@ -641,7 +652,7 @@ class Svc(Resource, Freezer):
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         has_hb = False
-        for r in self.get_resources(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
+        for r in self.get_resources('hb'):
             if not r.disabled:
                 has_hb = True
         if not has_hb:
@@ -703,35 +714,37 @@ class Svc(Resource, Freezer):
                     return True
         return False 
 
-    def encap_cmd(self, cmd, container=None, verbose=False):
-        if len(self.runmethod) == 0:
-            return None
+    def encap_cmd(self, cmd, verbose=False):
+        for container in self.get_ressources('container'):
+            out, err, ret = self.encap_cmd(cmd, container, verbose=verbose)
+
+    def _encap_cmd(self, cmd, container, verbose=False):
         if not self.has_encap_resources():
-            return None
+            raise ex.excAbortAction("no need to run encap cmd %s (no encap resource)"%str(cmd))
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
 
-        if container is None:
-            container = self.resources_by_id["container"]
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
-        else:
-            cmd = self.runmethod + cmd
+        elif hasattr(container, "runmethod"):
+            cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd)
+        else:
+            raise ex.excError("undefined rcmd/runmethod in resource %s"%container.rid)
+
         if ret != 0:
             raise ex.excError("failed to execute encap service command: %d\n%s\n%s"%(ret, out, err))
         if verbose:
-            self.log.info('logs from %s child service:'%self.vmname)
+            self.log.info('logs from %s child service:'%container.name)
             print out
             if len(err) > 0:
                 print err
         return out, err, ret
 
-    def encap_json_status(self, refresh=False):
+    def encap_json_status(self, container, refresh=False):
         if not refresh and hasattr(self, 'encap_json_status_cache'):
             return self.encap_json_status_cache
-        container = self.resources_by_id["container"]
-        if self.guestos == 'Windows':
+        if container.guestos == 'Windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
             """
@@ -768,7 +781,7 @@ class Svc(Resource, Freezer):
             return gs
 
         cmd = ['json', 'status']
-        out, err, ret = self.encap_cmd(cmd, container=container)
+        out, err, ret = self._encap_cmd(cmd, container)
         import json
         gs = json.loads(out)
         self.encap_json_status_cache = gs
@@ -789,10 +802,12 @@ class Svc(Resource, Freezer):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        try:
-            encap_rset_status = self.encap_json_status()
-        except:
-            encap_rset_status = {}
+        encap_rset_status = {}
+        for container in self.get_resources('container'):
+            try:
+                encap_rset_status.update(self.encap_json_status(container))
+            except:
+                pass
 
         for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
             group = t.split('.')[0]
@@ -993,7 +1008,7 @@ class Svc(Resource, Freezer):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
             return
         all_disabled = True
-        for r in self.get_resources(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
+        for r in self.get_resources('hb'):
             if not r.disabled:
                 all_disabled = False
         if all_disabled:
@@ -1540,21 +1555,21 @@ class Svc(Resource, Freezer):
         if self.encap or not self.has_encap_resources():
             return
 
-        for r in self.get_resources(map(lambda x: 'container.'+x, rcEnv.vt_supported)):
+        for r in self.get_resources('container'):
             self._push_encap_env(r)
 
     def _push_encap_env(self, r):
         if hasattr(r, 'rcp'):
             out, err, ret = r.rcp(self.pathenv, rcEnv.pathetc+'/')
         else:
-            cmd = rcEnv.rcp.split() + [self.pathenv, self.vmname+':'+rcEnv.pathetc+'/']
+            cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+rcEnv.pathetc+'/']
             out, err, ret = justcall(cmd)
         print "send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err
         if ret != 0:
             raise ex.excError()
 
         cmd = ['install', '--envfile', self.pathenv]
-        out, err, ret = self.encap_cmd(cmd, container=r)
+        out, err, ret = self._encap_cmd(cmd, container=r)
         print "install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err
         if ret != 0:
             raise ex.excError()
@@ -1768,6 +1783,12 @@ class Svc(Resource, Freezer):
         self.stop()
         self.start()
 
+    def _migrate(self):
+        self.sub_set_action("container.ovm", "_migrate")
+        self.sub_set_action("container.hpvm", "_migrate")
+        self.sub_set_action("container.esx", "_migrate")
+
+    @_master_action
     def migrate(self):
         if not hasattr(self, "destination_node"):
             self.log.error("a destination node must be provided for the switch action")

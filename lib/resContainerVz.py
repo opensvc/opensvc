@@ -129,13 +129,15 @@ class Vz(resContainer.Container):
             raise ex.excError
         return self._cf
 
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="vz", name=name,
+    def __init__(self, rid, name, guestos="Linux", optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.vz",
+                                        guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
         self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
+        self.runmethod = ['vzctl', 'exec', name]
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

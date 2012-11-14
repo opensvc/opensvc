@@ -20,6 +20,7 @@ import resources as Res
 import os
 import rcExceptions as ex
 import resContainer
+from rcGlobalEnv import rcEnv
 
 rcU = __import__("rcUtilities" + os.uname()[0])
 
@@ -27,12 +28,13 @@ class Ovm(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, uuid, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="ovm", name=name,
+    def __init__(self, rid, name, uuid, guestos=None, optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.ovm",
+                                        guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
         self.uuid = uuid
         self.xen_d = os.path.join(os.sep, 'etc', 'xen')
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')

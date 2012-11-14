@@ -27,12 +27,13 @@ class Xen(resContainer.Container):
     startup_timeout = 180
     shutdown_timeout = 120
 
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="xen", name=name,
+    def __init__(self, rid, name, guestos=None, optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.xen",
+                                        guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

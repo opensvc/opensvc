@@ -40,7 +40,7 @@ class Jail(resContainer.Container):
         return True
 
     def install_drp_flag(self):
-        rootfs = self.svc.jailroot
+        rootfs = self.jailroot
         flag = os.path.join(rootfs, ".drp_flag")
         self.log.info("install drp flag in container : %s"%flag)
         with open(flag, 'w') as f:
@@ -48,20 +48,12 @@ class Jail(resContainer.Container):
             f.close()
 
     def container_start(self):
-        ips = []
-        ip6s = []
-        for rs in self.svc.get_res_sets("ip"):
-            for r in rs.resources:
-                if ':' in r.addr:
-                    ip6s.append(r.addr)
-                else:
-                    ips.append(r.addr)
-        cmd = ['jail', '-c', 'name='+self.svc.basevmname, 'path='+self.svc.jailroot,
-               'host.hostname='+self.svc.vmname]
-        if len(ips) > 0:
-            cmd += ['ip4.addr='+','.join(ips)]
-        if len(ip6s) > 0:
-            cmd += ['ip6.addr='+','.join(ip6s)]
+        cmd = ['jail', '-c', 'name='+self.basename, 'path='+self.jailroot,
+               'host.hostname='+self.name]
+        if len(self.ips) > 0:
+            cmd += ['ip4.addr='+','.join(self.ips)]
+        if len(self.ip6s) > 0:
+            cmd += ['ip6.addr='+','.join(self.ip6s)]
         cmd += ['command=/bin/sh', '/etc/rc']
         self.log.info(' '.join(cmd))
         ret = qcall(cmd)
@@ -69,7 +61,7 @@ class Jail(resContainer.Container):
             raise ex.excError
 
     def container_stop(self):
-        cmd = ['jail', '-r', self.svc.basevmname]
+        cmd = ['jail', '-r', self.basename]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -93,7 +85,7 @@ class Jail(resContainer.Container):
             l = line.split()
             if len(l) < 4:
                 continue
-            if l[2] == self.svc.vmname:
+            if l[2] == self.name:
                 return True
         return False
 
@@ -107,12 +99,13 @@ class Jail(resContainer.Container):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, name, optional=False, disabled=False,
-                 monitor=False, tags=set([])):
-        resContainer.Container.__init__(self, rid="jail", name=name,
+    def __init__(self, rid, name, guestos="FreeBSD", optional=False, disabled=False,
+                 monitor=False, tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
+                                        guestos=guestos,
                                         type="container.jail",
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

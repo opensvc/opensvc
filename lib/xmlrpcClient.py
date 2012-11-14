@@ -613,7 +613,6 @@ class Collector(object):
     
         vars = ['svc_hostid',
                 'svc_name',
-                'svc_vmname',
                 'svc_cluster_type',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
@@ -636,7 +635,6 @@ class Collector(object):
     
         vals = [repr(hostid),
                 repr(svc.svcname),
-                repr(svc.vmname),
                 repr(svc.clustertype),
                 repr(svc.flex_min_nodes),
                 repr(svc.flex_max_nodes),
@@ -657,21 +655,34 @@ class Collector(object):
                 repr(guestos),
                 '1' if svc.ha else '0']
     
-        if 'container' in svc.resources_by_id:
-            container = svc.resources_by_id['container']
-            container_info = container.get_container_info()
-            vars += ['svc_vcpus', 'svc_vmem']
-            vals += [container_info['vcpus'],
-                     container_info['vmem']]
-
-            if hasattr(container, "zonepath"):
-                vars.append("svc_containerpath")
-                vals.append(container.zonepath)
-    
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_service(*args)
+
+        vars = ['mon_svcname',
+                'mon_nodname',
+                'mon_vmname',
+                'mon_guestos',
+                'mon_vmem',
+                'mon_vcpus',
+                'mon_containerpath']
+        vals = []
+
+        for container in svc.get_resources('container'):
+            container_info = container.get_container_info()
+            vals += [svc.svcname,
+                     rcEnv.nodename,
+                     container.name,
+                     container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
+                     container_info['vcpus'],
+                     container_info['vmem'],
+                     container.zonepath if hasattr(container, 'zonepath') else ""]
+
+        args = [vars, vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.svcmon_update(*args)
     
     def push_disks(self, node, sync=True):
         di = __import__('rcDiskInfo'+rcEnv.sysname)
@@ -720,7 +731,7 @@ class Collector(object):
                             cluster = svc.clustername
                         else:
                             cluster = ','.join(sorted(list(svc.nodes)))
-                        served_disks += map(lambda x: (x[0], svc.vm_hostname()+'.'+x[1], cluster), r.devmap())
+                        served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
 
                     for devpath in r.devlist():
                         for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):

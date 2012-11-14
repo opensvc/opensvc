@@ -108,38 +108,10 @@ def svcmode_mod_name(svcmode=''):
     zone   => ('svcZone', 'SvcZone')
     hosted => ('svcHosted', 'SvcHosted')
     """
-    if svcmode == 'lxc':
-        return ('svcLxc', 'SvcLxc')
-    elif svcmode == 'vz':
-        return ('svcVz', 'SvcVz')
-    elif svcmode == 'zone':
+    if svcmode == 'zone':
         return ('svcZone', 'SvcZone')
-    elif svcmode == 'jail':
-        return ('svcJail', 'SvcJail')
     elif svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
-    elif svcmode == 'hpvm':
-        return ('svcHpVm', 'SvcHpVm')
-    elif svcmode == 'ldom':
-        return ('svcLdom', 'SvcLdom')
-    elif svcmode == 'kvm':
-        return ('svcKvm', 'SvcKvm')
-    elif svcmode == 'esx':
-        return ('svcEsx', 'SvcEsx')
-    elif svcmode == 'xen':
-        return ('svcXen', 'SvcXen')
-    elif svcmode == 'ovm':
-        return ('svcOvm', 'SvcOvm')
-    elif svcmode == 'vbox':
-        return ('svcVbox', 'SvcVbox')
-    elif svcmode == 'sg':
-        return ('svcSg', 'SvcSg')
-    elif svcmode == 'rhcs':
-        return ('svcRhcs', 'SvcRhcs')
-    elif svcmode == 'vcloud':
-        return ('svcVcloud', 'SvcVcloud')
-    elif svcmode == 'openstack':
-        return ('svcOpenstack', 'SvcOpenstack')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
@@ -727,6 +699,243 @@ def add_fs(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_containers_vcloud(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        svc.log.error("name must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+    except ex.OptNotFound:
+        svc.log.error("cloud_id must be set in section %s"%s)
+        return
+
+    m = __import__('resContainerVcloud')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.CloudVm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_openstack(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        svc.log.error("name must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+    except ex.OptNotFound:
+        svc.log.error("cloud_id must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['size'] = conf_get_string_scope(svc, conf, s, 'size')
+    except ex.OptNotFound:
+        svc.log.error("size must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['key_name'] = conf_get_string_scope(svc, conf, s, 'key_name')
+    except ex.OptNotFound:
+        svc.log.error("key_name must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['shared_ip_group'] = conf_get_string_scope(svc, conf, s, 'shared_ip_group')
+    except ex.OptNotFound:
+        return
+
+    m = __import__('resContainerOpenstack')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.CloudVm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_vz(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerVz')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Vz(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_kvm(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        svc.log.error("name must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerKvm')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Kvm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_lxc(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerLxc')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Lxc(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_ovm(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['uuid'] = conf_get_string_scope(svc, conf, s, 'uuid')
+    except ex.OptNotFound:
+        svc.log.error("uuid must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        svc.log.error("name must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerOvm')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Ovm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_jail(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['jailroot'] = conf_get_string_scope(svc, conf, s, 'jailroot')
+    except ex.OptNotFound:
+        svc.log.error("jailroot must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        svc.log.error("name must be set in section %s"%s)
+        return
+
+    m = __import__('resContainerJail')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Jail(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers(svc, conf):
+    for t in rcEnv.vt_supported:
+        add_containers_resources(t, svc, conf)
+
+def add_containers_resources(subtype, svc, conf):
+    add_sub_resources('container', subtype, svc, conf)
+
 def add_mandatory_syncs(svc, conf):
     """Mandatory files to sync:
     1/ to all nodes: service definition
@@ -795,21 +1004,24 @@ def add_mandatory_syncs(svc, conf):
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
-def add_syncs_resources(restype, svc, conf):
+def add_syncs_resources(subtype, svc, conf):
+    add_sub_resources('sync', subtype, svc, conf, default_subtype="rsync")
+
+def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
     for s in conf.sections():
-        if re.match('sync#i[0-9]', s, re.I) is None and \
-           re.match('sync#[0-9]', s, re.I) is None:
+        if re.match(restype+'#i[0-9]', s, re.I) is None and \
+           re.match(restype+'#[0-9]', s, re.I) is None:
             continue
         if svc.encap and 'encap' not in get_tags(conf, s):
             continue
         if not conf.has_option(s, 'type'):
-            # 'type' is mandatory, expect for rsync (the default)
-            if restype != "rsync":
+            # 'type' is mandatory in resource section, fallback to default_subtype (if set)
+            if default_subtype is None or subtype != default_subtype:
                 continue
-        elif conf.get(s, 'type') != restype:
+        elif conf.get(s, 'type') != subtype:
             continue
 
-        globals()['add_syncs_'+restype](svc, conf, s)
+        globals()['add_'+restype+'s_'+subtype](svc, conf, s)
 
 def add_syncs(svc, conf):
     add_mandatory_syncs(svc, conf)
@@ -1307,39 +1519,6 @@ def build(name):
 
         d_nodes = {'nodes': nodes, 'drpnodes': drpnodes}
 
-        if svcmode in rcEnv.vt_supported:
-            try:
-                vmname = conf_get_string_scope(d_nodes, conf, 'DEFAULT', 'vm_name')
-                kwargs['vmname'] = vmname
-            except ex.OptNotFound:
-                pass
-
-        if svcmode == "ovm":
-            try:
-                kwargs['vmuuid'] = conf_get_string_scope(d_nodes, conf, 'DEFAULT', 'vm_uuid')
-                kwargs['vmuuid'] = defaults["vm_uuid"]
-            except ex.OptNotFound:
-                pass
-
-        if "guest_os" in defaults and \
-           len(defaults["guest_os"]) > 0:
-            if svcmode not in rcEnv.vt_supported:
-                log.error("can not set 'guest_os' with '%s' mode in %s env"%(svcmode, name))
-                return None
-            guestos = defaults["guest_os"]
-            kwargs['guestos'] = guestos
-        elif svcmode in rcEnv.vt_supported:
-            guestos = rcEnv.sysname
-            kwargs['guestos'] = guestos
-        if svcmode == 'jail':
-            if not "jailroot" in defaults:
-                log.error("jailroot parameter is mandatory for jail mode")
-                return None
-            jailroot = defaults["jailroot"]
-            if not os.path.exists(jailroot):
-                log.error("jailroot %s does not exist"%jailroot)
-                return None
-            kwargs['jailroot'] = jailroot
         kwargs['disabled'] = get_disabled(conf, "", "")
 
         if "pkg_name" in defaults:
@@ -1566,6 +1745,7 @@ def build(name):
         add_resources('vmdg', svc, conf)
         add_resources('pool', svc, conf)
         add_resources('fs', svc, conf)
+        add_containers(svc, conf)
         add_apps(svc, conf)
         add_syncs(svc, conf)
     except (ex.excInitError, ex.excError), e:

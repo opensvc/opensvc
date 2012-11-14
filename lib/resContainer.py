@@ -30,14 +30,32 @@ class Container(Res.Resource):
     startup_timeout = 600
     shutdown_timeout = 60
 
-    def __init__(self, name, rid=None, type=None, optional=False,
-                 disabled=False, monitor=False, tags=set([])):
+    def __init__(self, rid, name, guestos=None, type=None, optional=False,
+                 disabled=False, monitor=False, tags=set([]), always_on=set([])):
         Res.Resource.__init__(self, rid=rid, type=type,
                               optional=optional, disabled=disabled,
                               monitor=monitor, tags=tags)
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
+        self.always_on = always_on
+        self.guestos = guestos
+        self.runmethod = rcEnv.rsh.split() + [name]
+
+    def vm_hostname(self):
+        if hasattr(self, 'vmhostname'):
+            return self.vmhostname
+        if self.guestos == "windows":
+            self.vmhostname = self.name
+            return self.vmhostname
+        cmd = self.runmethod + ['hostname']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            self.vmhostname = self.name
+        else:
+            self.vmhostname = out.strip()
+        return self.vmhostname
 
     def getaddr(self):
         if hasattr(self, 'addr'):

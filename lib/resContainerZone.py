@@ -38,17 +38,17 @@ SVCS="/usr/bin/svcs"
 MULTI_USER_SMF="svc:/milestone/multi-user:default"
 
 class Zone(resContainer.Container):
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
+    def __init__(self, rid, name, guestos="SunOS", optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
         """define Zone object attribute :
                 name
                 label
                 state
                 zonepath
         """
-        Res.Resource.__init__(self, rid="zone", type="container.zone",
+        Res.Resource.__init__(self, rid=rid, type="container.zone", guestos=guestos,
                               optional=optional, disabled=disabled,
-                              monitor=monitor, tags=tags)
+                              monitor=monitor, tags=tags, always_on=always_on)
         self.name = name
         self.label = name
         self.state = None

@@ -104,7 +104,7 @@ class ProvisioningKvm(Provisioning):
 
     def get_config(self):
         cf = ['todo']
-        s = ';'.join(('vm', self.r.svc.vmname))
+        s = ';'.join(('vm', self.r.name))
         cf.append(s)
         s = 'ns;192.168.122.1'
         cf.append(s)

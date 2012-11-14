@@ -25,6 +25,7 @@ import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which
+from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
 
@@ -185,12 +186,13 @@ class Lxc(resContainer.Container):
                  return prefix
         return None
 
-    def __init__(self, name, optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="lxc", name=name,
+    def __init__(self, rid, name, guestos="Linux", optional=False, disabled=False, monitor=False,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.lxc",
+                                        guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
         self.prefix = self.find_prefix()
         if self.prefix is None:
             print >>sys.stderr, "lxc install prefix not found"
@@ -199,6 +201,11 @@ class Lxc(resContainer.Container):
         if self.cf is None:
             print >>sys.stderr, "lxc container config file not found"
             raise ex.excInitError
+
+        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
+            self.runmethod = ['lxc-attach', '-n', name, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [name]
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

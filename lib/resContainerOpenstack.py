@@ -31,13 +31,14 @@ class CloudVm(resContainer.Container):
     shutdown_timeout = 120
     save_timeout = 240
 
-    def __init__(self, name, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
+    def __init__(self, rid, name, guestos=None, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
                  optional=False, disabled=False, monitor=False,
-                 tags=set([])):
-        resContainer.Container.__init__(self, rid="container", name=name,
+                 tags=set([]), always_on=set([])):
+        resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.openstack",
+                                        guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags)
+                                        monitor=monitor, tags=tags, always_on=always_on)
         self.cloud_id = cloud_id
         self.save_name = name + '.save'
         self.size_name = size

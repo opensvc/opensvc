@@ -55,10 +55,12 @@ class check(checks.check):
 
     def find_svc(self, name, mnt):
         for svc in self.svcs:
-            if type(svc) == svcZone.SvcZone: 
-                zp = self.get_zonepath(svc.vmname)
-                if zp is not None and zp == mnt:
-                    return svc.svcname
+            for rs in svc.get_res_sets('container'):
+                for r in rs.resources:
+                    if  r.type == "container.zone": 
+                        zp = self.get_zonepath(r.name)
+                        if zp is not None and zp == mnt:
+                            return svc.svcname
             for rs in svc.get_res_sets('fs'):
                 for r in rs.resources:
                     if r.device == name:
