@@ -705,8 +705,7 @@ def add_containers_vcloud(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
     except ex.OptNotFound:
-        svc.log.error("name must be set in section %s"%s)
-        return
+        kwargs['name'] = svc.svcname
 
     try:
         kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
@@ -739,8 +738,7 @@ def add_containers_openstack(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
     except ex.OptNotFound:
-        svc.log.error("name must be set in section %s"%s)
-        return
+        kwargs['name'] = svc.svcname
 
     try:
         kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
@@ -768,7 +766,7 @@ def add_containers_openstack(svc, conf, s):
     try:
         kwargs['shared_ip_group'] = conf_get_string_scope(svc, conf, s, 'shared_ip_group')
     except ex.OptNotFound:
-        return
+        pass
 
     m = __import__('resContainerOpenstack')
 

@@ -716,7 +716,7 @@ class Svc(Resource, Freezer):
 
     def encap_cmd(self, cmd, verbose=False):
         for container in self.get_resources('container'):
-            out, err, ret = self.encap_cmd(cmd, container, verbose=verbose)
+            out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
 
     def _encap_cmd(self, cmd, container, verbose=False):
         if not self.has_encap_resources():
@@ -781,7 +781,10 @@ class Svc(Resource, Freezer):
             return gs
 
         cmd = ['json', 'status']
-        out, err, ret = self._encap_cmd(cmd, container)
+        try:
+            out, err, ret = self._encap_cmd(cmd, container)
+        except ex.excAbortAction:
+            return {'resources': {}}
         import json
         gs = json.loads(out)
         self.encap_json_status_cache = gs

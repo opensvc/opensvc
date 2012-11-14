@@ -73,7 +73,7 @@ class Container(Res.Resource):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def operational(self):
-        if self.svc.guestos == "Windows":
+        if self.guestos == "Windows":
             """ Windows has no sshd.
             """
             return True

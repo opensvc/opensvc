@@ -56,7 +56,7 @@ class CloudVm(resContainer.Container):
         raise ex.excError("key file for key name '%s' not found"%self.key_name)
 
     def rcp(self, src, dst):
-        if self.svc.guestos == "Windows":
+        if self.guestos == "Windows":
             """ Windows has no sshd.
             """
             raise ex.excNotSupported("remote copy not supported on Windows")
@@ -76,7 +76,7 @@ class CloudVm(resContainer.Container):
         return out, err, ret
 
     def rcmd(self, cmd):
-        if self.svc.guestos == "Windows":
+        if self.guestos == "Windows":
             """ Windows has no sshd.
             """
             raise ex.excNotSupported("remote commands not supported on Windows")

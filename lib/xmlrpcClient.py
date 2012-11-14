@@ -606,11 +606,6 @@ class Collector(object):
         except:
             version = "0";
     
-        if hasattr(svc, "guestos"):
-            guestos = svc.guestos
-        else:
-            guestos = ""
-    
         vars = ['svc_hostid',
                 'svc_name',
                 'svc_cluster_type',
@@ -630,7 +625,6 @@ class Collector(object):
                 'svc_envfile',
                 'svc_version',
                 'svc_drnoaction',
-                'svc_guestos',
                 'svc_ha']
     
         vals = [repr(hostid),
@@ -652,7 +646,6 @@ class Collector(object):
                 repr(envfile(svc.svcname)),
                 repr(version),
                 repr(svc.drnoaction),
-                repr(guestos),
                 '1' if svc.ha else '0']
     
         args = [vars, vals]

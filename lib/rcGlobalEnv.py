@@ -164,7 +164,7 @@ class rcEnv:
     vt_libvirt = ['kvm', 'lxc', 'xen']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx'] + vt_cloud
     vt_container = ['zone', 'lxc', 'jail', 'vz']
-    vt_supported = vt_vm + vt_container + vt_cloud
+    vt_supported = vt_vm + vt_container
 
     dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(dbopensvc_host, dbopensvc_port, dbopensvc_app)
     dbcompliance = "http://%s:%s/%s/compliance/call/xmlrpc"%(dbcompliance_host, dbcompliance_port, dbcompliance_app)
