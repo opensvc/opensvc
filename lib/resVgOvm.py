@@ -26,10 +26,11 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
+    def __init__(self, rid=None, name=None, container_id=None, type=None,
                  optional=False, disabled=False, tags=set([]),
                  monitor=False):
         self.label = name
+        self.container_id = container_id
         resVg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           optional=optional, disabled=disabled, tags=tags,
@@ -56,7 +57,7 @@ class Vg(resVg.Dg):
 
         self.devmapping = []
 
-        cf = self.svc.resources_by_id['container'].find_vmcf()
+        cf = self.svc.resources_by_id[self.container_id].find_vmcf()
         with open(cf, 'r') as f:
             buff = f.read()
 

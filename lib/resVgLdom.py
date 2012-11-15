@@ -24,10 +24,11 @@ from subprocess import *
 import re
 
 class Vg(resVg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
+    def __init__(self, rid=None, name=None, container_id=None, type=None,
                  optional=False, disabled=False, tags=set([]),
                  monitor=False):
         self.label = name
+        self.container_id = container_id
         resVg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           optional=optional, disabled=disabled, tags=tags,
@@ -95,7 +96,7 @@ class Vg(resVg.Dg):
             else:
                 vds = ''
 
-        cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p', self.svc.vmname]
+        cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p', self.svc.resources_by_id[self.container_id].name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:

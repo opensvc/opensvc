@@ -27,10 +27,11 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
+    def __init__(self, rid=None, container_id=None, name=None, type=None,
                  optional=False, disabled=False, tags=set([]),
                  monitor=False):
         self.label = name
+        self.container_id = container_id
         resVg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.vg',
                           optional=optional, disabled=disabled, tags=tags,
@@ -77,7 +78,7 @@ class Vg(resVg.Dg):
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
-        tree.parse(self.svc.resources_by_id['container'].cf)
+        tree.parse(self.svc.resources_by_id[self.container_id].cf)
         for dev in tree.getiterator('disk'):
             s = dev.find('source')
             if s is None:

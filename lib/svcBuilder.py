@@ -319,11 +319,7 @@ def add_ip(svc, conf, s):
     except ex.OptNotFound:
         pass
 
-    if svc.svcmode == 'lxc':
-        ip = __import__('resIp'+rcEnv.sysname+'Lxc')
-    elif svc.svcmode == 'vz':
-        ip = __import__('resIp'+rcEnv.sysname+'Lxc')
-    elif svc.svcmode  == 'zone':
+    if svc.svcmode  == 'zone':
         ip = __import__('resIp'+'Zone')
     else:
         ip = __import__('resIp'+rcEnv.sysname)
@@ -581,20 +577,35 @@ def add_vg(svc, conf, s):
     add_scsireserv(svc, r, conf, s)
 
 def add_vmdg(svc, conf, s):
-    if not conf.has_section('vmdg'):
+    kwargs = {}
+
+    try:
+        kwargs['container_id'] = conf_get_string_scope(svc, conf, s, 'container_id')
+    except ex.OptNotFound:
+        svc.log.error("container_id must be set in section %s"%s)
         return
-    if svc.svcmode == 'hpvm':
+
+    if not conf.has_section(kwargs['container_id']):
+        svc.log.error("%s.container_id points to an invalid section"%kwargs['container_id'])
+        return
+
+    try:
+        container_type = conf_get_string_scope(svc, conf, kwargs['container_id'], 'type')
+    except ex.OptNotFound:
+        svc.log.error("type must be set in section %s"%kwargs['container_id'])
+        return
+
+    if container_type == 'hpvm':
         vg = __import__('resVgHpVm')
-    elif svc.svcmode == 'ldom':
+    elif container_type == 'ldom':
         vg = __import__('resVgLdom')
-    elif svc.svcmode in rcEnv.vt_libvirt:
+    elif container_type in rcEnv.vt_libvirt:
         vg = __import__('resVgLibvirtVm')
-    elif svc.svcmode == 'ovm':
+    elif container_type == 'ovm':
         vg = __import__('resVgOvm')
     else:
         return
 
-    kwargs = {}
     kwargs['rid'] = 'vmdg'
     kwargs['tags'] = get_tags(conf, 'vmdg')
     kwargs['name'] = 'vmdg'
@@ -1535,15 +1546,6 @@ def build(name):
                 return None
             kwargs['pkg_name'] = defaults["pkg_name"]
 
-        if svcmode in rcEnv.vt_cloud:
-            if "cloud_id" in defaults:
-                kwargs['cloud_id'] = defaults["cloud_id"]
-            if "size" in defaults:
-                kwargs['size'] = defaults["size"]
-            if "key_name" in defaults:
-                kwargs['key_name'] = defaults["key_name"]
-            if "shared_ip_group" in defaults:
-                kwargs['shared_ip_group'] = defaults["shared_ip_group"]
 
     #
     # dynamically import the module matching the service mode
