@@ -707,55 +707,52 @@ class Collector(object):
         for svc in svcs:
             # hash to add up disk usage inside a service
             valsh = {}
-            for rs in svc.resSets:
-                for r in rs.resources:
-                    if r.is_disabled():
-                        continue
+            for r in svc.get_resources():
+                if hasattr(r, "name"):
+                    disk_dg = r.name
+                elif hasattr(r, "dev"):
+                    disk_dg = r.dev
+                else:
+                    disk_dg = r.rid
 
-                    if hasattr(r, "name"):
-                        disk_dg = r.name
-                    elif hasattr(r, "dev"):
-                        disk_dg = r.dev
+                if hasattr(r, 'devmap') and hasattr(r, 'vm_hostname'):
+                    if hasattr(svc, "clustername"):
+                        cluster = svc.clustername
                     else:
-                        disk_dg = r.rid
+                        cluster = ','.join(sorted(list(svc.nodes)))
+                    served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
 
-                    if hasattr(r, 'devmap'):
-                        if hasattr(svc, "clustername"):
-                            cluster = svc.clustername
+                for devpath in r.devlist():
+                    for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
+                        disk_id = disks.disk_id(d)
+                        if disk_id is None or disk_id == "":
+                            """ no point pushing to db an empty entry
+                            """
+                            continue
+                        if disk_id in dh:
+                            dh[disk_id] += used
                         else:
-                            cluster = ','.join(sorted(list(svc.nodes)))
-                        served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
+                            dh[disk_id] = used
+                        disk_size = disks.disk_size(d)
+                        if dh[disk_id] > disk_size:
+                            dh[disk_id] = disk_size
+                        if disk_id in valsh:
+                            valsh[disk_id][3] += used
+                        else:
+                            valsh[disk_id] = [
+                             disk_id,
+                             svc.svcname,
+                             disk_size,
+                             used,
+                             disks.disk_vendor(d),
+                             disks.disk_model(d),
+                             disk_dg,
+                             rcEnv.nodename,
+                             region
+                            ]
+                        if valsh[disk_id][3] > disk_size:
+                            valsh[disk_id][3] = disk_size
 
-                    for devpath in r.devlist():
-                        for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
-                            disk_id = disks.disk_id(d)
-                            if disk_id is None or disk_id == "":
-                                """ no point pushing to db an empty entry
-                                """
-                                continue
-                            if disk_id in dh:
-                                dh[disk_id] += used
-                            else:
-                                dh[disk_id] = used
-                            disk_size = disks.disk_size(d)
-                            if dh[disk_id] > disk_size:
-                                dh[disk_id] = disk_size
-                            if disk_id in valsh:
-                                valsh[disk_id][3] += used
-                            else:
-                                valsh[disk_id] = [
-                                 disk_id,
-                                 svc.svcname,
-                                 disk_size,
-                                 used,
-                                 disks.disk_vendor(d),
-                                 disks.disk_model(d),
-                                 disk_dg,
-                                 rcEnv.nodename,
-                                 region
-                                ]
-                            if valsh[disk_id][3] > disk_size:
-                                valsh[disk_id][3] = disk_size
             for l in valsh.values():
                 vals += [map(lambda x: repr(x), l)]
                 print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region
