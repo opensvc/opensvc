@@ -1619,7 +1619,7 @@ def build(name):
 
     if 'flex' in svc.clustertype:
         svc.ha = True
-    allowed_clustertype = ['failover', 'allactive', 'flex', 'autoflex']
+    allowed_clustertype = ['failover', 'flex', 'autoflex']
     if svc.clustertype not in allowed_clustertype:
         svc.log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
         del(svc)

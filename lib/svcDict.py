@@ -162,17 +162,29 @@ class KeywordMode(Keyword):
                   required=True,
                   order=10,
                   default="hosted",
-                  candidates=["hosted"] + rcEnv.vt_supported,
+                  candidates=["hosted"],
                   text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
+                )
+
+class KeywordContainerType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="type",
+                  candidates=rcEnv.vt_supported,
+                  text="The type of container.",
+                  required=True,
+                  order=1
                 )
 
 class KeywordVirtinst(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="virtinst",
-                  depends=[('mode', ["kvm", "xen", "ovm"])],
+                  depends=[('type', ["kvm", "xen", "ovm"])],
                   text="The virt-install command to use to create the container.",
                   required=True,
                   provisioning=True
@@ -182,9 +194,9 @@ class KeywordSnap(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="snap",
-                  depends=[('mode', ["kvm", "xen", "ovm", "zone", "esx"])],
+                  depends=[('type', ["kvm", "xen", "ovm", "zone", "esx"])],
                   text="The target snapshot/clone full path containing the new container disk files.",
                   required=True,
                   provisioning=True
@@ -194,9 +206,9 @@ class KeywordSnapof(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="snapof",
-                  depends=[('mode', ["kvm", "xen", "ovm", "zone", "esx"])],
+                  depends=[('type', ["kvm", "xen", "ovm", "zone", "esx"])],
                   text="The snapshot origin full path containing the reference container disk files.",
                   required=True,
                   provisioning=True
@@ -206,9 +218,9 @@ class KeywordContainerOrigin(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="container_origin",
-                  depends=[('mode', ["zone"])],
+                  depends=[('type', ["zone"])],
                   text="The origin container having the reference container disk files.",
                   required=True,
                   provisioning=True
@@ -218,9 +230,9 @@ class KeywordRootfs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="rootfs",
-                  depends=[('mode', ["lxc", "vz", "zone"])],
+                  depends=[('type', ["lxc", "vz", "zone"])],
                   text="Sets the root fs directory of the container",
                   required=True,
                   provisioning=True
@@ -230,9 +242,9 @@ class KeywordTemplate(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="template",
-                  depends=[('mode', ["lxc", "vz", "zone"])],
+                  depends=[('type', ["lxc", "vz", "zone"])],
                   text="Sets the url of the template unpacked into the container root fs.",
                   required=True,
                   provisioning=True
@@ -242,10 +254,10 @@ class KeywordVmName(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
-                  keyword="vm_name",
-                  order=11,
-                  depends=[('mode', rcEnv.vt_supported)],
+                  section="container",
+                  keyword="name",
+                  order=2,
+                  depends=[('type', rcEnv.vt_supported)],
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
@@ -253,10 +265,10 @@ class KeywordSharedIpGroup(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="shared_ip_group",
                   order=11,
-                  depends=[('mode', rcEnv.vt_cloud)],
+                  depends=[('type', rcEnv.vt_cloud)],
                   text="The cloud shared ip group name to allocate a public ip from."
                 )
 
@@ -264,10 +276,10 @@ class KeywordSize(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="size",
                   order=11,
-                  depends=[('mode', rcEnv.vt_cloud)],
+                  depends=[('type', rcEnv.vt_cloud)],
                   text="The cloud vm size, as known to the cloud manager. Example: tiny."
                 )
 
@@ -275,10 +287,10 @@ class KeywordKeyName(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="key_name",
                   order=11,
-                  depends=[('mode', rcEnv.vt_cloud)],
+                  depends=[('type', rcEnv.vt_cloud)],
                   text="The key name, as known to the cloud manager, to trust in the provisioned vm."
                 )
 
@@ -286,10 +298,10 @@ class KeywordCloudId(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
+                  section="container",
                   keyword="cloud_id",
                   order=11,
-                  depends=[('mode', rcEnv.vt_cloud)],
+                  depends=[('type', rcEnv.vt_cloud)],
                   text="The cloud id as configured in node.conf. Example: cloud#1."
                 )
 
@@ -297,10 +309,10 @@ class KeywordVmUuid(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="DEFAULT",
-                  keyword="vm_uuid",
+                  section="container",
+                  keyword="uuid",
                   order=11,
-                  depends=[('mode', "ovm")],
+                  depends=[('type', "ovm")],
                   text="The virtual machine unique identifier used to pass commands on the VM."
                 )
 
@@ -313,7 +325,7 @@ class KeywordClusterType(Keyword):
                   order=15,
                   required=False,
                   default="failover",
-                  candidates=["failover", "allactive", "flex", "autoflex"],
+                  candidates=["failover", "flex", "autoflex"],
                   text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range. autoflex: same as flex, but charge the collector to start the service on passive nodes when the average %cpu usage on active nodes > flex_cpu_high_threshold and stop the service on active nodes when the average %cpu usage on active nodes < flex_cpu_low_threshold."
                 )
 
@@ -338,7 +350,7 @@ class KeywordFlexMaxNodes(Keyword):
                   keyword="flex_max_nodes",
                   order=16,
                   required=False,
-                  default=0,
+                  default=10,
                   depends=[('cluster_type', ['flex', 'autoflex'])],
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
@@ -1526,14 +1538,6 @@ class KeyDict(KeywordStore):
             self += kw_always_on(r)
 
         self += KeywordMode()
-        self += KeywordRootfs()
-        self += KeywordTemplate()
-        self += KeywordVmName()
-        self += KeywordSharedIpGroup()
-        self += KeywordSize()
-        self += KeywordKeyName()
-        self += KeywordCloudId()
-        self += KeywordVmUuid()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
@@ -1612,6 +1616,15 @@ class KeyDict(KeywordStore):
         self += KeywordVdiskPath()
         self += KeywordHbType()
         self += KeywordHbName()
+        self += KeywordContainerType()
+        self += KeywordVmName()
+        self += KeywordRootfs()
+        self += KeywordTemplate()
+        self += KeywordSharedIpGroup()
+        self += KeywordSize()
+        self += KeywordKeyName()
+        self += KeywordCloudId()
+        self += KeywordVmUuid()
         self += KeywordVirtinst()
         self += KeywordSnap()
         self += KeywordSnapof()
