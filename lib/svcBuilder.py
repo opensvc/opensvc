@@ -710,6 +710,170 @@ def add_fs(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_containers_esx(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerEsx')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Esx(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_hpvm(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerHpVm')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.HpVm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_ldom(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerLdom')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Ldom(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_vbox(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerVbox')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Vbox(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_xen(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerXen')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Xen(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_zone(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerZone')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Zone(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+
+
 def add_containers_vcloud(svc, conf, s):
     kwargs = {}
 
