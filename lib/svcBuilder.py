@@ -288,6 +288,9 @@ def add_resources(restype, svc, conf):
             continue
         if svc.encap and 'encap' not in get_tags(conf, s):
             continue
+        if not svc.encap and 'encap' in get_tags(conf, s):
+            svc.has_encap_resources = True
+            continue
         globals()['add_'+restype](svc, conf, s)
  
 def add_ip(svc, conf, s):
@@ -1222,6 +1225,9 @@ def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
            re.match(restype+'#[0-9]', s, re.I) is None:
             continue
         if svc.encap and 'encap' not in get_tags(conf, s):
+            continue
+        if not svc.encap and 'encap' in get_tags(conf, s):
+            svc.has_encap_resources = True
             continue
         if not conf.has_option(s, 'type'):
             # 'type' is mandatory in resource section, fallback to default_subtype (if set)

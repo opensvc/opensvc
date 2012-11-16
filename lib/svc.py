@@ -69,6 +69,7 @@ class Svc(Resource, Freezer):
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
         self.encap = False
+        self.has_encap_resources = False
         self.options = Options()
         self.node = None
         self.ha = False
@@ -472,7 +473,9 @@ class Svc(Resource, Freezer):
         """
         from textwrap import wrap
 
-        def print_res(e, fmt, pfx):
+        def print_res(e, fmt, pfx, subpfx=None):
+            if subpfx is None:
+                subpfx = pfx
             rid, status, label, log, monitor, disabled, optional, encap = e
             flags = ''
             flags += 'M' if monitor else '.'
@@ -482,8 +485,8 @@ class Svc(Resource, Freezer):
             print fmt%(rid, flags, status, label)
             if len(log) > 0:
                 print '\n'.join(wrap(log,
-                                     initial_indent = pfx,
-                                     subsequent_indent = pfx,
+                                     initial_indent = subpfx,
+                                     subsequent_indent = subpfx,
                                      width=78
                                     )
                                )
@@ -497,17 +500,24 @@ class Svc(Resource, Freezer):
         encap_res_status = {}
         for container in self.get_resources('container'):
             try:
-                encap_res_status.update(self.encap_json_status(container)['resources'])
+                res = self.encap_json_status(container)['resources']
+                encap_res_status[container.rid] = res
             except Exception, e:
                 print e
+                encap_res_status[container.rid] = {}
 
         l = []
+        cr = {}
         for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
                 l.append((rid, status, label, log, monitor, disable, optional, encap))
+                if rid.startswith("container") and rid in encap_res_status:
+                    _l = []
+                    for _rid, val in encap_res_status[rid].items():
+                        _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
+                    cr[rid] = _l
+
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -518,7 +528,23 @@ class Svc(Resource, Freezer):
                 else:
                     fmt = "|  |- %-14s %4s %-8s %s"
                     pfx = "|  |  %-14s %4s %-8s "%('','','')
-                    print_res(e, fmt, pfx)
+                    if e[0] in cr:
+                        subpfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                    else:
+                        subpfx = None
+                    print_res(e, fmt, pfx, subpfx=subpfx)
+                if e[0] in cr:
+                    _last = len(cr[e[0]]) - 1
+                    if _last >= 0:
+                        for _i, _e in enumerate(cr[e[0]]):
+                            if _i == _last:
+                                fmt = "|  |  '- %-11s %4s %-8s %s"
+                                pfx = "|  |     %-11s %4s %-8s "%('','','')
+                                print_res(_e, fmt, pfx)
+                            else:
+                                fmt = "|  |  |- %-11s %4s %-8s %s"
+                                pfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                                print_res(_e, fmt, pfx)
 
         fmt = "|- %-17s %4s %-8s %s"
         print fmt%("sync", '', str(self.group_status()['sync']), "\n"),
@@ -708,13 +734,6 @@ class Svc(Resource, Freezer):
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
         
-    def has_encap_resources(self):
-        for t in self.status_types:
-            for rs in self.get_res_sets(t):
-                if rs.has_encap_resources():
-                    return True
-        return False 
-
     def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
             try:
@@ -727,7 +746,7 @@ class Svc(Resource, Freezer):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
-        if not self.has_encap_resources():
+        if not self.has_encap_resources:
             # no need to run encap cmd (no encap resource)
             return '', '', 0
 
@@ -751,8 +770,8 @@ class Svc(Resource, Freezer):
         return out, err, ret
 
     def encap_json_status(self, container, refresh=False):
-        if not refresh and hasattr(self, 'encap_json_status_cache'):
-            return self.encap_json_status_cache
+        if not refresh and hasattr(self, 'encap_json_status_cache') and container.rid in self.encap_json_status_cache:
+            return self.encap_json_status_cache[container.rid]
         if container.guestos == 'Windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
@@ -794,13 +813,21 @@ class Svc(Resource, Freezer):
             out, err, ret = self._encap_cmd(cmd, container)
         except ex.excError:
             return {'resources': {}}
+        except Exception, e:
+            print str(e)
+            return {'resources': {}}
 
         import json
         try:
             gs = json.loads(out)
         except:
             gs = {'resources': {}}
-        self.encap_json_status_cache = gs
+
+        # feed cache
+        if not hasattr(self, 'encap_json_status_cache'):
+            self.encap_json_status_cache = {}
+        self.encap_json_status_cache[container.rid] = gs
+
         return gs
         
     def group_status(self,
@@ -956,7 +983,7 @@ class Svc(Resource, Freezer):
 
     def _slave_action(fn):
         def _fn(self):
-            if self.encap or not self.has_encap_resources():
+            if self.encap or not self.has_encap_resources:
                 return
             if self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slave):
@@ -970,7 +997,7 @@ class Svc(Resource, Freezer):
         def _fn(self):
             if not self.encap and \
                self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
-               self.has_encap_resources() and \
+               self.has_encap_resources and \
                (not self.options.master and not self.options.slave):
                 raise ex.excAbortAction("specify either --master, --slave or both (%s)"%fn.__name__)
             if self.options.master or \
@@ -1591,7 +1618,7 @@ class Svc(Resource, Freezer):
         print "update %s timestamp"%self.push_flag, "...", ret
 
     def push_encap_env(self):
-        if self.encap or not self.has_encap_resources():
+        if self.encap or not self.has_encap_resources:
             return
 
         for r in self.get_resources('container'):
