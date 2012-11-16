@@ -43,15 +43,13 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         Provisioning.__init__(self, r)
 
         self.section = r.svc.config.defaults()
+        self.rootfs = r.svc.config.get(r.rid, 'rootfs')
+        self.template = r.svc.config.get(r.rid, 'template')
 
         # hostname file in the container rootfs
-        self.p_hostname = os.path.join(self.section['rootfs'], 'etc', 'hostname')
+        self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
 
-        # container name and hostname
-        if "vm_name" in self.section:
-            self.vm_name = self.section["vm_name"]
-        else:
-            self.vm_name = self.r.svc.svcname
+        self.vm_name = r.name
 
         # lxc root conf dir
         self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
@@ -65,8 +63,8 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.config = os.path.join(self.d_lxc, self.vm_name, 'config')
 
         # network config candidates
-        self.interfaces = os.path.join(self.section['rootfs'], 'etc', 'network', 'interfaces')
-        self.network = os.path.join(self.section['rootfs'], 'etc', 'sysconfig', 'network-scripts')
+        self.interfaces = os.path.join(self.rootfs, 'etc', 'network', 'interfaces')
+        self.network = os.path.join(self.rootfs, 'etc', 'sysconfig', 'network-scripts')
 
     def validate(self):
         if self.d_lxc is None:
@@ -90,7 +88,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
     def setup_lxc_config(self):
         import tempfile
         f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(self.config_template%dict(vm_name=self.vm_name, rootfs=self.section['rootfs']))
+        f.write(self.config_template%dict(vm_name=self.vm_name, rootfs=self.rootfs))
         self.config = f.name
         f.close()
 
@@ -132,8 +130,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         self.r.log.info("container hostname set to %s"%self.vm_name)
 
     def get_template(self):
-        template = self.section['template']
-        self.template_fname = os.path.basename(template)
+        self.template_fname = os.path.basename(self.template)
         self.template_local = os.path.join(rcEnv.pathtmp, self.template_fname)
         if os.path.exists(self.template_local):
             self.r.log.info("template %s already downloaded"%self.template_fname)
@@ -141,14 +138,14 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         import urllib
         fname, headers = urllib.urlretrieve(template, self.template_local)
         if 'invalid file' in headers.values():
-            self.r.log.error("%s not found"%template)
+            self.r.log.error("%s not found"%self.template)
             raise ex.excError
 
     def unpack_template(self):
         import tarfile
-        os.chdir(self.section['rootfs'])
+        os.chdir(self.rootfs)
         tar = tarfile.open(name=self.template_local, errorlevel=0)
-        if os.path.exists(os.path.join(self.section['rootfs'],'etc')):
+        if os.path.exists(os.path.join(self.rootfs,'etc')):
             self.r.log.info("template already unpacked")
             return
         tar.extractall()
@@ -158,18 +155,18 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         self.set_vm_name()
 
     def disable_udev(self):
-        updaterc = os.path.join(self.section['rootfs'], 'usr', 'sbin', 'update-rc.d')
-        chkconfig = os.path.join(self.section['rootfs'], 'sbin', 'chkconfig')
+        updaterc = os.path.join(self.rootfs, 'usr', 'sbin', 'update-rc.d')
+        chkconfig = os.path.join(self.rootfs, 'sbin', 'chkconfig')
         if os.path.exists(updaterc):
-            self.r.vcall(['chroot', self.section['rootfs'], 'update-rc.d', '-f', 'udev', 'remove'])
+            self.r.vcall(['chroot', self.rootfs, 'update-rc.d', '-f', 'udev', 'remove'])
         elif os.path.exists(chkconfig):
-            self.r.vcall(['chroot', self.section['rootfs'], 'chkconfig', 'udev', 'off'])
+            self.r.vcall(['chroot', self.rootfs, 'chkconfig', 'udev', 'off'])
 
     def setup_getty(self):
-         getty = os.path.join(self.section['rootfs'], 'sbin', 'getty')
+         getty = os.path.join(self.rootfs, 'sbin', 'getty')
          if os.path.exists(getty):
              self.r.log.info("setup getty")
-             inittab = os.path.join(self.section['rootfs'], 'etc', 'inittab')
+             inittab = os.path.join(self.rootfs, 'etc', 'inittab')
              with open(inittab, 'a') as f:
                  f.write("""
 1:2345:respawn:/sbin/getty 38400 console
@@ -178,7 +175,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def setup_authkeys(self):
         pub = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
-        authkeys = os.path.join(self.section['rootfs'], 'root', '.ssh', 'authorized_keys')
+        authkeys = os.path.join(self.rootfs, 'root', '.ssh', 'authorized_keys')
         if not os.path.exists(pub):
             self.r.log.error("no dsa found on node for root")
             return
@@ -237,8 +234,7 @@ iface %(ipdev)s inet static
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def provisioner(self):
-        path = self.section['rootfs']
-        template = self.section['template']
+        path = self.rootfs
 
         if not os.path.exists(path):
             os.makedirs(path)
