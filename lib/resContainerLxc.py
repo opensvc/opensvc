@@ -24,7 +24,7 @@ import sys
 import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which
+from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
@@ -60,6 +60,17 @@ class Lxc(resContainer.Container):
 
     def files_to_sync(self):
         return [self.cf]
+
+    def rcp(self, src, dst):
+        rootfs = self.get_rootfs()
+        if len(rootfs) == 0:
+            raise ex.excError()
+        dst = rootfs + dst
+        cmd = ['cp', src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
 
     def lxc(self, action):
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'

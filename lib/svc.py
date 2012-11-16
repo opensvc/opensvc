@@ -715,9 +715,16 @@ class Svc(Resource, Freezer):
                     return True
         return False 
 
-    def encap_cmd(self, cmd, verbose=False):
+    def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
-            out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
+            try:
+                out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
+            except ex.excError:
+                if error != "continue":
+                    self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                    raise
+                elif verbose:
+                    self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
         if not self.has_encap_resources():
@@ -735,7 +742,7 @@ class Svc(Resource, Freezer):
             raise ex.excError("undefined rcmd/runmethod in resource %s"%container.rid)
 
         if ret != 0:
-            raise ex.excError("failed to execute encap service command: %d\n%s\n%s"%(ret, out, err))
+            raise ex.excError("failed to execute encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         if verbose:
             self.log.info('logs from %s child service:'%container.name)
             print out
@@ -783,7 +790,11 @@ class Svc(Resource, Freezer):
             return gs
 
         cmd = ['json', 'status']
-        out, err, ret = self._encap_cmd(cmd, container)
+        try:
+            out, err, ret = self._encap_cmd(cmd, container)
+        except ex.excError:
+            return {'resources': {}}
+
         import json
         try:
             gs = json.loads(out)
@@ -947,9 +958,9 @@ class Svc(Resource, Freezer):
         def _fn(self):
             if self.encap or not self.has_encap_resources():
                 return
-            if fn.__name__ not in ('start', 'stop', 'startstandby', 'stopstandby') and \
+            if self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slave):
-                raise ex.excAbortAction("specify either --master, --slave or both")
+                raise ex.excAbortAction("specify either --master, --slave or both (%s)"%fn.__name__)
             if self.options.slave or \
                (not self.options.master and not self.options.slave):
                 fn(self)
@@ -958,10 +969,10 @@ class Svc(Resource, Freezer):
     def _master_action(fn):
         def _fn(self):
             if not self.encap and \
-               fn.__name__ not in ('start', 'stop', 'startstandby', 'stopstandby') and \
+               self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources() and \
                (not self.options.master and not self.options.slave):
-                raise ex.excAbortAction("specify either --master, --slave or both")
+                raise ex.excAbortAction("specify either --master, --slave or both (%s)"%fn.__name__)
             if self.options.master or \
                (not self.options.master and not self.options.slave):
                 fn(self)
@@ -1000,7 +1011,7 @@ class Svc(Resource, Freezer):
 
     def stop(self):
         self.master_stophb()
-        self.encap_cmd(['stop'], verbose=True)
+        self.encap_cmd(['stop'], verbose=True, error="continue")
         try:
             self.master_stopapp()
         except ex.excError:
@@ -1392,6 +1403,11 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.scsireserv", "scsicheckreserv")
 
     def startstandby(self):
+        self.master_startstandby()
+        self.slave_startstandby()
+
+    @_master_action
+    def master_startstandby(self):
         self.sub_set_action("ip", "startstandby")
         self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
@@ -1401,7 +1417,22 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
         self.sub_set_action("fs", "startstandby")
         self.sub_set_action("app", "startstandby")
-        self.encap_cmd(['startstandaby'], verbose=True)
+
+    @_slave_action
+    def slave_startstandby(self):
+        cmd = 'startstandby'
+        for container in self.get_resources('container'):
+            if not container.is_up() and not container.always_on:
+                # no need to try to startstandby the encap service on a container we not activated
+                continue
+            try:
+                out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
+            except ex.excError:
+                if error != "continue":
+                    self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                    raise
+                elif verbose:
+                    self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def postsync(self):
         """ action triggered by a remote master node after
@@ -1720,7 +1751,9 @@ class Svc(Resource, Freezer):
                 o = Collector(self.options, self.node.collector, self.svcname)
                 getattr(o, action)()
             elif hasattr(self, action):
+                self.running_action = action
                 getattr(self, action)()
+                self.running_action = None
             else:
                 self.log.error("unsupported action")
                 err = 1
