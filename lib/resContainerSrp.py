@@ -199,7 +199,21 @@ class Srp(resContainer.Container):
         return True
 
     def presync(self):
-        cmd = ['srp', '-export', self.name, '-xfile', self.export_file]
+        self.container_export()
+
+    def postsync(self):
+        self.container_import()
+
+    def container_import(self):
+        if not os.path.exists(self.export_file):
+            raise ex.excError("%s does not exist"%self.export_file)
+        cmd = ['srp', '-batch', '-import', '-xfile', self.export_file, 'allow_sw_mismatch=yes', 'autostart=no']
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError()
+
+    def container_export(self):
+        cmd = ['srp', '-batch', '-export', self.name, '-xfile', self.export_file]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError()
