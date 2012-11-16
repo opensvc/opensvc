@@ -24,7 +24,6 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from rcUtilitiesLinux import check_ping
 import resContainer
-import rcCloudOpenstack as rccloud
 
 class CloudVm(resContainer.Container):
     startup_timeout = 240
@@ -44,6 +43,7 @@ class CloudVm(resContainer.Container):
         self.size_name = size
         self.key_name = key_name
         self.shared_ip_group = shared_ip_group
+        self.addr = None
 
     def keyfile(self):
         kf = [os.path.join(rcEnv.pathetc, self.key_name+'.pem'),
@@ -62,7 +62,7 @@ class CloudVm(resContainer.Container):
             raise ex.excNotSupported("remote copy not supported on Windows")
 
         self.getaddr()
-        if not hasattr(self, 'addr'):
+        if self.addr is None:
             raise ex.excError('no usable public ip to send files to')
 
         timeout = 5
@@ -82,7 +82,7 @@ class CloudVm(resContainer.Container):
             raise ex.excNotSupported("remote commands not supported on Windows")
 
         self.getaddr()
-        if not hasattr(self, 'addr'):
+        if self.addr is None:
             raise ex.excError('no usable public ip to send command to')
 
         if type(cmd) == str:
@@ -179,7 +179,7 @@ class CloudVm(resContainer.Container):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def getaddr(self):
-        if hasattr(self, 'addr'):
+        if self.addr is not None:
             return
         n = self.get_node()
         if n is None:
@@ -203,7 +203,7 @@ class CloudVm(resContainer.Container):
         return True
 
     def ping(self):
-        if not hasattr(self, "addr"):
+        if self.addr is None:
             return 0
         return check_ping(self.addr, timeout=1, count=1)
 
