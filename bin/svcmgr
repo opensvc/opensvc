@@ -72,6 +72,7 @@ def _install_service(svcname, src_env):
     pathbin = os.path.join(pathsvc, 'bin')
 
     # install env file in etc/
+    src_env = os.path.realpath(src_env)
     dst_env = os.path.join(pathetc, svcname+'.env')
     if dst_env != src_env:
         shutil.copy2(src_env, dst_env)
