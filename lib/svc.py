@@ -94,6 +94,7 @@ class Svc(Resource, Freezer):
                              "container.ovm",
                              "container.lxc",
                              "container.vz",
+                             "container.srp",
                              "container.zone",
                              "container.jail",
                              "container.ldom",
@@ -720,7 +721,8 @@ class Svc(Resource, Freezer):
 
     def _encap_cmd(self, cmd, container, verbose=False):
         if not self.has_encap_resources():
-            raise ex.excAbortAction("no need to run encap cmd %s (no encap resource)"%str(cmd))
+            # no need to run encap cmd (no encap resource)
+            return '', '', 0
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
 
@@ -781,12 +783,12 @@ class Svc(Resource, Freezer):
             return gs
 
         cmd = ['json', 'status']
-        try:
-            out, err, ret = self._encap_cmd(cmd, container)
-        except ex.excAbortAction:
-            return {'resources': {}}
+        out, err, ret = self._encap_cmd(cmd, container)
         import json
-        gs = json.loads(out)
+        try:
+            gs = json.loads(out)
+        except:
+            gs = {'resources': {}}
         self.encap_json_status_cache = gs
         return gs
         
@@ -1269,6 +1271,7 @@ class Svc(Resource, Freezer):
     def startcontainer(self):
         self.sub_set_action("container.lxc", "start")
         self.sub_set_action("container.vz", "start")
+        self.sub_set_action("container.srp", "start")
         self.sub_set_action("container.jail", "start")
         self.sub_set_action("container.kvm", "start")
         self.sub_set_action("container.openstack", "start")
@@ -1302,6 +1305,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.jail", "stop")
         self.sub_set_action("container.lxc", "stop")
         self.sub_set_action("container.vz", "stop")
+        self.sub_set_action("container.srp", "stop")
         self.refresh_ip_status()
 
     def rollbackcontainer(self):
@@ -1317,6 +1321,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.jail", "rollback")
         self.sub_set_action("container.lxc", "rollback")
         self.sub_set_action("container.vz", "rollback")
+        self.sub_set_action("container.srp", "rollback")
         self.refresh_ip_status()
 
     def provision(self):

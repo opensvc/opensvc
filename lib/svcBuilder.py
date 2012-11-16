@@ -104,7 +104,6 @@ def conf_get_int_scope(svc, conf, s, o):
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for
     a given service mode. For example:
-    lxc    => ('svcLxc', 'SvcLxc')
     zone   => ('svcZone', 'SvcZone')
     hosted => ('svcHosted', 'SvcHosted')
     """
@@ -1008,6 +1007,33 @@ def add_containers_kvm(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
 
     r = m.Kvm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_srp(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerSrp')
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = m.Srp(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
