@@ -1193,7 +1193,7 @@ class Node(Svc, Freezer):
             raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%self.nodeconf)
 
         if hasattr(self, "clouds") and s in self.clouds:
-            return
+            return self.clouds[s]
 
         try:
             cloud_type = self.config.get(s, 'type')
