@@ -49,7 +49,8 @@ def dblogger(self, action, begin, end, actionlogfile, sync=False):
 
 class Options(object):
     def __init__(self):
-        self.slave = False
+        self.slaves = False
+        self.slave = None
         self.master = False
         self.cron = False
         self.force = False
@@ -750,6 +751,12 @@ class Svc(Resource, Freezer):
             # no need to run encap cmd (no encap resource)
             return '', '', 0
 
+        if self.options.slave is not None and not \
+           (container.name in self.options.slave or \
+            container.rid in self.options.slave):
+            # no need to run encap cmd (container not specified in --slave)
+            return '', '', 0
+
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
 
         if container is not None and hasattr(container, "rcmd"):
@@ -986,10 +993,11 @@ class Svc(Resource, Freezer):
             if self.encap or not self.has_encap_resources:
                 return
             if self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
-               (not self.options.master and not self.options.slave):
-                raise ex.excAbortAction("specify either --master, --slave or both (%s)"%fn.__name__)
-            if self.options.slave or \
-               (not self.options.master and not self.options.slave):
+               (not self.options.master and not self.options.slaves and self.options.slave is None):
+                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+            if self.options.slaves or \
+               self.options.slave is not None or \
+               (not self.options.master and not self.options.slaves and self.options.slave is None):
                 fn(self)
         return _fn
 
@@ -998,10 +1006,10 @@ class Svc(Resource, Freezer):
             if not self.encap and \
                self.running_action not in ('boot', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources and \
-               (not self.options.master and not self.options.slave):
-                raise ex.excAbortAction("specify either --master, --slave or both (%s)"%fn.__name__)
+               (not self.options.master and not self.options.slaves and self.options.slave is None):
+                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.master or \
-               (not self.options.master and not self.options.slave):
+               (not self.options.master and not self.options.slaves and self.options.slave is None):
                 fn(self)
         return _fn
 

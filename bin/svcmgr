@@ -114,8 +114,10 @@ parser.add_option("-f", "--force", default=False, action="store_true", dest="for
                   help="force action, ignore sanity check warnings")
 parser.add_option("--cron", default=False, action="store_true", dest="cron",
                   help="used by cron'ed action to tell the collector to treat the log entries as such")
-parser.add_option("--slave", default=False, action="store_true", dest="slave",
-                  help="option to set to limit the action scope to the slave service resources")
+parser.add_option("--slaves", default=False, action="store_true", dest="slaves",
+                  help="option to set to limit the action scope to all slave service resources")
+parser.add_option("--slave", default=None, action="store", dest="slave",
+                  help="option to set to limit the action scope to the service resources in the specified, comma-sperated, slaves")
 parser.add_option("--master", default=False, action="store_true", dest="master",
                   help="option to set to limit the action scope to the master service resources")
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
@@ -285,7 +287,12 @@ if hasattr(options, "parm_rid") and options.parm_rid is not None:
 else:
    rid = []
 
-if hasattr(options, "parm_tags") and options.parm_tags is not None:
+if options.slave is not None:
+   slave = options.slave.split(',')
+else:
+   slave = None
+
+if options.parm_tags is not None:
    tags = set(options.parm_tags.split(','))
 else:
    tags = set([])
@@ -316,7 +323,8 @@ for s in node.svcs:
     s.options = options
     s.force = options.force
     s.cron = options.cron
-    s.options.slave = options.slave
+    s.options.slaves = options.slaves
+    s.options.slave = slave
     s.options.master = options.master
     if cluster:
         s.cluster = cluster
