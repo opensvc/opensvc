@@ -1030,8 +1030,12 @@ class Svc(Resource, Freezer):
         self.master_mount()
         self.startcontainer()
         self.master_startapp()
-        self.encap_cmd(['start'], verbose=True)
+        self.slave_start()
         self.master_starthb()
+
+    @_slave_action
+    def slave_start(self):
+        self.encap_cmd(['start'], verbose=True)
 
     def rollback(self):
         self.rollbackhb()
@@ -1046,7 +1050,7 @@ class Svc(Resource, Freezer):
 
     def stop(self):
         self.master_stophb()
-        self.encap_cmd(['stop'], verbose=True, error="continue")
+        self.slave_stop()
         try:
             self.master_stopapp()
         except ex.excError:
@@ -1054,6 +1058,10 @@ class Svc(Resource, Freezer):
         self.stopcontainer()
         self.master_umount()
         self.master_stopip()
+
+    @_slave_action
+    def slave_stop(self):
+        self.encap_cmd(['stop'], verbose=True, error="continue")
 
     def cluster_mode_safety_net(self):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
