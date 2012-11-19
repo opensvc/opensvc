@@ -13,6 +13,33 @@ class ProvisioningFs(Provisioning):
         self.section = dict(r.svc.config.items(r.rid))
         self.dev = self.section['dev']
         self.mnt = self.section['mnt']
+        self.size = self.section['size']
+        self.size_to_mb()
+
+    def size_to_mb(self):
+        s = self.size.replace(' ', '')
+        if len(s) < 2:
+            raise ex.excError("size provisioning parameter too short")
+        try:
+            unit = s[-1].lower()
+        except:
+            # no unit, consider value expressed as megabytes
+            return
+        try:
+            size = int(s[:-1])
+        except:
+            raise ex.excError("failed to convert provisioning size %s to integer"%size)
+        if unit == 't':
+            size *= 1024*1024
+        elif unit == 'g':
+            size *= 1024
+        elif unit == 'm':
+            pass
+        elif unit == 'k':
+            size = size // 1024
+        else:
+            raise ex.excError("failed to convert %s to megabytes"%self.size)
+        self.size = str(size)
 
     def check_fs(self):
         cmd = self.info + [self.mkfs_dev]
@@ -41,7 +68,7 @@ class ProvisioningFs(Provisioning):
             raise ex.excError
         if which('lvcreate'):
             # create the logical volume
-            cmd = ['lvcreate', '-n', dev, '-L', str(self.section['size'])+'M', self.section['vg']]
+            cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.section['vg']]
             ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
@@ -76,7 +103,7 @@ class ProvisioningFs(Provisioning):
         dev = os.path.basename(self.section['dev'])
         if which('lvcreate'):
             # create the logical volume
-            cmd = ['lvcreate', '-n', dev, '-L', str(self.section['size'])+'M', self.section['vg']]
+            cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.section['vg']]
             ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
