@@ -144,6 +144,27 @@ class Vg(resDg.Dg):
         return True
 
     def is_imported(self):
+        r = self.is_imported_lvm2()
+        if r:
+            return True
+        return self.is_imported_lvm1()
+
+    def is_imported_lvm2(self):
+        if not os.path.exists('/etc/lvmtab_p'):
+            return False
+        cmd = ['strings', '/etc/lvmtab_p']
+        process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        out, err = process.communicate()
+        l = out.split('\n')
+        map(lambda x: x.strip(), l)
+        s = '/dev/'+self.name
+        if s in l:
+            return True
+        return False
+
+    def is_imported_lvm1(self):
+        if not os.path.exists('/etc/lvmtab'):
+            return False
         cmd = ['strings', '/etc/lvmtab']
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         out, err = process.communicate()
@@ -158,7 +179,11 @@ class Vg(resDg.Dg):
         """Returns True if the volume group is present and activated
         """
         if not os.path.exists(self.mapfile_name()):
-            self.do_export(force_preview=True)
+            try:
+                self.do_export(force_preview=True)
+            except ex.excError:
+                # vg does not exist
+                return False
         if not self.is_imported():
             return False
         if not self.is_active():
@@ -331,5 +356,10 @@ class Vg(resDg.Dg):
     def unlock(self):
         import lock
         lock.unlock(self.lockfd)
+
+    def provision(self):
+        m = __import__("provVgHP-UX")
+        prov = getattr(m, "ProvisioningVg")(self)
+        prov.provisioner()
 
 
