@@ -294,6 +294,43 @@ class KeywordKeyName(Keyword):
                   text="The key name, as known to the cloud manager, to trust in the provisioned vm."
                 )
 
+class KeywordSrpPrmCores(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="prm_cores",
+                  order=11,
+                  depends=[('type', 'srp')],
+                  default=1,
+                  provisioning=True,
+                  text="The number of core to bind the SRP container to."
+                )
+
+class KeywordSrpIp(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="ip",
+                  order=11,
+                  depends=[('type', 'srp')],
+                  provisioning=True,
+                  text="The ip name or addr used to create the SRP container."
+                )
+
+class KeywordSrpRootpath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="rootpath",
+                  order=11,
+                  depends=[('type', 'srp')],
+                  provisioning=True,
+                  text="The path of the SRP container root filesystem."
+                )
+
 class KeywordCloudId(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -854,6 +891,18 @@ class KeywordVgVgname(Keyword):
                   order=10,
                   required=True,
                   text="The name of the volume group"
+                )
+
+class KeywordVgOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="options",
+                  default="",
+                  required=False,
+                  provisioning=True,
+                  text="The vgcreate options to use upon vg provisioning."
                 )
 
 class KeywordVgDsf(Keyword):
@@ -1586,6 +1635,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgType()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
+        self += KeywordVgOptions()
         self += KeywordVgScsireserv()
         self += KeywordVgPvs()
         self += KeywordPoolPoolname()
@@ -1629,6 +1679,9 @@ class KeyDict(KeywordStore):
         self += KeywordSnap()
         self += KeywordSnapof()
         self += KeywordContainerOrigin()
+        self += KeywordSrpIp()
+        self += KeywordSrpRootpath()
+        self += KeywordSrpPrmCores()
 
 if __name__ == "__main__":
     store = KeyDict()
