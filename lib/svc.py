@@ -37,16 +37,6 @@ import node
 def signal_handler(signum, frame):
     raise ex.excSignal
 
-def dblogger(self, action, begin, end, actionlogfile, sync=False):
-    self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=sync)
-    g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
-    self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=sync)
-    os.unlink(actionlogfile)
-    try:
-        logging.shutdown()
-    except:
-        pass
-
 class Options(object):
     def __init__(self):
         self.slaves = False
@@ -183,6 +173,16 @@ class Svc(Resource, Freezer):
             r.on_add()
 
         return self
+
+    def dblogger(self, action, begin, end, actionlogfile):
+        self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=self.sync_dblogger)
+        g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
+        self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=self.sync_dblogger)
+        os.unlink(actionlogfile)
+        try:
+            logging.shutdown()
+        except:
+            pass
 
     def svclock(self, action=None, timeout=30, delay=5):
         suffix = None
@@ -1861,7 +1861,7 @@ class Svc(Resource, Freezer):
         actionlogfilehandler.close()
         log.removeHandler(actionlogfilehandler)
         end = datetime.now()
-        dblogger(self, action, begin, end, actionlogfile, self.sync_dblogger)
+        self.dblogger(action, begin, end, actionlogfile)
         return err
 
     def restart(self):
