@@ -19,6 +19,7 @@ class ProvisioningVg(Provisioning):
     def provisioner(self):
         if self.r.has_it():
             self.r.log.info("already provisioned")
+            return
 
         err = False
         for i, pv in enumerate(self.pvs):
