@@ -187,7 +187,10 @@ class Srp(resContainer.Container):
         return {'vcpus': '0', 'vmem': '0'}
 
     def check_manual_boot(self):
-        val = self.get_verbose_list()['autostart']
+        try:
+            val = self.get_verbose_list()['autostart']
+        except ex.excError:
+            return False
         if val == 'yes':
             return True
         return False
@@ -227,6 +230,11 @@ class Srp(resContainer.Container):
                                         monitor=monitor, tags=tags, always_on=always_on)
         self.export_file = os.path.join(rcEnv.pathvar, name + '.xml')
         self.runmethod = ['srp_su', name, 'root', '-c']
+
+    def provision(self):
+        m = __import__("provSrp")
+        prov = m.ProvisioningSrp(self)
+        prov.provisioner()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
