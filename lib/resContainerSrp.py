@@ -74,6 +74,9 @@ class Srp(resContainer.Container):
 
     def get_verbose_list(self):
         """
+        Name: iisdevs1  Template: system Service: provision ID: 1
+        ----------------------------------------------------------------------
+
         autostart=0
         srp_name=iisdevs1
         ...
@@ -87,8 +90,10 @@ class Srp(resContainer.Container):
 
         words = out.split()
         for i, w in enumerate(words):
+            if w == "Service:":
+                service = words[i+1]
             if '=' in w:
-                key = w[:w.index('=')]
+                key = service + '.' + w[:w.index('=')]
                 val = w[w.index('=')+1:]
                 data[key] = val
         return data
@@ -188,12 +193,12 @@ class Srp(resContainer.Container):
 
     def check_manual_boot(self):
         try:
-            val = self.get_verbose_list()['autostart']
+            val = self.get_verbose_list()['init.autostart']
         except ex.excError:
             return False
-        if val == 'yes':
-            return True
-        return False
+        if val == 'yes' or val == '1':
+            return False
+        return True
 
     def check_capabilities(self):
         if not which('srp'):
