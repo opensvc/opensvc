@@ -77,7 +77,7 @@ class ProvisioningSrp(Provisioning):
                     break
 
     def restart_fs(self):
-        for r in need_start:
+        for r in self.need_start:
             r.start()
 
     def add_srp(self):
