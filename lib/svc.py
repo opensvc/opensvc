@@ -565,6 +565,9 @@ class Svc(Resource, Freezer):
                 str(now),
                 ' '.join(self.nodes),
                 frozen]
+        if hasattr(self, "vmname") and len(self.vmname)>0:
+            g_vars.append("mon_vmname")
+            g_vals.append(self.vmname)
         return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups):
