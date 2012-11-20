@@ -536,6 +536,7 @@ class Svc(Resource, Freezer):
         g_vars=["mon_svcname",
                 "mon_svctype",
                 "mon_nodname",
+                "mon_vmname",
                 "mon_nodtype",
                 "mon_ipstatus",
                 "mon_diskstatus",
@@ -552,6 +553,7 @@ class Svc(Resource, Freezer):
         g_vals=[self.svcname,
                 self.svctype,
                 rcEnv.nodename,
+                self.vmname,
                 rcEnv.host_mode,
                 str(status["ip"]),
                 str(status["disk"]),
@@ -565,9 +567,6 @@ class Svc(Resource, Freezer):
                 str(now),
                 ' '.join(self.nodes),
                 frozen]
-        if hasattr(self, "vmname") and len(self.vmname)>0:
-            g_vars.append("mon_vmname")
-            g_vals.append(self.vmname)
         return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups):
