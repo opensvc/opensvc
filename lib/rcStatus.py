@@ -155,4 +155,7 @@ class Status(object):
         return status_str(self.status)
 
     def __init__(self, initial_status=UNDEF):
-        self.status = initial_status
+        if type(initial_status) in (str, unicode):
+            self.status = _status_value[initial_status]
+        else:
+            self.status = initial_status
