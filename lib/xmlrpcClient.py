@@ -664,13 +664,13 @@ class Collector(object):
 
         for container in svc.get_resources('container'):
             container_info = container.get_container_info()
-            vals += [svc.svcname,
-                     rcEnv.nodename,
-                     container.name,
-                     container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
-                     container_info['vcpus'],
-                     container_info['vmem'],
-                     container.zonepath if hasattr(container, 'zonepath') else ""]
+            vals += [[svc.svcname,
+                      rcEnv.nodename,
+                      container.name,
+                      container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
+                      container_info['vcpus'],
+                      container_info['vmem'],
+                      container.zonepath if hasattr(container, 'zonepath') else ""]]
 
         args = [vars, vals]
         if self.auth_node:

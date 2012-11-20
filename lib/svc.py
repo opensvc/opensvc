@@ -595,13 +595,6 @@ class Svc(Resource, Freezer):
         if status is None:
             status = self.group_status()
 
-        encap_res_status = {}
-        for container in self.get_resources('container'):
-            try:
-                encap_res_status.update(self.encap_json_status(container)['resources'])
-            except Exception, e:
-                print e
-
         if self.frozen():
             frozen = "1"
         else:
@@ -609,6 +602,7 @@ class Svc(Resource, Freezer):
 
         r_vars=["svcname",
                 "nodename",
+                "vmname",
                 "rid",
                 "res_desc",
                 "res_status",
@@ -617,23 +611,25 @@ class Svc(Resource, Freezer):
         r_vals = []
         import datetime
         now = datetime.datetime.now()
+
         for rs in self.resSets:
             for r in rs.resources:
-                if r.rid in encap_res_status:
-                    rstatus = encap_res_status[r.rid]['status']
-                else:
-                    rstatus = rcStatus.status_str(r.rstatus)
+                if 'encap' in r.tags:
+                    continue
+                rstatus = rcStatus.status_str(r.rstatus)
                 r_vals.append([repr(self.svcname),
-                             repr(rcEnv.nodename),
-                             repr(r.rid),
-                             repr(r.label),
-                             repr(str(rstatus)),
-                             repr(str(now)),
-                             r.status_log_str])
+                               repr(rcEnv.nodename),
+                               "",
+                               repr(r.rid),
+                               repr(r.label),
+                               repr(str(rstatus)),
+                               repr(str(now)),
+                               r.status_log_str])
 
         g_vars=["mon_svcname",
                 "mon_svctype",
                 "mon_nodname",
+                "mon_vmname",
                 "mon_nodtype",
                 "mon_ipstatus",
                 "mon_diskstatus",
@@ -647,22 +643,69 @@ class Svc(Resource, Freezer):
                 "mon_updated",
                 "mon_prinodes",
                 "mon_frozen"]
-        g_vals=[self.svcname,
-                self.svctype,
-                rcEnv.nodename,
-                rcEnv.host_mode,
-                str(status["ip"]),
-                str(status["disk"]),
-                str(status["sync"]),
-                str(status["hb"]),
-                str(status["container"]),
-                str(status["fs"]),
-                str(status["app"]),
-                str(status["avail"]),
-                str(status["overall"]),
-                str(now),
-                ' '.join(self.nodes),
-                frozen]
+
+        containers = self.get_resources('container')
+        if len(containers) == 0:
+            g_vals=[self.svcname,
+                    self.svctype,
+                    rcEnv.nodename,
+                    "",
+                    rcEnv.host_mode,
+                    str(status["ip"]),
+                    str(status["disk"]),
+                    str(status["sync"]),
+                    str(status["hb"]),
+                    str(status["container"]),
+                    str(status["fs"]),
+                    str(status["app"]),
+                    str(status["avail"]),
+                    str(status["overall"]),
+                    str(now),
+                    ' '.join(self.nodes),
+                    frozen]
+        else:
+            g_vals = []
+            for container in containers:
+                encap_res_status = {}
+                try:
+                    encap_res_status = self.encap_json_status(container)
+                except Exception, e:
+                    print e
+                    continue
+
+                for rid in encap_res_status['resources']:
+                    rstatus = encap_res_status['resources'][rid]['status']
+                    r_vals.append([repr(self.svcname),
+                                   repr(rcEnv.nodename),
+                                   repr(container.name),
+                                   repr(str(rid)),
+                                   repr(str(encap_res_status['resources'][rid]['label'])),
+                                   repr(str(rstatus)),
+                                   repr(str(now)),
+                                   repr(str(encap_res_status['resources'][rid]['log']))])
+
+                if 'avail' not in status or 'avail' not in encap_res_status:
+                    continue
+
+                g_vals.append([self.svcname,
+                               self.svctype,
+                               rcEnv.nodename,
+                               container.name,
+                               rcEnv.host_mode,
+                               str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
+                               str(status["disk"]+rcStatus.Status(encap_res_status['disk'])),
+                               str(status["sync"]+rcStatus.Status(encap_res_status['sync'])),
+                               str(status["hb"]+rcStatus.Status(encap_res_status['hb'])),
+                               str(status["container"]+rcStatus.Status(encap_res_status['container'])),
+                               str(status["fs"]+rcStatus.Status(encap_res_status['fs'])),
+                               str(status["app"]+rcStatus.Status(encap_res_status['app'])),
+                               str(status["avail"]+rcStatus.Status(encap_res_status['avail'])),
+                               str(status["overall"]+rcStatus.Status(encap_res_status['overall'])),
+                               str(now),
+                               ' '.join(self.nodes),
+                               frozen,
+                               str(container.name)])
+
         return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups):
@@ -788,7 +831,8 @@ class Svc(Resource, Freezer):
                  - other encap res are down
             """
             gs = {
-              'sync': 'n/a',
+              'avail': 'down',
+              'overall': 'down',
               'resources': {},
             }
             groups = set(["container", "ip", "disk", "fs", "hb"])
