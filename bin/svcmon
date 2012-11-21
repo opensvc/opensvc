@@ -37,7 +37,7 @@ from lock import *
 import node
 
 try:
-    from multiprocessing import Process, Queue
+    from multiprocessing import Process, Queue, Lock
     mp = True
 except:
     mp = False
@@ -66,11 +66,12 @@ def max_len(svcs):
                 _len = l
     return _len
 
-def svcmon_normal1(svc,upddb=False, fmt=None, queue=None):
+def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     # don't schedule svcmon updates for encap services.
     # those are triggered by the master node
     status = svc.group_status()
-    print fmt % (
+    l = []
+    buff = fmt % (
               svc.svcname,
               svc.svctype,
               svc.svcmode,
@@ -84,11 +85,12 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None):
               status["avail"],
               status["overall"],
               svc.frozen())
+    l.append(buff)
     containers = svc.get_resources("container")
     if len(containers) > 0:
         for container in containers:
             s = svc.encap_json_status(container)
-            print fmt % (
+            buff = fmt % (
                       ' @'+container.name,
                       '',
                       container.type.replace('container.', ''),
@@ -102,6 +104,11 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None):
                       s["avail"],
                       s["overall"],
                       '')
+            l.append(buff)
+
+    lock.acquire()
+    print '\n'.join(l)
+    lock.release()
 
     if upddb:
         if queue is None:
@@ -129,10 +136,11 @@ def svcmon_normal(svcs, upddb=False):
             continue
         try:
             queues[svc.svcname] = Queue()
+            lock = Lock()
         except:
             # some platform don't support Queue's synchronize (bug 3770)
             queues[svc.svcname] = None
-        p = Process(target=svcmon_normal1, args=(svc, upddb, fmt, queues[svc.svcname]))
+        p = Process(target=svcmon_normal1, args=(svc, upddb, fmt, queues[svc.svcname], lock))
         p.start()
         ps.append(p)
     for p in ps:
