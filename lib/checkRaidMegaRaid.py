@@ -118,6 +118,13 @@ class check(checks.check):
             if 'Adapter:' in line:
                 l = line.split()
                 slot = 'slot'+l[-1]
+            if line.startswith('BatteryType:') and 'No Battery' in line:
+                val = 1
+                r.append({
+                          'chk_instance': '%s battery NoBattery'%slot,
+                          'chk_value': str(val),
+                          'chk_svcname': '',
+                         })
             if line.startswith('Relative State of Charge:'):
                 val = line.strip('%').split()[-1]
                 r.append({
