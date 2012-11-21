@@ -865,20 +865,29 @@ class Svc(Resource, Freezer):
 
             return gs
 
+        gs = {
+          'avail': 'n/a',
+          'overall': 'n/a',
+          'resources': {},
+        }
+        groups = set(["container", "ip", "disk", "fs", "hb", "app", "sync"])
+        for g in groups:
+            gs[g] = 'n/a'
+
         cmd = ['json', 'status']
         try:
             out, err, ret = self._encap_cmd(cmd, container)
-        except ex.excError:
-            return {'resources': {}}
+        except ex.excError, e:
+            return gs
         except Exception, e:
-            print str(e)
-            return {'resources': {}}
+            print e
+            return gs
 
         import json
         try:
             gs = json.loads(out)
         except:
-            gs = {'resources': {}}
+            pass
 
         # feed cache
         if not hasattr(self, 'encap_json_status_cache'):
@@ -902,21 +911,12 @@ class Svc(Resource, Freezer):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        encap_rset_status = {}
-        for container in self.get_resources('container'):
-            try:
-                encap_rset_status.update(self.encap_json_status(container))
-            except:
-                pass
-
         for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
             for r in self.get_res_sets(t):
                 s = rcStatus.Status(rset_status[r.type])
-                if not self.encap and group in encap_rset_status:
-                    s += rcStatus.Status(rcStatus.status_value(encap_rset_status[group]))
                 status[group] += s
                 status["avail"] += s
 
@@ -938,10 +938,7 @@ class Svc(Resource, Freezer):
             if 'hb' not in groups:
                 continue
             for r in self.get_res_sets(t):
-                if not self.encap and 'encap' in r.tags and r.type in encap_rset_status:
-                    s = rcStatus.Status(rcStatus.status_value(encap_rset_status[r.type]))
-                else:
-                    s = rset_status[r.type]
+                s = rset_status[r.type]
                 status['hb'] += s
                 status["overall"] += s
 
@@ -951,10 +948,7 @@ class Svc(Resource, Freezer):
             for r in self.get_res_sets(t):
                 """ sync are expected to be up
                 """
-                if not self.encap and 'encap' in r.tags and r.type in encap_rset_status:
-                    s = rcStatus.Status(rcStatus.status_value(encap_rset_status[r.type]))
-                else:
-                    s = rset_status[r.type]
+                s = rset_status[r.type]
                 status['sync'] += s
                 if s == rcStatus.UP:
                     status["overall"] += rcStatus.UNDEF
