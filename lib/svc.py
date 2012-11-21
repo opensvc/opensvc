@@ -447,16 +447,19 @@ class Svc(Resource, Freezer):
         d = {
               'resources': {},
             }
-        try:
-            encap_res_status = self.encap_json_status()['resources']
-        except:
-            encap_res_status = {}
+
+        containers = self.get_resources('container')
+        if len(containers) > 0:
+            d['encap'] = {}
+            for container in containers:
+                try:
+                    d['encap'][container.name] = self.encap_json_status(container)
+                except:
+                    d['encap'][container.name] = {'resources': {}}
 
         for rs in self.get_res_sets(self.status_types):
             for r in rs.resources:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = encap_res_status[rid]['status']
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log':log,
