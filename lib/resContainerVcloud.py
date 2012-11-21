@@ -35,7 +35,7 @@ class CloudVm(resContainer.Container):
                  optional=False, disabled=False, monitor=False,
                  tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
-                                        type="container.openstack",
+                                        type="container.vcloud",
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags, always_on=always_on)
