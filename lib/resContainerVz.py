@@ -98,10 +98,15 @@ class Vz(resContainer.Container):
             return True
         return False
 
-    def is_up(self):
+    def is_up_on(self, nodename):
+        return self.is_up(nodename)
+
+    def is_up(self, nodename=None):
         """ CTID 101 exist mounted running
         """
         cmd = ['vzctl', 'status', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
         ret, out, err = self.call(cmd)
         if ret != 0:
             return False

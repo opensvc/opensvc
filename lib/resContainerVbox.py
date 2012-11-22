@@ -74,8 +74,10 @@ class Vbox(resContainer.Container):
             return False
         return True
 
-    def state(self):
+    def state(self, nodename):
         cmd = ['VBoxManage', 'list', 'runningvms']
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             return None
@@ -136,8 +138,11 @@ class Vbox(resContainer.Container):
             return True
         return False
 
-    def is_up(self):
-        if self.state() == 'on':
+    def is_up_on(self, nodename):
+        return self.is_up(nodename)
+
+    def is_up(self, nodename=None):
+        if self.state(nodename) == 'on':
             return True
         return False
 

@@ -151,12 +151,15 @@ class Srp(resContainer.Container):
                 }
         return data
 
-    def get_status(self):
+    def get_status(self, nodename=None):
         """
         NAME         TYPE      STATE       SUBTYPE    ROOTPATH
         iisdevs1     system    maintenance private    /var/hpsrp/iisdevs1
         """
         cmd = ['srp', '-status', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
+
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("srp -status returned %d:\n%s"%(ret, err))
@@ -182,8 +185,11 @@ class Srp(resContainer.Container):
             return True
         return False
 
-    def is_up(self):
-        d = self.get_status()
+    def is_up_on(self, nodename):
+        return self.is_up(nodename)
+
+    def is_up(self, nodename=None):
+        d = self.get_status(nodename)
         if d['state'] == 'started':
             return True
         return False

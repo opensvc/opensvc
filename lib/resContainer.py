@@ -118,14 +118,37 @@ class Container(Res.Resource):
     def install_drp_flag(self):
         print "TODO: install_drp_flag()"
 
+    def where_up(self):
+        """ returns None if the vm is not found running anywhere
+            or returns the nodename where the vm is found running
+        """
+        if self.is_up():
+            return rcEnv.nodename
+        if not hasattr(self, "is_up_on"):
+            # to implement in Container child class
+            return
+        if rcEnv.nodename in self.svc.nodes:
+            nodes = self.svc.nodes - set([rcEnv.nodename])
+        elif rcEnv.nodename in self.svc.drpnodes:
+            nodes = self.svc.drpnodes - set([rcEnv.nodename])
+        else:
+            nodes = []
+        if len(nodes) == 0:
+            return
+        for node in nodes:
+            if self.is_up_on(node):
+                return node
+        return
+
     def start(self):
         try:
             self.getaddr()
         except:
             self.log.error("could not resolve %s to an ip address"%self.name)
             raise ex.excError
-        if self.is_up():
-            self.log.info("container %s already started" % self.name)
+        where = self.where_up()
+        if where is not None:
+            self.log.info("container %s already started on %s" % (self.name, where))
             return
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()

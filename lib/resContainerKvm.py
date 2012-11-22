@@ -89,8 +89,13 @@ class Kvm(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
-    def is_up(self):
+    def is_up_on(self, nodename):
+        return self.is_up(nodename)
+
+    def is_up(self, nodename=None):
         cmd = ['virsh', 'dominfo', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False

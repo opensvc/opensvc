@@ -138,12 +138,17 @@ class Lxc(resContainer.Container):
     def ping(self):
         return check_ping(self.addr, timeout=1)
 
-    def is_up(self):
-        self.log.debug("call: lxc-ps --name %s | grep %s" % (self.name, self.name))
-        p1 = Popen(['lxc-ps', '--name', self.name], stdout=PIPE)
-        p2 = Popen(["grep", self.name], stdin=p1.stdout, stdout=PIPE)
-        p2.communicate()[0]
-        if p2.returncode == 0:
+    def is_up_on(self, nodename):
+        return self.is_up(nodename)
+
+    def is_up(self, nodename=None):
+        cmd = ['lxc-ps', '--name', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if self.name in out:
             return True
         return False
 
