@@ -60,6 +60,15 @@ class CloudVm(resContainer.Container):
         self.cloud = c
         return self.cloud
 
+    def get_vapp(self):
+        c = self.get_cloud()
+        try:
+            vapp = c.driver.ex_find_node(self.vapp)
+        except Exception, e:
+            print e
+            raise
+        return vapp
+
     def get_node(self):
         c = self.get_cloud()
         try:
@@ -166,13 +175,11 @@ class CloudVm(resContainer.Container):
 
     def container_start(self):
         c = self.get_cloud()
-        image = self.get_last_save()
-        size = self.get_size()
-        self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
-        n = c.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        vapp = self.get_vapp()
+        self.log.info("power on vapp %s"%vapp)
+        c.driver.ex_power_on_node(vapp)
         self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 5)
-        #n = c.driver.ex_update_node(n, accessIPv4='46.231.128.84')
 
     def wait_for_startup(self):
         pass
@@ -190,10 +197,9 @@ class CloudVm(resContainer.Container):
 
     def container_stop(self):
         c = self.get_cloud()
-        n = self.get_node()
-        self.container_save()
-        c.driver.destroy_node(n)
-        self.purge_saves()
+        vapp = self.get_vapp()
+        self.log.info("shutdown vapp %s"%vapp)
+        c.driver.ex_shutdown_node(vapp)
 
     def print_obj(self, n):
         for k in dir(n):
@@ -227,11 +233,13 @@ class CloudVm(resContainer.Container):
             raise ex.excError("save failed, image status %s"%img.extra['status'])
 
     def container_forcestop(self):
-        pass
+        c = self.get_cloud()
+        vapp = self.get_vapp()
+        self.log.info("power off vapp %s"%vapp)
+        c.driver.ex_power_off_node(vapp)
 
     def is_up(self):
         n = self.get_node()
-        #self.print_obj(n)
         if n is not None and n['state'] == 0:
             return True
         return False
