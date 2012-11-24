@@ -1810,9 +1810,9 @@ def build(name):
         return None
 
     if not hasattr(svc, "clustertype"):
-        if "cluster_type" in defaults:
-            svc.clustertype = defaults["cluster_type"]
-        else:
+        try:
+            svc.clustertype = conf_get_string_scope(svc, conf, 'DEFAULT', 'cluster_type')
+        except ex.OptNotFound:
             svc.clustertype = 'failover'
 
     if 'flex' in svc.clustertype:
@@ -1823,14 +1823,14 @@ def build(name):
         del(svc)
         return None
 
-    if "flex_primary" in defaults:
-        svc.flex_primary = defaults["flex_primary"]
-    else:
+    try:
+        svc.flex_primary = conf_get_string_scope(svc, conf, 'DEFAULT', 'flex_primary')
+    except ex.OptNotFound:
         svc.flex_primary = ''
 
-    if "flex_min_nodes" in defaults:
-        svc.flex_min_nodes = int(defaults["flex_min_nodes"])
-    else:
+    try:
+        svc.flex_min_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_min_nodes')
+    except ex.OptNotFound:
         svc.flex_min_nodes = 1
     if svc.flex_min_nodes < 0:
         svc.log.error("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
@@ -1849,9 +1849,9 @@ def build(name):
     except ex.OptNotFound:
         svc.encap = False
 
-    if "flex_max_nodes" in defaults:
-        svc.flex_max_nodes = int(defaults["flex_max_nodes"])
-    else:
+    try:
+        svc.flex_max_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_max_nodes')
+    except ex.OptNotFound:
         svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < 0:
         svc.log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
@@ -1862,9 +1862,9 @@ def build(name):
         del(svc)
         return None
 
-    if "flex_cpu_low_threshold" in defaults:
-        svc.flex_cpu_low_threshold = int(defaults["flex_cpu_low_threshold"])
-    else:
+    try:
+        svc.flex_cpu_low_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_low_threshold')
+    except ex.OptNotFound:
         svc.flex_cpu_low_threshold = 10
     if svc.flex_cpu_low_threshold < 0:
         svc.log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
@@ -1875,9 +1875,9 @@ def build(name):
         del(svc)
         return None
 
-    if "flex_cpu_high_threshold" in defaults:
-        svc.flex_cpu_high_threshold = int(defaults["flex_cpu_high_threshold"])
-    else:
+    try:
+        svc.flex_cpu_high_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_high_threshold')
+    except ex.OptNotFound:
         svc.flex_cpu_high_threshold = 90
     if svc.flex_cpu_high_threshold < 0:
         svc.log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
