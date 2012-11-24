@@ -31,7 +31,7 @@ class CloudVm(resContainer.Container):
     shutdown_timeout = 120
     save_timeout = 240
 
-    def __init__(self, rid, name, guestos=None, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
+    def __init__(self, rid, name, vapp=None, guestos=None, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
                  optional=False, disabled=False, monitor=False,
                  tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
@@ -43,6 +43,7 @@ class CloudVm(resContainer.Container):
         self.save_name = name + '.save'
         self.size_name = size
         self.key_name = key_name
+        self.vapp = vapp
         self.shared_ip_group = shared_ip_group
 
     def get_size(self):
@@ -61,10 +62,15 @@ class CloudVm(resContainer.Container):
 
     def get_node(self):
         c = self.get_cloud()
-        l = c.list_nodes()
-        for n in l:
-            if n.name == self.name:
-                return n
+        try:
+            vapp = c.driver.ex_find_node(self.vapp)
+            vms = vapp.extra['vms']
+        except Exception, e:
+            print e
+            raise
+        for vm in vms:
+            if vm['name'] == self.name:
+                return vm
         return
 
     def get_save_name(self):
@@ -126,9 +132,16 @@ class CloudVm(resContainer.Container):
         if hasattr(self, 'addr'):
             return
         n = self.get_node()
-        #self.print_obj(n)
-        if n is not None and len(n.public_ip) > 0:
-            self.addr = n.public_ip
+
+        ips = set(n['public_ips']+n['private_ips'])
+        if len(ips) == 0:
+            return 0
+
+        # find first pinging ip
+        for ip in ips:
+            if check_ping(ip, timeout=1, count=1):
+                self.addr = ip
+                break
 
     def files_to_sync(self):
         return []
@@ -195,7 +208,7 @@ class CloudVm(resContainer.Container):
         if self.has_image(save_name):
             return
         #self.print_obj(n)
-        if n.state == 9999:
+        if n['state'] == 9999:
             self.log.info("a save is already in progress")
             return
         self.log.info("save new image %s"%save_name)
@@ -218,7 +231,8 @@ class CloudVm(resContainer.Container):
 
     def is_up(self):
         n = self.get_node()
-        if n is not None and n.state == 0:
+        #self.print_obj(n)
+        if n is not None and n['state'] == 0:
             return True
         return False
 
@@ -226,11 +240,21 @@ class CloudVm(resContainer.Container):
         self.info = {'vcpus': '0', 'vmem': '0'}
         c = self.get_cloud()
         n = self.get_node()
-        try:
-            size = c.driver.ex_get_size(n.extra['flavorId'])
-            self.info['vmem'] = str(size.ram)
-        except:
-            pass
+        top = c.driver._get_vm_elements(n['id'])[0]
+        def recurse(x, info={}, desc=None):
+            if x.tag == '{http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData}Description':
+                desc = x.text
+                info[desc] = {}
+                return info, desc
+            if desc is not None:
+                info[desc][x.tag[x.tag.index('}')+1:]] = x.text
+            for c in x._children:
+                info, desc = recurse(c, info, desc)
+            return info, desc
+        info, desc = recurse(top)
+        self.info['vcpus'] = info['Number of Virtual CPUs']['VirtualQuantity']
+        self.info['vmem'] = info['Memory Size']['VirtualQuantity']
+        print self.info
         return self.info
 
     def check_manual_boot(self):

@@ -895,6 +895,12 @@ def add_containers_vcloud(svc, conf, s):
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
+    try:
+        kwargs['vapp'] = conf_get_string_scope(svc, conf, s, 'vapp')
+    except ex.OptNotFound:
+        svc.log.error("vapp must be set in section %s"%s)
+        return
+
     m = __import__('resContainerVcloud')
 
     kwargs['rid'] = s
