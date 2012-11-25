@@ -24,7 +24,13 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import qcall
 from rcUtilitiesLinux import check_ping
 import resContainer
-import rcCloudOpenstack as rccloud
+
+from libcloud.utils.py3 import urlparse
+
+urlparse = urlparse.urlparse
+
+def get_url_path(url):
+    return urlparse(url.strip()).path
 
 class CloudVm(resContainer.Container):
     startup_timeout = 240
@@ -45,6 +51,16 @@ class CloudVm(resContainer.Container):
         self.key_name = key_name
         self.vapp = vapp
         self.shared_ip_group = shared_ip_group
+
+    def _vm_perform_power_operation(self, vapp_or_vm_id, operation):
+        drv = self.get_cloud().driver
+        vms = drv._get_vm_elements(vapp_or_vm_id)
+        for vm in vms:
+            res = drv.connection.request(
+                '%s/power/action/%s' % (get_url_path(vm.get('href')), operation),
+                method='POST')
+            drv._wait_for_task_completion(res.object.get('href'))
+            res = drv.connection.request(get_url_path(vm.get('href')))
 
     def get_size(self):
         c = self.get_cloud()
@@ -175,9 +191,9 @@ class CloudVm(resContainer.Container):
 
     def container_start(self):
         c = self.get_cloud()
-        vapp = self.get_vapp()
-        self.log.info("power on vapp %s"%vapp)
-        c.driver.ex_power_on_node(vapp)
+        n = self.get_node()
+        self.log.info("power on container %s"%self.name)
+        self._vm_perform_power_operation(n['id'], 'powerOn')
         self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 5)
 
@@ -197,9 +213,9 @@ class CloudVm(resContainer.Container):
 
     def container_stop(self):
         c = self.get_cloud()
-        vapp = self.get_vapp()
-        self.log.info("shutdown vapp %s"%vapp)
-        c.driver.ex_shutdown_node(vapp)
+        n = self.get_node()
+        self.log.info("shutdown container %s"%self.name)
+        self._vm_perform_power_operation(n['id'], 'shutdown')
 
     def print_obj(self, n):
         for k in dir(n):
@@ -234,9 +250,9 @@ class CloudVm(resContainer.Container):
 
     def container_forcestop(self):
         c = self.get_cloud()
-        vapp = self.get_vapp()
-        self.log.info("power off vapp %s"%vapp)
-        c.driver.ex_power_off_node(vapp)
+        n = self.get_node()
+        self.log.info("power off container %s"%self.name)
+        self._vm_perform_power_operation(n['id'], 'powerOff')
 
     def is_up(self):
         n = self.get_node()
