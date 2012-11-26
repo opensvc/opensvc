@@ -26,8 +26,8 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, name=None, cloud_id=None, user="root",
-                 group="root", perm="660",
+    def __init__(self, rid=None, name=None, node=None, cloud_id=None,
+                 user="root", group="root", perm="660",
                  optional=False, disabled=False, tags=set([]),
                  always_on=set([]), monitor=False):
         self.label = "gandi volume %s"%str(name)
@@ -39,6 +39,7 @@ class Vg(resDg.Dg):
                           monitor=monitor)
 
         self.name = name
+        self.node = node
         self.cloud_id = cloud_id
         self.user = user
         self.group = group
@@ -141,11 +142,18 @@ class Vg(resDg.Dg):
 
     def get_node(self):
         c = self.get_cloud()
+        if self.node is not None:
+            n = self.node
+        else:
+            n = rcEnv.nodename
         try:
-            node = c.driver.list_nodes()[0]
+            nodes = c.driver.list_nodes()
         except:
             raise ex.excError()
-        return node
+        for node in nodes:
+            if node.name == n:
+                return node
+        raise ex.excError()
 
     def get_disk(self):
         c = self.get_cloud()

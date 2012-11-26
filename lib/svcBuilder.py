@@ -552,6 +552,10 @@ def add_vg(svc, conf, s):
             svc.log.error("name must be set in section %s"%s)
             return
         try:
+            kwargs['node'] = conf_get_string_scope(svc, conf, s, 'node')
+        except ex.OptNotFound:
+            pass
+        try:
             kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
         except ex.OptNotFound:
             pass
