@@ -114,6 +114,11 @@ class Ip(Res.Resource):
         if self.check_ping() and not self.is_up():
             raise ex.excError
 
+    def abort_start(self):
+        if self.check_ping() and not self.is_up():
+            return True
+        return False
+
     def check_ping(self):
         raise ex.MissImpl('check_ping')
 

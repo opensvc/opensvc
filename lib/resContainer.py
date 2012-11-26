@@ -140,6 +140,12 @@ class Container(Res.Resource):
                 return node
         return
 
+    def abort_start(self):
+        nodename = self.where_up()
+        if nodename is not None and nodename != rcEnv.nodename:
+            return True
+        return False
+
     def start(self):
         try:
             self.getaddr()

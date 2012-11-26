@@ -1058,13 +1058,13 @@ class Svc(Resource, Freezer):
         return _fn
 
     def start(self):
+        try:
+            self.abort_start()
+        except ex.excError, e:
+            self.log.error(str(e))
+            return
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
-            try:
-                self.checkip()
-            except ex.excError:
-                self.log.error("ip address is already up on another host")
-                return
             if self.options.ignore_affinity:
                 self.log.error("force start of %s on the same node as %s despite anti-affinity settings"%(self.svcname, ', '.join(af_svc)))
             else:
@@ -1305,8 +1305,10 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.scsireserv", "rollback")
         self.sub_set_action("disk.loop", "rollback")
 
-    def checkip(self):
-        self.sub_set_action("ip", "check_not_ping_raise")
+    def abort_start(self):
+        for r in self.get_resources():
+            if hasattr(r, 'abort_start') and r.abort_start():
+                raise ex.excError("start aborted due to resource %s conflict"%r.rid)
 
     def startip(self):
         self.master_startip()
