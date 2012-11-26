@@ -22,6 +22,7 @@ import resources as Res
 from rcUtilities import which, qcall, justcall
 import resContainer
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
 class Vz(resContainer.Container):
     def files_to_sync(self):
