@@ -93,6 +93,7 @@ class Svc(Resource, Freezer):
                              "container.vbox",
                              "disk.drbd",
                              "disk.loop",
+                             "disk.gandi",
                              "disk.scsireserv",
                              "disk.vg",
                              "disk.zpool",
@@ -1274,6 +1275,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("disk.loop", "start")
+        self.sub_set_action("disk.gandi", "start")
         self.sub_set_action("disk.scsireserv", "start")
         self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "start")
@@ -1296,6 +1298,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop")
         self.sub_set_action("disk.loop", "stop")
+        self.sub_set_action("disk.gandi", "stop")
 
     def rollbackdisk(self):
         self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
@@ -1304,6 +1307,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "rollback")
         self.sub_set_action("disk.loop", "rollback")
+        self.sub_set_action("disk.gandi", "rollback")
 
     def abort_start(self):
         for r in self.get_resources():
@@ -1499,6 +1503,7 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_startstandby(self):
         self.sub_set_action("ip", "startstandby")
+        self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))

@@ -540,11 +540,34 @@ def add_vg(svc, conf, s):
             kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
         except ex.OptNotFound:
             pass
+    elif vgtype == 'Gandi':
+        try:
+            kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+        except ex.OptNotFound:
+            svc.log.error("cloud_id must be set in section %s"%s)
+            return
+        try:
+            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        except ex.OptNotFound:
+            svc.log.error("name must be set in section %s"%s)
+            return
+        try:
+            kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['group'] = conf_get_string_scope(svc, conf, s, 'user')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+        except ex.OptNotFound:
+            pass
 
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
-        if not vgtype.startswith("Raw"):
+        if not vgtype.startswith("Raw") and vgtype != "Gandi":
             svc.log.error("vgname must be set in section %s"%s)
             return
 
