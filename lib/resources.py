@@ -263,6 +263,9 @@ class Resource(object):
     def start(self):
         pass
 
+    def shutdown(self):
+        self.stop()
+
 class ResourceSet(Resource):
     """ Define Set of same type resources
     Example 1: ResourceSet("fs",[m1,m2])

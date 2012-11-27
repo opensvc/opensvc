@@ -1031,7 +1031,15 @@ class Svc(Resource, Freezer):
         # don't loose the action log on node shutdown
         self.sync_dblogger = True
         self.force = True
-        self.stop()
+        self.master_shutdownhb()
+        self.slave_shutdown()
+        try:
+            self.master_shutdownapp()
+        except ex.excError:
+            pass
+        self.shutdowncontainer()
+        self.master_shutdownfs()
+        self.master_shutdownip()
 
     def _slave_action(fn):
         def _fn(self):
@@ -1072,7 +1080,7 @@ class Svc(Resource, Freezer):
                 self.log.error("refuse to start %s on the same node as %s"%(self.svcname, ', '.join(af_svc)))
                 return
         self.master_startip()
-        self.master_mount()
+        self.master_startfs()
         self.startcontainer()
         self.master_startapp()
         self.slave_start()
@@ -1090,7 +1098,7 @@ class Svc(Resource, Freezer):
         except ex.excError:
             pass
         self.rollbackcontainer()
-        self.rollbackmount()
+        self.rollbackfs()
         self.rollbackip()
 
     def stop(self):
@@ -1101,8 +1109,12 @@ class Svc(Resource, Freezer):
         except ex.excError:
             pass
         self.stopcontainer()
-        self.master_umount()
+        self.master_stopfs()
         self.master_stopip()
+
+    @_slave_action
+    def slave_shutdown(self):
+        self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
     @_slave_action
     def slave_stop(self):
@@ -1136,6 +1148,14 @@ class Svc(Resource, Freezer):
         self.sub_set_action("hb.linuxha", "start")
         self.sub_set_action("hb.sg", "start")
         self.sub_set_action("hb.rhcs", "start")
+
+    @_master_action
+    def master_shutdownhb(self):
+        self.sub_set_action("hb.ovm", "shutdown")
+        self.sub_set_action("hb.openha", "shutdown")
+        self.sub_set_action("hb.linuxha", "shutdown")
+        self.sub_set_action("hb.sg", "shutdown")
+        self.sub_set_action("hb.rhcs", "shutdown")
 
     def stophb(self):
         self.slave_stophb()
@@ -1300,6 +1320,16 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.loop", "stop")
         self.sub_set_action("disk.gandi", "stop")
 
+    @_master_action
+    def master_shutdowndisk(self):
+        self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
+        self.sub_set_action("disk.vg", "shutdown")
+        self.sub_set_action("disk.zpool", "shutdown")
+        self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
+        self.sub_set_action("disk.scsireserv", "shutdown")
+        self.sub_set_action("disk.loop", "shutdown")
+        self.sub_set_action("disk.gandi", "shutdown")
+
     def rollbackdisk(self):
         self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "rollback")
@@ -1338,36 +1368,45 @@ class Svc(Resource, Freezer):
     def master_stopip(self):
         self.sub_set_action("ip", "stop")
 
+    @_master_action
+    def master_shutdownip(self):
+        self.sub_set_action("ip", "shutdown")
+
     def rollbackip(self):
         self.sub_set_action("ip", "rollback")
 
-    def mount(self):
-        self.master_mount()
-        self.slave_mount()
+    def startfs(self):
+        self.master_startfs()
+        self.slave_startfs()
 
     @_master_action
-    def master_mount(self):
+    def master_startfs(self):
         self.master_startdisk()
         self.sub_set_action("fs", "start")
 
     @_slave_action
-    def slave_mount(self):
-        self.encap_cmd(['mount'], verbose=True)
+    def slave_startfs(self):
+        self.encap_cmd(['startfs'], verbose=True)
 
-    def umount(self):
-        self.slave_umount()
-        self.master_umount()
+    def stopfs(self):
+        self.slave_stopfs()
+        self.master_stopfs()
 
     @_master_action
-    def master_umount(self):
+    def master_stopfs(self):
         self.sub_set_action("fs", "stop")
         self.master_stopdisk()
 
-    @_slave_action
-    def slave_umount(self):
-        self.encap_cmd(['umount'], verbose=True)
+    @_master_action
+    def master_shutdownfs(self):
+        self.sub_set_action("fs", "shutdown")
+        self.master_shutdowndisk()
 
-    def rollbackmount(self):
+    @_slave_action
+    def slave_stopfs(self):
+        self.encap_cmd(['stopfs'], verbose=True)
+
+    def rollbackfs(self):
         self.sub_set_action("fs", "rollback")
         self.rollbackdisk()
 
@@ -1394,6 +1433,23 @@ class Svc(Resource, Freezer):
         """
         for r in self.get_resources("ip"):
             r.status(refresh=True)
+
+    @_master_action
+    def shutdowncontainer(self):
+        self.sub_set_action("container.vbox", "shutdown")
+        self.sub_set_action("container.ldom", "shutdown")
+        self.sub_set_action("container.hpvm", "shutdown")
+        self.sub_set_action("container.xen", "shutdown")
+        self.sub_set_action("container.esx", "shutdown")
+        self.sub_set_action("container.ovm", "shutdown")
+        self.sub_set_action("container.kvm", "shutdown")
+        self.sub_set_action("container.openstack", "shutdown")
+        self.sub_set_action("container.vcloud", "shutdown")
+        self.sub_set_action("container.jail", "shutdown")
+        self.sub_set_action("container.lxc", "shutdown")
+        self.sub_set_action("container.vz", "shutdown")
+        self.sub_set_action("container.srp", "shutdown")
+        self.refresh_ip_status()
 
     @_master_action
     def stopcontainer(self):
@@ -1465,6 +1521,10 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_stopapp(self):
         self.sub_set_action("app", "stop")
+
+    @_master_action
+    def master_shutdownapp(self):
+        self.sub_set_action("app", "shutdown")
 
     def rollbackapp(self):
         self.sub_set_action("app", "rollback")
@@ -1939,13 +1999,13 @@ class Svc(Resource, Freezer):
             raise ex.excError
         self.prstop()
         try:
-            self.remote_action(node=self.destination_node, action='mount')
+            self.remote_action(node=self.destination_node, action='startfs')
             self._migrate()
         except:
             if self.has_res_set(['disk.scsireserv']):
                 self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
-        self.umount()
+        self.stopfs()
 	self.remote_action(node=self.destination_node, action='prstart')
 
     def switch(self):

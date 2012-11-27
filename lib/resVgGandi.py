@@ -196,5 +196,8 @@ class Vg(resDg.Dg):
         c = self.get_cloud()
         c.driver.ex_node_detach_disk(node, disk)
 
+    def shutdown(self):
+        pass
+
     def disklist(self):
         return []
