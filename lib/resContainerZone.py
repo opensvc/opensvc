@@ -46,10 +46,9 @@ class Zone(resContainer.Container):
                 state
                 zonepath
         """
-        Res.Resource.__init__(self, rid=rid, type="container.zone", guestos=guestos,
+        resContainer.Container.__init__(self, rid=rid, name=name, type="container.zone", guestos=guestos,
                               optional=optional, disabled=disabled,
                               monitor=monitor, tags=tags, always_on=always_on)
-        self.name = name
         self.label = name
         self.state = None
         self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
