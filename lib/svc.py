@@ -655,7 +655,7 @@ class Svc(Resource, Freezer):
                     self.svctype,
                     rcEnv.nodename,
                     "",
-                    "",
+                    "hosted",
                     rcEnv.host_mode,
                     str(status["ip"]),
                     str(status["disk"]),
