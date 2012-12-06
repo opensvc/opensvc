@@ -160,3 +160,51 @@ class Kvm(resContainer.Container):
         prov = m.ProvisioningKvm(self)
         prov.provisioner()
 
+    def devlist(self):
+        if hasattr(self, 'devs') and self.devs != set():
+            return self.devs
+
+        devmapping = self.devmap()
+        self.devs = set(map(lambda x: x[0], devmapping))
+        return self.devs
+
+    def disklist(self):
+        if hasattr(self, 'disks'):
+            return self.disks
+        if not hasattr(self, 'devs'):
+            self.devlist()
+        devps = self.devs
+        try:
+	    u = __import__('rcUtilities'+rcEnv.sysname)
+            self.disks = u.devs_to_disks(self, devps)
+        except:
+            self.disks = devps
+
+        return self.disks
+
+    def devmap(self):
+        if hasattr(self, "devmapping"):
+            return self.devmapping
+
+        self.devmapping = []
+
+        from xml.etree.ElementTree import ElementTree, SubElement
+        tree = ElementTree()
+        tree.parse(self.cf)
+        for dev in tree.getiterator('disk'):
+            s = dev.find('source')
+            if s is None:
+                 continue
+            if 'dev' not in s.attrib:
+                 continue
+            src = s.attrib['dev']
+            s = dev.find('target')
+            if s is None:
+                 continue
+            if 'dev' not in s.attrib:
+                 continue
+            dst = s.attrib['dev']
+            self.devmapping.append((src, dst))
+        return self.devmapping
+
+
