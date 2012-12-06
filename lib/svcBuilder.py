@@ -628,8 +628,6 @@ def add_vmdg(svc, conf, s):
         vg = __import__('resVgHpVm')
     elif container_type == 'ldom':
         vg = __import__('resVgLdom')
-    elif container_type == 'ovm':
-        vg = __import__('resVgOvm')
     else:
         return
 

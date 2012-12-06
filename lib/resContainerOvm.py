@@ -138,3 +138,53 @@ class Ovm(resContainer.Container):
         if os.path.exists(f):
             return False
         return True
+
+    def devmap(self):
+        if hasattr(self, "devmapping"):
+            return self.devmapping
+
+        self.devmapping = []
+
+        cf = self.find_vmcf()
+        with open(cf, 'r') as f:
+            buff = f.read()
+
+        for line in buff.split('\n'):
+            if not line.startswith('disk'):
+                continue
+            disks = line[line.index('['):]
+            if len(line) <= 2:
+                break
+            disks = disks[1:-1]
+            disks = disks.split(', ')
+            for disk in disks:
+                disk = disk.strip("'")
+                d = disk.split(',')
+                if not d[0].startswith('phy:'):
+                    continue
+                l = [d[0].strip('phy:'), d[1]]
+                self.devmapping.append(l)
+            break
+
+        return self.devmapping
+
+    def devlist(self):
+        if hasattr(self, 'devs') and self.devs != set():
+            return self.devs
+        self.devs = set(map(lambda x: x[0], self.devmap()))
+        return self.devs
+
+    def disklist(self):
+        if hasattr(self, 'disks') and self.disks != set():
+            return self.disks
+
+        self.disks = set()
+        devps = self.devlist()
+
+        try:
+	    u = __import__('rcUtilities'+rcEnv.sysname)
+            self.disks = u.devs_to_disks(self, devps)
+        except:
+            self.disks = devps
+
+        return self.disks
