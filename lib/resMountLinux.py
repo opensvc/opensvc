@@ -79,7 +79,9 @@ class Mount(Res.Mount):
             1    - File system errors corrected
             32   - E2fsck canceled by user request
         """
-        self.device = os.path.realpath(self.device)
+        if self.device.startswith("/dev/disk/by-"):
+            self.device = os.path.realpath(self.device)
+
         self.fsck_h = {
             'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
             'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
