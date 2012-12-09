@@ -39,7 +39,7 @@ class IbmSvcs(object):
             if not conf.has_option(s, "type") or \
                conf.get(s, "type") != "ibmsvc":
                 continue
-            if filtering and not s in self.objects:
+            if self.filtering and not s in self.objects:
                 continue
             try:
                 username = conf.get(s, 'username')
