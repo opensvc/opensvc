@@ -55,10 +55,12 @@ def xentop(node):
         return
 
     node.build_services()
-    svcnames = {}
+    containernames = {}
     for svc in node.svcs:
-        if hasattr(svc, 'vmuuid') and svc.svcmode in ("ovm", "xen"):
-            svcnames[svc.vmuuid] = svc.svcname
+        for r in svc.get_resources("container"):
+            if r.type in ("container.ovm", "container.xen"):
+                if hasattr(r, "uuid"):
+                    containernames[r.uuid] = r.name
 
     zs_d = os.path.join(pathsvc, 'log', 'xentop')
     zs_prefix = 'xentop'
@@ -105,8 +107,8 @@ def xentop(node):
         fields = line.split()
         if len(fields) == 19 and pr > 1:
             uuid = fields[0]
-            if uuid in svcnames:
-                uuid = svcnames[uuid]
+            if uuid in containernames:
+                uuid = containernames[uuid]
             stor[uuid] = {
              'STATE': fields[1],
              'CPU_SEC': fields[2],

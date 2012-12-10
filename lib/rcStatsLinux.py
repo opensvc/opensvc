@@ -36,6 +36,7 @@ class StatsProvider(rcStats.StatsProvider):
                 'cpu',
                 'mem',
                 'cap',
+                'cap_cpu',
                 'nodename']
         f = self.xentopfile(day)
         lines = []
@@ -58,7 +59,7 @@ class StatsProvider(rcStats.StatsProvider):
             _d = _d.hour * 3600 + _d.minute * 60 + _d.second
             if _d < _start or _d > _end:
                 continue
-            l = [" ".join((l[0], l[1]))] + [l[2], l[5], l[7], l[8], self.nodename]
+            l = [" ".join((l[0], l[1]))] + [l[2], l[5], l[7], l[8], l[10], self.nodename]
             lines.append(l)
         return cols, lines
 
