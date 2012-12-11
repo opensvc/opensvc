@@ -21,6 +21,8 @@ start_msg)
 start)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
+	else
+		exit 0
 	fi
 	if [ -x $agt ] ; then
 		$agt
@@ -36,6 +38,8 @@ stop_msg)
 stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
 		echo "Starting opensvc services"
+	else
+		exit 0
 	fi
 	${allservices} ${osvc_opts} shutdown
 	;;
