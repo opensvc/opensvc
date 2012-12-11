@@ -20,13 +20,17 @@ from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 from subprocess import *
 import rcAsset
+import datetime
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
         # echo "selclass qualifier memory;info;wait;infolog"|cstm
         process = Popen(['cstm'], stdin=PIPE, stdout=PIPE, stderr=None)
-        (out, err) = process.communicate(input='selclass qualifier memory;info;wait;infolog')
+        if self.skip_cstm_info():
+            (out, err) = process.communicate(input='selclass qualifier memory;infolog')
+        else:
+            (out, err) = process.communicate(input='selclass qualifier memory;info;wait;infolog')
         if process.returncode != 0:
             self.memory = []
         else:
@@ -39,6 +43,46 @@ class Asset(rcAsset.Asset):
             self.manifest = out.split('\n')
 
         self.parse_memory()
+
+    def skip_cstm_info(self):
+        d = self.get_last_boot()
+        if d is None:
+            return True
+        delta = datetime.datetime.now() - d
+        threshold = datetime.timedelta(minutes=60)
+        if delta < threshold:
+            return True
+        return False
+
+    def get_last_boot(self):
+        cmd = ['who', '-b']
+        out, err, ret = justcall(cmd)
+
+        """
+           .       system boot  Nov 30 08:58
+        """
+        l = out.split()
+        idx = l.index("boot")
+        l = l[idx+1:]
+        buff = ' '.join(l)
+        d = None
+        now = datetime.datetime.now()
+
+        if len(l) == 1:
+            buff = now.strftime("%Y %b ") + buff
+        elif len(l) == 3:
+            buff = now.strftime("%Y ") + buff
+        elif len(l) == 4:
+            pass
+        else:
+            return None
+
+        try:
+            d = datetime.datetime.strptime(buff, "%Y %b %d %H:%M")
+        except:
+            pass
+
+        return d
 
     def _get_mem_bytes(self):
         cmd = ['swapinfo', '-Mq']
