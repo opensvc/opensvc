@@ -1619,7 +1619,7 @@ class Svc(Resource, Freezer):
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
-        rcmd += ['--waitlock', str(waitlock), action]
+        rcmd += ['--waitlock', str(waitlock)] + action.split()
         self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         cmd = rcEnv.rsh.split() + [node] + rcmd
         self.node.cmdworker.enqueue(cmd)
@@ -1996,13 +1996,13 @@ class Svc(Resource, Freezer):
             raise ex.excError
         self.prstop()
         try:
-            self.remote_action(node=self.destination_node, action='startfs')
+            self.remote_action(node=self.destination_node, action='startfs --master')
             self._migrate()
         except:
             if self.has_res_set(['disk.scsireserv']):
                 self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
-        self.stopfs()
+        self.master_stopfs()
 	self.remote_action(node=self.destination_node, action='prstart')
 
     def switch(self):
