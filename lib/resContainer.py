@@ -23,6 +23,7 @@ import rcExceptions as ex
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 import socket
+from subprocess import *
 
 class Container(Res.Resource):
     """ in seconds
