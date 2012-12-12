@@ -1045,7 +1045,7 @@ class Svc(Resource, Freezer):
         def _fn(self):
             if self.encap or not self.has_encap_resources:
                 return
-            if self.running_action not in ('boot', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+            if self.running_action not in ('migrate', 'boot', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.slaves or \
@@ -1057,7 +1057,7 @@ class Svc(Resource, Freezer):
     def _master_action(fn):
         def _fn(self):
             if not self.encap and \
-               self.running_action not in ('boot', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+               self.running_action not in ('migrate', 'boot', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
@@ -1993,9 +1993,6 @@ class Svc(Resource, Freezer):
             raise ex.excError
         if self.destination_node not in self.nodes:
             self.log.error("destination node %s is not in service node list"%self.destination_node)
-            raise ex.excError
-        if not hasattr(self, '_migrate'):
-            self.log.error("the 'migrate' action is not supported with %s service mode"%self.svcmode)
             raise ex.excError
         self.prstop()
         try:
