@@ -1994,7 +1994,7 @@ class Svc(Resource, Freezer):
         if self.destination_node not in self.nodes:
             self.log.error("destination node %s is not in service node list"%self.destination_node)
             raise ex.excError
-        self.prstop()
+        self.master_prstop()
         try:
             self.remote_action(node=self.destination_node, action='startfs --master')
             self._migrate()
@@ -2003,7 +2003,7 @@ class Svc(Resource, Freezer):
                 self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.master_stopfs()
-	self.remote_action(node=self.destination_node, action='prstart')
+	self.remote_action(node=self.destination_node, action='prstart --master')
 
     def switch(self):
 	""" stop then start service
