@@ -92,7 +92,7 @@ class Apps(Res.Resource):
             if verbose: self.status_log("%s does not exist"%self.svc.initd)
             return False
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk", "hb"]))
-        if str(status["overall"]) != "up":
+        if str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
             if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
             return False
