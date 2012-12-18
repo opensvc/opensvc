@@ -29,13 +29,15 @@ from rcUtilitiesSunOS import get_os_ver
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
+    def __init__(self, rid=None, ipDev=None, ipName=None, zone=None,
                  mask=None, always_on=set([]), monitor=False,
                  disabled=False, tags=set([]), optional=False, gateway=None):
         Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
                         mask=mask, always_on=always_on,
                         disabled=disabled, tags=tags, optional=optional,
                         monitor=monitor, gateway=gateway)
+        self.type = "ip.zone"
+        self.zone = zone
         self.osver = get_os_ver()
         if self.osver >= 11.0:
             self.tags.add('noalias')
@@ -44,7 +46,7 @@ class Ip(Res.Ip):
 
     def get_ifconfig(self):
         if 'exclusive' in self.tags:
-            out = Popen(['zlogin', self.svc.vmname, 'ifconfig', '-a'],
+            out = Popen(['zlogin', self.zone, 'ifconfig', '-a'],
                         stdin=None, stdout=PIPE, stderr=PIPE,
                         close_fds=True).communicate()[0]
             return rcIfconfig.ifconfig(out)
@@ -76,28 +78,28 @@ class Ip(Res.Ip):
             return self._stopip_cmd_exclusive_10()
 
     def _stopip_cmd_exclusive_10(self):
-        cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'unplumb' ]
+        cmd=['zlogin', self.zone, 'ifconfig', self.stacked_dev, 'unplumb' ]
         return self.vcall(cmd)
 
     def _stopip_cmd_exclusive_11(self):
         ret,out,err = (0, '', '')
         if self.gateway is not None:
-            cmd=['zlogin', self.svc.vmname, 'route', '-q', 'delete', 'default', self.gateway, '>/dev/null', '2>&1' ]
+            cmd=['zlogin', self.zone, 'route', '-q', 'delete', 'default', self.gateway, '>/dev/null', '2>&1' ]
             r,o,e = self.vcall(cmd)
             ret += r
             out += o
             err += e
         objext = self.rid.replace('#', '')
-        cmd=['zlogin', self.svc.vmname, 'ipadm', 'delete-addr', self.stacked_dev+'/v4osvcres'+objext ]
+        cmd=['zlogin', self.zone, 'ipadm', 'delete-addr', self.stacked_dev+'/v4osvcres'+objext ]
         r,o,e =  self.vcall(cmd)
         ret += r
         out += o
         err += e
-        tst = Popen(['zlogin', self.svc.vmname, 'ipadm', 'show-addr', self.stacked_dev+'/' ],
+        tst = Popen(['zlogin', self.zone, 'ipadm', 'show-addr', self.stacked_dev+'/' ],
                         stdin=None, stdout=PIPE, stderr=None, close_fds=True).communicate()[0].split("\n")
         if len(tst) >= 2:
             return (ret,out,err)
-        cmd=['zlogin', self.svc.vmname, 'ipadm', 'delete-ip', self.stacked_dev ]
+        cmd=['zlogin', self.zone, 'ipadm', 'delete-ip', self.stacked_dev ]
         r,o,e =  self.vcall(cmd)
         ret += r
         out += o
@@ -111,7 +113,7 @@ class Ip(Res.Ip):
             return self._startip_cmd_exclusive_10()
 
     def _startip_cmd_exclusive_10(self):
-        cmd=['zlogin', self.svc.vmname, 'ifconfig', self.stacked_dev, 'plumb', self.addr, \
+        cmd=['zlogin', self.zone, 'ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up' ]
         return self.vcall(cmd)
 
@@ -138,15 +140,15 @@ class Ip(Res.Ip):
         
     def _startip_cmd_exclusive_11(self):
         ret,out,err = (0, '', '')
-        tst = Popen(['zlogin', self.svc.vmname, 'ipadm', 'show-if', self.stacked_dev, '2>/dev/null' ],
+        tst = Popen(['zlogin', self.zone, 'ipadm', 'show-if', self.stacked_dev, '2>/dev/null' ],
                         stdin=None, stdout=PIPE, stderr=None, close_fds=True).communicate()[0].split("\n")
         if len(tst) < 2:
-            cmd=['zlogin', self.svc.vmname, 'ipadm', 'create-ip', '-t', self.stacked_dev ]
+            cmd=['zlogin', self.zone, 'ipadm', 'create-ip', '-t', self.stacked_dev ]
             r,o,e = self.vcall(cmd)
         objext = self.rid.replace('#', '')
         n = 5
         while n != 0:
-            cmd=['zlogin', self.svc.vmname, 'ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/v4osvcres'+objext ]
+            cmd=['zlogin', self.zone, 'ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/v4osvcres'+objext ]
             r,o,e = self.vcall(cmd)
             if r == 0:
                 break
@@ -154,13 +156,13 @@ class Ip(Res.Ip):
             time.sleep(5)
             n -= 1
         if r != 0:
-            cmd=['zlogin', self.svc.vmname, 'ipadm', 'show-if' ]
+            cmd=['zlogin', self.zone, 'ipadm', 'show-if' ]
             self.vcall(cmd)
         ret += r
         out += o
         err += e
         if self.gateway is not None:
-            cmd=['zlogin', self.svc.vmname, 'route', '-q', 'add', 'default', self.gateway, '>/dev/null', '2>&1' ]
+            cmd=['zlogin', self.zone, 'route', '-q', 'add', 'default', self.gateway, '>/dev/null', '2>&1' ]
             r,o,e = self.vcall(cmd)
             ret += r
             out += o
@@ -169,7 +171,7 @@ class Ip(Res.Ip):
 
     def startip_cmd_shared(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
-            'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.svc.vmname ]
+            'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.zone ]
         return self.vcall(cmd)
 
     def stopip_cmd_shared(self):

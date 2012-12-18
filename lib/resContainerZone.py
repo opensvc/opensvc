@@ -53,6 +53,7 @@ class Zone(resContainer.Container):
         self.state = None
         self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
         self.zone_refresh()
+        self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
 
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
@@ -101,6 +102,14 @@ class Zone(resContainer.Container):
            (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
             self.vcall(['chmod', '700', self.zonepath])
 
+    def rcp(self, src, dst):
+        dst = os.path.realpath(self.zonepath + '/root/' + dst)
+        cmd = ['cp', src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
+
     def attach(self):
         self.zone_refresh()
         if self.state in ('installed' , 'ready', 'running'):
@@ -128,8 +137,7 @@ class Zone(resContainer.Container):
         return self.zoneadm('ready')
 
     def install_drp_flag(self):
-        rootfs = self.zonepath
-        flag = os.path.join(rootfs, ".drp_flag")
+        flag = os.path.join(self.zonepath, ".drp_flag")
         self.log.info("install drp flag in container : %s"%flag)
         with open(flag, 'w') as f:
             f.write(' ')
@@ -170,6 +178,8 @@ class Zone(resContainer.Container):
             return(0)
         else:
             raise(excError("zone should be running"))
+        self.log.info("wait for zone operational")
+        self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
     def stop(self):
         """ Need wait poststat after returning to installed state on ipkg

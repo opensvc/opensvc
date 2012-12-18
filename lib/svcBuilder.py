@@ -308,7 +308,7 @@ def add_ip(svc, conf, s):
     try:
         kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
     except ex.OptNotFound:
-        svc.log.debug('add_ips ipdev not found in ip section %s'%s)
+        svc.log.debug('ipdev not found in ip section %s'%s)
         return
 
     try:
@@ -321,7 +321,12 @@ def add_ip(svc, conf, s):
     except ex.OptNotFound:
         pass
 
-    if svc.svcmode  == 'zone':
+    try:
+        kwargs['zone'] = conf_get_string_scope(svc, conf, s, 'zone')
+    except ex.OptNotFound:
+        pass
+
+    if 'zone' in kwargs:
         ip = __import__('resIp'+'Zone')
     else:
         ip = __import__('resIp'+rcEnv.sysname)
@@ -708,14 +713,21 @@ def add_fs(svc, conf, s):
     except ex.OptNotFound:
         pass
 
-    if svc.svcmode == 'zone':
-        try:
-            globalfs = conf.getboolean(s, "globalfs")
-        except:
-            globalfs = False
+    try:
+        zone = conf_get_string_scope(svc, conf, s, 'zone')
+    except:
+        zone = None
 
-        if globalfs is False:
-            kwargs['mountPoint'] = os.path.realpath(svc.zone.zonepath+'/root/'+kwargs['mountPoint'])
+    if zone is not None:
+        zp = None
+        for r in svc.get_resources("container.zone"):
+            if r.name == zone:
+                zp = r.zonepath
+                break
+        if zp is None:
+            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
+            raise ex.excError()
+        kwargs['mountPoint'] = os.path.realpath(zp+'/root/'+kwargs['mountPoint'])
 
     try:
         mount = __import__('resMount'+rcEnv.sysname)
@@ -731,6 +743,10 @@ def add_fs(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
 
     r = mount.Mount(**kwargs)
+
+    if zone is not None:
+        r.type = "fs.zone"
+
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1185,39 +1201,43 @@ def add_mandatory_syncs(svc, conf):
 
     """1
     """
-    kwargs = {}
-    src = []
-    src.append(os.path.join(rcEnv.pathetc, svc.svcname))
-    src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
-    src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-    localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
-    cluster = os.path.join(rcEnv.pathetc, svc.svcname+'.cluster')
-    if os.path.exists(cluster):
-        src.append(cluster)
-    if os.path.exists(localrc):
-        src.append(localrc)
-    for rs in svc.resSets:
-        for r in rs.resources:
-            src += r.files_to_sync()
-    dst = os.path.join("/")
-    exclude = ['--exclude=*.core']
-    targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
-    kwargs['rid'] = "sync#i0"
-    kwargs['src'] = src
-    kwargs['dst'] = dst
-    kwargs['options'] = ['-R']+exclude
-    if conf.has_option(kwargs['rid'], 'options'):
-        kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
-    kwargs['target'] = targethash
-    kwargs['internal'] = True
-    kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
-    kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
-    kwargs.update(get_sync_args(conf, 'sync', svc))
-    r = resSyncRsync.Rsync(**kwargs)
-    svc += r
+    if len(svc.nodes|svc.drpnodes) > 1:
+        kwargs = {}
+        src = []
+        src.append(os.path.join(rcEnv.pathetc, svc.svcname))
+        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
+        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
+        localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
+        cluster = os.path.join(rcEnv.pathetc, svc.svcname+'.cluster')
+        if os.path.exists(cluster):
+            src.append(cluster)
+        if os.path.exists(localrc):
+            src.append(localrc)
+        for rs in svc.resSets:
+            for r in rs.resources:
+                src += r.files_to_sync()
+        dst = os.path.join("/")
+        exclude = ['--exclude=*.core']
+        targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
+        kwargs['rid'] = "sync#i0"
+        kwargs['src'] = src
+        kwargs['dst'] = dst
+        kwargs['options'] = ['-R']+exclude
+        if conf.has_option(kwargs['rid'], 'options'):
+            kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
+        kwargs['target'] = targethash
+        kwargs['internal'] = True
+        kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
+        kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
+        kwargs.update(get_sync_args(conf, 'sync', svc))
+        r = resSyncRsync.Rsync(**kwargs)
+        svc += r
 
     """2
     """
+    if len(svc.drpnodes) == 0:
+        return
+
     targethash = {'drpnodes': svc.drpnodes}
     """ Reparent all PRD backed-up file in drp_path/node on the drpnode
     """
@@ -1970,6 +1990,7 @@ def build(name):
     # instanciate resources
     #
     try:
+        add_containers(svc, conf)
         add_resources('hb', svc, conf)
         add_resources('stonith', svc, conf)
         add_resources('ip', svc, conf)
@@ -1980,7 +2001,6 @@ def build(name):
         add_resources('vmdg', svc, conf)
         add_resources('pool', svc, conf)
         add_resources('fs', svc, conf)
-        add_containers(svc, conf)
         add_apps(svc, conf)
         add_syncs(svc, conf)
     except (ex.excInitError, ex.excError), e:

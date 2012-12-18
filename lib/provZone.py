@@ -263,6 +263,11 @@ class ProvisioningZone(Provisioning):
                 raise
 
     def create_zone2clone(self):
+        if os.path.exists(self.r.zonepath):
+            try:
+                os.chmod(self.r.zonepath, 0700)
+            except:
+                pass
         if self.osver >= 11.0:
             self._create_zone2clone_11()
         else:
@@ -270,7 +275,7 @@ class ProvisioningZone(Provisioning):
 
     def _create_zone2clone_11(self):
         zonename = self.container_origin
-        zone2clone = resContainerZone.Zone(name=zonename)
+        zone2clone = resContainerZone.Zone(rid="container#skelzone", name=zonename)
         zone2clone.log = self.r.log
         if zone2clone.state == "installed":
             return
@@ -301,7 +306,7 @@ class ProvisioningZone(Provisioning):
         then install container_origin if required
         """
         zonename = self.container_origin
-        zone2clone = resContainerZone.Zone(name=zonename)
+        zone2clone = resContainerZone.Zone(rid="container#skelzone", name=zonename)
         zone2clone.log = self.r.log
         if zone2clone.state == "installed":
             return

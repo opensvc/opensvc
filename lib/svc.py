@@ -98,7 +98,9 @@ class Svc(Resource, Freezer):
                              "disk.vg",
                              "disk.zpool",
                              "fs",
+                             "fs.zone",
                              "ip",
+                             "ip.zone",
                              "sync.rsync",
                              "sync.symclone",
                              "sync.evasnap",
@@ -252,11 +254,11 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resources(self, _type=None):
+    def get_resources(self, _type=None, strict=False):
          if _type is None:
              rsets = self.resSets
          else:
-             rsets = self.get_res_sets(_type)
+             rsets = self.get_res_sets(_type, strict=strict)
 
          resources = []
          for rs in rsets:
@@ -268,7 +270,7 @@ class Svc(Resource, Freezer):
                  resources.append(r)
          return resources
 
-    def get_res_sets(self, _type):
+    def get_res_sets(self, _type, strict=False):
          if not isinstance(_type, list):
              l = [_type]
          else:
@@ -280,7 +282,7 @@ class Svc(Resource, Freezer):
                      # exact match
                      if rs.type == t:
                          rsets.append(rs)
-                 elif '.' in rs.type:
+                 elif '.' in rs.type and not strict:
                      # group match
                      _t = rs.type.split('.')
                      if _t[0] == t:
@@ -290,8 +292,8 @@ class Svc(Resource, Freezer):
                          rsets.append(rs)
          return rsets
 
-    def has_res_set(self, type):
-        if len(self.get_res_sets(type)) > 0:
+    def has_res_set(self, type, strict=False):
+        if len(self.get_res_sets(type, strict=strict)) > 0:
             return True
         else:
             return False
@@ -301,10 +303,10 @@ class Svc(Resource, Freezer):
         """
         self.set_action(self.resSets, action=action, tags=tags)
 
-    def sub_set_action(self, type=None, action=None, tags=set([])):
+    def sub_set_action(self, type=None, action=None, tags=set([]), strict=False):
         """Call action on each member of the subset of specified type
         """
-        self.set_action(self.get_res_sets(type), action=action, tags=tags)
+        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags)
 
     def need_snap_trigger(self, sets, action):
         if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
@@ -319,7 +321,7 @@ class Svc(Resource, Freezer):
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([])):
+    def set_action(self, sets=[], action=None, tags=set([]), strict=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
@@ -422,7 +424,7 @@ class Svc(Resource, Freezer):
         """aggregate status a service
         """
         ss = rcStatus.Status()
-        for r in self.get_res_sets(self.status_types):
+        for r in self.get_res_sets(self.status_types, strict=True):
             if not self.encap and 'encap' in r.tags:
                 continue
             if "sync." not in r.type:
@@ -458,7 +460,7 @@ class Svc(Resource, Freezer):
                 except:
                     d['encap'][container.name] = {'resources': {}}
 
-        for rs in self.get_res_sets(self.status_types):
+        for rs in self.get_res_sets(self.status_types, strict=True):
             for r in rs.resources:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 d['resources'][rid] = {'status': status,
@@ -513,7 +515,7 @@ class Svc(Resource, Freezer):
 
         l = []
         cr = {}
-        for rs in self.get_res_sets(self.status_types):
+        for rs in self.get_res_sets(self.status_types, strict=True):
             for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 l.append((rid, status, label, log, monitor, disable, optional, encap))
@@ -555,7 +557,7 @@ class Svc(Resource, Freezer):
         print fmt%("sync", '', str(self.group_status()['sync']), "\n"),
 
         l = []
-        for rs in self.get_res_sets(self.status_types):
+        for rs in self.get_res_sets(self.status_types, strict=True):
             for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
@@ -577,7 +579,7 @@ class Svc(Resource, Freezer):
         print fmt%("hb", '', str(self.group_status()['hb']), "\n"),
 
         l = []
-        for rs in self.get_res_sets(self.status_types):
+        for rs in self.get_res_sets(self.status_types, strict=True):
             for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
@@ -722,7 +724,7 @@ class Svc(Resource, Freezer):
             g = t.split('.')[0]
             if g not in groups:
                 continue
-            for rs in self.get_res_sets(t):
+            for rs in self.get_res_sets(t, strict=True):
                 rset_status[rs.type] = rs.status()
         return rset_status
 
@@ -845,7 +847,7 @@ class Svc(Resource, Freezer):
             groups = set(["container", "ip", "disk", "fs", "hb"])
             for g in groups:
                 gs[g] = 'down'
-            for rs in self.get_res_sets(self.status_types):
+            for rs in self.get_res_sets(self.status_types, strict=True):
                 g = rs.type.split('.')[0]
                 if g not in groups:
                     continue
@@ -916,7 +918,7 @@ class Svc(Resource, Freezer):
             group = t.split('.')[0]
             if group not in groups:
                 continue
-            for r in self.get_res_sets(t):
+            for r in self.get_res_sets(t, strict=True):
                 s = rcStatus.Status(rset_status[r.type])
                 status[group] += s
                 status["avail"] += s
@@ -938,7 +940,7 @@ class Svc(Resource, Freezer):
         for t in [_t for _t in self.status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
                 continue
-            for r in self.get_res_sets(t):
+            for r in self.get_res_sets(t, strict=True):
                 s = rset_status[r.type]
                 status['hb'] += s
                 status["overall"] += s
@@ -946,7 +948,7 @@ class Svc(Resource, Freezer):
         for t in [_t for _t in self.status_types if _t.startswith('sync')]:
             if 'sync' not in groups:
                 continue
-            for r in self.get_res_sets(t):
+            for r in self.get_res_sets(t, strict=True):
                 """ sync are expected to be up
                 """
                 s = rset_status[r.type]
@@ -1354,7 +1356,7 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startip(self):
-        self.sub_set_action("ip", "start")
+        self.sub_set_action("ip", "start", strict=True)
 
     def stopip(self):
         self.slave_stopip()
@@ -1366,14 +1368,17 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopip(self):
-        self.sub_set_action("ip", "stop")
+        self.sub_set_action("ip", "stop", strict=True)
+        self.sub_set_action("ip.zone", "stop")
 
     @_master_action
     def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown")
+        self.sub_set_action("ip", "shutdown", strict=True)
+        self.sub_set_action("ip.zone", "shutdown")
 
     def rollbackip(self):
-        self.sub_set_action("ip", "rollback")
+        self.sub_set_action("ip", "rollback", strict=True)
+        self.sub_set_action("ip.zone", "rollback")
 
     def startfs(self):
         self.master_startfs()
@@ -1382,7 +1387,8 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_startfs(self):
         self.master_startdisk()
-        self.sub_set_action("fs", "start")
+        self.sub_set_action("fs", "start", strict=True)
+        self.sub_set_action("fs.zone", "start", tags=set(['preboot']))
 
     @_slave_action
     def slave_startfs(self):
@@ -1394,11 +1400,13 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopfs(self):
+        self.sub_set_action("fs.zone", "stop", tags=set(['preboot']))
         self.sub_set_action("fs", "stop")
         self.master_stopdisk()
 
     @_master_action
     def master_shutdownfs(self):
+        self.sub_set_action("fs.zone", "shutdown", tags=set(['preboot']))
         self.sub_set_action("fs", "shutdown")
         self.master_shutdowndisk()
 
@@ -1407,6 +1415,7 @@ class Svc(Resource, Freezer):
         self.encap_cmd(['stopfs'], verbose=True)
 
     def rollbackfs(self):
+        self.sub_set_action("fs.zone", "rollback", tags=set(['preboot']))
         self.sub_set_action("fs", "rollback")
         self.rollbackdisk()
 
@@ -1425,7 +1434,28 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.hpvm", "start")
         self.sub_set_action("container.ldom", "start")
         self.sub_set_action("container.vbox", "start")
+        self.startzone()
         self.refresh_ip_status()
+
+    @_master_action
+    def stopzone(self):
+        self.sub_set_action("fs.zone", "stop", tags=set(['postboot']))
+        self.sub_set_action("disk.vg", "stop", tags=set(['postboot']))
+        self.sub_set_action("disk.zpool", "stop", tags=set(['postboot']))
+        self.sub_set_action("disk.scsireserv", "stop", tags=set(['postboot']))
+        self.sub_set_action("container.zone", "stop")
+        self.sub_set_action("container.zone", "detach")
+
+    @_master_action
+    def startzone(self):
+        self.sub_set_action("container.zone", "attach")
+        self.sub_set_action("container.zone", "ready")
+        self.sub_set_action("ip.zone", "start")
+        self.sub_set_action("container.zone", "boot")
+        self.sub_set_action("disk.scsireserv", "start", tags=set(['postboot']))
+        self.sub_set_action("disk.vg", "start", tags=set(['postboot']))
+        self.sub_set_action("disk.zpool", "start", tags=set(['postboot']))
+        self.sub_set_action("fs.zone", "start", tags=set(['postboot']))
 
     def refresh_ip_status(self):
         """ Used after start/stop container because the ip resource
@@ -1466,6 +1496,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.lxc", "stop")
         self.sub_set_action("container.vz", "stop")
         self.sub_set_action("container.srp", "stop")
+        self.stopzone()
         self.refresh_ip_status()
 
     def rollbackcontainer(self):
@@ -1487,15 +1518,19 @@ class Svc(Resource, Freezer):
     def provision(self):
         self.sub_set_action("disk.loop", "provision")
         self.sub_set_action("disk.vg", "provision")
-        self.sub_set_action("fs", "provision")
+        self.sub_set_action("fs", "provision", strict=True)
+        self.sub_set_action("fs.zone", "provision", tags=set(['preboot']))
+        self.sub_set_action("fs.zone", "start", tags=set(['preboot']))
         self.sub_set_action("container.lxc", "provision")
         self.sub_set_action("container.srp", "provision")
         self.sub_set_action("container.kvm", "provision")
         self.sub_set_action("container.openstack", "provision")
         self.sub_set_action("container.vcloud", "provision")
         self.sub_set_action("container.zone", "provision")
-        self.sub_set_action("ip", "provision")
-        self.sub_set_action("fs", "start", tags=set(['postboot']))
+        self.sub_set_action("ip.zone", "provision")
+        self.sub_set_action("ip", "provision", strict=True)
+        self.sub_set_action("fs.zone", "provision", tags=set(['postboot']))
+        self.sub_set_action("fs.zone", "start", tags=set(['postboot']))
         self.push()
 
     def startapp(self):
@@ -1562,7 +1597,7 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startstandby(self):
-        self.sub_set_action("ip", "startstandby")
+        self.sub_set_action("ip", "startstandby", strict=True)
         self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby")
@@ -1570,7 +1605,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.zpool", "startstandby")
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
-        self.sub_set_action("fs", "startstandby")
+        self.sub_set_action("fs", "startstandby", strict=True)
         self.sub_set_action("app", "startstandby")
 
     @_slave_action

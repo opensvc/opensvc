@@ -836,6 +836,18 @@ class KeywordIpIpname(Keyword):
                   text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter."
                 )
 
+class KeywordIpZone(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="zone",
+                  order=12,
+                  at=True,
+                  required=False,
+                  text="The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context."
+                )
+
 class KeywordIpIpdev(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1000,6 +1012,18 @@ class KeywordFsDev(Keyword):
                   at=True,
                   required=True,
                   text="The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
+                )
+
+class KeywordFsZone(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="zone",
+                  order=11,
+                  at=True,
+                  required=False,
+                  text="The zone name the fs refers to. If set, the fs mount point is reparented into the zonepath rootfs."
                 )
 
 class KeywordFsVg(Keyword):
@@ -1632,6 +1656,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpIpdev()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
+        self += KeywordIpZone()
         self += KeywordVgType()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
@@ -1645,6 +1670,7 @@ class KeyDict(KeywordStore):
         self += KeywordDrbdRes()
         self += KeywordFsType()
         self += KeywordFsDev()
+        self += KeywordFsZone()
         self += KeywordFsMnt()
         self += KeywordFsMntOpt()
         self += KeywordFsSnapSize()
