@@ -11,10 +11,16 @@ class ProvisioningFs(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
         self.section = dict(r.svc.config.items(r.rid))
-        self.dev = self.section['dev']
-        self.mnt = self.section['mnt']
-        self.size = self.section['size']
-        self.size_to_mb()
+        for i in ('dev', 'mnt'):
+            if i not in self.section:
+                raise ex.excError("%s keyword is not set in section %s"%(i, r.rid))
+            setattr(self, i, self.section[i])
+        if 'size' not in self.section:
+            if self.r.fsType != "zfs":
+                raise ex.excError("'size' keyword is not set in section %s"%(r.rid))
+        else:
+            self.size = self.section['size']
+            self.size_to_mb()
 
     def size_to_mb(self):
         s = self.size.replace(' ', '')
@@ -110,7 +116,6 @@ class ProvisioningFs(Provisioning):
         else:
             self.r.log.error("lvcreate command not found")
             raise ex.excError
-
 
     def provision_dev(self):
         if 'vg' not in self.section:
