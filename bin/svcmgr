@@ -86,7 +86,8 @@ def _install_service(svcname, src_env):
     ld = os.path.join(pathetc, svcname+'.d')
     if not os.path.exists(ld):
         os.symlink(d, ld)
-    elif os.path.realpath(d) != os.path.realpath(ld):
+    elif not os.path.exists(ld+os.sep):
+        # repair broken symlink
         os.unlink(ld)
         os.symlink(d, ld)
 
