@@ -151,10 +151,6 @@ class Ip(Res.Resource):
             raise ex.IpConflict(self.addr)
         return
 
-    def startstandby(self):
-        if rcEnv.nodename in self.always_on:
-             self.start()
-
     def lock(self, timeout=30, delay=1):
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'startip')

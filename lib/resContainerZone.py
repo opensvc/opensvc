@@ -181,7 +181,7 @@ class Zone(resContainer.Container):
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
-    def stop(self):
+    def halt(self):
         """ Need wait poststat after returning to installed state on ipkg
             example : /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
         """
@@ -293,11 +293,34 @@ class Zone(resContainer.Container):
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
-        
+ 
+    def start(self):
+        self.attach()
+        self.ready()
+        self.svc.sub_set_action("ip", "start", tags=set([self.name]))
+        self.boot()
+        self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "start", tags=set([self.name]))
+
+    def stop(self):
+        self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("ip", "stop", tags=set([self.name]))
+        self.halt()
+        self.detach()
+
+    def provision(self):
+        self._provision()
+        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
+
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
-    def provision(self):
+    def _provision(self):
         m = __import__("provZone")
         m.ProvisioningZone(self).provisioner()
 

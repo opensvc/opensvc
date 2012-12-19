@@ -60,10 +60,6 @@ class Dg(Res.Resource):
         self.do_start()
         self.can_rollback = True
 
-    def startstandby(self):
-        if rcEnv.nodename in self.always_on:
-             self.start()
-
     def _status(self, verbose=False):
         if rcEnv.nodename in self.always_on:
             if self.is_up(): return rcStatus.STDBY_UP

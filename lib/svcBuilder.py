@@ -104,12 +104,9 @@ def conf_get_int_scope(svc, conf, s, o):
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for
     a given service mode. For example:
-    zone   => ('svcZone', 'SvcZone')
     hosted => ('svcHosted', 'SvcHosted')
     """
-    if svcmode == 'zone':
-        return ('svcZone', 'SvcZone')
-    elif svcmode == 'hosted':
+    if svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
@@ -671,6 +668,11 @@ def add_pool(svc, conf, s):
         svc.log.error("poolname must be set in section %s"%s)
         return
 
+    try:
+        zone = conf_get_string_scope(svc, conf, s, 'zone')
+    except ex.OptNotFound:
+        zone = None
+
     pool = __import__('resVgZfs')
 
     kwargs['rid'] = s
@@ -681,6 +683,11 @@ def add_pool(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
 
     r = pool.Pool(**kwargs)
+
+    if zone is not None:
+        r.tags.add('zone')
+        r.tags.add(zone)
+
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -756,7 +763,8 @@ def add_fs(svc, conf, s):
     r = mount.Mount(**kwargs)
 
     if zone is not None:
-        r.type = "fs.zone"
+        r.tags.add(zone)
+        r.tags.add('zone')
 
     add_triggers(svc, r, conf, s)
     svc += r

@@ -36,12 +36,13 @@ class Ip(Res.Ip):
                         mask=mask, always_on=always_on,
                         disabled=disabled, tags=tags, optional=optional,
                         monitor=monitor, gateway=gateway)
-        self.type = "ip.zone"
         self.zone = zone
+        self.tags.add(zone)
+        self.tags.add('zone')
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
-            'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.zone ]
+             'netmask', '+', 'broadcast', '+', 'up' , 'zone' , self.zone ]
         return self.vcall(cmd)
 
     def stopip_cmd(self):

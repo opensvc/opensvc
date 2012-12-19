@@ -260,6 +260,10 @@ class Resource(object):
     def stop(self):
         pass
 
+    def startstandby(self):
+        if rcEnv.nodename in self.always_on:
+             self.start()
+
     def start(self):
         pass
 
@@ -350,10 +354,14 @@ class ResourceSet(Resource):
             return False
         return True
         
-    def action(self, action=None, tags=set([])):
+    def action(self, action=None, tags=set([]), xtags=set([])):
         """Call action on each resource of the ResourceSet
         """
-        resources = [r for r in self.resources if self.tag_match(r.tags, tags)]
+        if len(xtags) > 0:
+            resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
+        else:
+            resources = self.resources
+        resources = [r for r in resources if self.tag_match(r.tags, tags)]
         self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
         if action in ["fs", "start", "startstandby", "provision"]:
             resources.sort()

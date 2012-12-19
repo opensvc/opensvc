@@ -98,9 +98,7 @@ class Svc(Resource, Freezer):
                              "disk.vg",
                              "disk.zpool",
                              "fs",
-                             "fs.zone",
                              "ip",
-                             "ip.zone",
                              "sync.rsync",
                              "sync.symclone",
                              "sync.evasnap",
@@ -303,10 +301,10 @@ class Svc(Resource, Freezer):
         """
         self.set_action(self.resSets, action=action, tags=tags)
 
-    def sub_set_action(self, type=None, action=None, tags=set([]), strict=False):
+    def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
         """Call action on each member of the subset of specified type
         """
-        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags)
+        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, sets, action):
         if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
@@ -321,7 +319,7 @@ class Svc(Resource, Freezer):
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([]), strict=False):
+    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
@@ -381,7 +379,7 @@ class Svc(Resource, Freezer):
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
-                r.action(action, tags=tags)
+                r.action(action, tags=tags, xtags=xtags)
             except ex.excError:
                 if r.is_optional():
                     pass
@@ -579,7 +577,7 @@ class Svc(Resource, Freezer):
         print fmt%("hb", '', str(self.group_status()['hb']), "\n"),
 
         l = []
-        for rs in self.get_res_sets(self.status_types, strict=True):
+        for rs in self.get_res_sets(self.status_types, ):
             for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
@@ -1145,19 +1143,26 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_starthb(self):
-        self.sub_set_action("hb.ovm", "start")
-        self.sub_set_action("hb.openha", "start")
-        self.sub_set_action("hb.linuxha", "start")
-        self.sub_set_action("hb.sg", "start")
-        self.sub_set_action("hb.rhcs", "start")
+        self.master_hb('start')
+
+    @_master_action
+    def master_startstandbyhb(self):
+        self.master_hb('startstandby')
 
     @_master_action
     def master_shutdownhb(self):
-        self.sub_set_action("hb.ovm", "shutdown")
-        self.sub_set_action("hb.openha", "shutdown")
-        self.sub_set_action("hb.linuxha", "shutdown")
-        self.sub_set_action("hb.sg", "shutdown")
-        self.sub_set_action("hb.rhcs", "shutdown")
+        self.master_hb('shutdown')
+
+    @_master_action
+    def master_stophb(self):
+        self.master_hb('stop')
+
+    @_master_action
+    def rollbackhb(self):
+        self.master_hb('rollback')
+
+    def master_hb(self, action):
+        self.sub_set_action("hb", action)
 
     def stophb(self):
         self.slave_stophb()
@@ -1166,21 +1171,6 @@ class Svc(Resource, Freezer):
     @_slave_action
     def slave_stophb(self):
         self.encap_cmd(['stophb'], verbose=True)
-
-    @_master_action
-    def master_stophb(self):
-        self.sub_set_action("hb.ovm", "stop")
-        self.sub_set_action("hb.openha", "stop")
-        self.sub_set_action("hb.linuxha", "stop")
-        self.sub_set_action("hb.sg", "stop")
-        self.sub_set_action("hb.rhcs", "stop")
-
-    def rollbackhb(self):
-        self.sub_set_action("hb.ovm", "rollback")
-        self.sub_set_action("hb.openha", "rollback")
-        self.sub_set_action("hb.linuxha", "rollback")
-        self.sub_set_action("hb.sg", "rollback")
-        self.sub_set_action("hb.rhcs", "rollback")
 
     def startdrbd(self):
         self.master_startdrbd()
@@ -1241,7 +1231,7 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_stopvg(self):
         self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.scsireserv", "stop")
+        self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     def startvg(self):
         self.master_startvg()
@@ -1253,7 +1243,7 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startvg(self):
-        self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
         self.sub_set_action("disk.vg", "start")
 
     def startpool(self):
@@ -1266,8 +1256,8 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startpool(self):
-        self.sub_set_action("disk.scsireserv", "start")
-        self.sub_set_action("disk.zpool", "start")
+        self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
+        self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
 
     def stoppool(self):
         self.slave_stoppool()
@@ -1279,8 +1269,8 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stoppool(self):
-        self.sub_set_action("disk.zpool", "stop")
-        self.sub_set_action("disk.scsireserv", "stop")
+        self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
+        self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     def startdisk(self):
         self.master_startdisk()
@@ -1291,6 +1281,20 @@ class Svc(Resource, Freezer):
         self.encap_cmd(['startdisk'], verbose=True)
 
     @_master_action
+    def master_startstandbydisk(self):
+        self.sub_set_action("sync.netapp", "startstandby")
+        self.sub_set_action("sync.dcsckpt", "startstandby")
+        self.sub_set_action("sync.nexenta", "startstandby")
+        self.sub_set_action("sync.symclone", "startstandby")
+        self.sub_set_action("disk.loop", "startstandby")
+        self.sub_set_action("disk.gandi", "startstandby")
+        self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
+        self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("disk.vg", "startstandby")
+        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
+
+    @_master_action
     def master_startdisk(self):
         self.sub_set_action("sync.netapp", "start")
         self.sub_set_action("sync.dcsckpt", "start")
@@ -1298,9 +1302,9 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.gandi", "start")
-        self.sub_set_action("disk.scsireserv", "start")
+        self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
-        self.sub_set_action("disk.zpool", "start")
+        self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
 
@@ -1316,9 +1320,9 @@ class Svc(Resource, Freezer):
     def master_stopdisk(self):
         self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.zpool", "stop")
+        self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
-        self.sub_set_action("disk.scsireserv", "stop")
+        self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "stop")
         self.sub_set_action("disk.gandi", "stop")
 
@@ -1326,18 +1330,18 @@ class Svc(Resource, Freezer):
     def master_shutdowndisk(self):
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "shutdown")
-        self.sub_set_action("disk.zpool", "shutdown")
+        self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
-        self.sub_set_action("disk.scsireserv", "shutdown")
+        self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "shutdown")
         self.sub_set_action("disk.gandi", "shutdown")
 
     def rollbackdisk(self):
         self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "rollback")
-        self.sub_set_action("disk.zpool", "rollback")
+        self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
-        self.sub_set_action("disk.scsireserv", "rollback")
+        self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "rollback")
         self.sub_set_action("disk.gandi", "rollback")
 
@@ -1355,9 +1359,12 @@ class Svc(Resource, Freezer):
         self.encap_cmd(['startip'], verbose=True)
 
     @_master_action
+    def master_startstandbyip(self):
+        self.sub_set_action("ip", "startstandby", xtags=set(['zone']))
+
+    @_master_action
     def master_startip(self):
-        self.sub_set_action("ip", "start", strict=True)
-        self.sub_set_action("ip.zone", "start")
+        self.sub_set_action("ip", "start", xtags=set(['zone']))
 
     def stopip(self):
         self.slave_stopip()
@@ -1369,17 +1376,14 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopip(self):
-        self.sub_set_action("ip", "stop", strict=True)
-        self.sub_set_action("ip.zone", "stop")
+        self.sub_set_action("ip", "stop", xtags=set(['zone']))
 
     @_master_action
     def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown", strict=True)
-        self.sub_set_action("ip.zone", "shutdown")
+        self.sub_set_action("ip", "shutdown", xtags=set(['zone']))
 
     def rollbackip(self):
-        self.sub_set_action("ip", "rollback", strict=True)
-        self.sub_set_action("ip.zone", "rollback")
+        self.sub_set_action("ip", "rollback", xtags=set(['zone']))
 
     def startfs(self):
         self.master_startfs()
@@ -1388,8 +1392,12 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_startfs(self):
         self.master_startdisk()
-        self.sub_set_action("fs", "start", strict=True)
-        self.sub_set_action("fs.zone", "start", tags=set(['preboot']))
+        self.sub_set_action("fs", "start", xtags=set(['zone']))
+
+    @_master_action
+    def master_startstandbyfs(self):
+        self.master_startstandbydisk()
+        self.sub_set_action("fs", "startstandby", xtags=set(['zone']))
 
     @_slave_action
     def slave_startfs(self):
@@ -1401,14 +1409,12 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopfs(self):
-        self.sub_set_action("fs.zone", "stop", tags=set(['preboot']))
-        self.sub_set_action("fs", "stop")
+        self.sub_set_action("fs", "stop", xtags=set(['zone']))
         self.master_stopdisk()
 
     @_master_action
     def master_shutdownfs(self):
-        self.sub_set_action("fs.zone", "shutdown", tags=set(['preboot']))
-        self.sub_set_action("fs", "shutdown")
+        self.sub_set_action("fs", "shutdown", xtags=set(['zone']))
         self.master_shutdowndisk()
 
     @_slave_action
@@ -1416,47 +1422,18 @@ class Svc(Resource, Freezer):
         self.encap_cmd(['stopfs'], verbose=True)
 
     def rollbackfs(self):
-        self.sub_set_action("fs.zone", "rollback", tags=set(['preboot']))
-        self.sub_set_action("fs", "rollback")
+        self.sub_set_action("fs", "rollback", xtags=set(['zone']))
         self.rollbackdisk()
 
     @_master_action
-    def startcontainer(self):
-        self.sub_set_action("container.lxc", "start")
-        self.sub_set_action("container.vz", "start")
-        self.sub_set_action("container.srp", "start")
-        self.sub_set_action("container.jail", "start")
-        self.sub_set_action("container.kvm", "start")
-        self.sub_set_action("container.openstack", "start")
-        self.sub_set_action("container.vcloud", "start")
-        self.sub_set_action("container.xen", "start")
-        self.sub_set_action("container.esx", "start")
-        self.sub_set_action("container.ovm", "start")
-        self.sub_set_action("container.hpvm", "start")
-        self.sub_set_action("container.ldom", "start")
-        self.sub_set_action("container.vbox", "start")
-        self.startzone()
+    def startstandbycontainer(self):
+        self.sub_set_action("container", "startstandby")
         self.refresh_ip_status()
 
     @_master_action
-    def stopzone(self):
-        self.sub_set_action("fs.zone", "stop", tags=set(['postboot']))
-        self.sub_set_action("disk.vg", "stop", tags=set(['postboot']))
-        self.sub_set_action("disk.zpool", "stop", tags=set(['postboot']))
-        self.sub_set_action("disk.scsireserv", "stop", tags=set(['postboot']))
-        self.sub_set_action("container.zone", "stop")
-        self.sub_set_action("container.zone", "detach")
-
-    @_master_action
-    def startzone(self):
-        self.sub_set_action("container.zone", "attach")
-        self.sub_set_action("container.zone", "ready")
-        self.sub_set_action("ip.zone", "start")
-        self.sub_set_action("container.zone", "boot")
-        self.sub_set_action("disk.scsireserv", "start", tags=set(['postboot']))
-        self.sub_set_action("disk.vg", "start", tags=set(['postboot']))
-        self.sub_set_action("disk.zpool", "start", tags=set(['postboot']))
-        self.sub_set_action("fs.zone", "start", tags=set(['postboot']))
+    def startcontainer(self):
+        self.sub_set_action("container", "start")
+        self.refresh_ip_status()
 
     def refresh_ip_status(self):
         """ Used after start/stop container because the ip resource
@@ -1484,54 +1461,18 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def stopcontainer(self):
-        self.sub_set_action("container.vbox", "stop")
-        self.sub_set_action("container.ldom", "stop")
-        self.sub_set_action("container.hpvm", "stop")
-        self.sub_set_action("container.xen", "stop")
-        self.sub_set_action("container.esx", "stop")
-        self.sub_set_action("container.ovm", "stop")
-        self.sub_set_action("container.kvm", "stop")
-        self.sub_set_action("container.openstack", "stop")
-        self.sub_set_action("container.vcloud", "stop")
-        self.sub_set_action("container.jail", "stop")
-        self.sub_set_action("container.lxc", "stop")
-        self.sub_set_action("container.vz", "stop")
-        self.sub_set_action("container.srp", "stop")
-        self.stopzone()
+        self.sub_set_action("container", "stop")
         self.refresh_ip_status()
 
     def rollbackcontainer(self):
-        self.sub_set_action("container.vbox", "rollback")
-        self.sub_set_action("container.ldom", "rollback")
-        self.sub_set_action("container.hpvm", "rollback")
-        self.sub_set_action("container.xen", "rollback")
-        self.sub_set_action("container.esx", "rollback")
-        self.sub_set_action("container.ovm", "rollback")
-        self.sub_set_action("container.kvm", "rollback")
-        self.sub_set_action("container.openstack", "rollback")
-        self.sub_set_action("container.vcloud", "rollback")
-        self.sub_set_action("container.jail", "rollback")
-        self.sub_set_action("container.lxc", "rollback")
-        self.sub_set_action("container.vz", "rollback")
-        self.sub_set_action("container.srp", "rollback")
+        self.sub_set_action("container", "rollback")
         self.refresh_ip_status()
 
     def provision(self):
-        self.sub_set_action("disk.loop", "provision")
-        self.sub_set_action("disk.vg", "provision")
-        self.sub_set_action("fs", "provision", strict=True)
-        self.sub_set_action("fs.zone", "provision", tags=set(['preboot']))
-        self.sub_set_action("fs.zone", "start", tags=set(['preboot']))
-        self.sub_set_action("container.lxc", "provision")
-        self.sub_set_action("container.srp", "provision")
-        self.sub_set_action("container.kvm", "provision")
-        self.sub_set_action("container.openstack", "provision")
-        self.sub_set_action("container.vcloud", "provision")
-        self.sub_set_action("container.zone", "provision")
-        self.sub_set_action("ip.zone", "provision")
-        self.sub_set_action("ip", "provision", strict=True)
-        self.sub_set_action("fs.zone", "provision", tags=set(['postboot']))
-        self.sub_set_action("fs.zone", "start", tags=set(['postboot']))
+        self.sub_set_action("disk", "provision", xtags=set(['zone']))
+        self.sub_set_action("fs", "provision", xtags=set(['zone']))
+        self.sub_set_action("container", "provision")
+        self.sub_set_action("ip", "provision", xtags=set(['zone']))
         self.push()
 
     def startapp(self):
@@ -1541,6 +1482,10 @@ class Svc(Resource, Freezer):
     @_slave_action
     def slave_startapp(self):
         self.encap_cmd(['startapp'], verbose=True)
+
+    @_master_action
+    def master_startstandbyapp(self):
+        self.sub_set_action("app", "startstandby")
 
     @_master_action
     def master_startapp(self):
@@ -1598,26 +1543,21 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startstandby(self):
-        self.sub_set_action("ip", "startstandby", strict=True)
-        self.sub_set_action("disk.gandi", "startstandby")
-        self.sub_set_action("disk.loop", "startstandby")
-        self.sub_set_action("disk.scsireserv", "startstandby")
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
-        self.sub_set_action("disk.vg", "startstandby")
-        self.sub_set_action("disk.zpool", "startstandby")
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
-        self.sub_set_action("fs", "startstandby", strict=True)
-        self.sub_set_action("app", "startstandby")
+        self.master_startstandbyip()
+        self.master_startstandbyfs()
+        self.startstandbycontainer()
+        self.master_startstandbyapp()
+        self.master_starthb()
 
     @_slave_action
     def slave_startstandby(self):
-        cmd = 'startstandby'
+        cmd = ['startstandby']
         for container in self.get_resources('container'):
-            if not container.is_up() and not container.always_on:
+            if not container.is_up() and not rcEnv.nodename in container.always_on:
                 # no need to try to startstandby the encap service on a container we not activated
                 continue
             try:
-                out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
+                out, err, ret = self._encap_cmd(cmd, container, verbose=True)
             except ex.excError:
                 if error != "continue":
                     self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
@@ -1812,13 +1752,13 @@ class Svc(Resource, Freezer):
                 return True
         return False
 
-    def disable_resources(self, keeprid=[], keeptags=set([])):
+    def disable_resources(self, keeprid=[], keeptags=set([]), xtags=set([])):
         if len(keeprid) > 0:
             ridfilter = True
         else:
             ridfilter = False
 
-        if len(keeptags) > 0:
+        if len(keeptags) > 0 or len(xtags) > 0:
             tagsfilter = True
         else:
             tagsfilter = False
@@ -1827,6 +1767,8 @@ class Svc(Resource, Freezer):
             return
 
         for r in self.get_resources():
+            if self.tag_match(r.tags, xtags):
+                r.disable()
             if ridfilter and r.rid in keeprid:
                 continue
             if tagsfilter and self.tag_match(r.tags, keeptags):
@@ -1840,7 +1782,7 @@ class Svc(Resource, Freezer):
         for r in self.get_resources():
             r.setup_environ()
 
-    def action(self, action, rid=[], tags=set([]), waitlock=60):
+    def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
@@ -1887,7 +1829,7 @@ class Svc(Resource, Freezer):
 
         self.setup_environ()
         self.setup_signal_handlers()
-        self.disable_resources(keeprid=rid, keeptags=tags)
+        self.disable_resources(keeprid=rid, keeptags=tags, xtags=xtags)
         actions_list_no_log = [
           'get',
           'set',

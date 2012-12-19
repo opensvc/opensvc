@@ -75,9 +75,6 @@ class Vdisk(Res.Resource):
     def start(self):
         self.remap()
 
-    def startstandby(self):
-        pass
-
     def _status(self, verbose=False):
         return rcStatus.NA
 
