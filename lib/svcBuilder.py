@@ -326,10 +326,21 @@ def add_ip(svc, conf, s):
     except ex.OptNotFound:
         pass
 
-    if 'zone' in kwargs:
+    try:
+        rtype = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        rtype = None
+
+    if rtype == "crossbow":
+        if 'zone' in kwargs:
+            svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s"%s)
+            return
+        ip = __import__('resIp'+'Crossbow')
+    elif 'zone' in kwargs:
         ip = __import__('resIp'+'Zone')
     else:
         ip = __import__('resIp'+rcEnv.sysname)
+
     kwargs['rid'] = s
     kwargs['tags'] = get_tags(conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)

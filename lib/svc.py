@@ -1357,6 +1357,7 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_startip(self):
         self.sub_set_action("ip", "start", strict=True)
+        self.sub_set_action("ip.zone", "start")
 
     def stopip(self):
         self.slave_stopip()
