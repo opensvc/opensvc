@@ -155,7 +155,7 @@ class Collector(object):
             print >>sys.stderr, "collector does not support node registration"
             return
         if rcEnv.uuid == "" and \
-           rcEnv.dbopensvc is not None and \
+           rcEnv.dbopensvc != "None" and \
            not rcEnv.warned and \
            self.auth_node and \
            fn != "register_node":
