@@ -24,7 +24,7 @@ import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
-from rcUtilitiesSunOS import get_os_ver
+from rcUtilities import which
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
@@ -36,8 +36,7 @@ class Ip(Res.Ip):
                         disabled=disabled, tags=tags, optional=optional,
                         monitor=monitor, gateway=gateway)
         self.type = "ip"
-        self.osver = get_os_ver()
-        if self.osver < 11.0:
+        if not which('ipadm'):
             raise ex.excInitError("crossbow ips are not supported on this system")
 
     def stopip_cmd(self):
