@@ -52,7 +52,7 @@ class Ip(Res.Ip):
 
     def stopip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', 'del', self.addr]
+            cmd = ['ifconfig', self.ipDev, 'inet6', 'del', '/'.join([self.addr, self.mask])]
         else:
             cmd = ['ifconfig', self.stacked_dev, 'down']
         return self.vcall(cmd)
