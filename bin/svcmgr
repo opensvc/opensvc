@@ -201,13 +201,12 @@ elif cmd == 'svcmgr':
               help="the envfile to use when installing a service")
 else:
     svcname = cmd.split('.')
-    if len(svcname) == 2:
-        if svcname[1] == 'cluster':
+    if len(svcname) > 1 and svcname[-1] == 'cluster':
             cluster = True
-            svcname = svcname[0]
-        elif svcname[1] == 'stonith':
+            svcname = ".".join(svcname[:-1])
+    elif len(svcname) > 1 and svcname[-1] == 'stonith':
             cluster = True
-            svcname = svcname[0]
+            svcname = ".".join(svcname[:-1])
             action = "stonith"
     else:
         svcname = cmd
