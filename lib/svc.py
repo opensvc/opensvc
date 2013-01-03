@@ -60,6 +60,7 @@ class Svc(Resource, Freezer):
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
         self.encap = False
+        self.encapnodes = set([])
         self.has_encap_resources = False
         self.options = Options()
         self.node = None

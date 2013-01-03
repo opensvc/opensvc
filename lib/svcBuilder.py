@@ -66,7 +66,11 @@ def conf_get(svc, conf, s, o, t, scope=False):
         else:
             raise ex.OptNotFound
     if type(svc) != dict:
-        d = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
+        d = {
+         'nodes': svc.nodes,
+         'drpnodes': svc.drpnodes,
+         'encapnodes': svc.encapnodes,
+        }
     else:
         d = svc
 
@@ -78,6 +82,9 @@ def conf_get(svc, conf, s, o, t, scope=False):
     elif conf.has_option(s, o+"@drpnodes") and \
          rcEnv.nodename in d['drpnodes']:
         return f(s, o+"@drpnodes")
+    elif conf.has_option(s, o+"@encapnodes") and \
+         rcEnv.nodename in d['encapnodes']:
+        return f(s, o+"@encapnodes")
     elif conf.has_option(s, o):
         return f(s, o)
     else:
@@ -1781,14 +1788,22 @@ def build(name):
         if "mode" in defaults:
             svcmode = conf_get_string_scope({}, conf, 'DEFAULT', "mode")
 
+        if "encapnodes" in defaults:
+            encapnodes = set(conf_get_string_scope({}, conf, 'DEFAULT', "encapnodes").split())
+            encapnodes -= set([''])
+        else:
+            encapnodes = set([])
+
+        d_nodes = {'encapnodes': encapnodes}
+
         if "nodes" in defaults:
-            nodes = set(conf_get_string_scope({}, conf, 'DEFAULT', "nodes").split())
+            nodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split())
             nodes -= set([''])
         else:
             nodes = set([])
 
         if "drpnodes" in defaults:
-            drpnodes = set(conf_get_string_scope({}, conf, 'DEFAULT', "drpnodes").split())
+            drpnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split())
             drpnodes -= set([''])
         else:
             drpnodes = set([])
@@ -1800,7 +1815,8 @@ def build(name):
         else:
             drpnode = ''
 
-        d_nodes = {'nodes': nodes, 'drpnodes': drpnodes}
+        d_nodes['nodes'] = nodes
+        d_nodes['drpnodes'] = drpnodes
 
         kwargs['disabled'] = get_disabled(conf, "", "")
 
@@ -1913,8 +1929,13 @@ def build(name):
         return None
 
     try:
-        svc.encap = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'encap')
+        svc.encapnodes = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'encapnodes').split())
     except ex.OptNotFound:
+        pass
+
+    if rcEnv.nodename in svc.encapnodes:
+        svc.encap = True
+    else:
         svc.encap = False
 
     try:
