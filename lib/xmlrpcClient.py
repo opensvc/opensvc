@@ -672,10 +672,11 @@ class Collector(object):
                       container_info['vmem'],
                       container.zonepath if hasattr(container, 'zonepath') else ""]]
 
-        args = [vars, vals]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.svcmon_update(*args)
+        if len(vals) > 0:
+            args = [vars, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.svcmon_update(*args)
     
     def push_disks(self, node, sync=True):
         di = __import__('rcDiskInfo'+rcEnv.sysname)
