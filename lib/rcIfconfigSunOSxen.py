@@ -1,1 +1,0 @@
-rcIfconfigSunOSldom.py
