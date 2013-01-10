@@ -248,7 +248,14 @@ class Collector(object):
         self.log.debug("%s refreshed"%self.method_cache)
 
     def get_methods(self):
-        self.log.debug("get method lists")
+        self.get_methods_dbopensvc()
+        self.get_methods_dbcompliance()
+
+    def get_methods_dbopensvc(self):
+        if rcEnv.dbopensvc == "None":
+            self.proxy_methods = []
+            return
+        self.log.debug("get dbopensvc method list")
         try:
             if self.proxy is None:
                 self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
@@ -258,6 +265,11 @@ class Collector(object):
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
 
+    def get_methods_dbcompliance(self):
+        if rcEnv.dbcompliance == "None":
+            self.comp_proxy_methods = []
+            return
+        self.log.debug("get dbcompliance method list")
         try:
             if self.comp_proxy is None:
                 self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
