@@ -18,7 +18,6 @@
 #
 import checks
 from rcUtilities import justcall
-import svcZone
 
 class check(checks.check):
     def __init__(self, svcs=[]):
