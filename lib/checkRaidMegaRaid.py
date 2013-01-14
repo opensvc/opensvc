@@ -21,8 +21,9 @@ from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 
 class check(checks.check):
-    prefixes = [os.path.join(os.sep, "usr", "local", "admin")]
-    megacli = "MegaCli"
+    prefixes = [os.path.join(os.sep, "usr", "local", "admin"),
+                os.path.join(os.sep, "opt", "MegaRAID", "MegaCli")]
+    megacli = ["MegaCli64", "MegaCli"]
     chk_type = "raid"
     chk_name = "MegaCli"
 
