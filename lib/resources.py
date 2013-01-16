@@ -42,6 +42,7 @@ class Resource(object):
         self.type = type
         self.optional = optional
         self.disabled = disabled
+        self.skip = False
         self.monitor = monitor
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
@@ -155,6 +156,13 @@ class Resource(object):
         self.log.debug('action: action=%s res=%s'%(action, self.rid))
         if action == None:
             self.log.debug('action: action cannot be None')
+            return True
+        if self.skip and (\
+             action.startswith("start") or \
+             action.startswith("stop") or \
+             action.startswith("sync") \
+           ):
+            self.log.debug('action: skip action on filtered-out resource')
             return True
         if self.disabled:
             self.log.debug('action: skip action on disabled resource')

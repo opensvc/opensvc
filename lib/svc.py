@@ -1753,7 +1753,7 @@ class Svc(Resource, Freezer):
                 return True
         return False
 
-    def disable_resources(self, keeprid=[], keeptags=set([]), xtags=set([])):
+    def set_skip_resources(self, keeprid=[], keeptags=set([]), xtags=set([])):
         if len(keeprid) > 0:
             ridfilter = True
         else:
@@ -1769,12 +1769,12 @@ class Svc(Resource, Freezer):
 
         for r in self.get_resources():
             if self.tag_match(r.tags, xtags):
-                r.disable()
+                r.skip = True
             if ridfilter and r.rid in keeprid:
                 continue
             if tagsfilter and self.tag_match(r.tags, keeptags):
                 continue
-            r.disable()
+            r.skip = True
 
     def setup_environ(self):
         """ Those are available to startup scripts and triggers
@@ -1833,7 +1833,7 @@ class Svc(Resource, Freezer):
 
         self.setup_environ()
         self.setup_signal_handlers()
-        self.disable_resources(keeprid=rid, keeptags=tags, xtags=xtags)
+        self.set_skip_resources(keeprid=rid, keeptags=tags, xtags=xtags)
         actions_list_no_log = [
           'get',
           'set',
