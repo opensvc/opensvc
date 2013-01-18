@@ -31,7 +31,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         cmd = ""
         vars = ""
         for i, d in enumerate(self.pairs):
-            cmd += '$v%d=Get-DcsVirtualDisk -connection %s -VirtualDisk %s;'%(i, self.conn, d['src'])
+            cmd += '$v%d=Get-DcsVirtualDisk -VirtualDisk %s -connection %s;'%(i, d['src'], self.conn)
             vars += '$v%d '%i
 
         cmd += "echo %s|Set-DcsReplicationCheckPoint -connection %s"%(vars, self.conn)
@@ -42,7 +42,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         if snap in self._info:
             return self._info[snap]
 
-        cmd = 'get-dcssnapshot -connection %s -snapshot %s;'%(self.conn, snap)
+        cmd = 'get-dcssnapshot -snapshot %s -connection %s;'%(snap, self.conn)
         try:
             ret, out, err = self.dcscmd(cmd)
         except:
@@ -115,7 +115,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
     def pause_checkpoint(self):
         cmd = ""
         for d in self.pairs:
-            cmd += 'Disable-DcsTask -connection %s -Task %s ; '%(self.conn, self.task_name(d['dst_ckpt']))
+            cmd += 'Disable-DcsTask -Task %s -connection %s ; '%(self.task_name(d['dst_ckpt']), self.conn)
         self.dcscmd(cmd, verbose=True)
 
     def create_task(self):
@@ -130,16 +130,16 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         for d in self.pairs:
             if self.task_name(d['dst_ckpt']) in tasks:
                 continue
-            cmd += "Add-DcsTask -Disabled -Name %s ; "%self.task_name(d['dst_ckpt'])
-            cmd += 'Add-DcsTrigger -Task %s -VirtualDisk "%s" ; '%(self.task_name(d['dst_ckpt']), d['dst'])
-            cmd += 'Add-DcsAction -connection %s -Task %s -MethodActionType UpdateSnapshot -TargetId (Get-DcsSnapshot -connection %s -snapshot "%s").Id ; '%(self.conn, self.task_name(d['dst_ckpt']), self.conn, d['dst_ckpt'])
+            cmd += "Add-DcsTask -Disabled -Name %s -connection %s; "%(self.task_name(d['dst_ckpt']), self.conn)
+            cmd += 'Add-DcsTrigger -Task %s -VirtualDisk "%s" -connection %s; '%(self.task_name(d['dst_ckpt']), d['dst'], self.conn)
+            cmd += 'Add-DcsAction -Task %s -MethodActionType UpdateSnapshot -connection %s -TargetId (Get-DcsSnapshot -snapshot "%s" -connection %s).Id ; '%(self.task_name(d['dst_ckpt']), self.conn, d['dst_ckpt'], self.conn)
         self.dcscmd(cmd, verbose=True)
 
     def resume_checkpoint(self):
         self.create_task()
         cmd = ""
         for d in self.pairs:
-            cmd += 'Enable-DcsTask -connection %s -Task %s ; '%(self.conn, self.task_name(d['dst_ckpt']))
+            cmd += 'Enable-DcsTask -Task %s -connection %s; '%(self.task_name(d['dst_ckpt']), self.conn)
         self.dcscmd(cmd, verbose=True)
 
     def task_name(self, id):

@@ -43,22 +43,51 @@ class syncDcsSnap(resSyncDcs.SyncDcs):
         cmd = ""
         vars = ""
         for i, snap in enumerate(self.snapname):
-            cmd += '$v%d=get-dcssnapshot -connection %s -snapshot %s;'%(i, self.conn, snap)
+            cmd += '$v%d=get-dcssnapshot -snapshot %s -connection %s;'%(i, snap, self.conn)
             vars += '$v%d '%i
 
-        cmd += "echo %s|update-dcssnapshot -connection %s -Y"%(vars, self.conn)
+        cmd += "echo %s|update-dcssnapshot -Y -connection %s"%(vars, self.conn)
         self.dcscmd(cmd, verbose=True)
 
-    def get_snap(self, snap):
-        if snap in self._info:
-            return self._info[snap]
-
-        cmd = 'get-dcssnapshot -connection %s -snapshot %s;'%(self.conn, snap)
+    def get_snaps(self):
+        cmd = ""
+        for i, snap in enumerate(self.snapname):
+            cmd += 'get-dcssnapshot -snapshot %s -connection %s;'%(snap, self.conn)
         try:
             ret, out, err = self.dcscmd(cmd)
         except:
-            return None
+            return
 
+        """
+SourceLogicalDiskId      : ef989edf-4a6d-4af6-8b9d-bc6d2070a36c
+DestinationLogicalDiskId : 24a6a20f-59f3-4c4d-b4de-9a4f45afff44
+Type                     : Full
+TimeStamp                : 17/01/2013 14:16:49
+ActiveOperation          : NoOperation
+State                    : Migrated
+Failure                  : NoFailure
+SequenceNumber           : 4677814244
+Id                       : V.{06C86883-CF53-11E1-9203-441EA14CCCC6}-00000177--V
+                           .{06C86883-CF53-11E1-9203-441EA14CCCC6}-000001D7
+Caption                  : S64lmwbic6f-22-clone-02
+ExtendedCaption          : S64lmwbic6f-22-clone-02 on SDSLMW03
+Internal                 : False
+
+SourceLogicalDiskId      : f0450ff7-076f-4dbc-bee0-25f6a586f5b2
+DestinationLogicalDiskId : 17e98dbf-1457-41c9-aaad-5b6d7d8cc81c
+Type                     : Full
+TimeStamp                : 17/01/2013 14:16:49
+ActiveOperation          : NoOperation
+State                    : Migrated
+Failure                  : NoFailure
+SequenceNumber           : 4677814247
+Id                       : V.{06C86883-CF53-11E1-9203-441EA14CCCC6}-0000017A--V
+                           .{06C86883-CF53-11E1-9203-441EA14CCCC6}-000001DA
+Caption                  : S64lmwbic6f-25-clone-02
+ExtendedCaption          : S64lmwbic6f-25-clone-02 on SDSLMW03
+Internal                 : False
+
+"""
         info = {}
         lines = out.split('\n')
         for line in lines:
@@ -67,17 +96,20 @@ class syncDcsSnap(resSyncDcs.SyncDcs):
                 continue
             var = l[0].strip()
             val = l[1].strip()
+            if var == 'Internal' and len(info) > 0:
+                self._info[info['Caption']] = info
+                info = {}
             if var == 'TimeStamp':
                 info['TimeStamp'] = datetime.datetime.strptime(val, "%d/%m/%Y %H:%M:%S")
-            elif var in ['Type', 'State', 'ActiveOperation', 'Failure']:
+            elif var in ['Type', 'State', 'ActiveOperation', 'Failure', 'Caption']:
                 info[var] = val
-        if len(info) > 0:
-            self._info[snap] = info
-        else:
-            # get-dcssnapshot does not return error when the snap does not exist
-            # an empty info dict is the tip
+
+    def get_snap(self, snap):
+        if len(self._info) == 0:
+            self.get_snaps()
+        if snap not in self._info:
             return None
-        return info
+        return self._info[snap]
 
     def _status(self, verbose=False, skip_prereq=False):
         err = False

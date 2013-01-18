@@ -32,7 +32,7 @@ class SyncDcs(resSync.Sync):
         for d in self.dcs:
             try:
                 self.log.debug("try dcs", d)
-                self.dcscmd("get-dcsserver -connection %s"%self.conn, dcs=d)
+                self.dcscmd("get-dcsserver", dcs=d)
                 self.active_dcs = d
                 self.log.debug("set active dcs", self.active_dcs)
                 return
