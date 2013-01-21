@@ -23,7 +23,7 @@ from rcGlobalEnv import rcEnv
 class check(checks.check):
     prefixes = [os.path.join(os.sep, "usr", "local", "admin"),
                 os.path.join(os.sep, "opt", "MegaRAID", "MegaCli")]
-    megacli = ["MegaCli64", "MegaCli"]
+    megacli = ["MegaCli64", "MegaCli", "megacli"]
     chk_type = "raid"
     chk_name = "MegaCli"
 
