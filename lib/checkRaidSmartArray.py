@@ -20,17 +20,8 @@ import checks
 from rcUtilities import justcall, which
 import os
 
-path_list = os.environ['PATH'].split(':') + ['/opt/HPQacucli/sbin']
 sep = ':'
-
-if 'PROGRAMFILES(X86)' in os.environ:
-    path_list.append(os.path.join(os.environ.get('PROGRAMFILES'),
-                                  'compaq', 'hpacucli', 'bin'))
-    sep = ';'
-if 'PROGRAMFILES' in os.environ:
-    path_list.append(os.path.join(os.environ.get('PROGRAMFILES(X86)'),
-                                  'compaq', 'hpacucli', 'bin'))
-    sep = ';'
+path_list = os.environ['PATH'].split(sep) + ['/opt/HPQacucli/sbin']
 
 os.environ['PATH'] = sep.join(path_list)
 
