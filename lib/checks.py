@@ -106,7 +106,7 @@ class checks(check):
             print s
 
             d = chk.do_check()
-            if len(d) == 0:
+            if type(d) != list or len(d) == 0:
                 continue
             for i in d:
                 if not isinstance(i, dict):
