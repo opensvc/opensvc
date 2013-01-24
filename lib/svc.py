@@ -1046,7 +1046,7 @@ class Svc(Resource, Freezer):
         def _fn(self):
             if self.encap or not self.has_encap_resources:
                 return
-            if self.running_action not in ('migrate', 'boot', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+            if self.running_action not in ('migrate', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.slaves or \
@@ -1058,7 +1058,7 @@ class Svc(Resource, Freezer):
     def _master_action(fn):
         def _fn(self):
             if not self.encap and \
-               self.running_action not in ('migrate', 'boot', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+               self.running_action not in ('migrate', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
