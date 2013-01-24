@@ -540,7 +540,7 @@ def install_pythonlink_windows():
 	cmdpath = os.path.join(pathbin, cmd)
 	if cmd == 'cron':
 	    cmdpath = os.path.join(pathbin, 'cron', 'opensvc')
-	print "create", cmdpath
+	print "create", l
 	content = '@echo off\n"'+sys.executable+'" "'+cmdpath+'" %*'
         f = open(l, 'w')
         f.write(content)
