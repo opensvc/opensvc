@@ -57,8 +57,10 @@ class Vg(resDg.Dg):
     def get_cloud(self):
         if hasattr(self, 'cloud'):
             return self.cloud
-        c = self.svc.node.cloud_get(self.cloud_id)
-        self.cloud = c
+        try:
+            self.cloud = self.svc.node.cloud_get(self.cloud_id)
+        except ex.excInitError, e:
+            raise ex.excError(str(e))
         return self.cloud
 
     def get_uid(self):
@@ -119,8 +121,8 @@ class Vg(resDg.Dg):
         """
         try:
             node = self.get_node()
-        except:
-            raise ex.excError("can't find cloud node to list volumes")
+        except ex.excError, e:
+            raise ex.excError("can't find cloud node to list volumes (%s)"%str(e))
 
         c = self.get_cloud()
         disks = c.driver._node_info(node.id)['disks']
@@ -135,7 +137,12 @@ class Vg(resDg.Dg):
         return self.has_it()
 
     def _status(self, verbose=False):
-        if self.is_up():
+        try:
+            s = self.is_up()
+        except ex.excError, e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+        if s:
             return rcStatus.UP
         else:
             return rcStatus.DOWN
@@ -169,8 +176,8 @@ class Vg(resDg.Dg):
     def do_start(self):
         try:
             node = self.get_node()
-        except:
-            raise ex.excError("can't find cloud node to attach volume %s to"%(self.name))
+        except ex.excError, e:
+            raise ex.excError("can't find cloud node to attach volume %s to (%s)"%(self.name, str(e)))
 
         try:
             disk = self.get_disk()
@@ -184,8 +191,8 @@ class Vg(resDg.Dg):
     def do_stop(self):
         try:
             node = self.get_node()
-        except:
-            raise ex.excError("can't find cloud node to detach volume %s from"%(self.name))
+        except ex.excError, e:
+            raise ex.excError("can't find cloud node to detach volume %s from"%(self.name, str(e)))
 
         try:
             disk = self.get_disk()
