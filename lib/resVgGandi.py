@@ -184,6 +184,15 @@ class Vg(resDg.Dg):
         except:
             raise ex.excError("volume %s not found in %s"%(self.name, self.cloud_id))
 
+        try:
+            status = self.is_up()
+        except ex.excError, e:
+            self.log.error("abort gandi volume %s attach: %s"%(self.name, str(e)))
+
+        if status:
+            self.log.info("gandi volume %s is already attached"%self.name)
+            return
+
         self.log.info("attach gandi volume %s"%self.name)
         c = self.get_cloud()
         c.driver.ex_node_attach_disk(node, disk)
@@ -198,6 +207,15 @@ class Vg(resDg.Dg):
             disk = self.get_disk()
         except:
             raise ex.excError("volume %s not found in %s"%(self.name, self.cloud_id))
+
+        try:
+            status = self.is_up()
+        except ex.excError, e:
+            self.log.error("abort gandi volume %s detach: %s"%(self.name, str(e)))
+
+        if not status:
+            self.log.info("gandi volume %s is already detached"%self.name)
+            return
 
         self.log.info("detach gandi volume %s"%self.name)
         c = self.get_cloud()
