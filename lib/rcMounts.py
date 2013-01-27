@@ -19,8 +19,8 @@
 
 class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
-        self.dev = dev
-        self.mnt = mnt
+        self.dev = dev.rstrip('/')
+        self.mnt = mnt.rstrip('/')
         self.type = type
         self.mnt_opt = mnt_opt
 
@@ -54,6 +54,13 @@ class Mounts:
             if getattr(i, param) == value:
                 return i
         return None
+
+    def sort(self, key='mnt', reverse=False):
+        if len(self.mounts) == 0:
+            return
+        if key not in ('mnt', 'dev', 'type'):
+            return
+        self.mounts.sort(lambda x, y: cmp(getattr(x, key), getattr(y, key)), reverse=reverse)
 
     def __str__(self):
         output="%s" % (self.__class__.__name__)
