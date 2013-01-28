@@ -1814,6 +1814,8 @@ class Svc(Resource, Freezer):
           'json_devlist'
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
+          'boot',
+          'startstandby',
           'resource_monitor',
           'presync',
           'postsync',
