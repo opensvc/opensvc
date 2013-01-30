@@ -27,9 +27,10 @@ from rcUtilities import justcall, qcall
 from stat import *
 import resContainer
 from rcExceptions import excError
+from rcZfs import zfs_setprop
+from rcGlobalEnv import rcEnv
 
 ZONECFG="/usr/sbin/zonecfg"
-ZLOGIN="/usr/sbin/zlogin"
 PGREP="/usr/bin/pgrep"
 PWAIT="/usr/bin/pwait"
 INIT="/sbin/init"
@@ -116,6 +117,7 @@ class Zone(resContainer.Container):
             self.log.info("zone container %s already installed" % self.name)
             return 0
         try:
+            self.umount_fs_in_zonepath()
             self.zoneadm('attach')
         except excError:
             self.zoneadm('attach', ['-F'] )
@@ -144,7 +146,7 @@ class Zone(resContainer.Container):
             f.close()
 
     def get_smf_state(self, smf=None):
-        cmd = [ ZLOGIN, self.name, SVCS, '-H', '-o', 'state', smf]
+        cmd = self.runmethod + [SVCS, '-H', '-o', 'state', smf]
         (out, err, status) = justcall(cmd)
         if status == 0:
             return out.split('\n')[0]
@@ -263,7 +265,7 @@ class Zone(resContainer.Container):
 
     def operational(self):
         "return status of: zlogin zone pwd"
-        cmd = [ ZLOGIN, self.name, 'pwd']
+        cmd = self.runmethod + ['pwd']
         if qcall(cmd) == 0:
             return True
         else:
@@ -294,6 +296,34 @@ class Zone(resContainer.Container):
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
  
+    def umount_fs_in_zonepath(self):
+        """zone boot will fail if some fs linger under the zonepath.
+           those fs might be datasets automounted upon zpool import.
+           umount them.
+           if they are needed, them still may be mounted by opensvc
+           if declared as zoned fs or encap fs.
+        """
+        if self.zonepath == "/":
+            # sanity check
+            return
+
+        m = __import__('rcMounts'+rcEnv.sysname)
+        mounts = m.Mounts()
+        mounts.sort(reverse=True)
+        mntpts = []
+        for resource in self.svc.get_resources('fs'):
+            mntpts.append(resource.mountPoint)
+        for mount in mounts.mounts:
+            if not mount.mnt.startswith(self.zonepath):
+                continue
+            # don't umount fs not handled by the service
+            if mount.mnt not in mntpts:
+                continue
+            self.vcall(['umount', mount.mnt])
+            self.vcall(['rmdir', mount.mnt])
+            if mount.type == 'zfs':
+                zfs_setprop(mount.dev, 'canmount', 'noauto')
+
     def start(self):
         self.attach()
         self.ready()
