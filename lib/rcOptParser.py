@@ -113,6 +113,14 @@ action_desc = {
       'collector_disks': 'display service disks',
       'collector_alerts': 'display service alerts',
       'collector_events': 'display service events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
+      'collector_json_list_unavailability_ack': 'same as "collector list unavailability ack", output in JSON',
+      'collector_json_list_actions': 'same as "collector list actions", output in JSON',
+      'collector_json_show_actions': 'same as "collector show actions", output in JSON',
+      'collector_json_status': 'same as "collector status", output in JSON',
+      'collector_json_checks': 'same as "collector checks", output in JSON',
+      'collector_json_disks': 'same as "collector disks", output in JSON',
+      'collector_json_alerts': 'same as "collector alerts", output in JSON',
+      'collector_json_events': 'same as "collector events", output in JSON',
     },
 }
 

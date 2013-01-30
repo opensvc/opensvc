@@ -156,6 +156,17 @@ class Node(Svc, Freezer):
             'collector_list_nodes': 'show the list of nodes matching the filterset pointed by --filterset',
             'collector_list_services': 'show the list of services matching the filterset pointed by --filterset',
             'collector_list_filtersets': 'show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>',
+            'collector_json_list_unavailability_ack': 'same as "collector list unavailability ack", output in JSON',
+            'collector_json_list_actions': 'same as "collector list actions", output in JSON',
+            'collector_json_show_actions': 'same as "collector show actions", output in JSON',
+            'collector_json_status': 'same as "collector status", output in JSON',
+            'collector_json_checks': 'same as "collector checks", output in JSON',
+            'collector_json_disks': 'same as "collector disks", output in JSON',
+            'collector_json_alerts': 'same as "collector alerts", output in JSON',
+            'collector_json_events': 'same as "collector events", output in JSON',
+            'collector_json_list_nodes': 'same as "collector list nodes", output in JSON',
+            'collector_json_list_services': 'same as "collector list services", output in JSON',
+            'collector_json_list_filtersets': 'same as "collector list filtersets", output in JSON',
           },
         }
         self.collector = xmlrpcClient.Collector()

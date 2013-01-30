@@ -44,6 +44,15 @@ class Collector(object):
             raise ex.excError(d['msg'])
 
     def collector_list_unavailability_ack(self):
+        d = self._collector_list_unavailability_ack()
+        print_table(d)
+
+    def collector_json_list_unavailability_ack(self):
+        d = self._collector_list_unavailability_ack()
+        import json
+        json.dumps(d)
+
+    def _collector_list_unavailability_ack(self):
         if self.svcname is None:
             return
 
@@ -70,9 +79,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'])
+        return d['data']
 
     def collector_list_actions(self):
+        d = self._collector_list_actions()
+        print_table(d)
+
+    def collector_json_list_actions(self):
+        d = self._collector_list_actions()
+        import json
+        json.dumps(d)
+
+    def _collector_list_actions(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -89,7 +107,7 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'])
+        return d['data']
 
     def collector_ack_action(self):
         opts = {}
@@ -111,6 +129,15 @@ class Collector(object):
             raise ex.excError(d['msg'])
 
     def collector_status(self):
+        d = self._collector_status()
+        print_table(d)
+
+    def collector_json_status(self):
+        d = self._collector_status()
+        import json
+        json.dumps(d)
+
+    def _collector_status(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -120,9 +147,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'])
+        return d['data']
 
     def collector_checks(self):
+        d = self._collector_checks()
+        print_table(d)
+
+    def collector_json_status(self):
+        d = self._collector_checks()
+        import json
+        json.dumps(d)
+
+    def _collector_checks(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -132,9 +168,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'])
+        return d['data']
 
     def collector_disks(self):
+        d = self._collector_disks()
+        print_table(d, width=64)
+
+    def collector_json_disks(self):
+        d = self._collector_disks()
+        import json
+        json.dumps(d)
+
+    def _collector_disks(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -144,9 +189,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'], width=64)
+        return d['data']
 
     def collector_alerts(self):
+        d = self._collector_alerts()
+        print_table(d, width=30)
+
+    def collector_json_alerts(self):
+        d = self._collector_alerts()
+        import json
+        json.dumps(d)
+
+    def _collector_alerts(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -156,9 +210,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'], width=30)
+        return d['data']
 
     def collector_events(self):
+        d = self._collector_events()
+        print_table(d, width=50)
+        
+    def collector_json_events(self):
+        d = self._collector_events()
+        import json
+        json.dumps(d)
+
+    def _collector_events(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -172,9 +235,18 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'], width=50)
+        return d['data']
 
     def collector_show_actions(self):
+        d = self._collector_show_actions()
+        print_table(d, width=50)
+        
+    def collector_json_show_actions(self):
+        d = self._collector_show_actions()
+        import json
+        json.dumps(d)
+
+    def _collector_show_actions(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -190,29 +262,56 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-        print_table(d['data'], width=50)
+        return d['data']
 
     def collector_list_nodes(self):
+        d = self._collector_list_nodes()
+        for node in d:
+            print node
+        
+    def collector_json_list_nodes(self):
+        d = self._collector_list_nodes()
+        import json
+        json.dumps(d)
+
+    def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_nodes', opts)
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
-        for node in d['data']:
-            print node
+        return d['data']
 
     def collector_list_services(self):
+        d = self._collector_list_services()
+        for service in d:
+            print service
+        
+    def collector_json_list_services(self):
+        d = self._collector_list_services()
+        import json
+        json.dumps(d)
+
+    def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_services', opts)
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
-        for service in d['data']:
-            print service
+        return d['data']
 
     def collector_list_filtersets(self):
+        d = self._collector_list_filtersets()
+        for fset in d['data']:
+            print fset
+        
+    def collector_json_list_filtersets(self):
+        d = self._collector_list_filtersets()
+        import json
+        json.dumps(d)
+
+    def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_filtersets', opts)
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
-        for fset in d['data']:
-            print fset
+        return d['data']
 
