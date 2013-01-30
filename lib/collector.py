@@ -153,7 +153,7 @@ class Collector(object):
         d = self._collector_checks()
         print_table(d)
 
-    def collector_json_status(self):
+    def collector_json_checks(self):
         d = self._collector_checks()
         import json
         print json.dumps(d)
