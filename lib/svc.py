@@ -799,7 +799,7 @@ class Svc(Resource, Freezer):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
-        if not self.has_encap_resources:
+        if not self.has_encap_resources or container.status() == rcStatus.DOWN:
             # no need to run encap cmd (no encap resource)
             return '', '', 0
 
@@ -820,7 +820,7 @@ class Svc(Resource, Freezer):
             raise ex.excError("undefined rcmd/runmethod in resource %s"%container.rid)
 
         if ret != 0:
-            raise ex.excError("failed to execute encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
+            raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         if verbose:
             self.log.info('logs from %s child service:'%container.name)
             print out
