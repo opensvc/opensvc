@@ -20,7 +20,7 @@ import rcStatus
 import resources as Res
 import time
 import rcExceptions as ex
-from rcUtilities import qcall
+from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 import socket
 from subprocess import *
@@ -79,13 +79,16 @@ class Container(Res.Resource):
             """
             return True
         timeout = 1
-        cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
-                                '-o', 'ForwardX11=no',
-                                '-o', 'BatchMode=yes',
-                                '-n',
-                                '-o', 'ConnectTimeout='+repr(timeout),
-                                self.name, 'pwd']
-        ret = qcall(cmd)
+        if 'ssh' in self.runmethod[0]:
+            cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
+                                 '-o', 'ForwardX11=no',
+                                 '-o', 'BatchMode=yes',
+                                 '-n',
+                                 '-o', 'ConnectTimeout='+repr(timeout),
+                                  self.name, 'pwd']
+        else:
+            cmd = self.runmethod + ['pwd']
+        out, err, ret = justcall(cmd)
         if ret == 0:
             return True
         return False
