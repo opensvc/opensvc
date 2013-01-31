@@ -115,6 +115,12 @@ def svcmode_mod_name(svcmode=''):
     """
     if svcmode == 'hosted':
         return ('svcHosted', 'SvcHosted')
+    elif svcmode == 'sg':
+        return ('svcSg', 'SvcSg')
+    elif svcmode == 'rhcs':
+        return ('svcRhcs', 'SvcRhcs')
+    elif svcmode == 'vcs':
+        return ('svcVcs', 'SvcVcs')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
 def get_tags(conf, section):
@@ -1821,7 +1827,7 @@ def build(name):
         kwargs['disabled'] = get_disabled(conf, "", "")
 
         if "pkg_name" in defaults:
-            if svcmode not in ["sg", "rhcs"]:
+            if svcmode not in ["sg", "rhcs", "vcs"]:
                 log.error("can not set 'pkg_name' with '%s' mode in %s env"%(svcmode, name))
                 return None
             kwargs['pkg_name'] = defaults["pkg_name"]

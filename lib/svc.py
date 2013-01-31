@@ -114,6 +114,7 @@ class Svc(Resource, Freezer):
                              "hb.openha",
                              "hb.sg",
                              "hb.rhcs",
+                             "hb.vcs",
                              "hb.ovm",
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
@@ -1122,7 +1123,7 @@ class Svc(Resource, Freezer):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
     def cluster_mode_safety_net(self):
-        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs']):
+        if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
         all_disabled = True
         for r in self.get_resources('hb'):
