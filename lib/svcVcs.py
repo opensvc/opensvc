@@ -30,20 +30,29 @@ class SvcVcs(svc.Svc):
         svc.Svc.__init__(self, svcname, "vcs", optional=optional, disabled=disabled, tags=tags)
         self.pkg_name = pkg_name
         self.domainname = None
+        self.vcs_operational = True
         self.builder()
 
     def get_res_val(self, res, p):
+        if not self.vcs_operational:
+            raise ex.excError("VCS is not operational")
         cmd = ['hares', '-value', res, p]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            if "Cannot connect" in out:
+                self.vcs_operational = False
+            raise ex.excError(out)
         return out.strip()
 
     def get_grp_val(self, p):
+        if not self.vcs_operational:
+            raise ex.excError("VCS is not operational")
         cmd = ['hagrp', '-value', self.pkg_name, p]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            if "Cannot connect" in out:
+                self.vcs_operational = False
+            raise ex.excError(out)
         return out.strip()
 
     def get_domainname(self):
@@ -57,7 +66,12 @@ class SvcVcs(svc.Svc):
         return out.strip()
 
     def set_nodes(self):
-        s = self.get_grp_val('SystemList')
+        try:
+            s = self.get_grp_val('SystemList')
+        except ex.excError, e:
+            self.nodes = set([rcEnv.nodename])
+            return
+
         l = s.split()
 
         # SystemList goes in system/weight pairs
@@ -75,8 +89,7 @@ class SvcVcs(svc.Svc):
 
     def builder(self):
         if self.pkg_name is None:
-            self.error("pkg_name is not set")
-            raise ex.excInitError()
+            raise ex.excInitError("pkg name is not set")
         self.set_nodes()
         self.load_hb()
         self.load_resources()
@@ -88,10 +101,12 @@ class SvcVcs(svc.Svc):
         self += r
 
     def load_resources(self):
+        if not self.vcs_operational:
+            return
         cmd = ['hagrp', '-resources', self.pkg_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            return
         resource_names = out.strip().split('\n')
         for resource_name in resource_names:
             self.load_resource(resource_name)
