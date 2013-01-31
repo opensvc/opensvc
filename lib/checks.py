@@ -53,6 +53,7 @@ class checks(check):
         self.register('checkMce')
         self.register('checkZpool')
         self.register('checkAdvfsUsage')
+        self.register('checkNuma')
         self.register_local_checkers()
 
     def __iadd__(self, c):
