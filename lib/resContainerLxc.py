@@ -135,9 +135,7 @@ class Lxc(resContainer.Container):
         """
         raise ex.excError
 
-    def ping(self):
-        if not self.test_ping:
-            return
+    def _ping(self):
         return check_ping(self.addr, timeout=1)
 
     def is_up_on(self, nodename):
@@ -222,10 +220,10 @@ class Lxc(resContainer.Container):
 
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']
-            self.test_ping = False
         else:
             self.runmethod = rcEnv.rsh.split() + [name]
-            self.test_ping = True
+            # enable ping test on start
+            self.ping = self._ping
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
