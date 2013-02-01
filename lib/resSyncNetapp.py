@@ -19,7 +19,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, justcall
 import rcExceptions as ex
 import rcStatus
 import time
@@ -50,10 +50,22 @@ class syncNetapp(resSync.Sync):
         elif target in self.filers.values():
             filer = target
         else:
-            self.log.error("unable to find the %s filer"%target)
-            raise ex.excError
+            raise ex.excError("unable to find the %s filer"%target)
 
-        return self.call(rcEnv.rsh.split() + [self.user+'@'+filer] + cmd, info=info)
+        _cmd = rcEnv.rsh.split() + [self.user+'@'+filer] + cmd
+
+        if info:
+            self.log.info(' '.join(_cmd))
+
+        out, err, ret = justcall(rcEnv.rsh.split() + [self.user+'@'+filer] + cmd)
+
+        if info:
+            if len(out) > 0:
+                self.log.info(out)
+            if len(err) > 0:
+                self.log.error(err)
+
+        return ret, out, err
 
     def cmd_master(self, cmd, info=False):
         return self._cmd(cmd, "master", info=info)
@@ -68,8 +80,7 @@ class syncNetapp(resSync.Sync):
         now = datetime.datetime.now()
         l = lag.split(":")
         if len(l) != 3:
-            self.log.error("unexpected lag format")
-            raise ex.excError
+            raise ex.excError("unexpected lag format")
         delta = datetime.timedelta(hours=int(l[0]),
                                    minutes=int(l[1]),
                                    seconds=int(l[2]))
@@ -88,8 +99,7 @@ class syncNetapp(resSync.Sync):
             max = self.sync_max_delay
         l = lag.split(":")
         if len(l) != 3:
-            self.log.error("unexpected lag format")
-            raise ex.excError
+            raise ex.excError("unexpected lag format")
         if int(l[0]) * 60 + int(l[1]) > max:
             return True
         return False
@@ -111,13 +121,13 @@ class syncNetapp(resSync.Sync):
 
         (ret, buff, err) = self._cmd(['snapmirror', 'resync', '-f', '-S', src, dst], master, info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.excError(err)
         (ret, buff, err) = self._cmd(['snapmirror', 'release', self.path_short, src], master, info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.excError(err)
         (ret, buff, err) = self._cmd(['snapmirror', 'status', '-l', dst], slave, info=False)
         if ret != 0:
-            raise ex.excError
+            raise ex.excError(err)
         snap = ""
         state = ""
         for line in buff.split('\n'):
@@ -138,7 +148,7 @@ class syncNetapp(resSync.Sync):
         time.sleep(5)
         (ret, buff, err) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.excError(err)
 
     def syncupdate(self):
         s = self.snapmirror_status(self.slave())
@@ -210,10 +220,9 @@ class syncNetapp(resSync.Sync):
         raise ex.excError
 
     def snapmirror_status(self, filer):
-        (ret, buff, err) = self._cmd(['snapmirror', 'status'], filer)
+        (ret, buff, err) = self._cmd(['snapmirror', 'status'], filer, info=False)
         if ret != 0:
-	    self.log.error("can get snapmirror status from %s"%filer)
-            raise ex.excError
+            raise ex.excError("can get snapmirror status from %s: %s"%(filer, err))
         key = ':'.join([filer, self.path_short])
         list = []
         for line in buff.split('\n'):
@@ -225,16 +234,14 @@ class syncNetapp(resSync.Sync):
             if l[0] == key or l[1] == key:
                 list.append(l)
         if len(list) == 0:
-	    self.log.error("%s not found in snapmirror status"%self.path_short)
-            raise ex.excError
+            raise ex.excError("%s not found in snapmirror status"%self.path_short)
         elif len(list) == 1:
             l = list[0]
             master = l[0].split(':')[0]
             slave = l[1].split(':')[0]
             return dict(master=master, slave=slave, state=l[2], lag=l[3], status=l[4])
         else:
-            self.log.error("%s is in an unsupported state. Please repair manually."%filer)
-            raise ex.excError
+            raise ex.excError("%s is in an unsupported state. Please repair manually."%filer)
 
     def local_snapmirror_status(self):
         return self.snapmirror_status(self.local())
@@ -264,7 +271,8 @@ class syncNetapp(resSync.Sync):
     def _status(self, verbose=False):
         try:
             s = self.snapmirror_status(self.slave())
-        except:
+        except ex.excError, e:
+            self.status_log(str(e))
             return rcStatus.UNDEF
         if s['state'] == "Snapmirrored":
             if "Transferring" in s['status']:
