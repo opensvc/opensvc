@@ -1,7 +1,7 @@
 import os
 import re
 import glob
-from rcUtilities import call, qcall
+from rcUtilities import call, qcall, justcall
 
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
@@ -39,7 +39,7 @@ def check_ping(addr, timeout=5, count=1):
                  '-W', repr(timeout),
                  '-w', repr(timeout),
                  addr]
-    (ret, out, err) = call(cmd)
+    out, err,ret = justcall(cmd)
     if ret == 0:
         return True
     return False
