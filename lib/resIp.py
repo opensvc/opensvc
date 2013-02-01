@@ -115,6 +115,8 @@ class Ip(Res.Resource):
             raise ex.excError
 
     def abort_start(self):
+        if 'noaction' in self.tags:
+            return False
         if self.check_ping() and not self.is_up():
             return True
         return False
