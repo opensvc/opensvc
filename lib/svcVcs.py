@@ -95,7 +95,7 @@ class SvcVcs(svc.Svc):
         self.load_resources()
 
     def load_hb(self):
-        rid = 'hb#sg0'
+        rid = 'hb#vcs0'
         m = __import__("resHbVcs")
         r = m.Hb(rid, self.pkg_name)
         self += r
