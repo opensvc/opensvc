@@ -36,7 +36,7 @@ class SvcVcs(svc.Svc):
     def get_res_val(self, res, p):
         if not self.vcs_operational:
             raise ex.excError("VCS is not operational")
-        cmd = ['hares', '-value', res, p]
+        cmd = ['/opt/VRTSvcs/bin/hares', '-value', res, p]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "Cannot connect" in out:
@@ -47,7 +47,7 @@ class SvcVcs(svc.Svc):
     def get_grp_val(self, p):
         if not self.vcs_operational:
             raise ex.excError("VCS is not operational")
-        cmd = ['hagrp', '-value', self.pkg_name, p]
+        cmd = ['/opt/VRTSvcs/bin/hagrp', '-value', self.pkg_name, p]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "Cannot connect" in out:
@@ -103,7 +103,7 @@ class SvcVcs(svc.Svc):
     def load_resources(self):
         if not self.vcs_operational:
             return
-        cmd = ['hagrp', '-resources', self.pkg_name]
+        cmd = ['/opt/VRTSvcs/bin/hagrp', '-resources', self.pkg_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
