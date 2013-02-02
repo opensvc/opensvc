@@ -31,6 +31,11 @@ class SvcVcs(svc.Svc):
         self.pkg_name = pkg_name
         self.domainname = None
         self.vcs_operational = True
+
+        self.n_ip = 0
+        self.n_fs = 0
+        self.n_vg = 0
+
         self.builder()
 
     def get_res_val(self, res, p):
@@ -112,80 +117,77 @@ class SvcVcs(svc.Svc):
             self.load_resource(resource_name)
 
     def load_resource(self, name):
-        n_ip = 0
-        n_fs = 0
-        n_vg = 0
         s = self.get_res_val(name, 'Type')
         if s == 'Mount':
-            self.load_fs(name, n_fs)
-            n_fs += 1
+            self.load_fs(name)
+            self.n_fs += 1
         elif s == 'CFSMount':
-            self.load_cfs(name, n_fs)
-            n_fs += 1
+            self.load_cfs(name)
+            self.n_fs += 1
         elif s  == 'DiskGroup':
-            self.load_vg(name, n_vg)
-            n_vg += 1
+            self.load_vg(name)
+            self.n_vg += 1
         elif s == 'CVMVolDg':
-            self.load_cvg(name, n_vg)
-            n_vg += 1
+            self.load_cvg(name)
+            self.n_vg += 1
         elif s == 'IP':
-            self.load_ip(name, n_ip)
-            n_ip += 1
+            self.load_ip(name)
+            self.n_ip += 1
 
-    def load_cvg(self, name, n):
+    def load_cvg(self, name):
         vgname = self.get_res_val(name, 'CVMDiskGroup')
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
-        rid = 'vg#vcs%d'%n
+        rid = 'vg#vcs%d'%self.n_vg
         m = __import__("resVgVcs"+rcEnv.sysname)
         r = m.Vg(rid, vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
-    def load_vg(self, name, n):
+    def load_vg(self, name):
         vgname = self.get_res_val(name, 'DiskGroup')
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
-        rid = 'vg#vcs%d'%n
+        rid = 'vg#vcs%d'%self.n_vg
         m = __import__("resVgVcs"+rcEnv.sysname)
         r = m.Vg(rid, vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
-    def load_ip(self, name, n):
+    def load_ip(self, name):
         dev = self.get_res_val(name, 'Device')
         ipaddr = self.get_res_val(name, 'Address')
         netmask = self.get_res_val(name, 'NetMask')
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
-        rid = 'ip#vcs%d'%n
+        rid = 'ip#vcs%d'%self.n_ip
         m = __import__("resIpVcs"+rcEnv.sysname)
         r = m.Ip(rid, dev, ipaddr, netmask, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
-    def load_fs(self, name, n):
+    def load_fs(self, name):
         dev = self.get_res_val(name, 'BlockDevice')
         mnt = self.get_res_val(name, 'MountPoint')
         mntopt = self.get_res_val(name, 'MountOpt')
         fstype = self.get_res_val(name, 'FSType')
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
-        rid = 'fs#vcs%d'%n
+        rid = 'fs#vcs%d'%self.n_fs
         m = __import__("resMountVcs"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt,
                     disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
-    def load_cfs(self, name, n):
+    def load_cfs(self, name):
         dev = self.get_res_val(name, 'BlockDevice')
         mnt = self.get_res_val(name, 'MountPoint')
         mntopt = self.get_res_val(name, 'MountOpt')
         fstype = self.get_res_val(name, 'AMFMountType')
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
-        rid = 'fs#vcs%d'%n
+        rid = 'fs#vcs%d'%self.n_fs
         m = __import__("resMountVcs"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt,
                     disabled=disabled, monitor=monitor)
