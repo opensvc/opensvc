@@ -122,6 +122,9 @@ class SvcVcs(svc.Svc):
         elif s == 'DiskGroup':
             self.load_vg(name, n_vg)
             n_vg += 1
+        elif s == 'IP':
+            self.load_ip(name, n_ip)
+            n_ip += 1
 
     def load_vg(self, name, n):
         vgname = self.get_res_val(name, 'DiskGroup')
@@ -134,23 +137,16 @@ class SvcVcs(svc.Svc):
         self += r
 
     def load_ip(self, name, n):
-        """
-        <ip address="10.105.133.5" monitor_link="0">
-        """
-        if 'ref' in e.attrib:
-            # load ref xml node and recurse
-            return
-        if not 'address' in e.attrib:
-            return
-        ipname = e.attrib['address']
-
-        n = self.n_ip
+        dev = self.get_res_val(name, 'Device')
+        ipaddr = self.get_res_val(name, 'Address')
+        netmask = self.get_res_val(name, 'NetMask')
+        disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
+        monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'ip#vcs%d'%n
         m = __import__("resIpVcs"+rcEnv.sysname)
-        r = m.Ip(rid, "", ipname, "")
-        r.monitor = True
+        r = m.Ip(rid, dev, ipaddr, netmask, disabled=disabled, monitor=monitor)
+        r.vcs_name = name
         self += r
-        self.n_ip += 1
 
     def load_fs(self, name, n):
         dev = self.get_res_val(name, 'BlockDevice')
