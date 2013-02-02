@@ -97,6 +97,7 @@ class Svc(Resource, Freezer):
                              "disk.gandi",
                              "disk.scsireserv",
                              "disk.vg",
+                             "disk.lv",
                              "disk.zpool",
                              "fs",
                              "ip",

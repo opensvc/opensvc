@@ -35,6 +35,7 @@ class SvcVcs(svc.Svc):
         self.n_ip = 0
         self.n_fs = 0
         self.n_vg = 0
+        self.n_lv = 0
 
         self.builder()
 
@@ -130,9 +131,23 @@ class SvcVcs(svc.Svc):
         elif s == 'CVMVolDg':
             self.load_cvg(name)
             self.n_vg += 1
+        elif s == 'Volume':
+            self.load_lv(name)
+            self.n_lv += 1
         elif s == 'IP':
             self.load_ip(name)
             self.n_ip += 1
+
+    def load_lv(self, name):
+        lvname = self.get_res_val(name, 'Volume')
+        vgname = self.get_res_val(name, 'DiskGroup')
+        disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
+        monitor = True if self.get_res_val(name, 'Critical') == "1" else False
+        rid = 'lv#vcs%d'%self.n_lv
+        m = __import__("resLvVcs"+rcEnv.sysname)
+        r = m.Lv(rid, vgname, lvname, disabled=disabled, monitor=monitor)
+        r.vcs_name = name
+        self += r
 
     def load_cvg(self, name):
         vgname = self.get_res_val(name, 'CVMDiskGroup')
