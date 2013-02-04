@@ -297,7 +297,11 @@ class Asset(rcAsset.Asset):
     def _get_serial(self):
         if self.container:
             return 'n/a'
-        for l in self.dmidecode:
+        try:
+            i = self.dmidecode.index('System Information')
+        except ValueError:
+            return 'Unknown'
+        for l in self.dmidecode[i+1:]:
             if 'Serial Number:' in l:
                 return l.split(':')[-1].strip()
         return 'Unknown'
