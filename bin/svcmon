@@ -106,9 +106,11 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       '')
             l.append(buff)
 
-    lock.acquire()
+    if lock is not None:
+        lock.acquire()
     print '\n'.join(l)
-    lock.release()
+    if lock is not None:
+        lock.release()
 
     if upddb:
         if queue is None:
