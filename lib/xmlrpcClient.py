@@ -1102,12 +1102,13 @@ class Collector(object):
     def push_sym(self, objects=[], sync=True):
         if 'update_sym_xml' not in self.proxy_methods:
     	    print "'update_sym_xml' method is not exported by the collector"
-    	    return
+    	    return 1
         m = __import__('rcSymmetrix')
         try:
             syms = m.Syms(objects)
-        except:
-            return
+        except Exception, e:
+            print e
+            return 1
         for sym in syms:
             vals = []
             for key in sym.keys:
