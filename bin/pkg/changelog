@@ -1,0 +1,1 @@
+git log --pretty=oneline origin/b1.4 | awk 'BEGIN{cmd="git describe --tags origin/b1.4" ; cmd | getline rev; split(rev, a, "-"); rev=a[2]}{if (rev<0){exit};print a[1] "-" rev " " $0; rev=rev-1}'
