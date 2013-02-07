@@ -23,7 +23,7 @@ class Syms(object):
         for symm in tree.getiterator('Symm_Info'):
             model = symm.find('model').text
             sid = symm.find('symid').text
-            if filtering and sid not in self.objects:
+            if self.filtering and sid not in self.objects:
                 continue
             if model in ['VMAX-1']:
                 self.syms.append(Vmax(sid))
