@@ -142,10 +142,16 @@ class Vg(resDg.Dg):
         except ex.excError, e:
             self.status_log(str(e))
             return rcStatus.WARN
-        if s:
-            return rcStatus.UP
+        if rcEnv.nodename in self.always_on:
+            if s:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.STDBY_DOWN
         else:
-            return rcStatus.DOWN
+            if s:
+                return rcStatus.UP
+            else:
+                return rcStatus.DOWN
 
     def get_node(self):
         c = self.get_cloud()
