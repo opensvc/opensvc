@@ -1,7 +1,6 @@
 #!/usr/bin/ksh
 
 osvc_path=/opt/opensvc/bin
-osvc_opts="--parallel"
 allservices=${osvc_path}/allservices
 
 case $1 in
