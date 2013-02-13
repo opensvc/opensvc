@@ -25,6 +25,7 @@ from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 import resContainer
 u = __import__('rcUtilitiesHP-UX')
+import resVgHpVm
 
 class HpVm(resContainer.Container):
     def __init__(self, rid, name, guestos="HP-UX", optional=False, disabled=False,
@@ -33,13 +34,21 @@ class HpVm(resContainer.Container):
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags, always_on=always_on)
+        self.vg = resVgHpVm.Vg(
+          rid = 'vmdg#'+self.rid,
+          name = 'vmdg_'+self.name,
+          container_name = self.name
+        )
+
+    def on_add(self):
+        self.vg.svc = self.svc
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def files_to_sync(self):
         import glob
-        a = []
+        a = self.vg.files_to_sync()
         guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
         uuid = os.path.realpath(guest)
         share = os.path.join(rcEnv.pathvar, 'vg_'+self.name+'_*.share')
@@ -120,3 +129,14 @@ class HpVm(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
+    def disklist(self):
+        return self.vg.disklist()
+
+    def devlist(self):
+        return self.vg.devlist()
+
+    def presync(self):
+        return self.vg.presync()
+
+    def postsync(self):
+        return self.vg.postsync()

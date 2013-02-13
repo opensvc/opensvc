@@ -27,11 +27,11 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Vg):
-    def __init__(self, rid=None, name=None, container_id=None, type=None,
+    def __init__(self, rid=None, name=None, container_name=None, type=None,
                  optional=False, disabled=False, tags=set([]),
                  monitor=False):
         self.label = name
-        self.container_id = container_id
+        self.container_name = container_name
         resVg.Vg.__init__(self, rid=rid, name=name,
                           type='disk.vg', monitor=monitor,
                           optional=optional, disabled=disabled, tags=tags)
@@ -135,7 +135,7 @@ class Vg(resVg.Vg):
             raise ex.excError
 
     def disklist(self):
-        cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.svc.resources_by_id[self.container_id].name]
+        cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.container_name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:

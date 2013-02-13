@@ -650,9 +650,7 @@ def add_vmdg(svc, conf, s):
         svc.log.error("type must be set in section %s"%kwargs['container_id'])
         return
 
-    if container_type == 'hpvm':
-        vg = __import__('resVgHpVm')
-    elif container_type == 'ldom':
+    if container_type == 'ldom':
         vg = __import__('resVgLdom')
     else:
         return
