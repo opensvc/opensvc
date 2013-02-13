@@ -153,7 +153,7 @@ class Fdmn(object):
         if type(o) == Volume:
             self.size += o.size
             self.free += o.free
-            self.used_pct += int(100. * (self.size - self.free) / self.size)
+            self.used_pct = int(100. * (self.size - self.free) / self.size)
             o.domain = self
             self.vols[o.name] = o
         elif type(o) == Fset:
