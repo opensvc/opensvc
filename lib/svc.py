@@ -646,6 +646,7 @@ class Svc(Resource, Freezer):
                 "mon_hbstatus",
                 "mon_containerstatus",
                 "mon_fsstatus",
+                "mon_sharestatus",
                 "mon_appstatus",
                 "mon_availstatus",
                 "mon_overallstatus",
