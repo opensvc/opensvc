@@ -703,6 +703,51 @@ def add_pool(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_share(svc, conf, s):
+    try:
+        _type = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        svc.log.error("type must be set in section %s"%s)
+        return
+
+    fname = 'add_share_'+_type
+    if fname not in globals():
+        svc.log.error("type '%s' not supported in section %s"%(_type, s)) 
+    globals()[fname](svc, conf, s)
+
+def add_share_nfs(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+    except ex.OptNotFound:
+        svc.log.error("path must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['opts'] = conf_get_string_scope(svc, conf, s, 'opts')
+    except ex.OptNotFound:
+        svc.log.error("opts must be set in section %s"%s)
+        return
+
+    try:
+        share = __import__('resShareNfs'+rcEnv.sysname)
+    except ImportError:
+        svc.log.error("resShareNfs%s is not implemented"%rcEnv.sysname)
+        return
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+
+    r = share.Share(**kwargs)
+
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_fs(svc, conf, s):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
@@ -2045,6 +2090,7 @@ def build(name):
         add_resources('vmdg', svc, conf)
         add_resources('pool', svc, conf)
         add_resources('fs', svc, conf)
+        add_resources('share', svc, conf)
         add_apps(svc, conf)
         add_syncs(svc, conf)
     except (ex.excInitError, ex.excError), e:

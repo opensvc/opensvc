@@ -79,6 +79,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
               status["ip"],
               status["disk"],
               status["fs"],
+              status["share"],
               status["app"],
               status["hb"],
               status["sync"],
@@ -98,6 +99,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       s["ip"],
                       s["disk"],
                       s["fs"],
+                      s["share"],
                       s["app"],
                       s["hb"],
                       s["sync"],
@@ -122,11 +124,11 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 
 def svcmon_normal(svcs, upddb=False):
     fmt = '%-' + str(max_len(svcs)) + 's'
-    fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-9s %-9s %-10s %-10s %-6s'
+    fmt += ' %-7s %-9s %-9s %-9s %-10s %-10s %-10s %-10s %-9s %-9s %-10s %-10s %-6s'
 
-    print fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "app   ", "hb    ", "sync  ", "avail ", "overall", "      ")
-    print fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status", "status", "status", "status ", "frozen")
-    print fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "------", "------", "------", "-------", "------")
+    print fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "share ", "app   ", "hb    ", "sync  ", "avail ", "overall", "      ")
+    print fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status", "status", "status", "status", "status ", "frozen")
+    print fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "------", "------", "------", "------", "-------", "------")
     ps = []
     queues = {}
 

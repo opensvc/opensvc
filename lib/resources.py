@@ -36,7 +36,7 @@ class Resource(object):
     label = None
 
     def __init__(self, rid=None, type=None, optional=False, disabled=False,
-                 monitor=False, tags=set([])):
+                 monitor=False, tags=set([]), always_on=set([])):
         self.rid = rid
         self.tags = tags
         self.type = type
@@ -46,7 +46,7 @@ class Resource(object):
         self.monitor = monitor
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
-        self.always_on = set([])
+        self.always_on = always_on
         if self.label is None: self.label = type
         self.status_log_str = ""
         self.can_rollback = False

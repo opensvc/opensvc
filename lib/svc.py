@@ -99,6 +99,7 @@ class Svc(Resource, Freezer):
                              "disk.vg",
                              "disk.lv",
                              "disk.zpool",
+                             "share.nfs",
                              "fs",
                              "ip",
                              "sync.rsync",
@@ -666,6 +667,7 @@ class Svc(Resource, Freezer):
                     str(status["hb"]),
                     str(status["container"]),
                     str(status["fs"]),
+                    str(status["share"]),
                     str(status["app"]),
                     str(status["avail"]),
                     str(status["overall"]),
@@ -708,6 +710,7 @@ class Svc(Resource, Freezer):
                                str(status["hb"]+rcStatus.Status(encap_res_status['hb'])),
                                str(status["container"]+rcStatus.Status(encap_res_status['container'])),
                                str(status["fs"]+rcStatus.Status(encap_res_status['fs'])),
+                               str(status["share"]+rcStatus.Status(encap_res_status['share'])),
                                str(status["app"]+rcStatus.Status(encap_res_status['app'])),
                                str(status["avail"]+rcStatus.Status(encap_res_status['avail'])),
                                str(status["overall"]+rcStatus.Status(encap_res_status['overall'])),
@@ -845,7 +848,7 @@ class Svc(Resource, Freezer):
               'overall': 'down',
               'resources': {},
             }
-            groups = set(["container", "ip", "disk", "fs", "hb"])
+            groups = set(["container", "ip", "disk", "fs", "share", "hb"])
             for g in groups:
                 gs[g] = 'down'
             for rs in self.get_res_sets(self.status_types, strict=True):
@@ -874,7 +877,7 @@ class Svc(Resource, Freezer):
           'overall': 'n/a',
           'resources': {},
         }
-        groups = set(["container", "ip", "disk", "fs", "hb", "app", "sync"])
+        groups = set(["container", "ip", "disk", "fs", "share", "hb", "app", "sync"])
         for g in groups:
             gs[g] = 'n/a'
 
@@ -901,7 +904,7 @@ class Svc(Resource, Freezer):
         return gs
         
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "sync", "app", "hb"]),
+                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
                      excluded_groups=set([])):
         from copy import copy
         """print each resource status for a service
@@ -1084,6 +1087,7 @@ class Svc(Resource, Freezer):
                 return
         self.master_startip()
         self.master_startfs()
+        self.master_startshare()
         self.startcontainer()
         self.master_startapp()
         self.slave_start()
@@ -1101,6 +1105,7 @@ class Svc(Resource, Freezer):
         except ex.excError:
             pass
         self.rollbackcontainer()
+        self.rollbackshare()
         self.rollbackfs()
         self.rollbackip()
 
@@ -1112,6 +1117,7 @@ class Svc(Resource, Freezer):
         except ex.excError:
             pass
         self.stopcontainer()
+        self.master_stopshare()
         self.master_stopfs()
         self.master_stopip()
 
@@ -1388,6 +1394,41 @@ class Svc(Resource, Freezer):
     def rollbackip(self):
         self.sub_set_action("ip", "rollback", xtags=set(['zone']))
 
+    def startshare(self):
+        self.master_startshare()
+        self.slave_startshare()
+
+    @_master_action
+    def master_startshare(self):
+        self.sub_set_action("share.nfs", "start")
+
+    @_master_action
+    def master_startstandbyshare(self):
+        self.sub_set_action("share", "startstandby")
+
+    @_slave_action
+    def slave_startshare(self):
+        self.encap_cmd(['startshare'], verbose=True)
+
+    def stopshare(self):
+        self.slave_stopshare()
+        self.master_stopshare()
+
+    @_master_action
+    def master_stopshare(self):
+        self.sub_set_action("share", "stop")
+
+    @_master_action
+    def master_shutdownshare(self):
+        self.sub_set_action("share", "shutdown")
+
+    @_slave_action
+    def slave_stopshare(self):
+        self.encap_cmd(['stopshare'], verbose=True)
+
+    def rollbackshare(self):
+        self.sub_set_action("share", "rollback")
+
     def startfs(self):
         self.master_startfs()
         self.slave_startfs()
@@ -1548,6 +1589,7 @@ class Svc(Resource, Freezer):
     def master_startstandby(self):
         self.master_startstandbyip()
         self.master_startstandbyfs()
+        self.master_startstandbyshare()
         self.startstandbycontainer()
         self.master_startstandbyapp()
         self.master_starthb()
