@@ -10,6 +10,15 @@ import time
 import datetime
 import subprocess
 
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(pathsvc, 'lib'))
+
+import node
+from rcUtilities import justcall, which
+
+node = node.Node()
+now = str(datetime.datetime.now())
+
 zs_d = os.path.join(os.sep, 'var', 'adm', 'zonestat')
 zs_prefix = 'zs'
 zs_f = os.path.join(zs_d, zs_prefix + datetime.datetime.now().strftime("%d"))
@@ -128,3 +137,88 @@ for z in stor:
     txt = out.split()
     print >>f, datenow, zn, stor[z]['SWAP'], stor[z]['RSS'], stor[z]['CAP'], stor[z]['at'], stor[z]['avgat'], stor[z]['pg'], stor[z]['avgpg'], stor[z]['NPROC'], stor[z]['mem'], stor[z]['cpu'], stor[z]['TIME'], txt[-3], txt[-2], txt[-1]
     p.wait()
+
+
+"""
+ fs_u
+"""
+def fs_u():
+    vars = ['date',
+            'nodename',
+            'mntpt',
+            'size',
+            'used']
+    vals = []
+    vals += fs_u_t("vxfs")
+    vals += fs_u_t("ufs")
+    vals += fs_u_zfs()
+    return vars, vals
+
+def fs_u_t(t):
+    if not which('df'):
+        return []
+    cmd = ['df', '-F', t, '-k']
+    (out,err,ret) = justcall(cmd)
+    if ret != 0:
+        return []
+    lines = out.split('\n')
+    if len(lines) < 2:
+        return []
+    vals = []
+    for line in lines[1:]:
+        l = line.split()
+        if len(l) == 5:
+            l = [''] + l
+        elif len(l) != 6:
+            continue
+        vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
+    return vals
+
+def fs_u_zfs():
+    if not which('zfs'):
+        return []
+    cmd = ['zfs', 'list', '-o', 'name,used,avail,mountpoint', '-H']
+    (out,err,ret) = justcall(cmd)
+    if ret != 0:
+        return []
+    lines = out.split('\n')
+    if len(lines) == 0:
+        return []
+    vals = []
+    for line in lines:
+        l = line.split()
+        if len(l) != 4:
+            continue
+        if "@" in l[0]:
+            # do not report clone usage
+            continue
+        if "osvc_sync_" in l[0]:
+            # do not report osvc sync snapshots fs usage
+            continue
+        used = convert(l[1])
+        if l[2] == '0':
+            l[2] = '0K'
+        avail = convert(l[2])
+        total = used + avail
+        pct = used / total * 100
+        vals.append([now, node.nodename, l[0], str(total), str(pct)])
+    return vals
+
+def convert(s):
+    s = s.replace(',', '.')
+    if len(s) < 2:
+        raise
+    if s.endswith('T'):
+        s = float(s[:-1])*1024*1024*1024
+    elif s.endswith('G'):
+        s = float(s[:-1])*1024*1024
+    elif s.endswith('M'):
+        s = float(s[:-1])*1024
+    elif s.endswith('K'):
+        s = float(s[:-1])
+    else:
+        raise
+    return s
+
+node.collector.call('push_stats_fs_u', fs_u())
+
