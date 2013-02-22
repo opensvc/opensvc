@@ -40,6 +40,9 @@ class Sysctl(object):
             print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
+        self.convert_keys()
+
+
     def fixable(self):
         return RET_OK
 
@@ -90,12 +93,8 @@ class Sysctl(object):
 
     def fix_key(self, key):
         done = False
-        value = key['value']
-        if type(value) != list or len(value) == 0:
-            print >>sys.stderr, "sysctl rule misformatted: %s"%value
-            raise
-        if type(value[0]) != list:
-            value = [value]
+        target = key['value']
+        index = key['index']
 
         with open(self.cf, 'r') as f:
             buff = f.read()
@@ -116,27 +115,20 @@ class Sysctl(object):
                 del lines[i]
                 continue
             val = self.parse_val(l[1])
-            for j, e in enumerate(value):
-                if len(e) != 2:
-                    continue
-                if e[1] == val[j]:
-                    continue
-                print "sysctl: set %s[%d] = %s"%(keyname, j, str(e[1]))
-                val[j] = e[1]
+            if target == val[index]:
+                continue
+            print "sysctl: set %s[%d] = %s"%(keyname, index, str(target))
+            val[index] = target
             lines[i] = "%s = %s"%(keyname, " ".join(map(str, val)))
             done = True
 
         if not done:
             # if key is not in sysctl.conf, get the value from kernel
             val = self.get_live_key(key['key'])
-            for j, e in enumerate(value):
-                if len(e) != 2:
-                    continue
-                if e[1] == val[j]:
-                    continue
-                val[j] = e[1]
-            print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
-            lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
+            if target != val[index]:
+                val[index] = target
+                print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
+                lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
 
         try:
             with open(self.cf, 'w') as f:
@@ -147,46 +139,62 @@ class Sysctl(object):
 
         return RET_OK
 
+    def convert_keys(self):
+        keys = []
+        for key in self.keys:
+            keyname = key['key']
+            value = key['value']
+            if type(value) == list:
+                if len(value) > 0 and type(value[0]) != list:
+                    value = [value]
+                for i, v in enumerate(value):
+                    keys.append({
+                      "key": keyname,
+                      "index": i,
+                      "op": v[0],
+                      "value": v[1],
+                    })
+            elif 'key' in key and 'index' in key and 'op' in key and 'value' in key:
+               keys.append(key)
+
+        self.keys = keys
+
     def check_key(self, key, verbose=False):
         r = RET_OK
         keyname = key['key']
-        value = key['value']
-        if type(value) != list or len(value) == 0:
-            print >>sys.stderr, "sysctl rule misformatted: %s"%value
-            raise
-        if type(value[0]) != list:
-            value = [value]
+        target = key['value']
+        op = key['op']
+        i = key['index']
         current_value = self.get_key(keyname)
         current_live_value = self.get_live_key(keyname)
+
         if current_value is None:
             if verbose:
                 print >>sys.stderr, "key '%s' not found in sysctl.conf"%keyname
             return RET_ERR
-        for i, v in enumerate(value):
-            if type(v) != list or len(v) != 2:
-                continue
-            op = v[0]
-            target = v[1]
-            if op == "=" and str(current_value[i]) != str(target):
-                if verbose:
-                    print >>sys.stderr, "sysctl err: %s[%d] = %s, target: %s"%(keyname, i, str(current_value[i]), str(target))
-                r |= RET_ERR
-            elif op == ">=" and type(target) == int and current_value[i] < target:
-                if verbose:
-                    print >>sys.stderr, "sysctl err: %s[%d] = %s, target: >= %s"%(keyname, i, str(current_value[i]), str(target))
-                r |= RET_ERR
-            elif op == "<=" and type(target) == int and current_value[i] > target:
-                if verbose:
-                    print >>sys.stderr, "sysctl err: %s[%d] = %s, target: <= %s"%(keyname, i, str(current_value[i]), str(target))
-                r |= RET_ERR
-            else:
-                if verbose:
-                    print "sysctl ok: %s[%d] = %s, on target"%(keyname, i, str(current_value[i]))
+
+        if op == "=" and str(current_value[i]) != str(target):
+            if verbose:
+                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: %s"%(keyname, i, str(current_value[i]), str(target))
+            r |= RET_ERR
+        elif op == ">=" and type(target) == int and current_value[i] < target:
+            if verbose:
+                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: >= %s"%(keyname, i, str(current_value[i]), str(target))
+            r |= RET_ERR
+        elif op == "<=" and type(target) == int and current_value[i] > target:
+            if verbose:
+                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: <= %s"%(keyname, i, str(current_value[i]), str(target))
+            r |= RET_ERR
+        else:
+            if verbose:
+                print "sysctl ok: %s[%d] = %s, on target"%(keyname, i, str(current_value[i]))
+
         if r == RET_OK and current_live_value is not None and current_value != current_live_value:
             if verbose:
                 print >>sys.stderr, "sysctl err: %s on target in sysctl.conf but kernel value is different"%(keyname)
             self.need_reload = True
             r |= RET_ERR
+
         return r
 
     def check(self):
