@@ -111,6 +111,8 @@ class Share(Resource):
             if e.startswith('ro=') or e.startswith('rw=') or e.startswith('access='):
                 opt, clients = e.split('=')
                 clients = ':'.join(sorted(clients.split(':')))
+                if len(clients) == 0:
+                    continue
                 out.append('='.join((opt, clients)))
             else:
                 out.append(e)
