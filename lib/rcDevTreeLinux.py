@@ -350,6 +350,9 @@ class DevTree(rcDevTree.DevTree):
         holderpaths = glob.glob("%s/holders/*"%devpath)
         holdernames = map(lambda x: os.path.basename(x), holderpaths)
         for holdername, holderpath in zip(holdernames, holderpaths):
+            if not os.path.exists(holderpath):
+                # broken symlink
+                continue
             size = self.get_size(holderpath)
             devtype = self.dev_type(holdername)
             d.add_child(holdername, size, devtype)
@@ -366,6 +369,9 @@ class DevTree(rcDevTree.DevTree):
         slavepaths = glob.glob("%s/slaves/*"%devpath)
         slavenames = map(lambda x: os.path.basename(x), slavepaths)
         for slavename, slavepath in zip(slavenames, slavepaths):
+            if not os.path.exists(slavepath):
+                # broken symlink
+                continue
             size = self.get_size(slavepath)
             devtype = self.dev_type(slavename)
             d.add_parent(slavename, size, devtype)
@@ -459,6 +465,10 @@ class DevTree(rcDevTree.DevTree):
         dm_h = self.get_dm()
         for lv, segments in self.get_lv_linear().items():
             for devt, length in segments:
+                if devt not in self.dev_h:
+                    continue
+                if lv not in dm_h:
+                    continue
                 child = dm_h[lv]
                 parent = self.dev_h[devt]
                 r = self.get_relation(parent, child)
