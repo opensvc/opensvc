@@ -17,6 +17,10 @@ except:
     sysname, nodename, x, x, machine, x = platform.uname()
 
 pathbin = os.path.dirname(__file__)
+if not pathbin.rstrip('/').endswith('bin'):
+    # hpux executes the postinstall from dir
+    # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
+    pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
 pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
 pathbin = os.path.join(pathsvc, 'bin')
 pathetc = os.path.join(pathsvc, 'etc')
