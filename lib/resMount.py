@@ -131,6 +131,14 @@ class Mount(Res.Resource):
                 return rcStatus.DOWN
 
     def devlist(self):
+        pseudofs = [
+          'lofs',
+          'none',
+          'proc',
+          'sysfs',
+        ]
+        if self.fstype in pseudofs:
+            return set([])
         return set([self.device])
 
     def __str__(self):
