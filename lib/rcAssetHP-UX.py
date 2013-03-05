@@ -125,7 +125,7 @@ class Asset(rcAsset.Asset):
         lines = out.split('\n')
         if len(lines) < 2:
             return 'Unknown'
-        return lines[1].split()[0]
+        return lines[1].split()[-1]
 
     def _get_cpu_cores(self):
         for line in self.manifest:
