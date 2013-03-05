@@ -147,21 +147,27 @@ class Asset(rcAsset.Asset):
         n = 0
         i = 0
         for line in self.manifest:
+            line = line.replace('(', '').replace(')', '')
             if 'Processors:' in line:
                 i = 1
                 continue
-            if i > 0 and i < 3:
+            if i > 0 and i < 4:
                 i += 1
-                if "core" not in line:
+                if "core" not in line and "socket" not in line:
                     continue
                 words = line.split()
                 for j, w in enumerate(words):
+                    if w == "socket":
+                        try:
+                            n = int(words[j-2])
+                        except:
+                            break
                     if 'core' in w:
                         try:
                             n = int(words[j-1])
                         except:
                             break
-            elif i >= 3:
+            elif i >= 4:
                 break
         return n
 
