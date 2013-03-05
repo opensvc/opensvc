@@ -22,6 +22,8 @@ from subprocess import *
 import rcAsset
 import datetime
 
+os.environ['PATH'] += ":/opt/ignite/bin:/opt/propplus/bin"
+
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
