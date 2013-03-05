@@ -144,12 +144,32 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_cpu_model(self):
+        s = self._get_cpu_model_manifest()
+        if s == 'Unknown':
+            s = self._get_cpu_model_ts99()
+        return s
+
+    def _get_cpu_model_ts99(self):
+        p = '/var/tombstones/ts99'
+        if not os.path.exists(p):
+            return 'Unknown'
+        with open(p, 'r') as f:
+            buff = f.read()
+        lines = buff.split('\n')
+        for line in lines:
+            if "CPU Module" in line:
+                return line.strip().replace("CPU Module", "rev").replace('  ', ' ')
+        return 'Unknown'
+
+    def _get_cpu_model_manifest(self):
         marker = False
         for line in self.manifest:
             if 'Processors:' in line:
                 marker = True
                 continue
             if marker:
+                if "processor" not in line:
+                    return 'Unknown'
                 e = line.split()
                 return ' '.join(e[1:]).replace('processors','').replace('processor','')
         return 'Unknown'
