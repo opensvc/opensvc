@@ -64,7 +64,10 @@ class Asset(rcAsset.Asset):
                     self.banks += 1
 
     def _get_mem_banks(self):
-        return str(self.banks)
+        s = str(self.banks)
+        if s == '0':
+            s = self._get_mem_banks_ts99()
+        return s
 
     def _get_mem_slots(self):
         return str(self.slots)
@@ -134,14 +137,62 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_cpu_dies(self):
-        marker = False
+        n = self._get_cpu_cores_per_die()
+        if n == 0:
+            return str(self._get_cpu_dies_ts99())
+        cores = int(self._get_cpu_cores())
+        return str(cores // n)
+
+    def _get_cpu_cores_per_die(self):
+        n = 0
+        i = 0
         for line in self.manifest:
             if 'Processors:' in line:
-                marker = True
+                i = 1
                 continue
-            if marker:
-                return line.split()[0]
-        return '0'
+            if i > 0 and i < 3:
+                i += 1
+                if "core" not in line:
+                    continue
+                words = line.split()
+                for j, w in enumerate(words):
+                    if 'core' in w:
+                        try:
+                            n = int(words[j-1])
+                        except:
+                            break
+            elif i >= 3:
+                break
+        return n
+
+    def _get_mem_banks_ts99(self):
+        p = '/var/tombstones/ts99'
+        if not os.path.exists(p):
+            return '0'
+        with open(p, 'r') as f:
+            buff = f.read()
+        lines = buff.split('\n')
+        c = 0
+        for line in lines:
+            if "DIMM Error Information" in line:
+                c += 1
+        return str(c)
+
+    def _get_cpu_dies_ts99(self):
+        # count different serial numbers
+        p = '/var/tombstones/ts99'
+        if not os.path.exists(p):
+            return 1
+        with open(p, 'r') as f:
+            buff = f.read()
+        lines = buff.split('\n')
+        serials = set([])
+        for line in lines:
+            if "Cpu Serial Number" in line:
+                serials.add(line.split()[-1])
+        if len(serials) == 0:
+            return 1
+        return len(serials)
 
     def _get_cpu_model(self):
         s = self._get_cpu_model_manifest()
