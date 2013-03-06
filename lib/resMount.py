@@ -137,7 +137,7 @@ class Mount(Res.Resource):
           'proc',
           'sysfs',
         ]
-        if self.fstype in pseudofs:
+        if self.fsType in pseudofs:
             return set([])
         return set([self.device])
 
