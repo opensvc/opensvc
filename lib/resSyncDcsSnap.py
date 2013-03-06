@@ -111,7 +111,20 @@ Internal                 : False
             return None
         return self._info[snap]
 
+    def no_status(self):
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.flex_primary != rcEnv.nodename:
+            return True
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        if s['overall'].status not in [rcStatus.UP, rcStatus.NA]:
+            return True
+        return False
+
     def _status(self, verbose=False, skip_prereq=False):
+        if self.no_status():
+            self.status_log("skip on secondary node")
+            return rcStatus.NA
+
         err = False
         errlog = []
         log = []
