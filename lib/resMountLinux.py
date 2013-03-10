@@ -286,6 +286,10 @@ class Mount(Res.Mount):
                 (self.device, self.mountPoint))
             return 0
 
+        if self.fsType == "btrfs":
+            cmd = ['btrfs', 'device', 'scan']
+            ret, out, err = self.vcall(cmd)
+
         self.fsck()
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0755)
