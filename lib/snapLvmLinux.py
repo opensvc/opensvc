@@ -55,8 +55,8 @@ class Snap(snap.Snap):
         err_l2 = []
         out_l = out.split('\n')
         for e in err_l1:
-            if 'WARN' in e:
-                out_l.append(e)
+            if 'This metadata update is NOT backed up' in e:
+                pass
             else:
                 err_l2.append(e)
         err = '\n'.join(err_l2)
@@ -101,7 +101,11 @@ class Snap(snap.Snap):
         err_l2 = []
         out_l = out.split('\n')
         for e in err_l1:
-            if 'WARN' in e:
+            if 'This metadata update is NOT backed up' in e:
+                pass
+            elif 'Falling back to direct link removal.' in e:
+                out_l.append(e)
+            elif 'Falling back to direct node removal.' in e:
                 out_l.append(e)
             else:
                 err_l2.append(e)
