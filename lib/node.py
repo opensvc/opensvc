@@ -381,6 +381,8 @@ class Node(Svc, Freezer):
         return self
 
     def action(self, a):
+        if self.options.cron and a == "compliance_check":
+            self.updatecomp()
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
@@ -1032,6 +1034,8 @@ class Node(Svc, Freezer):
         elif self.config.has_option('node', 'repo'):
             pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
         else:
+            if self.options.cron:
+                return 0
             print >>sys.stderr, "node.repo or node.repocomp must be set in node.conf"
             return 1
         import tempfile
@@ -1044,16 +1048,22 @@ class Node(Svc, Freezer):
         except IOError:
             import traceback
             e = sys.exc_info()
+            if self.options.cron:
+                return 0
             print >>sys.stderr, "download failed", ":", e[1]
             return 1
         if 'invalid file' in headers.values():
-            print >>sys.stderr, "invalid file"
             f.close()
+            if self.options.cron:
+                return 0
+            print >>sys.stderr, "invalid file"
             return 1
         content = f.read()
         if content.startswith('<') and '404 Not Found' in content:
-            print >>sys.stderr, "not found"
             f.close()
+            if self.options.cron:
+                return 0
+            print >>sys.stderr, "not found"
             return 1
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
