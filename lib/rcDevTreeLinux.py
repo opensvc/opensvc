@@ -238,6 +238,8 @@ class DevTree(rcDevTree.DevTree):
             if wwid is not None:
                 d.set_alias(wwid)
             for dev in table[mapname]["devs"]:
+                if dev not in self.dev_h:
+                    continue
                 d.add_parent(self.dev_h[dev])
                 parentdev = self.get_dev(self.dev_h[dev])
                 parentdev.add_child(mapname)

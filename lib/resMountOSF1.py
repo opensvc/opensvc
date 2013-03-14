@@ -97,8 +97,11 @@ class Mount(Res.Mount):
         if '#' in self.device:
             dom, fset = self.device.split('#')
             import rcAdvfs
-            o = rcAdvfs.Fdmns()
-            d = o.get_fdmn(dom)
+            try:
+                o = rcAdvfs.Fdmns()
+                d = o.get_fdmn(dom)
+            except rcAdvfs.ExInit, e:
+                return set([])
             if d is None:
                 return set([])
             return set(d.list_volnames())

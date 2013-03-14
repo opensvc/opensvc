@@ -81,9 +81,12 @@ class diskInfo(rcDiskInfo.diskInfo):
         self.mpath_h = {}
         regex = re.compile('[(]*[0-9a-f]*[)]*')
         for line in lines:
-            if " dm-" in line:
-                wwid = None
+            if len(line) > 0 and \
+               line[0] not in (' ', '\\', '[', '`', '|'):
                 l = line.split()
+                if l[0].startswith("size="):
+                    continue
+                wwid = None
                 for w in l:
                     w = w.strip("()")
                     if len(w) not in [17, 33]:

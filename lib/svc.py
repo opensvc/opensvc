@@ -711,7 +711,7 @@ class Svc(Resource, Freezer):
                                str(status["hb"]+rcStatus.Status(encap_res_status['hb'])),
                                str(status["container"]+rcStatus.Status(encap_res_status['container'])),
                                str(status["fs"]+rcStatus.Status(encap_res_status['fs'])),
-                               str(status["share"]+rcStatus.Status(encap_res_status['share'])),
+                               str(status["share"]+rcStatus.Status(encap_res_status['share'] if 'share' in encap_res_status else 'n/a')),
                                str(status["app"]+rcStatus.Status(encap_res_status['app'])),
                                str(status["avail"]+rcStatus.Status(encap_res_status['avail'])),
                                str(status["overall"]+rcStatus.Status(encap_res_status['overall'])),
