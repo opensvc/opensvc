@@ -20,6 +20,7 @@ class Module(object):
     def __init__(self, name):
         self.name = name
         self.executable = None
+        self.updatecomp = False
 
         dl = os.listdir(comp_dir)
         match = []
@@ -228,6 +229,8 @@ class Compliance(object):
                             period_option='comp_check_period',
                             days_option='comp_check_days'):
             return
+        if self.updatecomp:
+            self.node.updatecomp()
         self.do_checks()
 
     def __iadd__(self, o):

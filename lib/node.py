@@ -381,13 +381,14 @@ class Node(Svc, Freezer):
         return self
 
     def action(self, a):
-        if self.options.cron and a == "compliance_check" and \
-           self.config.has_option('compliance', 'auto_update') and \
-           self.config.getboolean('compliance', 'auto_update'):
-            self.updatecomp()
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
+            if self.options.cron and a == "compliance_check" and \
+               self.config.has_option('compliance', 'auto_update') and \
+               self.config.getboolean('compliance', 'auto_update'):
+                o.updatecomp = True
+                o.node = self
             return getattr(o, a)()
         elif a.startswith("collector_"):
             from collector import Collector
