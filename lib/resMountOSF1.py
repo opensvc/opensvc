@@ -100,7 +100,7 @@ class Mount(Res.Mount):
             try:
                 o = rcAdvfs.Fdmns()
                 d = o.get_fdmn(dom)
-            except rcAdvfs.ExInit, e:
+            except rcAdvfs.ExInit as e:
                 return set([])
             if d is None:
                 return set([])
@@ -123,7 +123,7 @@ class Mount(Res.Mount):
 
         self.fsck()
         if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0755)
+            os.makedirs(self.mountPoint, 0o755)
         if self.fsType != "":
             fstype = ['-t', self.fsType]
         else:

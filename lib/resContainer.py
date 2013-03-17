@@ -120,7 +120,7 @@ class Container(Res.Resource):
         raise ex.excError
 
     def install_drp_flag(self):
-        print "TODO: install_drp_flag()"
+        print("TODO: install_drp_flag()")
 
     def where_up(self):
         """ returns None if the vm is not found running anywhere
@@ -183,20 +183,20 @@ class Container(Res.Resource):
             self.wait_for_shutdown()
 
     def check_capabilities(self):
-        #print "TODO: check_capabilities(self)"
+        #print("TODO: check_capabilities(self)")
         pass
 
     def container_start(self):
-        print "TODO: container_start(self)"
+        print("TODO: container_start(self)")
 
     def container_stop(self):
-        print "TODO: container_stop(self)"
+        print("TODO: container_stop(self)")
 
     def container_forcestop(self):
-        print "TODO: container_forcestop(self)"
+        print("TODO: container_forcestop(self)")
 
     def check_manual_boot(self):
-        print "TODO: check_manual_boot(self)"
+        print("TODO: check_manual_boot(self)")
         return False
 
     def is_up(self):
@@ -226,5 +226,5 @@ class Container(Res.Resource):
             return rcStatus.WARN
 
     def get_container_info(self):
-        print "TODO: get_container_info(self)"
+        print("TODO: get_container_info(self)")
         return {'vcpus': '0', 'vmem': '0'}

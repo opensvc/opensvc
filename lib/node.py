@@ -19,12 +19,12 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+from __future__ import print_function
 from svc import Svc
 from freezer import Freezer
 import svcBuilder
 import xmlrpcClient
 import os
-import ConfigParser
 import datetime
 import time
 import sys
@@ -35,6 +35,11 @@ import socket
 import rcLogger
 import rcUtilities
 import rcExceptions as ex
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 class Options(object):
     def __init__(self):
@@ -269,7 +274,7 @@ class Node(Svc, Freezer):
             self.config.write(fp)
             fp.close()
         except:
-            print >>sys.stderr, "failed to write new %s"%self.dotnodeconf
+            print("failed to write new %s"%self.dotnodeconf, file=sys.stderr)
             raise Exception()
         self.load_config()
 
@@ -285,7 +290,7 @@ class Node(Svc, Freezer):
             self.config.write(fp)
             fp.close()
         except:
-            print >>sys.stderr, "failed to write new %s"%self.nodeconf
+            print("failed to write new %s"%self.nodeconf, file=sys.stderr)
             raise Exception()
         self.load_config()
 
@@ -425,7 +430,7 @@ class Node(Svc, Freezer):
     def timestamp(self, timestamp_f, interval):
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
-            os.makedirs(timestamp_d ,0755)
+            os.makedirs(timestamp_d, 0o755)
         with open(timestamp_f, 'w') as f:
             f.write(str(datetime.datetime.now())+'\n')
             f.close()
@@ -480,18 +485,18 @@ class Node(Svc, Freezer):
         r = random.random()*100.0
 
         """
-        print "start:", start
-        print "end:", end
-        print "now:", now
-        print "length:", length
-        print "elapsed:", elapsed
-        print "elapsed_pct:", elapsed_pct
-        print "p:", p
-        print "r:", r
+        print("start:", start)
+        print("end:", end)
+        print("now:", now)
+        print("length:", length)
+        print("elapsed:", elapsed)
+        print("elapsed_pct:", elapsed_pct)
+        print("p:", p)
+        print("r:", r)
         """
 
         if r >= p:
-            print "win probabilistic challenge: %d, over %d"%(r, p)
+            print("win probabilistic challenge: %d, over %d"%(r, p))
             return False
 
         return True
@@ -504,7 +509,7 @@ class Node(Svc, Freezer):
             start = start_t.tm_hour * 60 + start_t.tm_min
             end = end_t.tm_hour * 60 + end_t.tm_min
         except:
-            print >>sys.stderr, "malformed time string: %s"%str(period)
+            print("malformed time string: %s"%str(period), file=sys.stderr)
             raise Exception("malformed time string: %s"%str(period))
         now = datetime.datetime.now()
         now_m = now.hour * 60 + now.minute
@@ -519,7 +524,7 @@ class Node(Svc, Freezer):
             return False
         elif not isinstance(period[0], unicode) or len(period) != 2 or \
              not isinstance(period[1], unicode):
-            print >>sys.stderr, "malformed period: %s"%str(period)
+            print("malformed period: %s"%str(period), file=sys.stderr)
             return False
 
         if len(period) == 0:
@@ -564,7 +569,7 @@ class Node(Svc, Freezer):
         try:
             period = json.loads(period_s)
         except:
-            print >>sys.stderr, "malformed parameter value: %s.period"%section
+            print("malformed parameter value: %s.period"%section, file=sys.stderr)
             return True
 
         if isinstance(period[0], list):
@@ -594,7 +599,7 @@ class Node(Svc, Freezer):
         try:
             period = json.loads(period_s)
         except:
-            print >>sys.stderr, "malformed parameter value: %s.period"%section
+            print("malformed parameter value: %s.period"%section, file=sys.stderr)
             return True
 
         if self.in_period(period):
@@ -617,7 +622,7 @@ class Node(Svc, Freezer):
         try:
             days = json.loads(days_s)
         except:
-            print >>sys.stderr, "malformed parameter value: %s.days"%section
+            print("malformed parameter value: %s.days"%section, file=sys.stderr)
             return True
 
         if self.in_days(days):
@@ -647,7 +652,7 @@ class Node(Svc, Freezer):
                     days_option=None):
 
         def err(msg):
-            print '%s: skip:'%section, msg, '(--force to bypass)'
+            print('%s: skip:'%section, msg, '(--force to bypass)')
 
         if not self.options.cron:
             return False
@@ -693,7 +698,7 @@ class Node(Svc, Freezer):
             import random
             import time
             delay = int(random.random()*300)
-            print "delay action for %d secs to level database load"%delay
+            print("delay action for %d secs to level database load"%delay)
             time.sleep(delay)
             self.delay_done = True
 
@@ -852,10 +857,10 @@ class Node(Svc, Freezer):
         return l
 
     def shutdown(self):
-        print "TODO"
+        print("TODO")
 
     def reboot(self):
-        print "TODO"
+        print("TODO")
 
     def syncservices(self):
         self.setup_sync_conf()
@@ -915,7 +920,7 @@ class Node(Svc, Freezer):
     def prkey(self):
         from rcGlobalEnv import rcEnv
         m = __import__('hostid'+rcEnv.sysname)
-        print m.hostid()
+        print(m.hostid())
 
     def checks(self):
         if self.skip_action('checks', 'push_interval', 'last_checks_push',
@@ -925,25 +930,25 @@ class Node(Svc, Freezer):
 
         import checks
         if self.svcs is None:
-	    self.build_services()
+            self.build_services()
         c = checks.checks(self.svcs)
         c.node = self
         c.do_checks()
 
     def unset(self):
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if not self.config.has_section(section):
-            print >>sys.stderr, "section '%s' not found"%section
+            print("section '%s' not found"%section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
         try:
             self.config.remove_option(section, option)
@@ -954,32 +959,32 @@ class Node(Svc, Freezer):
 
     def get(self):
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if not self.config.has_section(section):
-            print >>sys.stderr, "section '%s' not found"%section
+            print("section '%s' not found"%section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
-        print self.config.get(section, option)
+        print(self.config.get(section, option))
         return 0
 
     def set(self):
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         if self.options.value is None:
-            print >>sys.stderr, "no value. set --value"
+            print("no value. set --value", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if not self.config.has_section(section):
@@ -997,10 +1002,10 @@ class Node(Svc, Freezer):
     def register(self):
         u = self.collector.call('register_node')
         if u is None:
-            print >>sys.stderr, "failed to obtain a registration number"
+            print("failed to obtain a registration number", file=sys.stderr)
             return 1
         elif isinstance(u, list):
-            print >>sys.stderr, u[0]
+            print(u[0], file=sys.stderr)
             return 1
         try:
             if not self.config.has_section('node'):
@@ -1008,9 +1013,9 @@ class Node(Svc, Freezer):
             self.config.set('node', 'uuid', u)
             self.write_config()
         except:
-            print >>sys.stderr, "failed to write registration number: %s"%u
+            print("failed to write registration number: %s"%u, file=sys.stderr)
             return 1
-        print "registered"
+        print("registered")
         return 0
 
     def service_action_worker(self, s, **kwargs):
@@ -1039,12 +1044,12 @@ class Node(Svc, Freezer):
         else:
             if self.options.cron:
                 return 0
-            print >>sys.stderr, "node.repo or node.repocomp must be set in node.conf"
+            print("node.repo or node.repocomp must be set in node.conf", file=sys.stderr)
             return 1
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
-        print "get %s (%s)"%(pkg_name, tmpf)
+        print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
@@ -1053,20 +1058,20 @@ class Node(Svc, Freezer):
             e = sys.exc_info()
             if self.options.cron:
                 return 0
-            print >>sys.stderr, "download failed", ":", e[1]
+            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
             f.close()
             if self.options.cron:
                 return 0
-            print >>sys.stderr, "invalid file"
+            print("invalid file", file=sys.stderr)
             return 1
         content = f.read()
         if content.startswith('<') and '404 Not Found' in content:
             f.close()
             if self.options.cron:
                 return 0
-            print >>sys.stderr, "not found"
+            print("not found", file=sys.stderr)
             return 1
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
@@ -1076,7 +1081,7 @@ class Node(Svc, Freezer):
             shutil.rmtree(backp)
         except:
             pass
-        print "extract compliance in", rcEnv.pathtmp
+        print("extract compliance in", rcEnv.pathtmp)
         import tarfile
         tar = tarfile.open(tmpf)
         os.chdir(rcEnv.pathtmp)
@@ -1084,16 +1089,16 @@ class Node(Svc, Freezer):
             tar.extractall()
             tar.close()
         except:
-            print >>sys.stderr, "failed to unpack"
+            print("failed to unpack", file=sys.stderr)
             return 1
         f.close()
-        print "install new compliance"
+        print("install new compliance")
         shutil.move(compp, backp)
         shutil.move(tmpp, compp)
 
     def updatepkg(self):
         if not os.path.exists(os.path.join(rcEnv.pathlib, 'rcUpdatePkg'+rcEnv.sysname+'.py')):
-            print >>sys.stderr, "updatepkg not implemented on", rcEnv.sysname
+            print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         m = __import__('rcUpdatePkg'+rcEnv.sysname)
         if self.config.has_option('node', 'repopkg'):
@@ -1101,32 +1106,32 @@ class Node(Svc, Freezer):
         elif self.config.has_option('node', 'repo'):
             pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
         else:
-            print >>sys.stderr, "node.repo or node.repopkg must be set in node.conf"
+            print("node.repo or node.repopkg must be set in node.conf", file=sys.stderr)
             return 1
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
-        print "get %s (%s)"%(pkg_name, tmpf)
+        print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
         except IOError:
             import traceback
             e = sys.exc_info()
-            print >>sys.stderr, "download failed", ":", e[1]
+            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
-            print >>sys.stderr, "invalid file"
+            print("invalid file", file=sys.stderr)
             f.close()
             return 1
         content = f.read()
         if content.startswith('<') and '404 Not Found' in content:
-            print >>sys.stderr, "not found"
+            print("not found", file=sys.stderr)
             f.close()
             return 1
-        print "updating opensvc"
+        print("updating opensvc")
         m.update(tmpf)
-        print "clean up"
+        print("clean up")
         f.close()
         return 0
 
@@ -1136,15 +1141,15 @@ class Node(Svc, Freezer):
             try:
                 d = json.loads(rs)
             except:
-                print >>sys.stderr, "JSON read error: %s", rs
+                print("JSON read error: %s", rs, file=sys.stderr)
                 return 1
             if 'rtype' not in d:
-                print >>sys.stderr, "'rtype' key must be set in resource dictionary: %s", rs
+                print("'rtype' key must be set in resource dictionary: %s", rs, file=sys.stderr)
                 return 1
 
             rtype = d['rtype']
             if len(rtype) < 2:
-                print >>sys.stderr, "invalid 'rtype' value: %s", rs
+                print("invalid 'rtype' value: %s", rs, file=sys.stderr)
                 return 1
             rtype = rtype[0].upper() + rtype[1:].lower()
 
@@ -1154,10 +1159,10 @@ class Node(Svc, Freezer):
             try:
                 m = __import__(modname)
             except ImportError:
-                print >>sys.stderr, "provisioning is not available for resource type:", d['rtype'], "(%s)"%modname
+                print("provisioning is not available for resource type:", d['rtype'], "(%s)"%modname, file=sys.stderr)
                 return 1
             if not hasattr(m, "d_provisioner"):
-                print >>sys.stderr, "provisioning with nodemgr is not available for this resource type:", d['rtype']
+                print("provisioning with nodemgr is not available for this resource type:", d['rtype'], file=sys.stderr)
                 return 1
 
             self.provision_resource.append((m, d))
@@ -1188,11 +1193,11 @@ class Node(Svc, Freezer):
         try:
             m = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
-            print >>sys.stderr, "scanscsi is not supported on", rcEnv.sysname
+            print("scanscsi is not supported on", rcEnv.sysname, file=sys.stderr)
             return 1
         o = m.diskInfo()
         if not hasattr(o, 'scanscsi'):
-            print >>sys.stderr, "scanscsi is not implemented on", rcEnv.sysname
+            print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         return o.scanscsi()
 
@@ -1204,8 +1209,8 @@ class Node(Svc, Freezer):
         for s in self.config.sections():
             try:
                 self.cloud_init_section(s)
-            except ex.excInitError, e:
-                print >>sys.stderr, str(e)
+            except ex.excInitError as e:
+                print(str(e), file=sys.stderr)
                 r |= 1
         return r
 
@@ -1269,16 +1274,16 @@ class Node(Svc, Freezer):
         for env in envs:
             svcname = os.path.basename(env).rstrip('.env')
             if svcname.endswith(suffix) and svcname not in svcnames:
-                print "purge_service(svcname)", svcname
+                print("purge_service(svcname)", svcname)
 
     def cloud_init_service(self, c, vmname, svcname):
         import glob
         envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
         env = os.path.join(rcEnv.pathetc, svcname+'.env')
         if env in envs:
-            print svcname, "is already defined"
+            print(svcname, "is already defined")
             return
-        print "initialize", svcname
+        print("initialize", svcname)
 
         defaults = {
           'app': c.app_id(svcname),
@@ -1295,7 +1300,7 @@ class Node(Svc, Freezer):
             config.write(fp)
             fp.close()
         except:
-            print >>sys.stderr, "failed to write %s"%env
+            print("failed to write %s"%env, file=sys.stderr)
             raise Exception()
 
         d = env.rstrip('.env')+'.dir'

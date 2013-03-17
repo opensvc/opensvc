@@ -45,7 +45,7 @@ class Cloud(rcCloud.Cloud):
         _id = self.app_cloud_id()
         try:
             vapps = self.driver.list_nodes()
-        except socket.error, e:
+        except socket.error as e:
             raise ex.excExecError("error connecting to %s cloud manager"%s)
         for vapp in vapps:
             __id = '.'.join((vapp.name, _id))

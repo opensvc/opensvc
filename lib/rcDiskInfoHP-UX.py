@@ -145,14 +145,14 @@ class diskInfo(rcDiskInfo.diskInfo):
     def print_diskinfo(self, info):
         info['size'] = self.disk_size(info['devname'])
         info['hbtl'] = "#:#:#:#"
-        print self.print_diskinfo_fmt%(
+        print(self.print_diskinfo_fmt%(
           info['hbtl'],
           os.path.basename(info['devname']),
           info['size'],
           info['dev'],
           info['vendor'],
           '',
-        )
+        ))
 
     def scanscsi(self):
         ioscan_before = self.load_ioscan()

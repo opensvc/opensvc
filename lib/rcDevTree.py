@@ -189,10 +189,10 @@ class Dev(object):
             s += " "
         s += "%s %s %d %d"%(self.alias, self.devtype, self.size, used)
         s += " %s"%self.devpath
-        print s
+        print(s)
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
-            #print map(lambda x: (x.parent, x.child, x.used, x.get_size(chain+[parent]), x.used), chain+[parent])
+            #print(map(lambda x: (x.parent, x.child, x.used, x.get_size(chain+[parent]), x.used), chain+[parent]))
             dev.print_dev_bottom_up(level+1, chain+[parent])
 
 class DevTree(object):
@@ -312,4 +312,4 @@ if __name__ == "__main__":
     d.add_child('/dev/mapper/vg01-foo', 1000)
     d = tree.get_dev('/dev/mapper/vg01-foo')
     d.add_child('foo.vmdk', 500)
-    print tree
+    print(tree)

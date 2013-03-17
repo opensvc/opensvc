@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
 from rcGlobalEnv import rcEnv
 import os
 
@@ -78,7 +79,7 @@ class checks(check):
                 m = __import__(cname)
                 self += m.check(svcs=self.svcs)
             except:
-                print >>sys.stderr, 'Could not import check:', cname
+                print('Could not import check:', cname, file=sys.stderr)
 
     def register(self, chk_name):
         if not os.path.exists(os.path.join(rcEnv.pathlib, chk_name+rcEnv.sysname+'.py')):
@@ -104,7 +105,7 @@ class checks(check):
             s = chk.chk_type
             if hasattr(chk, "chk_name"):
                 s += ' (' + chk.chk_name + ')'
-            print s
+            print(s)
 
             d = chk.do_check()
             if type(d) != list or len(d) == 0:
@@ -128,7 +129,7 @@ class checks(check):
                 if len(chk_svcname) > 0:
                     s += '@' + chk_svcname
                 s += ': ' + i['chk_value']
-                print s
+                print(s)
 
                 vals.append([\
                     rcEnv.nodename,

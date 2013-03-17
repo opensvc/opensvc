@@ -3,6 +3,7 @@
 YYYY-MM-DD hh:mm:ss ZONE SWAP RSS CAP at avgat pg avgpg NPROC mem% cpu% TIME LastReboot
 """
 
+from __future__ import print_function
 import os, sys, platform
 import select
 import logging
@@ -135,7 +136,7 @@ for z in stor:
                          shell=True)
     out = p.stdout.readline()
     txt = out.split()
-    print >>f, datenow, zn, stor[z]['SWAP'], stor[z]['RSS'], stor[z]['CAP'], stor[z]['at'], stor[z]['avgat'], stor[z]['pg'], stor[z]['avgpg'], stor[z]['NPROC'], stor[z]['mem'], stor[z]['cpu'], stor[z]['TIME'], txt[-3], txt[-2], txt[-1]
+    print(datenow, zn, stor[z]['SWAP'], stor[z]['RSS'], stor[z]['CAP'], stor[z]['at'], stor[z]['avgat'], stor[z]['pg'], stor[z]['avgpg'], stor[z]['NPROC'], stor[z]['mem'], stor[z]['cpu'], stor[z]['TIME'], txt[-3], txt[-2], txt[-1], file=f)
     p.wait()
 
 

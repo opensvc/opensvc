@@ -35,7 +35,7 @@ if len(sys.argv) == 1:
 elif len(sys.argv) == 2:
 	f = Freezer(sys.argv[1])
 else:
-	print __file__ + " [service]"
+	print(__file__ + " [service]")
 	sys.exit(1)
 
 cmd = os.path.basename(__file__)

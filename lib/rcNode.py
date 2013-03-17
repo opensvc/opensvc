@@ -22,7 +22,11 @@ import re
 from rcGlobalEnv import *
 import logging
 import rcExceptions as ex
-import ConfigParser
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 def node_get_hostmode():
     nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
@@ -36,7 +40,7 @@ def node_get_hostmode():
     return 'TST'
 
 def discover_node():
-	"""Fill rcEnv class with information from node discovery
-	"""
-	rcEnv.host_mode = node_get_hostmode()
+    """Fill rcEnv class with information from node discovery
+    """
+    rcEnv.host_mode = node_get_hostmode()
 

@@ -120,14 +120,14 @@ class Fdmn(object):
         lines = out.split('\n')
         if len(lines) < 5:
             raise ExInit()
-    	header = lines[2].split()
-    	self.domid = header[0]
-    	self.name = header[-1]
-    	self.version = header[-2]
-    	self.logpgs = header[-3]
-    	self.vols = {}
-    	self.fsets = {}
-    	for line in lines[5:]:
+        header = lines[2].split()
+        self.domid = header[0]
+        self.name = header[-1]
+        self.version = header[-2]
+        self.logpgs = header[-3]
+        self.vols = {}
+        self.fsets = {}
+        for line in lines[5:]:
             try:
                 v = Volume(line)
                 self += v
@@ -207,6 +207,6 @@ class Fdmns(object):
 
 if __name__ == "__main__":
     o = Fdmns()
-    print o.list_fdmns()
+    print(o.list_fdmns())
     d = o.get_fdmn('dom1')
-    print d
+    print(d)

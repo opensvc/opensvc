@@ -209,14 +209,6 @@ class Lxc(resContainer.Container):
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
                                         monitor=monitor, tags=tags, always_on=always_on)
-        self.prefix = self.find_prefix()
-        if self.prefix is None:
-            print >>sys.stderr, "lxc install prefix not found"
-            raise ex.excInitError
-        self.cf = self.find_cf()
-        if self.cf is None:
-            print >>sys.stderr, "lxc container config file not found"
-            raise ex.excInitError
 
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']
@@ -224,6 +216,16 @@ class Lxc(resContainer.Container):
             self.runmethod = rcEnv.rsh.split() + [name]
             # enable ping test on start
             self.ping = self._ping
+
+    def on_add(self):
+        self.prefix = self.find_prefix()
+        if self.prefix is None:
+            self.log.error("lxc install prefix not found")
+            raise ex.excInitError
+        self.cf = self.find_cf()
+        if self.cf is None:
+            self.log.error("lxc container config file not found")
+            raise ex.excInitError
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

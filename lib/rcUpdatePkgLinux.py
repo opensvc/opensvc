@@ -4,14 +4,14 @@ import os
 
 def update_deb(fpath):
     cmd = ['dpkg', '-i', fpath]
-    print ' '.join(cmd)
+    print(' '.join(cmd))
     p = Popen(cmd)
     p.communicate()
     return p.returncode
 
 def update_rpm(fpath):
     cmd = ['rpm', '-U', fpath, '--force', '--nodeps']
-    print ' '.join(cmd)
+    print(' '.join(cmd))
     p = Popen(cmd)
     p.communicate()
     return p.returncode

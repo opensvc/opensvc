@@ -25,11 +25,10 @@ def dcscmd(cmd, manager, username, password, dcs=None, conn=None):
                  cmd+ " ; disconnect-dcsserver -connection %s"%conn]
     else:
         _cmd += [cmd]
-    #print ' '.join(_cmd)
     out, err, ret = justcall(_cmd)
     if "ErrorId" in err:
-        print _cmd
-        print out
+        print(_cmd)
+        print(out)
         raise ex.excError("dcs command execution error")
     try:
         out = out.decode("latin1").encode("utf8")
@@ -67,7 +66,7 @@ class Dcss(object):
                 password = conf.get(s, 'password')
                 m += [(manager, dcs, username, password)]
             except:
-                print "error parsing section", s
+                print("error parsing section", s)
                 pass
         del(conf)
         done = []
@@ -135,67 +134,67 @@ class Dcs(object):
 
     def get_dcsservergroup(self):
         cmd = 'get-dcsservergroup -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsserver(self):
         cmd = 'get-dcsserver -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspool(self):
         cmd = 'get-dcspool -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldisk(self):
         cmd = 'get-dcslogicaldisk -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsvirtualdisk(self):
         cmd = 'get-dcsvirtualdisk -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsphysicaldisk(self):
         cmd = 'get-dcsphysicaldisk -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsdiskpath(self):
         cmd = 'get-dcsdiskpath -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolmember(self):
         cmd = 'get-dcspoolmember -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcspoolperf(self):
         cmd = 'get-dcspool -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcslogicaldiskperf(self):
         cmd = 'get-dcslogicaldisk -connection %s | get-dcsperformancecounter -connection %s'%(self.conn, self.conn)
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
     def get_dcsport(self):
         cmd = 'get-dcsport -connection %s'%self.conn
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.dcscmd(cmd)[0]
         return buff
 
@@ -253,7 +252,7 @@ class Dcs(object):
             raise ex.excError("'dg_name' value is misformatted")
         for machine in self.get_machines(map(lambda x: x[0], paths)):
             cmd += " $v | Serve-DcsVirtualDisk -connection %s -Machine %s -EnableRedundancy ;"""%(self.conn, machine)
-        print cmd
+        print(cmd)
         out, err, ret = self.dcscmd(cmd)
 
     def get_machines(self, ids):
@@ -282,4 +281,4 @@ class Dcs(object):
 if __name__ == "__main__":
     o = Dcss()
     for dcs in o:
-        print dcs.get_dcsserver()
+        print(dcs.get_dcsserver())

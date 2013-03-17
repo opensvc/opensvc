@@ -24,11 +24,11 @@ class check(checks.check):
     chk_name = "Windows network link aggregate"
 
     def do_check(self):
-	self.w = wmi.WMI(namespace="root\hpq")
-	r = []
+        self.w = wmi.WMI(namespace="root\hpq")
+        r = []
         for team in self.w.HP_EthernetTeam():
             r += self.do_check_team(team)
-	return r
+        return r
 
     def do_check_team(self, team):
         r = []

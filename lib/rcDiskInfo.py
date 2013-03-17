@@ -35,12 +35,12 @@ class diskInfo(object):
         return "tbd"
 
     def print_diskinfo_header(self):
-        print self.print_diskinfo_fmt%(
+        print(self.print_diskinfo_fmt%(
           "hbtl",
           "devname",
           "size",
           "dev",
           "vendor",
           "model",
-        )
+        ))
 

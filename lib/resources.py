@@ -169,8 +169,8 @@ class Resource(object):
             return True
         try :
             self.do_action(action)
-        except exc.excUndefined , ex:
-            print ex
+        except exc.excUndefined as ex:
+            print(ex)
             return False
         except exc.excError:
             if self.optional:
@@ -341,7 +341,7 @@ class ResourceSet(Resource):
                 import sys
                 import traceback
                 e = sys.exc_info()
-                print e[0], e[1], traceback.print_tb(e[2])
+                print(e[0], e[1], traceback.print_tb(e[2]))
 
                 status = rcStatus.NA
 
@@ -386,21 +386,21 @@ class ResourceSet(Resource):
 if __name__ == "__main__":
     for c in (Resource,ResourceSet) :
         help(c)
-    print """m1=Resource("Type1")"""
+    print("""m1=Resource("Type1")""")
     m1=Resource("Type1")
-    print "m1=",m1
-    print """m2=Resource("Type1")"""
+    print("m1=",m1)
+    print("""m2=Resource("Type1")""")
     m2=Resource("Type1")
-    print "m1=",m1
-    print "m2=",m2
-    print """sets=ResourceSet("TypeRes2")"""
+    print("m1=",m1)
+    print("m2=",m2)
+    print("""sets=ResourceSet("TypeRes2")""")
     sets=ResourceSet("TypeRes2")
-    print "sets=", sets
-    print """sets+=m1"""
+    print("sets=", sets)
+    print("""sets+=m1""")
     sets+=m1
-    print "sets=", sets
-    print """sets+=m2"""
+    print("sets=", sets)
+    print("""sets+=m2""")
     sets+=m2
-    print "sets=", sets
+    print("sets=", sets)
 
 

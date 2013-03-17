@@ -129,7 +129,7 @@ class Mount(Res.Mount):
             return 0
         self.fsck()
         if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0755)
+            os.makedirs(self.mountPoint, 0o755)
         if self.fsType != "":
             fstype = ['-v', self.fsType]
         else:

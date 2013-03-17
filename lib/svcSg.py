@@ -63,7 +63,7 @@ class SvcSg(svc.Svc):
                     res, node, param = l
                     node = node.replace('node:', '')
                 else:
-                    print l
+                    print(l)
                     continue
                 restype, resname = res.split(':')
                 if restype not in self.cmviewcl:
@@ -76,7 +76,7 @@ class SvcSg(svc.Svc):
                     self.cmviewcl[restype][resname][param] = value
             else:
                 self.cmviewcl[param] = value
-        #print self.cmviewcl
+        #print(self.cmviewcl)
 
     def load_cntl(self):
         p = self.cmviewcl['run_script']

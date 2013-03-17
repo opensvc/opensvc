@@ -198,5 +198,5 @@ class Drbd(Res.Resource):
 if __name__ == "__main__":
     help(Drbd)
     v = Drbd(res='test')
-    print v
+    print(v)
 

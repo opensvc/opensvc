@@ -48,7 +48,7 @@ class check(checks.check):
         for log in logs:
             try:
                 os.unlink(log)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == 2:
                     pass
                 else:
@@ -72,7 +72,7 @@ class check(checks.check):
             lines = out.split('\n')
             ctrl = "ctrl:"+str(ix)
             slot=""
-	    chk_dsk = 0
+            chk_dsk = 0
             for line in lines:
                 if line.startswith('IR volume'):
                     chk_dsk = 2

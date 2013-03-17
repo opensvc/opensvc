@@ -19,7 +19,7 @@ class Cloud(rcCloud.Cloud):
         gandi = get_driver(Provider.GANDI)
         try:
             self.driver = gandi(auth['key'])
-        except Exception, e:
+        except Exception as e:
             raise ex.excInitError("error login to gandi cloud %s: %s"%(s, str(e)))
 
     def app_id(self):
@@ -36,7 +36,7 @@ class Cloud(rcCloud.Cloud):
         _id = self.app_cloud_id()
         try:
             vapps = self.driver.list_nodes()
-        except socket.error, e:
+        except socket.error as e:
             raise ex.excExecError("error connecting to %s cloud manager"%s)
         for vapp in vapps:
             __id = '.'.join((vapp.name, _id))

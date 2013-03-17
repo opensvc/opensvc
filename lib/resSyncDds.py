@@ -379,7 +379,7 @@ class syncDds(resSync.Sync):
             import sys
             import traceback
             e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
+            print(e[0], e[1], traceback.print_tb(e[2]))
             return rcStatus.WARN
         if last < now - delay:
             self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))

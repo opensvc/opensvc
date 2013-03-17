@@ -271,7 +271,7 @@ class syncNetapp(resSync.Sync):
     def _status(self, verbose=False):
         try:
             s = self.snapmirror_status(self.slave())
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.UNDEF
         if s['state'] == "Snapmirrored":

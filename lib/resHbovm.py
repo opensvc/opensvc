@@ -50,18 +50,18 @@ class Hb(resHb.Hb):
     def stop(self):
         try:
             self.manager = rcOvm.Ovm(log=self.log)
-            for r in self.svc.get_resources('container.ovm"):
+            for r in self.svc.get_resources('container.ovm'):
                 self.manager.vm_disable_ha(r.name)
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise
 
     def start(self):
         try:
             self.manager = rcOvm.Ovm(log=self.log)
-            for r in self.svc.get_resources('container.ovm"):
+            for r in self.svc.get_resources('container.ovm'):
                 self.manager.vm_enable_ha(r.name)
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise
         self.can_rollback = True
@@ -75,9 +75,9 @@ class Hb(resHb.Hb):
             return rcStatus.WARN
         try:
             self.manager = rcOvm.Ovm(log=self.log)
-            for r in self.svc.get_resources('container.ovm"):
+            for r in self.svc.get_resources('container.ovm'):
                 ha_enabled = self.manager.vm_ha_enabled(r.name)
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if not ha_enabled:

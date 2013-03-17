@@ -95,7 +95,7 @@ class Jail(resContainer.Container):
         return False
 
     def get_container_info(self):
-        print "TODO: get_container_info()"
+        print("TODO: get_container_info()")
         return {'vcpus': '0', 'vmem': '0'}
 
     def _status(self, verbose=False):

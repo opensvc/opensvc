@@ -29,7 +29,7 @@ class Ip(Res.Ip):
     """ define ip SunOS start/stop doAction """
 
     def arp_announce(self):
-	""" arp_announce job is done by SunOS ifconfig... """
+        """ arp_announce job is done by SunOS ifconfig... """
         return
 
     def check_ping(self):

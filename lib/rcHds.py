@@ -11,7 +11,7 @@ pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 def _cmd(cmd, url, username, password, serial):
     bin = "HiCommandCLI"
     if which(bin) is None:
-        print "Can not find %s"%bin
+        print("Can not find %s"%bin)
         raise ex.excError
     l = [bin, url, cmd[0],
          "-u", username,
@@ -19,9 +19,7 @@ def _cmd(cmd, url, username, password, serial):
          "serialnum="+serial]
     if len(cmd) > 1:
         l += cmd[1:]
-    #print ' '.join(l)
     out, err, ret = justcall(l)
-    #print out, err, ret
     if ret != 0:
         raise ex.excError(err)
     return out, err, ret
@@ -56,7 +54,7 @@ class Hdss(object):
                 password = conf.get(s, 'password')
                 m += [(url, arrays, username, password)]
             except:
-                print "error parsing section", s
+                print("error parsing section", s)
                 pass
         del(conf)
         done = []
@@ -92,24 +90,24 @@ class Hds(object):
 
     def get_lu(self):
         cmd = ['GetStorageArray', 'subtarget=Logicalunit', 'lusubinfo=Path,LDEV,VolumeConnection']
-        print ' '.join(cmd)
+        print(' '.join(cmd))
         out, err, ret = self._cmd(cmd)
         return out
 
     def get_arraygroup(self):
         cmd = ['GetStorageArray', 'subtarget=ArrayGroup']
-        print ' '.join(cmd)
+        print(' '.join(cmd))
         out, err, ret = self._cmd(cmd)
         return out
 
     def get_port(self):
         cmd = ['GetStorageArray', 'subtarget=Port']
-        print ' '.join(cmd)
+        print(' '.join(cmd))
         out, err, ret = self._cmd(cmd)
         return out
 
 if __name__ == "__main__":
     o = Hdss()
     for hds in o:
-        print hds.lu()
+        print(hds.lu())
 

@@ -31,15 +31,15 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-	import win32api
+        import win32api
         cmd = ['df', '-lP']
-	r = []
-	for drive in get_drives():
-	    try:
-	        n_free_user, n_total, n_free = win32api.GetDiskFreeSpaceEx(drive+':\\')
-	    except:
-	    	continue
-	    pct = 100 * (n_total - n_free) // n_total
+        r = []
+        for drive in get_drives():
+            try:
+                n_free_user, n_total, n_free = win32api.GetDiskFreeSpaceEx(drive+':\\')
+            except:
+                continue
+            pct = 100 * (n_total - n_free) // n_total
             r.append({
                       'chk_instance': drive,
                       'chk_value': str(pct),
@@ -49,4 +49,4 @@ class check(checks.check):
 
 if __name__ == "__main__":
     o = check()
-    print o.do_check()
+    print(o.do_check())

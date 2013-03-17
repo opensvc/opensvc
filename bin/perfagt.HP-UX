@@ -24,10 +24,10 @@ def fs_u():
     cmd = ['df', '-lP']
     (out, err, ret) = justcall(cmd)
     if ret != 0:
-        return self.undef
+        return
     lines = out.split('\n')
     if len(lines) < 2:
-        return self.undef
+        return
     vals = []
     for line in lines[1:]:
         l = line.split()
@@ -39,7 +39,7 @@ def fs_u():
 def glance_running(cmd_str):
     (out, err, ret) = justcall(['ps', '-ef'])
     if ret != 0:
-        print 'ps error'
+        print('ps error')
         return
 
     for line in out.split('\n'):
@@ -60,11 +60,11 @@ def run_glance():
     cmd_str = ' '.join(cmd)
 
     if not is_exe(glance):
-        print 'glance executable not found'
+        print('glance executable not found')
         return
 
     if glance_running(cmd_str):
-        print 'glance is already running'
+        print('glance is already running')
         return
 
     buff = """print GBL_STATTIME,
@@ -114,7 +114,7 @@ GBL_DISK_PHYS_WRITE_BYTE_RATE
         with open(syn, 'w') as f:
             f.write(buff)
     except:
-        print 'error writing %s'%syn
+        print('error writing %s'%syn)
         return
 
     collect_d = '/opt/opensvc/var/'
@@ -131,6 +131,8 @@ GBL_DISK_PHYS_WRITE_BYTE_RATE
 
 
 run_glance()
-node.collector.call('push_stats_fs_u', fs_u())
+fs_u_data = fs_u()
+if fs_u_data is not None:
+    node.collector.call('push_stats_fs_u', fs_u_data)
 node.close()
 

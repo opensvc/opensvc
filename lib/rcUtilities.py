@@ -57,7 +57,7 @@ def check_privs():
     if os.name == 'nt':
         return
     if os.getuid() != 0:
-        print 'Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv)
+        print('Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv))
         sys.exit(1)
 
 
@@ -101,8 +101,11 @@ def justcall(argv=['/bin/false']):
     else:
         close_fds = True
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
-    (stdout, stderr)=process.communicate(input=None)
-    return (stdout, stderr, process.returncode)
+    stdout, stderr = process.communicate(input=None)
+    if sys.version_info.major < 3:
+        return stdout, stderr, process.returncode
+    else:
+        return str(stdout, "ascii"), str(stderr, "ascii"), process.returncode
 
 def empty_string(buff):
     b = buff.strip(' ').strip('\n')
@@ -157,6 +160,8 @@ def call(argv=['/bin/false'],
             log.debug("cache miss for '%s'"%cmd)
         process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
+        if sys.version_info.major >= 3:
+            buff = tuple(map(lambda x: str(x, "ascii"), buff))
         ret = process.returncode
         if ret == 0:
             log.debug("store '%s' output in cache"%cmd)
@@ -231,7 +236,7 @@ def protected_mount(path):
 
 
 if __name__ == "__main__":
-    print "call(('id','-a'))"
+    print("call(('id','-a'))")
     (r,output,err)=call(("/usr/bin/id","-a"))
-    print "status: ",r,"output:",output
+    print("status: ", r, "output:", output)
 

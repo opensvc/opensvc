@@ -61,7 +61,7 @@ class Snap(snap.Snap):
             raise ex.syncSnapCreateError
         snap_mnt = '/service/tmp/osvc_sync_'+os.path.basename(vg_name)+'_'+os.path.basename(lv_name)
         if not os.path.exists(snap_mnt):
-            os.makedirs(snap_mnt, 0755)
+            os.makedirs(snap_mnt, 0o755)
         snap_dev = os.path.join(vg_name, snap_name)
         (ret, buff, err) = self.vcall(['mount', '-F', 'vxfs', '-o', 'ro,snapof='+m.device, snap_dev, snap_mnt])
         if ret != 0:

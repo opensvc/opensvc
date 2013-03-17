@@ -109,4 +109,4 @@ x64lmwbief4 /install/outils  /mnt             nfs3   Dec 07 11:53
 if __name__ == "__main__" :
     help(Mounts)
     for m in Mounts():
-        print m
+        print(m)

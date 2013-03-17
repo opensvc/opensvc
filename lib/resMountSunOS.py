@@ -96,7 +96,7 @@ class Mount(Res.Mount):
             mntopt = []
 
         if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0755)
+            os.makedirs(self.mountPoint, 0o755)
         cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:

@@ -20,7 +20,7 @@ from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 
 def listpkg_dummy():
-    print "pushpkg supported on this system"
+    print("pushpkg supported on this system")
     return []
 
 def listpkg_rpm():

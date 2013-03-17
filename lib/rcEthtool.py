@@ -75,5 +75,5 @@ if __name__ == "__main__":
     o = Ethtool("eth0")
     o.load()
     for attr in o.data.keys():
-        print "%-30s: %s"%(attr, str(o.data[attr]))
+        print("%-30s: %s"%(attr, str(o.data[attr])))
 

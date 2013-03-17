@@ -166,7 +166,7 @@ class Vg(resDg.Dg):
 
         self.disks = set()
 
-	pvs = self.devlist()
+        pvs = self.devlist()
         self.disks = devs_to_disks(self, pvs)
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks

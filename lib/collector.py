@@ -50,7 +50,7 @@ class Collector(object):
     def collector_json_list_unavailability_ack(self):
         d = self._collector_list_unavailability_ack()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_list_unavailability_ack(self):
         if self.svcname is None:
@@ -88,7 +88,7 @@ class Collector(object):
     def collector_json_list_actions(self):
         d = self._collector_list_actions()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_list_actions(self):
         opts = {}
@@ -135,7 +135,7 @@ class Collector(object):
     def collector_json_status(self):
         d = self._collector_status()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_status(self):
         opts = {}
@@ -156,7 +156,7 @@ class Collector(object):
     def collector_json_checks(self):
         d = self._collector_checks()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_checks(self):
         opts = {}
@@ -177,7 +177,7 @@ class Collector(object):
     def collector_json_disks(self):
         d = self._collector_disks()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_disks(self):
         opts = {}
@@ -198,7 +198,7 @@ class Collector(object):
     def collector_json_alerts(self):
         d = self._collector_alerts()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_alerts(self):
         opts = {}
@@ -219,7 +219,7 @@ class Collector(object):
     def collector_json_events(self):
         d = self._collector_events()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_events(self):
         opts = {}
@@ -244,7 +244,7 @@ class Collector(object):
     def collector_json_show_actions(self):
         d = self._collector_show_actions()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_show_actions(self):
         opts = {}
@@ -267,12 +267,12 @@ class Collector(object):
     def collector_list_nodes(self):
         d = self._collector_list_nodes()
         for node in d:
-            print node
+            print(node)
         
     def collector_json_list_nodes(self):
         d = self._collector_list_nodes()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
@@ -284,12 +284,12 @@ class Collector(object):
     def collector_list_services(self):
         d = self._collector_list_services()
         for service in d:
-            print service
+            print(service)
         
     def collector_json_list_services(self):
         d = self._collector_list_services()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
@@ -301,12 +301,12 @@ class Collector(object):
     def collector_list_filtersets(self):
         d = self._collector_list_filtersets()
         for fset in d['data']:
-            print fset
+            print(fset)
         
     def collector_json_list_filtersets(self):
         d = self._collector_list_filtersets()
         import json
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}

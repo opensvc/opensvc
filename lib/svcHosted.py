@@ -33,13 +33,13 @@ if __name__ == "__main__":
         help(c)
     import mountSunOS as mount
     import ipSunOS as ip
-    print """
+    print("""
     S=SvcHosted()
     S+=mount.Mount("/mnt1","/dev/sda")
     S+=mount.Mount("/mnt2","/dev/sdb")
     S+=ip.Ip("eth0","192.168.0.173")
     S+=ip.Ip("eth0","192.168.0.174")
-    """
+    """)
 
     S=SvcSone()
     S+=mount.Mount("/mnt1","/dev/sda")
@@ -47,10 +47,10 @@ if __name__ == "__main__":
     S+=ip.Ip("eth0","192.168.0.173")
     S+=ip.Ip("eth0","192.168.0.174")
 
-    print "Show S: ", S
-    print "start S:"
+    print("Show S: ", S)
+    print("start S:")
     S.start()
 
-    print "stop S:"
+    print("stop S:")
     S.stop()
 

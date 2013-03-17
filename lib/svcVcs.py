@@ -74,7 +74,7 @@ class SvcVcs(svc.Svc):
     def set_nodes(self):
         try:
             s = self.get_grp_val('SystemList')
-        except ex.excError, e:
+        except ex.excError as e:
             self.nodes = set([rcEnv.nodename])
             return
 

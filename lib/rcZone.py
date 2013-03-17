@@ -83,17 +83,17 @@ class Zone(object):
             (self.zoneid, self.zonename, self.state, self.zonepath, self.uuid,
                 self.brand, self.ip_type ) = out.split('\n')[0].split(':')
         else:
-            print "fail to refresh zone informations for zonename", self.zonename
+            print("fail to refresh zone informations for zonename", self.zonename)
 
 if __name__ == "__main__":
     zones = Zones()
-    print "Detected %s zones on system" % (len(zones.zone_list))
+    print("Detected %s zones on system" % (len(zones.zone_list)))
     for zone in zones.zone_list:
         zonepath = zone.zonepath
         zonename = zone.zonename
-        print "zonename=%s zonepath=%s zones.zonepath2zone[%s].zonename=%s" % (
+        print("zonename=%s zonepath=%s zones.zonepath2zone[%s].zonename=%s" % (
             zonename, zonepath, zonepath, zones.zonepath2zone[zonepath].zonename
-            )
+            ))
         z = Zone(zonename=zonename)
-        print "zone %s : zoneid=%s, zonepath=%s brand=%s" % (zonename, z.zoneid,
-                z.zonepath, z.brand)
+        print("zone %s : zoneid=%s, zonepath=%s brand=%s" % (zonename, z.zoneid,
+                z.zonepath, z.brand))

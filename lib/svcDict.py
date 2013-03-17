@@ -76,8 +76,8 @@ class Keyword(object):
             if d[d_keyword] not in d_value:
                 return d
 
-        # print the form
-        print self
+        # print() the form
+        print(self)
 
         # if we got a json seed, use its values as default
         # else use the Keyword object default
@@ -104,7 +104,7 @@ class Keyword(object):
                     return d
                 if default is None:
                     if self.required:
-                        print "value required"
+                        print("value required")
                         continue
                     # keyword is optional, leave dictionary untouched
                     return d
@@ -112,13 +112,13 @@ class Keyword(object):
                     val = default
                 if self.candidates is not None and \
                    val not in self.candidates:
-                    print "invalid value"
+                    print("invalid value")
                     continue
                 d[self.keyword] = val
             elif self.at and val[0] == '@':
                 l = val.split()
                 if len(l) < 2:
-                    print "invalid value"
+                    print("invalid value")
                     continue
                 val = ' '.join(l[1:])
                 d[self.keyword+l[0]] = val
@@ -128,7 +128,7 @@ class Keyword(object):
                 req_satisfied = True
             if self.at:
                 # loop for more key@node = values
-                print "More '%s' ? <enter> to step to the next parameter."%self.keyword
+                print("More '%s' ? <enter> to step to the next parameter."%self.keyword)
                 continue
             else:
                 return d
@@ -1352,7 +1352,7 @@ class KeywordStore(dict):
                 key = self.sections[section].getkey(keyword, rtype)
             if key is None:
                 if keyword != "rtype":
-                    print "Remove unknown keyword '%s' from section '%s'"%(keyword, section)
+                    print("Remove unknown keyword '%s' from section '%s'"%(keyword, section))
                     del d[keyword]
         return d
 
@@ -1391,7 +1391,7 @@ class KeywordStore(dict):
             if key is None:
                 continue
             if key.candidates is not None and value not in key.candidates:
-                print "'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid)
+                print("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
                 raise KeyInvalidValue()
 
         # add missing required keys if they have a known default value
@@ -1403,7 +1403,7 @@ class KeywordStore(dict):
             if key.default is None:
                 sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
                 raise MissKeyNoDefault()
-            print "Implicitely add [%s]"%rid, key.keyword, "=", key.default
+            print("Implicitely add [%s]"%rid, key.keyword, "=", key.default)
             completion[key.keyword] = key.default
 
         """
@@ -1414,11 +1414,11 @@ class KeywordStore(dict):
             # is provisioning needed ?
             tmp = {rid: completion}
             if prov(rid, tmp).validate():
-                print rid, "resource is valid"
+                print(rid, "resource is valid")
             elif prov(rid, tmp).provisioner():
-                print rid, "resource provisioned"
+                print(rid, "resource provisioned")
             else:
-                print rid, "resource provisioning failed"
+                print(rid, "resource provisioning failed")
         """
 
         # purge unknown keywords and provisioning keywords
@@ -1431,12 +1431,12 @@ class KeywordStore(dict):
         wrapper = TextWrapper(subsequent_indent="%18s"%"", width=78)
         candidates = set(self.sections.keys()) - set(['DEFAULT'])
 
-        print "------------------------------------------------------------------------------"
-        print "Choose a resource type to add or a resource to edit."
-        print "Enter 'quit' to finish the creation."
-        print "------------------------------------------------------------------------------"
-        print wrapper.fill("resource types: "+', '.join(candidates))
-        print wrapper.fill("resource ids:   "+', '.join(sections.keys()))
+        print("------------------------------------------------------------------------------")
+        print("Choose a resource type to add or a resource to edit.")
+        print("Enter 'quit' to finish the creation.")
+        print("------------------------------------------------------------------------------")
+        print(wrapper.fill("resource types: "+', '.join(candidates)))
+        print(wrapper.fill("resource ids:   "+', '.join(sections.keys())))
         print
         return raw_input("resource type or id> ")
 
@@ -1476,7 +1476,7 @@ class KeywordStore(dict):
                 index = self.free_resource_index(section, sections)
                 rid = '#'.join((section, str(index)))
             if section not in self.sections:
-                 print "unsupported resource type"
+                 print("unsupported resource type")
                  continue
             for key in sorted(self.sections[section].getkeys()):
                 if rid not in sections:
@@ -1485,7 +1485,7 @@ class KeywordStore(dict):
             if 'type' in sections[rid]:
                 specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
                 if len(specific_keys) > 0:
-                    print "\nKeywords specific to the '%s' driver\n"%sections[rid]['type']
+                    print("\nKeywords specific to the '%s' driver\n"%sections[rid]['type'])
                 for key in sorted(specific_keys):
                     if rid not in sections:
                         sections[rid] = {}
@@ -1500,7 +1500,7 @@ class KeywordStore(dict):
 
             # is provisioning needed ?
             if prov(rid, sections).validate():
-                print rid, "resource is valid"
+                print(rid, "resource is valid")
                 continue
 
             # toggle provisioning keywords
@@ -1513,7 +1513,7 @@ class KeywordStore(dict):
 
             provkeys = self.sections[section].getprovkeys()
             if len(provkeys) > 0:
-                print "\nProvisioning keywords\n"
+                print("\nProvisioning keywords\n")
             for key in sorted(provkeys):
                 if rid not in sections:
                     sections[rid] = {}
@@ -1522,7 +1522,7 @@ class KeywordStore(dict):
             if 'type' in sections[rid]:
                 specific_provkeys = self.sections[section].getprovkeys(rtype=sections[rid]['type'])
                 if len(specific_provkeys) > 0:
-                    print "\nProvisioning keywords specific to the '%s' driver\n"%sections[rid]['type']
+                    print("\nProvisioning keywords specific to the '%s' driver\n"%sections[rid]['type'])
                 for key in sorted(specific_provkeys):
                     if rid not in sections:
                         sections[rid] = {}
@@ -1563,7 +1563,7 @@ class KeywordStore(dict):
             m = __import__(mod_prefix+section)
             return getattr(m, class_prefix+section)
         except ImportError:
-            print mod_prefix+section+rtype, "nor", mod_prefix+section, "provisioning modules not implemented"
+            print(mod_prefix+section+rtype, "nor", mod_prefix+section, "provisioning modules not implemented")
             return None
     """
 
@@ -1711,6 +1711,6 @@ class KeyDict(KeywordStore):
 
 if __name__ == "__main__":
     store = KeyDict()
-    print store
-    #print store.DEFAULT.app
-    #print store['DEFAULT']
+    print(store)
+    #print(store.DEFAULT.app)
+    #print(store['DEFAULT'])

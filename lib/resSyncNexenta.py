@@ -29,7 +29,7 @@ class syncNexenta(resSync.Sync):
     def can_sync(self, target=None):
         try:
             self.get_endpoints()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise ex.excError
 
@@ -46,7 +46,7 @@ class syncNexenta(resSync.Sync):
     def syncupdate(self):
         try:
             self.get_endpoints()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise ex.excError
 
@@ -98,7 +98,7 @@ class syncNexenta(resSync.Sync):
             self.bind()
             self.master.autosync_enable(self.autosync)
             self.log.info("autosync enable submitted")
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise ex.excError
 
@@ -109,7 +109,7 @@ class syncNexenta(resSync.Sync):
             self.master.autosync_disable(self.autosync)
             self.log.info("autosync disable submitted")
             self.wait_break()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise ex.excError
 
@@ -130,7 +130,7 @@ class syncNexenta(resSync.Sync):
             self.get_endpoints()
             self.local.set_can_mount(self.path)
             self.log.info("set 'canmount = on' on %s"%self.path)
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             raise ex.excError
 
@@ -156,7 +156,7 @@ class syncNexenta(resSync.Sync):
             self.get_endpoints()
             self.status_log("master head is %s"%self.master.head)
             self.get_props()
-        except ex.excError, e:
+        except ex.excError as e:
             if 'message' in e.value:
                 msg = e.value['message']
             else:
@@ -205,7 +205,7 @@ class syncNexenta(resSync.Sync):
                 self.slave = self.remote
                 self.master = self.local
             return
-        except ex.excError, e:
+        except ex.excError as e:
             if 'does not exist' in str(e):
                 path_props = self.local.get_props(self.path)
                 if path_props is None:
@@ -225,7 +225,7 @@ class syncNexenta(resSync.Sync):
                 self.slave = self.remote
                 self.master = self.local
             return
-        except ex.excError, e:
+        except ex.excError as e:
             if 'does not exist' in str(e):
                 path_props = self.remote.get_props(self.path)
                 if path_props is None:

@@ -126,9 +126,9 @@ def listpkg():
     lines = []
     for p in plist:
         x = [rcEnv.nodename,
-	     p.ProductName,
-	     p.VersionString,
-	     ""]
+             p.ProductName,
+             p.VersionString,
+             ""]
         lines.append(x)
     return lines
 
@@ -137,4 +137,4 @@ def listpatch():
     return [] 
 
 if __name__ == "__main__":
-    print get_installed_products()
+    print(get_installed_products())

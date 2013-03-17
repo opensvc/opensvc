@@ -15,8 +15,8 @@ def rcmd(cmd, manager, username, key):
     _cmd += [cmd]
     out, err, ret = justcall(_cmd)
     if ret != 0:
-        print _cmd
-        print out
+        print(_cmd)
+        print(out)
         raise ex.excError("ssh command execution error")
     return out, err
 
@@ -46,7 +46,7 @@ class IbmSvcs(object):
                 key = conf.get(s, 'key')
                 m[s] = [username, key]
             except:
-                print "error parsing section", s
+                print("error parsing section", s)
                 pass
         del(conf)
         for name, creds in m.items():
@@ -75,35 +75,35 @@ class IbmSvc(object):
 
     def get_lsvdisk(self):
         cmd = 'lsvdisk -delim :'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsmdiskgrp(self):
         cmd = 'lsmdiskgrp -delim :'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsnode(self):
         cmd = 'svcinfo lsnode -delim !'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lscluster(self):
         cmd = 'svcinfo lscluster -delim :'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsfabric(self):
         cmd = 'lsfabric -delim :'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_svc_product_id(self):
         cmd = 'echo $SVC_PRODUCT_ID'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
 if __name__ == "__main__":
     o = IbmSvcs()
     for ibmsvc in o:
-        print ibmsvc.lsmdiskgrp()
+        print(ibmsvc.lsmdiskgrp())

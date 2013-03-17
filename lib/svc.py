@@ -19,6 +19,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+from __future__ import print_function
 from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
@@ -475,10 +476,10 @@ class Svc(Resource, Freezer):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print json.dumps(d)
+        print(json.dumps(d))
 
     def print_status(self):
-        """print each resource status for a service
+        """print() each resource status for a service
         """
         from textwrap import wrap
 
@@ -491,28 +492,29 @@ class Svc(Resource, Freezer):
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
-            print fmt%(rid, flags, status, label)
+            print(fmt%(rid, flags, status, label))
             if len(log) > 0:
-                print '\n'.join(wrap(log,
+                print('\n'.join(wrap(log,
                                      initial_indent = subpfx,
                                      subsequent_indent = subpfx,
                                      width=78
                                     )
                                )
+                )
 
-        print self.svcname
+        print(self.svcname)
         fmt = "%-20s %4s %-8s %s"
-        print fmt%("overall", '', str(self.group_status()['overall']), "\n"),
+        print(fmt%("overall", '', str(self.group_status()['overall']), ''))
         fmt = "|- %-17s %4s %-8s %s"
-        print fmt%("avail", '', str(self.group_status()['avail']), "\n"),
+        print(fmt%("avail", '', str(self.group_status()['avail']), ''))
 
         encap_res_status = {}
         for container in self.get_resources('container'):
             try:
                 res = self.encap_json_status(container)['resources']
                 encap_res_status[container.rid] = res
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 encap_res_status[container.rid] = {}
 
         l = []
@@ -556,7 +558,7 @@ class Svc(Resource, Freezer):
                                 print_res(_e, fmt, pfx)
 
         fmt = "|- %-17s %4s %-8s %s"
-        print fmt%("sync", '', str(self.group_status()['sync']), "\n"),
+        print(fmt%("sync", '', str(self.group_status()['sync']), ''))
 
         l = []
         for rs in self.get_res_sets(self.status_types, strict=True):
@@ -578,7 +580,7 @@ class Svc(Resource, Freezer):
                     print_res(e, fmt, pfx)
 
         fmt = "'- %-17s %4s %-8s %s"
-        print fmt%("hb", '', str(self.group_status()['hb']), "\n"),
+        print(fmt%("hb", '', str(self.group_status()['hb']), ''))
 
         l = []
         for rs in self.get_res_sets(self.status_types, ):
@@ -681,8 +683,8 @@ class Svc(Resource, Freezer):
                 encap_res_status = {}
                 try:
                     encap_res_status = self.encap_json_status(container)
-                except Exception, e:
-                    print e
+                except Exception as e:
+                    print(e)
                     continue
 
                 for rid in encap_res_status['resources']:
@@ -828,9 +830,9 @@ class Svc(Resource, Freezer):
             raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         if verbose:
             self.log.info('logs from %s child service:'%container.name)
-            print out
+            print(out)
             if len(err) > 0:
-                print err
+                print(err)
         return out, err, ret
 
     def encap_json_status(self, container, refresh=False):
@@ -885,10 +887,10 @@ class Svc(Resource, Freezer):
         cmd = ['json', 'status']
         try:
             out, err, ret = self._encap_cmd(cmd, container)
-        except ex.excError, e:
+        except ex.excError as e:
             return gs
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return gs
 
         import json
@@ -908,7 +910,7 @@ class Svc(Resource, Freezer):
                      groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
                      excluded_groups=set([])):
         from copy import copy
-        """print each resource status for a service
+        """print() each resource status for a service
         """
         status = {}
         moregroups = groups | set(["overall", "avail"])
@@ -969,18 +971,18 @@ class Svc(Resource, Freezer):
         return status
 
     def print_disklist(self):
-        print '\n'.join(self.disklist())
+        print('\n'.join(self.disklist()))
 
     def print_devlist(self):
-        print '\n'.join(self.devlist())
+        print('\n'.join(self.devlist()))
 
     def json_disklist(self):
         import json
-        print json.dumps(list(self.disklist()))
+        print(json.dumps(list(self.disklist())))
 
     def json_devlist(self):
         import json
-        print json.dumps(list(self.devlist()))
+        print(json.dumps(list(self.devlist())))
 
     def disklist(self):
         if len(self.disks) == 0:
@@ -1076,7 +1078,7 @@ class Svc(Resource, Freezer):
     def start(self):
         try:
             self.abort_start()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error(str(e))
             return
         af_svc = self.get_non_affine_svc()
@@ -1620,10 +1622,10 @@ class Svc(Resource, Freezer):
         self.all_set_action("postsync")
 
     def remote_postsync(self):
-	""" run the remote exec of postsync async because the
+        """ run the remote exec of postsync async because the
             waitlock timeout is long, and we ourselves still
             hold the service lock we want to release early.
-	"""
+        """
         """ action triggered by a remote master node after
             syncnodes and syncdrp. Typically make use of files
             received in var/.
@@ -1721,7 +1723,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dds", "syncverify")
 
     def printsvc(self):
-        print str(self)
+        print(str(self))
 
     def can_sync(self, target=None):
         ret = False
@@ -1757,7 +1759,7 @@ class Svc(Resource, Freezer):
             return
         self.push_encap_env()
         self.node.collector.call('push_all', [self])
-        print "send %s to collector ... OK"%self.pathenv
+        print("send %s to collector ... OK"%self.pathenv)
         try:
             import time
             with open(self.push_flag, 'w') as f:
@@ -1765,7 +1767,7 @@ class Svc(Resource, Freezer):
             ret = "OK"
         except:
             ret = "ERR"
-        print "update %s timestamp"%self.push_flag, "...", ret
+        print("update %s timestamp"%self.push_flag, "...", ret)
 
     def push_encap_env(self):
         if self.encap or not self.has_encap_resources:
@@ -1782,13 +1784,13 @@ class Svc(Resource, Freezer):
         else:
             cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+rcEnv.pathetc+'/']
             out, err, ret = justcall(cmd)
-        print "send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err
+        print("send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
         if ret != 0:
             raise ex.excError()
 
         cmd = ['install', '--envfile', self.pathenv]
         out, err, ret = self._encap_cmd(cmd, container=r)
-        print "install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err
+        print("install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err)
         if ret != 0:
             raise ex.excError()
 
@@ -1941,13 +1943,13 @@ class Svc(Resource, Freezer):
             else:
                 self.log.error("unsupported action")
                 err = 1
-        except ex.excAbortAction, e:
+        except ex.excAbortAction as e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
                 s += ": %s"%str(e)
             self.log.error(s)
             err = 1
-        except ex.excError, e:
+        except ex.excError as e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
                 s += ": %s"%str(e)
@@ -2005,8 +2007,6 @@ class Svc(Resource, Freezer):
         return err
 
     def restart(self):
-	""" stop then start service
-        """
         self.stop()
         self.start()
 
@@ -2032,11 +2032,9 @@ class Svc(Resource, Freezer):
                 self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.master_stopfs()
-	self.remote_action(node=self.destination_node, action='prstart --master')
+        self.remote_action(node=self.destination_node, action='prstart --master')
 
     def switch(self):
-	""" stop then start service
-        """
         if not hasattr(self, "destination_node"):
             self.log.error("a destination node must be provided for the switch action")
             raise ex.excError
@@ -2044,7 +2042,7 @@ class Svc(Resource, Freezer):
             self.log.error("destination node %s is not in service node list"%self.destination_node)
             raise ex.excError
         self.stop()
-	self.remote_action(node=self.destination_node, action='start')
+        self.remote_action(node=self.destination_node, action='start')
 
     def collector_outdated(self):
         """ return True if the env file has changed since last push
@@ -2073,7 +2071,7 @@ class Svc(Resource, Freezer):
             self.config.write(fp)
             fp.close()
         except:
-            print >>sys.stderr, "failed to write new %s"%self.nodeconf
+            print("failed to write new %s"%self.nodeconf, file=sys.stderr)
             raise ex.excError()
 
     def load_config(self):
@@ -2085,18 +2083,18 @@ class Svc(Resource, Freezer):
         self.load_config()
         import sys
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if section != 'DEFAULT' and not self.config.has_section(section):
-            print >>sys.stderr, "section '%s' not found"%section
+            print("section '%s' not found"%section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
         try:
             self.config.remove_option(section, option)
@@ -2109,34 +2107,34 @@ class Svc(Resource, Freezer):
         self.load_config()
         import sys
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if section != 'DEFAULT' and not self.config.has_section(section):
-            print >>sys.stderr, "section '%s' not found"%section
+            print("section '%s' not found"%section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print >>sys.stderr, "option '%s' not found in section '%s'"%(option, section)
+            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
-        print self.config.get(section, option)
+        print(self.config.get(section, option))
         return 0
 
     def set(self):
         self.load_config()
         import sys
         if self.options.param is None:
-            print >>sys.stderr, "no parameter. set --param"
+            print("no parameter. set --param", file=sys.stderr)
             return 1
         if self.options.value is None:
-            print >>sys.stderr, "no value. set --value"
+            print("no value. set --value", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
         if len(l) != 2:
-            print >>sys.stderr, "malformed parameter. format as 'section.key'"
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
         if section != 'DEFAULT' and not self.config.has_section(section):
@@ -2154,22 +2152,22 @@ class Svc(Resource, Freezer):
 if __name__ == "__main__" :
     for c in (Svc,) :
         help(c)
-    print """s1=Svc("Zone")"""
+    print("""s1=Svc("Zone")""")
     s1=Svc("Zone")
-    print "s1=",s1
-    print """s2=Svc("basic")"""
+    print("s1=",s1)
+    print("""s2=Svc("basic")""")
     s2=Svc("basic")
-    print "s2=",s2
-    print """s1+=Resource("ip")"""
+    print("s2=",s2)
+    print("""s1+=Resource("ip")""")
     s1+=Resource("ip")
-    print "s1=",s1
-    print """s1+=Resource("ip")"""
+    print("s1=",s1)
+    print("""s1+=Resource("ip")""")
     s1+=Resource("ip")
-    print """s1+=Resource("fs")"""
+    print("""s1+=Resource("fs")""")
     s1+=Resource("fs")
-    print """s1+=Resource("fs")"""
+    print("""s1+=Resource("fs")""")
     s1+=Resource("fs")
-    print "s1=",s1
+    print("s1=",s1)
 
-    print """s1.action("status")"""
+    print("""s1.action("status")""")
     s1.action("status")

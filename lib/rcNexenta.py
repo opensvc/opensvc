@@ -28,13 +28,13 @@ class logger(object):
         pass
 
     def info(self, msg):
-        print msg
+        print(msg)
     
     def warning(self, msg):
-        print msg
+        print(msg)
     
     def error(self, msg):
-        print msg
+        print(msg)
 
 class Nexenta(object):
     def __init__(self, head, log=None):
@@ -299,17 +299,17 @@ class Nexenta(object):
 if __name__ == "__main__":
     o = Nexenta("nexenta1")
     #names = o.autosync_register("test")
-    #print o.set_prop("vol1/folder1", "canmount", "on")
-    #print o.get_props("vol1/folder1")
-    print Nexenta("nexenta1").dbus_auth_keys_list()
-    print Nexenta("nexenta2").dbus_auth_keys_list()
-    #print o.autosync_set_can_mount("vol1-folder1-000")
+    #print(o.set_prop("vol1/folder1", "canmount", "on"))
+    #print(o.get_props("vol1/folder1"))
+    print(Nexenta("nexenta1").dbus_auth_keys_list())
+    print(Nexenta("nexenta2").dbus_auth_keys_list())
+    #print(o.autosync_set_can_mount("vol1-folder1-000"))
     #names = o.autosync_get_names()
-    #print o.autosync_set_prop(names[0], "zfs/reverse_capable", "1")
-    #print o.autosync_get_state(names[0])
-    #print o.autosync_get_props(names[0])
-    #print o.snapshot_create("vol1/zvol1", "test")
-    #print o.snapshot_get_names()
-    #print o.snapshot_destroy("vol1/zvol1", "test")
-    #print o.snapclone("vol1/folder1", "vol1/folder2")
+    #print(o.autosync_set_prop(names[0], "zfs/reverse_capable", "1"))
+    #print(o.autosync_get_state(names[0]))
+    #print(o.autosync_get_props(names[0]))
+    #print(o.snapshot_create("vol1/zvol1", "test"))
+    #print(o.snapshot_get_names())
+    #print(o.snapshot_destroy("vol1/zvol1", "test"))
+    #print(o.snapclone("vol1/folder1", "vol1/folder2"))
 

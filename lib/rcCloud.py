@@ -6,13 +6,13 @@ class Cloud(object):
         self.auth = auth
 
     def list_svcnames(self):
-         print "todo"
+         print("todo")
          return []
 
     def list_nodes(self):
         try:
             nodes = self.driver.list_nodes()
-        except socket.error, e:
+        except socket.error as e:
             raise ex.excExecError("error connecting to %s cloud url"%s)
         return nodes
 

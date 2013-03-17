@@ -269,9 +269,9 @@ def Decode(input, len):
     return list(res)
 
 def test():
-    print `md5("/dev/sda").digest().encode('hex')`
+    print(`md5("/dev/sda").digest().encode('hex')`)
     #from md5 import new
-    #print `new("/dev/sda").digest()`
+    #print(`new("/dev/sda").digest()`)
 
 if __name__=="__main__":
     test()

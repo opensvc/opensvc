@@ -42,7 +42,7 @@ class Asset(rcAsset.Asset):
         if self.container:
             self.dmidecode = []
         else:
-            (out, err, ret) = justcall(['dmidecode'])
+            out, err, ret = justcall(['dmidecode'])
             if ret != 0:
                 self.dmidecode = []
             else:
@@ -50,7 +50,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_esx(self):
         cmd = ['vmware-cmd', '-s', 'getresource', 'system.mem.totalMem']
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return '0'
         l = out.split(' = ')
@@ -72,7 +72,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_virsh(self):
         cmd = ['virsh', 'nodeinfo']
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -87,7 +87,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_xm(self):
         cmd = ['xm', 'info']
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -102,7 +102,7 @@ class Asset(rcAsset.Asset):
 
     def _get_mem_bytes_phy(self):
         cmd = ['free', '-m']
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return '0'
         lines = out.split('\n')
@@ -200,7 +200,7 @@ class Asset(rcAsset.Asset):
                         v += [line.split('=')[-1].replace('\n','').strip('" ')]
                     if 'PATCHLEVEL' in line:
                         v += [line.split('=')[-1].replace('\n','').strip('" ')]
-	    return '.'.join(v)
+            return '.'.join(v)
         if os.path.exists('/etc/lsb-release'):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
@@ -233,7 +233,7 @@ class Asset(rcAsset.Asset):
             cmd = ['arch']
         else:
             cmd = ['uname', '-m']
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.split('\n')[0]
@@ -272,13 +272,13 @@ class Asset(rcAsset.Asset):
     def _get_cpu_dies_cpuinfo(self):
         if self.container:
             return 'n/a'
-	(out, err, ret) = justcall(['grep', 'processor', '/proc/cpuinfo'])
-	if ret != 0:
-	    return '1'
-	lines = out.split('\n')
-	c = lines[-2].split(':')[-1].replace('\n','').strip()
-	c = int(c) + 1
-	return str(c)
+        (out, err, ret) = justcall(['grep', 'processor', '/proc/cpuinfo'])
+        if ret != 0:
+            return '1'
+        lines = out.split('\n')
+        c = lines[-2].split(':')[-1].replace('\n','').strip()
+        c = int(c) + 1
+        return str(c)
 
     def _get_cpu_dies(self):
         try:

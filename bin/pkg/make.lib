@@ -3,7 +3,7 @@ function changelog {
 }
 
 function date_to_release {
-	/opt/opensvc/bin/python -c "import datetime ; print datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M')"
+	/opt/opensvc/bin/python -c "import datetime ; print(datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M'))"
 }
 
 HEAD=$(git log -1 --pretty=format:%at || exit 1)

@@ -60,10 +60,10 @@ class Snap(snap.Snap):
 
         if pps == 0 or pp_size == 0 or pp_unit == '' or vg_name is None:
             self.log.error("logical volume %s information fetching error"%device)
-            print "pps = ", pps
-            print "pp_size = ", pp_size
-            print "pp_unit = ", pp_unit
-            print "vg_name = ", vg_name
+            print("pps = ", pps)
+            print("pp_size = ", pp_size)
+            print("pp_unit = ", pp_unit)
+            print("vg_name = ", vg_name)
             raise ex.excError
 
         if pp_unit == 'megabyte(s)':
@@ -92,14 +92,14 @@ class Snap(snap.Snap):
         if self.lv_exists(os.path.join(vg_name, snap_name)):
             self.log.error("snap of %s already exists"%(lv_name))
             raise ex.syncSnapExists
-        print lv_size
-        print lv_size//10
+        print(lv_size)
+        print(lv_size//10)
         (ret, buff, err) = self.vcall(['mklv', '-t', 'jfs2', '-y', snap_name, vg_name, str(lv_size//10)+'M'])
         if ret != 0:
             raise ex.syncSnapCreateError
         snap_mnt = '/service/tmp/osvc_sync_'+os.path.basename(vg_name)+'_'+os.path.basename(lv_name)
         if not os.path.exists(snap_mnt):
-            os.makedirs(snap_mnt, 0755)
+            os.makedirs(snap_mnt, 0o755)
         snap_dev = os.path.join(os.sep, 'dev', snap_name)
         (ret, buff, err) = self.vcall(['snapshot', '-o', 'snapfrom='+m.mountPoint, snap_dev])
         if ret != 0:

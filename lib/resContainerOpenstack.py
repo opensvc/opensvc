@@ -233,7 +233,7 @@ class CloudVm(resContainer.Container):
         n = self.get_node()
         try:
             c.driver.reboot_node(n)
-        except Exception, e:
+        except Exception as e:
             raise ex.excError(str(e))
 
     def container_restore(self):
@@ -276,7 +276,7 @@ class CloudVm(resContainer.Container):
         for k in dir(n):
             if '__' in k:
                 continue
-            print k, "=", getattr(n, k)
+            print(k, "=", getattr(n, k))
 
     def container_save(self):
         c = self.get_cloud()
@@ -291,7 +291,7 @@ class CloudVm(resContainer.Container):
         self.log.info("save new image %s"%save_name)
         try:
             image = c.driver.ex_save_image(n, save_name)
-        except Exception, e:
+        except Exception as e:
             raise ex.excError(str(e))
         import time
         delay = 5

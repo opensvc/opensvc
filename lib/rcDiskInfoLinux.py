@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
+from __future__ import print_function
 import sys
 import os
 import re
@@ -222,18 +223,18 @@ class diskInfo(rcDiskInfo.diskInfo):
             with open(i_f, 'r') as f:
                 info[i] = f.read().strip()
         info['hbtl'] = os.path.basename(os.path.realpath(os.path.join(disk, "device")))
-        print self.print_diskinfo_fmt%(
+        print(self.print_diskinfo_fmt%(
           info['hbtl'],
           name,
           int(float(info['size'])/2//1024),
           info['dev'],
           info['device/vendor'],
           info['device/model'],
-        )
+        ))
 
     def scanscsi(self):
         if not os.path.exists('/sys') or not os.path.ismount('/sys'):
-            print >>sys.stderr, "scanscsi is not supported without /sys mounted"
+            print("scanscsi is not supported without /sys mounted", file=sys.stderr)
             return 1
 
         import glob
@@ -245,7 +246,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             scan_f = host+'/scan'
             if not os.path.exists(scan_f):
                 continue
-            print "scan", os.path.basename(host)
+            print("scan", os.path.basename(host))
             os.command('echo - - - >'+scan_f)
 
         disks_after = glob.glob('/sys/block/sd*')

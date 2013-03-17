@@ -80,8 +80,8 @@ class CloudVm(resContainer.Container):
         c = self.get_cloud()
         try:
             vapp = c.driver.ex_find_node(self.vapp)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             raise
         return vapp
 
@@ -90,8 +90,8 @@ class CloudVm(resContainer.Container):
         try:
             vapp = c.driver.ex_find_node(self.vapp)
             vms = vapp.extra['vms']
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             raise
         for vm in vms:
             if vm['name'] == self.name:
@@ -221,7 +221,7 @@ class CloudVm(resContainer.Container):
         for k in dir(n):
             if '__' in k:
                 continue
-            print k, "=", getattr(n, k)
+            print(k, "=", getattr(n, k))
 
     def container_save(self):
         c = self.get_cloud()
@@ -236,7 +236,7 @@ class CloudVm(resContainer.Container):
         self.log.info("save new image %s"%save_name)
         try:
             image = c.driver.ex_save_image(n, save_name)
-        except Exception, e:
+        except Exception as e:
             raise ex.excError(str(e))
         import time
         delay = 5
@@ -278,7 +278,7 @@ class CloudVm(resContainer.Container):
         info, desc = recurse(top)
         self.info['vcpus'] = info['Number of Virtual CPUs']['VirtualQuantity']
         self.info['vmem'] = info['Memory Size']['VirtualQuantity']
-        print self.info
+        #print(self.info)
         return self.info
 
     def check_manual_boot(self):

@@ -17,6 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
 import sys
 import os
 import optparse
@@ -49,17 +50,17 @@ node = node_mod.Node()
 
 def install_service(svcnames, src_env):
     if len(svcnames) != 1:
-        print >>sys.stderr, "only one service must be specified"
+        print("only one service must be specified", file=sys.stderr)
         return 1
 
     if not os.path.exists(src_env):
-        print >>sys.stderr, "%s does not exists"%src_env
+        print("%s does not exists"%src_env, file=sys.stderr)
         return 1
 
     try:
         _install_service(svcnames[0], src_env)
-    except:
-        print sys.exc_info()
+    except Exception as e:
+        print(e)
         return 1
 
     return 0

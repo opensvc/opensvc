@@ -1,3 +1,4 @@
+from __future__ import print_function
 from stat import *
 import os
 import sys
@@ -91,10 +92,10 @@ class Module(object):
         self.collector.call('comp_log_action', vars, vals, sync=False)
 
     def action(self, action):
-        print banner(self.name)
+        print(banner(self.name))
 
         if action not in ['check', 'fix', 'fixable']:
-            print 'action %s not supported'
+            print('action %s not supported')
             return 1
 
         if self.options.force:
@@ -103,10 +104,10 @@ class Module(object):
 
         if action == 'fix':
             if self.do_action('check') == 0:
-                print 'check passed, skip fix'
+                print('check passed, skip fix')
                 return 0
             if self.do_action('fixable') not in (0, 2):
-                print 'not fixable, skip fix'
+                print('not fixable, skip fix')
                 return 1
             self.do_action('fix')
             r = self.do_action('check')
@@ -122,10 +123,10 @@ class Module(object):
         start = datetime.datetime.now()
         cmd = [self.executable, action]
         log = ''
-        print "ACTION:   %s"%action
-        print "START:    %s"%str(start)
-        print "COMMAND:  %s"%' '.join(cmd)
-        print "LOG:"
+        print("ACTION:   %s"%action)
+        print("START:    %s"%str(start))
+        print("COMMAND:  %s"%' '.join(cmd))
+        print("LOG:")
 
         import tempfile
         import time
@@ -178,7 +179,7 @@ class Module(object):
                 if p.poll() != None:
                     log = poll_pipes(log)
                     break
-        except OSError, e:
+        except OSError as e:
             if _fo is not None:
                 _fo.close()
             if _fe is not None:
@@ -196,8 +197,8 @@ class Module(object):
         _fo.close()
         _fe.close()
         end = datetime.datetime.now()
-        print "RCODE:    %d"%p.returncode
-        print "DURATION: %s"%str(end-start)
+        print("RCODE:    %d"%p.returncode)
+        print("DURATION: %s"%str(end-start))
         self.log_action(log, p.returncode, action)
         return p.returncode
 
@@ -264,22 +265,22 @@ class Compliance(object):
         self.set_rset_md5()
 
         if not os.path.exists(comp_dir):
-            os.makedirs(comp_dir, 0755)
+            os.makedirs(comp_dir, 0o755)
             raise ex.excError('modules [%s] are not present in %s'%(
                                ','.join(self.module), comp_dir))
 
         for module in self.module:
             try:
                 self += Module(module)
-            except ex.excInitError, e:
-                print >>sys.stderr, e
+            except ex.excInitError as e:
+                print(e, file=sys.stderr)
 
         self.ordered_module = self.module_o.keys()
         self.ordered_module.sort(lambda x, y: cmp(self.module_o[x].ordering,
                                                   self.module_o[y].ordering))
 
     def __str__(self):
-        print banner('run context')
+        print(banner('run context'))
         a = []
         a.append('modules:')
         for m in self.ordered_module:
@@ -384,10 +385,10 @@ class Compliance(object):
                 return ''
             return '\n%s'%'\n'.join(map(lambda x: ' '+x, l))
 
-        print banner("digest")
-        print "%d n/a%s"%(n_na, modules(na))
-        print "%d passed%s"%(n_passed, modules(passed))
-        print "%d error%s%s"%(n_errors, _s(n_errors), modules(errors))
+        print(banner("digest"))
+        print("%d n/a%s"%(n_na, modules(na)))
+        print("%d passed%s"%(n_passed, modules(passed)))
+        print("%d error%s%s"%(n_errors, _s(n_errors), modules(errors)))
 
         if len(errors) > 0:
             return 1
@@ -396,14 +397,14 @@ class Compliance(object):
     def compliance_show_moduleset(self):
         self.moduleset = self.get_moduleset()
         for ms in self.moduleset:
-            print ms+':'
+            print(ms+':')
             for m in self.get_moduleset_modules(ms):
-                print ' %s'%m
+                print(' %s'%m)
 
     def compliance_show_ruleset(self):
         self.ruleset = self.get_ruleset()
         self.setup_env()
-        print self.str_ruleset()
+        print(self.str_ruleset())
         self.unsetup_env()
 
     def do_run(self, action):
@@ -414,7 +415,7 @@ class Compliance(object):
             err[module] = getattr(self.module_o[module], action)()
         r = self.digest_errors(err)
         end = datetime.datetime.now()
-        print "total duration: %s"%str(end-start)
+        print("total duration: %s"%str(end-start))
         self.unsetup_env()
         return r
 
@@ -442,7 +443,7 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_moduleset', moduleset)
             if not d['status']:
                 err = True
-            print d['msg']
+            print(d['msg'])
         if err:
             raise ex.excError()
 
@@ -458,7 +459,7 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_moduleset', moduleset)
             if not d['status']:
                 err = True
-            print d['msg']
+            print(d['msg'])
         if err:
             raise ex.excError()
 
@@ -474,7 +475,7 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_ruleset', ruleset)
             if not d['status']:
                 err = True
-            print d['msg']
+            print(d['msg'])
         if err:
             raise ex.excError()
 
@@ -490,7 +491,7 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_ruleset', ruleset)
             if not d['status']:
                 err = True
-            print d['msg']
+            print(d['msg'])
         if err:
             raise ex.excError()
 
@@ -516,7 +517,7 @@ class Compliance(object):
             l = self.collector.call('comp_list_ruleset', self.options.ruleset)
         if l is None:
             return
-        print '\n'.join(l)
+        print('\n'.join(l))
 
     def compliance_list_moduleset(self):
         if not hasattr(self.options, 'moduleset') or \
@@ -526,7 +527,7 @@ class Compliance(object):
             l = self.collector.call('comp_list_moduleset', self.options.moduleset)
         if l is None:
             return
-        print '\n'.join(l)
+        print('\n'.join(l))
 
     def compliance_list_module(self):
         import glob
@@ -535,7 +536,7 @@ class Compliance(object):
             name = regex2.sub("", os.path.basename(path))
             try:
                 m = Module(name)
-                print m.name
+                print(m.name)
             except:
                 continue
 

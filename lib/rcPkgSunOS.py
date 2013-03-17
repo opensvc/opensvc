@@ -76,4 +76,4 @@ def listpatch():
     return lines
 
 if __name__ == "__main__" :
-    print listpatch()
+    print(listpatch())

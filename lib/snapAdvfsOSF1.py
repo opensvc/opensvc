@@ -51,7 +51,6 @@ class Snap(snap.Snap):
                 self.log.error('failed to create directory %s'%snapMountPoint)
                 raise ex.syncSnapCreateError
         clonedev = '#'.join((dom, clonefset))
-        print clonedev, snapMountPoint, Mounts().has_mount(clonedev, snapMountPoint)
         if Mounts().has_mount(clonedev, snapMountPoint):
             cmd = ['fuser', '-kcv', snapMountPoint]
             (ret, out, err) = self.vcall(cmd, err_to_info=True)

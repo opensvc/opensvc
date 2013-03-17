@@ -20,8 +20,8 @@ def sssu(cmd, manager, username, password, array=None):
     _cmd += [cmd]
     out, err, ret = justcall(_cmd)
     if "Error" in out:
-        print _cmd
-        print out
+        print(_cmd)
+        print(out)
         raise ex.excError("sssu command execution error")
     return out, err
 
@@ -48,7 +48,7 @@ class Evas(object):
                 password = conf.get(s, 'password')
                 m[manager] = [username, password]
             except:
-                print "error parsing section", s
+                print("error parsing section", s)
                 pass
         del(conf)
         done = []
@@ -100,29 +100,29 @@ class Eva(object):
 
     def get_controller(self):
         cmd = 'ls controller full xml'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.sssu(cmd)[0]
         return self.stripxml(buff)
 
     def get_disk_group(self):
         cmd = 'ls disk_group full xml'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.sssu(cmd)[0]
         return self.stripxml(buff)
 
     def get_vdisk(self):
         cmd = 'ls vdisk full xml'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.sssu(cmd)[0]
         return self.stripxml(buff)
 
     def get_lun(self):
         cmd = 'ls lun full xml'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.sssu(cmd)[0]
         return self.stripxml(buff)
 
 if __name__ == "__main__":
     o = Evas()
     for eva in o:
-        print eva.get_controller()
+        print(eva.get_controller())

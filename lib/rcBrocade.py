@@ -65,7 +65,7 @@ class Brocades(object):
             try:
                 username = conf.get(s, 'username')
             except:
-                print "no 'username' parameter in %s section %s"%(cf, s)
+                print("no 'username' parameter in %s section %s"%(cf, s))
                 continue
             try:
                 key = conf.get(s, 'key')
@@ -76,7 +76,7 @@ class Brocades(object):
             except:
                 pass
             if key is None and password is None:
-                print "no 'key' nor 'password' parameter in %s section %s"%(cf, s)
+                print("no 'key' nor 'password' parameter in %s section %s"%(cf, s))
                 continue
             m.append([name, username, key, password])
         del(conf)
@@ -110,23 +110,23 @@ class Brocade(object):
 
     def get_brocadeswitchshow(self):
         cmd = 'switchshow'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.brocadecmd(cmd)[0]
         return buff
 
     def get_brocadensshow(self):
         cmd = 'nsshow'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.brocadecmd(cmd)[0]
         return buff
 
     def get_brocadezoneshow(self):
         cmd = 'zoneshow'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         buff = self.brocadecmd(cmd)[0]
         return buff
 
 if __name__ == "__main__":
     o = Brocades()
     for brocade in o:
-        print brocade.get_brocadeswitchshow()
+        print(brocade.get_brocadeswitchshow())

@@ -13,11 +13,11 @@ class Syms(object):
             self.filtering = False
         self.index = 0
         if which('symcfg') is None:
-            print 'Can not find symcli programs in PATH'
+            print('Can not find symcli programs in PATH')
             raise ex.excError
         out, err, ret = justcall(['symcfg', 'list', '-output', 'xml_element'])
         if ret != 0:
-            print err
+            print(err)
             raise ex.excError
         tree = fromstring(out)
         for symm in tree.getiterator('Symm_Info'):
@@ -30,7 +30,7 @@ class Syms(object):
             if 'DMX' in model or '3000-M' in model:
                 self.syms.append(Dmx(sid))
             else:
-                print "unsupported sym model: %s"%model
+                print("unsupported sym model: %s"%model)
 
     def __iter__(self):
         return self
@@ -130,7 +130,7 @@ class Vmax(Sym):
                 if len(files) == 1:
                     self.aclx = files[0]
             if not os.path.exists(self.aclx):
-                print "missing file %s"%self.aclx
+                print("missing file %s"%self.aclx)
         else:
             self.aclx = None
 
@@ -174,7 +174,7 @@ class Dmx(Sym):
                 # emc grab format
                 self.maskdb = os.path.join(dir, sid, 'symmaskdb_backup.bin')
             if not os.path.exists(self.maskdb):
-                print "missing file %s"%self.maskdb
+                print("missing file %s"%self.maskdb)
         else:
             self.maskdb = None
 

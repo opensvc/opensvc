@@ -33,7 +33,7 @@ class Hb(resHb.Hb):
     def _status(self, verbose=False):
         try:
             s = self.svc.get_grp_val('State').strip('|')
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
 

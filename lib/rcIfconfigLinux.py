@@ -59,7 +59,8 @@ def octal_to_cidr(s):
 
 class ifconfig(rcIfconfig.ifconfig):
     def parse_ip(self, out):
-        for line in out.split('\n'):
+        out = str(out)
+        for line in out.split("\n"):
             if len(line) == 0:
                 continue
             if line[0] != " " or "secondary" in line:

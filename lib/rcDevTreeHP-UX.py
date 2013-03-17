@@ -184,6 +184,6 @@ Last Open or Close state      = ACTIVE
 if __name__ == "__main__":
     tree = DevTree()
     tree.load()
-    #print tree
+    #print(tree)
     tree.print_tree_bottom_up()
-    #print map(lambda x: x.alias, tree.get_top_devs())
+    #print(map(lambda x: x.alias, tree.get_top_devs()))

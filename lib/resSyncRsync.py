@@ -144,9 +144,9 @@ def sync_timestamp(self, node):
     sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
     sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
     if not os.path.isdir(sync_timestamp_d):
-        os.makedirs(sync_timestamp_d, 0755)
+        os.makedirs(sync_timestamp_d, 0o755)
     if not os.path.isdir(sync_timestamp_d_src):
-        os.makedirs(sync_timestamp_d_src, 0755)
+        os.makedirs(sync_timestamp_d_src, 0o755)
     with open(sync_timestamp_f, 'w') as f:
         f.write(str(self.svc.action_start_date)+'\n')
     import shutil

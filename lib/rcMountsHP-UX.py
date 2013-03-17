@@ -64,4 +64,4 @@ class Mounts(rcMounts.Mounts):
 if __name__ == "__main__" :
     help(Mounts)
     for m in Mounts():
-        print m
+        print(m)

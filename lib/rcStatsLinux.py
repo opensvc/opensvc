@@ -82,40 +82,40 @@ class StatsProvider(rcStats.StatsProvider):
                 """ redhat 4
                     18:50:01 CPU %user %nice %system %iowait %idle
                 """
-		cols = ['date',
-			'cpu',
-			'usr',
-			'nice',
-			'sys',
-			'iowait',
-			'idle',
-			'nodename']
+                cols = ['date',
+                        'cpu',
+                        'usr',
+                        'nice',
+                        'sys',
+                        'iowait',
+                        'idle',
+                        'nodename']
             elif len(l) == 8:
                 """ redhat 5
                     05:20:01 CPU %user %nice %system %iowait %steal %idle
                 """
-       		cols = ['date',
-			'cpu',
-			'usr',
-			'nice',
-			'sys',
-			'iowait',
-			'steal',
-			'idle',
-			'nodename']
+                cols = ['date',
+                        'cpu',
+                        'usr',
+                        'nice',
+                        'sys',
+                        'iowait',
+                        'steal',
+                        'idle',
+                        'nodename']
             elif len(l) == 11:
-		cols = ['date',
-			'cpu',
-			'usr',
-			'nice',
-			'sys',
-			'iowait',
-			'steal',
-			'irq',
-			'soft',
-			'guest',
-			'idle',
-			'nodename']
+                cols = ['date',
+                        'cpu',
+                        'usr',
+                        'nice',
+                        'sys',
+                        'iowait',
+                        'steal',
+                        'irq',
+                        'soft',
+                        'guest',
+                        'idle',
+                        'nodename']
             else:
                 continue
             if l[1] == 'CPU':
@@ -365,5 +365,5 @@ class StatsProvider(rcStats.StatsProvider):
 
 if __name__ == "__main__":
     sp = StatsProvider(interval=20)
-    print sp.get('cpu')
-    print sp.get('swap')
+    print(sp.get('cpu'))
+    print(sp.get('swap'))

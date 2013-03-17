@@ -29,9 +29,9 @@ class diskInfo(rcDiskInfo.diskInfo):
         self.load_cache()
 
     def is_id(self, line):
-	if regex.match(line) is None:
+        if regex.match(line) is None:
             return False
-	return True
+        return True
 
     def cache_add(self, id, dev, wwid, path_count):
         d = self.devattr(id)

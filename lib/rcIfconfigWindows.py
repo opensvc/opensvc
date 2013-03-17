@@ -23,8 +23,8 @@ import rcIfconfig
 class ifconfig(rcIfconfig.ifconfig):
     def parse(self, out):
         for line in out.split('\n'):
-	    if len(line) == 0:
-	        continue
+            if len(line) == 0:
+                continue
             if line.startswith('Ethernet'):
                 i = rcIfconfig.interface("")
                 self.intf.append(i)
@@ -52,7 +52,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ipaddr = line.split(':')[-1].strip()
             if 'IPv6 Address' in line:
                 ip6addr = line.split(': ')[-1].strip().replace('(Preferred)','')
-		ip6addr = ip6addr.split('%')[0]
+                ip6addr = ip6addr.split('%')[0]
                 i.ip6addr += [ip6addr]
                 i.ip6mask += ['']
 

@@ -39,7 +39,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
-    print ' '.join(cmd)
+    print(' '.join(cmd))
     (retcode, stdout, stderr) = vcall(cmd)
     if retcode == 0 :
         return True
@@ -190,41 +190,41 @@ if __name__ == "__main__":
     dsname="rpool/toto"
     ds = Dataset(dsname)
     if ds.create(option=[ "-o", "mountpoint=none"]) is False:
-        print "========== Failed"
+        print("========== Failed")
     else:
-        print ds
+        print(ds)
 
     ds.verify_prop({'mountpoint':'/tmp/mnt', 'refquota':(10*1024*1024).__str__(),})
 
-    print "show type,refquota,mountpoint"
+    print("show type,refquota,mountpoint")
     for p in ('type', 'refquota', 'mountpoint'):
-        print '%s value: %s'%(p, ds.getprop(p))
-    print ds
+        print('%s value: %s'%(p, ds.getprop(p)))
+    print(ds)
 
     val = ds.setprop('opensvc:name', 'Example')
-    print ds.__str__(["-Ho", "opensvc:name"])
+    print(ds.__str__(["-Ho", "opensvc:name"]))
 
     val = ds.getprop('opensvc:name')
-    print "val Value=",val
+    print("val Value=",val)
 
     for sname in ["foo" , "bar"]:
         s = ds.snapshot(sname)
         if s is False:
-            print "========== Failed"
+            print("========== Failed")
         else:
-            print s
+            print(s)
             c=s.clone(dsname + "/clone_"+ sname)
             if c is False:
-                print "========== Failed"
+                print("========== Failed")
             else:
-                print c
+                print(c)
                 c.destroy()
 
             if s.destroy() is False:
-                print "========== Failed"
+                print("========== Failed")
 
     if ds.exists:
-        print "Destroy dataset", ds.name
+        print("Destroy dataset", ds.name)
         if ds.destroy() is False:
-            print "Failed to create snapshot"
+            print("Failed to create snapshot")
 

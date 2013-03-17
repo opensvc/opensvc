@@ -37,7 +37,7 @@ class OsvcSched(win32serviceutil.ServiceFramework):
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-	now = datetime.datetime.now()
+        now = datetime.datetime.now()
         self.next_task10 = now + datetime.timedelta(minutes=1)
 
 
@@ -60,24 +60,24 @@ class OsvcSched(win32serviceutil.ServiceFramework):
                 break
             else:
                 #servicemanager.LogInfoMsg("%s - ALIVE"%self._svc_name_)
-		self.SvcDoJob()
+                self.SvcDoJob()
 
     def SvcDoJob(self):
         now = datetime.datetime.now()
-	if now > self.next_task10:
-	    self.run('task10')
-	    self.next_task10 = now + datetime.timedelta(minutes=10)
+        if now > self.next_task10:
+            self.run('task10')
+            self.next_task10 = now + datetime.timedelta(minutes=10)
 
     def run(self, task):
         if task == "task10":
             servicemanager.LogInfoMsg("run svcmon")
-	    cmd = ["c:\Program Files\opensvc\svcmon.cmd", "--updatedb"]
+            cmd = ["c:\Program Files\opensvc\svcmon.cmd", "--updatedb"]
             p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-	    p.communicate()
+            p.communicate()
             servicemanager.LogInfoMsg("run internal scheduler")
-	    cmd = ["c:\Program Files\opensvc\cron.cmd"]
+            cmd = ["c:\Program Files\opensvc\cron.cmd"]
             p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-	    p.communicate()
+            p.communicate()
 
 def ctrlHandler(ctrlType):
     return True

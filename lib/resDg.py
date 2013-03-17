@@ -72,10 +72,10 @@ if __name__ == "__main__":
     for c in (Dg,) :
         help(c)
 
-    print """d=Dg("aGenericDg")"""
+    print("""d=Dg("aGenericDg")""")
     d=Dg("aGenericDg")
-    print "show d", d
-    print """d.do_action("start")"""
+    print("show d", d)
+    print("""d.do_action("start")""")
     d.do_action("start")
-    print """d.do_action("stop")"""
+    print("""d.do_action("stop")""")
     d.do_action("stop")

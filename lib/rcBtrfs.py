@@ -333,9 +333,9 @@ class Btrfs(object):
     def parse_fi_show(self):
         """
         Label: 'data'  uuid: 0d05d0b9-ffab-4ab8-b923-15a38ec806d5
-        	Total devices 2 FS bytes used 48.92MB
-        	devid    2 size 5.00GB used 1.51GB path /dev/vdc
-        	devid    1 size 5.00GB used 1.53GB path /dev/vdb
+                Total devices 2 FS bytes used 48.92MB
+                devid    2 size 5.00GB used 1.51GB path /dev/vdc
+                devid    1 size 5.00GB used 1.53GB path /dev/vdb
         """
         cmd = ['btrfs', 'fi', 'show', path]
         out, err, ret = self.justcall(cmd)
@@ -372,6 +372,6 @@ class Btrfs(object):
 
 if __name__ == "__main__":
     o = Btrfs(label=sys.argv[1], node="deb2")
-    print o
+    print(o)
     #o.setup_snap()
 

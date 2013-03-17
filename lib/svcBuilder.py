@@ -16,9 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
 import os
 import sys
-import ConfigParser
 import logging
 import re
 import socket
@@ -30,6 +30,11 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import platform
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 check_privs()
 
@@ -2093,7 +2098,7 @@ def build(name):
         add_resources('share', svc, conf)
         add_apps(svc, conf)
         add_syncs(svc, conf)
-    except (ex.excInitError, ex.excError), e:
+    except (ex.excInitError, ex.excError) as e:
         log.error(str(e))
         return None
 
@@ -2109,14 +2114,14 @@ def is_service(f):
 
 def list_services():
     if not os.path.exists(rcEnv.pathetc):
-        print "create dir %s"%rcEnv.pathetc
+        print("create dir %s"%rcEnv.pathetc)
         os.makedirs(rcEnv.pathetc)
 
     if os.name == 'nt':
-	import glob
+        import glob
         s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-	s = map(lambda x: os.path.basename(x).replace('.env',''), s)
-	return s
+        s = map(lambda x: os.path.basename(x).replace('.env',''), s)
+        return s
 
     # posix
     s = []
@@ -2140,7 +2145,7 @@ def build_services(status=None, svcnames=[],
         fix_default_section([name])
         try:
             svc = build(name)
-        except (ex.excError, ex.excInitError), e:
+        except (ex.excError, ex.excInitError) as e:
             log.error(str(e))
             continue
         except ex.excAbortAction:
@@ -2162,10 +2167,10 @@ def build_services(status=None, svcnames=[],
 
 def toggle_one(svcname, rids=[], disable=True):
     if len(svcname) == 0:
-        print >>sys.stderr, "service name must not be empty"
+        print("service name must not be empty", file=sys.stderr)
         return 1
     if svcname not in list_services():
-        print >>sys.stderr, "service", svcname, "does not exist"
+        print("service", svcname, "does not exist", file=sys.stderr)
         return 1
     if len(rids) == 0:
         rids = ['DEFAULT']
@@ -2174,13 +2179,13 @@ def toggle_one(svcname, rids=[], disable=True):
     conf.read(envfile)
     for rid in rids:
         if rid != 'DEFAULT' and not conf.has_section(rid):
-            print >>sys.stderr, "service", svcname, "has not resource", rid
+            print("service", svcname, "has not resource", rid, file=sys.stderr)
             continue
         conf.set(rid, "disable", disable)
     try:
        f = open(envfile, 'w')
     except:
-        print >>sys.stderr, "failed to open", envfile, "for writing"
+        print("failed to open", envfile, "for writing", file=sys.stderr)
         return 1
 
     #
@@ -2218,23 +2223,23 @@ def enable(svcnames, rid=[]):
 
 def delete_one(svcname, rids=[]):
     if len(svcname) == 0:
-        print >>sys.stderr, "service name must not be empty"
+        print("service name must not be empty", file=sys.stderr)
         return 1
     if svcname not in list_services():
-        print >>sys.stderr, "service", svcname, "does not exist"
+        print("service", svcname, "does not exist", file=sys.stderr)
         return 0
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     conf = ConfigParser.RawConfigParser()
     conf.read(envfile)
     for rid in rids:
         if not conf.has_section(rid):
-            print >>sys.stderr, "service", svcname, "has not resource", rid
+            print("service", svcname, "has not resource", rid, file=sys.stderr)
             continue
         conf.remove_section(rid)
     try:
        f = open(envfile, 'w')
     except:
-        print >>sys.stderr, "failed to open", envfile, "for writing"
+        print("failed to open", envfile, "for writing", file=sys.stderr)
         return 1
     conf.write(f)
     return 0
@@ -2242,7 +2247,7 @@ def delete_one(svcname, rids=[]):
 def delete(svcnames, rid=[]):
     fix_default_section(svcnames)
     if len(rid) == 0:
-        print "no resource flagged for deletion"
+        print("no resource flagged for deletion")
         return 0
     r = 0
     for svcname in svcnames:
@@ -2251,26 +2256,26 @@ def delete(svcnames, rid=[]):
 
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
-        print >>sys.stderr, "ouch, svcname should be a list object"
+        print("ouch, svcname should be a list object", file=sys.stderr)
         return 1
     if len(svcname) != 1:
-        print >>sys.stderr, "you must specify a single service name with the 'create' action"
+        print("you must specify a single service name with the 'create' action", file=sys.stderr)
         return 1
     svcname = svcname[0]
     if len(svcname) == 0:
-        print >>sys.stderr, "service name must not be empty"
+        print("service name must not be empty", file=sys.stderr)
         return 1
     if svcname in list_services():
-        print >>sys.stderr, "service", svcname, "already exists"
+        print("service", svcname, "already exists", file=sys.stderr)
         return 1
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     if os.path.exists(envfile):
-        print >>sys.stderr, envfile, "already exists"
+        print(envfile, "already exists", file=sys.stderr)
         return 1
     try:
        f = open(envfile, 'w')
     except:
-        print >>sys.stderr, "failed to open", envfile, "for writing"
+        print("failed to open", envfile, "for writing", file=sys.stderr)
         return 1
 
     defaults = {}
@@ -2282,16 +2287,16 @@ def create(svcname, resources=[], interactive=False, provision=False):
         try:
             d = json.loads(r)
         except:
-            print >>sys.stderr, "can not parse resource:", r
+            print("can not parse resource:", r, file=sys.stderr)
             return 1
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
-                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
                 return 1
             l = section.split('#')
             if len(l) != 2:
-                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
                 return 1
             rtype = l[1]
             if rtype in rtypes:
@@ -2356,17 +2361,17 @@ def create(svcname, resources=[], interactive=False, provision=False):
 def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
     if not isinstance(svcname, list):
-        print >>sys.stderr, "ouch, svcname should be a list object"
+        print("ouch, svcname should be a list object", file=sys.stderr)
         return 1
     if len(svcname) != 1:
-        print >>sys.stderr, "you must specify a single service name with the 'create' action"
+        print("you must specify a single service name with the 'create' action", file=sys.stderr)
         return 1
     svcname = svcname[0]
     if len(svcname) == 0:
-        print >>sys.stderr, "service name must not be empty"
+        print("service name must not be empty", file=sys.stderr)
         return 1
     if svcname not in list_services():
-        print >>sys.stderr, "service", svcname, "does not exist"
+        print("service", svcname, "does not exist", file=sys.stderr)
         return 1
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     sections = {}
@@ -2393,16 +2398,16 @@ def update(svcname, resources=[], interactive=False, provision=False):
         try:
             d = json.loads(r)
         except:
-            print >>sys.stderr, "can not parse resource:", r
+            print("can not parse resource:", r, file=sys.stderr)
             return 1
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
-                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
                 return 1
             l = section.split('#')
             if len(l) != 2:
-                print >>sys.stderr, section, "must be formatted as 'rtype#n'"
+                print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
                 return 1
             del(d['rid'])
             if section in sections:
@@ -2435,7 +2440,7 @@ def update(svcname, resources=[], interactive=False, provision=False):
     try:
         f = open(envfile, 'w')
     except:
-        print >>sys.stderr, "failed to open", envfile, "for writing"
+        print("failed to open", envfile, "for writing", file=sys.stderr)
         return 1
 
     conf.write(f)
@@ -2480,7 +2485,7 @@ def _fix_default_section(svcname):
     try:
         f = open(envfile, 'r')
     except:
-        print >>sys.stderr, "failed to open", envfile, "for reading"
+        print("failed to open", envfile, "for reading", file=sys.stderr)
         return 1
     found = False
     lines = []
@@ -2494,7 +2499,7 @@ def _fix_default_section(svcname):
         try:
             f = open(envfile, 'w')
         except:
-            print >>sys.stderr, "failed to open", envfile, "for writing"
+            print("failed to open", envfile, "for writing", file=sys.stderr)
             return 1
         f.write(''.join(lines))
         f.close()

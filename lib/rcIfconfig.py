@@ -86,7 +86,7 @@ class ifconfig(object):
 
     def __str__(self):
         for intf in self.intf:
-            print intf
+            print(intf)
 
     def __init__(self):
         self.intf = []

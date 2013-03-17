@@ -243,4 +243,4 @@ class Lvm(object):
 
 if __name__ == "__main__" :
     lvm = Lvm()
-    print lvm
+    print(lvm)

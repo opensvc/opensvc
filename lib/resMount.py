@@ -48,7 +48,7 @@ class Mount(Res.Resource):
 
     def start(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
-	    return None
+            return
         if not os.path.exists(self.device):
             self.log.error("device does not exist %s" % self.device)
             raise ex.excError
@@ -103,7 +103,7 @@ class Mount(Res.Resource):
             f = open(self.testfile, 'w')
             f.write(' ')
             f.close()
-        except IOError, e:
+        except IOError as e:
             if e.errno == 28:
                 self.log.error('No space left on device. Invalidate writable test.')
                 return True
@@ -159,8 +159,8 @@ class Mount(Res.Resource):
 if __name__ == "__main__":
     for c in (Mount,) :
         help(c)
-    print """   m=Mount("/mnt1","/dev/sda1","ext3","rw")   """
+    print("""   m=Mount("/mnt1","/dev/sda1","ext3","rw")   """)
     m=Mount("/mnt1","/dev/sda1","ext3","rw")
-    print "show m", m
+    print("show m", m)
 
 

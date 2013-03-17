@@ -9,8 +9,8 @@ def check_ping(addr, timeout=5, count=1):
     ping = 'ping.exe'
     cmd = [ping,
            '-n', repr(count),
-	   '-w', repr(timeout),
-	   addr]
+           '-w', repr(timeout),
+           addr]
     out, err, ret = justcall(cmd)
     if ret == 0:
         return True

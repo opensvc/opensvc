@@ -156,12 +156,11 @@ if __name__ == "__main__":
     for c in (Pool,) :
         help(c)
 
-
-        # return cache if initialized
-    print """p=Pool("svczfs1")"""
+    # return cache if initialized
+    print("""p=Pool("svczfs1")""")
     p=Pool("svczfs1")
-    print "show p", p
-    print """p.do_action("start")"""
+    print("show p", p)
+    print("""p.do_action("start")""")
     p.do_action("start")
-    print """p.do_action("stop")"""
+    print("""p.do_action("stop")""")
     p.do_action("stop")

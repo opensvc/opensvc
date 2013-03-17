@@ -52,14 +52,14 @@ class Vg(resDg.Dg):
         for k in dir(n):
             if '__' in k:
                 continue
-            print k, "=", getattr(n, k)
+            print(k, "=", getattr(n, k))
 
     def get_cloud(self):
         if hasattr(self, 'cloud'):
             return self.cloud
         try:
             self.cloud = self.svc.node.cloud_get(self.cloud_id)
-        except ex.excInitError, e:
+        except ex.excInitError as e:
             raise ex.excError(str(e))
         return self.cloud
 
@@ -121,7 +121,7 @@ class Vg(resDg.Dg):
         """
         try:
             node = self.get_node()
-        except ex.excError, e:
+        except ex.excError as e:
             raise ex.excError("can't find cloud node to list volumes (%s)"%str(e))
 
         c = self.get_cloud()
@@ -139,7 +139,7 @@ class Vg(resDg.Dg):
     def _status(self, verbose=False):
         try:
             s = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if rcEnv.nodename in self.always_on:
@@ -182,7 +182,7 @@ class Vg(resDg.Dg):
     def do_start(self):
         try:
             node = self.get_node()
-        except ex.excError, e:
+        except ex.excError as e:
             raise ex.excError("can't find cloud node to attach volume %s to (%s)"%(self.name, str(e)))
 
         try:
@@ -192,7 +192,7 @@ class Vg(resDg.Dg):
 
         try:
             status = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error("abort gandi volume %s attach: %s"%(self.name, str(e)))
 
         if status:
@@ -206,7 +206,7 @@ class Vg(resDg.Dg):
     def do_stop(self):
         try:
             node = self.get_node()
-        except ex.excError, e:
+        except ex.excError as e:
             raise ex.excError("can't find cloud node to detach volume %s from"%(self.name, str(e)))
 
         try:
@@ -216,7 +216,7 @@ class Vg(resDg.Dg):
 
         try:
             status = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error("abort gandi volume %s detach: %s"%(self.name, str(e)))
 
         if not status:

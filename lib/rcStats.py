@@ -55,13 +55,13 @@ class StatsProvider(object):
             if start != end:
                 self.ranges.append((start, end))
             end = start - one_minute
-        #print self.stats_end, interval, map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges)
+        #print(self.stats_end, interval, map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges))
 
     def get(self, fname):
         lines = []
         cols = []
         if not hasattr(self, fname):
-            print fname, 'is not implemented'
+            print(fname, 'is not implemented')
             return cols, lines
         for start, end in self.ranges:
             date = start.strftime("%Y-%m-%d")
@@ -113,5 +113,5 @@ class StatsProvider(object):
 
 if __name__ == "__main__":
     sp = StatsProvider(interval=20)
-    print sp.get('cpu')
-    print sp.get('swap')
+    print(sp.get('cpu'))
+    print(sp.get('swap'))

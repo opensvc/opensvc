@@ -292,9 +292,9 @@ if __name__ == "__main__":
     for c in (Ip,) :
         help(c)
 
-    print """i1=Ip("eth0","192.168.0.173")"""
+    print("""i1=Ip("eth0","192.168.0.173")""")
     i=Ip("eth0","192.168.0.173")
-    print "show i", i
-    print """i.do_action("start")"""
+    print("show i", i)
+    print("""i.do_action("start")""")
     i.do_action("start")
 

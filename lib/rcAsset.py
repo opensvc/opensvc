@@ -41,8 +41,8 @@ class Asset(object):
         return s
 
     def print_mem_bytes(self, s, source):
-        print "mem (%s)"%source
-        print "  %s MB"%s
+        print("mem (%s)"%source)
+        print("  %s MB"%s)
 
     def get_mem_banks(self):
         s = '0'
@@ -60,8 +60,8 @@ class Asset(object):
         return s
 
     def print_mem_banks(self, s, source):
-        print "mem banks (%s)"%source
-        print "  %s"%s
+        print("mem banks (%s)"%source)
+        print("  %s"%s)
 
     def get_mem_slots(self):
         s = '0'
@@ -79,8 +79,8 @@ class Asset(object):
         return s
 
     def print_mem_slots(self, s, source):
-        print "mem slots (%s)"%source
-        print "  %s"%s
+        print("mem slots (%s)"%source)
+        print("  %s"%s)
 
     def get_os_vendor(self):
         s = 'Unknown'
@@ -98,8 +98,8 @@ class Asset(object):
         return s
 
     def print_os_vendor(self, s, source):
-        print "os vendor (%s)"%source
-        print "  %s"%s
+        print("os vendor (%s)"%source)
+        print("  %s"%s)
 
     def get_os_release(self):
         s = 'Unknown'
@@ -117,8 +117,8 @@ class Asset(object):
         return s
 
     def print_os_release(self, s, source):
-        print "os release (%s)"%source
-        print "  %s"%s
+        print("os release (%s)"%source)
+        print("  %s"%s)
 
     def get_os_kernel(self):
         s = 'Unknown'
@@ -136,8 +136,8 @@ class Asset(object):
         return s
 
     def print_os_kernel(self, s, source):
-        print "os kernel (%s)"%source
-        print "  %s"%s
+        print("os kernel (%s)"%source)
+        print("  %s"%s)
 
     def get_os_arch(self):
         s = 'Unknown'
@@ -155,8 +155,8 @@ class Asset(object):
         return s
 
     def print_os_arch(self, s, source):
-        print "os arch (%s)"%source
-        print "  %s"%s
+        print("os arch (%s)"%source)
+        print("  %s"%s)
 
     def get_cpu_freq(self):
         s = '0'
@@ -174,8 +174,8 @@ class Asset(object):
         return s
 
     def print_cpu_freq(self, s, source):
-        print "cpu freq (%s)"%source
-        print "  %s Mhz"%s
+        print("cpu freq (%s)"%source)
+        print("  %s Mhz"%s)
 
     def get_cpu_cores(self):
         s = '0'
@@ -193,8 +193,8 @@ class Asset(object):
         return s
 
     def print_cpu_cores(self, s, source):
-        print "cpu cores (%s)"%source
-        print "  %s"%s
+        print("cpu cores (%s)"%source)
+        print("  %s"%s)
 
     def get_cpu_dies(self):
         s = '0'
@@ -212,8 +212,8 @@ class Asset(object):
         return s
 
     def print_cpu_dies(self, s, source):
-        print "cpu dies (%s)"%source
-        print "  %s"%s
+        print("cpu dies (%s)"%source)
+        print("  %s"%s)
 
     def get_cpu_model(self):
         s = 'Unknown'
@@ -231,8 +231,8 @@ class Asset(object):
         return s
 
     def print_cpu_model(self, s, source):
-        print "cpu model (%s)"%source
-        print "  %s"%s
+        print("cpu model (%s)"%source)
+        print("  %s"%s)
 
     def get_serial(self):
         s = 'Unknown'
@@ -250,8 +250,8 @@ class Asset(object):
         return s
 
     def print_serial(self, s, source):
-        print "serial (%s)"%source
-        print "  %s"%s
+        print("serial (%s)"%source)
+        print("  %s"%s)
 
 
     def get_enclosure(self):
@@ -270,8 +270,8 @@ class Asset(object):
         return s
 
     def print_enclosure(self, s, source):
-        print "enclosure (%s)"%source
-        print "  %s"%s
+        print("enclosure (%s)"%source)
+        print("  %s"%s)
 
     def get_model(self):
         s = 'Unknown'
@@ -289,8 +289,8 @@ class Asset(object):
         return s
 
     def print_model(self, s, source):
-        print "model (%s)"%source
-        print "  %s"%s
+        print("model (%s)"%source)
+        print("  %s"%s)
 
     def get_host_mode(self):
         s = 'TST'
@@ -304,8 +304,8 @@ class Asset(object):
         return s
 
     def print_host_mode(self, s, source):
-        print "host mode (%s)"%source
-        print "  %s"%s
+        print("host mode (%s)"%source)
+        print("  %s"%s)
 
     def get_environnement(self):
         s = None
@@ -321,8 +321,8 @@ class Asset(object):
     def print_environnement(self, s, source):
         if s is None:
             return
-        print "environment (%s)"%source
-        print "  %s"%s
+        print("environment (%s)"%source)
+        print("  %s"%s)
 
     def get_team_responsible(self):
         s = None
@@ -338,14 +338,14 @@ class Asset(object):
     def print_team_responsible(self, s, source):
         if s is None:
             return
-        print "team responsible (%s)"%source
-        print "  %s"%s
+        print("team responsible (%s)"%source)
+        print("  %s"%s)
 
     def print_generic_cf(self, s, source, title):
         if s is None:
             return
-        print "%s (%s)"%(title, source)
-        print "  %s"%s
+        print("%s (%s)"%(title, source))
+        print("  %s"%s)
 
     def get_loc_country(self):
         s = None
@@ -474,9 +474,9 @@ class Asset(object):
         return hba
 
     def print_hba(self, hba):
-        print "hba (probe)"
+        print("hba (probe)")
         for h in hba:
-            print "  %-5s %s"%(h[1], h[0])
+            print("  %-5s %s"%(h[1], h[0]))
 
     def get_targets(self):
         try:
@@ -487,9 +487,9 @@ class Asset(object):
         return s
 
     def print_targets(self, targets):
-        print "paths to targets (probe)"
+        print("paths to targets (probe)")
         for t in targets:
-            print "  %s - %s"%t
+            print("  %s - %s"%t)
 
     def get_lan(self):
         if rcEnv.sysname == 'HP-UX':
@@ -532,10 +532,10 @@ class Asset(object):
         return lan
 
     def print_lan(self, lan):
-        print "lan (probe)"
+        print("lan (probe)")
         for h, l in lan.items():
             for d in l:
-                print "  %s %-8s %-5s %s/%s"%(h, d['intf'], d['type'], d['addr'], d['mask'])
+                print("  %s %-8s %-5s %s/%s"%(h, d['intf'], d['type'], d['addr'], d['mask']))
 
     def get_asset_dict(self):
         d = {}

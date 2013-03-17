@@ -155,7 +155,9 @@ class Status(object):
         return status_str(self.status)
 
     def __init__(self, initial_status=UNDEF):
-        if type(initial_status) in (str, unicode):
-            self.status = _status_value[initial_status]
-        else:
+        if type(initial_status) == int:
             self.status = initial_status
+        elif type(initial_status) == Status:
+            self.status = initial_status.status
+        else:
+            self.status = _status_value[str(initial_status)]

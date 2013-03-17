@@ -133,7 +133,7 @@ class Apps(Res.Resource):
                 (out, err, ret) = justcall(cmd)
                 self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]"%(cmd, out, err, ret))
                 return ret
-        except OSError, e:
+        except OSError as e:
             if e.errno == 8:
                 self.log.error("%s execution error (Exec format error)"%name)
                 return 1

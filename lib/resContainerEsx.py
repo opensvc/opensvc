@@ -77,7 +77,7 @@ class Esx(resContainer.Container):
         return self.vmx
 
     def _migrate(self):
-        print "TODO"
+        print("TODO")
         pass
 
     def container_start(self):

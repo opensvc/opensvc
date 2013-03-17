@@ -71,7 +71,7 @@ def lock_nowait(lockfile=None):
         pass
 
     try:
-        lockfd = os.open(lockfile, os.O_RDWR|os.O_SYNC|os.O_CREAT|os.O_TRUNC, 0644)
+        lockfd = os.open(lockfile, os.O_RDWR|os.O_SYNC|os.O_CREAT|os.O_TRUNC, 0o644)
     except:
         raise lockCreateError
 
@@ -85,7 +85,7 @@ def lock_nowait(lockfile=None):
         """ FD_CLOEXEC makes sure the lock is the held by processes
             we fork from this process
         """
-	if os.name == 'posix':
+        if os.name == 'posix':
             import fcntl
             fcntl.flock(lockfd, fcntl.LOCK_EX|fcntl.LOCK_NB)
             flags = fcntl.fcntl(lockfd, fcntl.F_GETFD)
@@ -94,14 +94,14 @@ def lock_nowait(lockfile=None):
             """ acquire lock
             """
             fcntl.fcntl(lockfd, fcntl.F_SETFD, flags)
-	elif os.name == 'nt':
-	    import msvcrt
-	    size = os.path.getsize(lockfile)
-	    msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
+        elif os.name == 'nt':
+            import msvcrt
+            size = os.path.getsize(lockfile)
+            msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
 
         """ drop our pid in the lockfile
         """
-        os.write(lockfd, str(os.getpid()))
+        os.write(lockfd, str(os.getpid()).encode('utf-8'))
         os.fsync(lockfd)
         return lockfd
     except IOError:

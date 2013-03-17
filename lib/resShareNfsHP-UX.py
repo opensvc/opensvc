@@ -57,7 +57,7 @@ class Share(Resource):
     def start(self):
         try:
             up = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error("skip start because the share is in unknown state")
             return
         if up:
@@ -78,7 +78,7 @@ class Share(Resource):
     def stop(self):
         try:
             up = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.log.error("continue with stop even if the share is in unknown state")
         if not up:
             self.log.info("%s is already down" % self.path)
@@ -91,7 +91,7 @@ class Share(Resource):
     def _status(self, verbose=False):
         try:
             up = self.is_up()
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if len(self.issues) > 0:
@@ -132,7 +132,7 @@ class Share(Resource):
         self.path = path
         try:
             self.opts = self.parse_opts(opts)
-        except ex.excError, e:
+        except ex.excError as e:
             raise ex.excInitError(str(e))
 
 

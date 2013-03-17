@@ -125,10 +125,10 @@ if __name__ == "__main__":
     for c in (Pool,) :
         help(c)
 
-    print """p=Vg("vzone1vg")"""
+    print("""p=Vg("vzone1vg")""")
     p=Pool("vzone1vg")
-    print "show p", p
-    print """p.do_action("start")"""
+    print("show p", p)
+    print("""p.do_action("start")""")
     p.do_action("start")
-    print """p.do_action("stop")"""
+    print("""p.do_action("stop")""")
     p.do_action("stop")

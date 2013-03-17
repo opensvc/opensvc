@@ -30,7 +30,7 @@ class Vg(Res.Vg):
     def _status(self, verbose=False):
         try:
             s = self.svc.get_res_val(self.vcs_name, 'State')
-        except ex.excError, e:
+        except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
 

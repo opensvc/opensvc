@@ -4,8 +4,8 @@ import wmi
 class DevTree(rcDevTree.DevTree):
 
     def load_diskdrive(self):
-	if not hasattr(self, 'wmi'):
-	    self.wmi = wmi.WMI()
+        if not hasattr(self, 'wmi'):
+            self.wmi = wmi.WMI()
         for drive in self.wmi.WIN32_DiskDrive():
             d = self.add_dev(drive.DeviceId, int(drive.size)//1024, "linear")
             d.set_devpath(drive.DeviceId)
@@ -19,6 +19,6 @@ class DevTree(rcDevTree.DevTree):
 if __name__ == "__main__":
     tree = DevTree()
     tree.load()
-    #print tree
+    #print(tree)
     tree.print_tree_bottom_up()
-    #print map(lambda x: x.alias, tree.get_top_devs())
+    #print(map(lambda x: x.alias, tree.get_top_devs()))

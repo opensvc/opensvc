@@ -12,11 +12,11 @@ class NecIsms(object):
             self.filtering = False
         self.index = 0
         if which('iSMview') is None:
-            print 'Can not find iSMview programs in PATH'
+            print('Can not find iSMview programs in PATH')
             raise ex.excError
         out, err, ret = justcall(['iSMview', '-d'])
         if ret != 0:
-            print err
+            print(err)
             raise ex.excError
 
         """
@@ -67,5 +67,5 @@ class NecIsm(object):
 if __name__ == "__main__":
     o = NecIsms()
     for necism in o:
-        print necism.all()
+        print(necism.all())
 

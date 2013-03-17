@@ -53,7 +53,7 @@ class check(checks.check):
         for log in logs:
             try:
                 os.unlink(log)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == 2:
                     pass
                 else:
@@ -101,7 +101,7 @@ class check(checks.check):
         for log in logs:
             try:
                 os.unlink(log)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == 2:
                     pass
                 else:

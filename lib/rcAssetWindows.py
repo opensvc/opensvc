@@ -54,14 +54,14 @@ class Asset(rcAsset.Asset):
         return str(self.memstat.ullTotalPhys // 1024 // 1024)
 
     def _get_mem_banks(self):
-	md = len(self.w.WIN32_PhysicalMemory())
+        md = len(self.w.WIN32_PhysicalMemory())
         return str(md)
 
     def _get_mem_slots(self):
         n = 0
-	for a in self.w.WIN32_PhysicalMemoryArray():
-	    n += a.MemoryDevices
-	return str(n)
+        for a in self.w.WIN32_PhysicalMemoryArray():
+            n += a.MemoryDevices
+        return str(n)
 
     def _get_os_vendor(self):
         return 'Microsoft'
@@ -76,10 +76,10 @@ class Asset(rcAsset.Asset):
          2: 'Domain Controller',
          3: 'Server',
         }
-	s = platform.release()
-	s = s.replace('Server', ' Server')
-	s = s.replace('Workstation', ' Workstation')
-	s += " %s" % v.service_pack
+        s = platform.release()
+        s = s.replace('Server', ' Server')
+        s = s.replace('Workstation', ' Workstation')
+        s += " %s" % v.service_pack
         return s
 
     def _get_os_kernel(self):
@@ -97,11 +97,11 @@ class Asset(rcAsset.Asset):
     def _get_cpu_cores(self):
         n = 0
         for p in self.w.Win32_Processor():
-	    n += p.NumberOfCores
+            n += p.NumberOfCores
         return str(n)
 
     def _get_cpu_dies(self):
-	n = len(self.w.Win32_Processor())
+        n = len(self.w.Win32_Processor())
         return str(n)
 
     def _get_cpu_model(self):
@@ -113,39 +113,39 @@ class Asset(rcAsset.Asset):
         return 'Unknown'
 
     def _get_model(self):
-	key = ["HKEY_LOCAL_MACHINE", "SYSTEM\\CurrentControlSet\\Control\\SystemInformation", "SystemProductName"]
-	#key = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
-	#key = "HKEY_LOCAL_MACHINE\DESCRIPTION\SYSTEM\BIOS"
-	compname = get_registry_value(*key)
+        key = ["HKEY_LOCAL_MACHINE", "SYSTEM\\CurrentControlSet\\Control\\SystemInformation", "SystemProductName"]
+        #key = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
+        #key = "HKEY_LOCAL_MACHINE\DESCRIPTION\SYSTEM\BIOS"
+        compname = get_registry_value(*key)
         return compname
 
     def _get_hba(self):
         hbas = []
-	self.di = diskInfo()
-	for index, portwwn, host in self.di._get_fc_hbas():
-	    hbas.append((portwwn, 'fc'))
+        self.di = diskInfo()
+        for index, portwwn, host in self.di._get_fc_hbas():
+            hbas.append((portwwn, 'fc'))
         return hbas
 
     def _get_targets(self):
         maps = []
         if not which('fcinfo'):
-	    print '  fcinfo is not installed'
-	    return []
-	for index, portwwn, host in self.di._get_fc_hbas():
-	    cmd = ['fcinfo', '/mapping', '/ai:'+index]
-	    out, err, ret = justcall(cmd)
-	    if ret != 0:
-	        print 'error executing', ' '.join(cmd), out, err, ret
-	        continue
+            print('  fcinfo is not installed')
+            return []
+        for index, portwwn, host in self.di._get_fc_hbas():
+            cmd = ['fcinfo', '/mapping', '/ai:'+index]
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                print('error executing', ' '.join(cmd), out, err, ret)
+                continue
             for line in out.split('\n'):
-	        if not line.startswith('(x'):
-		    continue
+                if not line.startswith('(x'):
+                    continue
                 l = line.split()
-		if len(l) < 3:
-		    continue
-		tgtportwwn = l[2].strip(',').replace(':', '')
-		if (portwwn, tgtportwwn) in maps:
-		    continue
-		maps.append((portwwn, tgtportwwn))
+                if len(l) < 3:
+                    continue
+                tgtportwwn = l[2].strip(',').replace(':', '')
+                if (portwwn, tgtportwwn) in maps:
+                    continue
+                maps.append((portwwn, tgtportwwn))
         return maps
 

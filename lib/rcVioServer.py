@@ -15,8 +15,8 @@ def rcmd(cmd, manager, username, key):
     _cmd += [cmd]
     out, err, ret = justcall(_cmd)
     if ret != 0:
-        print ' '.join(_cmd)
-        print out
+        print(' '.join(_cmd))
+        print(out)
         raise ex.excError("ssh command execution error")
     return out, err
 
@@ -46,7 +46,7 @@ class VioServers(object):
                 key = conf.get(s, 'key')
                 m[s] = [username, key]
             except:
-                print "error parsing section", s
+                print("error parsing section", s)
                 pass
         del(conf)
         for name, creds in m.items():
@@ -74,35 +74,35 @@ class VioServer(object):
 
     def get_lsmap(self):
         cmd = 'ioscli lsmap -all -fmt :'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_bootinfo(self):
         cmd = 'for i in $(ioscli lsmap -all -field backing|sed "s/Backing device//"); do echo $i $(bootinfo -s $i) ; done'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsfware(self):
         cmd = 'ioscli lsfware'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsdevattr(self):
         cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i $(ioscli lsdev -dev $i -attr|grep ww_name);done'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_lsdevvpd(self):
         cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i ; ioscli lsdev -dev $i -vpd;done'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
     def get_devsize(self):
         cmd = 'for i in $(ioscli lsdev -type disk -field name -fmt .) ; do echo $i $(bootinfo -s $i);done'
-        print "%s: %s"%(self.name, cmd)
+        print("%s: %s"%(self.name, cmd))
         return self.rcmd(cmd)[0]
 
 if __name__ == "__main__":
     o = VioServers()
     for vioserver in o:
-        print vioserver.lsmap()
+        print(vioserver.lsmap())

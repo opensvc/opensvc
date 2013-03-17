@@ -175,7 +175,7 @@ class Kvm(resContainer.Container):
             self.devlist()
         devps = self.devs
         try:
-	    u = __import__('rcUtilities'+rcEnv.sysname)
+            u = __import__('rcUtilities'+rcEnv.sysname)
             self.disks = u.devs_to_disks(self, devps)
         except:
             self.disks = devps

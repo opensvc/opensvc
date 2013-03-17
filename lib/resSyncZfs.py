@@ -150,7 +150,7 @@ class SyncZfs(resSync.Sync):
             send_cmd = ['zfs', 'send', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
 
-	receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool]
+        receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -172,7 +172,7 @@ class SyncZfs(resSync.Sync):
         else:
             send_cmd = ['zfs', 'send', self.src_snap_tosend]
 
-	receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool ]
+        receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool ]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -278,7 +278,7 @@ class SyncZfs(resSync.Sync):
             import sys
             import traceback
             e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
+            print(e[0], e[1], traceback.print_tb(e[2]))
             return False
         if self.skip_sync(ts):
             self.status_log("Last sync on %s older than %i minutes"%(ts, self.sync_max_delay))
@@ -298,7 +298,7 @@ class SyncZfs(resSync.Sync):
             import sys
             import traceback
             e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
+            print(e[0], e[1], traceback.print_tb(e[2]))
             return rcStatus.WARN
         if last < now - delay:
             self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
