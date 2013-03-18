@@ -119,7 +119,13 @@ class Apps(Res.Resource):
                 f = open(outf, 'w')
                 t = datetime.now()
                 p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
-                p.communicate()
+                try:
+                    p.communicate()
+                except (KeyboardInterrupt, ex.excSignal):
+                    _len = datetime.now() - t
+                    self.log.error('%s interrupted after %s - ret %d - logs in %s' % (action, _len, 1, outf))
+                    f.close()
+                    return 1
                 _len = datetime.now() - t
                 self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
                 f.close()
