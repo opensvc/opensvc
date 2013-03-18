@@ -20,7 +20,6 @@ class Module(object):
     def __init__(self, name):
         self.name = name
         self.executable = None
-        self.updatecomp = False
 
         dl = os.listdir(comp_dir)
         match = []
@@ -219,6 +218,7 @@ class Compliance(object):
         self.options = options
         self.module_o = {}
         self.module = []
+        self.updatecomp = False
 
     def compliance_check(self):
         flag = "last_comp_check"
