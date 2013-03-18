@@ -540,6 +540,7 @@ class Asset(object):
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
+        d['fqdn'] = rcEnv.fqdn
         d['os_name'] = rcEnv.sysname
         d['os_vendor'] = self.get_os_vendor()
         d['os_release'] = self.get_os_release()
