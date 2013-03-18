@@ -281,10 +281,10 @@ class Asset(rcAsset.Asset):
         return str(c)
 
     def _get_cpu_dies(self):
-        try:
-            return self._get_cpu_dies_dmi()
-        except:
-            return self._get_cpu_dies_cpuinfo()
+        n = self._get_cpu_dies_dmi()
+        if n == '0':
+            n = self._get_cpu_dies_cpuinfo()
+        return n
 
     def _get_cpu_model(self):
         (out, err, ret) = justcall(['grep', 'model name', '/proc/cpuinfo'])
