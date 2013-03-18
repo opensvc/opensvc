@@ -22,6 +22,7 @@ import re
 import pwd
 import grp
 import stat
+import sys
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, devs=set([]), user="root",
@@ -41,6 +42,11 @@ class Vg(resDg.Dg):
         self.user = user
         self.group = group
         self.perm = perm
+
+        if sys.version_info.major < 3:
+            self.str_types = (str, unicode)
+        else:
+            self.str_types = (str)
         
         for dev in devs:
             if os.path.exists(dev):
@@ -61,7 +67,7 @@ class Vg(resDg.Dg):
 
     def get_uid(self):
         self.uid = self.user
-        if isinstance(self.uid, (str, unicode)):
+        if isinstance(self.uid, self.str_types):
             try:
                 info=pwd.getpwnam(self.uid)
                 self.uid = info[2]
@@ -70,7 +76,7 @@ class Vg(resDg.Dg):
 
     def get_gid(self):
         self.gid = self.group
-        if isinstance(self.gid, (str, unicode)):
+        if isinstance(self.gid, self.str_types):
             try:
                 info=grp.getgrnam(self.gid)
                 self.gid = info[2]
