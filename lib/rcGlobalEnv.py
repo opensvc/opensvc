@@ -29,6 +29,7 @@
 import sys
 import os
 import platform
+import socket
 
 class rcEnv:
     """Class to store globals
@@ -37,6 +38,7 @@ class rcEnv:
     allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
     _platform = sys.platform
     sysname, nodename, x, x, machine, x = platform.uname()
+    fqdn = socket.getfqdn()
 
     """program used to execute remote command on other nodes or virtual hosts
     """
