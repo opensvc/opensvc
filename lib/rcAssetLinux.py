@@ -114,13 +114,13 @@ class Asset(rcAsset.Asset):
         return line[1]
 
     def detect_xen(self):
-        c = os.path.join(os.sep, 'proc', 'xen', 'capabilities')
+        c = os.path.join(os.sep, 'sys', 'hypervisor', 'uuid')
         self.xenguest = False
         self.xenhv = False
         if not os.path.exists(c):
             return
         with open(c, 'r') as f:
-            if 'control_d' in f.read():
+            if '00000000-0000-0000-0000-000000000000' in f.read():
                 self.xenhv = True
             else:
                 self.xenguest = True
@@ -317,7 +317,7 @@ class Asset(rcAsset.Asset):
     def _get_model(self):
         if self.container:
             return 'container'
-        elif self.xenguest:
+        elif self.xenguest and len(self.dmidecode) < 5:
             return "Xen Virtual Machine (PVM)"
         for l in self.dmidecode:
             if 'Product Name:' in l:
