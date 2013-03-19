@@ -28,6 +28,8 @@ def is_container():
         lines = f.readlines()
         if len(lines) != 1:
             return False
+        if ':' not in lines[0]:
+            return False
         l = lines[0].split(':')
         if l[-1].strip('\n') != '/':
             return True
