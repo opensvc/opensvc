@@ -43,7 +43,7 @@ class Vg(resDg.Dg):
         self.group = group
         self.perm = perm
 
-        if sys.version_info.major < 3:
+        if sys.version_info[0] < 3:
             self.str_types = (str, unicode)
         else:
             self.str_types = (str)

@@ -56,7 +56,7 @@ log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 
 try:
-    if sys.version >3:
+    if sys.version_info[0] >= 3:
         from multiprocessing import queue as Queue, Process
     else:
         from multiprocessing import Queue, Process

@@ -102,7 +102,7 @@ def justcall(argv=['/bin/false']):
         close_fds = True
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     stdout, stderr = process.communicate(input=None)
-    if sys.version_info.major < 3:
+    if sys.version_info[0] < 3:
         return stdout, stderr, process.returncode
     else:
         return str(stdout, "ascii"), str(stderr, "ascii"), process.returncode
@@ -160,7 +160,7 @@ def call(argv=['/bin/false'],
             log.debug("cache miss for '%s'"%cmd)
         process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = process.communicate()
-        if sys.version_info.major >= 3:
+        if sys.version_info[0] >= 3:
             buff = tuple(map(lambda x: str(x, "ascii"), buff))
         ret = process.returncode
         if ret == 0:
