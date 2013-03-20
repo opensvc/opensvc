@@ -72,7 +72,7 @@ class SyncDcs(resSync.Sync):
             self.get_active_dcs()
             dcs = self.active_dcs
         self.get_auth()
-        cmd = ['ssh', self.active_manager,
+        cmd = self.ssh + [self.active_manager,
                "connect-dcsserver -server %s -username %s -password %s -connection %s ; "%(dcs, self.username, self.password, self.conn)+\
                cmd+\
                " ; disconnect-dcsserver -connection %s"%self.conn]
@@ -93,7 +93,7 @@ class SyncDcs(resSync.Sync):
         if self.active_manager is not None:
             return
         for manager in self.manager:
-            cmd = ['ssh', manager, 'id']
+            cmd = self.ssh + [manager, 'id']
             out, err, ret = justcall(cmd)
             if ret != 0:
                 continue
@@ -115,7 +115,7 @@ class SyncDcs(resSync.Sync):
                               sync_days=sync_days,
                               sync_period=sync_period,
                               optional=optional, disabled=disabled, tags=tags)
-
+        self.ssh = rcEnv.rsh.split()
         self.active_dcs = None
         self.active_manager = None
         self.username = None
