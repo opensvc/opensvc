@@ -1,4 +1,6 @@
+from textwrap import wrap
 import sys
+
 if sys.version_info[0] >= 3:
     from functools import reduce
 
@@ -47,7 +49,15 @@ def print_table(data, width=20):
     labels = data[0]
     max_label_len = reduce(lambda x,y: max(x,len(y)), labels, 0)
     data = data[1:]
+    subsequent_indent = ""
+    for i in range(max_label_len+4):
+        subsequent_indent += " "
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
-            print(" %s = %s" % (label.ljust(max_label_len), str(d[i])))
+            val = '\n'.join(wrap(str(d[i]),
+                       initial_indent = "",
+                       subsequent_indent = subsequent_indent,
+                       width=78
+                  ))
+            print(" %s = %s" % (label.ljust(max_label_len), val))
