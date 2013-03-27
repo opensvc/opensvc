@@ -1049,6 +1049,7 @@ class Node(Svc, Freezer):
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
+        f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         try:
@@ -1061,14 +1062,17 @@ class Node(Svc, Freezer):
             print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
-            f.close()
             if self.options.cron:
                 return 0
             print("invalid file", file=sys.stderr)
             return 1
-        content = f.read()
+        with open(fname, 'r') as f:
+            content = f.read()
         if content.startswith('<') and '404 Not Found' in content:
-            f.close()
+            try:
+                os.unlink(fname)
+            except:
+                pass
             if self.options.cron:
                 return 0
             print("not found", file=sys.stderr)
@@ -1083,7 +1087,7 @@ class Node(Svc, Freezer):
             pass
         print("extract compliance in", rcEnv.pathtmp)
         import tarfile
-        tar = tarfile.open(tmpf)
+        tar = tarfile.open(f.name)
         os.chdir(rcEnv.pathtmp)
         try:
             tar.extractall()
