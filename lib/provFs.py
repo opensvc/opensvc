@@ -23,9 +23,15 @@ class ProvisioningFs(Provisioning):
             self.size_to_mb()
 
     def size_to_mb(self):
+        if isinstance(self.size, int):
+            # consider value expressed as megabytes
+            return
         s = self.size.replace(' ', '')
         if len(s) < 2:
             raise ex.excError("size provisioning parameter too short")
+        if s[-1].isdigit():
+            # no unit, consider value expressed as megabytes
+            return
         try:
             unit = s[-1].lower()
         except:
