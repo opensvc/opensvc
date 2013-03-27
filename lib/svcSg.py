@@ -39,6 +39,8 @@ class SvcSg(svc.Svc):
         else:
             self.prefix = ''
         self.cmviewcl_bin = self.prefix + 'cmviewcl'
+        self.cmgetconf_bin = self.prefix + 'cmgetconf'
+        self.cntl = {"vg": {}, "ip": {}, "fs": {}}
 
     def load_cmviewcl(self):
         self.cmviewcl = {}
@@ -63,7 +65,7 @@ class SvcSg(svc.Svc):
                     res, node, param = l
                     node = node.replace('node:', '')
                 else:
-                    print(l)
+                    print l
                     continue
                 restype, resname = res.split(':')
                 if restype not in self.cmviewcl:
@@ -76,9 +78,62 @@ class SvcSg(svc.Svc):
                     self.cmviewcl[restype][resname][param] = value
             else:
                 self.cmviewcl[param] = value
-        #print(self.cmviewcl)
+        #print self.cmviewcl
+
+    def load_cmgetconf(self):
+        if self.cmviewcl.get('style') != "modular":
+            return
+        cmd = [self.cmgetconf_bin, "-p", self.pkg_name]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excInitError(err)
+        lines = out.split("\n")
+        l = []
+        for line in lines:
+            if len(line) == 0:
+                continue
+            if line.startswith("#"):
+                continue
+            if '\t' not in line:
+                continue
+            i = line.index('\t')
+            param = line[:i]
+            value = line[i+1:]
+            value = value.strip().strip('"')
+            l.append((param, value))
+
+        index1 = None
+        for i, (param, value) in enumerate(l):
+            if param in ("vg", "cvm_vg", "vxvm_vg"):
+                self.cntl["vg"][value] = {param.upper(): value}
+                continue
+            if param == "ip_subnet":
+                index1 = "ip"
+                index2 = 0
+                ip_subnet = value
+                continue
+            if param == "ip_address":
+                self.cntl[index1][index2] = {
+                  'IP': value,
+                  'SUBNET': ip_subnet,
+                }
+                index2 += 1
+                continue
+            if param == "fs_name":
+                index1 = "fs"
+                index2 = value
+                self.cntl[index1][index2] = {}
+            if index1 is None:
+                continue
+            self.cntl[index1][index2][param] = value
+            if index1 == "fs" and param == "fs_fsck_opt":
+                index1 = None
+        #print self.cntl
 
     def load_cntl(self):
+        if 'run_script' not in self.cmviewcl:
+            # modular package
+            return
         p = self.cmviewcl['run_script']
         try:
             f = open(p, 'r')
@@ -87,7 +142,6 @@ class SvcSg(svc.Svc):
         except:
             self.log.error("failed to load %s"%p)
             raise ex.excError
-        self.cntl = {"vg": {}, "ip": {}, "fs": {}}
         for line in buff.split('\n'):
              line = line.strip()
              if line.startswith("#"):
@@ -142,6 +196,7 @@ class SvcSg(svc.Svc):
         if len(self.cmviewcl) == 0:
             raise ex.excInitError()
         self.load_cntl()
+        self.load_cmgetconf()
         self.nodes = set(self.cmviewcl['node'].keys())
         self.load_hb()
         self.load_resources()
@@ -166,7 +221,7 @@ class SvcSg(svc.Svc):
         if 'VG' in data:
             name = data['VG']
             type = ""
-        elif 'VCM_DG' in data:
+        elif 'CVM_DG' in data:
             name = data['CVM_DG']
             type = "Cvm"
         elif 'VXVM_DG' in data:
@@ -181,6 +236,12 @@ class SvcSg(svc.Svc):
             self.log.error("module %s is not implemented"%modname)
             return
         r = m.Vg(rid, name)
+        if 'service' in self.cmviewcl:
+           for data in self.cmviewcl['service'].values():
+               if 'command' not in data:
+                   continue
+               if name in data['command'].split():
+                   r.monitor = True
         self += r
         self.n_vg += 1
 
@@ -210,10 +271,19 @@ class SvcSg(svc.Svc):
             self.load_resource(data)
 
     def load_resource(self, data):
-        dev = data['LV']
-        mnt = data['FS']
-        mntopt = data['FS_MOUNT_OPT']
-        fstype = data['FS_TYPE']
+        if 'LV' in data:
+            dev = data['LV']
+            mnt = data['FS']
+            mntopt = data['FS_MOUNT_OPT']
+            fstype = data['FS_TYPE']
+        else:
+            if data['fs_server'] != "":
+                dev = data['fs_server'] + ":" + data['fs_name']
+            else:
+                dev = data['fs_name']
+            mnt = data['fs_directory']
+            mntopt = data['fs_mount_opt']
+            fstype = data['fs_type']
         vgname = dev.split('/')[2]
         lvname = dev.split('/')[3]
         n = self.n_resource
@@ -224,5 +294,11 @@ class SvcSg(svc.Svc):
         if 'resource' in self.cmviewcl and \
            r.mon_name in self.cmviewcl['resource']:
             r.monitor = True
+        if 'service' in self.cmviewcl:
+           for data in self.cmviewcl['service'].values():
+               if 'command' not in data:
+                   continue
+               if dev in data['command']:
+                   r.monitor = True
         self += r
         self.n_resource += 1
