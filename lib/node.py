@@ -1115,6 +1115,7 @@ class Node(Svc, Freezer):
         import tempfile
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
+        f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         try:
@@ -1126,12 +1127,15 @@ class Node(Svc, Freezer):
             return 1
         if 'invalid file' in headers.values():
             print("invalid file", file=sys.stderr)
-            f.close()
             return 1
-        content = f.read()
+        with open(fname, 'r') as f:
+            content = f.read()
         if content.startswith('<') and '404 Not Found' in content:
             print("not found", file=sys.stderr)
-            f.close()
+            try:
+                os.unlink(fname)
+            except:
+                pass
             return 1
         print("updating opensvc")
         m.update(tmpf)
