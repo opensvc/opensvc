@@ -300,7 +300,7 @@ class Collector(object):
 
     def collector_list_filtersets(self):
         d = self._collector_list_filtersets()
-        for fset in d['data']:
+        for fset in d:
             print(fset)
         
     def collector_json_list_filtersets(self):
