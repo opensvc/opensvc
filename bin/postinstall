@@ -395,6 +395,7 @@ def missing_dir(sub):
 def missing_dirs():
     missing_dir('log')
     missing_dir('tmp')
+    missing_dir('var')
 
 def convert_svclinks():
     missing_dir('etc')
