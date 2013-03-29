@@ -18,6 +18,7 @@
 import os
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
+import datetime
 
 def listpkg_dummy():
     print("pushpkg supported on this system")
@@ -28,8 +29,12 @@ def listpkg_rpm():
     lines = []
     for line in out.split('\n'):
         l = line.split()
-        if len(l) != 3:
+        if len(l) != 5:
             continue
+        try:
+            l[4] = datetime.datetime.fromtimestamp(int(l[4])).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            l[4] = None
         x = [rcEnv.nodename] + l
         lines.append(x)
     return lines
@@ -52,7 +57,7 @@ if which('dpkg') is not None:
     cmd = ['dpkg', '-l']
     listpkg = listpkg_deb
 elif which('rpm') is not None:
-    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch}\n']
+    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
     listpkg = listpkg_rpm
 else:
     cmd = ['true']

@@ -877,6 +877,11 @@ class Collector(object):
                 'pkg_version',
                 'pkg_arch']
         vals = p.listpkg()
+        if len(vals) == 0:
+            return
+        if len(vals[0]) == 6:
+            vars.append('pkg_type')
+            vars.append('pkg_install_date')
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -891,6 +896,10 @@ class Collector(object):
                 'patch_num',
                 'patch_rev']
         vals = p.listpatch()
+        if len(vals) == 0:
+            return
+        if len(vals[0]) == 4:
+            vars.append('patch_install_date')
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
