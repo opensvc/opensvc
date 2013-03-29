@@ -19,6 +19,7 @@ import os
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
 import datetime
+from stat import *
 
 def listpkg_dummy():
     print("pushpkg supported on this system")
@@ -34,7 +35,7 @@ def listpkg_rpm():
         try:
             l[4] = datetime.datetime.fromtimestamp(int(l[4])).strftime("%Y-%m-%d %H:%M:%S")
         except:
-            l[4] = None
+            l[4] = ""
         x = [rcEnv.nodename] + l
         lines.append(x)
     return lines
@@ -49,7 +50,13 @@ def listpkg_deb():
             continue
         if l[0] != "ii":
             continue
-        x = [rcEnv.nodename] + l[1:3] + [arch]
+        x = [rcEnv.nodename] + l[1:3] + [arch, "deb"]
+        try:
+            t = os.stat("/var/lib/dpkg/info/"+l[1]+".list")[ST_MTIME]
+            t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            t = ""
+        x.append(t)
         lines.append(x)
     return lines
 
