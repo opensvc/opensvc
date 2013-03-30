@@ -21,6 +21,7 @@ from subprocess import *
 from rcUtilities import which
 
 import rcIfconfig
+import copy
 
 """
 ip addr:
@@ -62,15 +63,14 @@ class ifconfig(rcIfconfig.ifconfig):
         for line in out.split('\n'):
             if len(line) == 0:
                 continue
-            if line[0] != " " or "secondary" in line:
-                if line[0] != " ":
-                    i = rcIfconfig.interface(line.split()[1].strip(':'))
-                    self.intf.append(i)
-                    idx = len(self.intf) - 1
-                if "secondary" in line:
-                    i = rcIfconfig.interface(line.split()[-1])
-                    self.intf.append(i)
+            if line[0] != " ":
+                """
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN 
+                """
+                _line = line.split()
+                ifname = _line[1].strip(":")
 
+                i = rcIfconfig.interface(ifname)
                 # defaults
                 i.link_encap = ''
                 i.scope = []
@@ -87,46 +87,75 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_multicast = False
                 i.flag_loopback = False
 
-            prev = ''
-            _line = line.split()
-            for w in _line:
+                self.intf.append(i)
+
+                prev = ''
+                for w in _line:
+                    if 'mtu' == prev:
+                        i.mtu = w
+                    elif w.startswith('<'):
+                        w = w.strip('<').strip('>')
+                        flags = w.split(',')
+                        for w in flags:
+                            if 'UP' == w:
+                                i.flag_up = True
+                            if 'BROADCAST' == w:
+                                i.flag_broadcast = True
+                            if 'RUNNING' == w:
+                                i.flag_running = True
+                            if 'MULTICAST' == w:
+                                i.flag_multicast = True
+                            if 'LOOPBACK' == w:
+                                i.flag_loopback = True
+    
+    
+                    prev = w
+            elif line.strip().startswith("link"):
+                """
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+                """
                 if 'link/' in w:
                     i.link_encap = w.split('/')[1]
                 elif 'link/ether' == prev:
                     i.hwaddr = w
-                elif 'mtu' == prev:
-                    i.mtu = w
-                elif w.startswith('<'):
-                    w = w.strip('<').strip('>')
-                    flags = w.split(',')
-                    for w in flags:
-                        if 'UP' == w:
-                            i.flag_up = True
-                        if 'BROADCAST' == w:
-                            i.flag_broadcast = True
-                        if 'RUNNING' == w:
-                            i.flag_running = True
-                        if 'MULTICAST' == w:
-                            i.flag_multicast = True
-                        if 'LOOPBACK' == w:
-                            i.flag_loopback = True
+            elif line.strip().startswith("inet"):
+                """
+    inet 127.0.0.1/8 scope host lo
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+                """
+                _line = line.split()
+                if "global" in line and ":" in _line[-1]:
+                    # clone parent intf and reset inet fields
+                    ifname = line.split()[-1]
+                    _i = copy.copy(i)
+                    _i.name = ifname
+                    _i.scope = []
+                    _i.bcast = []
+                    _i.mask = []
+                    _i.ipaddr = []
+                    _i.ip6addr = []
+                    _i.ip6mask = []
+                    self.intf.append(_i)
+                else:
+                    _i = i
 
-                elif 'inet' == prev :
-                    ipaddr, mask = w.split('/')
-                    i.ipaddr += [ipaddr]
-                    i.mask += [octal_to_cidr(mask)]
-                elif 'inet6' == prev:
-                    (ip6addr, ip6mask) = w.split('/')
-                    i.ip6addr += [ip6addr]
-                    i.ip6mask += [ip6mask]
-                elif 'brd' == prev and 'inet' in line:
-                    i.bcast += [w]
-                elif 'scope' == prev and 'inet' in line:
-                    i.scope += [w]
-                elif 'secondary' == prev:
-                    i = self.intf[idx]
-
-                prev = w
+                prev = ''
+                for w in _line:
+                    if 'inet' == prev :
+                        ipaddr, mask = w.split('/')
+                        _i.ipaddr += [ipaddr]
+                        _i.mask += [octal_to_cidr(mask)]
+                    elif 'inet6' == prev:
+                        (ip6addr, ip6mask) = w.split('/')
+                        _i.ip6addr += [ip6addr]
+                        _i.ip6mask += [ip6mask]
+                    elif 'brd' == prev and 'inet' in line:
+                        _i.bcast += [w]
+                    elif 'scope' == prev and 'inet' in line:
+                        _i.scope += [w]
+    
+                    prev = w
 
 
     def parse_ifconfig(self, out):

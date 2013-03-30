@@ -24,8 +24,8 @@ class interface:
     def __str__(self):
         a = ['ifconfig %s:'%self.name]
         a += [' link_encap = ' + self.link_encap]
-        a += [' scope = ' + self.scope]
-        a += [' bcast = ' + self.bcast]
+        a += [' scope = ' + str(self.scope)]
+        a += [' bcast = ' + str(self.bcast)]
         a += [' mtu = ' + self.mtu]
         a += [' ipaddr = ' + str(self.ipaddr)]
         a += [' mask = ' + str(self.mask)]

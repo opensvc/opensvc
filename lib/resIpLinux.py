@@ -54,6 +54,8 @@ class Ip(Res.Ip):
         if ':' in self.addr:
             cmd = ['ifconfig', self.ipDev, 'inet6', 'del', '/'.join([self.addr, self.mask])]
         else:
+            if self.stacked_dev is None:
+                return 1, "", "no stacked dev found"
             cmd = ['ifconfig', self.stacked_dev, 'down']
         return self.vcall(cmd)
 
