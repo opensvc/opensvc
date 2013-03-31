@@ -16,8 +16,10 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import os
+import datetime
 from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
+from stat import *
 
 """
 format:
@@ -52,7 +54,20 @@ def listpkg():
             x[2] = l[1]
         elif f == "ARCH":
             x[3] = l[1]
-        lines.append(x)
+            lines.append(x)
+
+    for i, x in enumerate(lines):
+        # pkg type
+        lines[i].append("pkg")
+
+        # pkg install date
+        try:
+            t = os.stat("/var/sadm/pkg/"+x[1])[ST_MTIME]
+            t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            t = ""
+        lines[i].append(t)
+
     return lines
 
 def listpatch():
@@ -73,6 +88,16 @@ def listpatch():
                 continue
             else:
                 lines.append( [ nodename , p[0], p[1] ] )
+
+    for i, x in enumerate(lines):
+        # pkg install date
+        try:
+            t = os.stat("/var/sadm/patch/"+x[1])[ST_MTIME]
+            t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            t = ""
+        lines[i].append(t)
+
     return lines
 
 if __name__ == "__main__" :
