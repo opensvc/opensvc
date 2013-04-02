@@ -19,44 +19,40 @@
 from subprocess import *
 
 import rcIfconfig
+import wmi
 
 class ifconfig(rcIfconfig.ifconfig):
-    def parse(self, out):
-        for line in out.split('\n'):
-            if len(line) == 0:
-                continue
-            if line.startswith('Ethernet'):
-                i = rcIfconfig.interface("")
-                self.intf.append(i)
+    def parse(self, intf):
+        i = rcIfconfig.interface(intf.Caption)
+        self.intf.append(i)
 
-                # defaults
-                i.link_encap = ''
-                i.scope = ''
-                i.bcast = ''
-                i.mask = ''
-                i.mtu = ''
-                i.ipaddr = ''
-                i.ip6addr = []
-                i.ip6mask = []
-                i.hwaddr = ''
-                i.flag_up = False
-                i.flag_broadcast = False
-                i.flag_running = False
-                i.flag_multicast = False
-                i.flag_loopback = False
-            elif 'Physical Address' in line:
-                i.hwaddr = line.split(':')[-1].strip().replace(':',':')
-            elif 'Mask:' in line:
-                i.mask = line.split(':')[-1].strip()
-            if 'IP Address' in line:
-                i.ipaddr = line.split(':')[-1].strip()
-            if 'IPv6 Address' in line:
-                ip6addr = line.split(': ')[-1].strip().replace('(Preferred)','')
-                ip6addr = ip6addr.split('%')[0]
-                i.ip6addr += [ip6addr]
-                i.ip6mask += ['']
+        # defaults
+        i.link_encap = ''
+        i.scope = ''
+        i.bcast = ''
+        i.mask = []
+        i.mtu = intf.MTU
+        i.ipaddr = []
+        i.ip6addr = []
+        i.ip6mask = []
+        i.hwaddr = intf.MACAddress
+        i.flag_up = False
+        i.flag_broadcast = False
+        i.flag_running = False
+        i.flag_multicast = False
+        i.flag_loopback = False
+
+        for idx, ip in enumerate(intf.IPAddress):
+	    if ":" in ip:
+	        i.ip6addr.append(ip)
+	        i.ip6mask.append(intf.IPsubnet[idx])
+	    else:
+	        i.ipaddr.append(ip)
+	        i.mask.append(intf.IPsubnet[idx])
 
     def __init__(self):
+        self.wmi = wmi.WMI()
         self.intf = []
-        out = Popen(['ipconfig', '/all'], stdout=PIPE).communicate()[0]
-        self.parse(out)
+        for i in self.wmi.Win32_NetworkAdapterConfiguration(IPEnabled=1):
+            self.parse(i)
+
