@@ -35,6 +35,7 @@ import socket
 import rcLogger
 import rcUtilities
 import rcExceptions as ex
+from subprocess import *
 
 try:
     import ConfigParser
@@ -100,6 +101,7 @@ class Node(Svc, Freezer):
             'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
             'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
             'scanscsi': 'scan the scsi hosts in search of new disks',
+            'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
@@ -1196,6 +1198,25 @@ class Node(Svc, Freezer):
         if node in h:
             return h[node]
         return default
+
+    def dequeue_actions(self):
+        actions = self.collector.call('collector_get_action_queue')
+        data = []
+        for action in actions:
+            ret, out, err = self.dequeue_action(action)
+            data.append((action.get('id'), ret, out, err))
+        self.collector.call('collector_update_action_queue', data)
+
+    def dequeue_action(self, action):
+        if action.get("svcname") is None:
+            cmd = [os.path.join(rcEnv.pathbin, "nodemgr")]
+        else:
+            cmd = [os.path.join(rcEnv.pathbin, "svcmgr"), "-s", action.get("svcname")]
+        cmd += action.get("command", "").split()
+        print("dequeue action %s" % " ".join(cmd))
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        return p.returncode, out, err
 
     def scanscsi(self):
         try:

@@ -1361,6 +1361,18 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_list_filtersets(*args)
 
+    def collector_get_action_queue(self, sync=True):
+        args = [rcEnv.nodename]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_get_action_queue(*args)
+
+    def collector_update_action_queue(self, data, sync=True):
+        args = [data]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_update_action_queue(*args)
+
 
 if __name__ == "__main__":
     x = Collector()
