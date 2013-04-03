@@ -28,6 +28,10 @@ import servicemanager
 import datetime
 from subprocess import *
 
+pathsvc = os.path.join(os.path.dirname(__file__), '..')
+svcmon = os.path.join(pathsvc, "svcmon.cmd")
+cron = os.path.join(pathsvc, "cron.cmd")
+
 class OsvcSched(win32serviceutil.ServiceFramework):
 
     _svc_name_ = "OsvcSched"
@@ -70,12 +74,12 @@ class OsvcSched(win32serviceutil.ServiceFramework):
 
     def run(self, task):
         if task == "task10":
-            servicemanager.LogInfoMsg("run svcmon")
-            cmd = ["c:\Program Files\opensvc\svcmon.cmd", "--updatedb"]
+            cmd = [svcmon, "--updatedb"]
+            servicemanager.LogInfoMsg("run %s" % ' '.join(cmd))
             p = Popen(cmd, stdout=None, stderr=None, stdin=None)
             p.communicate()
             servicemanager.LogInfoMsg("run internal scheduler")
-            cmd = ["c:\Program Files\opensvc\cron.cmd"]
+            cmd = [cron]
             p = Popen(cmd, stdout=None, stderr=None, stdin=None)
             p.communicate()
 
