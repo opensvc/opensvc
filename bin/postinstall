@@ -4,6 +4,8 @@ import os
 import shutil
 import glob
 import sys
+import subprocess
+import tempfile
 
 python_names = ['python2.7', 'python2.6']
 python_paths = [
@@ -17,7 +19,8 @@ except:
     sysname, nodename, x, x, machine, x = platform.uname()
 
 pathbin = os.path.dirname(__file__)
-if not pathbin.rstrip('/').endswith('bin'):
+pathbin = os.path.realpath(pathbin)
+if not pathbin.rstrip(os.sep).endswith('bin'):
     # hpux executes the postinstall from dir
     # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
     pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
@@ -51,18 +54,37 @@ def install_cron():
         return install_cron_unix()
 
 def install_cron_windows():
-    import win32api
-    import subprocess
-    rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'rcWinScheduler.py')+'"'
-    cmd = "@echo off\n"
-    cmd += rc
-    #cmd += ' --username '+nodename+'\\'+win32api.GetUserName()
+    print "install OsvcSched service"
+    schedstop()
+    schedremove()
+    schedinstall()
+    schedstart()
+
+def schedremove():
+    cmd = ' remove'
+    schedcmd(cmd)
+
+def schedstart():
+    cmd = ' start'
+    schedcmd(cmd)
+
+def schedstop():
+    cmd = ' stop'
+    schedcmd(cmd)
+
+def schedinstall():
+    cmd = ''
     cmd += ' --username LocalSystem'
     cmd += ' --startup auto'
     cmd += ' install\n'
+    schedcmd(cmd)
+
+def schedcmd(_cmd):
+    print _cmd
+    rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'rcWinScheduler.py')+'"'
+    cmd = "@echo off\n"
     cmd += rc
-    cmd += ' start\n'
-    import tempfile
+    cmd += _cmd
     fd, fname = tempfile.mkstemp(dir=pathtmp, suffix='.cmd')
     f = os.fdopen(fd, 'w')
     f.write(cmd)
