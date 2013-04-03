@@ -29,8 +29,39 @@ import datetime
 from subprocess import *
 
 pathsvc = os.path.join(os.path.dirname(__file__), '..')
+nodemgr = os.path.join(pathsvc, "nodemgr.cmd")
 svcmon = os.path.join(pathsvc, "svcmon.cmd")
 cron = os.path.join(pathsvc, "cron.cmd")
+
+import time
+import thread
+import sys
+from socket import *
+
+def HandleClient(conn):
+    data = conn.recv(1024)
+    conn.close()
+    cmd = [nodemgr, 'dequeue_actions']
+    p = Popen(cmd, stdout=None, stderr=None, stdin=None)
+    p.communicate()
+
+class listener(object):
+    def __init__(self):
+        thread.start_new(self.do, tuple())
+        while True:
+            if getattr(sys, 'stop_listener', False):
+                sys.exit(0)
+            time.sleep(0.3)
+
+    def do(self):
+        port = 1214
+        sock = socket(AF_INET, SOCK_STREAM)
+        sock.bind((gethostname(), port))
+        sock.listen(5)
+
+        while True:
+            conn, addr = sock.accept()
+            thread.start_new(HandleClient, (conn,))
 
 class OsvcSched(win32serviceutil.ServiceFramework):
 
@@ -47,10 +78,12 @@ class OsvcSched(win32serviceutil.ServiceFramework):
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+	sys.stop_listener = True
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
         servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
+        a = listener()
 
         self.timeout = 60000
 
@@ -87,6 +120,7 @@ def ctrlHandler(ctrlType):
     return True
 
 if __name__ == '__main__':
-    win32api.SetConsoleCtrlHandler(ctrlHandler, True)
-    win32serviceutil.HandleCommandLine(OsvcSched)
+    #win32api.SetConsoleCtrlHandler(ctrlHandler, True)
+    #win32serviceutil.HandleCommandLine(OsvcSched)
+    a = listener()
 
