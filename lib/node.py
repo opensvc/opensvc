@@ -1208,10 +1208,16 @@ class Node(Svc, Freezer):
         self.collector.call('collector_update_action_queue', data)
 
     def dequeue_action(self, action):
-        if action.get("svcname") is None:
-            cmd = [os.path.join(rcEnv.pathbin, "nodemgr")]
+        if rcEnv.sysname == "Windows":
+            nodemgr = os.path.join(rcEnv.pathsvc, "nodemgr.cmd")
+            svcmgr = os.path.join(rcEnv.pathsvc, "svcmgr.cmd")
         else:
-            cmd = [os.path.join(rcEnv.pathbin, "svcmgr"), "-s", action.get("svcname")]
+            nodemgr = os.path.join(rcEnv.pathbin, "nodemgr")
+            svcmgr = os.path.join(rcEnv.pathbin, "svcmgr")
+        if action.get("svcname") is None:
+            cmd = [nodemgr]
+        else:
+            cmd = [svcmgr, "-s", action.get("svcname")]
         cmd += action.get("command", "").split()
         print("dequeue action %s" % " ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
