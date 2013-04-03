@@ -126,15 +126,33 @@ def listpkg():
     lines = []
     for p in plist:
         x = [rcEnv.nodename,
-	     p.ProductName,
-	     p.VersionString,
-	     ""]
+             p.ProductName,
+             p.VersionString,
+             "",
+	     "msi",
+             p.InstallDate]
         lines.append(x)
     return lines
 
 
 def listpatch():
-    return [] 
+    import wmi
+    import datetime
+    wmi = wmi.WMI()
+    lines = []
+    for hotfix in wmi.WIN32_QuickFixEngineering():
+        try:
+            t = hotfix.InstalledOn
+            t = datetime.datetime.strptime(t, "%m/%d/%Y").strftime("%Y-%m-%d")
+        except:
+            t = ""
+        lines.append([
+          rcEnv.nodename,
+          hotfix.HotFixID,
+          "",
+          t
+        ])
+    return lines
 
 if __name__ == "__main__":
-    print get_installed_products()
+    print(get_installed_products())

@@ -17,14 +17,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
+import socket
+
+try:
+    import xmlrpclib
+except ImportError:
+    import xmlrpc.client as xmlrpclib
+
+try:
+    import httplib
+except ImportError:
+    import http.client as httplib
+
 from datetime import datetime, timedelta
-import xmlrpclib
 import os
 import sys
 from rcGlobalEnv import rcEnv
 import rcStatus
-import socket
-import httplib
 import rcExceptions as ex
 
 hostId = __import__('hostid'+rcEnv.sysname)
@@ -46,11 +56,14 @@ log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 
 try:
-    from multiprocessing import Queue, Process
+    if sys.version_info[0] >= 3:
+        from multiprocessing import queue as Queue, Process
+    else:
+        from multiprocessing import Queue, Process
+    from Queue import Empty
     mp = True
 except:
     mp = False
-from Queue import Empty
 
 def call_worker(q):
     e = "foo"
@@ -112,7 +125,10 @@ class Collector(object):
         return transport, host, port, app
     
     def setNodeEnv(self):
-        import ConfigParser
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
         pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
         nodeconf = os.path.join(pathetc, 'node.conf')
         config = ConfigParser.RawConfigParser()
@@ -152,15 +168,15 @@ class Collector(object):
             args = []
         if fn == "register_node" and \
            'register_node' not in self.proxy_methods:
-            print >>sys.stderr, "collector does not support node registration"
+            print("collector does not support node registration", file=sys.stderr)
             return
         if rcEnv.uuid == "" and \
            rcEnv.dbopensvc != "None" and \
            not rcEnv.warned and \
            self.auth_node and \
            fn != "register_node":
-            print >>sys.stderr, "this node is not registered. try 'nodemgr register'"
-            print >>sys.stderr, "to disable this warning, set 'dbopensvc = None' in node.conf"
+            print("this node is not registered. try 'nodemgr register'", file=sys.stderr)
+            print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             rcEnv.warned = True
             return
         try:
@@ -173,13 +189,13 @@ class Collector(object):
             """
             pass
         #except AttributeError:
-        #    print fn, "function does not exist in Collector() object"
+        #    print(fn, "function does not exist in Collector() object")
         except socket.timeout:
-            print "connection to collector timed out"
+            print("connection to collector timed out")
         except:
             import traceback
             e = sys.exc_info()
-            print e[0], e[1], traceback.print_tb(e[2])
+            print(e[0], e[1], traceback.print_tb(e[2]))
         self.log.error("call %s error"%fn)
     
     def __init__(self, worker=False):
@@ -217,7 +233,10 @@ class Collector(object):
         if not os.path.exists(self.method_cache):
             self.log.error("missing %s"%self.method_cache)
             raise ex.excError
-        import ConfigParser
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
         conf = ConfigParser.RawConfigParser()
         conf.read(self.method_cache)
         if not conf.has_section("methods"):
@@ -236,7 +255,10 @@ class Collector(object):
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
     def write_method_cache(self):
-        import ConfigParser
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
         conf = ConfigParser.RawConfigParser()
         conf.add_section('methods')
         if len(self.proxy_methods) > 0:
@@ -588,7 +610,7 @@ class Collector(object):
             return
 
         for val in vals:
-            print "%s: %s"%(val[4], val[5])
+            print("%s: %s"%(val[4], val[5]))
 
         args = [vars, vals]
         if self.auth_node:
@@ -768,7 +790,7 @@ class Collector(object):
 
             for l in valsh.values():
                 vals += [map(lambda x: repr(x), l)]
-                print l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region
+                print(l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region)
 
         done = []
         region = 0
@@ -791,7 +813,7 @@ class Collector(object):
                 left = disks.disk_size(d)
             if left == 0:
                 continue
-            print rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d)), "region", region
+            print(rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d)), "region", region)
             vals.append([
                  repr(disks.disk_id(d)),
                  "",
@@ -835,7 +857,7 @@ class Collector(object):
               "virtual",
               "virtual"
             ])
-            print "register served disk", disk_id, "as", vdisk_id, "from varray", cluster
+            print("register served disk", disk_id, "as", vdisk_id, "from varray", cluster)
 
         args = [vars, vals]
         if self.auth_node:
@@ -855,6 +877,11 @@ class Collector(object):
                 'pkg_version',
                 'pkg_arch']
         vals = p.listpkg()
+        if len(vals) == 0:
+            return
+        if len(vals[0]) == 6:
+            vars.append('pkg_type')
+            vars.append('pkg_install_date')
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -869,6 +896,10 @@ class Collector(object):
                 'patch_num',
                 'patch_rev']
         vals = p.listpatch()
+        if len(vals) == 0:
+            return
+        if len(vals[0]) == 4:
+            vars.append('patch_install_date')
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -900,10 +931,10 @@ class Collector(object):
         try:
             m = __import__('rcAsset'+rcEnv.sysname)
         except ImportError:
-            print "pushasset methods not implemented on", rcEnv.sysname
+            print("pushasset methods not implemented on", rcEnv.sysname)
             return
         if "update_asset" not in self.proxy_methods:
-            print "'update_asset' method is not exported by the collector"
+            print("'update_asset' method is not exported by the collector")
             return
         d = m.Asset(node).get_asset_dict()
 
@@ -948,7 +979,7 @@ class Collector(object):
     
     def push_brocade(self, objects=[], sync=True):
         if 'update_brocade' not in self.proxy_methods:
-            print "'update_brocade' method is not exported by the collector"
+            print("'update_brocade' method is not exported by the collector")
             return
         m = __import__('rcBrocade')
         try:
@@ -961,7 +992,7 @@ class Collector(object):
                 try:
                     vals.append(getattr(brocade, 'get_'+key)())
                 except:
-                    print "error fetching", key
+                    print("error fetching", key)
                     continue
             args = [brocade.name, brocade.keys, vals]
             if self.auth_node:
@@ -970,7 +1001,7 @@ class Collector(object):
 
     def push_vioserver(self, objects=[], sync=True):
         if 'update_vioserver' not in self.proxy_methods:
-            print "'update_vioserver' method is not exported by the collector"
+            print("'update_vioserver' method is not exported by the collector")
             return
         m = __import__('rcVioServer')
         try:
@@ -988,7 +1019,7 @@ class Collector(object):
 
     def push_hds(self, objects=[], sync=True):
         if 'update_hds' not in self.proxy_methods:
-            print "'update_hds' method is not exported by the collector"
+            print("'update_hds' method is not exported by the collector")
             return
         m = __import__('rcHds')
         try:
@@ -1006,8 +1037,8 @@ class Collector(object):
 
     def push_necism(self, objects=[], sync=True):
         if 'update_necism' not in self.proxy_methods:
-    	    print "'update_necism' method is not exported by the collector"
-    	    return
+            print("'update_necism' method is not exported by the collector")
+            return
         m = __import__('rcNecIsm')
         try:
             necisms = m.NecIsms(objects)
@@ -1024,8 +1055,8 @@ class Collector(object):
 
     def push_ibmsvc(self, objects=[], sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
-    	    print "'update_ibmsvc' method is not exported by the collector"
-    	    return
+            print("'update_ibmsvc' method is not exported by the collector")
+            return
         m = __import__('rcIbmSvc')
         try:
             ibmsvcs = m.IbmSvcs(objects)
@@ -1042,7 +1073,7 @@ class Collector(object):
     
     def push_nsr(self, sync=True):
         if 'update_nsr' not in self.proxy_methods:
-           print "'update_nsr' method is not exported by the collector"
+           print("'update_nsr' method is not exported by the collector")
            return
         m = __import__('rcNsr')
         try:
@@ -1058,11 +1089,11 @@ class Collector(object):
         try:
             self.proxy.update_nsr(*args)
         except:
-            print "error pushing nsr index"
+            print("error pushing nsr index")
 
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
-           print "'update_dcs' method is not exported by the collector"
+           print("'update_dcs' method is not exported by the collector")
            return
         m = __import__('rcDcs')
         try:
@@ -1079,12 +1110,12 @@ class Collector(object):
             try:
                 self.proxy.update_dcs(*args)
             except:
-                print "error pushing", dcs.name
+                print("error pushing", dcs.name)
 
     def push_eva(self, objects=[], sync=True):
         if 'update_eva_xml' not in self.proxy_methods:
-    	    print "'update_eva_xml' method is not exported by the collector"
-    	    return
+            print("'update_eva_xml' method is not exported by the collector")
+            return
         m = __import__('rcEva')
         try:
             evas = m.Evas(objects)
@@ -1101,13 +1132,13 @@ class Collector(object):
     
     def push_sym(self, objects=[], sync=True):
         if 'update_sym_xml' not in self.proxy_methods:
-    	    print "'update_sym_xml' method is not exported by the collector"
-    	    return 1
+            print("'update_sym_xml' method is not exported by the collector")
+            return 1
         m = __import__('rcSymmetrix')
         try:
             syms = m.Syms(objects)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return 1
         for sym in syms:
             vals = []
@@ -1134,7 +1165,7 @@ class Collector(object):
     
     def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:
-            print "'push_checks' method is not exported by the collector"
+            print("'push_checks' method is not exported by the collector")
             return
         args = [vars, vals]
         if self.auth_node:
@@ -1334,5 +1365,5 @@ class Collector(object):
 if __name__ == "__main__":
     x = Collector()
     x.init()
-    print x.proxy_methods
-    print x.comp_proxy_methods
+    print(x.proxy_methods)
+    print(x.comp_proxy_methods)
