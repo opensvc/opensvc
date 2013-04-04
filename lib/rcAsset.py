@@ -324,6 +324,19 @@ class Asset(object):
         print("environment (%s)"%source)
         print("  %s"%s)
 
+    def get_version(self):
+        try:
+            import version
+            s = version.version
+        except:
+            s = "0"
+        self.print_version(s)
+        return s
+
+    def print_version(self, s):
+        print("agent version")
+        print("  %s"%s)
+
     def get_listener_port(self):
         s = str(rcEnv.listener_port)
         source = self.s_default
@@ -558,6 +571,7 @@ class Asset(object):
         d = {}
         d['nodename'] = rcEnv.nodename
         d['fqdn'] = rcEnv.fqdn
+        d['version'] = self.get_version()
         d['os_name'] = rcEnv.sysname
         d['os_vendor'] = self.get_os_vendor()
         d['os_release'] = self.get_os_release()

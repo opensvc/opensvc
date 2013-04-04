@@ -634,12 +634,6 @@ class Collector(object):
                 return buff
             return
     
-        try:
-            import version
-            version = version.version
-        except:
-            version = "0";
-    
         vars = ['svc_hostid',
                 'svc_name',
                 'svc_cluster_type',
@@ -657,7 +651,6 @@ class Collector(object):
                 'svc_app',
                 'svc_containertype',
                 'svc_envfile',
-                'svc_version',
                 'svc_drnoaction',
                 'svc_ha']
     
@@ -678,7 +671,6 @@ class Collector(object):
                 repr(svc.app),
                 repr(svc.svcmode),
                 repr(envfile(svc.svcname)),
-                repr(version),
                 repr(svc.drnoaction),
                 '1' if svc.ha else '0']
     
