@@ -37,7 +37,7 @@ _svcmgr()
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
             collector)
-		local opts="ack alerts checks events status list show"
+		local opts="json ack alerts checks events status list show"
 		;;
 	    compliance)
 		local opts="check fixable fix show list attach detach"
@@ -64,6 +64,9 @@ _svcmgr()
         b="${COMP_WORDS[COMP_CWORD-1]}"
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
+            "collector json")
+		local opts="alerts checks events status list show"
+		;;
             "collector ack")
 		local opts="action"
 		;;
@@ -105,6 +108,15 @@ _svcmgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         d="${COMP_WORDS[COMP_CWORD-3]}"
         case "${d} ${c} ${b}" in
+            "collector json list")
+		local opts="actions"
+		;;
+            "collector json show")
+		local opts="actions"
+		;;
+            "collector json events")
+		local opts="--begin --end"
+		;;
             "collector ack action")
 		local opts="--comment --author --duration"
 		;;
@@ -133,6 +145,22 @@ _svcmgr()
 		local opts="--ruleset"
 		;;
         esac
+    elif [ $COMP_CWORD -eq 5 ]; then
+        b="${COMP_WORDS[COMP_CWORD-1]}"
+        c="${COMP_WORDS[COMP_CWORD-2]}"
+        d="${COMP_WORDS[COMP_CWORD-3]}"
+        e="${COMP_WORDS[COMP_CWORD-4]}"
+        case "${e} ${d} ${c} ${b}" in
+            "collector json ack action")
+		local opts="--comment --author --duration"
+		;;
+            "collector json list actions")
+		local opts="--begin --end"
+		;;
+            "collector json show action")
+		local opts="--id --begin --end"
+		;;
+	esac
      fi
 
      COMPREPLY=($(compgen -W "${opts}" -- ${a}))  
@@ -160,12 +188,15 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="compliance collector pushasset pusheva pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown prkey updateservices updatepkg updatecomp"
+        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhds pushdisks pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown provision prkey updateservices updatepkg updatecomp scanscsi dequeue"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
+            dequeue)
+		local opts="actions"
+		;;
             collector)
-		local opts="ack alerts checks events status list show"
+		local opts="json ack alerts checks events status list show"
 		;;
 	    compliance)
 		local opts="check fixable fix show list attach detach"
@@ -192,11 +223,14 @@ _nodemgr()
         b="${COMP_WORDS[COMP_CWORD-1]}"
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
+            "collector json")
+		local opts="alerts checks events status list show"
+		;;
             "collector ack")
 		local opts="action"
 		;;
             "collector list")
-		local opts="actions"
+		local opts="actions filtersets nodes services"
 		;;
             "collector show")
 		local opts="actions"
@@ -233,11 +267,26 @@ _nodemgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         d="${COMP_WORDS[COMP_CWORD-3]}"
         case "${d} ${c} ${b}" in
+            "collector json list")
+                local opts="actions"
+                ;;
+            "collector json show")
+                local opts="actions"
+                ;;
+            "collector json events")
+                local opts="--begin --end"
+                ;;
             "collector ack action")
 		local opts="--comment --author --duration"
 		;;
             "collector list actions")
 		local opts="--begin --end"
+		;;
+            "collector list nodes")
+		local opts="--filterset"
+		;;
+            "collector list services")
+		local opts="--filterset"
 		;;
             "collector show action")
 		local opts="--id --begin --end"
@@ -261,10 +310,26 @@ _nodemgr()
 		local opts="--ruleset"
 		;;
         esac
-     fi
+    elif [ $COMP_CWORD -eq 5 ]; then
+        b="${COMP_WORDS[COMP_CWORD-1]}"
+        c="${COMP_WORDS[COMP_CWORD-2]}"
+        d="${COMP_WORDS[COMP_CWORD-3]}"
+        e="${COMP_WORDS[COMP_CWORD-4]}"
+        case "${e} ${d} ${c} ${b}" in
+            "collector json ack action")
+                local opts="--comment --author --duration"
+                ;;
+            "collector json list actions")
+                local opts="--begin --end"
+                ;;
+            "collector json show action")
+                local opts="--id --begin --end"
+                ;;
+        esac
+    fi
 
-   COMPREPLY=($(compgen -W "${opts}" -- ${a}))  
-   return 0
+    COMPREPLY=($(compgen -W "${opts}" -- ${a}))  
+    return 0
 }
 
 opts=$svcmgr_opts
