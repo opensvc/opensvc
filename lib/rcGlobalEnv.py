@@ -39,6 +39,7 @@ class rcEnv:
     _platform = sys.platform
     sysname, nodename, x, x, machine, x = platform.uname()
     fqdn = socket.getfqdn()
+    listener_port = 1214
 
     """program used to execute remote command on other nodes or virtual hosts
     """

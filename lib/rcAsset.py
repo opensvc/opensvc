@@ -324,6 +324,23 @@ class Asset(object):
         print("environment (%s)"%source)
         print("  %s"%s)
 
+    def get_listener_port(self):
+        s = str(rcEnv.listener_port)
+        source = self.s_default
+        try:
+            s = str(self.node.config.getint('listener', 'port'))
+            source = self.s_config
+        except:
+            pass
+        self.print_listener_port(s, source)
+        return s
+
+    def print_listener_port(self, s, source):
+        if s is None:
+            return
+        print("listener port (%s)"%source)
+        print("  %s"%s)
+
     def get_team_responsible(self):
         s = None
         source = self.s_default
@@ -557,6 +574,7 @@ class Asset(object):
         d['model'] = self.get_model()
         d['host_mode'] = self.get_host_mode()
         d['enclosure'] = self.get_enclosure()
+        d['listener_port'] = self.get_listener_port()
         environnement = self.get_environnement()
         if environnement is not None:
             d['environnement'] = environnement

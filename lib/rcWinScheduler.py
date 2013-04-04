@@ -33,35 +33,8 @@ nodemgr = os.path.join(pathsvc, "nodemgr.cmd")
 svcmon = os.path.join(pathsvc, "svcmon.cmd")
 cron = os.path.join(pathsvc, "cron.cmd")
 
-import time
-import thread
 import sys
-from socket import *
-
-def HandleClient(conn):
-    data = conn.recv(1024)
-    conn.close()
-    cmd = [nodemgr, 'dequeue_actions']
-    p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-    p.communicate()
-
-class listener(object):
-    def __init__(self):
-        thread.start_new(self.do, tuple())
-        while True:
-            if getattr(sys, 'stop_listener', False):
-                sys.exit(0)
-            time.sleep(0.3)
-
-    def do(self):
-        port = 1214
-        sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind((gethostname(), port))
-        sock.listen(5)
-
-        while True:
-            conn, addr = sock.accept()
-            thread.start_new(HandleClient, (conn,))
+from rcListener import listener
 
 class OsvcSched(win32serviceutil.ServiceFramework):
 
@@ -120,7 +93,6 @@ def ctrlHandler(ctrlType):
     return True
 
 if __name__ == '__main__':
-    #win32api.SetConsoleCtrlHandler(ctrlHandler, True)
-    #win32serviceutil.HandleCommandLine(OsvcSched)
-    a = listener()
+    win32api.SetConsoleCtrlHandler(ctrlHandler, True)
+    win32serviceutil.HandleCommandLine(OsvcSched)
 
