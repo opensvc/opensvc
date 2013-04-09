@@ -123,14 +123,14 @@ class Asset(rcAsset.Asset):
         return name
 
     def _get_serial(self):
-        return 'Unknown'
+        for i in self.w.Win32_ComputerSystemProduct():
+            name = i.IdentifyingNumber
+        return name
 
     def _get_model(self):
-        key = ["HKEY_LOCAL_MACHINE", "SYSTEM\\CurrentControlSet\\Control\\SystemInformation", "SystemProductName"]
-        #key = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
-        #key = "HKEY_LOCAL_MACHINE\DESCRIPTION\SYSTEM\BIOS"
-        compname = get_registry_value(*key)
-        return compname
+        for i in self.w.Win32_ComputerSystemProduct():
+            name = i.Name
+        return name
 
     def _get_hba(self):
         hbas = []
