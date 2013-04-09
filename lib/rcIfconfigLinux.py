@@ -115,10 +115,14 @@ class ifconfig(rcIfconfig.ifconfig):
                 """
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
                 """
-                if 'link/' in w:
-                    i.link_encap = w.split('/')[1]
-                elif 'link/ether' == prev:
-                    i.hwaddr = w
+                _line = line.split()
+                prev = ''
+                for w in _line:
+                    if 'link/' in w:
+                        i.link_encap = w.split('/')[1]
+                    elif 'link/ether' == prev:
+                        i.hwaddr = w
+                    prev = w
             elif line.strip().startswith("inet"):
                 """
     inet 127.0.0.1/8 scope host lo
