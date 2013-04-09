@@ -98,11 +98,18 @@ class Asset(rcAsset.Asset):
     def _get_cpu_cores(self):
         n = 0
         for p in self.cpuinfo:
-            n += p.NumberOfCores
+	    try:
+                cores = p.NumberOfCores
+	    except:
+                cores = 1
+            n += cores
         return str(n)
 
     def _get_cpu_dies(self):
-        n = len(self.cpuinfo)
+	s = set([])
+        for p in self.cpuinfo:
+	    s.add(p.SocketDesignation)
+        n = len(s)
         return str(n)
 
     def _get_cpu_model(self):
