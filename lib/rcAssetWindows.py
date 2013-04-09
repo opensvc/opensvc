@@ -46,6 +46,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.w = wmi.WMI()
+	self.cpuinfo = self.w.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
@@ -90,24 +91,29 @@ class Asset(rcAsset.Asset):
         return platform.uname()[4]
 
     def _get_cpu_freq(self):
-        for i in self.w.Win32_Processor():
+        for i in self.cpuinfo:
             cpuspeed = i.MaxClockSpeed
         return str(cpuspeed)
 
     def _get_cpu_cores(self):
         n = 0
-        for p in self.w.Win32_Processor():
+        for p in self.cpuinfo:
             n += p.NumberOfCores
         return str(n)
 
     def _get_cpu_dies(self):
-        n = len(self.w.Win32_Processor())
+        n = len(self.cpuinfo)
         return str(n)
 
     def _get_cpu_model(self):
-        for i in self.w.Win32_Processor():
+        for i in self.cpuinfo:
             cputype = i.Name
         return cputype
+
+    def _get_enclosure(self):
+        for i in self.w.Win32_SystemEnclosure():
+            name = i.Name
+        return name
 
     def _get_serial(self):
         return 'Unknown'
