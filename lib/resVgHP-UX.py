@@ -299,31 +299,42 @@ class Vg(resDg.Dg):
         if not self.is_active() and not self.is_imported():
             self.do_import()
             need_export = True
-        cmd = ['strings', '/etc/lvmtab']
+
+        self.disks = set([])
+        if os.path.exists('/etc/lvmtab'):
+            self.disks |= self._disklist('/etc/lvmtab')
+        if os.path.exists('/etc/lvmtab_p'):
+            self.disks |= self._disklist('/etc/lvmtab_p')
+
+        if need_export:
+            self.do_export()
+
+        return self.disks
+
+    def _disklist(self, tabp):
+        cmd = ['strings', tabp]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
 
         tab = out.split('\n')
         insection = False
-        self.disks = set([])
+        disks = set([])
         for e in tab:
             """ move to the first disk of the vg
             """
-            if e == '/dev/'+self.name:
-                 insection = True
-                 continue
+            if e == "/dev/" + self.name:
+                insection = True
+                continue
             if not insection:
-                 continue
-            if e == "_KDI":
-                 continue
-            if "/dev/dsk" not in e and "/dev/disk" not in e:
-                 break
-            self.disks |= set([e])
+                continue
+            if not  e.startswith('/dev/'):
+                continue
+            if not e.startswith('/dev/disk') and not e.startswith('/dev/dsk'):
+                break
+            disks |= set([e])
 
-        if need_export:
-            self.do_export()
-        return self.disks
+        return disks
 
     def lock(self, timeout=30, delay=1):
         import lock
