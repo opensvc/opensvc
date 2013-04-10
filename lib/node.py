@@ -67,7 +67,7 @@ class Node(Svc, Freezer):
     def __init__(self):
         self.auth_config = None
         self.delay_done = False
-        self.nodename = socket.gethostname()
+        self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')

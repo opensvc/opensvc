@@ -37,8 +37,9 @@ class rcEnv:
 
     allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
     _platform = sys.platform
-    sysname, nodename, x, x, machine, x = platform.uname()
-    fqdn = socket.getfqdn()
+    sysname, x, x, x, machine, x = platform.uname()
+    nodename = socket.gethostname().lower()
+    fqdn = socket.getfqdn().lower()
     listener_port = 1214
 
     """program used to execute remote command on other nodes or virtual hosts

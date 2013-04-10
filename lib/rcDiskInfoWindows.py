@@ -68,12 +68,16 @@ class diskInfo(rcDiskInfo.diskInfo):
             id = drive.DeviceID
             vid = str(drive.Manufacturer)
             pid = str(drive.Caption)
-            serial = str(drive.SerialNumber)
+            try:
+                serial = str(drive.SerialNumber)
+            except:
+                serial = "unknown"
             size = int(drive.Size) // 1024 // 1024
             host = drive.SCSIPort
             bus = drive.SCSIBus
             target = drive.SCSITargetId
             lun = drive.SCSILogicalUnit
+
 
             d = dict(id=id,
                      vid=vid,
