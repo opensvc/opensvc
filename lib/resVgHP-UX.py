@@ -38,6 +38,15 @@ class Vg(resDg.Dg):
                           disabled=disabled, tags=tags,
                           monitor=monitor)
 
+    def is_child_dev(self, device):
+        l = device.split("/")
+        if len(l) != 4 or l[1] != "dev":
+            return False
+        vgname = l[2]
+        if vgname == self.name:
+            return True
+        return False
+
     def files_to_sync(self):
         return [self.mapfile_name(), self.mkfsfile_name()]
 
