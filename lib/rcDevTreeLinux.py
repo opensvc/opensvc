@@ -429,11 +429,16 @@ class DevTree(rcDevTree.DevTree):
                         p.set_devpath(path)
                         p.add_child(devname)
                         d.add_parent(path.replace('/dev/',''))
+            elif line.startswith('Unit'):
+                unit = int(line.split()[-2])
             elif line.startswith('/dev/'):
                 # partition
                 line = line.replace('*', '')
-                partpath = line.split()[0]
-                partsize = int(line.split()[3].replace('+','')) * 512 / 1024 / 1024
+                _l = line.split()
+                partpath = _l[0]
+                partend = int(_l[2])
+                partstart = int(_l[1])
+                partsize = (partend - partstart) * unit / 1024/1024
                 partname = partpath.replace('/dev/','').replace("/","!")
                 dev_t = self.get_dev_t(partpath)
                 self.dev_h[dev_t] = partname
