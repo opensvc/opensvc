@@ -38,6 +38,26 @@ class Vg(resDg.Dg):
                           disabled=disabled, tags=tags,
                           monitor=monitor)
 
+    def is_child_dev(self, device):
+        l = device.split("/")
+        if len(l) != 4 or l[1] != "dev":
+            return False
+        if l[2] == "mapper":
+            dmname = l[3]
+            if "-" not in dmname:
+                return False
+            i = 0
+            dmname.replace("--", "#")
+            _l = dmname.split("-")
+            if len(_l) != 2:
+                return False
+            vgname = _l[0].replace("#", "-")
+        else:
+            vgname = l[2]
+        if vgname == self.name:
+            return True
+        return False  
+
     def has_it(self):
         """Returns True if the volume is present
         """
