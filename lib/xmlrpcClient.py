@@ -756,16 +756,15 @@ class Collector(object):
                             """ no point pushing to db an empty entry
                             """
                             continue
+                        disk_size = disks.disk_size(d)
                         if disk_id in dh:
                             dh[disk_id] += used
                         else:
                             dh[disk_id] = used
-                        disk_size = disks.disk_size(d)
                         if dh[disk_id] > disk_size:
                             dh[disk_id] = disk_size
-                        if disk_id in valsh:
-                            valsh[disk_id][3] += used
-                        else:
+
+                        if disk_id not in valsh or used == disk_size:
                             valsh[disk_id] = [
                              disk_id,
                              svc.svcname,
@@ -777,6 +776,11 @@ class Collector(object):
                              rcEnv.nodename,
                              region
                             ]
+                        elif disk_id in valsh and valsh[disk_id][3] < disk_size:
+                            valsh[disk_id][3] += used
+                            valsh[disk_id][6] = ""
+                            valsh[disk_id][8] = ""
+
                         if valsh[disk_id][3] > disk_size:
                             valsh[disk_id][3] = disk_size
 
