@@ -338,8 +338,12 @@ class DevTree(rcDevTree.DevTree):
         if d is None:
             return
 
+        self.get_dm()
+
         if 'cciss' in devname:
             d.set_devpath('/dev/'+devname.replace('!', '/'))
+        elif devname in self.mp_h:
+            d.set_devpath('/dev/mpath/'+self._dm_h[devname])
         else:
             d.set_devpath('/dev/'+devname)
 
@@ -360,7 +364,6 @@ class DevTree(rcDevTree.DevTree):
             d.add_child(holdername, size, devtype)
 
         # add lv aliases
-        self.get_dm()
         if devname in self._dm_h:
             d.set_alias(self._dm_h[devname])
             d.set_devpath('/dev/mapper/'+self._dm_h[devname])
