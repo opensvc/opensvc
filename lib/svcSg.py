@@ -125,7 +125,10 @@ class SvcSg(svc.Svc):
                 self.cntl[index1][index2] = {}
             if index1 is None:
                 continue
-            self.cntl[index1][index2][param] = value
+            try:
+                self.cntl[index1][index2][param] = value
+            except:
+                continue
             if index1 == "fs" and param == "fs_fsck_opt":
                 index1 = None
         #print self.cntl
