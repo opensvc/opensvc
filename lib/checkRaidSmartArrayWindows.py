@@ -22,10 +22,10 @@ import os
 sep = ';'
 path_list = os.environ['PATH'].split(sep)
 
-if 'PROGRAMFILES(X86)' in os.environ:
+if 'PROGRAMFILES' in os.environ:
     path_list.append(os.path.join(os.environ.get('PROGRAMFILES'),
                                   'compaq', 'hpacucli', 'bin'))
-if 'PROGRAMFILES' in os.environ:
+if 'PROGRAMFILES(X86)' in os.environ:
     path_list.append(os.path.join(os.environ.get('PROGRAMFILES(X86)'),
                                   'compaq', 'hpacucli', 'bin'))
 
