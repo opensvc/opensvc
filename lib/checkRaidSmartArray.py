@@ -24,6 +24,7 @@ sep = ':'
 path_list = os.environ['PATH'].split(sep) + ['/opt/HPQacucli/sbin']
 
 os.environ['PATH'] = sep.join(path_list)
+os.environ['INFOMGR_BYPASS_NONSA'] = '1'
 
 class check(checks.check):
     chk_type = "raid"
