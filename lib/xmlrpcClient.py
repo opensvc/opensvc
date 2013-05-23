@@ -904,7 +904,8 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
-    def push_stats(self, force=False, interval=None, stats_dir=None, stats_start=None, stats_end=None, sync=True):
+    def push_stats(self, force=False, interval=None, stats_dir=None,
+                   stats_start=None, stats_end=None, sync=True, disable=None):
         try:
             s = __import__('rcStats'+rcEnv.sysname)
         except ImportError:
@@ -916,6 +917,10 @@ class Collector(object):
         h = {}
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                      'blockdev', 'netdev', 'netdev_err', 'svc']:
+            if disable is not None and stat in disable:
+                print("skip "+stat)
+                continue
+            print("do "+stat)
             h[stat] = sp.get(stat)
         import cPickle
         args = [cPickle.dumps(h)]

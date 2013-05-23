@@ -726,6 +726,18 @@ class Node(Svc, Freezer):
         except:
             return
 
+        disable = self.config.get("stats", "disable")
+        if isinstance(disable, str):
+            try:
+                disable = json.loads(disable)
+            except:
+                if ',' in disable:
+                    disable = disable.replace(' ','').split(',')
+                else:
+                    disable = disable.split(' ')
+        else:
+            disable = []
+
         # set interval to grab from the begining of the last allowed period
         # to now
         interval = 1440 + now - start
@@ -734,7 +746,8 @@ class Node(Svc, Freezer):
                                 stats_dir=self.options.stats_dir,
                                 stats_start=self.options.begin,
                                 stats_end=self.options.end,
-                                interval=interval)
+                                interval=interval,
+                                disable=disable)
 
     def pushpkg(self):
         if self.skip_action('packages', 'push_interval', 'last_pkg_push',
