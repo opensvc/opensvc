@@ -182,14 +182,22 @@ class StatsProvider(rcStats.StatsProvider):
         cmd = ['sar', '-t', '-q', '-f', f, '-s', start, '-e', end]
         (buff, err, ret) = justcall(cmd)
         lines = []
+        if "blocked" in buff:
+            n_fields = 7
+            drop_blocked = True
+        else:
+            n_fields = 6
+            drop_blocked = False
         for line in buff.split('\n'):
            l = line.split()
-           if len(l) != 6:
+           if len(l) != n_fields:
                continue
            if l[1] == 'runq-sz':
                continue
            if l[0] == 'Average:':
                continue
+           if drop_blocked:
+              l = l[:-1]
            l.append(self.nodename)
            l[0] = '%s %s'%(d, l[0])
            lines.append(l)
