@@ -910,10 +910,17 @@ class Collector(object):
             s = __import__('rcStats'+rcEnv.sysname)
         except ImportError:
             return
-        sp = s.StatsProvider(interval=interval,
-                             stats_dir=stats_dir,
-                             stats_start=stats_start,
-                             stats_end=stats_end)
+
+        try:
+            sp = s.StatsProvider(interval=interval,
+                                 stats_dir=stats_dir,
+                                 stats_start=stats_start,
+                                 stats_end=stats_end)
+        except ValueError as e:
+            print(str(e))
+            return 1
+        except:
+            raise
         h = {}
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                      'blockdev', 'netdev', 'netdev_err', 'svc']:

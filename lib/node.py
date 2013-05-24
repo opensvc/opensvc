@@ -742,7 +742,7 @@ class Node(Svc, Freezer):
         # to now
         interval = 1440 + now - start
 
-        self.collector.call('push_stats', force=self.options.force,
+        return self.collector.call('push_stats', force=self.options.force,
                                 stats_dir=self.options.stats_dir,
                                 stats_start=self.options.begin,
                                 stats_end=self.options.end,
