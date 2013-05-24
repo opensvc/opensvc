@@ -60,11 +60,12 @@ class Keyword(object):
         s += "  default:     %s\n"%str(self.default)
         s += "  candidates:  %s\n"%str(self.candidates)
         s += "  depends:     %s\n"%depends
-        s += "  @node:       %s\n"%str(self.at)
+        s += "  scopable:    %s\n"%str(self.at)
         if self.text:
             s += wrapper.fill("  help:        "+self.text)
         if self.at:
-            s += "\n\nPrefix the value with '@node ' to specify a node-specific value.\n"
+            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ' or '@encapnodes '\n"
+            s += "to specify a scope-specific value.\n"
             s += "You will be prompted for new values until you submit an empty value.\n"
         return s
 
