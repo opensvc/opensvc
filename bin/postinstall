@@ -515,21 +515,6 @@ def install_profile():
         import traceback
         traceback.print_exc()
 
-def install_user_linux():
-    cmd = ['useradd', '-m', 'opensvc', '-s', '/bin/bash']
-    ret = os.system(' '.join(cmd))
-
-def install_user():
-    if sysname == 'Windows':
-        return
-    cmd = ['id', 'opensvc']
-    ret = os.system(' '.join(cmd))
-    if ret == 0:
-        return
-
-    if sysname == 'Linux':
-        install_user_linux()
-
 def install_bash_completion():
     src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
@@ -689,7 +674,6 @@ try:
     gen_keys()
     install_profile()
     install_etc_path()
-    install_user()
     install_bash_completion()
     move_host_mode()
     nodeconf_params()
