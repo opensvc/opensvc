@@ -134,6 +134,10 @@ class DevTree(rcDevTree.DevTree):
             if l[0] == poolname:
                 continue
             devname = l[0]
+
+            # -d mode import ?
+            if devname.startswith(rcEnv.pathvar):
+                devname = devname.split('/')[-1]
             d = self.get_dev(devname)
             if d is None:
                 continue

@@ -79,6 +79,14 @@ class Pool(resDg.Dg):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
+        devzp = os.path.join(rcEnv.pathvar, self.svc.svcname, 'dev', 'dsk')
+        if os.path.isdir(devzp):
+            cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), '-d', devzp, self.name ]
+            (ret, out, err) = self.vcall(cmd)
+            if ret == 0:
+                return ret
+            else:
+                self.log.info("import %s: FallBack Long Way" %self.name)
         cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
         (ret, out, err) = self.vcall(cmd)
         return ret
@@ -137,7 +145,9 @@ class Pool(resDg.Dg):
                 if re.match('^\t  raid', line) is not None:
                     continue
                 # vdev entry
-                disk=line.split()[0]
+                disk = line.split()[0]
+                if disk.startswith(rcEnv.pathvar):
+                    disk = disk.split('/')[-1]
                 if re.match("^.*", disk) is not None :
                     disks.add("/dev/rdsk/" + disk )
 

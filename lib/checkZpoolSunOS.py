@@ -18,6 +18,7 @@ import checks
 from rcUtilities import justcall
 import os
 import re
+from rcGlobalEnv import rcEnv
  
 class check(checks.check):
     """
@@ -64,12 +65,15 @@ class check(checks.check):
                 continue
             if getdevs == 2:
                 l = line.split()
-                if 'd0' in l[0] and l[0].startswith('c'):
-                    d = l[0]
+                x = l[0]
+                if 'd0' in x and x.startswith(rcEnv.pathvar):
+                    x = l[0].split('/')[-1]
+                if 'd0' in x and x.startswith('c'):
+                    d = x
                     if re.match("^.*[sp][0-9]*$", d) is not None:
                         # partition, substitute s2 to given part
-                       regex = re.compile("[sp][0-9]*$", re.UNICODE)
-                       d = regex.sub("s2", d)
+                        regex = re.compile("[sp][0-9]*$", re.UNICODE)
+                        d = regex.sub("s2", d)
                     else:
                         # base device, append s2
                         d += 's2'
