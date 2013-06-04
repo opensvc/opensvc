@@ -17,9 +17,10 @@
 #
 import checks
 import os
-from rcUtilities import justcall, which
-from rcGlobalEnv import rcEnv
+import json
 import glob
+import datetime
+from rcGlobalEnv import rcEnv
 
 """
 Ethernet Channel Bonding Driver: v3.4.0 (October 7, 2008)
@@ -58,6 +59,40 @@ class check(checks.check):
             r += self.do_check_bond(bond)
         return r
 
+    def get_cache(self, bond, slave, uptime):
+        cache_p = self.cache_path(bond, slave)
+        try:
+            with open(cache_p, 'r') as f:
+                 buff = f.read()
+            data = json.loads(buff)
+            prev_uptime, prev_val = data
+        except:
+            prev_uptime, prev_val = 0, 0
+
+        if prev_uptime >= uptime:
+            # reboot
+            prev_uptime, prev_val = 0, 0
+
+        return prev_uptime, prev_val
+
+    def uptime(self):
+        with open('/proc/uptime', 'r') as f:
+            uptime_seconds = float(f.readline().split()[0])
+        return uptime_seconds
+
+    def cache_path(self, bond, slave):
+        cache_p = os.path.join(rcEnv.pathtmp, "checkLagLinux.cache."+os.path.basename(bond)+"."+slave)
+        return cache_p
+
+    def write_cache(self, bond, slave, val, uptime):
+        cache_p = self.cache_path(bond, slave)
+        with open(cache_p, 'w') as f: f.write(json.dumps([uptime, val]))
+        try:
+            with open(cache_p, 'w') as f:
+                f.write(json.dumps([uptime, val]))
+        except:
+            pass
+
     def do_check_bond(self, bond):
         r = []
         try:
@@ -86,10 +121,17 @@ class check(checks.check):
                           'chk_svcname': '',
                          })
             elif line.startswith('Link Failure Count:'):
-                val = line.split()[-1]
+                val = int(line.split()[-1])
+                uptime = self.uptime()
+                prev_uptime, prev_val = self.get_cache(bond, slave, uptime)
+                if uptime - prev_uptime > 3600:
+                    # don't mask alerts by refreshing the cache too soon
+                    self.write_cache(bond, slave, val, uptime)
+                # Link Failure Count per hour
+                val = 3600. * (val - prev_val) / (uptime - prev_uptime)
                 r.append({
-                          'chk_instance': inst+'.link_failure_count',
-                          'chk_value': val,
+                          'chk_instance': inst+'.link_failure_per_hour',
+                          'chk_value': "%.2f"%val,
                           'chk_svcname': '',
                          })
         r.append({
