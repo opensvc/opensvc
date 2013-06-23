@@ -925,6 +925,7 @@ class Collector(object):
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                      'blockdev', 'netdev', 'netdev_err', 'svc']:
             if disable is not None and stat in disable:
+                print("%s collection is disabled in node configuration"%stat)
                 continue
             h[stat] = sp.get(stat)
         import cPickle
