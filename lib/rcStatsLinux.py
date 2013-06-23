@@ -328,12 +328,14 @@ class StatsProvider(rcStats.StatsProvider):
                continue
            if l[0] == 'Average:':
                continue
-           m = l[0:3]
+           m = []
+           m.append('%s %s'%(d, l[0]))
+           m.append(l[1])
            m.append(str(float(l[4])/div))
            m.append(str(float(l[5])/div))
-           m.append(l[6])
+           m.append(l[2])
+           m.append(l[3])
            m.append(self.nodename)
-           m[0] = '%s %s'%(d, l[0])
            lines.append(m)
         return cols, lines
 
