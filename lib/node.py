@@ -726,7 +726,11 @@ class Node(Svc, Freezer):
         except:
             return
 
-        disable = self.config.get("stats", "disable")
+        if self.config.has_option("stats", "disable"):
+            disable = self.config.get("stats", "disable")
+        else:
+            disable = []
+
         if isinstance(disable, str):
             try:
                 disable = json.loads(disable)
