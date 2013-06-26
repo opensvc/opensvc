@@ -222,7 +222,7 @@ class SvcSg(svc.Svc):
 
     def load_vg(self, data):
         if 'VG' in data:
-            name = data['VG']
+            name = data['VG'].replace('/dev/', '')
             type = ""
         elif 'CVM_DG' in data:
             name = data['CVM_DG']
