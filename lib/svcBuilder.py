@@ -1606,7 +1606,7 @@ def add_syncs_evasnap(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
-def add_syncs_symclone(svc, con, sf):
+def add_syncs_symclone(svc, conf, s):
     kwargs = {}
 
     try:
