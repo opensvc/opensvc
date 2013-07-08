@@ -21,6 +21,7 @@ License: GPLv2
 Group: Administration/Tools
 BuildRoot: $CHROOT
 Provides: /opt/opensvc/bin/python
+AutoReqProv: no
 
 %description
 These are the tools to drive OpenSVC services
