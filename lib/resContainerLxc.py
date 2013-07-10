@@ -61,6 +61,17 @@ class Lxc(resContainer.Container):
     def files_to_sync(self):
         return [self.cf]
 
+    def rcp_from(self, src, dst):
+        rootfs = self.get_rootfs()
+        if len(rootfs) == 0:
+            raise ex.excError()
+        src = rootfs + src
+        cmd = ['cp', src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
+
     def rcp(self, src, dst):
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:

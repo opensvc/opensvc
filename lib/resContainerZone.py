@@ -103,6 +103,14 @@ class Zone(resContainer.Container):
            (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
             self.vcall(['chmod', '700', self.zonepath])
 
+    def rcp_from(self, src, dst):
+        src = os.path.realpath(self.zonepath + '/root/' + src)
+        cmd = ['cp', src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
+
     def rcp(self, src, dst):
         dst = os.path.realpath(self.zonepath + '/root/' + dst)
         cmd = ['cp', src, dst]

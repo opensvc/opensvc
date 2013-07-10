@@ -55,6 +55,26 @@ class CloudVm(resContainer.Container):
                 return k
         raise ex.excError("key file for key name '%s' not found"%self.key_name)
 
+    def rcp_from(self, src, dst):
+        if self.guestos == "Windows":
+            """ Windows has no sshd.
+            """
+            raise ex.excNotSupported("remote copy not supported on Windows")
+
+        self.getaddr()
+        if self.addr is None:
+            raise ex.excError('no usable public ip to send files to')
+
+        timeout = 5
+        cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
+                       '-o', 'ConnectTimeout='+str(timeout),
+                       '-i', self.keyfile(),
+                        self.addr+':'+src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
+
     def rcp(self, src, dst):
         if self.guestos == "Windows":
             """ Windows has no sshd.

@@ -43,6 +43,7 @@ action_desc = {
       'enable': 'enable resources passed through --rid in services passed through --service. Specifying no resource enables the whole service.',
       'status': 'return service overall status code',
       'print_status': 'display service resource status',
+      'print_env_mtime': 'display service env file modification time',
       'freeze': 'set up a flag to block actions on this service',
       'thaw': 'remove the flag to unblock actions on this service',
       'frozen': 'report on the current blocking of actions on this service',

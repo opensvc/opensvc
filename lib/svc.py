@@ -1023,6 +1023,10 @@ class Svc(Resource, Freezer):
                 running_af_svc.append(svc.svcname)
         return running_af_svc
 
+    def print_env_mtime(self):
+        mtime = os.stat(self.pathenv).st_mtime
+        print(mtime)
+
     def boot(self):
         if rcEnv.nodename in self.autostart_node:
             try:
@@ -1777,6 +1781,28 @@ class Svc(Resource, Freezer):
             self._push_encap_env(r)
 
     def _push_encap_env(self, r):
+        cmd = ['print', 'env', 'mtime']
+        try:
+            out, err, ret = self._encap_cmd(cmd, r)
+        except ex.excError:
+            ret = 1
+        if ret == 0:
+            encap_mtime = int(float(out.strip()))
+            local_mtime = int(os.stat(self.pathenv).st_mtime)
+            if encap_mtime > local_mtime:
+                if hasattr(r, 'rcp_from'):
+                    out, err, ret = r.rcp_from(self.pathenv, rcEnv.pathetc+'/')
+                else:
+                    cmd = rcEnv.rcp.split() + [r.name+':'+self.pathenv, rcEnv.pathetc+'/']
+                    out, err, ret = justcall(cmd)
+                os.utime(self.pathenv, (encap_mtime, encap_mtime))
+                print("fetch %s from %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+                if ret != 0:
+                    raise ex.excError()
+                return
+            elif encap_mtime == local_mtime:
+                return
+
         if hasattr(r, 'rcp'):
             out, err, ret = r.rcp(self.pathenv, rcEnv.pathetc+'/')
         else:
