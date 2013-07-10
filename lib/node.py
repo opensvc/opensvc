@@ -457,21 +457,26 @@ class Node(Svc, Freezer):
 
         length = end - start
 
+        if length < 60:
+            # no need to play this game on short allowed periods
+            return False
+
         if interval <= length:
             # don't skip if interval <= period length, because the user
             # expects the action to run multiple times in the period
             return False
 
+        length -= 11
         elapsed = now - start
-        elapsed_pct = int(100.0 * elapsed / length)
+        elapsed_pct = min(100, int(100.0 * elapsed / length))
 
         """
             proba
               ^
         100%  |
          75%  |X
-         50%  |XX
-         25%  |XXX
+         50%  |XXX
+         25%  |XXXXXX
           0%  ----|----|-> elapsed
              0%  50%  100%
 
@@ -482,7 +487,7 @@ class Node(Svc, Freezer):
         This algo is meant to level collector's load which peaks
         when all daily cron trigger at the same minute.
         """
-        p = 75.0 * (100.0 - min(elapsed_pct * 2, 100)) / 100
+        p = 90.0 * (100.0 - min(elapsed_pct, 100)) / 100
         import random
         r = random.random()*100.0
 
