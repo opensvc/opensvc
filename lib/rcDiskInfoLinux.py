@@ -240,14 +240,14 @@ class diskInfo(rcDiskInfo.diskInfo):
         import glob
 
         disks_before = glob.glob('/sys/block/sd*')
-        hosts = glob.glob('/sys/class/scsi_hosts/host*')
+        hosts = glob.glob('/sys/class/scsi_host/host*')
 
         for host in hosts:
             scan_f = host+'/scan'
             if not os.path.exists(scan_f):
                 continue
             print("scan", os.path.basename(host))
-            os.command('echo - - - >'+scan_f)
+            os.system('echo - - - >'+scan_f)
 
         disks_after = glob.glob('/sys/block/sd*')
         new_disks = set(disks_after) - set(disks_before)
