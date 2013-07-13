@@ -106,10 +106,10 @@ class diskInfo(rcDiskInfo.diskInfo):
     def load_mpath(self):
         if hasattr(self, "mpath_h"):
             return self.mpath_h
+        self.mpath_h = {}
         if which('multipath'):
             self.load_mpath_native()
-        else:
-            self.mpath_h = {}
+        return self.mpath_h
 
     def scsi_id(self, dev):
         s = self._scsi_id(dev, ["-p", "0x83"])
