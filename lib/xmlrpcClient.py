@@ -19,6 +19,7 @@
 #
 from __future__ import print_function
 import socket
+socket.setdefaulttimeout(180)
 
 try:
     import xmlrpclib
@@ -80,18 +81,9 @@ def call_worker(q):
                 getattr(o.proxy, fn)(*args, **kwargs)
                 o.log.debug("xmlrpc async %s done"%fn)
                 continue
-            except (socket.error, xmlrpclib.ProtocolError):
-                """ normal for collector communications disabled
-                    through 127.0.0.1 == dbopensvc
-                """
-                pass
-            except socket.timeout:
-                o.log.error("connection to collector timed out")
-            except:
-                import traceback
-                e = sys.exc_info()
-                o.log.error(str((e[0], e[1], traceback.print_tb(e[2]))))
-            o.log.error("xmlrpc async %s error"%fn)
+            except Exception as _e:
+                err = str(_e)
+            o.log.error("xmlrpc async %s error: %s"%(fn, err))
         o.log.info("shutdown")
     except ex.excSignal:
         o.log.info("interrupted on signal")
@@ -183,20 +175,9 @@ class Collector(object):
             buff = getattr(self, fn)(*args, **kwargs)
             self.log.debug("call %s done"%fn)
             return buff
-        except (socket.error, xmlrpclib.ProtocolError):
-            """ normal for collector communications disabled
-                through 127.0.0.1 == dbopensvc
-            """
-            pass
-        #except AttributeError:
-        #    print(fn, "function does not exist in Collector() object")
-        except socket.timeout:
-            print("connection to collector timed out")
-        except:
-            import traceback
-            e = sys.exc_info()
-            print(e[0], e[1], traceback.print_tb(e[2]))
-        self.log.error("call %s error"%fn)
+        except Exception as e:
+            err = str(e)
+        self.log.error("call %s error: %s"%(fn, err))
     
     def __init__(self, worker=False):
         self.proxy = None
@@ -326,8 +307,6 @@ class Collector(object):
             dbcompliance_ip = a[0][-1][0]
         except:
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
-
-        socket.setdefaulttimeout(120)
 
         utils = __import__('rcUtilities'+rcEnv.sysname)
 
