@@ -474,20 +474,22 @@ class Node(Svc, Freezer):
             proba
               ^
         100%  |
-         75%  |X
-         50%  |XXX
+         75%  |XXX
+         50%  |XXXX
          25%  |XXXXXX
           0%  ----|----|-> elapsed
              0%  50%  100%
 
-        The idea is to skip 75% of actions in period's first run,
-        skip none after half the interval is consumed, and decrease
-        skip probabilty linearly in-between.
-
         This algo is meant to level collector's load which peaks
         when all daily cron trigger at the same minute.
         """
-        p = 90.0 * (100.0 - min(elapsed_pct, 100)) / 100
+        if elapsed_pct < 50:
+            # fixed skip proba for a perfect leveling on the first half-period
+            p = 100.0 - max(1, 1000.0 / length)
+        else:
+            # decreasing skip proba on the second half-period
+            p = 100.0 - min(elapsed_pct, 100)
+
         import random
         r = random.random()*100.0
 
