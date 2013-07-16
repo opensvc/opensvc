@@ -902,7 +902,7 @@ class Collector(object):
             raise
         h = {}
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
-                     'blockdev', 'netdev', 'netdev_err', 'svc']:
+                     'blockdev', 'netdev', 'netdev_err', 'svc', 'fs_u']:
             if disable is not None and stat in disable:
                 print("%s collection is disabled in node configuration"%stat)
                 continue
