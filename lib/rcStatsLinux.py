@@ -167,6 +167,44 @@ class StatsProvider(rcStats.StatsProvider):
            lines.append(l)
         return cols, lines
 
+    def fs_u(self, d, day, start, end):
+        pathvar = os.path.join(os.path.dirname(__file__), '..', 'var')
+        now = datetime.datetime.now()
+        _start = datetime.datetime.strptime(start, "%H:%M:%S")
+        _start = _start.hour * 3600 + _start.minute * 60 + _start.second
+        _end = datetime.datetime.strptime(end, "%H:%M:%S")
+        _end = _end.hour * 3600 + _end.minute * 60 + _end.second
+        f = os.path.join(pathvar, 'stats_fs_u.%s' % day)
+        cols = ['date',
+                'nodename',
+                'mntpt',
+                'size',
+                'used']
+
+        if not os.path.exists(f):
+            return [], []
+
+        with open(f, 'r') as fd:
+            buff = fd.read()
+
+        import json
+        lines = []
+        for line in buff.split('\n'):
+            try:
+                l = json.loads(line)
+            except:
+                continue
+            for _l in l:
+                if len(_l) != 5:
+                    continue
+                _now = datetime.datetime.strptime(_l[0], "%Y-%m-%d %H:%M:%S.%f")
+                _now = _now.hour * 3600 + _now.minute * 60 + _now.second
+                if _now < _start or _now > _end:
+                    continue
+                lines.append(_l)
+
+        return cols, lines
+
     def proc(self, d, day, start, end):
         f = self.sarfile(day)
         cols = ['date',
@@ -375,5 +413,4 @@ class StatsProvider(rcStats.StatsProvider):
 
 if __name__ == "__main__":
     sp = StatsProvider(interval=20)
-    print sp.get('cpu')
-    print sp.get('swap')
+    print(sp.get('fs_u'))

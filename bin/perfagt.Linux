@@ -3,6 +3,8 @@
 import os
 import sys
 import datetime
+import time
+import json
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(pathsvc, 'lib'))
@@ -11,15 +13,10 @@ import node
 from rcUtilities import justcall, which
 
 node = node.Node()
+
 now = str(datetime.datetime.now())
 
 def fs_u():
-    vars = ['date',
-            'nodename',
-            'mntpt',
-            'size',
-            'used']
-
     cmd = ['df', '-lP']
     (out, err, ret) = justcall(cmd)
     if ret != 0:
@@ -33,10 +30,21 @@ def fs_u():
         if len(l) != 6:
             continue
         vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
-    return (vars, vals)
 
-node.collector.call('push_stats_fs_u', fs_u())
+    pathvar = os.path.join(pathsvc, 'var')
+    stats_fs_u_p = os.path.join(pathvar, 'stats_fs_u.%d' % datetime.datetime.now().day)
+    if not os.path.exists(stats_fs_u_p):
+        # create the stats file
+        mode = 'w+'
+    elif os.stat(stats_fs_u_p).st_mtime < time.time() - 86400:
+        # reset the stats file from last month
+        mode = 'w+'
+    else:
+        # append to the daily stats file
+        mode = 'a'
 
+    with open(stats_fs_u_p, mode) as f:
+        f.write(json.dumps(vals)+'\n')
 
 """
 xentop
@@ -133,6 +141,8 @@ def xentop(node):
         out = p.stdout.readline()
     
     p.wait()
+
+fs_u()
 
 xentop(node)
 
