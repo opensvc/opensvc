@@ -99,7 +99,7 @@ def install_cron_unix():
            'sched': "0,10,20,30,40,50 * * * *",
            'reset_sched': False,
            'user': "",
-           'cmd': "[ -x %(agt)s ] && %(agt)s >/dev/null 2>&1"%dict(agt=agt),
+           'cmd': "[ -x %s ] && %s >/dev/null 2>&1"%(agt,agt),
            'marker': agt,
            'ok': False
     }]
@@ -156,12 +156,14 @@ def install_cron_unix():
             import traceback
             traceback.print_exc()
 
-        for i, line in enumerate(new):
+        i = -1
+        for line in new:
+            i += 1
             for c in ce:
                 if c['full'] is None:
                     continue
-                if c['marker'] in line:
-                    if c['cmd'] in line:
+                if line.find(c['marker']) != -1:
+                    if line.find(c['cmd']) != -1:
                         sched = ' '.join(line.split()[:5])
                     if c['reset_sched'] and sched != c['sched']:
                         new[i] = ' '.join([c['sched'], c['user'], c['cmd']])+'\n'
@@ -187,9 +189,11 @@ def install_cron_unix():
         print "problem preparing the new crontab"
         return False
  
-    for i, line in enumerate(new):
+    i = -1
+    for line in new:
+        i += 1
         for re in remove_entries:
-            if re in line:
+            if line.find(re) != -1:
                 print 'delete line "%s" from %s'%(re,root_crontab)
                 del new[i]
 
@@ -204,14 +208,14 @@ def install_cron_unix():
 
     """ Activate changes (actually only needed on HP-UX)
     """
-    if '/var/spool/' in root_crontab:
+    if root_crontab.find('/var/spool/') != -1:
         cmd = ['crontab', root_crontab]
         ret = os.system(' '.join(cmd))
 
     for loc in purge:
         try:
             f = open(loc, 'r')
-            new = [ line for line in f.readlines() if not 'opensvc.daily' in line and not  'svcmon --updatedb' in line ]
+            new = [ line for line in f.readlines() if line.find('opensvc.daily') == -1 and line.find('svcmon --updatedb') == -1 ]
             f.close()
             f = open(loc, 'w')
             f.write(''.join(new))
@@ -337,7 +341,7 @@ def install_rc():
             f.close()
         except:
             buff = ""
-        if 'Oracle VM server' in buff:
+        if buff.find('Oracle VM server') != -1:
             rc = '/etc/init.d/zopensvc'
             activate = activate_ovm
         else:
@@ -429,7 +433,7 @@ def move_usr_to_opt():
     if os.path.exists(old_pathvar):
         for f in glob.glob(old_pathvar+'/*'):
             dst = os.path.join(pathvar, os.path.basename(f))
-            if os.path.exists(dst) and 'host_mode' not in dst:
+            if os.path.exists(dst) and dst.find('host_mode') == -1:
                 continue
             if os.path.isdir(f):
                 shutil.copytree(f, dst, symlinks=True)
@@ -598,7 +602,10 @@ def nodeconf_params():
 
     import ConfigParser
     import copy
-    config = ConfigParser.RawConfigParser()
+    try:
+        config = ConfigParser.RawConfigParser()
+    except AttributeArror:
+        return
     config.read(nodeconf)
     changed = False
 
