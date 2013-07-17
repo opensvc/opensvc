@@ -18,7 +18,12 @@ except:
     import platform
     sysname, nodename, x, x, machine, x = platform.uname()
 
-pathbin = os.path.dirname(__file__)
+try:
+    pathbin = os.path.dirname(__file__)
+except NameError:
+    # old python version do not support __file__
+    pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
+
 pathbin = os.path.realpath(pathbin)
 if not pathbin.rstrip(os.sep).endswith('bin'):
     # hpux executes the postinstall from dir
