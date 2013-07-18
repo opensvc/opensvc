@@ -140,7 +140,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         size = self.get(dev, 'size')
         if size == 0:
             size = self.get_legacy_size(dev)
-        if size is None:
+        if size is None or size == "":
             # broken disk
             size = 0
         return size
