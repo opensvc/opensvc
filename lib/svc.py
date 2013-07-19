@@ -816,6 +816,10 @@ class Svc(Resource, Freezer):
             # no need to run encap cmd (container not specified in --slave)
             return '', '', 0
 
+        if cmd == ['start'] and not self.need_start_encap(container):
+            self.log.info("skip start in container %s: the encap service is configured to start on container boot."%container.name)
+            return '', '', 0
+
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
 
         if container is not None and hasattr(container, "rcmd"):
@@ -1029,6 +1033,17 @@ class Svc(Resource, Freezer):
         mtime = os.stat(self.pathenv).st_mtime
         print(mtime)
 
+    def need_start_encap(self, container):
+        self.load_config()
+        defaults = self.config.defaults()
+        if defaults.get('autostart_node@'+container.name) in (container.name, 'encapnodes'):
+            return False
+        elif defaults.get('autostart_node@encapnodes') in (container.name, 'encapnodes'):
+            return False
+        elif defaults.get('autostart_node') in (container.name, 'encapnodes'):
+            return False
+        return True
+        
     def boot(self):
         if rcEnv.nodename in self.autostart_node:
             try:
