@@ -32,22 +32,26 @@ class check(checks.check):
 
     def diskpart_rescan(self):
         f = tempfile.NamedTemporaryFile()
-	tmpf = f.name
-	f.close()
-	with open(tmpf, 'w') as f:
-	    f.write("rescan\n")
-	p = Popen(["diskpart", "/s", tmpf], stdout=PIPE, stderr=PIPE, stdin=None)
+        tmpf = f.name
+        f.close()
+        with open(tmpf, 'w') as f:
+            f.write("rescan\n")
+        p = Popen(["diskpart", "/s", tmpf], stdout=PIPE, stderr=PIPE, stdin=None)
         out, err = p.communicate()
-	os.unlink(tmpf)
+        os.unlink(tmpf)
 
     def do_check(self):
         self.wmi = wmi.WMI(namespace="root/wmi")
-	self.diskpart_rescan()
-	r = []
-	for disk in self.wmi.MPIO_DISK_INFO():
-	    for drive in disk.driveinfo:
+        self.diskpart_rescan()
+        r = []
+        try:
+            l = self.wmi.MPIO_DISK_INFO()
+        except:
+            l = []
+        for disk in l:
+            for drive in disk.driveinfo:
                 name = drive.name
-		n = drive.numberpaths
+                n = drive.numberpaths
                 r.append({'chk_instance': name,
                           'chk_value': str(n),
                           'chk_svcname': "",
