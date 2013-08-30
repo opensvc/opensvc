@@ -134,7 +134,9 @@ class Asset(rcAsset.Asset):
         if self.xenhv:
             return self._get_mem_bytes_hv()
         elif self.is_esx_hv():
-            return self._get_mem_bytes_esx()
+            s = self._get_mem_bytes_esx()
+            if s == '0':
+                return self._get_mem_bytes_phy()
         else:
             return self._get_mem_bytes_phy()
 
@@ -251,16 +253,28 @@ class Asset(rcAsset.Asset):
         return 'Unknown'
 
     def _get_cpu_cores(self):
-        if self.is_esx_hv():
+        if self.container:
+            return 'n/a'
+        try:
+            with open('/proc/cpuinfo') as f:
+                lines = f.readlines()
+        except:
             return '0'
-        with open('/proc/cpuinfo') as f:
-            lines = f.readlines()
-            lines = [l for l in lines if 'core id' in l]
-            if len(lines) == 0:
-                return self._get_cpu_dies()
-            c = len(lines)
-            return str(c)
-        return '0'
+        phy = {}
+        for line in lines:
+            if 'physical id' in line:
+                id = line.split(":")[-1].strip()
+                if id not in phy:
+                    phy[id] = 0
+            elif 'cpu cores' in line and phy[id] == 0:
+                n = line.split(":")[-1].strip()
+                phy[id] = int(n)
+        n_cores = 0
+        for id, n in phy.items():
+            n_cores += n
+        if n_cores == 0:
+            return self._get_cpu_dies()
+        return str(n_cores)
 
     def _get_cpu_dies_dmi(self):
         if self.container:
@@ -274,18 +288,38 @@ class Asset(rcAsset.Asset):
     def _get_cpu_dies_cpuinfo(self):
         if self.container:
             return 'n/a'
-        (out, err, ret) = justcall(['grep', 'processor', '/proc/cpuinfo'])
-        if ret != 0:
-            return '1'
-        lines = out.split('\n')
-        c = lines[-2].split(':')[-1].replace('\n','').strip()
-        c = int(c) + 1
-        return str(c)
+        try:
+            with open('/proc/cpuinfo') as f:
+                lines = f.readlines()
+        except:
+            return '0'
+        _lines = set([l for l in lines if 'physical id' in l])
+        n_dies = len(_lines)
+        if n_dies > 0:
+            return str(n_dies)
+        # vmware do not show processor physical id
+        _lines = [l for l in lines if 'processor' in l]
+        n_dies = len(_lines)
+        return str(n_dies)
+
+    def _get_cpu_threads(self):
+        if self.container:
+            return 'n/a'
+        try:
+            with open('/proc/cpuinfo') as f:
+                lines = f.readlines()
+        except:
+            return '0'
+        lines = [l for l in lines if 'physical id' in l]
+        n_threads = len(lines)
+        if n_threads == 0:
+            return self._get_cpu_dies()
+        return str(len(lines))
 
     def _get_cpu_dies(self):
-        n = self._get_cpu_dies_dmi()
+        n = self._get_cpu_dies_cpuinfo()
         if n == '0':
-            n = self._get_cpu_dies_cpuinfo()
+            n = self._get_cpu_dies_dmi()
         return n
 
     def _get_cpu_model(self):
@@ -296,9 +330,7 @@ class Asset(rcAsset.Asset):
         l = lines[0].split(':')
         return l[1].strip()
 
-    def _get_serial(self):
-        if self.container:
-            return 'n/a'
+    def _get_serial_1(self):
         try:
             i = self.dmidecode.index('System Information')
         except ValueError:
@@ -307,6 +339,26 @@ class Asset(rcAsset.Asset):
             if 'Serial Number:' in l:
                 return l.split(':')[-1].strip()
         return 'Unknown'
+
+    def _get_serial_2(self):
+	""" Dell poweredge 2500 are known to be in this case
+        """
+        try:
+            i = self.dmidecode.index('Chassis Information')
+        except ValueError:
+            return 'Unknown'
+        for l in self.dmidecode[i+1:]:
+            if 'Serial Number:' in l:
+                return l.split(':')[-1].strip()
+        return 'Unknown'
+
+    def _get_serial(self):
+        if self.container:
+            return 'n/a'
+        serial = self._get_serial_1()
+        if serial in ('Unknown', 'Not Specified'):
+            serial = self._get_serial_2()
+        return serial
 
     def _get_enclosure(self):
         if self.container:

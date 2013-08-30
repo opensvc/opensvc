@@ -177,6 +177,25 @@ class Asset(object):
         print("cpu freq (%s)"%source)
         print("  %s Mhz"%s)
 
+    def get_cpu_threads(self):
+        s = '0'
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'cpu_threads')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_cpu_threads()
+                source = self.s_probe
+            except:
+                pass
+        self.print_cpu_threads(s, source)
+        return s
+
+    def print_cpu_threads(self, s, source):
+        print("cpu threads (%s)"%source)
+        print("  %s"%s)
+
     def get_cpu_cores(self):
         s = '0'
         source = self.s_default
@@ -581,6 +600,7 @@ class Asset(object):
         d['mem_banks'] = self.get_mem_banks()
         d['mem_slots'] = self.get_mem_slots()
         d['cpu_freq'] = self.get_cpu_freq()
+        d['cpu_threads'] = self.get_cpu_threads()
         d['cpu_cores'] = self.get_cpu_cores()
         d['cpu_dies'] = self.get_cpu_dies()
         d['cpu_model'] = self.get_cpu_model()
