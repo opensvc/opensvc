@@ -296,9 +296,7 @@ class Asset(rcAsset.Asset):
         l = lines[0].split(':')
         return l[1].strip()
 
-    def _get_serial(self):
-        if self.container:
-            return 'n/a'
+    def _get_serial_1(self):
         try:
             i = self.dmidecode.index('System Information')
         except ValueError:
@@ -307,6 +305,26 @@ class Asset(rcAsset.Asset):
             if 'Serial Number:' in l:
                 return l.split(':')[-1].strip()
         return 'Unknown'
+
+    def _get_serial_2(self):
+	""" Dell poweredge 2500 are known to be in this case
+        """
+        try:
+            i = self.dmidecode.index('Chassis Information')
+        except ValueError:
+            return 'Unknown'
+        for l in self.dmidecode[i+1:]:
+            if 'Serial Number:' in l:
+                return l.split(':')[-1].strip()
+        return 'Unknown'
+
+    def _get_serial(self):
+        if self.container:
+            return 'n/a'
+        serial = self._get_serial_1()
+        if serial in ('Unknown', 'Not Specified'):
+            serial = self._get_serial_2()
+        return serial
 
     def _get_enclosure(self):
         if self.container:
