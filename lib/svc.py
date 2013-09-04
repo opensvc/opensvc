@@ -180,6 +180,10 @@ class Svc(Resource, Freezer):
         return self
 
     def dblogger(self, action, begin, end, actionlogfile):
+        if action in ('postsync', 'shutdown'):
+            # don't loose the action log on node shutdown
+            # no background dblogger for remotely triggered postsync
+            self.sync_dblogger = True
         self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=self.sync_dblogger)
         g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
         self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=self.sync_dblogger)
@@ -1039,8 +1043,6 @@ class Svc(Resource, Freezer):
             self.startstandby()
 
     def shutdown(self):
-        # don't loose the action log on node shutdown
-        self.sync_dblogger = True
         self.force = True
         self.master_shutdownhb()
         self.slave_shutdown()
@@ -1620,7 +1622,6 @@ class Svc(Resource, Freezer):
             syncnodes and syncdrp. Typically make use of files
             received in var/
         """
-        self.sync_dblogger = True
         self.all_set_action("postsync")
 
     def remote_postsync(self):
