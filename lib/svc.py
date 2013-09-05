@@ -180,10 +180,6 @@ class Svc(Resource, Freezer):
         return self
 
     def dblogger(self, action, begin, end, actionlogfile):
-        if action in ('postsync', 'shutdown'):
-            # don't loose the action log on node shutdown
-            # no background dblogger for remotely triggered postsync
-            self.sync_dblogger = True
         self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=self.sync_dblogger)
         g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
         self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=self.sync_dblogger)
@@ -2008,6 +2004,10 @@ class Svc(Resource, Freezer):
 
         """Provision a database entry to store action log later
         """
+        if action in ('postsync', 'shutdown'):
+            # don't loose the action log on node shutdown
+            # no background dblogger for remotely triggered postsync
+            self.sync_dblogger = True
         self.node.collector.call('begin_action', self, action, begin, sync=self.sync_dblogger)
 
         """Per action logfile to push to database at the end of the action
