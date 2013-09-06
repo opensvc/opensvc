@@ -854,9 +854,12 @@ class Collector(object):
         vals = p.listpkg()
         if len(vals) == 0:
             return
-        if len(vals[0]) == 6:
+        if len(vals[0]) >= 5:
             vars.append('pkg_type')
+        if len(vals[0]) >= 6:
             vars.append('pkg_install_date')
+        if len(vals[0]) >= 7:
+            vars.append('pkg_sig')
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]

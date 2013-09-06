@@ -30,12 +30,17 @@ def listpkg_rpm():
     lines = []
     for line in out.split('\n'):
         l = line.split()
-        if len(l) != 5:
+        if len(l) < 5:
             continue
         try:
             l[4] = datetime.datetime.fromtimestamp(int(l[4])).strftime("%Y-%m-%d %H:%M:%S")
         except:
             l[4] = ""
+        if len(l) == 6:
+            try:
+                l[5] = l[5][18:34]
+            except:
+                l[5] = ""
         x = [rcEnv.nodename] + l
         lines.append(x)
     return lines
@@ -64,7 +69,7 @@ if which('dpkg') is not None:
     cmd = ['dpkg', '-l']
     listpkg = listpkg_deb
 elif which('rpm') is not None:
-    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
+    cmd = ['rpm', '-qa', '--queryformat=%{n} %{v}-%{r} %{arch} rpm %{installtime} %{SIGGPG}\n']
     listpkg = listpkg_rpm
 else:
     cmd = ['true']
