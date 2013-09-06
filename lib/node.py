@@ -1229,7 +1229,8 @@ class Node(Svc, Freezer):
         for action in actions:
             ret, out, err = self.dequeue_action(action)
             data.append((action.get('id'), ret, out, err))
-        self.collector.call('collector_update_action_queue', data)
+        if len(actions) > 0:
+            self.collector.call('collector_update_action_queue', data)
 
     def dequeue_action(self, action):
         if rcEnv.sysname == "Windows":
