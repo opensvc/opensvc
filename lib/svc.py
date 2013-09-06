@@ -1056,8 +1056,6 @@ class Svc(Resource, Freezer):
             self.startstandby()
 
     def shutdown(self):
-        # don't loose the action log on node shutdown
-        self.sync_dblogger = True
         self.force = True
         self.master_shutdownhb()
         self.slave_shutdown()
@@ -1637,7 +1635,6 @@ class Svc(Resource, Freezer):
             syncnodes and syncdrp. Typically make use of files
             received in var/
         """
-        self.sync_dblogger = True
         self.all_set_action("postsync")
 
     def remote_postsync(self):
@@ -2024,6 +2021,10 @@ class Svc(Resource, Freezer):
 
         """Provision a database entry to store action log later
         """
+        if action in ('postsync', 'shutdown'):
+            # don't loose the action log on node shutdown
+            # no background dblogger for remotely triggered postsync
+            self.sync_dblogger = True
         self.node.collector.call('begin_action', self, action, begin, sync=self.sync_dblogger)
 
         """Per action logfile to push to database at the end of the action
