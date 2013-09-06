@@ -4,7 +4,6 @@ import os
 import shutil
 import glob
 import sys
-import subprocess
 import tempfile
 
 python_names = ['python2.7', 'python2.6']
@@ -94,6 +93,7 @@ def schedcmd(_cmd):
     f = os.fdopen(fd, 'w')
     f.write(cmd)
     f.close()
+    import subprocess
     subprocess.call([fname])
     os.unlink(fname)
 
