@@ -265,13 +265,14 @@ class Asset(rcAsset.Asset):
             if 'physical id' in line:
                 id = line.split(":")[-1].strip()
                 if id not in phy:
-                    phy[id] = 0
-            elif 'cpu cores' in line and phy[id] == 0:
-                n = line.split(":")[-1].strip()
-                phy[id] = int(n)
+                    phy[id] = []
+            elif 'core id' in line:
+                coreid = line.split(":")[-1].strip()
+                if coreid not in phy[id]:
+                    phy[id].append(coreid)
         n_cores = 0
-        for id, n in phy.items():
-            n_cores += n
+        for id, coreids in phy.items():
+            n_cores += len(coreids)
         if n_cores == 0:
             return self._get_cpu_dies()
         return str(n_cores)
