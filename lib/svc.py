@@ -798,7 +798,7 @@ class Svc(Resource, Freezer):
         for container in self.get_resources('container'):
             try:
                 out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
-            except ex.excError:
+            except ex.excEncapUnjoignable as e:
                 if error != "continue":
                     self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
                     raise
@@ -828,15 +828,15 @@ class Svc(Resource, Freezer):
             cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd)
         else:
-            raise ex.excError("undefined rcmd/runmethod in resource %s"%container.rid)
+            raise ex.excEncapUnjoignable("undefined rcmd/runmethod in resource %s"%container.rid)
 
-        if ret != 0:
-            raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         if verbose:
             self.log.info('logs from %s child service:'%container.name)
             print(out)
             if len(err) > 0:
                 print(err)
+        if ret != 0:
+            raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         return out, err, ret
 
     def encap_json_status(self, container, refresh=False):

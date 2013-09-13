@@ -19,6 +19,9 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+class excEncapUnjoignable(Exception):
+    pass
+
 class excError(Exception):
     """ Failed action
     """

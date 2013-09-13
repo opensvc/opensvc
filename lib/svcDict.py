@@ -849,6 +849,18 @@ class KeywordIpZone(Keyword):
                   text="The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context."
                 )
 
+class KeywordIpType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="type",
+                  candidates=['crossbow'],
+                  text="The opensvc ip driver name.",
+                  required=False,
+                  order=10
+                )
+
 class KeywordIpIpdev(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -859,6 +871,20 @@ class KeywordIpIpdev(Keyword):
                   at=True,
                   required=True,
                   text="The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
+                )
+
+class KeywordIpIpdevext(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="crossbow",
+                  keyword="ipdevext",
+                  order=12,
+                  at=True,
+                  required=False,
+                  default="v4",
+                  text="The interface name extension for crossbow ipadm configuration."
                 )
 
 class KeywordIpNetmask(Keyword):
@@ -1653,8 +1679,10 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncBwlimit()
         self += KeywordSyncSyncInterval()
         self += KeywordSyncSyncMaxDelay()
+        self += KeywordIpType()
         self += KeywordIpIpname()
         self += KeywordIpIpdev()
+        self += KeywordIpIpdevext()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpZone()
