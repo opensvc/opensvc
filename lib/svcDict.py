@@ -968,7 +968,7 @@ class KeywordPoolTags(Keyword):
                   self,
                   section="pool",
                   keyword="tags",
-                  text="tags  = preboot may be used when zfs pool is required before container boot else postboot is presumed"
+                  text=""
                 )
 
 class KeywordVmdgScsireserv(Keyword):
@@ -1097,7 +1097,7 @@ class KeywordFsTags(Keyword):
                   self,
                   section="fs",
                   keyword="tags",
-                  text="tags = preboot may be used when zfs dataset is required before container boot else postboot is presumed",
+                  text="",
                   provisioning=True
                 )
 
