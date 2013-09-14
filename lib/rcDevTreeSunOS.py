@@ -234,7 +234,8 @@ class DevTree(rcDevTree.DevTree):
         return int(size)
         
     def load(self):
-        self.di = diskInfo()
+        if self.di is None;
+            self.di = diskInfo()
         self.load_format()
         self.load_zpool()
         self.load_sds()

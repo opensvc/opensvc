@@ -23,6 +23,9 @@ import rcDiskInfo
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
 
+    def __init__(self, deferred=False):
+        pass
+
     def disk_id(self, dev):
         print("%s:disk_id TODO"%__file__)
         return ""

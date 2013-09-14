@@ -196,8 +196,9 @@ class Dev(object):
             dev.print_dev_bottom_up(level+1, chain+[parent])
 
 class DevTree(object):
-    def __init__(self):
+    def __init__(self, diskInfo=None):
         self.dev = {}
+        self.di = diskInfo
 
         # root node of the relation tree
         self.root = []

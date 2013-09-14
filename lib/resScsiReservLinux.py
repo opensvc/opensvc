@@ -119,7 +119,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def _disk_preempt_reservation(self, disk, oldkey):
         m = __import__("rcDiskInfo"+rcEnv.sysname)
-        if m.diskInfo().disk_vendor(disk).strip() in ["VMware"] or self.no_preempt_abort:
+        if self.no_preempt_abort or m.diskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = '--preempt'
         else:
             preempt_opt = '--preempt-abort'

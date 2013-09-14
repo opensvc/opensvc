@@ -99,8 +99,14 @@ class diskInfo(rcDiskInfo.diskInfo):
 
         return size
 
-    def __init__(self):
+    def __init__(self, deferred=False):
+        self.deferred = deferred
         self.h = {}
+        if deferred:
+            return
+        self.scan()
+
+    def scan(self):
         cmd = ["/usr/bin/find", "/dev/rdsk", "-name", "c*s2"]
         (out, err, ret) = justcall(cmd)
         if ret != 0:
@@ -111,36 +117,40 @@ class diskInfo(rcDiskInfo.diskInfo):
                 continue
             
             dev = e.strip()
+            self.scan_dev(dev)
 
-            cmd = ["mpathadm", "show", "lu", dev]
-            (out, err, ret) = justcall(cmd)
-            if ret != 0:
-                continue
-            if "Error: Logical-unit " + dev + " is not found" in err:
-                dsk = dev.replace("/dev/rdsk/", "")
-                dsk = dsk.replace("s2", "")
-                wwid = rcEnv.nodename + "." + dsk
-                vid = "LOCAL"
-                pid = ""
-                size = 0
-            else:
-                wwid = ""
-                vid = ""
-                pid = ""
-                size = 0
+    def scan_dev(self, dev):
+        cmd = ["mpathadm", "show", "lu", dev]
+        (out, err, ret) = justcall(cmd)
+        if ret != 0:
+            return
+        if "Error: Logical-unit " + dev + " is not found" in err:
+            dsk = dev.replace("/dev/rdsk/", "")
+            dsk = dsk.replace("s2", "")
+            wwid = rcEnv.nodename + "." + dsk
+            vid = "LOCAL"
+            pid = ""
+            size = 0
+        else:
+            wwid = ""
+            vid = ""
+            pid = ""
+            size = 0
 
-                for line in out.split('\n'):
-                    if line.startswith("\tVendor:"):
-                        vid = self.get_val(line)
-                    elif line.startswith("\tProduct:"):
-                        pid = self.get_val(line)
-                    elif line.startswith("\tName:"):
-                        wwid = self.get_val(line)
+            for line in out.split('\n'):
+                if line.startswith("\tVendor:"):
+                    vid = self.get_val(line)
+                elif line.startswith("\tProduct:"):
+                    pid = self.get_val(line)
+                elif line.startswith("\tName:"):
+                    wwid = self.get_val(line)
 
-            size = self.get_size(dev)
-            self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
+        size = self.get_size(dev)
+        self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
     def get(self, dev, type):
+        if self.deferred:
+            self.scan_dev(dev)
         dummy = dict(wwid="unknown", vid="unknown", pid="unknown", size=0)
         if dev not in self.h:
             return dummy[type]

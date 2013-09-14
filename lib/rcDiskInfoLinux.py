@@ -29,6 +29,9 @@ from rcGlobalEnv import rcEnv
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
 
+    def __init__(self, deferred=False):
+        pass
+
     def prefix_local(self, id):
         return '.'.join((rcEnv.nodename, id))
 
