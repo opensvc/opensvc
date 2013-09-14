@@ -56,6 +56,9 @@ class Zone(resContainer.Container):
         self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
 
+    def files_to_sync(self):
+        return ["/etc/zones/"+self.name+".xml"]
+
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
