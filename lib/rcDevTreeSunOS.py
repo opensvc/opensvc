@@ -5,9 +5,9 @@ import re
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
-from rcDiskInfoSunOS import diskInfo
 
 class DevTree(rcDevTree.DevTree):
+    di = None
     zpool_members = {}
     zpool_used = {}
     zpool_used_zfs = {}
@@ -233,8 +233,11 @@ class DevTree(rcDevTree.DevTree):
             raise Exception("unit not supported: %s"%unit)
         return int(size)
         
-    def load(self):
-        if self.di is None;
+    def load(self, di=None):
+        if di is not None:
+            self.di = di
+        if self.di is None:
+            from rcDiskInfoSunOS import diskInfo
             self.di = diskInfo()
         self.load_format()
         self.load_zpool()

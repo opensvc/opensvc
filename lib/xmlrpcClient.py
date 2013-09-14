@@ -690,9 +690,8 @@ class Collector(object):
             m = __import__("rcDevTree"+rcEnv.sysname)
         except ImportError:
             return
-        tree = m.DevTree(diskInfo=disks)
-        tree.load()
-    
+        tree = m.DevTree()
+        tree.load(di=disks)
         vars = ['disk_id',
                 'disk_svcname',
                 'disk_size',

@@ -22,7 +22,11 @@ from rcUtilities import justcall
 import math
 from rcGlobalEnv import rcEnv
 
+
 class diskInfo(rcDiskInfo.diskInfo):
+    h = {}
+    done = []
+
     def get_val(self, line):
         l = line.split(":")
         if len(l) != 2:
@@ -101,12 +105,14 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def __init__(self, deferred=False):
         self.deferred = deferred
-        self.h = {}
         if deferred:
             return
         self.scan()
 
     def scan(self):
+        if 'scan' in self.done:
+            return
+        self.done.append('scan')
         cmd = ["/usr/bin/find", "/dev/rdsk", "-name", "c*s2"]
         (out, err, ret) = justcall(cmd)
         if ret != 0:
