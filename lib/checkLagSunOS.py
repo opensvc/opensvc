@@ -76,7 +76,7 @@ class check(checks.check):
         out, err, ret = justcall(cmd)
         if ret != 0:
             return self.undef
-        if self.osver == 11:
+        if self.osver >= 11:
             self.aggs = out.split('\n')
             if len(self.aggs) == 0:
                 return self.undef
