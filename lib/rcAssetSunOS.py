@@ -101,8 +101,14 @@ class Asset(rcAsset.Asset):
                 return 'Unknown'
             nfo = out.split('\n')
             for l in nfo:
-                if 'Version:' in l and 'SRU' in l:
-                    return ' '.join([lines[0], 'SRU', l.split()[6].strip(')')])
+                if 'Version: ' in l:
+                    if 'SRU' in l:
+                        return ' '.join([lines[0], 'SRU', l.split()[6].strip(')')])
+                    elif lines[0] in l:
+                        return l.split()[4].strip(')')
+                    else:
+                        return ' '.join([lines[0], l.split()[4]])
+        return 'Unknown'
 
     def _get_os_arch(self):
         (out, err, ret) = justcall(['uname', '-m'])
