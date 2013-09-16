@@ -127,6 +127,18 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_cpu_cores(self):
+        cmd = ['kstat', 'cpu_info']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return '0'
+        core_ids = set([])
+        for line in out.split('\n'):
+            if not line.strip().startswith('core_id'):
+                continue
+            core_ids.add(line.split()[-1])
+        return str(len(core_ids))
+
+    def _get_cpu_threads(self):
         (out, err, ret) = justcall(['psrinfo'])
         if ret != 0:
             return '0'
