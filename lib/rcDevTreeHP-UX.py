@@ -169,7 +169,7 @@ Last Open or Close state      = ACTIVE
                 continue
             self.load_lv(line.split()[-1])
 
-    def load(self):
+    def load(self, di=None):
         self.get_lunmap()
         self.load_ioscan()
         self.load_lvm()

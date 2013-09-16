@@ -76,7 +76,7 @@ drivedata: 0
             d.set_devpath('/dev/disk/'+devname)
             self.get_parts(devname, d)
 
-    def load(self):
+    def load(self, di=None):
         self.di = diskInfo()
         self.get_disks()
 

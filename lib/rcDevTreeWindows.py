@@ -10,7 +10,7 @@ class DevTree(rcDevTree.DevTree):
             d = self.add_dev(drive.DeviceId, int(drive.size)//1024, "linear")
             d.set_devpath(drive.DeviceId)
 
-    def load(self):
+    def load(self, di=None):
         self.load_diskdrive()
 
     def blacklist(self, devname):

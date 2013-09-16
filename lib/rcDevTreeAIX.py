@@ -47,7 +47,7 @@ class DevTree(rcDevTree.DevTree):
             return 0
         return int(out.strip())
 
-    def load(self):
+    def load(self, di=None):
         self.load_lsdev()
         self.load_lvm()
 

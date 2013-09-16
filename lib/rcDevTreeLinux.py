@@ -485,7 +485,7 @@ class DevTree(rcDevTree.DevTree):
                 if r is not None:
                     r.set_used(length)
 
-    def load(self):
+    def load(self, di=None):
         if len(glob.glob("/sys/block/*/slaves")) == 0:
             self.load_fdisk()
             self.load_dm()
