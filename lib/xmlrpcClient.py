@@ -673,8 +673,8 @@ class Collector(object):
                       rcEnv.nodename,
                       container.name,
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
-                      container_info['vcpus'],
                       container_info['vmem'],
+                      container_info['vcpus'],
                       container.zonepath if hasattr(container, 'zonepath') else ""]]
 
         if len(vals) > 0:
