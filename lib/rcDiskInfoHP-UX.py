@@ -41,6 +41,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             wwid = wwid.replace('0x', '')
             if len(size) != 0:
                 size = int(size)/2048
+            else:
+                size = 0
             vid = vid.strip('" ')
             pid = pid.strip('" ')
             if dev in self.aliases:
@@ -115,6 +117,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         wwid = wwid.replace('0x', '')
         if len(size) != 0:
             size = int(size)/2048
+        else:
+            size = 0
         vid = vid.strip('" ')
         pid = pid.strip('" ')
         self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
