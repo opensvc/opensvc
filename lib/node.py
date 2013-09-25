@@ -833,7 +833,7 @@ class Node(Svc, Freezer):
         self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
-        if self.skip_action('ibmsvc', 'push_interval', 'last_vioserver_push',
+        if self.skip_action('vioserver', 'push_interval', 'last_vioserver_push',
                             period_option='push_period',
                             days_option='push_days'):
             return
@@ -857,7 +857,7 @@ class Node(Svc, Freezer):
         self.collector.call('push_brocade', self.options.objects)
 
     def pushdisks(self):
-        if self.skip_action('sym', 'push_interval', 'last_disks_push',
+        if self.skip_action('disks', 'push_interval', 'last_disks_push',
                             period_option='push_period',
                             days_option='push_days'):
             return

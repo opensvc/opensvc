@@ -1048,7 +1048,8 @@ class Svc(Resource, Freezer):
         if rcEnv.nodename in self.autostart_node:
             try:
                 self.start()
-            except ex.excError:
+            except ex.excError as e:
+                self.log.error(str(e))
                 self.log.info("start failed. try to start standby")
                 self.startstandby()
         else:
@@ -1093,11 +1094,7 @@ class Svc(Resource, Freezer):
         return _fn
 
     def start(self):
-        try:
-            self.abort_start()
-        except ex.excError as e:
-            self.log.error(str(e))
-            return
+        self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
             if self.options.ignore_affinity:
