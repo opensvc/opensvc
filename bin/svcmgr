@@ -172,6 +172,8 @@ parser.add_option("--author", default=None, action="store", dest="author",
                   help="the acker name to log when used with the 'collector ack unavailability' action")
 parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
+parser.add_option("--table", default=False, action="store_true", dest="table",
+                  help="used table representation of collector data instead of the default itemized list of objects and properties")
 
 
 cluster = False
