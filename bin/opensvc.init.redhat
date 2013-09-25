@@ -20,9 +20,11 @@ case $1 in
 start)
 	${osvc_path}/nodemgr pushasset
 	${allservices} ${osvc_opts} boot
+	[ -d /var/lock/subsys ] && touch /var/lock/subsys/opensvc
 	;;
 stop)
 	${allservices} ${osvc_opts} shutdown
+	rm -f /var/lock/subsys/opensvc
 	;;
 esac
 
