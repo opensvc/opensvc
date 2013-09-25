@@ -507,7 +507,7 @@ class Compliance(object):
         l = self.collector.call(*args)
         if l is None:
             return
-        print_table(l, width=50)
+        print_table(l, width=50, table=self.options.table)
 
     def compliance_list_ruleset(self):
         if not hasattr(self.options, 'ruleset') or \

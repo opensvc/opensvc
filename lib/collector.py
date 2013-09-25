@@ -45,7 +45,7 @@ class Collector(object):
 
     def collector_list_unavailability_ack(self):
         d = self._collector_list_unavailability_ack()
-        print_table(d)
+        print_table(d, table=self.options.table)
 
     def collector_json_list_unavailability_ack(self):
         d = self._collector_list_unavailability_ack()
@@ -83,7 +83,7 @@ class Collector(object):
 
     def collector_list_actions(self):
         d = self._collector_list_actions()
-        print_table(d)
+        print_table(d, table=self.options.table)
 
     def collector_json_list_actions(self):
         d = self._collector_list_actions()
@@ -130,7 +130,7 @@ class Collector(object):
 
     def collector_status(self):
         d = self._collector_status()
-        print_table(d)
+        print_table(d, table=self.options.table)
 
     def collector_json_status(self):
         d = self._collector_status()
@@ -149,9 +149,9 @@ class Collector(object):
 
         return d['data']
 
-    def collector_checks(self):
+    def collector_checks(self, table=True):
         d = self._collector_checks()
-        print_table(d)
+        print_table(d, table=self.options.table)
 
     def collector_json_checks(self):
         d = self._collector_checks()
@@ -172,7 +172,7 @@ class Collector(object):
 
     def collector_disks(self):
         d = self._collector_disks()
-        print_table(d, width=64)
+        print_table(d, width=64, table=self.options.table)
 
     def collector_json_disks(self):
         d = self._collector_disks()
@@ -193,7 +193,7 @@ class Collector(object):
 
     def collector_alerts(self):
         d = self._collector_alerts()
-        print_table(d, width=30)
+        print_table(d, width=30, table=self.options.table)
 
     def collector_json_alerts(self):
         d = self._collector_alerts()
@@ -214,7 +214,7 @@ class Collector(object):
 
     def collector_events(self):
         d = self._collector_events()
-        print_table(d, width=50)
+        print_table(d, width=50, table=self.options.table)
         
     def collector_json_events(self):
         d = self._collector_events()
@@ -239,7 +239,7 @@ class Collector(object):
 
     def collector_show_actions(self):
         d = self._collector_show_actions()
-        print_table(d, width=50)
+        print_table(d, width=50, table=self.options.table)
         
     def collector_json_show_actions(self):
         d = self._collector_show_actions()

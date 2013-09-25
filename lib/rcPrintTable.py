@@ -41,7 +41,11 @@ def parse_data(data):
         rows.append(row)
     return [labels]+rows
 
-def print_table(data, width=20):
+def print_table(data, width=20, table=False):
+    if table:
+        from tabulate import tabulate
+        print tabulate(data, headers="firstrow", tablefmt="simple")
+        return
     if not isinstance(data, list):
         data = parse_data(data)
     if len(data) < 2:
