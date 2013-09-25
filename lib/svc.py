@@ -1897,9 +1897,7 @@ class Svc(Resource, Freezer):
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
           'boot',
-          'shutdown',
           'startstandby',
-          'stopstandby',
           'resource_monitor',
           'presync',
           'postsync',
