@@ -28,7 +28,6 @@ class check(checks.check):
                 try:
                     devs = svc.disklist()
                 except Exception as e:
-                    print(e)
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:

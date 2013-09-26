@@ -21,11 +21,18 @@ from rcDiskInfoOSF1 import diskInfo
 
 class check(checks.check):
     chk_type = "mpath"
+    svcdevs = {}
 
     def find_svc(self, dev):
         devpath = '/dev/rdisk/'+dev
         for svc in self.svcs:
-            if devpath in svc.disklist():
+            if svc not in self.svcdevs:
+                try:
+                    devs = svc.disklist()
+                except Exception as e:
+                    devs = []
+                self.svcdevs[svc] = devs
+            if dev in self.svcdevs[svc]:
                 return svc.svcname
         return ''
 
