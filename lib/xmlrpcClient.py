@@ -728,7 +728,7 @@ class Collector(object):
                     served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
 
                 try:
-                    devpaths = r.devlist():
+                    devpaths = r.devlist()
                 except Exception as e:
                     print(e)
                     devpaths = []
@@ -776,7 +776,7 @@ class Collector(object):
         region = 0
 
         try:
-            devpaths = node.devlist():
+            devpaths = node.devlist()
         except Exception as e:
             print(e)
             devpaths = []
