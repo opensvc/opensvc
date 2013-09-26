@@ -727,7 +727,13 @@ class Collector(object):
                         cluster = ','.join(sorted(list(svc.nodes)))
                     served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
 
-                for devpath in r.devlist():
+                try:
+                    devpaths = r.devlist():
+                except Exception as e:
+                    print(e)
+                    devpaths = []
+
+                for devpath in devpaths:
                     for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
                         disk_id = disks.disk_id(d)
                         if disk_id is None or disk_id == "":
@@ -768,7 +774,14 @@ class Collector(object):
 
         done = []
         region = 0
-        for d in node.devlist():
+
+        try:
+            devpaths = node.devlist():
+        except Exception as e:
+            print(e)
+            devpaths = []
+
+        for d in devpaths:
             disk_id = disks.disk_id(d)
             if disk_id is None or disk_id == "":
                 """ no point pushing to db an empty entry
