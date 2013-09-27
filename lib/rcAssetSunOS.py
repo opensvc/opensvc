@@ -20,20 +20,13 @@ import datetime
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset
+from rcZone import is_zone
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
         self.osver = 0.
-        self.zone = True
-        if not which('zonename'):
-            self.zone = False
-        else:
-            (out, err, ret) = justcall(['zonename'])
-            if ret != 0:
-                self.zone = False
-            elif out.strip() == 'global':
-                self.zone = False
+        self.zone = is_zone()
 
         (out, err, ret) = justcall(['prtdiag'])
         if ret != 0 and len(out) < 4:
@@ -139,7 +132,7 @@ class Asset(rcAsset.Asset):
         return str(len(core_ids))
 
     def _get_cpu_threads(self):
-        (out, err, ret) = justcall(['psrinfo'])
+        out, err, ret = justcall(['psrinfo'])
         if ret != 0:
             return '0'
         return str(len(out.split('\n'))-1)

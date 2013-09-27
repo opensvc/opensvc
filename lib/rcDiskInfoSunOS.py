@@ -21,7 +21,7 @@ import rcDiskInfo
 from rcUtilities import justcall
 import math
 from rcGlobalEnv import rcEnv
-
+from rcZone import is_zone
 
 class diskInfo(rcDiskInfo.diskInfo):
     h = {}
@@ -104,6 +104,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         return size
 
     def __init__(self, deferred=False):
+        self.zone = is_zone()
         self.deferred = deferred
         if deferred:
             return
@@ -118,6 +119,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         if ret != 0:
             return
         lines = out.split('\n')
+        if len(lines) < 2:
+            return
         for e in lines:
             if "/dev/" not in e:
                 continue
@@ -159,6 +162,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             self.scan_dev(dev)
         dummy = dict(wwid="unknown", vid="unknown", pid="unknown", size=0)
         if dev not in self.h:
+            if self.zone:
+                return None
             return dummy[type]
         return self.h[dev][type]
 

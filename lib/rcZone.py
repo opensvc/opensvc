@@ -19,9 +19,19 @@
 
 import os
 from rcZfs import Dataset
-from rcUtilities import justcall
+from rcUtilities import justcall, which
 
 ZONEADM="/usr/sbin/zoneadm"
+
+def is_zone():
+    if not which('zonename'):
+        return False
+    out, err, ret = justcall(['zonename'])
+    if ret != 0:
+        return False
+    if out.strip() == 'global':
+        return False
+    return True
 
 class Zones(object):
     """Define zones (a.k.a. container) defined on a node"""
