@@ -149,6 +149,48 @@ class Collector(object):
 
         return d['data']
 
+    def collector_networks(self):
+        d = self._collector_networks()
+        print_table(d)
+
+    def collector_json_networks(self):
+        d = self._collector_networks()
+        import json
+        print(json.dumps(d))
+
+    def _collector_networks(self):
+        opts = {}
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
+        d = self.collector.call('collector_networks', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        return d['data']
+
+    def collector_asset(self):
+        d = self._collector_asset()
+        print_table(d)
+
+    def collector_json_asset(self):
+        d = self._collector_asset()
+        import json
+        print(json.dumps(d))
+
+    def _collector_asset(self):
+        opts = {}
+        if self.svcname is not None:
+            opts['svcname'] = self.svcname
+        d = self.collector.call('collector_asset', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
+        return d['data']
+
     def collector_checks(self):
         d = self._collector_checks()
         print_table(d)

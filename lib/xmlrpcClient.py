@@ -171,6 +171,8 @@ class Collector(object):
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             rcEnv.warned = True
             return
+        # XXX
+        buff = getattr(self, fn)(*args, **kwargs)
         try:
             buff = getattr(self, fn)(*args, **kwargs)
             self.log.debug("call %s done"%fn)
@@ -1290,6 +1292,18 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.proxy.collector_status(*args)
+
+    def collector_asset(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_asset(*args)
+
+    def collector_networks(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_networks(*args)
 
     def collector_checks(self, opts, sync=True):
         args = [opts]
