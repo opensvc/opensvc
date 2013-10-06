@@ -120,6 +120,7 @@ class Node(Svc, Freezer):
             'pushhds':        'push HDS configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
+            'pushibmds':      'push IBM DS configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
@@ -771,6 +772,14 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_nsr')
+
+    def pushibmds(self):
+        if self.skip_action('ibmds', 'push_interval', 'last_ibmds_push',
+                            period_option='push_period',
+                            days_option='push_days'):
+            return
+
+        self.collector.call('push_ibmds', self.options.objects)
 
     def pushdcs(self):
         if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
