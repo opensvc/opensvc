@@ -1094,6 +1094,27 @@ class Collector(object):
         except:
             print("error pushing nsr index")
 
+    def push_ibmds(self, objects=[], sync=True):
+        if 'update_ibmds' not in self.proxy_methods:
+           print("'update_ibmds' method is not exported by the collector")
+           return
+        m = __import__('rcIbmDs')
+        try:
+            ibmdss = m.IbmDss(objects)
+        except:
+            return
+        for ibmds in ibmdss:
+            vals = []
+            for key in ibmds.keys:
+                vals.append(getattr(ibmds, 'get_'+key)())
+            args = [ibmds.name, ibmds.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            try:
+                self.proxy.update_ibmds(*args)
+            except:
+                print("error pushing", ibmds.name)
+
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print("'update_dcs' method is not exported by the collector")
