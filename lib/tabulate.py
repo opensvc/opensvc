@@ -66,7 +66,11 @@ _table_formats = {"simple":
                   "plain":
                   TableFormat(None, None, None, None,
                               DataRow("", "  ", ""), DataRow("", "  ", ""),
-                              **_format_defaults),
+                              padding=_format_defaults["padding"],
+                              usecolons=_format_defaults["usecolons"],
+                              usehtmlattrs=_format_defaults["usehtmlattrs"],
+                              with_header_hide=_format_defaults["with_header_hide"],
+                              without_header_hide=_format_defaults["without_header_hide"]),
                   "grid":
                   TableFormat(lineabove=Line("+", "-", "+", "+"),
                               linebelowheader=Line("+", "=", "+", "+"),
@@ -142,7 +146,12 @@ def simple_separated_format(separator):
 
     """
     return TableFormat(None, None, None, None,
-                       headerrow=None, datarow=DataRow('', '\t', ''), **_format_defaults)
+                       headerrow=None, datarow=DataRow('', '\t', ''),
+                       padding=_format_defaults["padding"],
+                       usecolons=_format_defaults["usecolons"],
+                       usehtmlattrs=_format_defaults["usehtmlattrs"],
+                       with_header_hide=_format_defaults["with_header_hide"],
+                       without_header_hide=_format_defaults["without_header_hide"])
 
 
 def _isconvertible(conv, string):
