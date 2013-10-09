@@ -171,8 +171,6 @@ class Collector(object):
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             rcEnv.warned = True
             return
-        # XXX
-        buff = getattr(self, fn)(*args, **kwargs)
         try:
             buff = getattr(self, fn)(*args, **kwargs)
             self.log.debug("call %s done"%fn)
