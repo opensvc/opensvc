@@ -1843,6 +1843,7 @@ def build(name):
         if "encapnodes" in defaults:
             encapnodes = set(conf_get_string_scope({}, conf, 'DEFAULT', "encapnodes").split())
             encapnodes -= set([''])
+            encapnodes = set(map(lambda x: x.lower(), encapnodes))
         else:
             encapnodes = set([])
 
@@ -1851,17 +1852,19 @@ def build(name):
         if "nodes" in defaults:
             nodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split())
             nodes -= set([''])
+            nodes = set(map(lambda x: x.lower(), nodes))
         else:
             nodes = set([])
 
         if "drpnodes" in defaults:
             drpnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split())
             drpnodes -= set([''])
+            drpnodes = set(map(lambda x: x.lower(), drpnodes))
         else:
             drpnodes = set([])
 
         if "drpnode" in defaults:
-            drpnode = conf_get_string_scope({}, conf, 'DEFAULT', "drpnode")
+            drpnode = conf_get_string_scope({}, conf, 'DEFAULT', "drpnode").lower()
             drpnodes |= set([drpnode])
             drpnodes -= set([''])
         else:
