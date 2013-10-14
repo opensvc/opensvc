@@ -1371,6 +1371,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('netapp', svc, conf)
     add_syncs_resources('nexenta', svc, conf)
     add_syncs_resources('symclone', svc, conf)
+    add_syncs_resources('ibmdssnap', svc, conf)
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
     add_syncs_resources('dcsckpt', svc, conf)
@@ -1636,6 +1637,34 @@ def add_syncs_symclone(svc, conf, s):
     except:
         sc = __import__('resSyncSymclone')
     r = sc.syncSymclone(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_ibmdssnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['pairs'] = conf_get_string(svc, conf, s, 'pairs').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have pairs set" % s)
+        return
+
+    try:
+        kwargs['array'] = conf_get_string(svc, conf, s, 'array')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have array set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        m = __import__('resSyncIbmdsSnap'+rcEnv.sysname)
+    except:
+        m = __import__('resSyncIbmdsSnap')
+    r = m.syncIbmdsSnap(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 

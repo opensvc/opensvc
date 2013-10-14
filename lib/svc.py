@@ -105,6 +105,7 @@ class Svc(Resource, Freezer):
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.ibmdssnap",
                              "sync.evasnap",
                              "sync.dcssnap",
                              "sync.dcsckpt",
@@ -1312,6 +1313,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dcsckpt", "startstandby")
         self.sub_set_action("sync.nexenta", "startstandby")
         self.sub_set_action("sync.symclone", "startstandby")
+        self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.loop", "startstandby")
         self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
@@ -1326,6 +1328,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
+        self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.gandi", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
@@ -1709,6 +1712,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.nexenta", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
+        self.sub_set_action("sync.ibmdssnap", "syncresync")
         self.sub_set_action("sync.evasnap", "syncresync")
         self.sub_set_action("sync.dcssnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
@@ -1717,6 +1721,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.netapp", "syncbreak")
         self.sub_set_action("sync.nexenta", "syncbreak")
         self.sub_set_action("sync.symclone", "syncbreak")
+        self.sub_set_action("sync.ibmdssnap", "syncbreak")
         self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
