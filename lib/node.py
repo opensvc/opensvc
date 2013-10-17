@@ -1060,6 +1060,7 @@ class Node(Svc, Freezer):
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
         except IOError:
+            f.close()
             import traceback
             e = sys.exc_info()
             if self.options.cron:
@@ -1095,6 +1096,7 @@ class Node(Svc, Freezer):
             tar.extractall()
             tar.close()
         except:
+            f.close()
             print >>sys.stderr, "failed to unpack"
             return 1
         f.close()
@@ -1122,6 +1124,7 @@ class Node(Svc, Freezer):
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
         except IOError:
+            f.close()
             import traceback
             e = sys.exc_info()
             print >>sys.stderr, "download failed", ":", e[1]
