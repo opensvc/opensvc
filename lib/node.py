@@ -1096,11 +1096,19 @@ class Node(Svc, Freezer):
         except IOError:
             import traceback
             e = sys.exc_info()
+            try:
+                os.unlink(fname)
+            except:
+                pass
             if self.options.cron:
                 return 0
             print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
+            try:
+                os.unlink(fname)
+            except:
+                pass
             if self.options.cron:
                 return 0
             print("invalid file", file=sys.stderr)
@@ -1132,9 +1140,16 @@ class Node(Svc, Freezer):
             tar.extractall()
             tar.close()
         except:
+            try:
+                os.unlink(fname)
+            except:
+                pass
             print("failed to unpack", file=sys.stderr)
             return 1
-        f.close()
+        try:
+            os.unlink(fname)
+        except:
+            pass
         print("install new compliance")
         shutil.move(compp, backp)
         shutil.move(tmpp, compp)
@@ -1160,11 +1175,19 @@ class Node(Svc, Freezer):
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
         except IOError:
+            try:
+                os.unlink(fname)
+            except:
+                pass
             import traceback
             e = sys.exc_info()
             print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
+            try:
+                os.unlink(fname)
+            except:
+                pass
             print("invalid file", file=sys.stderr)
             return 1
         with open(fname, 'r') as f:
@@ -1179,7 +1202,10 @@ class Node(Svc, Freezer):
         print("updating opensvc")
         m.update(tmpf)
         print("clean up")
-        f.close()
+        try:
+            os.unlink(fname)
+        except:
+            pass
         return 0
 
     def provision(self):
