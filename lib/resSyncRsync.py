@@ -223,7 +223,8 @@ class Rsync(resSync.Sync):
         """
         if self.svc.clustertype in ["flex", "autoflex"] and \
            self.svc.flex_primary != rcEnv.nodename:
-            self.log.debug("won't sync this resource from a flex non-primary node")
+            if not self.svc.cron:
+                self.log.info("won't sync this resource from a flex non-primary node")
             return set([])
 
         """Discard the local node from the set
@@ -260,8 +261,10 @@ class Rsync(resSync.Sync):
         if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
             if s['overall'].status == rcStatus.WARN:
-                self.log.debug("won't sync this resource service in warn status")
-            self.log.debug("won't sync this resource for a service not up")
+                if not self.svc.cron:
+                    self.log.info("won't sync this resource service in warn status")
+            if not self.svc.cron:
+                self.log.info("won't sync this resource for a service not up")
             return set([])
 
         for node in targets.copy():
@@ -279,13 +282,15 @@ class Rsync(resSync.Sync):
 
     def sync(self, target):
         if target not in self.target.keys():
-            self.log.debug('%s => %s sync not applicable to %s'%(self.src, self.dst, target))
+            if not self.svc.cron:
+                self.log.info('%s => %s sync not applicable to %s'%(self.src, self.dst, target))
             return 0
 
         targets = self.nodes_to_sync(target)
 
         if len(targets) == 0:
-            self.log.debug("no nodes to sync")
+            if not self.svc.cron:
+                self.log.info("no nodes to sync")
             raise ex.syncNoNodesToSync
 
         if "delay_snap" in self.tags:
@@ -304,7 +309,8 @@ class Rsync(resSync.Sync):
             src = self.src
 
         if len(src) == 0:
-            self.log.debug("no files to sync")
+            if not self.svc.cron:
+                self.log.info("no files to sync")
             raise ex.syncNoFilesToSync
 
         bwlimit = bwlimit_option(self)
@@ -337,7 +343,8 @@ class Rsync(resSync.Sync):
         """Don't sync PRD services when running on !PRD node
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
-            self.log.debug("won't sync a PRD service running on a !PRD node")
+            if not self.svc.cron:
+                self.log.info("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
         """ Is there at least one node to sync ?
@@ -362,7 +369,8 @@ class Rsync(resSync.Sync):
             targets |= rtargets[i]
 
         if len(targets) == 0:
-            self.log.debug("no node to sync")
+            if not self.svc.cron:
+                self.log.info("no node to sync")
             raise ex.excAbortAction
 
         if not need_snap:
@@ -388,20 +396,24 @@ class Rsync(resSync.Sync):
         try:
             self.sync("nodes")
         except ex.syncNoFilesToSync:
-            self.log.debug("no file to sync")
+            if not self.svc.cron:
+                self.log.info("no file to sync")
             pass
         except ex.syncNoNodesToSync:
-            self.log.debug("no node to sync")
+            if not self.svc.cron:
+                self.log.info("no node to sync")
             pass
 
     def syncdrp(self):
         try:
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
-            self.log.debug("no file to sync")
+            if not self.svc.cron:
+                self.log.info("no file to sync")
             pass
         except ex.syncNoNodesToSync:
-            self.log.debug("no node to sync")
+            if not self.svc.cron:
+                self.log.info("no node to sync")
             pass
 
     def _status(self, verbose=False):
