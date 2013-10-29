@@ -32,9 +32,9 @@ class Ip(Res.Ip):
         """ arp_announce job is done by SunOS ifconfig... """
         return
 
-    def check_ping(self):
+    def check_ping(self, count=1, timeout=2):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr, timeout=2)
+        return check_ping(self.addr, timeout=timeout)
 
     def startip_cmd(self):
         cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \

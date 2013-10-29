@@ -24,9 +24,9 @@ import resIp as Res
 u = __import__('rcUtilitiesHP-UX')
 
 class Ip(Res.Ip):
-    def check_ping(self):
+    def check_ping(self, count=1, timeout=5):
         self.log.info("checking %s availability"%self.addr)
-        return u.check_ping(self.addr)
+        return u.check_ping(self.addr, count=count, timeout=timeout)
 
     def arp_announce(self):
         """ arp_announce job is done by HP-UX ifconfig... """

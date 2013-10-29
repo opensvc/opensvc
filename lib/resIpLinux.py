@@ -25,9 +25,9 @@ import rcExceptions as ex
 from rcUtilitiesLinux import check_ping
 
 class Ip(Res.Ip):
-    def check_ping(self):
+    def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr)
+        return check_ping(self.addr, timeout=timeout, count=count)
 
     def startip_cmd(self):
         if ':' in self.addr:

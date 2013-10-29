@@ -25,9 +25,9 @@ import rcExceptions as ex
 from rcUtilitiesFreeBSD import check_ping
 
 class Ip(Res.Ip):
-    def check_ping(self):
+    def check_ping(self, count=1, timeout=5):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr)
+        return check_ping(self.addr, count=count, timeout=timeout)
 
     def arp_announce(self):
         return

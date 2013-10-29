@@ -110,18 +110,15 @@ class Ip(Res.Resource):
         self.log.info(' '.join(cmd))
         qcall(cmd)
 
-    def check_not_ping_raise(self):
-        if self.check_ping() and not self.is_up():
-            raise ex.excError
-
     def abort_start(self):
-        if 'noaction' in self.tags:
+        self.abort_start_done = True
+        if 'nonrouted' in self.tags or 'noaction' in self.tags:
             return False
         if self.check_ping() and not self.is_up():
             return True
         return False
 
-    def check_ping(self):
+    def check_ping(self, count=1, timeout=5):
         raise ex.MissImpl('check_ping')
 
     def startip_cmd(self):
@@ -148,7 +145,7 @@ class Ip(Res.Resource):
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
             raise ex.IpAlreadyUp(self.addr)
-        if self.check_ping():
+        if not hasattr(self, 'abort_start_done') and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
         return
@@ -274,7 +271,7 @@ class Ip(Res.Resource):
         import time
         tmo = 15
         for i in range(tmo):
-            if not self.check_ping():
+            if not self.check_ping(count=1, timeout=1):
                 break
             time.sleep(1)
 

@@ -127,7 +127,7 @@ class Ip(Res.Ip):
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
             raise ex.IpAlreadyUp(self.addr)
-        if 'nonrouted' not in self.tags and self.check_ping():
+        if not hasattr(self, 'abort_start_done') and 'nonrouted' not in self.tags and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
 
