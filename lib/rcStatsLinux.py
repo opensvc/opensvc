@@ -116,6 +116,20 @@ class StatsProvider(rcStats.StatsProvider):
                         'guest',
                         'idle',
                         'nodename']
+            elif len(l) == 12:
+                cols = ['date',
+                        'cpu',
+                        'usr',
+                        'nice',
+                        'sys',
+                        'iowait',
+                        'steal',
+                        'irq',
+                        'soft',
+                        'guest',
+                        'gnice',
+                        'idle',
+                        'nodename']
             else:
                 continue
             if l[1] == 'CPU':

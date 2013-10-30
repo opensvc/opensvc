@@ -913,7 +913,8 @@ class Collector(object):
         except ValueError as e:
             print(str(e))
             return 1
-        except:
+        except Exception as e:
+            print(e)
             raise
         h = {}
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
