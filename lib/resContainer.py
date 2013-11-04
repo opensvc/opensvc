@@ -40,7 +40,10 @@ class Container(Res.Resource):
         self.name = name
         self.label = name
         self.always_on = always_on
-        self.guestos = guestos
+        if guestos is not None:
+            self.guestos = guestos.lower()
+        else:
+            self.guestos = guestos
         self.runmethod = rcEnv.rsh.split() + [name]
 
     def vm_hostname(self):
@@ -74,7 +77,7 @@ class Container(Res.Resource):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def operational(self):
-        if self.guestos == "Windows":
+        if self.guestos == "windows":
             """ Windows has no sshd.
             """
             return True

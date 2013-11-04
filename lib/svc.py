@@ -843,7 +843,7 @@ class Svc(Resource, Freezer):
     def encap_json_status(self, container, refresh=False):
         if not refresh and hasattr(self, 'encap_json_status_cache') and container.rid in self.encap_json_status_cache:
             return self.encap_json_status_cache[container.rid]
-        if container.guestos == 'Windows':
+        if container.guestos == 'windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
             """
