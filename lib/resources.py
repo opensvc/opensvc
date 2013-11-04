@@ -362,9 +362,16 @@ class ResourceSet(Resource):
             return False
         return True
         
-    def action(self, action=None, tags=set([]), xtags=set([])):
+    def action(self, action=None, tags=set([]), xtags=set([]), parallel=False):
         """Call action on each resource of the ResourceSet
         """
+        if parallel:
+            # verify we can actually do parallel processing, fallback to serialized
+            try:
+                from multiprocessing import Process
+            except:
+                parallel = False
+
         if len(xtags) > 0:
             resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
         else:
@@ -376,11 +383,21 @@ class ResourceSet(Resource):
         else:
             resources.sort(reverse=True)
 
-        for r in resources:
-            try:
-                r.action(action)
-            except exc.excAbortAction:
-                break
+        if parallel and len(resources) > 1:
+            ps = []
+            for r in resources:
+                p = Process(target=r.action, args=(action,))
+                p.start()
+                r.log.info("action %s started in child process %d"%(action, p.pid))
+                ps.append(p)
+            for p in ps:
+                p.join()
+        else:
+            for r in resources:
+                try:
+                    r.action(action)
+                except exc.excAbortAction:
+                    break
 
 
 if __name__ == "__main__":

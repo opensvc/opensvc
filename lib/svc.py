@@ -312,6 +312,9 @@ class Svc(Resource, Freezer):
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
+    def sub_set_action_parallel(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
+        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags, parallel=True)
+
     def need_snap_trigger(self, sets, action):
         if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
             return False
@@ -325,7 +328,7 @@ class Svc(Resource, Freezer):
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
+    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False, parallel=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
@@ -385,7 +388,7 @@ class Svc(Resource, Freezer):
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
-                r.action(action, tags=tags, xtags=xtags)
+                r.action(action, tags=tags, xtags=xtags, parallel=parallel)
             except ex.excError:
                 if r.is_optional():
                     pass
@@ -1678,7 +1681,7 @@ class Svc(Resource, Freezer):
 
     def syncnodes(self):
         self.presync()
-        self.sub_set_action("sync.rsync", "syncnodes")
+        self.sub_set_action_parallel("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
@@ -1686,7 +1689,7 @@ class Svc(Resource, Freezer):
 
     def syncdrp(self):
         self.presync()
-        self.sub_set_action("sync.rsync", "syncdrp")
+        self.sub_set_action_parallel("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
