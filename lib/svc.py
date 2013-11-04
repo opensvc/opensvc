@@ -514,6 +514,8 @@ class Svc(Resource, Freezer):
             try:
                 res = self.encap_json_status(container)['resources']
                 encap_res_status[container.rid] = res
+            except ex.excNotAvailable as e:
+                encap_res_status[container.rid] = {}
             except Exception as e:
                 print(e)
                 encap_res_status[container.rid] = {}
