@@ -1366,7 +1366,6 @@ def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
         globals()['add_'+restype+'s_'+subtype](svc, conf, s)
 
 def add_syncs(svc, conf):
-    add_mandatory_syncs(svc, conf)
     add_syncs_resources('rsync', svc, conf)
     add_syncs_resources('netapp', svc, conf)
     add_syncs_resources('nexenta', svc, conf)
@@ -1378,6 +1377,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('dds', svc, conf)
     add_syncs_resources('zfs', svc, conf)
     add_syncs_resources('btrfs', svc, conf)
+    add_mandatory_syncs(svc, conf)
 
 def add_syncs_btrfs(svc, conf, s):
     kwargs = {}
