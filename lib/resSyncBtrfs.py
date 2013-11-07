@@ -163,12 +163,12 @@ class SyncBtrfs(resSync.Sync):
     def btrfs_send_incremental(self, node):
         if self.recursive :  
             send_cmd = ['btrfs', 'send', '-R',
-                        '-i', self.src_snap_sent,
+                        '-c', self.src_snap_sent,
                         '-p', self.src_snap_sent,
                         self.src_snap_tosend]
         else:
             send_cmd = ['btrfs', 'send',
-                        '-i', self.src_snap_sent,
+                        '-c', self.src_snap_sent,
                         '-p', self.src_snap_sent,
                         self.src_snap_tosend]
 
