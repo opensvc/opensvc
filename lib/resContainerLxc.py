@@ -59,7 +59,20 @@ class Lxc(resContainer.Container):
     """
 
     def files_to_sync(self):
-        return [self.cf]
+        try:
+            self.find_cf()
+        except:
+            # the config file might be in a umounted fs resource
+            # in which case, no need to ask for its sync as the sync won't happen
+            return []
+        l = [self.cf]
+        try:
+            fstab = self.get_cf_value("lxc.mount")
+            if os.path.exists(fstab):
+                l.append(fstab)
+        except:
+            pass
+        return l
 
     def rcp_from(self, src, dst):
         rootfs = self.get_rootfs()
@@ -84,9 +97,10 @@ class Lxc(resContainer.Container):
         return out, err, ret
 
     def lxc(self, action):
+        self.find_cf()
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
         if action == 'start':
-            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
+            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf, '-f', self.cf]
         elif action == 'stop':
             cmd = ['lxc-stop', '-n', self.name, '-o', outf]
         else:
@@ -101,6 +115,7 @@ class Lxc(resContainer.Container):
             raise ex.excError
 
     def get_cf_value(self, param):
+        self.find_cf()
         value = None
         if not os.path.exists(self.cf):
             return None
@@ -181,6 +196,9 @@ class Lxc(resContainer.Container):
         return True
 
     def find_cf(self):
+        if self.cf is not None and os.path.exists(self.cf):
+            return
+
         d_lxc = os.path.join('var', 'lib', 'lxc')
 
         # seen on debian squeeze : prefix is /usr, but containers'
@@ -195,14 +213,17 @@ class Lxc(resContainer.Container):
                 cf_d = os.path.dirname(cf)
                 if not os.path.exists(cf_d):
                     os.makedirs(cf_d)
-                return cf
+                self.cf = cf
+                return
 
         # on Oracle Linux, config is in /etc/lxc
         cf = os.path.join(os.sep, 'etc', 'lxc', self.name, 'config')
         if os.path.exists(cf):
-            return cf
+            self.cf = cf
+            return
 
-        return None
+        self.cf = None
+        raise ex.excError("unable to find the container configuration file")
 
     def find_prefix(self):
         prefixes = [os.path.join(os.sep),
@@ -213,7 +234,7 @@ class Lxc(resContainer.Container):
                  return prefix
         return None
 
-    def __init__(self, rid, name, guestos="Linux", optional=False, disabled=False, monitor=False,
+    def __init__(self, rid, name, guestos="Linux", cf=None, optional=False, disabled=False, monitor=False,
                  tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.lxc",
@@ -223,19 +244,21 @@ class Lxc(resContainer.Container):
 
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']
+            # override getaddr from parent class with a noop
+            self.getaddr = self.dummy
         else:
             self.runmethod = rcEnv.rsh.split() + [name]
             # enable ping test on start
             self.ping = self._ping
+        self.cf = cf
+
+    def dummy(self):
+        pass
 
     def on_add(self):
         self.prefix = self.find_prefix()
         if self.prefix is None:
             self.log.error("lxc install prefix not found")
-            raise ex.excInitError
-        self.cf = self.find_cf()
-        if self.cf is None:
-            self.log.error("lxc container config file not found")
             raise ex.excInitError
 
     def __str__(self):

@@ -1180,6 +1180,11 @@ def add_containers_lxc(svc, conf, s):
     except ex.OptNotFound:
         pass
 
+    try:
+        kwargs['cf'] = conf_get_string_scope(svc, conf, s, 'cf')
+    except ex.OptNotFound:
+        pass
+
     m = __import__('resContainerLxc')
 
     kwargs['rid'] = s
