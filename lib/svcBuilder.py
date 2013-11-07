@@ -175,8 +175,11 @@ def get_disabled(conf, section, svc):
             return conf.getboolean("DEFAULT", "disable")
         else:
             return False
-    if conf.has_option(section, 'disable'):
-        return conf.getboolean(section, "disable")
+    try:
+        r = conf_get_boolean_scope(svc, conf, section, 'disable')
+        return r
+    except ex.OptNotFound:
+        pass
     nodes = set([])
     if conf.has_option(section, 'disable_on'):
         l = conf.get(section, "disable_on").split()
@@ -1356,11 +1359,12 @@ def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
         if not svc.encap and 'encap' in get_tags(conf, s):
             svc.has_encap_resources = True
             continue
-        if not conf.has_option(s, 'type'):
-            # 'type' is mandatory in resource section, fallback to default_subtype (if set)
-            if default_subtype is None or subtype != default_subtype:
-                continue
-        elif conf.get(s, 'type') != subtype:
+        try:
+            res_subtype = conf_get_string_scope(svc, conf, s, "type")
+        except ex.OptNotFound:
+            res_subtype = default_subtype
+
+        if subtype != res_subtype:
             continue
 
         globals()['add_'+restype+'s_'+subtype](svc, conf, s)
@@ -1770,38 +1774,59 @@ def add_syncs_netapp(svc, conf, s):
 def add_syncs_rsync(svc, conf, s):
     import glob
 
-    if not conf.has_option(s, 'src') or \
-       not conf.has_option(s, 'dst'):
-        svc.log.error("config file section %s must have src and dst set" % s)
-        return
-
     options = []
     kwargs = {}
     kwargs['src'] = []
-    for src in conf.get(s, "src").split():
+    try:
+        _s = conf_get_string_scope(svc, conf, s, 'src')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have src set" % s)
+        return
+
+    for src in _s.split():
         kwargs['src'] += glob.glob(src)
-    kwargs['dst'] = conf.get(s, "dst")
 
-    if conf.has_option(s, 'dstfs'):
-        kwargs['dstfs'] = conf.get(s, 'dstfs')
+    try:
+        kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have dst set" % s)
+        return
 
-    if conf.has_option(s, 'options'):
-        options += conf.get(s, 'options').split()
-    if conf.has_option(s, 'exclude'):
+    try:
+        kwargs['dstfs'] = conf_get_string_scope(svc, conf, s, 'dst')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        _s = conf_get_string_scope(svc, conf, s, 'options')
+        options += _s.split()
+    except ex.OptNotFound:
+        pass
+
+    try:
         # for backward compat (use options keyword now)
-        options += conf.get(s, 'exclude').split()
+        _s = conf_get_string_scope(svc, conf, s, 'exclude')
+        options += _s.split()
+    except ex.OptNotFound:
+        pass
+
     kwargs['options'] = options
 
-    if conf.has_option(s, 'snap'):
-        kwargs['snap'] = conf.getboolean(s, 'snap')
+    try:
+        kwargs['snap'] = conf_get_boolean_scope(svc, conf, s, 'snap')
+    except ex.OptNotFound:
+        pass
 
-    if conf.has_option(s, 'target'):
-        target = conf.get(s, 'target').split()
-    else:
+    try:
+        _s = conf_get_string_scope(svc, conf, s, 'target')
+        target = _s.split()
+    except ex.OptNotFound:
         target = []
 
-    if conf.has_option(s, 'bwlimit'):
-        kwargs['bwlimit'] = conf.get(s, 'bwlimit')
+    try:
+        kwargs['bwlimit'] = conf_get_int_scope(svc, conf, s, 'bwlimit')
+    except ex.OptNotFound:
+        pass
 
     targethash = {}
     if 'nodes' in target: targethash['nodes'] = svc.nodes
