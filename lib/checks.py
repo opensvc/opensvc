@@ -53,6 +53,7 @@ class checks(check):
         self.register('checkFmFmadm')
         self.register('checkMce')
         self.register('checkZpool')
+        self.register('checkBtrfsDevStats')
         self.register('checkAdvfsUsage')
         self.register('checkNuma')
         self.register_local_checkers()
