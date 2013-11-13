@@ -941,6 +941,18 @@ class Collector(object):
             del(d['lan'])
             gen.update({'lan': [vars, vals]})
 
+        if 'uids' in d:
+            vars = ['user_name', 'user_id']
+            vals = d['uids']
+            del(d['uids'])
+            gen.update({'uids': [vars, vals]})
+
+        if 'gids' in d:
+            vars = ['group_name', 'group_id']
+            vals = d['gids']
+            del(d['gids'])
+            gen.update({'gids': [vars, vals]})
+
         if len(gen) > 0:
             args = [gen]
             if self.auth_node:
