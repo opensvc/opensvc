@@ -16,6 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 from rcGlobalEnv import rcEnv
+import os
 
 class Asset(object):
     s_config = "node configuration file"
@@ -540,6 +541,34 @@ class Asset(object):
         for t in targets:
             print("  %s - %s"%t)
 
+    def get_uids(self):
+        return self.get_ids("/etc/passwd")
+
+    def get_gids(self):
+        return self.get_ids("/etc/group")
+
+    def get_ids(self, p):
+        if rcEnv.sysname == "Windows":
+            return []
+        if not os.path.exists(p):
+            return []
+        with open(p, 'r') as f:
+            buff = f.read()
+        d = []
+        for line in buff.split('\n'):
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            l = line.split(':')
+            if len(l) < 3:
+                continue
+            try:
+                i = int(l[2])
+            except:
+                continue
+            d.append((l[0], l[2]))
+        return d
+
     def get_lan(self):
         if rcEnv.sysname == 'HP-UX':
             args = [True]
@@ -657,4 +686,10 @@ class Asset(object):
         lan = self.get_lan()
         if lan is not None:
             d['lan'] = lan
+        uids = self.get_uids()
+        if uids is not None:
+            d['uids'] = uids
+        gids = self.get_gids()
+        if gids is not None:
+            d['gids'] = gids
         return d
