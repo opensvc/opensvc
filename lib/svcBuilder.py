@@ -1798,7 +1798,7 @@ def add_syncs_rsync(svc, conf, s):
         return
 
     try:
-        kwargs['dstfs'] = conf_get_string_scope(svc, conf, s, 'dst')
+        kwargs['dstfs'] = conf_get_string_scope(svc, conf, s, 'dstfs')
     except ex.OptNotFound:
         pass
 
