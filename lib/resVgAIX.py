@@ -18,7 +18,16 @@
 #
 import rcExceptions as ex
 import resDg
+import json
+import os
+import logging
+import shutil
+
+from rcGlobalEnv import rcEnv
 from subprocess import *
+
+
+# ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
 class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
@@ -68,14 +77,80 @@ class Vg(resDg.Dg):
             return False
         return True
 
+    def pvid2hdisk(self,mypvid):
+        cmd = ['lspv']
+        process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        buff = process.communicate()
+        hdisk = "notfound"
+        for line in buff[0].split('\n'):
+            if mypvid in line:
+                elem = line.split()
+                #print("<%s> {%s}"%(line, elem[0]))
+                return elem[0]    # first hdisk name matching requested pvid
+
+    def dumped_pvids(self, p):
+        if not os.path.exists(p):
+            return []
+        with open(p) as f:
+            s = f.read()
+        try:
+            data = json.loads(s)
+        except:
+            return []
+        l = []
+        for line in data:
+            pvid = line.get('pvid')
+            if pvid is not None:
+                l.append(pvid)
+        return l
+
+    def dump_changed(self):
+        pvids1 = self.dumped_pvids(self.vgfile_name())
+        pvids2 = self.dumped_pvids(self.vgimportedfile_name())
+        if set(pvids1) == set(pvids2):
+            return False
+        return True
+
     def do_import(self):
-        if self.is_imported():
+        if not os.path.exists(self.vgfile_name()):
+            raise ex.excError("%s should exist" % self.vgfile_name())
+        if not self.dump_changed() and self.is_imported():
             self.log.info("%s is already imported" % self.name)
             return
-        cmd = ['importvg', self.name]
-        (ret, out, err) = self.vcall(cmd)
+        if self.dump_changed() and self.is_imported():
+            if self.is_active():
+                self.log.warning("%s is active. can't reimport." % self.name)
+                return
+            self.do_deactivate()
+        with open(self.vgfile_name()) as f:
+            s = f.read()
+        try:
+            data = json.loads(s)
+        except:
+            raise ex.excError("%s is misformatted" % self.vgfile_name())
+        self.pvids = {}
+        missing = []
+        for l in data:
+            pvid = l.get('pvid')
+            if pvid is None:
+                continue
+            hdisk = self.pvid2hdisk(pvid)
+            self.pvids[pvid] = hdisk
+            if hdisk == "notfound":
+                missing.append(pvid)
+
+        # check for missing devices
+        if len(missing) > 1:
+            raise ex.excError("Missing hdisks for pvids %s to be able to import vg" % ','.join(missing))
+        elif len(missing) == 1:
+            raise ex.excError("Missing hdisk for pvid %s to be able to import vg" % ','.join(missing))
+
+        myhdisks = self.pvids.values()
+        cmd = ['importvg', '-n', '-y', self.name, myhdisks[0]]
+        ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        shutil.copy2(self.vgfile_name(), self.vgimportedfile_name())
 
     def do_export(self):
         if not self.is_imported():
@@ -107,11 +182,71 @@ class Vg(resDg.Dg):
     def do_start(self):
         self.do_import()
         self.do_activate()
+        self.do_dumpcfg()
 
     def do_stop(self):
+        self.do_dumpcfg()
         self.do_deactivate()
 
+    def vgfile_name(self):
+        return os.path.join(rcEnv.pathvar, self.name + '.vginfo')
+
+    def vgimportedfile_name(self):
+        return os.path.join(rcEnv.pathvar, self.name + '.vginfo.imported')
+
+    def files_to_sync(self):
+        return [self.vgfile_name()]
+
+    def do_dumpcfg(self):
+        cmd = ['lspv']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        data = []
+        for line in out.split('\n'):
+            l = line.split()
+            n = len(l)
+            h = {}
+            for i, key in enumerate(['hdisk', 'pvid', 'vg', 'state']):
+                if i >= n -1:
+                    break
+                h[key] = l[i]
+            vg = h.get('vg')
+            if vg is not None and vg == self.name:
+                data.append(h)
+        if len(data) == 0:
+            # don't overwrite existing dump file with an empty dataset
+            return
+        s = json.dumps(data)
+        with open(self.vgfile_name(), 'w') as f:
+            f.write(s)
+                
+	"""
+	root@host:/$ lspv
+	hdisk0          00078e0b282e417a                    rootvg          active      
+	hdisk1          none                                None                        
+	hdisk2          00078e0bb1618c92                    tstvg           active      
+	hdisk3          00078e0bb161b59e                    tstvg           active      
+	hdisk4          none                                None                        
+	hdisk5          none                                None                        
+
+        =>
+
+        [{'hdisk': 'hdisk0', 'pvid': '00078e0b282e417a', 'vg': 'rootvg', 'state': 'active'},
+         {'hdisk': 'hdisk1', 'pvid': 'none', 'vg': 'None'},
+         {'hdisk': 'hdisk2', 'pvid': '00078e0bb1618c92', 'vg': 'testvg', 'state': 'active'},
+         {'hdisk': 'hdisk3', 'pvid': '00078e0bb161b59e', 'vg': 'testvg', 'state': 'active'},
+         {'hdisk': 'hdisk4', 'pvid': 'none', 'vg': 'None'},
+         {'hdisk': 'hdisk5', 'pvid': 'none', 'vg': 'None'}]
+	"""
+    
     def disklist(self):
+        if self.is_active():
+            return self.disklist_active()
+        return self.disklist_inactive()
+
+    def disklist_active(self):
         cmd = ['lsvg', '-p', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -124,3 +259,24 @@ class Vg(resDg.Dg):
             self.disks |= set([x[0]])
 
         return self.disks
+
+    def disklist_inactive(self):
+        self.disks = set([])
+        if not os.path.exists(self.vgfile_name()):
+            return self.disks
+        with open(self.vgfile_name()) as f:
+            s = f.read()
+        try:
+            data = json.loads(s)
+        except:
+            return self.disks
+        for l in data:
+            pvid = l.get('pvid')
+            if pvid is None:
+                continue
+            hdisk = self.pvid2hdisk(pvid)
+            if hdisk == "notfound":
+                continue
+            self.disks.add(hdisk)
+        return self.disks
+
