@@ -131,17 +131,25 @@ action_desc = {
     },
 }
 
-def format_desc(svc=False):
+def format_desc(svc=False, action=None):
     from textwrap import TextWrapper
     wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
     desc = ""
     for s in sorted(action_desc):
+        valid_actions = []
+        for a in sorted(action_desc[s]):
+            if action is not None and not a.startswith(action):
+                continue
+            valid_actions.append(a)
+        if len(valid_actions) == 0:
+            continue
+
         l = len(s)
         desc += s+'\n'
         for i in range(0, l):
             desc += '-'
         desc += "\n\n"
-        for a in sorted(action_desc[s]):
+        for a in valid_actions:
             if svc and not hasattr(svc, a):
                 continue
             fancya = a.replace('_', ' ')
