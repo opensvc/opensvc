@@ -45,8 +45,8 @@ except:
 n = node_mod.Node()
 
 __ver = prog + " version " + version
-__usage = "%prog [options] command\n\n" + n.format_desc()
-parser = optparse.OptionParser(version=__ver, usage=__usage)
+__usage = "%prog [options] command\n\n"
+parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
@@ -129,6 +129,7 @@ if len(args) is 0:
 action = '_'.join(args)
 if not action in n.supported_actions():
     n.close()
+    parser.set_usage(__usage + n.format_desc(action))
     parser.error("unsupported action: %s"%action)
 
 def _exit(r):

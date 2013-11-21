@@ -345,19 +345,26 @@ class Node(Svc, Freezer):
            not self.config.has_option('sync', 'period'):
             self._setup_sync_conf()
 
-    def format_desc(self):
+    def format_desc(self, action=None):
         from textwrap import TextWrapper
         from compliance import Compliance
         from collector import Collector
         wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
         desc = ""
         for s in sorted(self.action_desc):
+            valid_actions = []
+            for a in sorted(self.action_desc[s]):
+                if action is not None and not a.startswith(action):
+                    continue
+                valid_actions.append(a)
+            if len(valid_actions) == 0:
+                continue
             l = len(s)
             desc += s+'\n'
             for i in range(0, l):
                 desc += '-'
             desc += "\n\n"
-            for a in sorted(self.action_desc[s]):
+            for a in valid_actions:
                 if a.startswith("compliance_"):
                     o = Compliance(self.skip_action, self.options, self.collector)
                     if not hasattr(o, a):
