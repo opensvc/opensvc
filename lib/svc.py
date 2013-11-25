@@ -227,25 +227,19 @@ class Svc(Resource, Freezer):
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
-            self.log.error("timed out waiting for lock")
-            raise ex.excError
+            raise ex.excError("timed out waiting for lock")
         except lock.lockNoLockFile:
-            self.log.error("lock_nowait: set the 'lockfile' param")
-            raise ex.excError
+            raise ex.excError("lock_nowait: set the 'lockfile' param")
         except lock.lockCreateError:
-            self.log.error("can not create lock file %s"%lockfile)
-            raise ex.excError
+            raise ex.excError("can not create lock file %s"%lockfile)
         except lock.lockAcquire as e:
-            self.log.warn("another action is currently running (pid=%s)"%e.pid)
-            raise ex.excError
+            raise ex.excError("another action is currently running (pid=%s)"%e.pid)
         except ex.excSignal:
-            self.log.error("interrupted by signal")
-            raise ex.excError
+            raise ex.excError("interrupted by signal")
         except:
-            self.log.error("unexpected locking error")
             import traceback
             traceback.print_exc()
-            raise ex.excError
+            raise ex.excError("unexpected locking error")
         if lockfd is not None:
             self.lockfd = lockfd
 
@@ -1935,6 +1929,12 @@ class Svc(Resource, Freezer):
             if action == "syncall" or "syncupdate": kwargs = {}
             elif action == "syncnodes": kwargs = {'target': 'nodes'}
             elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
+            try:
+                # timeout=1, delay=1 => immediate response
+                self.svclock(action, timeout=1, delay=1)
+            except:
+                self.log.info("%s is action already running"%action)
+                return 0
             if self.can_sync(**kwargs):
                 err = self.do_logged_action(action, waitlock=waitlock)
             else:
