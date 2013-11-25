@@ -68,14 +68,22 @@ class syncIbmdsSnap(resSync.Sync):
         lastsync = datetime.datetime.now()
         for _data in data:
             _lastsync = _data['DateSynced']
-            _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
+            try:
+                _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
+            except ValueError:
+                # workaround hp-ux python 2.6
+                _lastsync = _lastsync.replace("CET", "MET")
+                _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
             if _lastsync < lastsync:
                 lastsync = _lastsync
         self.last = lastsync
 
     def _status(self, verbose=False):
         data = self.lsflash()
-        self.get_last(data)
+        try:
+            self.get_last(data)
+        except ValueError as e:
+            self.status_log(str(e))
         r = rcStatus.UP
 
         record_disabled = []
