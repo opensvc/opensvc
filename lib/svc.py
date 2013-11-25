@@ -1952,7 +1952,8 @@ class Svc(Resource, Freezer):
                 # timeout=1, delay=1 => immediate response
                 self.svclock(action, timeout=1, delay=1)
             except:
-                self.log.info("%s is action already running"%action)
+                if not self.cron:
+                    self.log.info("%s action is already running"%action)
                 return 0
             if self.can_sync(**kwargs):
                 err = self.do_logged_action(action, waitlock=waitlock)
