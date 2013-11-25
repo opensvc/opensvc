@@ -31,7 +31,25 @@ class syncIbmdsSnap(resSync.Sync):
     def resyncflash(self):
         if self.array is None:
             raise ex.excError("%s not defined in auth.conf or not usable")
-        cmd = 'resyncflash -record -persist ' + ' '.join(self.pairs)
+        data = self.lsflash()
+        ese_pairs = []
+        other_pairs = []
+        for d in data:
+            if d['isTgtSE'] == 'ESE':
+                ese_pairs.append(d['ID'])
+            else:
+                other_pairs.append(d['ID'])
+        self._resyncflash(ese_pairs, '-tgtse')
+        self._resyncflash(other_pairs)
+
+    def _resyncflash(self, pairs, options=None):
+        if len(pairs) == 0:
+            return
+        l = ['resyncflash -record -persist']
+        if options is not None:
+            l.append(options)
+        l.append(' '.join(pairs))
+        cmd = ' '.join(l)
         out, err = self.array.dscli(cmd, log=self.log)
         if len(err) > 0:
             raise ex.excError(err)
