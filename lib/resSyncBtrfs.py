@@ -156,9 +156,39 @@ class SyncBtrfs(resSync.Sync):
         """alias to syncupdate"""
         self.syncupdate()
 
+    def sanity_checks(self):
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        if s['overall'].status != rcStatus.UP:
+            if not self.svc.cron:
+                self.log.info("won't sync this resource for a service not up")
+            raise ex.excError
+
+        """ Refuse to sync from a flex non-primary node
+        """
+        if self.svc.clustertype in ["flex", "autoflex"] and \
+           self.svc.flex_primary != rcEnv.nodename:
+            if not self.svc.cron:
+                self.log.info("won't sync this resource from a flex non-primary node")
+            raise ex.excError
+
     def syncfullsync(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+        try:
+            self.sanity_checks()
+        except ex.excError:
+            return
+        self.get_src_info()
+        if not self.src_btrfs.has_subvol(self.src_snap_tosend):
+            self.create_snap(self.src, self.src_snap_tosend)
+        self.get_targets()
+        for n in self.targets:
+            self.get_dst_info(n)
+            self.btrfs_send_initial(n)
+            self.rotate_snaps(n)
+            self.install_snaps(n)
+        self.rotate_snaps()
+        self.write_statefile()
+        for n in self.targets:
+            self.push_statefile(n)
 
     def btrfs_send_incremental(self, node):
         if self.recursive :  
@@ -282,18 +312,10 @@ class SyncBtrfs(resSync.Sync):
         self.rename_snap(node)
 
     def syncupdate(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
+        try:
+            self.sanity_checks()
+        except ex.excError:
             return
-
-        """ Refuse to sync from a flex non-primary node
-        """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            self.log.debug("won't sync this resource from a flex non-primary node")
-            return set([])
-
         self.get_src_info()
         if not self.src_btrfs.has_subvol(self.src_snap_tosend):
             self.create_snap(self.src, self.src_snap_tosend)
