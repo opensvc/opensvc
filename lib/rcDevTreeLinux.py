@@ -344,6 +344,7 @@ class DevTree(rcDevTree.DevTree):
             d.set_devpath('/dev/'+devname.replace('!', '/'))
         elif devname in self.mp_h:
             d.set_devpath('/dev/mpath/'+self._dm_h[devname])
+            d.set_devpath('/dev/'+devname)
         else:
             d.set_devpath('/dev/'+devname)
 
