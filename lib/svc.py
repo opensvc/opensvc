@@ -1734,7 +1734,7 @@ class Svc(Resource, Freezer):
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
         self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncnodes")
+        self.sub_set_action("sync.btrfs", "syncfullsync")
 
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")
