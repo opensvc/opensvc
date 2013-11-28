@@ -35,7 +35,7 @@ def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
         if len(err) > 0:
             log.error(err)
     if p.returncode != 0:
-        print >>sys.stderr, out, err
+        #print >>sys.stderr, out, err
         raise ex.excError("dscli command execution error")
     return out, err
 
@@ -62,8 +62,7 @@ class IbmDss(object):
                 continue
             pwfile = os.path.join(pathvar, s+'.pwfile')
             if not os.path.exists(pwfile):
-                print >>sys.stderr, pwfile, "does not exists. create it with 'dscli managepwfile ...'"
-                continue
+                raise ex.excError("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
 
             try:
                 username = conf.get(s, 'username')
@@ -85,6 +84,7 @@ class IbmDss(object):
         for o in self.arrays:
             if o.name == array:
                 return o
+        raise ex.excError("%s not defined in auth.conf or not usable" % array)
 
     def next(self):
         if self.index == len(self.arrays):

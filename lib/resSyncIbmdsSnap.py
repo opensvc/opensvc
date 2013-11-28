@@ -30,7 +30,7 @@ import rcIbmDs
 class syncIbmdsSnap(resSync.Sync):
     def resyncflash(self):
         if self.array is None:
-            raise ex.excError("%s not defined in auth.conf or not usable")
+            self.array = rcIbmDs.IbmDss().get(self.arrayname)
         data = self.lsflash()
         ese_pairs = []
         other_pairs = []
@@ -45,7 +45,7 @@ class syncIbmdsSnap(resSync.Sync):
     def _resyncflash(self, pairs, options=None):
         if len(pairs) == 0:
             return
-        l = ['resyncflash -record -persist']
+        l = ['resyncflash -dev %s -record -persist' % self.arrayname]
         if options is not None:
             l.append(options)
         l.append(' '.join(pairs))
@@ -68,22 +68,18 @@ class syncIbmdsSnap(resSync.Sync):
         lastsync = datetime.datetime.now()
         for _data in data:
             _lastsync = _data['DateSynced']
-            try:
-                _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
-            except ValueError:
-                # workaround hp-ux python 2.6
-                _lastsync = _lastsync.replace("CET", "MET")
-                _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
+            _lastsync = datetime.datetime.strptime(_lastsync, "%a %b %d %H:%M:%S %Z %Y")
             if _lastsync < lastsync:
                 lastsync = _lastsync
         self.last = lastsync
 
     def _status(self, verbose=False):
-        data = self.lsflash()
         try:
+            data = self.lsflash()
             self.get_last(data)
-        except ValueError as e:
+        except ex.excError as e:
             self.status_log(str(e))
+            return rcStatus.WARN
         r = rcStatus.UP
 
         record_disabled = []
@@ -144,14 +140,14 @@ class syncIbmdsSnap(resSync.Sync):
         self.label = "flash copy %s"%','.join(pairs)
         self.pairs = pairs
         self.arrayname = array
-        self.array = rcIbmDs.IbmDss().get(array)
+        self.array = None
         self.last = None
         self.params = "setenv -banner off -header on -format delim\n"
 
     def lsflash(self):
         if self.array is None:
-            raise ex.excError("%s not defined in auth.conf or not usable")
-        out, err = self.array.dscli(self.params+'lsflash -l ' + ' '.join(self.pairs))
+            self.array = rcIbmDs.IbmDss().get(self.arrayname)
+        out, err = self.array.dscli(self.params+'lsflash -l -dev %s ' % self.arrayname + ' '.join(self.pairs))
         if 'No Flash Copy found' in out:
             return []
         data = self.parseblock(0, out)
