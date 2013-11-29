@@ -74,14 +74,12 @@ class Module(object):
         return regex.sub('', s).decode('utf8', 'ignore')
 
     def log_action(self, out, ret, action):
-        ruleset = ','.join(self.ruleset)
         vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
-                'run_ruleset', 'run_action', 'rset_md5']
+                'run_action', 'rset_md5']
         vals = [rcEnv.nodename,
                 self.name,
                 str(ret),
                 self.strip_unprintable(out),
-                ruleset,
                 action,
                 self.rset_md5]
         if self.svcname is not None:
