@@ -1769,11 +1769,11 @@ class Svc(Resource, Freezer):
 
     def syncall(self):
         self.presync()
-        self.sub_set_action("sync.rsync", "syncnodes")
+        self.sub_set_action_parallel("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
-        self.sub_set_action("sync.rsync", "syncdrp")
+        self.sub_set_action_parallel("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
