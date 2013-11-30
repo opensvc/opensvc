@@ -683,6 +683,18 @@ class Svc(Resource, Freezer):
                 encap_res_status = {}
                 try:
                     encap_res_status = self.encap_json_status(container)
+                except ex.excNotAvailable as e:
+                    encap_res_status = {'resources': [],
+                                        'ip': 'n/a',
+                                        'disk': 'n/a',
+                                        'sync': 'n/a',
+                                        'hb': 'n/a',
+                                        'container': 'n/a',
+                                        'fs': 'n/a',
+                                        'share': 'n/a',
+                                        'app': 'n/a',
+                                        'avail': 'n/a',
+                                        'overall': 'n/a'}
                 except Exception as e:
                     print(e)
                     continue
