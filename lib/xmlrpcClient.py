@@ -78,12 +78,17 @@ def call_worker(q):
             fn, args, kwargs = e
             o.log.debug("xmlrpc async %s"%fn)
             try:
+                _b = datetime.now()
                 getattr(o.proxy, fn)(*args, **kwargs)
-                o.log.debug("xmlrpc async %s done"%fn)
+                _e = datetime.now()
+                _d = _e - _b
+                o.log.debug("xmlrpc async %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
                 continue
             except Exception as _e:
+                _e = datetime.now()
+                _d = _e - _b
                 err = str(_e)
-            o.log.error("xmlrpc async %s error: %s"%(fn, err))
+            o.log.error("xmlrpc async %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
         o.log.info("shutdown")
     except ex.excSignal:
         o.log.info("interrupted on signal")
@@ -172,12 +177,17 @@ class Collector(object):
             rcEnv.warned = True
             return
         try:
+            _b = datetime.now()
             buff = getattr(self, fn)(*args, **kwargs)
-            self.log.debug("call %s done"%fn)
+            _e = datetime.now()
+            _d = _e - _b
+            self.log.debug("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
             return buff
         except Exception as e:
+            _e = datetime.now()
+            _d = _e - _b
             err = str(e)
-        self.log.error("call %s error: %s"%(fn, err))
+        self.log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
     
     def __init__(self, worker=False):
         self.proxy = None
