@@ -384,6 +384,7 @@ class DevTree(rcDevTree.DevTree):
 
         if devname in mp_h:
             d.set_alias(wwid_h[devname])
+            d.set_devpath('/dev/mpath/3'+wwid_h[devname])
 
         return d
 
