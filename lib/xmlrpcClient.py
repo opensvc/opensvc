@@ -215,7 +215,7 @@ class Collector(object):
                          'comp_list_ruleset',
                          'comp_list_moduleset',
                          'comp_show_status',
-                         'comp_log_action']
+                         'comp_log_actions']
         self.method_cache = os.path.join(pathosvc, "var", "collector")
         self.auth_node = True
         self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
@@ -1292,11 +1292,11 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_list_modulesets(*args)
     
-    def comp_log_action(self, vars, vals, sync=True):
+    def comp_log_actions(self, vars, vals, sync=True):
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_log_action(*args)
+        return self.comp_proxy.comp_log_actions(*args)
 
     def comp_show_status(self, svcname, pattern='%', sync=True):
         args = [svcname, pattern]

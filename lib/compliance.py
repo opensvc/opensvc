@@ -74,8 +74,6 @@ class Module(object):
         return regex.sub('', s).decode('utf8', 'ignore')
 
     def log_action(self, out, ret, action):
-        vars = ['run_nodename', 'run_module', 'run_status', 'run_log',
-                'run_action', 'rset_md5']
         vals = [rcEnv.nodename,
                 self.name,
                 str(ret),
@@ -83,9 +81,10 @@ class Module(object):
                 action,
                 self.rset_md5]
         if self.svcname is not None:
-            vars.append('run_svcname')
             vals.append(self.svcname)
-        self.collector.call('comp_log_action', vars, vals, sync=False)
+        else:
+            vals.append("")
+        self.context.action_log_vals.append(vals)
 
     def action(self, action):
         print banner(self.name)
@@ -217,6 +216,15 @@ class Compliance(object):
         self.module_o = {}
         self.module = []
         self.updatecomp = False
+        self.action_log_vals = []
+        self.action_log_vars = [
+          'run_nodename',
+          'run_module',
+          'run_status',
+          'run_log',
+          'run_action',
+          'rset_md5',
+          'run_svcname']
 
     def compliance_check(self):
         flag = "last_comp_check"
@@ -237,6 +245,7 @@ class Compliance(object):
         o.ruleset = self.ruleset
         o.options = self.options
         o.collector = self.collector
+        o.context = self
         o.rset_md5 = self.rset_md5
         return self
 
@@ -414,6 +423,7 @@ class Compliance(object):
         end = datetime.datetime.now()
         print "total duration: %s"%str(end-start)
         self.unsetup_env()
+        self.collector.call('comp_log_actions', self.action_log_vars, self.action_log_vals)
         return r
 
     def do_checks(self):
