@@ -669,6 +669,11 @@ def save_exc():
         print >>sys.stderr, "unexpected error"
         traceback.print_exc()
 
+def purge_collector_api_cache():
+    fname = os.path.join(pathvar, "collector")
+    if os.path.exists(fname):
+        os.unlink(fname)
+
 try:
     install_pythonlink()
     move_usr_to_opt()
@@ -683,6 +688,7 @@ try:
     install_bash_completion()
     move_host_mode()
     nodeconf_params()
+    purge_collector_api_cache()
 except:
     save_exc()
     sys.exit(1)
