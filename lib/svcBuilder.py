@@ -2001,9 +2001,19 @@ def build(name):
     if not hasattr(svc, "drpnode"):
         svc.drpnode = drpnode
 
-    if "autostart_node" in defaults:
-        svc.autostart_node = defaults["autostart_node"].split()
+    try:
+        svc.encapnodes = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'encapnodes').split())
+    except ex.OptNotFound:
+        pass
+
+    if rcEnv.nodename in svc.encapnodes:
+        svc.encap = True
     else:
+        svc.encap = False
+
+    try:
+        svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()
+    except ex.OptNotFound:
         svc.autostart_node = []
 
     try:
@@ -2053,16 +2063,6 @@ def build(name):
         svc.log.error("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
         del(svc)
         return None
-
-    try:
-        svc.encapnodes = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'encapnodes').split())
-    except ex.OptNotFound:
-        pass
-
-    if rcEnv.nodename in svc.encapnodes:
-        svc.encap = True
-    else:
-        svc.encap = False
 
     try:
         svc.flex_max_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_max_nodes')
