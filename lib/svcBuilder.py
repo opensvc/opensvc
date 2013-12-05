@@ -53,7 +53,7 @@ rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
-def conf_get(svc, conf, s, o, t, scope=False):
+def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     if t == 'string':
         f = conf.get
     elif t == 'boolean':
@@ -77,16 +77,21 @@ def conf_get(svc, conf, s, o, t, scope=False):
     else:
         d = svc
 
-    if conf.has_option(s, o+"@"+rcEnv.nodename):
-        return f(s, o+"@"+rcEnv.nodename)
+    if impersonate is None:
+        nodename = rcEnv.nodename
+    else:
+        nodename = impersonate
+
+    if conf.has_option(s, o+"@"+nodename):
+        return f(s, o+"@"+nodename)
     elif conf.has_option(s, o+"@nodes") and \
-         rcEnv.nodename in d['nodes']:
+         nodename in d['nodes']:
         return f(s, o+"@nodes")
     elif conf.has_option(s, o+"@drpnodes") and \
-         rcEnv.nodename in d['drpnodes']:
+         nodename in d['drpnodes']:
         return f(s, o+"@drpnodes")
     elif conf.has_option(s, o+"@encapnodes") and \
-         rcEnv.nodename in d['encapnodes']:
+         nodename in d['encapnodes']:
         return f(s, o+"@encapnodes")
     elif conf.has_option(s, o):
         return f(s, o)
@@ -96,20 +101,20 @@ def conf_get(svc, conf, s, o, t, scope=False):
 def conf_get_string(svc, conf, s, o):
     return conf_get(svc, conf, s, o, 'string', scope=False)
 
-def conf_get_string_scope(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'string', scope=True)
+def conf_get_string_scope(svc, conf, s, o, impersonate=None):
+    return conf_get(svc, conf, s, o, 'string', scope=True, impersonate=impersonate)
 
 def conf_get_boolean(svc, conf, s, o):
     return conf_get(svc, conf, s, o, 'boolean', scope=False)
 
-def conf_get_boolean_scope(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'boolean', scope=True)
+def conf_get_boolean_scope(svc, conf, s, o, impersonate=None):
+    return conf_get(svc, conf, s, o, 'boolean', scope=True, impersonate=impersonate)
 
 def conf_get_int(svc, conf, s, o):
     return conf_get(svc, conf, s, o, 'integer', scope=False)
 
-def conf_get_int_scope(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'integer', scope=True)
+def conf_get_int_scope(svc, conf, s, o, impersonate=None):
+    return conf_get(svc, conf, s, o, 'integer', scope=True, impersonate=impersonate)
 
 def svcmode_mod_name(svcmode=''):
     """Returns (moduleName, serviceClassName) implementing the class for

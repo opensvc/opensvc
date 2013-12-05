@@ -25,6 +25,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
+from svcBuilder import conf_get_string_scope
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -818,6 +819,14 @@ class Svc(Resource, Freezer):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
+        vmhostname = container.vm_hostname()
+        try:
+            autostart_node = conf_get_string_scope(self, self.config, 'DEFAULT', 'autostart_node', impersonate=vmhostname).split()
+        except:
+            autostart_node = []
+        if cmd == ["start"] and container.booted and vmhostname in autostart_node:
+            self.log.info("skip encap service start in container %s: already started on boot"%vmhostname)
+            return '', '', 0
         if not self.has_encap_resources or container.status() == rcStatus.DOWN:
             # no need to run encap cmd (no encap resource)
             return '', '', 0

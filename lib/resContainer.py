@@ -45,6 +45,7 @@ class Container(Res.Resource):
         else:
             self.guestos = guestos
         self.runmethod = rcEnv.rsh.split() + [name]
+        self.booted = False
 
     def vm_hostname(self):
         if hasattr(self, 'vmhostname'):
@@ -168,6 +169,7 @@ class Container(Res.Resource):
         self.container_start()
         self.can_rollback = True
         self.wait_for_startup()
+        self.booted = True
 
     def stop(self):
         try:
