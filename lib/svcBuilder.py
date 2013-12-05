@@ -1657,6 +1657,18 @@ def add_syncs_ibmdssnap(svc, conf, s):
         svc.log.error("config file section %s must have array set" % s)
         return
 
+    try:
+        kwargs['bgcopy'] = conf_get_string(svc, conf, s, 'bgcopy')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have bgcopy set" % s)
+        return
+
+    try:
+        kwargs['recording'] = conf_get_string(svc, conf, s, 'recording')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have recording set" % s)
+        return
+
     kwargs['rid'] = s
     kwargs['tags'] = get_tags(conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
