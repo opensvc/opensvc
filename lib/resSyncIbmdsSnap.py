@@ -45,7 +45,12 @@ class syncIbmdsSnap(resSync.Sync):
     def _resyncflash(self, pairs, options=None):
         if len(pairs) == 0:
             return
-        l = ['resyncflash -dev %s -record -persist' % self.arrayname]
+        s = 'resyncflash -dev %s -persist' % self.arrayname
+        if self.recording:
+            s += ' -record'
+        if self.bgcopy:
+            s += ' -cp'
+        l = [s]
         if options is not None:
             l.append(options)
         l.append(' '.join(pairs))
@@ -84,16 +89,30 @@ class syncIbmdsSnap(resSync.Sync):
 
         record_disabled = []
         persist_disabled = []
+        record_enabled = []
+        state_invalid = []
+
         for _data in data:
             if _data['Recording'] == "Disabled":
                 record_disabled.append(_data['ID'])
+            elif _data['Recording'] == "Enabled":
+                record_enabled.append(_data['ID'])
+            if _data['State'] != "Valid":
+                state_invalid.append(_data['ID'])
             if _data['Persistent'] == "Disabled":
                 persist_disabled.append(_data['ID'])
-        if len(record_disabled) > 0:
+
+        if self.recording and len(record_disabled) > 0:
             self.status_log("Recording disabled on %s"%','.join(record_disabled))
+            r = rcStatus.WARN
+        elif not self.recording and len(record_enabled) > 0:
+            self.status_log("Recording enabled on %s"%','.join(record_enabled))
+            r = rcStatus.WARN
+        if len(state_invalid) > 0:
+            self.status_log("State not valid on %s"%','.join(state_invalid))
+            r = rcStatus.WARN
         if len(persist_disabled) > 0:
             self.status_log("Persistent disabled on %s"%','.join(persist_disabled))
-        if len(record_disabled)+len(persist_disabled):
             r = rcStatus.WARN
 
         pairs = []
@@ -127,6 +146,7 @@ class syncIbmdsSnap(resSync.Sync):
         self.syncbreak()
 
     def __init__(self, rid=None, pairs=[], array=None,
+                 bgcopy=True, recording=True,
                  sync_max_delay=None, sync_interval=None, sync_days=None,
                  sync_period=None,
                  optional=False, disabled=False, tags=set([]), internal=False):
@@ -140,6 +160,8 @@ class syncIbmdsSnap(resSync.Sync):
         self.label = "flash copy %s"%','.join(pairs)
         self.pairs = pairs
         self.arrayname = array
+        self.recording = recording
+        self.bgcopy = bgcopy
         self.array = None
         self.last = None
         self.params = "setenv -banner off -header on -format delim\n"
