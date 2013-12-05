@@ -1003,7 +1003,11 @@ class Node(Svc, Freezer):
             return 1
         section, option = l
         if not self.config.has_section(section):
-            self.config.add_section(section)
+            try:
+                self.config.add_section(section)
+            except ValueError as e:
+                print(e)
+                return 1
         if self.config.has_option(section, option) and \
            self.config.get(section, option) == self.options.value:
             return
