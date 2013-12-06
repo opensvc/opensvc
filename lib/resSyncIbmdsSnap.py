@@ -45,9 +45,33 @@ class syncIbmdsSnap(resSync.Sync):
     def _resyncflash(self, pairs, options=None):
         if len(pairs) == 0:
             return
-        s = 'resyncflash -dev %s -persist' % self.arrayname
         if self.recording:
-            s += ' -record'
+            self._resyncflash_recording(pairs, options=options)
+        else:
+            self._resyncflash_norecording(pairs, options=options)
+
+    def _resyncflash_norecording(self, pairs, options=None):
+        s = 'rmflash -dev %s -quiet' % self.arrayname
+        l = [s]
+        l.append(' '.join(pairs))
+        cmd = ' '.join(l)
+        out, err = self.array.dscli(cmd, log=self.log)
+        if len(err) > 0:
+            raise ex.excError(err)
+        s = 'mkflash -dev %s -persist' % self.arrayname
+        if self.bgcopy:
+            s += ' -cp'
+        l = [s]
+        if options is not None:
+            l.append(options)
+        l.append(' '.join(pairs))
+        cmd = ' '.join(l)
+        out, err = self.array.dscli(cmd, log=self.log)
+        if len(err) > 0:
+            raise ex.excError(err)
+
+    def _resyncflash_recording(self, pairs, options=None):
+        s = 'resyncflash -dev %s -persist -record' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
         l = [s]
