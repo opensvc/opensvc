@@ -1670,13 +1670,13 @@ def add_syncs_ibmdssnap(svc, conf, s):
         return
 
     try:
-        kwargs['bgcopy'] = conf_get_string(svc, conf, s, 'bgcopy')
+        kwargs['bgcopy'] = conf_get_boolean(svc, conf, s, 'bgcopy')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bgcopy set" % s)
         return
 
     try:
-        kwargs['recording'] = conf_get_string(svc, conf, s, 'recording')
+        kwargs['recording'] = conf_get_boolean(svc, conf, s, 'recording')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have recording set" % s)
         return
