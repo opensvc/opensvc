@@ -34,11 +34,19 @@ class syncIbmdsSnap(resSync.Sync):
         data = self.lsflash()
         ese_pairs = []
         other_pairs = []
+        
         for d in data:
             if d['isTgtSE'] == 'ESE':
                 ese_pairs.append(d['ID'])
             else:
                 other_pairs.append(d['ID'])
+
+        present_pairs = set(map(lambda x: x['ID'], data))
+        missing_pairs = list(set(self.pairs) - present_pairs)
+        if len(missing_pairs) > 0:
+            missing_pairs.sort()
+            raise ex.excError("refuse to resync as %s pairs are not currently configured"%', '.join(missing_pairs))
+
         self._resyncflash(ese_pairs, '-tgtse')
         self._resyncflash(other_pairs)
 
