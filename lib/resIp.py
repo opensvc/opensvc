@@ -55,8 +55,7 @@ class Ip(Res.Resource):
             self.addr = a[0][4][0]
         except:
             if not self.disabled:
-                self.log.error("could not resolve name %s"%self.ipName)
-                raise ex.excError
+                raise ex.excError("could not resolve name %s"%self.ipName)
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
@@ -113,6 +112,8 @@ class Ip(Res.Resource):
     def abort_start(self):
         self.abort_start_done = True
         if 'nonrouted' in self.tags or 'noaction' in self.tags:
+            return False
+	if not hasattr(self, "addr"):
             return False
         if self.check_ping() and not self.is_up():
             return True
