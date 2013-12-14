@@ -2022,13 +2022,7 @@ class Svc(Resource, Freezer):
                 s += ": %s"%str(e)
             self.log.error(s)
             err = 1
-            if 'start' in action:
-                try:
-                    self.log.info("trying to rollback %s"%action)
-                    self.rollback()
-                except:
-                    self.log.error("rollback %s failed"%action)
-                    pass
+            self.rollback_handler(action)
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
@@ -2042,6 +2036,19 @@ class Svc(Resource, Freezer):
         self.svcunlock()
         return err
 
+    def rollback_handler(self, action):
+        if 'start' not in action:
+            return
+        rids = [r.rid for r in self.get_resources() if r.can_rollback]
+        if len(rids) == 0:
+            self.log.info("skip rollback %s: no resource activated"%action)
+            return
+        self.log.info("trying to rollback %s on %s"%(action, ', '.join(rids)))
+        try:
+            self.rollback()
+        except:
+            self.log.error("rollback %s failed"%action)
+ 
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
         import tempfile
