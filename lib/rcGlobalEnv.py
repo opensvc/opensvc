@@ -35,7 +35,7 @@ class rcEnv:
     """Class to store globals
     """
 
-    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP']
+    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA']
     _platform = sys.platform
     sysname, nodename, x, x, machine, x = platform.uname()
     fqdn = socket.getfqdn()
