@@ -2037,6 +2037,9 @@ class Svc(Resource, Freezer):
         return err
 
     def rollback_handler(self, action):
+	if self.options.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
+            return
         if 'start' not in action:
             return
         rids = [r.rid for r in self.get_resources() if r.can_rollback]

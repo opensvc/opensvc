@@ -108,6 +108,8 @@ parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
+parser.add_option("--disable-rollback", default=False, action="store_true", dest="disable_rollback",
+                  help="Exit without resource activation rollback on start action error")
 parser.add_option("-p", "--parallel", default=False, action="store_true", dest="parallel",
                   help="start actions on specified services in parallel")
 parser.add_option("--ignore-affinity", default=False, action="store_true", dest="ignore_affinity",
