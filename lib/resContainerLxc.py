@@ -59,12 +59,15 @@ class Lxc(resContainer.Container):
     """
 
     def files_to_sync(self):
+        # the config file might be in a umounted fs resource
+        # in which case, no need to ask for its sync as the sync won't happen
         try:
             self.find_cf()
         except:
-            # the config file might be in a umounted fs resource
-            # in which case, no need to ask for its sync as the sync won't happen
             return []
+        if self.cf is None:
+            return []
+
         l = [self.cf]
         try:
             fstab = self.get_cf_value("lxc.mount")
@@ -196,7 +199,7 @@ class Lxc(resContainer.Container):
         return True
 
     def find_cf(self):
-        if self.cf is not None and os.path.exists(self.cf):
+        if self.cf is not None:
             return
 
         d_lxc = os.path.join('var', 'lib', 'lxc')
