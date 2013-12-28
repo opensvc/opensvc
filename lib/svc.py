@@ -1644,11 +1644,8 @@ class Svc(Resource, Freezer):
             try:
                 out, err, ret = self._encap_cmd(cmd, container, verbose=True)
             except ex.excError:
-                if error != "continue":
-                    self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
-                    raise
-                elif verbose:
-                    self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                raise
 
     def postsync(self):
         """ action triggered by a remote master node after
