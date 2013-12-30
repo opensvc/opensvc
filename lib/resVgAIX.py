@@ -121,7 +121,7 @@ class Vg(resDg.Dg):
             if self.is_active():
                 self.log.warning("%s is active. can't reimport." % self.name)
                 return
-            self.do_deactivate()
+            self.do_export()
         with open(self.vgfile_name()) as f:
             s = f.read()
         try:
