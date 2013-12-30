@@ -636,7 +636,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "dds", "netapp", "zfs", "symclone"),
+                  candidates=("rsync", "dds", "netapp", "symsrdfs", "zfs", "symclone"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -1183,6 +1183,28 @@ class KeywordSyncNetappUser(Keyword):
                   required=True,
                   default="nasadm",
                   text="Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
+                )
+
+class KeywordSyncSymsrdfsSymdg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symdg",
+                  rtype="symsrdfs",
+                  required=True,
+                  text="Name of the symmetrix device group where the source and target SRDF devices are grouped."
+                )
+
+class KeywordSyncSymsrdfsRdfg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="rdfg",
+                  rtype="symsrdfs",
+                  required=True,
+                  text="Number of the symmetrix rdf group where the source and target SRDF/S devices are paired."
                 )
 
 class KeywordSyncSymcloneSymdg(Keyword):

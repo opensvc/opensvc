@@ -1384,6 +1384,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('netapp', svc, conf)
     add_syncs_resources('nexenta', svc, conf)
     add_syncs_resources('symclone', svc, conf)
+    add_syncs_resources('symsrdfs', svc, conf)
     add_syncs_resources('ibmdssnap', svc, conf)
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
@@ -1620,6 +1621,36 @@ def add_syncs_evasnap(svc, conf, s):
     r = sc.syncEvasnap(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
+
+def add_syncs_symsrdfs(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['symdg'] = conf_get_string(svc, conf, s, 'symdg')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have symdg set" % s)
+        return
+
+    try:
+        kwargs['rdfg'] = conf_get_int(svc, conf, s, 'rdfg')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have rdfg number set" % s)
+        return
+
+
+    kwargs['rid'] = s
+    kwargs['tags'] = get_tags(conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncSymSrdfS'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncSymSrdfS')
+    r = sc.syncSymSrdfS(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 
 def add_syncs_symclone(svc, conf, s):
     kwargs = {}

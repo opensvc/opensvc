@@ -106,6 +106,7 @@ class Svc(Resource, Freezer):
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.symsrdfs",
                              "sync.ibmdssnap",
                              "sync.evasnap",
                              "sync.dcssnap",
@@ -1348,6 +1349,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
+        self.sub_set_action("sync.symsrdfs", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.gandi", "start")
@@ -1697,6 +1699,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
+        self.sub_set_action("sync.symsrdfs", "syncnodes")
         self.remote_postsync()
 
     def syncdrp(self):
@@ -1705,14 +1708,17 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
+        self.sub_set_action("sync.symsrdfs", "syncdrp")
         self.remote_postsync()
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
+        self.sub_set_action("sync.symsrdfs", "syncswap")
         self.sub_set_action("sync.nexenta", "syncswap")
 
     def syncresume(self):
         self.sub_set_action("sync.netapp", "syncresume")
+        self.sub_set_action("sync.symsrdfs", "syncresume")
         self.sub_set_action("sync.dcsckpt", "syncresume")
         self.sub_set_action("sync.nexenta", "syncresume")
 
@@ -1754,6 +1760,12 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncfullsync")
 
+    def syncsplit(self):
+        self.sub_set_action("sync.symsrdfs", "syncsplit")
+
+    def syncestablish(self):
+        self.sub_set_action("sync.symsrdfs", "syncestablish")
+
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")
 
@@ -1779,6 +1791,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
+        self.sub_set_action("sync.symsrdfs", "syncnodes")
         self.sub_set_action_parallel("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")

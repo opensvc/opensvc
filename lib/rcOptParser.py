@@ -64,6 +64,8 @@ action_desc = {
       'resync': 'combo action, chaining stop-syncresync-start',
       'syncquiesce': 'trigger a storage hardware-assisted disk synchronization',
       'syncbreak': 'split a storage hardware-assisted disk synchronization',
+      'syncsplit': 'split a EMC SRDF storage hardware-assisted disk synchronization',
+      'syncestablish': 'establish a EMC SRDF storage hardware-assisted disk synchronization',
       'syncresync': 'like syncupdate, but not triggered by the scheduler (thus adapted for clone/snap operations)',
       'syncfullsync': 'trigger a full copy of the volume to its target',
       'syncupdate': 'trigger a one-time resync of the volume to its target',
