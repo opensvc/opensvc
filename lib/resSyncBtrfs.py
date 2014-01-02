@@ -78,6 +78,9 @@ class SyncBtrfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        if not action.startswith('sync'):
+            return
+
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
@@ -92,16 +95,10 @@ class SyncBtrfs(resSync.Sync):
                 continue
             if 'delay_snap' in r.tags:
                 continue
-            if action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
-                if action == 'syncnodes' and self.target != ['nodes']:
-                    return
-                if action == 'syncdrp' and self.target != ['drpnodes']:
-                    return
-                nb = 0
-                r.get_targets()
-                tgts = r.targets.copy()
-                if len(tgts) == 0 :
-                    continue
+            r.get_targets(action)
+            tgts = r.targets.copy()
+            if len(tgts) == 0:
+                continue
 
             r.get_src_info()
 
@@ -144,17 +141,19 @@ class SyncBtrfs(resSync.Sync):
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])
 
-    def get_targets(self):
+    def get_targets(self, action=None):
         self.targets = set()
-        if 'nodes' in self.target:
+        if 'nodes' in self.target and action in (None, 'syncnodes'):
             self.targets |= self.svc.nodes
-        if 'drpnodes' in self.target:
+        if 'drpnodes' in self.target and action in (None, 'syncdrp'):
             self.targets |= self.svc.drpnodes
         self.targets -= set([rcEnv.nodename])
 
     def syncnodes(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+        self._syncupdate('syncnodes')
+
+    def syncdrp(self):
+        self._syncupdate('syncdrp')
 
     def sanity_checks(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
@@ -311,15 +310,17 @@ class SyncBtrfs(resSync.Sync):
         self.remove_snap(node)
         self.rename_snap(node)
 
-    def syncupdate(self):
+    def _syncupdate(self, action):
         try:
             self.sanity_checks()
         except ex.excError:
             return
+        self.get_targets(action)
+        if len(self.targets) == 0:
+            return
         self.get_src_info()
         if not self.src_btrfs.has_subvol(self.src_snap_tosend):
             self.create_snap(self.src, self.src_snap_tosend)
-        self.get_targets()
         if self.src_btrfs.has_subvol(self.src_snap_sent):
             for n in self.targets:
                 self.get_dst_info(n)
