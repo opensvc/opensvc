@@ -71,9 +71,12 @@ def lock_nowait(lockfile=None):
         pass
 
     try:
-        lockfd = os.open(lockfile, os.O_RDWR|os.O_SYNC|os.O_CREAT|os.O_TRUNC, 0o644)
-    except:
-        raise lockCreateError
+	flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+	if rcEnv.sysname != 'Windows':
+	    flags |= os.O_SYNC
+        lockfd = os.open(lockfile, flags, 0o644)
+    except Exception as e:
+        raise lockCreateError()
 
     try:
         """ test if we already own the lock
