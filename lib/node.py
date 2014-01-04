@@ -1435,7 +1435,9 @@ class Node(Svc, Freezer):
     def do_svcs_action(self, action, rid, tags):
         err = 0
         if self.options.parallel:
-            from multiprocessing import Process
+            from multiprocessing import Process, set_executable
+	    if rcEnv.sysname == "Windows":
+                set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             p = {}
         for s in self.svcs:
             if self.options.parallel:

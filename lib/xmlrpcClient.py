@@ -62,6 +62,8 @@ try:
     else:
         from multiprocessing import Queue, Process
     from Queue import Empty
+    if rcEnv.sysname == 'Windows':
+        multiprocessing.set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
     mp = True
 except:
     mp = False
