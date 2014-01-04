@@ -54,6 +54,8 @@ class Options(object):
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
+        self.waitlock = 60
+        self.parallel = False
         os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
@@ -1429,6 +1431,44 @@ class Node(Svc, Freezer):
             os.symlink(x, b)
         except:
             pass
+
+    def do_svcs_action(self, action, rid, tags):
+        err = 0
+        if self.options.parallel:
+            from multiprocessing import Process
+            p = {}
+        for s in self.svcs:
+            if self.options.parallel:
+                d = {
+                  'action': action,
+                  'rid': rid,
+                  'tags': tags,
+                  'waitlock': self.options.waitlock
+                }
+                p[s.svcname] = Process(target=self.service_action_worker,
+                                       name='worker_'+s.svcname,
+                                       args=[s],
+                                       kwargs=d)
+                p[s.svcname].start()
+            else:
+                try:
+                    err += s.action(action, rid=rid, tags=tags, waitlock=self.options.waitlock)
+                except s.exMonitorAction:
+                    s.cluster = True
+                    s.action('toc')
+                    s.action(s.monitor_action)
+
+        if self.options.parallel:
+            for svcname in p:
+                p[svcname].join()
+                r = p[svcname].exitcode
+                if r > 0:
+                   # r is negative when p[svcname] is killed by signal.
+                   # in this case, we don't want to decrement the err counter.
+                   err += r
+
+        return err
+
 
 
 if __name__ == "__main__" :

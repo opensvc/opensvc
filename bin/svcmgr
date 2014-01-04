@@ -303,10 +303,6 @@ if options.parm_tags is not None:
 else:
    tags = set([])
 
-if options.parallel:
-    from multiprocessing import Process
-    p = {}
-
 if action in ['create', 'update']:
     r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
     if options.provision:
@@ -323,7 +319,8 @@ elif action in ['disable', 'enable', 'delete']:
     r = getattr(svcBuilder, action)(svcnames, rid)
     _exit(r)
 
-err = 0
+node.options.parallel = options.parallel
+node.options.waitlock = options.parm_waitlock
 
 for s in node.svcs:
     s.options = options
@@ -337,29 +334,8 @@ for s in node.svcs:
     else:
         s.cluster = options.cluster
     s.destination_node = options.parm_destination_node
-    if options.parallel:
-        d = {'action':action, 'rid':rid, 'tags':tags, 'waitlock':options.parm_waitlock}
-        p[s.svcname] = Process(target=node.service_action_worker,
-                               name='worker_'+s.svcname,
-                               args=[s],
-                               kwargs=d)
-        p[s.svcname].start()
-    else:
-        try:
-            err += s.action(action, rid=rid, tags=tags, waitlock=options.parm_waitlock)
-        except s.exMonitorAction:
-            s.cluster = True
-            s.action('toc')
-            s.action(s.monitor_action)
 
-if options.parallel:
-    for svcname in p:
-        p[svcname].join()
-        r = p[svcname].exitcode
-        if r > 0:
-           # r is negative when p[svcname] is killed by signal.
-           # in this case, we don't want to decrement the err counter.
-           err += r
+err = node.do_svcs_action(action, rid, tags)
 
 try:
     import logging
