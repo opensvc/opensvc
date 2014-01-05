@@ -79,7 +79,7 @@ class Resource(object):
             import datetime
             now = str(datetime.datetime.now()).replace(' ', '-')
             f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
-                                            prefix='exc-'+now+'-')
+                                            prefix='exc-')
             f.close()
             f = open(f.name, 'w')
             traceback.print_exc(file=f)
@@ -369,6 +369,11 @@ class ResourceSet(Resource):
             # verify we can actually do parallel processing, fallback to serialized
             try:
                 from multiprocessing import Process
+                if rcEnv.sysname == "Windows":
+                    import sys
+                    import os
+                    from multiprocessing import set_executable
+                    set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             except:
                 parallel = False
 
