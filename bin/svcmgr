@@ -83,6 +83,11 @@ def _install_service(svcname, src_env):
     if not os.path.exists(d):
         os.makedirs(d)
 
+    import platform
+    sysname, nodename, x, x, machine, x = platform.uname()
+    if sysname == 'Windows':
+        return
+
     # install .d
     ld = os.path.join(pathetc, svcname+'.d')
     if not os.path.exists(ld):
