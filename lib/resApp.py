@@ -29,6 +29,8 @@ import rcStatus
 import rcExceptions as ex
 
 try:
+    if rcEnv.sysname == "Windows":
+        raise
     from multiprocessing import Process, Queue
     mp = True
 except:
@@ -242,7 +244,7 @@ class Apps(Res.Resource):
 
         try:
             if not self.start_checks():
-                sys.exit(1)
+                return
         except ex.excNotAvailable:
             return
         if self.svc.containerize:
