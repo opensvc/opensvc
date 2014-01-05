@@ -1,11 +1,16 @@
 #!/opt/opensvc/bin/python
 
 import os
+from rcGlobalEnv import rcEnv
 
 try:
     from multiprocessing import Queue, Process
     from Queue import Empty
     mp = True
+    if rcEnv.sysname == "Windows":
+        import sys
+        from multiprocessing import set_executable
+        set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 except:
     mp = False
 
