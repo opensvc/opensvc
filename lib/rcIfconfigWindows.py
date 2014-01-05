@@ -22,8 +22,10 @@ import rcIfconfig
 import wmi
 
 class ifconfig(rcIfconfig.ifconfig):
-    def parse(self, intf):
-        i = rcIfconfig.interface(intf.Caption)
+    def parse(self, intf, intf_cf):
+	if intf_cf.IPAddress is None:
+	    return
+        i = rcIfconfig.interface(intf.NetConnectionID)
         self.intf.append(i)
 
         # defaults
@@ -31,28 +33,31 @@ class ifconfig(rcIfconfig.ifconfig):
         i.scope = ''
         i.bcast = ''
         i.mask = []
-        i.mtu = intf.MTU
+        i.mtu = intf_cf.MTU
         i.ipaddr = []
         i.ip6addr = []
         i.ip6mask = []
-        i.hwaddr = intf.MACAddress
+        i.hwaddr = intf_cf.MACAddress
         i.flag_up = False
         i.flag_broadcast = False
         i.flag_running = False
         i.flag_multicast = False
         i.flag_loopback = False
 
-        for idx, ip in enumerate(intf.IPAddress):
+        for idx, ip in enumerate(intf_cf.IPAddress):
 	    if ":" in ip:
 	        i.ip6addr.append(ip)
-	        i.ip6mask.append(intf.IPsubnet[idx])
+	        i.ip6mask.append(intf_cf.IPsubnet[idx])
 	    else:
 	        i.ipaddr.append(ip)
-	        i.mask.append(intf.IPsubnet[idx])
+	        i.mask.append(intf_cf.IPsubnet[idx])
 
     def __init__(self):
         self.wmi = wmi.WMI()
         self.intf = []
-        for i in self.wmi.Win32_NetworkAdapterConfiguration(IPEnabled=1):
-            self.parse(i)
+        for n, nc in zip(self.wmi.Win32_NetworkAdapter(), self.wmi.Win32_NetworkAdapterConfiguration()):
+            self.parse(n, nc)
 
+if __name__ == "__main__" :
+    o = ifconfig()
+    print(o)
