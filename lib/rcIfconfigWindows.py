@@ -38,7 +38,7 @@ class ifconfig(rcIfconfig.ifconfig):
         i.ip6addr = []
         i.ip6mask = []
         i.hwaddr = intf_cf.MACAddress
-        i.flag_up = False
+        i.flag_up = intf.NetEnabled
         i.flag_broadcast = False
         i.flag_running = False
         i.flag_multicast = False
