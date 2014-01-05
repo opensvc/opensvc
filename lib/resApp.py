@@ -39,13 +39,19 @@ except:
 class Apps(Res.Resource):
     prefix = []
 
-    def __init__(self, runmethod=[], optional=False, disabled=False,
+    def __init__(self, dir=None, optional=False, disabled=False,
                  tags=set([]), monitor=False):
         Res.Resource.__init__(self, rid="app", type="app",
                               optional=optional, disabled=disabled, tags=tags,
                               monitor=monitor) 
-        self.prefix = runmethod
         self.label = "app"
+        self.dir = dir
+
+    def on_add(self):
+        if self.dir is None:
+            self.initd = self.svc.initd
+        else:
+            self.initd = self.dir
 
     def set_perms(self, rc):
         s = os.stat(rc)
@@ -57,41 +63,41 @@ class Apps(Res.Resource):
             self.vcall(self.prefix+['chmod', '+x', rc])
 
     def stop_checks(self):
-        if not os.path.exists(self.svc.initd):
+        if not os.path.exists(self.initd):
             self.log.info("%s is not present, perhaps already stopped"
-                            %self.svc.initd)
+                            %self.initd)
             return True
-        elif not os.path.islink(self.svc.initd):
-            self.log.error("%s is not a link"%self.svc.initd)
+        elif self.dir is None and not os.path.islink(self.initd):
+            self.log.error("%s is not a link"%self.initd)
             return False
         return True
 
     def info_checks(self):
-        if not os.path.exists(self.svc.initd):
+        if not os.path.exists(self.initd):
             return False
         return True
 
     def start_checks(self):
-        if not os.path.exists(self.svc.initd):
-            self.log.error("%s is not present"%self.svc.initd)
+        if not os.path.exists(self.initd):
+            self.log.error("%s is not present"%self.initd)
             return False
-        elif not os.path.islink(self.svc.initd):
-            self.log.error("%s is not a link"%self.svc.initd)
+        elif self.dir is None and not os.path.islink(self.initd):
+            self.log.error("%s is not a link"%self.initd)
             return False
         return True
 
     def startstandby_checks(self):
-        if not os.path.islink(self.svc.initd):
-            self.log.error("%s is not a link"%self.svc.initd)
+        if not os.path.islink(self.initd):
+            self.log.error("%s is not a link"%self.initd)
             return False
-        elif not os.path.exists(self.svc.initd):
-            self.log.info("%s is not present, no apps to start for standby"%self.svc.initd)
+        elif self.dir is None and not os.path.exists(self.initd):
+            self.log.info("%s is not present, no apps to start for standby"%self.initd)
             return True
         return True
 
     def status_checks(self, verbose=False):
-        if not os.path.exists(self.svc.initd):
-            if verbose: self.status_log("%s does not exist"%self.svc.initd)
+        if not os.path.exists(self.initd):
+            if verbose: self.status_log("%s does not exist"%self.initd)
             return False
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk.scsireserv", "hb"]))
         if str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
@@ -153,7 +159,7 @@ class Apps(Res.Resource):
            return 1
 
     def sorted_app_list(self, pattern):
-        return sorted(glob.glob(os.path.join(self.svc.initd, pattern)))
+        return sorted(glob.glob(os.path.join(self.initd, pattern)))
 
     def _status(self, verbose=False):
         """Execute each startup script (C* files). Log the return code but

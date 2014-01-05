@@ -1900,6 +1900,12 @@ def add_apps(svc, conf):
     kwargs = {}
 
     s = 'app'
+
+    try:
+        kwargs['dir'] = conf_get_string_scope(svc, conf, s, 'dir')
+    except ex.OptNotFound:
+        pass
+
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
