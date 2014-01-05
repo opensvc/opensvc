@@ -23,10 +23,10 @@ from rcGlobalEnv import *
 class interface:
     def __str__(self):
         a = ['ifconfig %s:'%self.name]
-        a += [' link_encap = ' + self.link_encap]
+        a += [' link_encap = ' + str(self.link_encap)]
         a += [' scope = ' + str(self.scope)]
         a += [' bcast = ' + str(self.bcast)]
-        a += [' mtu = ' + self.mtu]
+        a += [' mtu = ' + str(self.mtu)]
         a += [' ipaddr = ' + str(self.ipaddr)]
         a += [' mask = ' + str(self.mask)]
         a += [' ip6addr = ' + str(self.ip6addr)]
@@ -85,8 +85,10 @@ class ifconfig(object):
         return None
 
     def __str__(self):
+	s = ""
         for intf in self.intf:
-            print(intf)
+            s += str(intf)
+	return s
 
     def __init__(self):
         self.intf = []
