@@ -21,6 +21,11 @@ import logging
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
+if os.name == 'nt':
+    close_fds = False
+else:
+    close_fds = True
+
 def ximport(base):
     mod = base + rcEnv.sysname
     try:
@@ -96,10 +101,6 @@ def justcall(argv=['/bin/false']):
     """
     if which(argv[0]) is None:
         return ("", "", 1)
-    if os.name == 'nt':
-        close_fds = False
-    else:
-        close_fds = True
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     stdout, stderr = process.communicate(input=None)
     if sys.version_info[0] < 3:
@@ -158,7 +159,7 @@ def call(argv=['/bin/false'],
             log.debug("caching for '%s' explicitely disabled"%cmd)
         elif cmd not in rcEnv.call_cache:
             log.debug("cache miss for '%s'"%cmd)
-        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=True)
+        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
         buff = process.communicate()
         if sys.version_info[0] >= 3:
             buff = tuple(map(lambda x: str(x, "ascii"), buff))
@@ -206,7 +207,7 @@ def qcall(argv=['/bin/false']) :
     """qcall Launch Popen it args disgarding output and stderr"""
     if not argv:
         return (0, '')
-    process = Popen(argv, stdout=open('/dev/null'), stderr=open('/dev/null'), close_fds=True)
+    process = Popen(argv, stdout=None, stderr=None, close_fds=close_fds)
     process.wait()
     return process.returncode
 
