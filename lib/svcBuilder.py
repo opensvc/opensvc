@@ -131,10 +131,12 @@ def svcmode_mod_name(svcmode=''):
         return ('svcVcs', 'SvcVcs')
     raise ex.excError("unknown service mode: %s"%svcmode)
 
-def get_tags(conf, section):
-    if conf.has_option(section, 'tags'):
-        return set(conf.get(section, "tags").split())
-    return set([])
+def get_tags(svc, conf, section):
+    try:
+        s = conf_get_string_scope(svc, conf, section, 'tags')
+    except ex.OptNotFound:
+        s = ""
+    return set(s.split())
 
 def get_optional(conf, section, svc):
     if not conf.has_section(section):
@@ -307,9 +309,9 @@ def add_resources(restype, svc, conf):
     for s in conf.sections():
         if restype != 'app' and s != restype and re.match(restype+'#[0-9]', s, re.I) is None:
             continue
-        if svc.encap and 'encap' not in get_tags(conf, s):
+        if svc.encap and 'encap' not in get_tags(svc, conf, s):
             continue
-        if not svc.encap and 'encap' in get_tags(conf, s):
+        if not svc.encap and 'encap' in get_tags(svc, conf, s):
             svc.has_encap_resources = True
             continue
         globals()['add_'+restype](svc, conf, s)
@@ -363,7 +365,7 @@ def add_ip(svc, conf, s):
         ip = __import__('resIp'+rcEnv.sysname)
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -385,7 +387,7 @@ def add_drbd(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -409,7 +411,7 @@ def add_vdisk(svc, conf, s):
 
     kwargs['devpath'] = devpath
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -459,7 +461,7 @@ def add_stonith(svc, conf, s):
             return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -494,7 +496,7 @@ def add_hb(svc, conf, s):
         pass
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -527,7 +529,7 @@ def add_loop(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -626,7 +628,7 @@ def add_vg(svc, conf, s):
 
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
@@ -667,7 +669,7 @@ def add_vmdg(svc, conf, s):
         return
 
     kwargs['rid'] = 'vmdg'
-    kwargs['tags'] = get_tags(conf, 'vmdg')
+    kwargs['tags'] = get_tags(svc, conf, 'vmdg')
     kwargs['name'] = 'vmdg'
     kwargs['disabled'] = get_disabled(conf, 'vmdg', svc)
     kwargs['optional'] = get_optional(conf, 'vmdg', svc)
@@ -698,7 +700,7 @@ def add_pool(svc, conf, s):
     pool = __import__('resVgZfs')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -748,7 +750,7 @@ def add_share_nfs(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -821,7 +823,7 @@ def add_fs(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -853,7 +855,7 @@ def add_containers_esx(svc, conf, s):
     m = __import__('resContainerEsx')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -880,7 +882,7 @@ def add_containers_hpvm(svc, conf, s):
     m = __import__('resContainerHpVm')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -907,7 +909,7 @@ def add_containers_ldom(svc, conf, s):
     m = __import__('resContainerLdom')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -934,7 +936,7 @@ def add_containers_vbox(svc, conf, s):
     m = __import__('resContainerVbox')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -961,7 +963,7 @@ def add_containers_xen(svc, conf, s):
     m = __import__('resContainerXen')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -988,7 +990,7 @@ def add_containers_zone(svc, conf, s):
     m = __import__('resContainerZone')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1029,7 +1031,7 @@ def add_containers_vcloud(svc, conf, s):
     m = __import__('resContainerVcloud')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1079,7 +1081,7 @@ def add_containers_openstack(svc, conf, s):
     m = __import__('resContainerOpenstack')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1106,7 +1108,7 @@ def add_containers_vz(svc, conf, s):
     m = __import__('resContainerVz')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1134,7 +1136,7 @@ def add_containers_kvm(svc, conf, s):
     m = __import__('resContainerKvm')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1161,7 +1163,7 @@ def add_containers_srp(svc, conf, s):
     m = __import__('resContainerSrp')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1193,7 +1195,7 @@ def add_containers_lxc(svc, conf, s):
     m = __import__('resContainerLxc')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1227,7 +1229,7 @@ def add_containers_ovm(svc, conf, s):
     m = __import__('resContainerOvm')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1266,7 +1268,7 @@ def add_containers_jail(svc, conf, s):
     m = __import__('resContainerJail')
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
@@ -1364,9 +1366,9 @@ def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
         if re.match(restype+'#i[0-9]', s, re.I) is None and \
            re.match(restype+'#[0-9]', s, re.I) is None:
             continue
-        if svc.encap and 'encap' not in get_tags(conf, s):
+        if svc.encap and 'encap' not in get_tags(svc, conf, s):
             continue
-        if not svc.encap and 'encap' in get_tags(conf, s):
+        if not svc.encap and 'encap' in get_tags(svc, conf, s):
             svc.has_encap_resources = True
             continue
         try:
@@ -1421,7 +1423,7 @@ def add_syncs_btrfs(svc, conf, s):
         pass
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1457,7 +1459,7 @@ def add_syncs_zfs(svc, conf, s):
         pass
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1502,7 +1504,7 @@ def add_syncs_dds(svc, conf, s):
         pass
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1539,7 +1541,7 @@ def add_syncs_dcsckpt(svc, conf, s):
     kwargs['pairs'] = pairs
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1573,7 +1575,7 @@ def add_syncs_dcssnap(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1610,7 +1612,7 @@ def add_syncs_evasnap(svc, conf, s):
         kwargs['pairs'] = pairs
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1639,7 +1641,7 @@ def add_syncs_symsrdfs(svc, conf, s):
 
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1673,7 +1675,7 @@ def add_syncs_symclone(svc, conf, s):
         pass
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1713,7 +1715,7 @@ def add_syncs_ibmdssnap(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1767,7 +1769,7 @@ def add_syncs_nexenta(svc, conf, s):
 
     kwargs['filers'] = filers
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1814,7 +1816,7 @@ def add_syncs_netapp(svc, conf, s):
 
     kwargs['filers'] = filers
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
@@ -1886,7 +1888,7 @@ def add_syncs_rsync(svc, conf, s):
     if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
     kwargs['target'] = targethash
     kwargs['rid'] = s
-    kwargs['tags'] = get_tags(conf, s)
+    kwargs['tags'] = get_tags(svc, conf, s)
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs.update(get_sync_args(conf, s, svc))
