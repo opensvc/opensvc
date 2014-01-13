@@ -51,6 +51,8 @@ function prepare_chroot {
 	EXCL="$EXCL --exclude='etc/.*'"
 	EXCL="$EXCL --exclude='tmp/*'"
 	EXCL="$EXCL --exclude=var/host_mode"
+	EXCL="$EXCL --exclude=var/last_comp_check*"
+	EXCL="$EXCL --exclude=var/*push"
 	EXCL="$EXCL --exclude='var/lock/*'"
 	EXCL="$EXCL --exclude='var/cache/*'"
 	EXCL="$EXCL --exclude=lib/rcLocalEnv.py"
