@@ -48,6 +48,7 @@ class Options(object):
         self.force = False
         self.ignore_affinity = False
         self.debug = False
+        self.disable_rollback = False
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
