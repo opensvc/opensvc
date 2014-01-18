@@ -1101,7 +1101,10 @@ class Svc(Resource, Freezer):
             if self.options.slaves or \
                self.options.slave is not None or \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
-                fn(self)
+                try:
+                    fn(self)
+                except Exception as e:
+                    raise ex.excError(str(e))
         return _fn
 
     def _master_action(fn):

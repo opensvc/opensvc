@@ -40,11 +40,11 @@ class Container(Res.Resource):
         self.name = name
         self.label = name
         self.always_on = always_on
+        self.guestos = guestos
         if guestos is not None:
             self.guestos = guestos.lower()
-        else:
-            self.guestos = guestos
-        self.runmethod = rcEnv.rsh.split() + [name]
+        if self.guestos != "windows":
+            self.runmethod = rcEnv.rsh.split() + [name]
         self.booted = False
 
     def vm_hostname(self):
