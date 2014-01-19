@@ -11,6 +11,7 @@ and optionnaly its owner's uid and/or username.
 import os
 import sys
 import json
+import re
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -39,7 +40,6 @@ class CompProcess(object):
         self.validate_process()
 
         if len(self.process) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         self.load_ps()
@@ -81,25 +81,34 @@ class CompProcess(object):
             return RET_ERR
         return RET_OK
 
+    def get_keys(self, comm):
+        found = []
+        for key in self.ps:
+            if re.match(comm, key) is not None:
+                found.append(key)
+        return found
+
     def check_present(self, comm, verbose):
-        if comm not in self.ps:
-           if verbose:
-               print >>sys.stderr, 'process', comm, 'is not started ... should be'
-           return RET_ERR
+        found = self.get_keys(comm)
+        if len(found) == 0:
+            if verbose:
+                print >>sys.stderr, 'process', comm, 'is not started ... should be'
+            return RET_ERR
         else:
-           if verbose:
-               print 'process', comm, 'is started ... on target'
+            if verbose:
+                print 'process', comm, 'is started ... on target'
         return RET_OK
 
     def check_not_present(self, comm, verbose):
-        if comm not in self.ps:
+        found = self.get_keys(comm)
+        if len(found) == 0:
            if verbose:
                print 'process', comm, 'is not started ... on target'
-           return RET_ERR
+           return RET_OK
         else:
            if verbose:
                print >>sys.stderr, 'process', comm, 'is started ... shoud be'
-        return RET_OK
+        return RET_ERR
 
     def check_process(self, process, verbose=True):
         r = RET_OK
@@ -118,10 +127,12 @@ class CompProcess(object):
 
     def check_uid(self, comm, uid, verbose):
         found = False
-        for _pid, _uid, _user in self.ps[comm]:
-            if uid == _uid:
-                found = True
-                continue
+        keys = self.get_keys(comm)
+        for key in keys:
+            for _pid, _uid, _user in self.ps[key]:
+                if uid == _uid:
+                    found = True
+                    continue
         if found:
             if verbose:
                 print 'process', comm, 'runs with uid', _uid, '... on target'
@@ -133,10 +144,12 @@ class CompProcess(object):
 
     def check_user(self, comm, user, verbose):
         found = False
-        for _pid, _uid, _user in self.ps[comm]:
-            if user == _user:
-                found = True
-                continue
+        keys = self.get_keys(comm)
+        for key in keys:
+            for _pid, _uid, _user in self.ps[key]:
+                if user == _user:
+                    found = True
+                    continue
         if found:
             if verbose:
                 print 'process', comm, 'runs with user', _user, '... on target'
