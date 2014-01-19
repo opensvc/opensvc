@@ -31,15 +31,17 @@ class CompRc(object):
         self.validate_svcs()
 
         if len(self.services) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         if self.sysname not in ['Linux', 'HP-UX']:
             print >>sys.stderr, __file__, 'module not supported on', self.sysname
             raise NotApplicable()
 
-        vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
-        if vendor in ['CentOS', 'Redhat', 'Red Hat']:
+        vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
+        release = os.environ.get('OSVC_COMP_NODES_OS_RELEASE', 'unknown')
+        if vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
+           (vendor == 'Oracle' and self.sysname == 'Linux'):
+
             import chkconfig
             self.o = chkconfig.Chkconfig()
         elif vendor in ['HP']:
