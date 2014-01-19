@@ -35,7 +35,6 @@ class CompAuthKeys(object):
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to authkey list'
 
         if len(self.authkeys) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         for ak in self.authkeys:
@@ -110,7 +109,7 @@ class CompAuthKeys(object):
         if p is None:
             return None
         p = p.replace('%u', user)
-        p = p.replace('%H', os.path.expanduser(user))
+        p = p.replace('%h', os.path.expanduser('~'+user))
         if not p.startswith('/'):
             p = os.path.join(os.path.expanduser('~'+user), p)
         return p
