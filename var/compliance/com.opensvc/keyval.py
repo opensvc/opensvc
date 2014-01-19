@@ -30,67 +30,106 @@ class KeyVal(object):
                 print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.keys) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
+        self.target_n_key = {}
+        for key in self.keys:
+             if 'op' in key and 'key' in key and key['op'] not in ("unset", "reset"):
+                 if key['key'] not in self.target_n_key:
+                     self.target_n_key[key['key']] = 1
+                 else:
+                     self.target_n_key[key['key']] += 1
         self.conf = Parser(path)
 
 
     def fixable(self):
         return RET_OK
 
-    def _check_key(self, keyname, target, op, value, verbose=True):
+    def _check_key(self, keyname, target, op, value, instance=0, verbose=True):
         r = RET_OK
-        if op == "unset":
+        if op == "reset":
             if value is not None:
-                if verbose:
-                    print >>sys.stderr, "%s is set, should not be"%keyname
-                return RET_ERR
+                current_n_key = len(value)
+                target_n_key = self.target_n_key[keyname] if keyname in self.target_n_key else 0
+                if current_n_key > target_n_key:
+                    if verbose:
+                        print >>sys.stderr, "%s is set %d times, should be set %d times"%(keyname, current_n_key, target_n_key)
+                    return RET_ERR
+                else:
+                    if verbose:
+                        print "%s is set %d times, on target"%(keyname, current_n_key)
+                    return RET_OK
             else:
-                if verbose:
-                    print "%s is not set, on target"%keyname
+                return RET_OK
+        elif op == "unset":
+            if value is not None:
+                if target.strip() == "":
+                    if verbose:
+                        print >>sys.stderr, "%s is set, should not be"%keyname
+                    return RET_ERR
+                target_found = False
+                for i, val in enumerate(value):
+                    if target == val:
+                        target_found = True
+                        break
+
+                if target_found:
+                    if verbose:
+                        print >>sys.stderr, "%s[%d] is set to value %s, should not be"%(keyname, i, target)
+                    return RET_ERR
+                else:
+                    if verbose:
+                        print "%s is not set to value %s, on target"%(keyname, target)
+                    return RET_OK
+            else:
+                if target.strip() != "":
+                    if verbose:
+                        print "%s=%s is not set, on target"%(keyname, target)
+                else:
+                    if verbose:
+                        print "%s is not set, on target"%keyname
                 return RET_OK
 
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s is not set, target: %s"%(keyname, str(target))
+                print >>sys.stderr, "%s[%d] is not set, target: %s"%(keyname, instance, str(target))
             return RET_ERR
 
         if type(value) == list:
             if str(target) in value:
                 if verbose:
-                    print "%s=%s on target"%(keyname, str(value))
+                    print "%s[%d]=%s on target"%(keyname, instance, str(value))
                 return RET_OK
             else:
                 if verbose:
-                    print >>sys.stderr, "%s=%s is not set"%(keyname, str(target))
+                    print >>sys.stderr, "%s[%d]=%s is not set"%(keyname, instance, str(target))
                 return RET_ERR
 
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                    print >>sys.stderr, "%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target))
                 r |= RET_ERR
             elif verbose:
                 print "%s=%s on target"%(keyname, str(value))
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                    print >>sys.stderr, "%s[%d]=%s value must be integer"%(keyname, instance, str(value))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                    print >>sys.stderr, "%s[%d]=%s target: <= %s"%(keyname, instance, str(value), str(target))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                    print >>sys.stderr, "%s[%d]=%s target: >= %s"%(keyname, instance, str(value), str(target))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                print "%s[%d]=%s on target"%(keyname, instance, str(value))
         return r
 
-    def check_key(self, key, verbose=True):
+    def check_key(self, key, instance=0, verbose=True):
         if 'key' not in key:
             if verbose:
                 print >>sys.stderr, "'key' not set in rule %s"%str(key)
@@ -105,36 +144,63 @@ class KeyVal(object):
             op = key['op']
         target = key['value']
 
-        if op not in ('>=', '<=', '=', 'unset'):
+        allowed_ops = ('>=', '<=', '=', 'unset', 'reset')
+        if op not in allowed_ops:
             if verbose:
-                print >>sys.stderr, "'op' must be either '=', '>=' or '<=': %s"%str(key)
+                print >>sys.stderr, key['key'], "'op' value must be one of", ", ".join(allowed_ops)
             return RET_NA
 
         keyname = key['key']
-        value = self.conf.get(keyname)
+        value = self.conf.get(keyname, instance=instance)
 
-        r = self._check_key(keyname, target, op, value, verbose=verbose)
+        r = self._check_key(keyname, target, op, value, instance=instance, verbose=verbose)
 
         return r
 
-    def fix_key(self, key):
+    def fix_key(self, key, instance=0):
         if key['op'] == "unset":
             print "%s unset"%key['key']
-            self.conf.unset(key['key'])
+            self.conf.unset(key['key'], key['value'])
+        elif key['op'] == "reset":
+            target_n_key = self.target_n_key[key['key']] if key['key'] in self.target_n_key else 0
+            print "%s truncated to %d definitions"%(key['key'], target_n_key)
+            self.conf.truncate(key['key'], target_n_key)
         else:
             print "%s=%s set"%(key['key'], key['value'])
-            self.conf.set(key['key'], key['value'])
+            self.conf.set(key['key'], key['value'], instance=instance)
 
     def check(self):
         r = 0
+        key_instance = {}
         for key in self.keys:
-            r |= self.check_key(key, verbose=True)
+            if 'key' not in key or 'op' not in key:
+                continue
+            if key['op'] in ('reset', 'unset'):
+                instance = None
+            else:
+                if key['key'] not in key_instance:
+                    key_instance[key['key']] = 0
+                else:
+                    key_instance[key['key']] += 1
+                instance = key_instance[key['key']]
+            r |= self.check_key(key, instance=instance, verbose=True)
         return r
 
     def fix(self):
+        key_instance = {}
         for key in self.keys:
-            if self.check_key(key, verbose=False) == RET_ERR:
-                self.fix_key(key)
+            if 'key' not in key or 'op' not in key:
+                continue
+            if key['op'] in ('reset', 'unset'):
+                instance = None
+            else:
+                if key['key'] not in key_instance:
+                    key_instance[key['key']] = 0
+                else:
+                    key_instance[key['key']] += 1
+                instance = key_instance[key['key']]
+            if self.check_key(key, instance=instance, verbose=False) == RET_ERR:
+                self.fix_key(key, instance=instance)
         if not self.conf.changed:
             return
         try:
