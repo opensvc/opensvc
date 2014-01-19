@@ -35,7 +35,7 @@ class CompGroupMembership(object):
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
 
@@ -47,7 +47,6 @@ class CompGroupMembership(object):
                 print 'group syntax error on var[', k, '] = ', os.environ[k]
 
         if len(self.groups) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable
 
     def member_of(self, user, refresh=False):
