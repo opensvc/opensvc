@@ -25,7 +25,6 @@ class NodeConf(object):
                 print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.keys) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
     def fixable(self):
