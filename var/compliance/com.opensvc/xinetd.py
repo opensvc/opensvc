@@ -34,7 +34,6 @@ class Xinetd(object):
                 print >>sys.stderr, 'xinetd service syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.svcs) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
         self.cf_d = {}
         self.known_props = (
