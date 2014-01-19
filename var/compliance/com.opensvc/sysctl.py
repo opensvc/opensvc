@@ -37,7 +37,6 @@ class Sysctl(object):
                 print >>sys.stderr, 'sysctl key syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.keys) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         self.convert_keys()
@@ -204,7 +203,7 @@ class Sysctl(object):
         return r
 
     def reload_sysctl(self):
-        cmd = ['sysctl', '-p']
+        cmd = ['sysctl', '-e', '-p']
         print "sysctl:", " ".join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         p.communicate()
