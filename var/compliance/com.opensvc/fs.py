@@ -58,7 +58,6 @@ class CompFs(object):
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.fs) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         self.fs.sort(lambda x, y: cmp(x['mnt'], y['mnt']))
@@ -445,10 +444,16 @@ class CompFs(object):
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_status']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        for line in out.split('\n'):
+            if line.startswith('{'):
+                out = line
+                break
         try:
             # json_status returns 0, even when it outs no data
             self.res_status = json.loads(out)['resources']
-        except:
+        except Exception as e:
+            print e
+            print out
             self.rids = []
             self.osvc_service = False
             return self.rids
@@ -523,8 +528,15 @@ class CompFs(object):
     def fix_fs_svc(self, fs):
         if not self.osvc_service or self.check_fs_svc(fs, False) == 0:
             return 0
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'get', '--param', 'DEFAULT.encapnodes']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if self.nodename in out.strip().split():
+            tags = "encap"
+        else:
+            tags = ''
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'update', '--resource',
-               '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mnt_opt": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'])]
+               '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mnt_opt": "%s", "tags": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'], tags)]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -557,9 +569,13 @@ class CompFs(object):
             print >>sys.stderr, "fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname)
             return 1
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'mount', '--cluster']
-        print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        if p.returncode != 0 and "unsupported action" in err:
+            cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'startfs', '--cluster']
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+        print ' '.join(cmd)
         if p.returncode != 0:
             print >>sys.stderr, "unable to mount %s"%fs['mnt']
             return 1
