@@ -39,15 +39,16 @@ class CompPackages(object):
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to package list'
 
         if len(self.packages) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
-        vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
+        vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
+        release = os.environ.get('OSVC_COMP_NODES_OS_RELEASE', 'unknown')
         if vendor in ['Debian', 'Ubuntu']:
             self.get_installed_packages = self.deb_get_installed_packages
             self.pkg_add = self.apt_fix_pkg
             self.pkg_del = self.apt_del_pkg
-        elif vendor in ['CentOS', 'Redhat', 'Red Hat']:
+        elif vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
+             (vendor == 'Oracle' and self.sysname == 'Linux'):
             self.get_installed_packages = self.rpm_get_installed_packages
             self.pkg_add = self.yum_fix_pkg
             self.pkg_del = self.yum_del_pkg
@@ -94,8 +95,9 @@ class CompPackages(object):
         self.packages = l
 
     def expand_pkgname(self, pkgname, prefix):
-        vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
-        if vendor in ['CentOS', 'Redhat', 'Red Hat']:
+        vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
+        release = os.environ.get('OSVC_COMP_NODES_OS_RELEASE', 'unknown')
+        if vendor in ['CentOS', 'Redhat', 'Red Hat'] or (vendor == 'Oracle' and release.startswith('VM ')):
             return self.yum_expand_pkgname(pkgname, prefix)
         elif vendor in ['IBM']:
             return self.aix_expand_pkgname(pkgname, prefix)
