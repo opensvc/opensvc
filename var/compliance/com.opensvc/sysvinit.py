@@ -33,7 +33,7 @@ class SysVInit(object):
     def get_svcname(self, s):
         _s = os.path.basename(s)
         _svcname = re.sub(r'^[SK][0-9]+', '', _s)
-        _seq = int(re.sub(r'[KS](\d+).+', r'\1', _s))
+        _seq = re.sub(r'[KS](\d+).+', r'\1', _s)
         if _s[0] == 'S':
             _state = 'on'
         elif _s[0] == 'K':
@@ -72,7 +72,7 @@ class SysVInit(object):
         if len(service) == 0:
             SetError("service is empty")
 
-        start_l = "S%d%s"%(seq,service)
+        start_l = "S%s%s"%(seq,service)
         svc_p = "../init.d/"+service
 
         os.chdir(self.base_d+"/rc%s.d"%level)
@@ -96,7 +96,7 @@ class SysVInit(object):
     def deactivate_one(self, service, level, seq):
         if len(service) == 0:
             SetError("service is empty")
-        stop_l = "K%d%s"%(seq,service)
+        stop_l = "K%s%s"%(seq,service)
         svc_p = "../init.d/"+service
 
         os.chdir(self.base_d+"/rc%s.d"%level)
@@ -137,7 +137,7 @@ class SysVInit(object):
         return False
 
     def set_state(self, service, level, state, seq):
-        if service in self.services:
+        if service in self.services and seq in self.services[service]:
             curstates = self.services[service][seq]
 
             if state != "del" and len(curstates) == 1 and curstates[int(level)] == state or \
@@ -171,8 +171,11 @@ class SysVInit(object):
         if len(l) > 1:
             raise DupError()
 
-        curstates = self.services[service][seq]
-        curstate = curstates[int(level)]
+        try:
+            curstates = self.services[service][seq]
+            curstate = curstates[int(level)]
+        except:
+            curstate = "none"
 
         if len(l) == 1 and curstate == "none":
             raise SeqError()
@@ -180,6 +183,9 @@ class SysVInit(object):
 
     def check_state(self, service, levels, state, seq=None, verbose=False):
         r = 0
+        if seq is not None and type(seq) == int:
+            seq = "%02d"%seq
+
         if not self.check_init(service):
             if verbose:
                 print >>sys.stderr, "service %s init script does not exist in %s"%(service, self.init_d)
@@ -221,6 +227,9 @@ class SysVInit(object):
         return r
             
     def fix_state(self, service, levels, state, seq=None):
+        if seq is not None and type(seq) == int:
+            seq = "%02d"%seq
+
         if seq is None and state != "del":
             print >>sys.stderr, "service %s sequence number must be set"%(service)
             return 1
