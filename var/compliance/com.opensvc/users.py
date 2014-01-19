@@ -70,7 +70,7 @@ class CompUser(object):
         else:
             self.initial_passwd = False
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -89,7 +89,6 @@ class CompUser(object):
                 print >>sys.stderr, 'user syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.users) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
         p = re.compile('%%ENV:\w+%%')
@@ -211,6 +210,9 @@ class CompUser(object):
                         continue
                 r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
 
+        if 'check_home' not in props or props['check_home'] == "yes":
+            r |= self.check_home_ownership(user)
+
         if not cap_shadow:
             return r
 
@@ -232,6 +234,7 @@ class CompUser(object):
                         if props[prop] == "x":
                             continue
                     r |= self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop]), verbose=True)
+
         return r
 
     def try_create_user(self, props):
@@ -243,6 +246,34 @@ class CompUser(object):
             return False
         return True
 
+    def get_uid(self, user):
+        import pwd
+        try:
+            info=pwd.getpwnam(user)
+            uid = info[2]
+        except:
+            print >>sys.stderr, "user %s does not exist"%user
+            raise ComplianceError()
+        return uid
+
+    def check_home_ownership(self, user, verbose=True):
+        path = os.path.expanduser("~"+user)
+        tuid = self.get_uid(user)
+        uid = os.stat(path).st_uid
+        if uid != tuid:
+            if verbose: print >>sys.stderr, path, 'uid should be %s but is %s'%(str(tuid), str(uid))
+            return RET_ERR
+        if verbose: print path, 'owner is', user
+        return RET_OK
+
+    def fix_home_ownership(self, user):
+        if self.check_home_ownership(user, verbose=False) == RET_OK:
+            return RET_OK
+        uid = self.get_uid(user)
+        path = os.path.expanduser("~"+user)
+        os.chown(path, uid, -1)
+        return RET_OK
+
     def create_user(self, user, props):
         cmd = ['useradd']
         for item in props:
@@ -250,6 +281,8 @@ class CompUser(object):
             if len(prop) == 0:
                 continue
             cmd = cmd + self.usermod_p[item].split() + [prop]
+            if item == "home" and self.sysname == "HP-UX":
+                cmd.append("-m")
         cmd += [user]
         print list2cmdline(cmd)
         p = Popen(cmd)
@@ -275,6 +308,9 @@ class CompUser(object):
             if prop in props and \
                self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop])) != RET_OK:
                 r |= self.fix_item(user, prop, props[prop])
+
+        if 'check_home' not in props or props['check_home'] == "yes":
+            r |= self.fix_home_ownership(user)
 
         if not cap_shadow:
             return r
