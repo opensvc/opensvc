@@ -119,7 +119,7 @@ class CompFirmware(object):
 
         try:
             cmd = ['dmidecode']
-            p = Popen(cmd, stdout=PIPE)
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
             if p.returncode != 0:
                 raise
@@ -129,7 +129,7 @@ class CompFirmware(object):
                     return
             raise
         except:
-            print >>sys.stderr, 'can not fetch bios version'
+            print 'can not fetch bios version'
             return
 
     def fixable(self):
