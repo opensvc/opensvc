@@ -50,7 +50,6 @@ class CompCron(object):
                        }]
 
         if len(self.ce) == 0:
-            print "no applicable variable found in rulesets"
             raise NotApplicable()
 
 
