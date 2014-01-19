@@ -74,7 +74,7 @@ class Section(object):
 class Conf(object):
     def __init__(self):
         self.blacklist = Blacklist("blacklist")
-        self.blacklist_exceptions = Blacklist("blacklist_exception")
+        self.blacklist_exceptions = Blacklist("blacklist_exceptions")
         self.defaults = Section("defaults", indent=0)
         self.devices = []
         self.multipaths = []
@@ -137,6 +137,9 @@ class Conf(object):
         key = re.sub(r'\{([^\}]+)\}\.', '', key)
         l = key.split('.')
         a = l[-1]
+        if len(l) < 2:
+            print >>sys.stderr, "malformed key", key
+            return
         if l[-2] == "device":
             o = self.find_device(l[0], index)
             if o and a in o.attr:
@@ -173,6 +176,9 @@ class Conf(object):
         if not l:
             return
         for device in l:
+            if 'vendor' not in device.attr or \
+               'product' not in device.attr:
+                continue
             if device.attr['vendor'] == vendor and \
                device.attr['product'] == product:
                 return device
@@ -190,10 +196,10 @@ class Conf(object):
 class LinuxMpath(object):
     def __init__(self, prefix='OSVC_COMP_MPATH_'):
         self.prefix = prefix.upper()
+        self.need_restart = False
         self.cf = os.path.join(os.sep, 'etc', 'multipath.conf')
         self.nocf = False
         self.conf = Conf()
-        self.load_file(self.cf)
 
         self.keys = []
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
@@ -203,8 +209,9 @@ class LinuxMpath(object):
                 print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
 
         if len(self.keys) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
+
+        self.load_file(self.cf)
 
     def fixable(self):
         return RET_OK
@@ -216,7 +223,29 @@ class LinuxMpath(object):
             return
         with open(p, 'r') as f:
             buff = f.read()
+        buff = self.strip_comments(buff)
         self._load_file(buff, sections_tree)
+
+    def strip_comments(self, buff):
+        lines = buff.split('\n')
+        l = []
+        for line in lines:
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            discard = False
+            for c in comment_chars:
+                if line[0] == c:
+                    discard = True
+                    break
+                try:
+                    i = line.index(c)
+                    line = line[:i]
+                except ValueError:
+                    pass
+            if not discard and len(line) > 0:
+                l.append(line)
+        return "\n".join(l)
 
     def _load_file(self, buff, sections, chain=[]):
         for section, subsections in sections.items():
@@ -234,15 +263,6 @@ class LinuxMpath(object):
         keywords = {}
         keyword = None
         for line in buff.split('\n'):
-            line = line.strip()
-            for c in comment_chars:
-                if line.startswith(c):
-                    continue
-                try:
-                    i = line.index(c)
-                    line = line[:i]
-                except ValueError:
-                    pass
             if len(line) == 0:
                 continue
             keyword = line.split()[0]
@@ -270,7 +290,7 @@ class LinuxMpath(object):
             s = Section("device")
             s.attr = keywords
             self.conf.blacklist.devices.append(s)
-        elif chain[-1] == 'device' and chain[0] == 'blacklist exception':
+        elif chain[-1] == 'device' and chain[0] == 'blacklist exceptions':
             s = Section("device")
             s.attr = keywords
             self.conf.blacklist_exceptions.devices.append(s)
@@ -294,7 +314,10 @@ class LinuxMpath(object):
         except ValueError:
             return
         buff = buff[start:]
-        buff = buff[buff.index('{')+1:]
+        try:
+            buff = buff[buff.index('{')+1:]
+        except ValueError:
+            return
         depth = 1
         for i, c in enumerate(buff):
             if c == '{':
@@ -392,8 +415,10 @@ class LinuxMpath(object):
         for key in self.keys:
             if self.check_key(key, verbose=False) == RET_ERR:
                 self.fix_key(key)
+
         if not self.conf.changed:
             return
+
         if not self.nocf:
             import datetime
             backup = self.cf+'.'+str(datetime.datetime.now())
@@ -408,13 +433,27 @@ class LinuxMpath(object):
             with open(self.cf, 'w') as f:
                 f.write(str(self.conf))
             print self.cf, "rewritten"
+            self.need_restart = True
         except:
             print >>sys.stderr, "failed to write %s"%self.cf
             if not self.nocf:
                 shutil.copy(backup, self.cf)
                 print "backup restored"
             return RET_ERR
+
+        self.restart_daemon()
+
         return RET_OK
+
+    def restart_daemon(self):
+        if not self.need_restart:
+            return
+        print "restarting multipath daemon"
+        cmd = ["/etc/init.d/multipathd", "restart"]
+        p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if len(err) > 0:
+            print >>sys.stderr, err
 
 if __name__ == "__main__":
     syntax = """syntax:
