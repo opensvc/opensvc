@@ -1,0 +1,31 @@
+OpenSVC Windows Build survival guide
+------------------------------------
+
+Goal :
+----
+=> Deliver a single .exe installer with everything inside
+=> Executable have to be upgradable
+
+HowTo :
+-----
+=> install wix tools ( http://wixtoolset.org/ - known to work with 3.8 )
+=> install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2 )
+=> check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files)
+=> check that kits/winpython content is OK (expected content is a ready to use python distrib, cleaned winpython for example)
+=> check osvcenv.cmd is setting environment variable OSVCPRJVERSION
+=> edit Makefile and verify/fix paths, validate with nmake.exe /N ( no execution, only macro interpretation )
+=> give a try with nmake.exe
+
+Install :
+-------
+=> Graphical : Copy .exe to target host & double clic on the installer
+=> Silent : Open a windows shell & launch installer with "/S" flag (uppercase)
+
+Tunable Files :
+-------------
+=> osvcvar.cmd
+=> Makefile
+=> wxs/ExcludeList.txt : used to avoid copying temp/log/unwanted files in the final archive
+=> wxs/opensvc.transform.xsl : used to modify xml stream produced by harvesting command heat.exe
+=> wxs/OpenSVCproduct.wxs : Wix config file for OpenSVC msi package
+=> nsis/opensvc.nsi : NSIS config file for EXE Bundle file (VC++ redist & Opensvc)
