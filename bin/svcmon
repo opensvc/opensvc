@@ -21,6 +21,7 @@ import sys
 import os
 import optparse
 import string
+import platform
 
 #
 # add project lib to path
@@ -36,11 +37,16 @@ from rcUtilities import *
 from lock import *
 import node
 
-try:
-    from multiprocessing import Process, Queue, Lock
-    mp = True
-except:
-    mp = False
+sysname, nodename, x, x, machine, x = platform.uname()
+
+if sysname == "Windows":                                                                                                                              
+    mp = False                                                                                                                                        
+else:                                                                                                                                                 
+    try:                                                                                                                                              
+        from multiprocessing import Process, Queue, Lock                                                                                              
+        mp = True                                                                                                                                     
+    except:                                                                                                                                           
+        mp = False                                                                                                                                    
 
 try:
     from version import version
