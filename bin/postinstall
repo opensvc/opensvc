@@ -53,7 +53,7 @@ def _python_path(python_exe):
 
 def install_cron():
     if sysname == 'Windows':
-        return install_cron_windows()
+        return 
     else:
         return install_cron_unix()
 
@@ -96,7 +96,7 @@ def schedcmd(_cmd):
     import subprocess
     subprocess.call([fname])
     os.unlink(fname)
-
+ 
 def install_cron_unix():
     """install opensvc cron jobs
     """
@@ -556,17 +556,16 @@ def install_pythonlink():
         return install_pythonlink_unix()
 
 def install_pythonlink_windows():
-    for cmd in ('nodemgr', 'svcmgr', 'svcmon', 'cron'):
-        l = os.path.join(pathsvc, cmd+'.cmd')
-	cmdpath = os.path.join(pathbin, cmd)
-	if cmd == 'cron':
-	    cmdpath = os.path.join(pathbin, 'cron', 'opensvc')
-	print "create", l
-	content = '@echo off\n"'+sys.executable+'" "'+cmdpath+'" %*'
-        f = open(l, 'w')
-        f.write(content)
-        f.close()
-
+    sys.path.append(pathlib)
+    from rcUtilitiesWindows import get_registry_value
+    installfolder = get_registry_value('HKEY_CURRENT_USER', 'Software\\OpenSVC', 'path')
+    installfolder = installfolder.rstrip('\\')
+    osvcenv = os.path.join(installfolder, 'osvcenv.cmd')
+    content = '@echo off\nset OSVCROOT='+installfolder+'\nset OSVCPYTHONROOT=%OSVCROOT%\python\nset PYTHONPATH=%OSVCROOT%\lib\nset OSVCPYTHONEXEC=%OSVCPYTHONROOT%\python.exe\ncall inpath.cmd OSVCPYTHONROOT'
+    f = open(osvcenv, 'w')
+    f.write(content)
+    f.close()
+		
 def install_pythonlink_unix():
     p = python_path()
     if p is None:

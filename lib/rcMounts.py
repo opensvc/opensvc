@@ -33,6 +33,9 @@ class Mounts:
         """ OS dependent """
         self.mounts = []
 
+    def __iter__(self):
+        return iter(self.mounts)
+
     def match_mount(self):
         """ OS dependent """
         pass
