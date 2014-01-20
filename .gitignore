@@ -10,6 +10,7 @@ tmp/
 bin/python
 lib/version.py
 bin/pkg/release_*
+bin/pkg/winbuilder/wxs/opensvcfiles.wxs
 bin/python
 .hg/
 .hgignore
