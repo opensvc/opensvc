@@ -1277,6 +1277,8 @@ class Node(Svc, Freezer):
 
     def dequeue_actions(self):
         actions = self.collector.call('collector_get_action_queue')
+        if actions is None:
+            return "unable to fetch actions scheduled by the collector"
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
