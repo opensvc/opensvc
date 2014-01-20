@@ -3,6 +3,7 @@
 *.swp
 etc/
 log/
+python/
 var/
 test/
 tmp/
