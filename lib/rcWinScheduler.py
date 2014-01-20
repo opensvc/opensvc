@@ -75,19 +75,18 @@ class OsvcSched(win32serviceutil.ServiceFramework):
     def SvcDoJob(self):
         now = datetime.datetime.now()
         if now > self.next_task10:
-            self.run('task10')
+            self.run_task10()
             self.next_task10 = now + datetime.timedelta(minutes=10)
 
-    def run(self, task):
-        if task == "task10":
-            cmd = [svcmon, "--updatedb"]
-            servicemanager.LogInfoMsg("run %s" % ' '.join(cmd))
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-            p.communicate()
-            servicemanager.LogInfoMsg("run internal scheduler")
-            cmd = [cron]
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-            p.communicate()
+    def run_task10(self):
+        cmd = [svcmon, "--updatedb"]
+        servicemanager.LogInfoMsg("run %s" % ' '.join(cmd))
+        p = Popen(cmd, stdout=None, stderr=None, stdin=None)
+        p.communicate()
+        servicemanager.LogInfoMsg("run internal scheduler")
+        cmd = [cron]
+        p = Popen(cmd, stdout=None, stderr=None, stdin=None)
+        p.communicate()
 
 def ctrlHandler(ctrlType):
     return True
