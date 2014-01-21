@@ -1,9 +1,9 @@
 from subprocess import *
 
-repo_subdir = "msi"
+repo_subdir = "exe"
 
 def update(fpath):
-    cmd = ['msiexec', '/quiet', '/i', fpath, 'REINSTALL=ALL', 'REINSTALLMODE=vomus']
+    cmd = [fpath, '/S']
     print(' '.join(cmd))
     p = Popen(cmd)
     p.communicate()
