@@ -54,8 +54,10 @@ all: build
 build: copy clean heat candle light movensis nsisexe
 
 copy:
-        @if exist "$(OSVCPKGROOT)" rmdir "$(OSVCPKGROOT)" /s /q
-        @rmdir "$(OSVCNSIS)\tmp" /s /q
+        @echo =^> Erasing old build directories
+		@if exist "$(OSVCPKGROOT)" rmdir "$(OSVCPKGROOT)" /s /q
+        @echo =^> Preparing build directories
+		@rmdir "$(OSVCNSIS)\tmp" /s /q
 		@mkdir "$(OSVCNSIS)\tmp"
         @mkdir "$(OSVCPKGROOT)"
 		@mkdir "$(OSVCPKGROOT)\etc"
@@ -64,35 +66,49 @@ copy:
 		@mkdir "$(OSVCPKGROOT)\log"
 		@mkdir "$(OSVCPKGROOT)\tmp"
 		@mkdir "$(OSVCPKGROOT)\python"
+		@echo =^> Copying Exclude file to temp location
 		@copy  "$(EXCLUDEFILE)" $(TEMPO)
-		@xcopy "$(OSVCROOT)" "$(OSVCPKGROOT)" /s /i /exclude:$(TEMPO)	
-        @xcopy "$(VCREDISTX86)" "$(OSVCNSIS)\tmp" /s /i
-		@xcopy "$(PYTHON)" "$(OSVCPKGROOT)\python" /s /i
+		@echo =^> Copying OpenSVC sources to build directory
+		@xcopy "$(OSVCROOT)" "$(OSVCPKGROOT)" /s /i /q /exclude:$(TEMPO)
+		@echo =^> Copying Visual C++ 2008 Redist installer to build directory
+        @xcopy "$(VCREDISTX86)" "$(OSVCNSIS)\tmp" /s /i /q
+		@echo =^> Copying Python distribution to build directory
+		@xcopy "$(PYTHON)" "$(OSVCPKGROOT)\python" /s /i /q
 
 clean:
-	    @del /s /q "$(OSVCWIX)\*.wixobj" 2>nul
+	    @echo =^> Removing old objects files 
+		@del /s /q "$(OSVCWIX)\*.wixobj" 2>nul
 	    @del /s /q "$(OSVCWIX)\*.wixpdb" 2>nul
         @del /s /q "$(OSVCWIX)\*.msi" 2>nul
         @del /s /q "$(OSVCPKGROOT)\tmp\exc*" 2>nul
         @del /s /q "$(OSVCPKGROOT)\log\*.log" 2>nul
 		
 heat:
+		@echo =^> Harvesting build directory files
 		"$(WIXTOOLS)\heat.exe" dir "$(OSVCPKGROOT)" -t "$(XSLFILE)" -nologo -cg OpenSVCFiles -gg -ke -scom -sreg -sfrag -srd -dr INSTALLFOLDER -var var.OSVCPKGROOT -out "$(WXSDIR)\$(PRJNAME)files.wxs"
 # -var var.OSVCPKGROOT  is the folder where we build the filelist to include in the msi file
 
 candle:
+		@echo =^> Compiling xml documents to object files
 		"$(WIXTOOLS)\candle.exe" -ext WiXFirewallExtension -dOSVCPKGROOT="$(OSVCPKGROOT)" -dPRJSVCNAME="$(PRJSVCNAME)" -dPRJSVCDESC="$(PRJSVCDESC)" -dPRJSVCDISPLAYNAME="$(PRJSVCDISPLAYNAME)" -dPRJFWRULE1NAME="$(PRJFWRULE1NAME)" -dPRJSVCPYEXECPATH="$(PRJSVCPYEXECPATH)" -dPRJSVCPYEXECBIN="$(PRJSVCPYEXECBIN)" -dPRJMANUFACTURER="$(PRJMANUFACTURER)" -dPRJNAME="$(PRJNAME)" -dPRJTITLE="$(PRJTITLE)" -dPRJVERSION="$(PRJVERSION)"  "$(WXSDIR)\$(PRJNAME)product.wxs" "$(WXSDIR)\$(PRJNAME)files.wxs" -out "$(OUTDIR)\\"
 
 light:
+		@echo =^> Linking objects files to generate final msi
 		"$(WIXTOOLS)\light.exe" -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).msi"
 
 lightv:
+		@echo =^> Linking objects files to generate final msi (VERBOSE LOGGING)
 		"$(WIXTOOLS)\light.exe" -v -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).msi"
 
 movensis:
-        @copy /V /Y "$(OSVCWIX)\$(PRJNAME).$(PRJVERSION).msi" "$(OSVCNSIS)\tmp\"
+        @echo =^> Copying msi installer to nsis build directory
+		@copy /V /Y "$(OSVCWIX)\$(PRJNAME).$(PRJVERSION).msi" "$(OSVCNSIS)\tmp\"
 
 nsisexe:
-        "$(NSISTOOLS)\makensis.exe" /DPRJMANUFACTURER="$(PRJMANUFACTURER)" /DPRJNAME="$(PRJNAME)" /DPRJTITLE="$(PRJTITLE)" /DPRJVERSION="$(PRJVERSION)" /DPRJBUILDER="$(PRJBUILDER)" /DPRJWEBSITE="$(PRJWEBSITE)" "$(OSVCNSIS)\$(PRJNAME).nsi"
-		@echo " "
-		@echo "OpenSVC installer is located here : $(OSVCNSIS)\"
+        @echo =^> Building nsis exe installer
+		"$(NSISTOOLS)\makensis.exe" /DPRJMANUFACTURER="$(PRJMANUFACTURER)" /DPRJNAME="$(PRJNAME)" /DPRJTITLE="$(PRJTITLE)" /DPRJVERSION="$(PRJVERSION)" /DPRJBUILDER="$(PRJBUILDER)" /DPRJWEBSITE="$(PRJWEBSITE)" "$(OSVCNSIS)\$(PRJNAME).nsi"
+		@echo =^> 
+		@echo =^> OpenSVC installer is located here : $(OSVCNSIS)
+		@echo =^> 
+		@start explorer.exe /e,"$(OSVCNSIS)\"
+		
