@@ -45,9 +45,7 @@ Function .onInit
   ;Check earlier installation
   Call CheckOSVC
         ${If} $OSVCInstalled == 1
-        DetailPrint "${PRODUCT_TITLE} is already installed. Aborting."
-        MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_TITLE} is already installed. Aborting"
-        Quit
+        DetailPrint "${PRODUCT_TITLE} is already installed. Going to version ${PRODUCT_VERSION}"
         ${EndIf}
 FunctionEnd
 
