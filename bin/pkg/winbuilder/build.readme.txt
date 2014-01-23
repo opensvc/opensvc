@@ -12,9 +12,10 @@ HowTo :
 => install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2 )
 => check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files)
 => check that kits/winpython content is OK (expected content is a ready to use python distrib, cleaned winpython for example)
-=> check osvcenv.cmd is setting environment variable OSVCPRJVERSION
+=> launch a cmd.exe /V:ON to enable "delayed environment variable expansion"
+=> check osvcenv.cmd is setting environment variables OSVCMAKEVERSION and OSVCMAKERELEASE
 => edit Makefile and verify/fix paths, validate with nmake.exe /N ( no execution, only macro interpretation )
-=> give a try with nmake.exe
+=> give a try with nmake.exe, you should end up with a ready to use installer
 
 Install :
 -------

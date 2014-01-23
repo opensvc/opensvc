@@ -5,10 +5,10 @@
 # kits folder filled in (vcredist and python) 
 #
 
-!if !defined(OSVCPRJVERSION)
+!if !defined(OSVCMAKEVERSION) | !defined(OSVCMAKERELEASE)
 MSG = ^
 You will need to run osvcvars.bat, first, to setup^
-the environment. OSVCPRJVERSION have to be defined.
+the environment. OSVCMAKEVERSION and OSVCMAKERELEASE have to be defined.
 !error $(MSG)
 !endif
 
@@ -19,7 +19,8 @@ PRJNAME=OpenSVC
 PRJFWRULE1NAME=OpenSVC Listener
 PRJTITLE=OpenSVC Agent Distribution
 PRJWEBSITE=http://www.opensvc.com/
-PRJVERSION=$(OSVCPRJVERSION)
+PRJVERSION=$(OSVCMAKEVERSION)
+PRJRELEASE=$(OSVCMAKERELEASE)
 
 # Windows Service
 PRJSVCNAME=OsvcSched
@@ -90,23 +91,23 @@ heat:
 
 candle:
 		@echo =^> Compiling xml documents to object files
-		"$(WIXTOOLS)\candle.exe" -ext WiXFirewallExtension -dOSVCPKGROOT="$(OSVCPKGROOT)" -dPRJSVCNAME="$(PRJSVCNAME)" -dPRJSVCDESC="$(PRJSVCDESC)" -dPRJSVCDISPLAYNAME="$(PRJSVCDISPLAYNAME)" -dPRJFWRULE1NAME="$(PRJFWRULE1NAME)" -dPRJSVCPYEXECPATH="$(PRJSVCPYEXECPATH)" -dPRJSVCPYEXECBIN="$(PRJSVCPYEXECBIN)" -dPRJMANUFACTURER="$(PRJMANUFACTURER)" -dPRJNAME="$(PRJNAME)" -dPRJTITLE="$(PRJTITLE)" -dPRJVERSION="$(PRJVERSION)"  "$(WXSDIR)\$(PRJNAME)product.wxs" "$(WXSDIR)\$(PRJNAME)files.wxs" -out "$(OUTDIR)\\"
+		"$(WIXTOOLS)\candle.exe" -ext WiXFirewallExtension -dOSVCPKGROOT="$(OSVCPKGROOT)" -dPRJSVCNAME="$(PRJSVCNAME)" -dPRJSVCDESC="$(PRJSVCDESC)" -dPRJSVCDISPLAYNAME="$(PRJSVCDISPLAYNAME)" -dPRJFWRULE1NAME="$(PRJFWRULE1NAME)" -dPRJSVCPYEXECPATH="$(PRJSVCPYEXECPATH)" -dPRJSVCPYEXECBIN="$(PRJSVCPYEXECBIN)" -dPRJMANUFACTURER="$(PRJMANUFACTURER)" -dPRJNAME="$(PRJNAME)" -dPRJTITLE="$(PRJTITLE)" -dPRJVERSION="$(PRJVERSION)" -dPRJRELEASE="$(PRJRELEASE)"  "$(WXSDIR)\$(PRJNAME)product.wxs" "$(WXSDIR)\$(PRJNAME)files.wxs" -out "$(OUTDIR)\\"
 
 light:
 		@echo =^> Linking objects files to generate final msi
-		"$(WIXTOOLS)\light.exe" -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).msi"
+		"$(WIXTOOLS)\light.exe" -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).$(PRJRELEASE).msi"
 
 lightv:
 		@echo =^> Linking objects files to generate final msi (VERBOSE LOGGING)
-		"$(WIXTOOLS)\light.exe" -v -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).msi"
+		"$(WIXTOOLS)\light.exe" -v -ext WixUIExtension -ext WixFirewallExtension "$(OUTDIR)\$(PRJNAME)files.wixobj" "$(OUTDIR)\$(PRJNAME)product.wixobj" -out "$(OUTDIR)\$(PRJNAME).$(PRJVERSION).$(PRJRELEASE).msi"
 
 movensis:
         @echo =^> Copying msi installer to nsis build directory
-		@copy /V /Y "$(OSVCWIX)\$(PRJNAME).$(PRJVERSION).msi" "$(OSVCNSIS)\tmp\"
+		@copy /V /Y "$(OSVCWIX)\$(PRJNAME).$(PRJVERSION).$(PRJRELEASE).msi" "$(OSVCNSIS)\tmp\"
 
 nsisexe:
         @echo =^> Building nsis exe installer
-		"$(NSISTOOLS)\makensis.exe" /DPRJMANUFACTURER="$(PRJMANUFACTURER)" /DPRJNAME="$(PRJNAME)" /DPRJTITLE="$(PRJTITLE)" /DPRJVERSION="$(PRJVERSION)" /DPRJBUILDER="$(PRJBUILDER)" /DPRJWEBSITE="$(PRJWEBSITE)" /DOSVCNSIS="$(OSVCNSIS)" "$(OSVCNSIS)\$(PRJNAME).nsi"
+		"$(NSISTOOLS)\makensis.exe" /DPRJMANUFACTURER="$(PRJMANUFACTURER)" /DPRJNAME="$(PRJNAME)" /DPRJTITLE="$(PRJTITLE)" /DPRJVERSION="$(PRJVERSION)" /DPRJRELEASE="$(PRJRELEASE)" /DPRJBUILDER="$(PRJBUILDER)" /DPRJWEBSITE="$(PRJWEBSITE)" /DOSVCNSIS="$(OSVCNSIS)" "$(OSVCNSIS)\$(PRJNAME).nsi"
 		@echo =^> 
 		@echo =^> OpenSVC installer is located here : $(OSVCNSIS)
 		@echo =^> 

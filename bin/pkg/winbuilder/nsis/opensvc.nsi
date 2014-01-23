@@ -2,6 +2,7 @@
 !define PRODUCT_NAME "${PRJNAME}"
 !define PRODUCT_MANUFACTURER "${PRJMANUFACTURER}"
 !define PRODUCT_VERSION "${PRJVERSION}"
+!define PRODUCT_RELEASE "${PRJRELEASE}"
 !define PRODUCT_PUBLISHER "${PRJBUILDER}"
 !define PRODUCT_WEB_SITE "${PRJWEBSITE}"
 
@@ -15,6 +16,7 @@
 !define MUI_ICON "${OSVCNSIS}\opensvc.ico"
 
 !insertmacro MUI_PAGE_WELCOME
+!define MUI_PAGE_CUSTOMFUNCTION_PRE DoWeNeedPageDirectory
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -24,34 +26,42 @@
 Var VCRedistInstalled
 Var OSVCInstalled
 
-Name "${PRODUCT_TITLE} ${PRODUCT_VERSION}"
-OutFile "${PRODUCT_NAME}.${PRODUCT_VERSION}.exe"
+Name "${PRODUCT_TITLE} ${PRODUCT_VERSION}.${PRODUCT_RELEASE}"
+OutFile "${PRODUCT_NAME}.${PRODUCT_VERSION}.${PRODUCT_RELEASE}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 
-VIProductVersion ${PRODUCT_VERSION}.0.0
+# 3 digits expected in PRODUCT_VERSION (example 1.5.1401230658)
+# VIProductVersion is restricted...
+# Product version must have a major version less than 256, a minor version less than 256, and a build version less than 65536.
+VIProductVersion ${PRODUCT_VERSION}.${PRODUCT_RELEASE}.0
+
 VIAddVersionKey ProductName "${PRODUCT_TITLE}"
-VIAddVersionKey Comments "A build of the PortableApps.com Launcher for ${PRODUCT_TITLE}, allowing it to be run from a removable drive.  For additional details, visit PortableApps.com"
+VIAddVersionKey Comments "A build of the ${PRODUCT_TITLE} product.  For additional details, visit OpenSVC.com"
 VIAddVersionKey CompanyName "${PRODUCT_MANUFACTURER}"
 VIAddVersionKey LegalCopyright "${PRODUCT_MANUFACTURER}"
 VIAddVersionKey FileDescription "${PRODUCT_TITLE}"
-VIAddVersionKey FileVersion ${PRODUCT_VERSION}
-VIAddVersionKey ProductVersion ${PRODUCT_VERSION}
+VIAddVersionKey FileVersion "${PRODUCT_VERSION}.${PRODUCT_RELEASE}"
+VIAddVersionKey ProductVersion "${PRODUCT_VERSION}.${PRODUCT_RELEASE}"
 VIAddVersionKey InternalName "${PRODUCT_TITLE}"
 VIAddVersionKey LegalTrademarks "${PRODUCT_MANUFACTURER} is a French registered company."
-VIAddVersionKey OriginalFilename "${PRODUCT_NAME}.${PRODUCT_VERSION}.exe"
+VIAddVersionKey OriginalFilename "${PRODUCT_NAME}.${PRODUCT_VERSION}.${PRODUCT_RELEASE}.exe"
 
 ShowInstDetails show
 
 Function .onInit  
   ;Check earlier installation
   Call CheckOSVC
-        ${If} $OSVCInstalled == 1
-        DetailPrint "${PRODUCT_TITLE} is already installed. Going to version ${PRODUCT_VERSION}"
-        ${EndIf}
 FunctionEnd
 
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
+  ${If} $OSVCInstalled == 1
+		ReadRegStr $R1 HKLM "SOFTWARE\${PRODUCT_NAME}" "path"
+        ; not supposed to have read error here
+		SetOutPath "$R1"
+		DetailPrint "${PRODUCT_TITLE} is already installed. Going to version ${PRODUCT_VERSION}"
+		DetailPrint "${PRODUCT_TITLE} is installed in folder $OUTDIR"
+  ${EndIf}
   SetOverwrite ifnewer
   File /r "tmp"
 SectionEnd
@@ -61,7 +71,6 @@ Section "Visual C++ 2008 Runtime" SEC02
         ${If} $VCRedistInstalled == 1
         DetailPrint "VC Runtime is already installed."
         ${Else}
-           SetOutPath $INSTDIR
            SetOverwrite on
            #run runtime installation tool
            DetailPrint "Installing Microsoft Visual C++ 2008 SP1 Redistributable Package (x86)"
@@ -71,7 +80,7 @@ Section "Visual C++ 2008 Runtime" SEC02
 SectionEnd
 
 Section "${PRODUCT_NAME} msi" SEC03
-  ExecWait 'msiexec /i "$INSTDIR\tmp\${PRODUCT_NAME}.${PRODUCT_VERSION}.msi" /quiet INSTALLFOLDER="$INSTDIR"'
+  ExecWait 'msiexec /i "$OUTDIR\tmp\${PRODUCT_NAME}.${PRODUCT_VERSION}.msi" /quiet INSTALLFOLDER="$OUTDIR"'
 SectionEnd
 
 ;-------------------------------
@@ -103,12 +112,18 @@ Function CheckOSVC
    StrCpy $OSVCInstalled "1"
 
    ClearErrors
-   # SP 1
    ReadRegDword $R0 HKLM "SOFTWARE\${PRODUCT_NAME}" "installed"
    IfErrors 0 OSVCInstalled
 
-   # Runtime not found
    StrCpy $OSVCInstalled 0
 
 OSVCInstalled:
+FunctionEnd
+
+;-------------------------------
+; Test if Directory Page is needed, yes if first install, no if upgrade
+Function DoWeNeedPageDirectory
+  ${If} $OSVCInstalled == 1
+        Abort
+  ${EndIf}
 FunctionEnd
