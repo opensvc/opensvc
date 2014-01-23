@@ -12,9 +12,10 @@
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
+!define MUI_ICON "${OSVCNSIS}\opensvc.ico"
 
 !insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_LANGUAGE "English"
@@ -70,7 +71,7 @@ Section "Visual C++ 2008 Runtime" SEC02
 SectionEnd
 
 Section "${PRODUCT_NAME} msi" SEC03
-  ExecWait 'msiexec /i "$INSTDIR\tmp\${PRODUCT_NAME}.${PRODUCT_VERSION}.msi" /quiet '
+  ExecWait 'msiexec /i "$INSTDIR\tmp\${PRODUCT_NAME}.${PRODUCT_VERSION}.msi" /quiet INSTALLFOLDER="$INSTDIR"'
 SectionEnd
 
 ;-------------------------------
