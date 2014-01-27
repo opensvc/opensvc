@@ -141,6 +141,9 @@ mkdir $TMPARCHIVE
 cd $BASE && git archive --format=tar HEAD | (
 	cd $TMPARCHIVE && tar xf - 			\
 	&& rm $TMPARCHIVE/.gitignore			\
+	&& rm $TMPARCHIVE/inpath.cmd			\
+	&& rm -rf $TMPARCHIVE/.be			\
+	&& rm -rf $TMPARCHIVE/bin/pkg			\
 	&& chown -R root:root $TMPARCHIVE		\
 	&& chmod -R og-w $TMPARCHIVE
 	)
