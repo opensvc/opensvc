@@ -58,7 +58,8 @@ copy:
         @echo =^> Erasing old build directories
 		@if exist "$(OSVCPKGROOT)" rmdir "$(OSVCPKGROOT)" /s /q
         @echo =^> Preparing build directories
-		@rmdir "$(OSVCNSIS)\tmp" /s /q
+		@if exist "$(OSVCNSIS)\tmp" rmdir "$(OSVCNSIS)\tmp" /s /q
+		@if not exist "$(OSVCWIX)" mkdir "$(OSVCWIX)"
 		@mkdir "$(OSVCNSIS)\tmp"
         @mkdir "$(OSVCPKGROOT)"
 		@mkdir "$(OSVCPKGROOT)\etc"
