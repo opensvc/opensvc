@@ -13,7 +13,7 @@
 
   <xsl:output method="xml" indent="yes" />
   <!-- PythonService.exe Search Python Service Executable -->
-  <xsl:key name="pythonservice" match="wix:Component[contains(wix:File/@Source, 'pythonservice.exe')]" use="@Id" />
+  <xsl:key name="pythonservice" match="wix:Component[contains(wix:File/@Source, 'PythonService.exe')]" use="@Id" />
   
   <!-- PythonService.exe Search Python Service Executable -->
   <xsl:key name="vIdToReplace" match="wix:File[contains(@Source, '\bin\postinstall.cmd')]" use="@Id" />

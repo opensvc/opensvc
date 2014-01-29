@@ -6,12 +6,15 @@ function date_to_release {
 	/opt/opensvc/bin/python -c "import datetime ; print(datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M'))"
 }
 
+OFFSET=10000
 HEAD=$(git log -1 --pretty=format:%at || exit 1)
 VERSION=$(git describe --tags --abbrev=0)
+RELEASE=$(git describe --tags|cut -d- -f2)
+
 MASTER=0
 git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1
 if [ $MASTER -eq 1 ] ; then
-	RELEASE=$(date_to_release $HEAD)
+	let RELEASE=$RELEASE+$OFFSET
 else
 	RELEASE=$(git describe --tags|cut -d- -f2)
         if [ "$RELEASE" = "$VERSION" ] ; then

@@ -10,8 +10,9 @@ HowTo :
 -----
 => install wix tools ( http://wixtoolset.org/ - known to work with 3.8 )
 => install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2 )
-=> check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files)
-=> check that kits/winpython content is OK (expected content is a ready to use python distrib, cleaned winpython for example)
+=> install Visual C++ 2010 x86 redist files, needed by nmake.exe ( http://www.microsoft.com/en-us/download/details.aspx?id=5555 )
+=> check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files, not the same file as previous point)
+=> check that kits/winpython content is OK (expected content is a folder named "python" with a ready to use python distrib, cleaned winpython for example)
 => launch a cmd.exe /V:ON to enable "delayed environment variable expansion"
 => check osvcenv.cmd is setting environment variables OSVCMAKEVERSION and OSVCMAKERELEASE
 => edit Makefile and verify/fix paths, validate with nmake.exe /N ( no execution, only macro interpretation )
