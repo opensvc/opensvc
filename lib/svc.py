@@ -179,7 +179,7 @@ class Svc(Resource, Freezer):
         if r.type.startswith("hb"):
             self.ha = True
 
-        if hasattr(r, "on_add"):
+        if not r.disabled and hasattr(r, "on_add"):
             r.on_add()
 
         return self
