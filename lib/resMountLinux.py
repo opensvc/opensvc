@@ -104,18 +104,29 @@ class Mount(Res.Mount):
                 return True
 
         if self.fsType not in self.netfs:
-            # might be a loopback mount
             try:
-                mode = os.stat(self.device)[ST_MODE]
-                if S_ISREG(mode):
-                    devs = file_to_loop(self.device)
-                    for dev in devs:
-                        ret = self.Mounts.has_mount(dev, self.mountPoint)
-                        if ret:
-                            return True
+                st = os.stat(self.device)
+                mode = st[ST_MODE]
             except:
                 self.log.debug("can not stat %s" % self.device)
                 return False
+
+            if S_ISREG(mode):
+                # might be a loopback mount
+                devs = file_to_loop(self.device)
+                for dev in devs:
+                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    if ret:
+                        return True
+            elif S_ISBLK(mode):
+                # might be a mount using a /dev/dm-<minor> name too
+                from rcUtilitiesLinux import major
+                dm_major = major('device-mapper')
+                if os.major(st.st_rdev) == dm_major:
+                    dev = '/dev/dm-' + str(os.minor(st.st_rdev))
+                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    if ret:
+                        return True
 
         return False
 
