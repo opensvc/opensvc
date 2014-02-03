@@ -178,9 +178,9 @@ def get_timestamp(self, node):
 
 def bwlimit_option(self):
     if self.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+self.bwlimit ]
+        bwlimit = [ '--bwlimit='+str(self.bwlimit) ]
     elif self.svc.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+self.svc.bwlimit ]
+        bwlimit = [ '--bwlimit='+str(self.svc.bwlimit) ]
     else:
         bwlimit = []
     return bwlimit
