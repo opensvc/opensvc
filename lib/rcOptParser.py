@@ -104,6 +104,8 @@ action_desc = {
       'compliance_show_ruleset': 'show compliance rules applying to this node',
       'compliance_attach_ruleset': 'attach ruleset specified by --ruleset to this service',
       'compliance_detach_ruleset': 'detach ruleset specified by --ruleset from this service',
+      'compliance_attach': 'attach ruleset specified by --ruleset and/or moduleset specified by --moduleset to this service',
+      'compliance_detach': 'detach ruleset specified by --ruleset and/or moduleset specified by --moduleset from this service',
      },
     'Collector management': {
       'collector_ack_unavailability': 'acknowledge an unavailability period. the period is specified by --begin/--end or --begin/--duration. omitting --begin defaults to now. an acknowlegment can be completed by --author (defaults to root@nodename), --account (default to 1) and --comment',

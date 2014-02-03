@@ -435,6 +435,32 @@ class Compliance(object):
     def compliance_fixable(self):
         return self.do_run('fixable')
 
+    def compliance_detach(self):
+        did_something = False
+        if hasattr(self.options, 'moduleset') and \
+           len(self.options.moduleset) > 0:
+            did_something = True
+            self._compliance_detach_moduleset(self.options.moduleset.split(','))
+        if hasattr(self.options, 'ruleset') and \
+           len(self.options.ruleset) > 0:
+            did_something = True
+            self._compliance_detach_ruleset(self.options.ruleset.split(','))
+        if not did_something:
+            raise ex.excError('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
+
+    def compliance_attach(self):
+        did_something = False
+        if hasattr(self.options, 'moduleset') and \
+           len(self.options.moduleset) > 0:
+            did_something = True
+            self._compliance_attach_moduleset(self.options.moduleset.split(','))
+        if hasattr(self.options, 'ruleset') and \
+           len(self.options.ruleset) > 0:
+            did_something = True
+            self._compliance_attach_ruleset(self.options.ruleset.split(','))
+        if not did_something:
+            raise ex.excError('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
+
     def compliance_attach_moduleset(self):
         if not hasattr(self.options, 'moduleset') or \
            len(self.options.moduleset) == 0:
@@ -458,8 +484,11 @@ class Compliance(object):
         if not hasattr(self.options, 'moduleset') or \
            len(self.options.moduleset) == 0:
             raise ex.excError('no moduleset specified. use --moduleset')
+        self._compliance_detach_moduleset()
+
+    def _compliance_detach_moduleset(self, modulesets):
         err = False
-        for moduleset in self.options.moduleset.split(','):
+        for moduleset in modulesets:
             if self.svcname is not None:
                 d = self.collector.call('comp_detach_svc_moduleset', self.svcname, moduleset)
             else:
@@ -474,8 +503,11 @@ class Compliance(object):
         if not hasattr(self.options, 'ruleset') or \
            len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
+        self._compliance_attach_ruleset()
+
+    def _compliance_attach_ruleset(self, rulesets):
         err = False
-        for ruleset in self.options.ruleset.split(','):
+        for ruleset in rulesets:
             if self.svcname is not None:
                 d = self.collector.call('comp_attach_svc_ruleset', self.svcname, ruleset)
             else:
@@ -490,8 +522,11 @@ class Compliance(object):
         if not hasattr(self.options, 'ruleset') or \
            len(self.options.ruleset) == 0:
             raise ex.excError('no ruleset specified. use --ruleset')
+        self._compliance_detach_ruleset()
+
+    def _compliance_detach_ruleset(self, rulesets):
         err = False
-        for ruleset in self.options.ruleset.split(','):
+        for ruleset in rulesets:
             if self.svcname is not None:
                 d = self.collector.call('comp_detach_svc_ruleset', self.svcname, ruleset)
             else:

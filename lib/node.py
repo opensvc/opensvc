@@ -142,6 +142,8 @@ class Node(Svc, Freezer):
             'compliance_list_ruleset': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
             'compliance_show_ruleset': 'show compliance rules applying to this node',
             'compliance_show_status': 'show compliance modules status',
+            'compliance_attach': 'attach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node',
+            'compliance_detach': 'detach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node',
             'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
             'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
           },
