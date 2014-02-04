@@ -23,7 +23,7 @@ import rcAsset
 from rcZone import is_zone
 
 class Asset(rcAsset.Asset):
-    def __init__(self, node):
+    def __init__(self, node=None):
         rcAsset.Asset.__init__(self, node)
         self.osver = 0.
         self.zone = is_zone()
@@ -110,7 +110,7 @@ class Asset(rcAsset.Asset):
         return out.split('\n')[0]
 
     def _get_cpu_freq(self):
-        (out, err, ret) = justcall(['psrinfo', '-pv'])
+        (out, err, ret) = justcall(['/usr/sbin/psrinfo', '-pv'])
         if ret != 0:
             return '0'
         for w in out.split():
@@ -136,26 +136,34 @@ class Asset(rcAsset.Asset):
         return str(len(core_ids))
 
     def _get_cpu_threads(self):
-        out, err, ret = justcall(['psrinfo'])
+        out, err, ret = justcall(['/usr/sbin/psrinfo'])
         if ret != 0:
             return '0'
         return str(len(out.split('\n'))-1)
 
     def _get_cpu_dies(self):
-        (out, err, ret) = justcall(['psrinfo', '-p'])
+        (out, err, ret) = justcall(['/usr/sbin/psrinfo', '-p'])
         if ret != 0:
             return '0'
         return out.split('\n')[0]
 
     def _get_cpu_model(self):
-        (out, err, ret) = justcall(['psrinfo', '-pv'])
+        (out, err, ret) = justcall(['/usr/sbin/psrinfo', '-pv'])
         if ret != 0:
             return 'Unknown'
         lines = out.split('\n')
         lines = [line for line in lines if len(line) > 0]
         if len(lines) == 0:
             return 'Unknown'
-        return lines[-1].strip()
+        model = lines[-1].strip()
+        known_garbage = [' (chipid', ' (portid']
+        for s in known_garbage:
+            try:
+                i = model.index(s)
+                model = model[:i]
+            except ValueError:
+                continue
+        return model
 
     def _get_serial(self):
         if which("sneep"):
@@ -231,3 +239,5 @@ class Asset(rcAsset.Asset):
                  m.append((hba_id, target))
         return m
 
+if __name__ == "__main__":
+    print(Asset()._get_cpu_model())
