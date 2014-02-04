@@ -37,12 +37,12 @@ class Ip(Res.Ip):
         return check_ping(self.addr, timeout=timeout)
 
     def startip_cmd(self):
-        cmd=['ifconfig', self.stacked_dev, 'plumb', self.addr, \
+        cmd=['/usr/sbin/ifconfig', self.stacked_dev, 'plumb', self.addr, \
             'netmask', '+', 'broadcast', '+', 'up']
         return self.vcall(cmd)
 
     def stopip_cmd(self):
-        cmd = ['ifconfig', self.stacked_dev, 'unplumb']
+        cmd = ['/usr/sbin/ifconfig', self.stacked_dev, 'unplumb']
         return self.vcall(cmd)
 
 if __name__ == "__main__":

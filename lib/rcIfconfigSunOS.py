@@ -28,7 +28,7 @@ class ifconfig(rcIfconfig.ifconfig):
         if ifconfig is not None:
             out = ifconfig
         else:
-            out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+            out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
 
     def set_hwaddr(self, i):
@@ -92,5 +92,6 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    for c in (ifconfig,) :
-        help(c)
+    #help(ifconfig)
+    for i in ifconfig().intf:
+        print(i)
