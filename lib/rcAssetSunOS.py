@@ -125,8 +125,12 @@ class Asset(rcAsset.Asset):
         if ret != 0:
             return '0'
         core_ids = set([])
+        if "core_id" in out:
+            keyword = "core_id"
+        else:
+            keyword = "chip_id"
         for line in out.split('\n'):
-            if not line.strip().startswith('core_id'):
+            if not line.strip().startswith(keyword):
                 continue
             core_ids.add(line.split()[-1])
         return str(len(core_ids))
