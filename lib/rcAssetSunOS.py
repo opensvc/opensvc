@@ -117,6 +117,13 @@ class Asset(rcAsset.Asset):
             if 'MHz)' in w:
                 return ' '.join([prev, w.strip(')')])
             prev = w
+        (out, err, ret) = justcall(['kstat', 'cpu_info'])
+        if ret != 0:
+            return '0'
+        l = out.split()
+        if 'clock_MHz' in l:
+            freq = l[l.index('clock_MHz')+1]
+            return freq
         return '0'
 
     def _get_cpu_cores(self):
@@ -156,7 +163,9 @@ class Asset(rcAsset.Asset):
         if len(lines) == 0:
             return 'Unknown'
         model = lines[-1].strip()
-        known_garbage = [' (chipid', ' (portid']
+        if model.startswith('The '):
+            model = model.replace('The ', '')
+        known_garbage = [' (chipid', ' (portid', ' physical proc']
         for s in known_garbage:
             try:
                 i = model.index(s)
