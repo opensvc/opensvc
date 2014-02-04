@@ -72,7 +72,7 @@ class Asset(rcAsset.Asset):
             (out, err, ret) = justcall(['cat', f])
             if ret != 0:
                 return 'Unknown'
-            return out.split('\n')[0].replace('OpenSolaris','').strip()
+            return out.split('\n')[0].replace('OpenSolaris','').replace('Oracle', '').strip()
         return 'Unknown'
 
     def _get_os_kernel(self):
