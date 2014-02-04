@@ -28,16 +28,37 @@ class ifconfig(rcIfconfig.ifconfig):
         if ifconfig is not None:
             out = ifconfig
         else:
-            out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+            out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
 
     def set_hwaddr(self, i):
-        if i is not None and i.hwaddr == '' and ':' in i.name:
-            base_ifname, index = i.name.split(':')
-            base_intf = self.interface(base_ifname)
-            if base_intf is not None:
-                i.hwaddr = base_intf.hwaddr
+        if i is None or i.hwaddr != '' or ':' not in i.name:
+            return i
+        base_ifname, index = i.name.split(':')
+        base_intf = self.interface(base_ifname)
+        if base_intf is not None and len(base_intf.hwaddr) > 0:
+            i.hwaddr = base_intf.hwaddr
+        else:
+            d = self.load_arp()
+            if base_ifname in d:
+                i.hwaddr = d[base_ifname]
         return i
+
+    def load_arp(self):
+        d = {}
+        cmd = ['/usr/sbin/arp', '-n', '-a']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return d
+        for line in out.split('\n'):
+            if '.' not in line:
+                continue
+            l = line.split()
+            if ':' not in l[-1]:
+                continue
+            d[l[0]] = l[-1]
+        return d
 
     def parse(self, out):
         i = None
@@ -92,5 +113,6 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    for c in (ifconfig,) :
-        help(c)
+    #help(ifconfig)
+    for i in ifconfig().intf:
+        print(i)
