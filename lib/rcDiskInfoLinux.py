@@ -1,6 +1,7 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -171,16 +172,22 @@ class diskInfo(rcDiskInfo.diskInfo):
         with open(path, 'r') as f:
             s = f.read()
             f.close()
+        if '6900' in s:
+            s = 'Red Hat'
         return s.strip()
 
     def disk_model(self, dev):
         if 'cciss' in dev:
             return 'VOLUME'
         s = ''
+        vendor = self.disk_vendor(dev)
         dev = re.sub("[0-9]+$", "", dev)
         path = dev.replace('/dev/', '/sys/block/')+'/device/model'
         if not os.path.exists(path):
-            return ""
+            if 'Red Hat' in vendor:
+                return 'VirtIO'
+            else:
+                return ""
         with open(path, 'r') as f:
             s = f.read()
             f.close()
@@ -225,6 +232,10 @@ class diskInfo(rcDiskInfo.diskInfo):
                 continue
             with open(i_f, 'r') as f:
                 info[i] = f.read().strip()
+        if '6900' in info['device/vendor']:
+            info['device/vendor'] = 'Red Hat'
+            if info['device/model'] is '':
+                info['device/model'] = 'VirtIO'
         info['hbtl'] = os.path.basename(os.path.realpath(os.path.join(disk, "device")))
         print(self.print_diskinfo_fmt%(
           info['hbtl'],
@@ -243,6 +254,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         import glob
 
         disks_before = glob.glob('/sys/block/sd*')
+        disks_before += glob.glob('/sys/block/vd*')
         hosts = glob.glob('/sys/class/scsi_host/host*')
 
         for host in hosts:
@@ -253,6 +265,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             os.system('echo - - - >'+scan_f)
 
         disks_after = glob.glob('/sys/block/sd*')
+        disks_after += glob.glob('/sys/block/vd*')
         new_disks = set(disks_after) - set(disks_before)
 
         self.print_diskinfo_header()
@@ -262,3 +275,15 @@ class diskInfo(rcDiskInfo.diskInfo):
 
         return 0
 
+if __name__ == "__main__":
+    diskinfo = diskInfo()
+    import glob
+    disks = glob.glob('/sys/block/sd*')
+    disks += glob.glob('/sys/block/vd*')
+    diskinfo.print_diskinfo_header()
+    for disk in disks:
+         diskinfo.print_diskinfo(disk)
+    #dev = '/dev/vda'
+    #vendor = diskinfo.disk_vendor(dev)
+    #model = diskinfo.disk_model(dev)
+    #print("%s has vendor [%s] model [%s]" % (dev, vendor, model))
