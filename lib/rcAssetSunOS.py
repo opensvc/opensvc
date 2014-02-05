@@ -115,7 +115,7 @@ class Asset(rcAsset.Asset):
             return '0'
         for w in out.split():
             if 'MHz)' in w:
-                return ' '.join([prev, w.strip(')')])
+                return prev
             prev = w
         (out, err, ret) = justcall(['kstat', 'cpu_info'])
         if ret != 0:
