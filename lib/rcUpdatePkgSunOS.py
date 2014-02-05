@@ -14,12 +14,10 @@ def update(fpath):
         opts = ''
     else:
         opts = '-G'
-    cmd1 = ['yes']
-    cmd2 = ['pkgadd', opts, '-d', fpath, 'all']
-    print(' '.join(cmd1) + '|' ' '.join(cmd2))
-    p1 = Popen(cmd1, stdout=PIPE)
-    p2 = Popen(cmd2, stdin=p1.stdout)
-    p2.communicate()
-    p1.terminate()
-    return p2.returncode
-
+    cmd = ['pkgadd', opts, '-d', fpath, 'all']
+    print(' '.join(cmd))
+    p = Popen(cmd, stdout=PIPE, stdin=PIPE)
+    while p.returncode is None:
+        p.stdin.write("y\n")
+        p.poll()
+    return p.returncode
