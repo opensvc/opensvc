@@ -104,6 +104,7 @@ class Node(Svc, Freezer):
             'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
             'scanscsi': 'scan the scsi hosts in search of new disks',
             'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
+            'rotate_root_pw': "set a new root password and store it in the collector",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
@@ -1304,6 +1305,34 @@ class Node(Svc, Freezer):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return p.returncode, out, err
+
+    def rotate_root_pw(self):
+        pw = self.genpw()
+
+        from collector import Collector
+        o = Collector(self.options, self.collector)
+        try:
+            data = getattr(o, 'rotate_root_pw')(pw)
+        except Exception as e:
+            print("unexpected error sending the new password to the collector (%s). Abording password change."%str(e), file=sys.stderr)
+            return 1
+
+        try:
+            rc = __import__('rcPasswd'+rcEnv.sysname)
+        except ImportError:
+            print("not implemented")
+            return 1
+        except Exception as e:
+            print(e)
+            return 1
+        return rc.change_root_pw(pw)
+
+    def genpw(self):
+        import string
+        chars = string.letters + string.digits + r'+/'
+        assert 256 % len(chars) == 0  # non-biased later modulo
+        PWD_LEN = 16
+        return ''.join(chars[ord(c) % len(chars)] for c in os.urandom(PWD_LEN))
 
     def scanscsi(self):
         try:

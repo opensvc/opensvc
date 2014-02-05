@@ -16,6 +16,15 @@ class Collector(object):
         self.svcname = svcname
         self.options = options
 
+    def rotate_root_pw(self, pw):
+        opts = {}
+        opts['pw'] = pw
+        d = self.collector.call('collector_update_root_pw', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
+        if d['ret'] != 0:
+            raise ex.excError(d['msg'])
+
     def collector_ack_unavailability(self):
         if self.svcname is None:
             return

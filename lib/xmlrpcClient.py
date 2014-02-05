@@ -1331,6 +1331,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_show_status(*args)
 
+    def collector_update_root_pw(self, opts, sync=True):
+        args = [opts]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.proxy.collector_update_root_pw(*args)
+
     def collector_ack_unavailability(self, opts, sync=True):
         args = [opts]
         if self.auth_node:
