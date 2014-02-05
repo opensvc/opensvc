@@ -1,8 +1,14 @@
 from subprocess import *
+from rcUtilities import which
 
 def change_root_pw(pw):
-    cmd = ['passwd', '--stdin', 'root']
+    if which('chpasswd') is not None:
+        cmd = ['chpasswd']
+        _input = "root:"+pw
+    else:
+        cmd = ['passwd', '--stdin', 'root']
+        _input = pw
     p = Popen(cmd, stdin=PIPE)
-    p.stdin.write(pw)
+    p.stdin.write(_input)
     p.communicate()
     return p.returncode
