@@ -39,26 +39,20 @@ class ifconfig(rcIfconfig.ifconfig):
         if base_intf is not None and len(base_intf.hwaddr) > 0:
             i.hwaddr = base_intf.hwaddr
         else:
-            d = self.load_arp()
-            if base_ifname in d:
-                i.hwaddr = d[base_ifname]
+            i.hwaddr = self.mac_from_arp(i.ipaddr)
         return i
 
-    def load_arp(self):
-        d = {}
-        cmd = ['/usr/sbin/arp', '-n', '-a']
+    def mac_from_arp(self, ipaddr):
+        cmd = ['/usr/sbin/arp', ipaddr]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            return d
-        for line in out.split('\n'):
-            if '.' not in line:
+            return ''
+        for word in out.split():
+            if ':' not in word:
                 continue
-            l = line.split()
-            if ':' not in l[-1]:
-                continue
-            d[l[0]] = l[-1]
-        return d
+            return word
+        return ''
 
     def parse(self, out):
         i = None
