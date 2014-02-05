@@ -1,4 +1,5 @@
 from subprocess import *
+from rcUtilitiesSunOS import get_os_ver
 
 repo_subdir = "pkg"
 
@@ -9,8 +10,12 @@ def update(fpath):
     p.communicate()
     if p.returncode != 0:
         return 1
+    if get_os_ver() < 10:
+        opts = ''
+    else:
+        opts = '-G'
     cmd1 = ['yes']
-    cmd2 = ['pkgadd', '-G', '-d', fpath, 'all']
+    cmd2 = ['pkgadd', opts, '-d', fpath, 'all']
     print(' '.join(cmd1) + '|' ' '.join(cmd2))
     p1 = Popen(cmd1, stdout=PIPE)
     p2 = Popen(cmd2, stdin=p1.stdout)
