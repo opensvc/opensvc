@@ -86,6 +86,9 @@ class Node(Svc, Freezer):
           'comp_check_interval': 241,
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["02:00", "06:00"]',
+          'rotate_root_pw_interval': 0,
+          'rotate_root_pw_days': '[]',
+          'rotate_root_pw_period': '[]',
         }
         self.load_config()
         try:
@@ -542,6 +545,8 @@ class Node(Svc, Freezer):
         return start, end, now_m
 
     def in_period(self, period):
+        if len(period) == 0:
+            return False
         if isinstance(period[0], list):
             r = False
             for p in period:
@@ -880,6 +885,13 @@ class Node(Svc, Freezer):
             return
 
         self.collector.call('push_brocade', self.options.objects)
+
+    def auto_rotate_root_pw(self):
+        if self.skip_action('rotate_root_pw', 'rotate_root_pw_interval', 'last_rotate_root_pw',
+                            period_option='rotate_root_pw_period',
+                            days_option='rotate_root_pw_days'):
+            return
+        self.rotate_root_pw()
 
     def pushdisks(self):
         if self.skip_action('disks', 'push_interval', 'last_disks_push',
@@ -1325,7 +1337,12 @@ class Node(Svc, Freezer):
         except Exception as e:
             print(e)
             return 1
-        return rc.change_root_pw(pw)
+        r = rc.change_root_pw(pw)
+        if r == 0:
+            print("root password changed")
+        else:
+            print("failed to change root password")
+        return r
 
     def genpw(self):
         import string
