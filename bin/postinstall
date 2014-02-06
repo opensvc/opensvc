@@ -5,6 +5,8 @@ import shutil
 import glob
 import sys
 import tempfile
+import inspect
+import datetime
 
 python_names = ['python2.7', 'python2.6']
 python_paths = [
@@ -35,7 +37,21 @@ pathvar = os.path.join(pathsvc, 'var')
 pathtmp = os.path.join(pathsvc, 'tmp')
 pathlib = os.path.join(pathsvc, 'lib')
 
+def logit(msg):
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    timestamp = str(datetime.datetime.now())
+    osvtmp = os.path.join(pathtmp, 'OpenSVC.postinstall.log')
+    content = '['+calframe[1][3]+']['+timestamp+'] '+msg
+    f = open(osvtmp, 'a')
+    f.write(content+'\n')
+    f.close()
+    print content
+
+logit("Starting OpenSVC PostInstall")
+
 def python_path():
+    logit("Begin")
     for n in python_names:
         p = _python_path(n)
         if p is not None:
@@ -45,6 +61,7 @@ def python_path():
             return p
 
 def _python_path(python_exe):
+    logit("Begin")
     for path in os.environ["PATH"].split(os.pathsep):
         exe_file = os.path.join(path, python_exe)
         if os.path.exists(exe_file) and os.access(exe_file, os.X_OK):
@@ -52,12 +69,14 @@ def _python_path(python_exe):
     return None
 
 def install_cron():
+    logit("Begin")
     if sysname == 'Windows':
         return 
     else:
         return install_cron_unix()
 
 def install_cron_windows():
+    logit("Begin")
     print "install OsvcSched service"
     schedstop()
     schedremove()
@@ -65,18 +84,22 @@ def install_cron_windows():
     schedstart()
 
 def schedremove():
+    logit("Begin")
     cmd = ' remove'
     schedcmd(cmd)
 
 def schedstart():
+    logit("Begin")
     cmd = ' start'
     schedcmd(cmd)
 
 def schedstop():
+    logit("Begin")
     cmd = ' stop'
     schedcmd(cmd)
 
 def schedinstall():
+    logit("Begin")
     cmd = ''
     cmd += ' --username LocalSystem'
     cmd += ' --startup auto'
@@ -84,6 +107,7 @@ def schedinstall():
     schedcmd(cmd)
 
 def schedcmd(_cmd):
+    logit("Begin")
     print _cmd
     rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'rcWinScheduler.py')+'"'
     cmd = "@echo off\n"
@@ -98,6 +122,7 @@ def schedcmd(_cmd):
     os.unlink(fname)
  
 def install_cron_unix():
+    logit("Begin")
     """install opensvc cron jobs
     """
 
@@ -253,6 +278,7 @@ def install_cron_unix():
             os.unlink(f)
 
 def activate_chkconfig(svc):
+    logit("Begin")
     cmd = ['chkconfig', '--add', svc]
     ret = os.system(' '.join(cmd))
     if ret > 0:
@@ -260,12 +286,15 @@ def activate_chkconfig(svc):
     return True
 
 def activate_ovm():
+    logit("Begin")
     activate_chkconfig('zopensvc')
 
 def activate_redhat():
+    logit("Begin")
     activate_chkconfig('opensvc')
 
 def activate_debian():
+    logit("Begin")
     cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
     ret = os.system(' '.join(cmd))
     if ret > 0:
@@ -277,6 +306,7 @@ def activate_debian():
     return True
 
 def activate_hpux():
+    logit("Begin")
     rc = "/sbin/init.d/opensvc"
     links = ["/sbin/rc1.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
     if os.path.exists("/sbin/rc2.d/S990opensvc"):
@@ -297,6 +327,7 @@ def activate_hpux():
     return True
 
 def activate_AIX():
+    logit("Begin")
     rc = "/etc/rc.d/init.d/opensvc"
     links = ["/etc/rc.d/rc2.d/S990opensvc"]
     for l in links:
@@ -308,6 +339,7 @@ def activate_AIX():
     return True
 
 def activate_OSF1():
+    logit("Begin")
     rc = "/sbin/init.d/opensvc"
     links = ["/sbin/rc0.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
     for l in links:
@@ -318,6 +350,7 @@ def activate_OSF1():
     return True
 
 def activate_SunOS():
+    logit("Begin")
     rc = "/etc/init.d/opensvc"
     links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
     for l in links:
@@ -328,12 +361,15 @@ def activate_SunOS():
     return True
 
 def activate_FreeBSD():
+    logit("Begin")
     return True
 
 def activate_Darwin():
+    logit("Begin")
     return True
 
 def update_file(filename, srctext, replacetext):
+    logit("Begin")
     """ replace into filename srctext by replacetext
     """
     import fileinput
@@ -344,6 +380,7 @@ def update_file(filename, srctext, replacetext):
     fileinput.close()
 
 def install_rc():
+    logit("Begin")
     """install startup script
     """
 
@@ -407,6 +444,7 @@ def install_rc():
     activate()
 
 def gen_keys():
+    logit("Begin")
     if sysname == 'Windows':
         return
     home = os.path.expanduser("~root")
@@ -418,17 +456,20 @@ def gen_keys():
     ret = os.system(' '.join(cmd))
 
 def missing_dir(sub):
+    logit("Begin")
     pathd = os.path.join(pathsvc, sub)
     if not os.path.exists(pathd):
 	print "create dir", pathd
 	os.makedirs(pathd, 755)
 
 def missing_dirs():
+    logit("Begin")
     missing_dir('log')
     missing_dir('tmp')
     missing_dir('var')
 
 def convert_svclinks():
+    logit("Begin")
     missing_dir('etc')
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
     if not os.path.exists(svcmgr):
@@ -447,6 +488,7 @@ def convert_svclinks():
         os.symlink(svcmgr, fpath)
 
 def move_usr_to_opt():
+    logit("Begin")
     linksvc = os.path.join(os.sep, 'service')
     old_pathsvc = os.path.join(os.sep, 'usr', 'local', 'opensvc')
     old_pathvar = os.path.join(old_pathsvc, 'var')
@@ -485,6 +527,7 @@ def move_usr_to_opt():
         os.unlink(linksvc)
 
 def install_etc_path():
+    logit("Begin")
     p = os.path.join(os.sep, 'etc', 'PATH')
     if not os.path.exists(p):
         return
@@ -510,6 +553,7 @@ def install_etc_path():
         return
 
 def install_profile():
+    logit("Begin")
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
     buff = "export PATH=$PATH:"+pathbin+":"+pathetc+"\n"
@@ -525,6 +569,7 @@ def install_profile():
         traceback.print_exc()
 
 def install_bash_completion():
+    logit("Begin")
     src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
@@ -541,6 +586,7 @@ def install_bash_completion():
     os.chmod(dst, 0644)
 
 def install_link(source, target):
+    logit("Begin")
     if source == '' or target == '':
         return False
     if os.path.realpath(source) == os.path.realpath(target):
@@ -550,23 +596,39 @@ def install_link(source, target):
     os.symlink(source,target)
 
 def install_pythonlink():
+    logit("Begin")
     if sysname == 'Windows':
         return install_pythonlink_windows()
     else:
         return install_pythonlink_unix()
 
+
 def install_pythonlink_windows():
+    logit("Begin")
+    logit("Before appending pathlib to syspath")
+    logit(os.environ["PATH"])
     sys.path.append(pathlib)
+    logit("After appending pathlib to syspath")
+    logit(os.environ["PATH"])
     from rcUtilitiesWindows import get_registry_value
-    installfolder = get_registry_value('HKEY_CURRENT_USER', 'Software\\OpenSVC', 'path')
-    installfolder = installfolder.rstrip('\\')
+    logit("Before reading installfolder in registry")
+    try:
+        installfolder = get_registry_value('HKEY_CURRENT_USER', 'Software\\OpenSVC', 'path')
+    except:
+        logit("ERROR while trying to read path into registry HKCU/Software/OpenSVC/path")
+        sys.exit(1)
+
+    installfolder = installfolder.rstrip('\\')   
+    logit("installfolder = <"+installfolder+">")
     osvcenv = os.path.join(installfolder, 'osvcenv.cmd')
     content = '@echo off\nset OSVCROOT='+installfolder+'\nset OSVCPYTHONROOT=%OSVCROOT%\python\nset PYTHONPATH=%OSVCROOT%\lib\nset OSVCPYTHONEXEC=%OSVCPYTHONROOT%\python.exe\ncall inpath.cmd OSVCPYTHONROOT'
+    logit(content)
     f = open(osvcenv, 'w')
     f.write(content)
     f.close()
 		
 def install_pythonlink_unix():
+    logit("Begin")
     p = python_path()
     if p is None:
         print >>sys.stderr, "could not find a valid python installation"
@@ -575,6 +637,7 @@ def install_pythonlink_unix():
     return install_link(source=p, target=target)
 
 def move_host_mode():
+    logit("Begin")
     hm = os.path.join(pathvar, 'host_mode')
     cf = os.path.join(pathetc, 'node.conf')
     nodemgr = os.path.join(pathbin, 'nodemgr')
@@ -596,6 +659,7 @@ def move_host_mode():
     shutil.move(hm, hm+'.old')
  
 def nodeconf_params():
+    logit("Begin")
     nodeconf = os.path.join(pathetc, 'node.conf')
     dotnodeconf = os.path.join(pathetc, '.node.conf')
 
@@ -652,6 +716,7 @@ def nodeconf_params():
             print >>sys.stderr, "failed to write new %s"%nodeconf
 
 def save_exc():
+    logit("Begin")
     import traceback
     try:
         import tempfile
@@ -676,6 +741,7 @@ def save_exc():
         traceback.print_exc()
 
 def purge_collector_api_cache():
+    logit("Begin")
     fname = os.path.join(pathvar, "collector")
     if os.path.exists(fname):
         os.unlink(fname)

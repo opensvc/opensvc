@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:firewall="http://schemas.microsoft.com/wix/FirewallExtension" xmlns:contrib="http://wixtoolset.org/wixcontrib/2008">
-    <Product Id="*" Codepage="1252" Language="1033" Manufacturer="$(var.PRJMANUFACTURER)" Name="$(var.PRJNAME)" UpgradeCode="BA9484B8-A0E2-4932-9BA1-5C0BE6230443" Version="$(var.PRJVERSION)">
+    <Product Id="*" Codepage="1252" Language="1033" Manufacturer="$(var.PRJMANUFACTURER)" Name="$(var.PRJNAME)" UpgradeCode="BA9484B8-A0E2-4932-9BA1-5C0BE6230443" Version="$(var.PRJVERSION).$(var.PRJRELEASE)">
         <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" InstallPrivileges="elevated" />
         <Media Id="1" Cabinet="$(var.PRJNAME).cab" EmbedCab="yes" />
         <!-- Begin checking for prereqs -->
