@@ -30,6 +30,7 @@ class Share(Resource):
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        out = out.replace('\n ', '').replace('\n\t', '')
         for line in out.split('\n'):
             words = line.split()
             if len(words) != 2:
