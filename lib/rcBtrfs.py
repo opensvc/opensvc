@@ -303,11 +303,21 @@ class Btrfs(object):
         for line in out.split("\n"):
             if len(line) == 0 or " on " not in line or " type btrfs " not in line:
                 continue
-            l = line.split('[')
-            label = l[-1].strip(']')
             mntpt = line[line.index(" on ")+4:line.index(" type btrfs ")]
+            if '[' in line:
+                l = line.split('[')
+                label = l[-1].strip(']')
+            else:
+                label = self.get_label(mntpt)
             mounts[mntpt] = label
         return mounts
+
+    def get_label(self, mntpt):
+        cmd = ['btrfs', 'fi', 'label', mntpt]
+        out, err, ret = self.justcall(cmd)
+        if ret != 0:
+            raise excError("error running %s:\n"%' '.join(cmd)+err)
+        return out.strip('\n')
 
     def is_mounted_subvol(self, path):
         path = path.rstrip('/')
