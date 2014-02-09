@@ -81,7 +81,7 @@ class SyncBtrfs(resSync.Sync):
         if not action.startswith('sync'):
             return
 
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             raise ex.excAbortAction
@@ -156,7 +156,7 @@ class SyncBtrfs(resSync.Sync):
         self._syncupdate('syncdrp')
 
     def sanity_checks(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status != rcStatus.UP:
             if not self.svc.cron:
                 self.log.info("won't sync this resource for a service not up")
