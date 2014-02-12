@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import errno
 import shutil
 import glob
 import sys
@@ -25,6 +26,13 @@ except NameError:
     # old python version do not support __file__
     pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
 
+def make_sure_path_exists(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+
 pathbin = os.path.realpath(pathbin)
 if not pathbin.rstrip(os.sep).endswith('bin'):
     # hpux executes the postinstall from dir
@@ -37,6 +45,8 @@ pathvar = os.path.join(pathsvc, 'var')
 pathtmp = os.path.join(pathsvc, 'tmp')
 pathlib = os.path.join(pathsvc, 'lib')
 
+make_sure_path_exists(pathtmp)
+
 def logit(msg):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
@@ -46,7 +56,6 @@ def logit(msg):
     f = open(osvtmp, 'a')
     f.write(content+'\n')
     f.close()
-    print content
 
 logit("Starting OpenSVC PostInstall")
 

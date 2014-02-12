@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2014 Arnaud veron <arnaud.veron@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import checks
-from rcUtilities import justcall
+from rcUtilities import justcall, printplus
 
 class check(checks.check):
     chk_type = "mpath"
@@ -133,3 +134,8 @@ class check(checks.check):
                       'chk_svcname': self.find_svc(dev),
                      })
         return r
+
+if __name__ == "__main__":
+    paths = check()
+    tab = paths.do_check()
+    printplus(tab)
