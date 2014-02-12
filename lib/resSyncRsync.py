@@ -157,6 +157,8 @@ def sync_timestamp(self, node):
         options = add_sudo_rsync_path(self.options)
     else:
         options = self.options
+    if '-e' not in options:
+        options += ['-e', rcEnv.rsh]
     cmd = ['rsync'] + options + bwlimit_option(self)
     cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
     self.call(cmd)
@@ -322,6 +324,8 @@ class Rsync(resSync.Sync):
                 options = add_sudo_rsync_path(self.options)
             else:
                 options = self.options
+            if '-e' not in options:
+                options += ['-e', rcEnv.rsh]
             cmd = ['rsync'] + options + bwlimit + src
             cmd.append(dst)
             if self.rid.startswith("sync#i"):
