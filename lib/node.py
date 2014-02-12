@@ -1234,7 +1234,7 @@ class Node(Svc, Freezer):
         try:
             data = getattr(o, 'rotate_root_pw')(pw)
         except Exception as e:
-            print("unexpected error sending the new password to the collector (%s). Abording password change."%str(e), file=sys.stderr)
+            print "unexpected error sending the new password to the collector (%s). Abording password change."%str(e)
             return 1
 
         try:
