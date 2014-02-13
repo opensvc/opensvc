@@ -29,14 +29,14 @@ class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, node=None, cloud_id=None,
                  user="root", group="root", perm="660",
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+                 always_on=set([]), monitor=False, restart=0):
         self.label = "gandi volume %s"%str(name)
         resDg.Dg.__init__(self, rid=rid, name="gandi",
                           type='disk.gandi',
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled, tags=tags,
-                          monitor=monitor)
+                          monitor=monitor, restart=restart)
 
         self.name = name
         self.node = node

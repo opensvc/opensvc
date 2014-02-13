@@ -26,12 +26,13 @@ import os
 
 class Ldom(resContainer.Container):
     def __init__(self, rid, name, guestos="SunOS", optional=False, disabled=False, monitor=False,
-                 tags=set([]), always_on=set([])):
+                 restart=0, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.ldom",
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags, always_on=always_on)
+                                        monitor=monitor, restart=restart,
+                                        tags=tags, always_on=always_on)
         self.shutdown_timeout = 240
         self.sshbin = '/usr/local/bin/ssh'
 

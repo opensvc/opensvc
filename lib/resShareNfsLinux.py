@@ -119,10 +119,10 @@ class Share(Resource):
         return client, set(opts.split(','))
 
     def __init__(self, rid, path, opts, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False, monitor=False):
+                 disabled=False, tags=set([]), optional=False, monitor=False, restart=0):
         Resource.__init__(self, rid, type="share.nfs", always_on=always_on,
                           disabled=disabled, tags=tags, optional=optional,
-                          monitor=monitor)
+                          monitor=monitor, restart=restart)
         if not which("exportfs"):
             raise ex.excInitError("exportfs is not installed")
         self.label = "nfs:"+path

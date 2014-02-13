@@ -107,12 +107,13 @@ class Jail(resContainer.Container):
     def __init__(self, rid, name, guestos="FreeBSD",
                  jailroot="/tmp", ips=[], ip6s=[],
                  optional=False, disabled=False,
-                 monitor=False, tags=set([]), always_on=set([])):
+                 monitor=False, restart=0, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         guestos=guestos,
                                         type="container.jail",
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags, always_on=always_on)
+                                        monitor=monitor, restart=restart,
+                                        tags=tags, always_on=always_on)
         self.jailroot = jailroot
         self.ips = ips
         self.ip6s = ip6s

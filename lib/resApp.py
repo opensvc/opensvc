@@ -40,10 +40,10 @@ class Apps(Res.Resource):
     prefix = []
 
     def __init__(self, dir=None, optional=False, disabled=False,
-                 tags=set([]), monitor=False):
+                 tags=set([]), monitor=False, restart=0):
         Res.Resource.__init__(self, rid="app", type="app",
                               optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor) 
+                              monitor=monitor, restart=restart) 
         self.label = "app"
         self.dir = dir
 

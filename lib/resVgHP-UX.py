@@ -28,7 +28,7 @@ class Vg(resDg.Dg):
     def __init__(self, rid=None, name=None, type=None,
                  always_on=set([]), dsf=True,
                  disabled=False, tags=set([]), optional=False,
-                 monitor=False):
+                 monitor=False, restart=0):
         self.label = name
         self.dsf = dsf
         resDg.Dg.__init__(self, rid=rid, name=name,
@@ -36,7 +36,7 @@ class Vg(resDg.Dg):
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled, tags=tags,
-                          monitor=monitor)
+                          monitor=monitor, restart=restart)
 
     def is_child_dev(self, device):
         l = device.split("/")

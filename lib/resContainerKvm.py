@@ -31,12 +31,12 @@ class Kvm(resContainer.Container):
     shutdown_timeout = 120
 
     def __init__(self, rid, name, guestos=None, optional=False, disabled=False, monitor=False,
-                 tags=set([]), always_on=set([])):
+                 restart=0, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.kvm",
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags, always_on=always_on)
+                                        monitor=monitor, restart=restart, tags=tags, always_on=always_on)
         self.cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', name+'.xml')
 
     def __str__(self):

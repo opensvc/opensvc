@@ -34,10 +34,10 @@ class Ip(Res.Resource):
     """
     def __init__(self, rid=None, ipDev=None, ipName=None, mask=None,
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, gateway=None):
+                 always_on=set([]), monitor=False, restart=0, gateway=None):
         Res.Resource.__init__(self, rid, "ip", optional=optional,
                               disabled=disabled, tags=tags,
-                              monitor=monitor)
+                              monitor=monitor, restart=restart)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask

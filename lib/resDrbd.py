@@ -38,10 +38,10 @@ class Drbd(Res.Resource):
     """
     def __init__(self, rid=None, res=None, always_on=set([]),
                  optional=False, disabled=False, tags=set([]),
-                 monitor=False):
+                 monitor=False, restart=0):
         Res.Resource.__init__(self, rid, "disk.drbd",
                               optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor)
+                              monitor=monitor, restart=restart)
         self.res = res
         self.label = res
         self.drbdadm = None

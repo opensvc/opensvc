@@ -777,6 +777,9 @@ class Svc(Resource, Freezer):
 
         for r in monitored_resources:
             if r.rstatus != rcStatus.UP:
+                if self.restart_resource(r):
+                    # restart suceeded : don't TOC because of this resource
+                    continue
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
                     if len(r.status_log_str) > 0:
@@ -790,6 +793,26 @@ class Svc(Resource, Freezer):
                 return
 
         self.log.debug("monitored resources are up")
+
+    def restart_resource(self, r):
+        if r.restart == 0:
+            return False
+        if not hasattr(r, 'start'):
+            self.log.error("resource restart configured on resource %s with no 'start' action support"%r.rid)
+            return False
+        for i in range(r.restart):
+            try:
+                self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.restart))
+                r.start()
+            except Exception as e:
+                self.log.error("restart resource failed: " + str(e))
+                return False
+            if r.is_up():
+                self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
+                return True
+            if i + 1 < r.restart:
+                time.sleep(1)
+        return False
 
     class exMonitorAction(Exception):
         pass
