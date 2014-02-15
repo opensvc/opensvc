@@ -79,6 +79,7 @@ class Asset(rcAsset.Asset):
         }
         s = platform.release()
         s = s.replace('Server', ' Server')
+        s = s.replace('ServerR', ' Server R')
         s = s.replace('Workstation', ' Workstation')
         s += " %s" % v.service_pack
         return s
