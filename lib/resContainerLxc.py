@@ -238,12 +238,13 @@ class Lxc(resContainer.Container):
         return None
 
     def __init__(self, rid, name, guestos="Linux", cf=None, optional=False, disabled=False, monitor=False,
-                 tags=set([]), always_on=set([])):
+                 restart=0, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.lxc",
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags, always_on=always_on)
+                                        monitor=monitor, restart=restart,
+                                        tags=tags, always_on=always_on)
 
         if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']

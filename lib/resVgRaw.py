@@ -28,14 +28,14 @@ class Vg(resDg.Dg):
     def __init__(self, rid=None, devs=set([]), user="root",
                  group="root", perm="660", type=None,
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+                 always_on=set([]), monitor=False, restart=0):
         self.label = "raw"
         resDg.Dg.__init__(self, rid=rid, name="raw",
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled, tags=tags,
-                          monitor=monitor)
+                          monitor=monitor, restart=restart)
 
         self.devs = set([])
         self.devs_not_found = set([])

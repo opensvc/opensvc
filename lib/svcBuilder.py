@@ -176,6 +176,21 @@ def get_monitor(conf, section, svc):
         return True
     return False
 
+def get_restart(conf, section, svc):
+    if not conf.has_section(section):
+        if conf.has_option('DEFAULT', 'restart'):
+            try:
+                return conf_get_int_scope(svc, conf, section, 'restart')
+            except ex.OptNotFound:
+                return 0
+        else:
+            return 0
+    try:
+        return conf_get_int_scope(svc, conf, section, 'restart')
+    except ex.OptNotFound:
+        return 0
+    return 0
+
 def get_disabled(conf, section, svc):
     if not conf.has_section(section):
         if conf.has_option('DEFAULT', 'disable'):
@@ -370,6 +385,7 @@ def add_ip(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
     r = ip.Ip(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
@@ -392,6 +408,7 @@ def add_drbd(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
     drbd = __import__('resDrbd')
     r = drbd.Drbd(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -416,6 +433,7 @@ def add_vdisk(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
     vdisk = __import__('resVdisk')
     r = vdisk.Vdisk(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -534,6 +552,7 @@ def add_loop(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
         loop = __import__('resLoop'+rcEnv.sysname)
@@ -632,6 +651,7 @@ def add_vg(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
         vg = __import__('resVg'+vgtype)
@@ -674,6 +694,7 @@ def add_vmdg(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, 'vmdg', svc)
     kwargs['optional'] = get_optional(conf, 'vmdg', svc)
     kwargs['monitor'] = get_monitor(conf, 'vmdg', svc)
+    kwargs['restart'] = get_restart(conf, 'vmdg', svc)
 
     r = vg.Vg(**kwargs)
     add_triggers(svc, r, conf, 'vmdg')
@@ -705,6 +726,7 @@ def add_pool(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = pool.Pool(**kwargs)
 
@@ -755,6 +777,7 @@ def add_share_nfs(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = share.Share(**kwargs)
 
@@ -828,6 +851,7 @@ def add_fs(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = mount.Mount(**kwargs)
 
@@ -860,6 +884,7 @@ def add_containers_esx(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Esx(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -887,6 +912,7 @@ def add_containers_hpvm(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.HpVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -914,6 +940,7 @@ def add_containers_ldom(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Ldom(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -941,6 +968,7 @@ def add_containers_vbox(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Vbox(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -968,6 +996,7 @@ def add_containers_xen(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Xen(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -995,6 +1024,7 @@ def add_containers_zone(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Zone(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1036,6 +1066,7 @@ def add_containers_vcloud(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1086,6 +1117,7 @@ def add_containers_openstack(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1113,6 +1145,7 @@ def add_containers_vz(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Vz(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1141,6 +1174,7 @@ def add_containers_kvm(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Kvm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1168,6 +1202,7 @@ def add_containers_srp(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Srp(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1200,6 +1235,7 @@ def add_containers_lxc(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Lxc(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1234,6 +1270,7 @@ def add_containers_ovm(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Ovm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1273,6 +1310,7 @@ def add_containers_jail(svc, conf, s):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Jail(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1911,6 +1949,7 @@ def add_apps(svc, conf):
     kwargs['disabled'] = get_disabled(conf, s, svc)
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
        
     r = resApp.Apps(**kwargs)
     add_triggers(svc, r, conf, s)

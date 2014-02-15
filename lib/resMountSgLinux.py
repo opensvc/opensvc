@@ -25,12 +25,12 @@ class Mount(Res.Mount):
     def __init__(self, rid, mountPoint, device, fsType, mntOpt,
                  always_on=set([]), snap_size=None,
                  disabled=False, tags=set([]), optional=False,
-                 monitor=False):
+                 monitor=False, restart=0):
         self.sgname = device
         Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt,
                            always_on=always_on, snap_size=snap_size,
                            disabled=disabled, tags=tags, optional=optional,
-                           monitor=monitor)
+                           monitor=monitor, restart=restart)
 
     def is_up(self):
         if 'resource' in self.svc.cmviewcl and \

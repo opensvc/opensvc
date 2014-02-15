@@ -34,13 +34,13 @@ class Pool(resDg.Dg):
     """
     def __init__(self, rid=None, name=None, type=None,
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+                 always_on=set([]), monitor=False, restart=0):
         self.label = 'pool ' + name
         resDg.Dg.__init__(self, rid=rid, name=name,
                           type='disk.zpool',
                           always_on=always_on,
                           optional=optional, disabled=disabled, tags=tags,
-                          monitor=monitor)
+                          monitor=monitor, restart=restart)
 
     def disklist_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')

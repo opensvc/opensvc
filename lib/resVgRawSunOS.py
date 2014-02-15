@@ -23,7 +23,7 @@ import re
 class Vg(resVgRaw.Vg):
     def __init__(self, rid=None, devs=set([]), type=None,
                  optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+                 always_on=set([]), monitor=False, restart=0):
         
         resVgRaw.Vg.__init__(self, rid=rid,
                              devs=devs,
@@ -32,7 +32,8 @@ class Vg(resVgRaw.Vg):
                              disabled=disabled,
                              tags=tags,
                              always_on=always_on,
-                             monitor=monitor)
+                             monitor=monitor,
+                             restart=restart)
 
         self.devs = set([])
         self.devs_not_found = set([])

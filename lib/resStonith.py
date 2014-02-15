@@ -7,8 +7,8 @@ import rcExceptions as ex
 
 class Stonith(Res.Resource):
     def __init__(self, rid=None, type=None, always_on=set([]),
-                 optional=False, disabled=False, monitor=False, tags=set([])):
-        Res.Resource.__init__(self, rid, type, optional=optional, disabled=disabled, monitor=monitor, tags=tags)
+                 optional=False, disabled=False, monitor=False, restart=0, tags=set([])):
+        Res.Resource.__init__(self, rid, type, optional=optional, disabled=disabled, monitor=monitor, restart=restart, tags=tags)
         self.name = None
         self.re_login = re.compile("(login\s*: )|(Login Name:  )|(username: )|(User Name :)", re.IGNORECASE)
         self.re_pass  = re.compile("password", re.IGNORECASE)

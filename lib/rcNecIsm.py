@@ -37,7 +37,7 @@ D1-10             D1_10                             ready           running
             l = line.split()
             if len(l) != 4:
                 continue
-            if filtering and l[1] not in self.objects:
+            if self.filtering and l[1] not in self.objects:
                 continue
             self.arrays.append(NecIsm(l[1]))
 
@@ -67,5 +67,5 @@ class NecIsm(object):
 if __name__ == "__main__":
     o = NecIsms()
     for necism in o:
-        print(necism.all())
+        print(necism.get_all())
 

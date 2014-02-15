@@ -36,7 +36,7 @@ class Resource(object):
     label = None
 
     def __init__(self, rid=None, type=None, optional=False, disabled=False,
-                 monitor=False, tags=set([]), always_on=set([])):
+                 monitor=False, restart=0, tags=set([]), always_on=set([])):
         self.rid = rid
         self.tags = tags
         self.type = type
@@ -44,6 +44,7 @@ class Resource(object):
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
+        self.restart = restart
         self.log = logging.getLogger(str(rid).upper())
         self.rstatus = None
         self.always_on = always_on

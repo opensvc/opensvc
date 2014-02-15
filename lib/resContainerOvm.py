@@ -29,12 +29,13 @@ class Ovm(resContainer.Container):
     shutdown_timeout = 120
 
     def __init__(self, rid, name, uuid, guestos=None, optional=False, disabled=False, monitor=False,
-                 tags=set([]), always_on=set([])):
+                 restart=0, tags=set([]), always_on=set([])):
         resContainer.Container.__init__(self, rid=rid, name=name,
                                         type="container.ovm",
                                         guestos=guestos,
                                         optional=optional, disabled=disabled,
-                                        monitor=monitor, tags=tags, always_on=always_on)
+                                        monitor=monitor, restart=restart,
+                                        tags=tags, always_on=always_on)
         self.uuid = uuid
         self.xen_d = os.path.join(os.sep, 'etc', 'xen')
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')
