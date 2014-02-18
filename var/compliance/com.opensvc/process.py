@@ -17,6 +17,7 @@ from subprocess import *
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
+from utilities import which
 
 class CompProcess(object):
     def __init__(self, prefix='OSVC_COMP_PROCESS_'):
@@ -44,8 +45,30 @@ class CompProcess(object):
 
         self.load_ps()
 
-    def load_ps(self):
-        self.ps = {}
+    def load_ps_args(self):
+        self.ps_args = {}
+        cmd = ['ps', '-e', '-o', 'pid,uid,user,args']
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "unable to fetch ps"
+            raise ComplianceError
+        lines = out.split('\n')
+        if len(lines) < 2:
+            return
+        for line in lines[1:]:
+            l = line.split()
+            if len(l) < 4:
+                continue
+            pid, uid, user = l[:3]
+            args = " ".join(l[3:])
+            if args not in self.ps_args:
+                self.ps_args[args] = [(pid, int(uid), user)]
+            else:
+                self.ps_args[args].append((pid, int(uid), user))
+
+    def load_ps_comm(self):
+        self.ps_comm = {}
         cmd = ['ps', '-e', '-o', 'comm,pid,uid,user']
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
@@ -60,10 +83,14 @@ class CompProcess(object):
             if len(l) != 4:
                 continue
             comm, pid, uid, user = l
-            if comm not in self.ps:
-                self.ps[comm] = [(pid, int(uid), user)]
+            if comm not in self.ps_comm:
+                self.ps_comm[comm] = [(pid, int(uid), user)]
             else:
-                self.ps[comm].append((pid, int(uid), user))
+                self.ps_comm[comm].append((pid, int(uid), user))
+
+    def load_ps(self):
+        self.load_ps_comm()
+        self.load_ps_args()
 
     def validate_process(self):
         l = []
@@ -73,109 +100,236 @@ class CompProcess(object):
         self.process = l
 
     def _validate_process(self, process):
-        if 'comm' not in process:
-            print >>sys.stderr, process, 'rule is malformed ... comm key not present'
+        if 'comm' not in process and 'args' not in process:
+            print >>sys.stderr, process, 'rule is malformed ... nor comm nor args key present'
             return RET_ERR
         if 'uid' in process and type(process['uid']) != int:
             print >>sys.stderr, process, 'rule is malformed ... uid value must be integer'
             return RET_ERR
         return RET_OK
 
-    def get_keys(self, comm):
+    def get_keys_args(self, args):
         found = []
-        for key in self.ps:
+        for key in self.ps_args:
+            if re.match(args, key) is not None:
+                found.append(key)
+        return found
+
+    def get_keys_comm(self, comm):
+        found = []
+        for key in self.ps_comm:
             if re.match(comm, key) is not None:
                 found.append(key)
         return found
 
-    def check_present(self, comm, verbose):
-        found = self.get_keys(comm)
+    def check_present_args(self, args, verbose):
+        if len(args.strip()) == 0:
+            return RET_OK
+        found = self.get_keys_args(args)
         if len(found) == 0:
             if verbose:
-                print >>sys.stderr, 'process', comm, 'is not started ... should be'
+                print >>sys.stderr, 'process with args', args, 'is not started ... should be'
             return RET_ERR
         else:
             if verbose:
-                print 'process', comm, 'is started ... on target'
+                print 'process with args', args, 'is started ... on target'
         return RET_OK
 
-    def check_not_present(self, comm, verbose):
-        found = self.get_keys(comm)
+    def check_present_comm(self, comm, verbose):
+        if len(comm.strip()) == 0:
+            return RET_OK
+        found = self.get_keys_comm(comm)
+        if len(found) == 0:
+            if verbose:
+                print >>sys.stderr, 'process with command', comm, 'is not started ... should be'
+            return RET_ERR
+        else:
+            if verbose:
+                print 'process with command', comm, 'is started ... on target'
+        return RET_OK
+
+    def check_present(self, process, verbose):
+        r = RET_OK
+        if 'comm' in process:
+            r |= self.check_present_comm(process['comm'], verbose)
+        if 'args' in process:
+            r |= self.check_present_args(process['args'], verbose)
+        return r
+
+    def check_not_present_comm(self, comm, verbose):
+        if len(comm.strip()) == 0:
+            return RET_OK
+        found = self.get_keys_comm(comm)
         if len(found) == 0:
            if verbose:
-               print 'process', comm, 'is not started ... on target'
+               print 'process with command', comm, 'is not started ... on target'
            return RET_OK
         else:
            if verbose:
-               print >>sys.stderr, 'process', comm, 'is started ... shoud be'
+               print >>sys.stderr, 'process with command', comm, 'is started ... shoud be'
         return RET_ERR
+
+    def check_not_present_args(self, args, verbose):
+        if len(args.strip()) == 0:
+            return RET_OK
+        found = self.get_keys_args(args)
+        if len(found) == 0:
+           if verbose:
+               print 'process with args', args, 'is not started ... on target'
+           return RET_OK
+        else:
+           if verbose:
+               print >>sys.stderr, 'process with args', args, 'is started ... shoud be'
+        return RET_ERR
+
+    def check_not_present(self, process, verbose):
+        r = 0
+        if 'comm' in process:
+            r |= self.check_not_present_comm(process['comm'], verbose)
+        if 'args' in process:
+            r |= self.check_not_present_args(process['args'], verbose)
+        return r
 
     def check_process(self, process, verbose=True):
         r = RET_OK
         if process['state'] == 'on':
-            r |= self.check_present(process['comm'], verbose)
+            r |= self.check_present(process, verbose)
             if r == RET_ERR:
                 return RET_ERR
             if 'uid' in process:
-                r |= self.check_uid(process['comm'], process['uid'], verbose)
+                r |= self.check_uid(process, process['uid'], verbose)
             if 'user' in process:
-                r |= self.check_user(process['comm'], process['user'], verbose)
+                r |= self.check_user(process, process['user'], verbose)
         else:
-            r |= self.check_not_present(process['comm'], verbose)
+            r |= self.check_not_present(process, verbose)
 
         return r
 
-    def check_uid(self, comm, uid, verbose):
+    def check_uid(self, process, uid, verbose):
+        if 'args' in process:
+            return self.check_uid_args(process['args'], uid, verbose)
+        if 'comm' in process:
+            return self.check_uid_comm(process['comm'], uid, verbose)
+
+    def check_uid_comm(self, comm, uid, verbose):
+        if len(comm.strip()) == 0:
+            return RET_OK
         found = False
-        keys = self.get_keys(comm)
+        keys = self.get_keys_comm(comm)
         for key in keys:
-            for _pid, _uid, _user in self.ps[key]:
+            for _pid, _uid, _user in self.ps_comm[key]:
                 if uid == _uid:
                     found = True
                     continue
         if found:
             if verbose:
-                print 'process', comm, 'runs with uid', _uid, '... on target'
+                print 'process with command', comm, 'runs with uid', _uid, '... on target'
         else:
             if verbose:
-                print >>sys.stderr, 'process', comm, 'does not run with uid', _uid, '... should be'
+                print >>sys.stderr, 'process with command', comm, 'does not run with uid', _uid, '... should be'
             return RET_ERR
         return RET_OK
 
-    def check_user(self, comm, user, verbose):
+    def check_uid_args(self, args, uid, verbose):
+        if len(args.strip()) == 0:
+            return RET_OK
         found = False
-        keys = self.get_keys(comm)
+        keys = self.get_keys_args(args)
         for key in keys:
-            for _pid, _uid, _user in self.ps[key]:
+            for _pid, _uid, _user in self.ps_args[key]:
+                if uid == _uid:
+                    found = True
+                    continue
+        if found:
+            if verbose:
+                print 'process with args', args, 'runs with uid', _uid, '... on target'
+        else:
+            if verbose:
+                print >>sys.stderr, 'process with args', args, 'does not run with uid', _uid, '... should be'
+            return RET_ERR
+        return RET_OK
+
+    def check_user(self, process, user, verbose):
+        if 'args' in process:
+            return self.check_user_args(process['args'], user, verbose)
+        if 'comm' in process:
+            return self.check_user_comm(process['comm'], user, verbose)
+
+    def check_user_comm(self, comm, user, verbose):
+        if len(comm.strip()) == 0:
+            return RET_OK
+        if user is None or len(user) == 0:
+            return RET_OK
+        found = False
+        keys = self.get_keys_comm(comm)
+        for key in keys:
+            for _pid, _uid, _user in self.ps_comm[key]:
                 if user == _user:
                     found = True
                     continue
         if found:
             if verbose:
-                print 'process', comm, 'runs with user', _user, '... on target'
+                print 'process with command', comm, 'runs with user', _user, '... on target'
         else:
             if verbose:
-                print >>sys.stderr, 'process', comm, 'does not run with user', _user, '... should be'
+                print >>sys.stderr, 'process with command', comm, 'runs with user', _user, '... should run with user', user
+            return RET_ERR
+        return RET_OK
+
+    def check_user_args(self, args, user, verbose):
+        if len(args.strip()) == 0:
+            return RET_OK
+        if user is None or len(user) == 0:
+            return RET_OK
+        found = False
+        keys = self.get_keys_args(args)
+        for key in keys:
+            for _pid, _uid, _user in self.ps_args[key]:
+                if user == _user:
+                    found = True
+                    continue
+        if found:
+            if verbose:
+                print 'process with args', args, 'runs with user', _user, '... on target'
+        else:
+            if verbose:
+                print >>sys.stderr, 'process with args', args, 'runs with user', _user, '... should run with user', user
             return RET_ERR
         return RET_OK
 
     def fix_process(self, process):
-        if self.check_present(process['comm'], verbose=False) == RET_OK:
-            if ('uid' in process and self.check_uid(process['comm'], process['uid'], verbose=False) == RET_ERR) or \
-               ('user' in process and self.check_user(process['comm'], process['user'], verbose=False) == RET_ERR):
-                print >>sys.stderr, process['comm'], "runs with the wrong user. can't fix."
-                return RET_ERR
-            return RET_OK
-        if 'start' not in process:
-            print >>sys.stderr, "undefined startup method for process", process['comm']
+        if process['state'] == 'on':
+            if self.check_present(process, verbose=False) == RET_OK:
+                if ('uid' in process and self.check_uid(process, process['uid'], verbose=False) == RET_ERR) or \
+                   ('user' in process and self.check_user(process, process['user'], verbose=False) == RET_ERR):
+                    print >>sys.stderr, process, "runs with the wrong user. can't fix."
+                    return RET_ERR
+                return RET_OK
+        elif process['state'] == 'off':
+            if self.check_not_present(process, verbose=False) == RET_OK:
+                return RET_OK
+
+        if 'start' not in process or len(process['start'].strip()) == 0:
+            print >>sys.stderr, "undefined fix method for process", process['comm']
+            return RET_ERR
+
+        v = process['start'].split(' ')
+        if not which(v[0]):
+            print >>sys.stderr, "fix command", v[0], "is not present or not executable"
             return RET_ERR
         print 'exec:', process['start']
-        p = Popen(process['start'].split(' '), stdout=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
-            print >>sys.stderr, "start up command returned with error code", p.returncode
+        try:
+            p = Popen(v, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+        except Exception as e:
+            print >>sys.stderr, e
+            return RET_ERR
+        if len(out) > 0:
             print out
+        if len(err) > 0:
             print >>sys.stderr, err
+        if p.returncode != 0:
+            print >>sys.stderr, "fix up command returned with error code", p.returncode
             return RET_ERR
         return RET_OK
 
