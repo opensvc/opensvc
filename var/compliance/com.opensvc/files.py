@@ -58,7 +58,6 @@ class CompFiles(object):
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.files) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
     def subst(self, v):
@@ -83,13 +82,13 @@ class CompFiles(object):
             v = v.replace(m, _v)
         return v
 
-    def parse_fmt(self, d):
+    def parse_fmt(self, d, add_linefeed=True):
         if isinstance(d['fmt'], int):
-            d['fmt'] = str(d['fmt'])+'\n'
+            d['fmt'] = str(d['fmt'])
         d['fmt'] = d['fmt'].replace('%%HOSTNAME%%', self.nodename)
         d['fmt'] = d['fmt'].replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
         d['fmt'] = self.subst(d['fmt'])
-        if not d['fmt'].endswith('\n'):
+        if add_linefeed and not d['fmt'].endswith('\n'):
             d['fmt'] += '\n'
         return [d]
 
@@ -106,12 +105,12 @@ class CompFiles(object):
         if 'invalid file' in headers.values():
             print >>sys.stderr, d['ref'], "not found on collector"
             raise InitError()
-        d['fmt'] = unicode(f.read())
+        d['fmt'] = f.read()
         if '<title>404 Not Found</title>' in d['fmt']:
             print >>sys.stderr, url, "not found on collector"
             raise InitError()
         f.close()
-        return self.parse_fmt(d)
+        return self.parse_fmt(d, add_linefeed=False)
 
     def get_env_item(self, d, item):
         if item not in d:
