@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(__file__))
 from comp import *
 
 class Sysctl(object):
-    def __init__(self, prefix='OSVC_COMP_XINETD_'):
+    def __init__(self, prefix='OSVC_COMP_SYSCTL_'):
         self.prefix = prefix.upper()
         self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
@@ -126,8 +126,8 @@ class Sysctl(object):
             val = self.get_live_key(key['key'])
             if target != val[index]:
                 val[index] = target
-                print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
-                lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
+            print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
+            lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
 
         try:
             with open(self.cf, 'w') as f:
