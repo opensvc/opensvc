@@ -267,7 +267,7 @@ class CompVuln(object):
         for line in out.split('\n'):
             if not line.startswith('ii'):
                 continue
-            v = line.split()[1:2]
+            v = line.split()[1:3]
             l[v[0]] = [(v[1], "")]
         return l
 
