@@ -26,11 +26,58 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
+blacklist = [
+ "root",
+ "bin",
+ "daemon",
+ "sys",
+ "adm",
+ "tty",
+ "disk",
+ "lp",
+ "mem",
+ "kmem",
+ "wheel",
+ "mail",
+ "uucp",
+ "man",
+ "games",
+ "gopher",
+ "video",
+ "dip",
+ "ftp",
+ "lock",
+ "audio",
+ "nobody",
+ "users",
+ "utmp",
+ "utempter",
+ "floppy",
+ "vcsa",
+ "cdrom",
+ "tape",
+ "dialout",
+ "saslauth",
+ "postdrop",
+ "postfix",
+ "sshd",
+ "opensvc",
+ "mailnull",
+ "smmsp",
+ "slocate",
+ "rpc",
+ "rpcuser",
+ "nfsnobody",
+ "tcpdump",
+ "ntp"
+]
+
 class CompGroup(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
         self.prefix = prefix.upper()
         self.groupmod = 'groupmod'
         self.groupadd = 'groupadd'
+        self.groupdel = 'groupdel'
         self.grt = {
             'gid': 'gr_gid',
         }
@@ -44,6 +91,7 @@ class CompGroup(object):
         if self.sysname == 'AIX':
             self.groupmod = 'chgroup'
             self.groupadd = 'mkgroup'
+            self.groupdel = 'rmgroup'
             self.groupmod_p = {
                 'gid': 'id',
             }
@@ -117,7 +165,18 @@ class CompGroup(object):
             return True
         return False
 
+    def check_group_del(self, group):
+        try:
+            groupinfo = grp.getgrnam(group)
+        except KeyError:
+            print 'group', group, 'does not exist, on target'
+            return RET_OK
+        print >>sys.stderr, 'group', group, "exists, shouldn't"
+        return RET_ERR
+
     def check_group(self, group, props):
+        if group.startswith('-'):
+            return self.check_group_del(group.lstrip('-'))
         r = 0
         try:
             groupinfo = grp.getgrnam(group)
@@ -147,7 +206,27 @@ class CompGroup(object):
         else:
             return RET_ERR
 
+    def fix_group_del(self, group):
+        if group in blacklist:
+            print >>sys.stderr, "delete", group, "... cowardly refusing"
+            return RET_ERR
+        try:
+            groupinfo = grp.getgrnam(group)
+        except KeyError:
+            return RET_OK
+        cmd = [self.groupdel, group]
+        print ' '.join(cmd)
+        p = Popen(cmd)
+        out, err = p.communicate()
+        r = p.returncode
+        if r == 0:
+            return RET_OK
+        else:
+            return RET_ERR
+
     def fix_group(self, group, props):
+        if group.startswith('-'):
+            return self.fix_group_del(group.lstrip('-'))
         r = 0
         try:
             groupinfo = grp.getgrnam(group)
