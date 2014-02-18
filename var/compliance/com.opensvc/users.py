@@ -33,11 +33,40 @@ try:
 except:
     cap_shadow = False
 
-from subprocess import Popen, list2cmdline
+from subprocess import Popen, list2cmdline, PIPE
 
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
+
+blacklist = [
+ "root",
+ "bin",
+ "daemon",
+ "adm",
+ "lp",
+ "sync",
+ "shutdown",
+ "halt",
+ "mail",
+ "news",
+ "uucp",
+ "operator",
+ "nobody",
+ "nscd",
+ "vcsa",
+ "pcap",
+ "mailnull",
+ "smmsp",
+ "sshd",
+ "rpc",
+ "avahi",
+ "rpcuser",
+ "nfsnobody",
+ "haldaemon",
+ "avahi-autoipd",
+ "ntp"
+]
 
 class CompUser(object):
     def __init__(self, prefix='OSVC_COMP_USER_'):
@@ -188,30 +217,47 @@ class CompUser(object):
                 print >>sys.stderr, 'user', user, item+':', current, 'target:', target
             return RET_ERR
 
-    def check_user(self, user, props):
+    def check_user_del(self, user, verbose=True):
+        r = 0
+        try:
+            userinfo=pwd.getpwnam(user)
+        except KeyError:
+            if verbose:
+                print 'user', user, 'does not exist, on target'
+            return RET_OK
+        if verbose:
+            print >>sys.stderr, 'user', user, "exists, shouldn't"
+        return RET_ERR
+
+    def check_user(self, user, props, verbose=True):
+        if user.startswith('-'):
+            return self.check_user_del(user.lstrip('-'), verbose=verbose)
         r = 0
         try:
             userinfo=pwd.getpwnam(user)
         except KeyError:
             if self.try_create_user(props):
-                print >>sys.stderr, 'user', user, 'does not exist'
+                if verbose:
+                    print >>sys.stderr, 'user', user, 'does not exist'
                 return RET_ERR
             else:
-                print >>sys.stderr, 'user', user, 'does not exist and not enough info to create it'
+                if verbose:
+                    print >>sys.stderr, 'user', user, 'does not exist and not enough info to create it'
                 return RET_ERR
 
         for prop in self.pwt:
             if prop in props:
                 if prop == "password":
                     if self.initial_passwd:
-                        print "skip", user, "passwd checking in initial_passwd mode"
+                        if verbose:
+                            print "skip", user, "passwd checking in initial_passwd mode"
                         continue
                     if props[prop] == "x":
                         continue
-                r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=True)
+                r |= self.check_item(user, prop, props[prop], getattr(userinfo, self.pwt[prop]), verbose=verbose)
 
         if 'check_home' not in props or props['check_home'] == "yes":
-            r |= self.check_home_ownership(user)
+            r |= self.check_home_ownership(user, verbose=verbose)
 
         if not cap_shadow:
             return r
@@ -220,7 +266,8 @@ class CompUser(object):
             usersinfo=spwd.getspnam(user)
         except KeyError:
             if "spassword" in props:
-                print >>sys.stderr, user, "not declared in /etc/shadow"
+                if verbose:
+                    print >>sys.stderr, user, "not declared in /etc/shadow"
                 r |= RET_ERR
             usersinfo = None
 
@@ -229,11 +276,12 @@ class CompUser(object):
                 if prop in props:
                     if prop == "spassword":
                         if self.initial_passwd:
-                            print "skip", user, "spasswd checking in initial_passwd mode"
+                            if verbose:
+                                print "skip", user, "spasswd checking in initial_passwd mode"
                             continue
                         if props[prop] == "x":
                             continue
-                    r |= self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop]), verbose=True)
+                    r |= self.check_item(user, prop, props[prop], getattr(usersinfo, self.spwt[prop]), verbose=verbose)
 
         return r
 
@@ -258,6 +306,10 @@ class CompUser(object):
 
     def check_home_ownership(self, user, verbose=True):
         path = os.path.expanduser("~"+user)
+        if not os.path.exists(path):
+            if verbose:
+                print >>sys.stderr, path, "homedir does not exist"
+            return RET_ERR 
         tuid = self.get_uid(user)
         uid = os.stat(path).st_uid
         if uid != tuid:
@@ -271,19 +323,80 @@ class CompUser(object):
             return RET_OK
         uid = self.get_uid(user)
         path = os.path.expanduser("~"+user)
-        os.chown(path, uid, -1)
+        if not os.path.exists(path):
+            if os.path.exists("/etc/skel"):
+                cmd = ['cp', '-R', '/etc/skel/', path]
+                print list2cmdline(cmd)
+                p = Popen(cmd)
+                out, err = p.communicate()
+                r = p.returncode
+                if r != 0:
+                    return RET_ERR
+
+                cmd = ['chown', '-R', str(uid), path]
+                print list2cmdline(cmd)
+                p = Popen(cmd)
+                out, err = p.communicate()
+                r = p.returncode
+                if r != 0:
+                    return RET_ERR
+            else:
+                os.makedirs(path)
+                os.chown(path, uid, -1)
         return RET_OK
+
+    def unlock_user(self, user):
+        if self.sysname != "SunOS":
+            return
+        cmd = ["uname", "-r"]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        if out.strip() == '5.8':
+            unlock_opt = '-d'
+        else:
+            unlock_opt = '-u'
+        cmd = ["passwd", unlock_opt, user]
+        print list2cmdline(cmd)
+        p = Popen(cmd)
+        out, err = p.communicate()
+        r = p.returncode
+        if r == 0:
+            return RET_OK
+        else:
+            return RET_ERR
 
     def create_user(self, user, props):
         cmd = ['useradd']
         for item in props:
+            if item == "check_home":
+                continue
             prop = str(props[item])
             if len(prop) == 0:
                 continue
+            if item.endswith("password") and self.sysname in ("AIX", "SunOS"):
+                continue
             cmd = cmd + self.usermod_p[item].split() + [prop]
-            if item == "home" and self.sysname == "HP-UX":
+            if item == "home":
                 cmd.append("-m")
         cmd += [user]
+        print list2cmdline(cmd)
+        p = Popen(cmd)
+        out, err = p.communicate()
+        r = p.returncode
+        if r == 0:
+            if self.unlock_user(user) == RET_ERR:
+                return RET_ERR
+            return RET_OK
+        else:
+            return RET_ERR
+
+    def fix_user_del(self, user):
+        if user in blacklist:
+            print >>sys.stderr, "delete", user, "... cowardly refusing"
+            return RET_ERR
+        cmd = ['userdel', user]
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -294,6 +407,8 @@ class CompUser(object):
             return RET_ERR
 
     def fix_user(self, user, props):
+        if user.startswith('-'):
+            return self.fix_user_del(user.lstrip('-'))
         r = 0
         try:
             userinfo = pwd.getpwnam(user)
@@ -340,7 +455,7 @@ class CompUser(object):
     def fix(self):
         r = 0
         for user, props in self.users.items():
-            if self.check_user(user, props) == RET_ERR:
+            if self.check_user(user, props, verbose=False) == RET_ERR:
                 r |= self.fix_user(user, props)
         return r
 
