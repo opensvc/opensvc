@@ -83,8 +83,21 @@ class CompAuthKeys(object):
         else:
             print >>sys.stderr, "unknown key", key
             return None
-        cfs = [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
-               os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config')]
+
+        cfs = []
+
+        cmd = ['ps', '-eo', 'comm']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode == 0:
+            l = out.split('\n')
+            if '/usr/local/sbin/sshd' in l:
+                cfs.append(os.path.join(os.sep, 'usr', 'local', 'etc', 'sshd_config'))
+            if '/usr/sfw/sbin/sshd' in l:
+                cfs.append(os.path.join(os.sep, 'etc', 'sshd_config'))
+
+        cfs += [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
+                os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config')]
         cf = None
         for _cf in cfs:
             if os.path.exists(_cf):
