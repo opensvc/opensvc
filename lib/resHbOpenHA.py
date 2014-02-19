@@ -82,6 +82,9 @@ class Hb(resHb.Hb):
         return self.service_status(peer)
 
     def service_status(self, nodename):
+        if not self.process_running():
+            self.log.error("open-ha daemons are not running")
+            return 'unknown'
         service_state = os.path.join(self.svcdir, self.cluster_name(), 'STATE.'+nodename)
         try:
             f = open(service_state, 'r')
@@ -114,8 +117,12 @@ class Hb(resHb.Hb):
         self.svc.node.cmdworker.enqueue(cmd)
 
     def process_running(self):
+        # self.cfmon exist if OpenHA setup is done
+        # os.path.exists(self.cfmon) return true if OpenHA setup is done
+        # _not_ os.path.exists(self.cfmon) = True mean that setup is _not_ done
+        # in this case, self.process_running() have to return _False_
         if not os.path.exists(self.cfmon):
-            return True
+            return False
         buff = ""
         with open(self.cfmon) as f:
             buff = f.read()
