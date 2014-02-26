@@ -27,14 +27,29 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 
 class Vg(resVg.Vg):
-    def __init__(self, rid=None, name=None, container_name=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 container_name=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = name
         self.container_name = container_name
-        resVg.Vg.__init__(self, rid=rid, name=name,
-                          type='disk.vg', monitor=monitor, restart=restart,
-                          optional=optional, disabled=disabled, tags=tags)
+        resVg.Vg.__init__(self,
+                          rid=rid,
+                          name=name,
+                          type='disk.vg',
+                          monitor=monitor,
+                          restart=restart,
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          subset=subset)
 
     def has_it(self):
         return True

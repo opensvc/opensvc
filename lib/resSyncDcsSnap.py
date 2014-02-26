@@ -165,18 +165,33 @@ Internal                 : False
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
 
-    def __init__(self, rid=None, snapname=set([]), manager=set([]), dcs=set([]),
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
+    def __init__(self,
+                 rid=None,
+                 snapname=set([]),
+                 manager=set([]),
+                 dcs=set([]),
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
                  sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSyncDcs.SyncDcs.__init__(self, rid=rid, type="sync.dcssnap",
-                              manager=manager,
-                              dcs=dcs,
-                              sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 internal=False):
+        resSyncDcs.SyncDcs.__init__(self,
+                                    rid=rid,
+                                    type="sync.dcssnap",
+                                    manager=manager,
+                                    dcs=dcs,
+                                    sync_max_delay=sync_max_delay,
+                                    sync_interval=sync_interval,
+                                    sync_days=sync_days,
+                                    sync_period=sync_period,
+                                    optional=optional,
+                                    disabled=disabled,
+                                    subset=subset,
+                                    tags=tags)
 
         self.label = "DCS snapshot %s"%', '.join(snapname)
         self.snapname = snapname

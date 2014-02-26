@@ -28,15 +28,29 @@ from rcUtilities import qcall
 class Vg(resDg.Dg):
     """ basic Veritas Volume group resource
     """
-    def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = name
-        resDg.Dg.__init__(self, rid=rid, name=name,
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.vg',
                           always_on=always_on,
-                          optional=optional, disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def has_it(self):
         """Returns True if the vg is present

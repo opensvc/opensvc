@@ -26,17 +26,30 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
 from rcUtilities import which
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = name
         self.tag = '@'+rcEnv.nodename
-        resDg.Dg.__init__(self, rid=rid, name=name,
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def is_child_dev(self, device):
         l = device.split("/")

@@ -147,19 +147,42 @@ class Svc(Resource, Freezer):
         """
         return cmp(self.svcname, other.svcname)
 
+    def get_subset_parallel(self, rtype):
+        subset_section = 'subset#' + rtype
+        if not self.config.has_section(subset_section):
+            return False
+        from svcBuilder import conf_get_string_scope
+        try:
+            return conf_get_string_scope(self, self.config, subset_section, "parallel")
+        except Exception as e:
+            return False
+
     def __iadd__(self, r):
         """svc+=aResourceSet
         svc+=aResource
         """
-        if r.type in self.type2resSets:
-            self.type2resSets[r.type] += r
+        if r.subset is not None:
+            # the resource wants to be added to a specific resourceset
+            # for action grouping, parallel execution or sub-resource
+            # triggers
+            rtype = "%s:%s" % (r.type, r.subset)
+        else:
+            rtype = r.type
 
-        elif isinstance(r, ResourceSet):
+        if rtype in self.type2resSets:
+            self.type2resSets[rtype] += r
+
+        elif hasattr(r, 'resources'):
+            # this is a ResourceSet or ResourceSet-derived class
             self.resSets.append(r)
-            self.type2resSets[r.type] = r
+            self.type2resSets[rtype] = r
 
         elif isinstance(r, Resource):
-            R = ResourceSet(r.type, [r])
+            parallel = self.get_subset_parallel(rtype)
+            if hasattr(r, 'rset_class'):
+                R = r.rset_class(type=rtype, resources=[r], parallel=parallel)
+            else:
+                R = ResourceSet(type=rtype, resources=[r], parallel=parallel)
             self.__iadd__(R)
 
         else:
@@ -171,10 +194,7 @@ class Svc(Resource, Freezer):
 
         r.svc = self
         import logging
-        if r.rid is not None:
-            r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
-        else:
-            r.log = logging.getLogger(str(self.svcname+'.'+str(r.type)).upper())
+        r.log = logging.getLogger(r.log_label())
 
         if r.type.startswith("hb"):
             self.ha = True
@@ -280,17 +300,22 @@ class Svc(Resource, Freezer):
          rsets = []
          for t in l:
              for rs in self.resSets:
+                 if ':' in rs.type:
+                     # remove subset suffix
+                     rstype = rs.type[:rs.type.index(':')]
+                 else:
+                     rstype = rs.type
                  if '.' in t:
                      # exact match
-                     if rs.type == t:
+                     if rstype == t:
                          rsets.append(rs)
-                 elif '.' in rs.type and not strict:
+                 elif '.' in rstype and not strict:
                      # group match
-                     _t = rs.type.split('.')
+                     _t = rstype.split('.')
                      if _t[0] == t:
                          rsets.append(rs)
                  else:
-                     if rs.type == t:
+                     if rstype == t:
                          rsets.append(rs)
          return rsets
 
@@ -310,9 +335,6 @@ class Svc(Resource, Freezer):
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
-    def sub_set_action_parallel(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags, parallel=True)
-
     def need_snap_trigger(self, sets, action):
         if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
             return False
@@ -326,7 +348,7 @@ class Svc(Resource, Freezer):
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False, parallel=False):
+    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
@@ -358,6 +380,25 @@ class Svc(Resource, Freezer):
             if ret != 0:
                 raise ex.excError
 
+        """ Multiple resourcesets of the same type need to be sorted
+            so that the start and stop action happen in a predictible order.
+            Sort alphanumerically on reseourceset type.
+
+            Exemple, on start:
+             app
+             app.1
+             app.2
+            on stop:
+             app.2
+             app.1
+             app
+        """
+        if "stop" in action:
+            reverse = True
+        else:
+            reverse = False
+        sets = sorted(sets, lambda x, y: cmp(x.type, y.type), reverse=reverse)
+
         for r in sets:
             if action in list_actions_no_pre_action:
                 break
@@ -386,7 +427,7 @@ class Svc(Resource, Freezer):
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
             try:
-                r.action(action, tags=tags, xtags=xtags, parallel=parallel)
+                r.action(action, tags=tags, xtags=xtags)
             except ex.excError:
                 if r.is_optional():
                     pass
@@ -587,7 +628,7 @@ class Svc(Resource, Freezer):
         print(fmt%("hb", '', str(self.group_status()['hb']), ''))
 
         l = []
-        for rs in self.get_res_sets(self.status_types, ):
+        for rs in self.get_res_sets(self.status_types):
             for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
@@ -1723,7 +1764,7 @@ class Svc(Resource, Freezer):
 
     def syncnodes(self):
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncnodes")
+        self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
@@ -1732,7 +1773,7 @@ class Svc(Resource, Freezer):
 
     def syncdrp(self):
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncdrp")
+        self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
@@ -1814,12 +1855,12 @@ class Svc(Resource, Freezer):
 
     def syncall(self):
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncnodes")
+        self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
         self.sub_set_action("sync.symsrdfs", "syncnodes")
-        self.sub_set_action_parallel("sync.rsync", "syncdrp")
+        self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")

@@ -31,11 +31,27 @@ class Container(Res.Resource):
     startup_timeout = 600
     shutdown_timeout = 60
 
-    def __init__(self, rid, name, guestos=None, type=None, optional=False,
-                 disabled=False, monitor=False, restart=0, tags=set([]), always_on=set([])):
-        Res.Resource.__init__(self, rid=rid, type=type,
-                              optional=optional, disabled=disabled,
-                              monitor=monitor, restart=restart, tags=tags)
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
+        Res.Resource.__init__(self,
+                              rid=rid,
+                              type=type,
+                              optional=optional,
+                              disabled=disabled,
+                              monitor=monitor,
+                              restart=restart,
+                              subset=subset,
+                              tags=tags)
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name

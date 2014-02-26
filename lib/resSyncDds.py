@@ -386,17 +386,33 @@ class syncDds(resSync.Sync):
             return rcStatus.WARN
         return rcStatus.UP
 
-    def __init__(self, rid=None, target=None, src=None, dst=None,
-                 delta_store=None, sender=None,
-                 snap_size=0, sync_max_delay=None,
-                 sync_interval=None, sync_days=None, sync_period=None,
-                 optional=False, disabled=False, tags=set([])):
-        resSync.Sync.__init__(self, rid=rid, type="sync.dds",
+    def __init__(self,
+                 rid=None,
+                 target=None,
+                 src=None,
+                 dst=None,
+                 delta_store=None,
+                 sender=None,
+                 snap_size=0,
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
+                 sync_period=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.dds",
                               sync_max_delay=sync_max_delay,
                               sync_interval=sync_interval,
                               sync_days=sync_days,
                               sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "dds of %s to %s"%(src, target)
         self.target = target

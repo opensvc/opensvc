@@ -31,14 +31,27 @@ from rcGlobalEnv import rcEnv
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
-    def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]), optional=False,
-                 disabled=False, tags=set([]), monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, type,
-                              optional=optional, disabled=disabled,
-                              tags=tags, monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 monitor=False,
+                 restart=0):
+        Res.Resource.__init__(self,
+                              rid, type,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset,
+                              monitor=monitor,
+                              restart=restart,
+                              always_on=always_on)
         self.name = name
-        self.always_on = always_on
         self.disks = set()
         self.devs = set()
 

@@ -183,17 +183,32 @@ class syncIbmdsSnap(resSync.Sync):
     def start(self):
         self.syncbreak()
 
-    def __init__(self, rid=None, pairs=[], array=None,
-                 bgcopy=True, recording=True,
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 array=None,
+                 bgcopy=True,
+                 recording=True,
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
                  sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.ibmdssnap",
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 internal=False):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.ibmdssnap",
                               sync_max_delay=sync_max_delay,
                               sync_interval=sync_interval,
                               sync_days=sync_days,
                               sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "flash copy %s"%','.join(pairs)
         self.pairs = pairs

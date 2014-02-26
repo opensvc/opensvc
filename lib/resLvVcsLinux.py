@@ -20,12 +20,26 @@ import rcStatus
 import rcExceptions as ex
 
 class Lv(Res.Resource):
-    def __init__(self, rid=None, vgname=None, lvname=None,
-                 always_on=set([]), optional=False,
-                 disabled=False, tags=set([]), monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, "disk.lv",
-                              optional=optional, disabled=disabled,
-                              tags=tags, monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 vgname=None,
+                 lvname=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        Res.Resource.__init__(self,
+                              rid,
+                              "disk.lv",
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              monitor=monitor,
+                              restart=restart,
+                              subset=subset)
         self.name = '@'.join((lvname, vgname))
         self.label = self.name
         self.always_on = always_on

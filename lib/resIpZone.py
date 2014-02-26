@@ -29,13 +29,33 @@ from rcUtilitiesSunOS import get_os_ver
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None, zone=None,
-                 mask=None, always_on=set([]), monitor=False, restart=0,
-                 disabled=False, tags=set([]), optional=False, gateway=None):
-        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        mask=mask, always_on=always_on,
-                        disabled=disabled, tags=tags, optional=optional,
-                        monitor=monitor, restart=restart, gateway=gateway)
+    def __init__(self,
+                 rid=None,
+                 ipDev=None,
+                 ipName=None,
+                 zone=None,
+                 mask=None,
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 gateway=None):
+        Res.Ip.__init__(self,
+                        rid=rid,
+                        ipDev=ipDev,
+                        ipName=ipName,
+                        mask=mask,
+                        always_on=always_on,
+                        disabled=disabled,
+                        tags=tags,
+                        optional=optional,
+                        monitor=monitor,
+                        restart=restart,
+                        subset=subset,
+                        gateway=gateway)
         self.zone = zone
         self.tags.add(zone)
         self.tags.add('zone')

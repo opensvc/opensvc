@@ -35,23 +35,53 @@ class Resource(object):
     """
     label = None
 
-    def __init__(self, rid=None, type=None, optional=False, disabled=False,
-                 monitor=False, restart=0, tags=set([]), always_on=set([])):
+    def __init__(self,
+                 rid=None,
+                 type=None,
+                 subset=None,
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 tags=set([]),
+                 always_on=set([])):
         self.rid = rid
         self.tags = tags
         self.type = type
+        self.subset = subset
         self.optional = optional
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
         self.restart = restart
-        self.log = logging.getLogger(str(rid).upper())
+        self.log = logging.getLogger(self.log_label())
         self.rstatus = None
         self.always_on = always_on
         if self.label is None: self.label = type
         self.status_log_str = ""
         self.can_rollback = False
 
+    def log_label(self):
+        s = ""
+        if hasattr(self, "svc"):
+            s += self.svc.svcname + '.'
+
+        if self.rid is None:
+            s += self.type
+            return s.upper()
+
+        if self.subset is None:
+            s += self.rid
+            return s.upper()
+
+        v = self.rid.split('#')
+        if len(v) != 2:
+            s += rid
+            return s.upper()
+
+        s += "%s:%s#%s" % (self.type, self.subset, v[1])
+        return s.upper()
+       
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
                                              self.rid, self.type)
@@ -285,11 +315,20 @@ class ResourceSet(Resource):
     Example 2: r=ResourceSet("fs",[ip1])
     It define the resource type
     """
-    def __init__(self, type=None, resources=[],
-                 optional=False, disabled=False, tags=set([])):
+    def __init__(self,
+                 type=None,
+                 resources=[],
+                 parallel=False,
+                 optional=False,
+                 disabled=False,
+                 tags=set([])):
+        self.parallel = parallel
         self.resources = []
-        Resource.__init__(self, type=type,
-                          optional=optional, disabled=disabled, tags=tags)
+        Resource.__init__(self,
+                          type=type,
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags)
         for r in resources:
             self += r
 
@@ -363,10 +402,10 @@ class ResourceSet(Resource):
             return False
         return True
         
-    def action(self, action=None, tags=set([]), xtags=set([]), parallel=False):
+    def action(self, action=None, tags=set([]), xtags=set([])):
         """Call action on each resource of the ResourceSet
         """
-        if parallel:
+        if self.parallel:
             # verify we can actually do parallel processing, fallback to serialized
             try:
                 from multiprocessing import Process
@@ -376,7 +415,7 @@ class ResourceSet(Resource):
                     from multiprocessing import set_executable
                     set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             except:
-                parallel = False
+                self.parallel = False
 
         if len(xtags) > 0:
             resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
@@ -384,12 +423,16 @@ class ResourceSet(Resource):
             resources = self.resources
         resources = [r for r in resources if self.tag_match(r.tags, tags)]
         self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
-        if action in ["fs", "start", "startstandby", "provision"]:
+        if hasattr(self, "sort_resources"):
+            resources = self.sort_resources(resources, action)
+        elif action in ["fs", "start", "startstandby", "provision"]:
+            # CODE TO KILL ASAP
             resources.sort()
         else:
+            # CODE TO KILL ASAP
             resources.sort(reverse=True)
 
-        if parallel and len(resources) > 1:
+        if self.parallel and len(resources) > 1:
             ps = []
             for r in resources:
                 p = Process(target=r.action, args=(action,))
@@ -398,6 +441,9 @@ class ResourceSet(Resource):
                 ps.append(p)
             for p in ps:
                 p.join()
+            for p in ps:
+                if p.exitcode != 0:
+                    raise exc.excError
         else:
             for r in resources:
                 try:

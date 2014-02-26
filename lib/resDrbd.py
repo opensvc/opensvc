@@ -36,12 +36,25 @@ class Drbd(Res.Resource):
         Start 'ups' and promotes the drbd devices to primary.
         Stop 'downs' the drbd devices.
     """
-    def __init__(self, rid=None, res=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([]),
-                 monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, "disk.drbd",
-                              optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 res=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 subset=None,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0):
+        Res.Resource.__init__(self,
+                              rid,
+                              "disk.drbd",
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset,
+                              monitor=monitor,
+                              restart=restart)
         self.res = res
         self.label = res
         self.drbdadm = None

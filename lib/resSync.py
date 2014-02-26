@@ -25,10 +25,17 @@ import time
 from rcGlobalEnv import rcEnv
 
 class Sync(Res.Resource):
-    def __init__(self, rid=None, sync_max_delay=None,
-                 sync_interval=None, sync_period=None, sync_days=None,
-                 optional=False, disabled=False, tags=set([]),
-                 type=type):
+    def __init__(self,
+                 rid=None,
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_period=None,
+                 sync_days=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 type=type,
+                 subset=None):
         if sync_max_delay is None:
             self.sync_max_delay = 1500
         else:
@@ -49,8 +56,13 @@ class Sync(Res.Resource):
         else:
             self.sync_days = sync_days
 
-        Res.Resource.__init__(self, rid=rid, type=type,
-                              optional=optional, disabled=disabled, tags=tags)
+        Res.Resource.__init__(self,
+                              rid=rid,
+                              type=type,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
     def check_timestamp(self, ts, comp='more', delay=10):
         """ Return False if timestamp is fresher than now-interval

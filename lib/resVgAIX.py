@@ -30,17 +30,31 @@ from subprocess import *
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]), dsf=True, monitor=False, restart=0,
-                 disabled=False, tags=set([]), optional=False):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 always_on=set([]),
+                 dsf=True,
+                 monitor=False,
+                 restart=0,
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 subset=None):
         self.label = name
         self.dsf = dsf
-        resDg.Dg.__init__(self, rid=rid, name=name,
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.vg',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def has_it(self):
         """ returns True if the volume is present

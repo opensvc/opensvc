@@ -28,12 +28,27 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 class Vdisk(Res.Resource):
-    def __init__(self, rid=None, name=None, devpath={}, type=None,
-                 always_on=set([]), optional=False,
-                 disabled=False, tags=set([]), monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, "disk.vdisk",
-                              optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 devpath={},
+                 type=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        Res.Resource.__init__(self,
+                              rid,
+                              "disk.vdisk",
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              monitor=monitor,
+                              restart=restart,
+                              subset=subset)
         self.name = name
         self.always_on = always_on
         self.disks = set()

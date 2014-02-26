@@ -166,18 +166,32 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
 
-    def __init__(self, rid=None, pairs=[], manager=set([]), dcs=set([]),
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 manager=set([]),
+                 dcs=set([]),
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
                  sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSyncDcs.SyncDcs.__init__(self, rid=rid, type="sync.dcsckpt",
-                              manager=manager,
-                              dcs=dcs,
-                              sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSyncDcs.SyncDcs.__init__(self,
+                                    rid=rid, type="sync.dcsckpt",
+                                    manager=manager,
+                                    dcs=dcs,
+                                    sync_max_delay=sync_max_delay,
+                                    sync_interval=sync_interval,
+                                    sync_days=sync_days,
+                                    sync_period=sync_period,
+                                    optional=optional,
+                                    disabled=disabled,
+                                    tags=tags,
+                                    subset=subset)
 
         self.label = "DCS checkpoint snapshot of %s"%' ,'.join(map(lambda x: x['src'], pairs))
         self.pairs = pairs

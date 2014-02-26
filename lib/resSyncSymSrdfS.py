@@ -434,16 +434,32 @@ class syncSymSrdfS(resSync.Sync):
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
 
-    def __init__(self, rid=None, symdg=None, rdfg=None, symdevs=[], precopy_timeout=300,
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
+    def __init__(self,
+                 rid=None,
+                 symdg=None,
+                 rdfg=None,
+                 symdevs=[],
+                 precopy_timeout=300,
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
                  sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.symsrdfs",
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.symsrdfs",
                               sync_max_delay=sync_max_delay,
                               sync_interval=sync_interval,
                               sync_days=sync_days,
                               sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.rdf_query_cache = None
         self.label = "srdf/s symdg %s"%(symdg)

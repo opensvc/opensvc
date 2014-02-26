@@ -28,10 +28,24 @@ from rcUtilities import justcall
 class Hb(resHb.Hb):
     """ HeartBeat ressource
     """
-    def __init__(self, rid=None, name=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([])):
-        resHb.Hb.__init__(self, rid, "hb.openha",
-                          optional=optional, disabled=disabled, tags=tags)
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([])):
+        resHb.Hb.__init__(self,
+                          rid,
+                          "hb.openha",
+                          optional=optional,
+                          disabled=disabled,
+                          restart=restart,
+                          subset=subset,
+                          tags=tags,
+                          always_on=always_on)
         self.basedir = os.path.join(os.sep, 'usr', 'local', 'cluster')
         self.bindir = os.path.join(self.basedir, 'bin')
         self.logdir = os.path.join(self.basedir, 'log')

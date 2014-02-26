@@ -28,15 +28,34 @@ from rcUtilities import which
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
-                 mask=None, always_on=set([]), monitor=False, restart=0,
-                 disabled=False, tags=set([]), optional=False, gateway=None,
+    def __init__(self,
+                 rid=None,
+                 ipDev=None,
+                 ipName=None,
+                 mask=None,
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 gateway=None,
                  ipDevExt="v4"):
         self.ipDevExt = ipDevExt
-        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        mask=mask, always_on=always_on,
-                        disabled=disabled, tags=tags, optional=optional,
-                        monitor=monitor, restart=restart, gateway=gateway)
+        Res.Ip.__init__(self,
+                        rid=rid,
+                        ipDev=ipDev,
+                        ipName=ipName,
+                        mask=mask,
+                        always_on=always_on,
+                        disabled=disabled,
+                        tags=tags,
+                        optional=optional,
+                        monitor=monitor,
+                        restart=restart,
+                        subset=subset,
+                        gateway=gateway)
         self.label = self.label + "/" + self.ipDevExt
         self.type = "ip"
         if not which('ipadm'):

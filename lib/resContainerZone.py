@@ -39,18 +39,35 @@ SVCS="/usr/bin/svcs"
 MULTI_USER_SMF="svc:/milestone/multi-user:default"
 
 class Zone(resContainer.Container):
-    def __init__(self, rid, name, guestos="SunOS", optional=False, disabled=False, monitor=False,
-                 restart=0, tags=set([]), always_on=set([])):
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="SunOS",
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
         """define Zone object attribute :
                 name
                 label
                 state
                 zonepath
         """
-        resContainer.Container.__init__(self, rid=rid, name=name, type="container.zone", guestos=guestos,
-                              optional=optional, disabled=disabled,
-                              monitor=monitor, restart=restart,
-                              tags=tags, always_on=always_on)
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
+                                        type="container.zone",
+                                        guestos=guestos,
+                                        optional=optional,
+                                        disabled=disabled,
+                                        monitor=monitor,
+                                        restart=restart,
+                                        subset=subset,
+                                        tags=tags,
+                                        always_on=always_on)
         self.label = name
         self.state = None
         self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))

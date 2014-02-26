@@ -24,15 +24,29 @@ from subprocess import *
 import re
 
 class Vg(resVg.Dg):
-    def __init__(self, rid=None, name=None, container_id=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 container_id=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = name
         self.container_id = container_id
-        resVg.Dg.__init__(self, rid=rid, name=name,
+        resVg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.vg',
-                          optional=optional, disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def has_it(self):
         return True

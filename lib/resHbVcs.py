@@ -24,10 +24,25 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 class Hb(resHb.Hb):
-    def __init__(self, rid=None, name=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([])):
-        resHb.Hb.__init__(self, rid, "hb.vcs",
-                          optional=optional, disabled=disabled, tags=tags)
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 restart=0,
+                 subset=None,
+                 disabled=False,
+                 tags=set([])):
+        resHb.Hb.__init__(self,
+                          rid,
+                          "hb.vcs",
+                          optional=optional,
+                          disabled=disabled,
+                          restart=restart,
+                          subset=subset,
+                          tags=tags,
+                          always_on=always_on)
         self.label = name
 
     def _status(self, verbose=False):

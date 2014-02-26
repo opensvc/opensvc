@@ -597,7 +597,9 @@ class Collector(object):
                 'app_launcher',
                 'app_key',
                 'app_value']
-        vals = svc.resources_by_id['app'].info()
+        vals = []
+        for r in svc.get_resources('app'):
+            vals += r.info()
         if len(vals) == 0:
             return
 

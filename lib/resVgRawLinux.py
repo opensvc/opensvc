@@ -23,12 +23,22 @@ import rcExceptions as ex
 from rcGlobalEnv import *
 
 class Vg(resVgRaw.Vg):
-    def __init__(self, rid=None, devs=set([]), user="root",
-                 group="root", perm="660", type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 devs=set([]),
+                 user="root",
+                 group="root",
+                 perm="660", type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         
-        resVgRaw.Vg.__init__(self, rid=rid,
+        resVgRaw.Vg.__init__(self,
+                             rid=rid,
                              devs=devs,
                              user=user,
                              group=group,
@@ -39,7 +49,8 @@ class Vg(resVgRaw.Vg):
                              tags=tags,
                              always_on=always_on,
                              monitor=monitor,
-                             restart=restart)
+                             restart=restart,
+                             subset=subset)
         self.min_raw = 1
         self.raws = {}
 

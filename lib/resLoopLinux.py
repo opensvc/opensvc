@@ -61,11 +61,26 @@ class Loop(Res.Loop):
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
-    def __init__(self, rid, loopFile, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False, monitor=False, restart=0):
-        Res.Loop.__init__(self, rid, loopFile, always_on=always_on,
-                          disabled=disabled, tags=tags, optional=optional,
-                          monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid,
+                 loopFile,
+                 always_on=set([]),
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        Res.Loop.__init__(self,
+                          rid,
+                          loopFile,
+                          always_on=always_on,
+                          disabled=disabled,
+                          tags=tags,
+                          subset=subset,
+                          optional=optional,
+                          monitor=monitor,
+                          restart=restart)
 
     def provision(self):
         m = __import__("provLoopLinux")

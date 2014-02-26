@@ -268,16 +268,30 @@ class syncEvasnap(resSync.Sync):
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
         
 
-    def __init__(self, rid=None, pairs=[], eva_name="", snap_name="",
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 eva_name="",
+                 snap_name="",
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
                  sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.evasnap",
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 internal=False):
+        resSync.Sync.__init__(self,
+                              rid=rid, type="sync.evasnap",
                               sync_max_delay=sync_max_delay,
                               sync_interval=sync_interval,
                               sync_days=sync_days,
                               sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "EVA snapshot %s"%(rid)
         self.eva_name = eva_name
