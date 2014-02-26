@@ -50,7 +50,7 @@ class Mount(Res.Resource):
                               disabled=disabled,
                               tags=tags,
                               monitor=monitor,
-                              restart=restart
+                              restart=restart,
                               subset=subset)
         self.mountPoint = mountPoint
         self.device = device
