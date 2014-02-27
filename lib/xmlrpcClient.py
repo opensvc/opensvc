@@ -1082,6 +1082,24 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_necism(*args)
 
+    def push_hp3par(self, objects=[], sync=True):
+        if 'update_hp3par' not in self.proxy_methods:
+            print("'update_hp3par' method is not exported by the collector")
+            return
+        m = __import__('rcHp3par')
+        try:
+            hp3pars = m.Hp3pars(objects)
+        except:
+            return
+        for hp3par in hp3pars:
+            vals = []
+            for key in hp3par.keys:
+                vals.append(getattr(hp3par, 'get_'+key)())
+            args = [hp3par.name, hp3par.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_hp3par(*args)
+
     def push_ibmsvc(self, objects=[], sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
             print("'update_ibmsvc' method is not exported by the collector")
