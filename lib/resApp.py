@@ -39,6 +39,12 @@ try:
 except:
     mp = False
 
+class StatusWARN(Exception):
+    pass
+
+class StatusNA(Exception):
+    pass
+
 class RsetApps(Res.ResourceSet):
     def __init__(self,
                  type=None,
@@ -167,14 +173,14 @@ class App(Res.Resource):
 
     def is_up(self):
         if self.script is None:
-            return rcStatus.NA
+            raise StatusNA()
         if self.uid is None:
-            return rcStatus.WARN
+            raise StatusWARN()
         if self.gid is None:
-            return rcStatus.WARN
+            raise StatusWARN()
         if self.check_seq is None:
             self.status_log("check disabled")
-            return rcStatus.NA
+            raise StatusNA()
         r = self.run('status', dedicated_log=False)
         return r
 
@@ -226,17 +232,20 @@ class App(Res.Resource):
             if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
             return rcStatus.NA
 
-        r = self.is_up()
+        try:
+            r = self.is_up()
+        except StatusWARN:
+            return rcStatus.WARN
+        except StatusNA:
+            return rcStatus.NA
+
         if r == 0:
             return rcStatus.UP
         elif r == 1:
             return rcStatus.DOWN
-        elif r == 2:
-            return rcStatus.NA
-        else:
-            self.status_log("check reports errors (%d)"%r)
-            return rcStatus.WARN
-        return r
+
+        self.status_log("check reports errors (%d)"%r)
+        return rcStatus.WARN
 
     def set_executable(self):
         if self.script_exec: 
