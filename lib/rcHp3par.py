@@ -77,7 +77,7 @@ class Hp3par(object):
         self.name = name
         self.username = username
         self.key = key
-        self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport"]
+        self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
 
     def rcmd(self, cmd):
         return rcmd(cmd, self.name, self.username, self.key)
@@ -127,6 +127,12 @@ class Hp3par(object):
         print("%s: %s"%(self.name, cmd))
         s = self.rcmd(cmd)[0]
         return self.serialize(s, cols)
+
+    def get_showversion(self):
+        cmd = 'showversion -s'
+        print("%s: %s"%(self.name, cmd))
+        s = self.rcmd(cmd)[0].strip("\n")
+        return json.dumps({"Version": s})
 
 if __name__ == "__main__":
     o = Hp3pars()
