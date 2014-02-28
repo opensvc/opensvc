@@ -90,13 +90,13 @@ class Node(Svc, Freezer):
           'rotate_root_pw_days': '[]',
           'rotate_root_pw_period': '[]',
         }
-        self.load_config()
+        self.svcs = None
         try:
             self.clusters = list(set(self.config.get('node', 'clusters').split()))
         except:
             self.clusters = []
+        self.load_config()
         self.options = Options()
-        self.svcs = None
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
@@ -312,7 +312,11 @@ class Node(Svc, Freezer):
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
-        self.config.read(self.dotnodeconf)
+        try:
+            self.config.read(self.dotnodeconf)
+        except:
+            self._setup_sync_conf()
+            self.write_dotconfig()
 
     def load_auth_config(self):
         if self.auth_config is not None:
