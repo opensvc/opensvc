@@ -150,7 +150,10 @@ class Hb(resHb.Hb):
             if l[1] == 'net':
                 l[1] = ''
             else:
-                l[1] = '_'+l[1]
+		if l[1] == 'disk':
+                    l[1] = '_'+'raw'
+		else:
+                    l[1] = '_'+'dio'
             if rcEnv.nodename == l[0]:
                 l[1] = self.heartd + l[1]
                 daemons.append(' '.join(l[1:-1]))
