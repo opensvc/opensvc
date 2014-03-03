@@ -26,12 +26,12 @@ CHROOT_BN=opensvc-$VERSION-$RELEASE.noarch
 CHROOT=$OSVC/tmp/BUILDROOT/$CHROOT_BN
 
 if [ "$(uname)" == "SunOS" -a -x /usr/xpg4/bin/id ] ; then
-	MYID="/usr/xpg4/bin/id"
+	ID_BIN="/usr/xpg4/bin/id"
 else
-	MYID="id"
+	ID_BIN="id"
 fi
 
-if [ "$($MYID -u)" == "0" ] ; then
+if [ "$($ID_BIN -u)" == "0" ] ; then
 	SUDO=""
 else
 	SUDO="sudo"
