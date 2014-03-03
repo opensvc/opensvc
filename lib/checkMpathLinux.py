@@ -63,11 +63,13 @@ class check(checks.check):
                 n = 0
                 l = line.split()
                 if len(l) == 2:
-                    wwid = l[1][2:-1]
+                    wwid = l[1][1:-1]
                 elif len(l) == 1:
-                    wwid = l[0][1:]
+                    wwid = l[0]
                 else:
                     wwid = None
+                if wwid is not None and wwid.startswith('3'):
+                    wwid = wwid[1:]
             if "[active]" in line and line.startswith(' '):
                 n += 1
                 dev = "/dev/"+line.split()[2]
@@ -113,9 +115,11 @@ class check(checks.check):
                 if len(l) < 2:
                     continue
                 if l[1].startswith('('):
-                    wwid = l[1][2:-1]
+                    wwid = l[1][1:-1]
                 else:
-                    wwid = l[0][1:]
+                    wwid = l[0]
+                if wwid is not None and wwid.startswith('3'):
+                    wwid = wwid[1:]
             if "[active][ready]" in line or \
                "active ready" in line:
                 n += 1
