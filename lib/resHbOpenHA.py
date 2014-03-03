@@ -148,18 +148,19 @@ class Hb(resHb.Hb):
             if '#' in l[0]:
                 continue
             if l[1] == 'net':
-                l[1] = ''
+                suffix = ''
+            elif l[1] == 'disk':
+                suffix = '_raw'
             else:
-		if l[1] == 'disk':
-                    l[1] = '_'+'raw'
-		else:
-                    l[1] = '_'+'dio'
+                suffix = '_dio'
             if rcEnv.nodename == l[0]:
-                l[1] = self.heartd + l[1]
-                daemons.append(' '.join(l[1:-1]))
+                daemon = self.heartd + suffix
+                string = daemon + ' ' + ' '.join(l[2:-1])
+                daemons.append(string)
             else:
-                l[1] = self.heartc + l[1]
-                daemons.append(' '.join(l[1:]))
+                daemon = self.heartc + suffix
+                string = daemon + ' ' + ' '.join(l[2:])
+                daemons.append(string)
         daemons.append(self.nmond)
         (out, err, ret) = justcall(['ps', '-ef'])
         if ret != 0:
@@ -167,10 +168,12 @@ class Hb(resHb.Hb):
         h = {}
         for d in daemons:
             h[d] = 1
+        # ckecking running daemons 
         for line in out.split('\n'):
             for d in daemons:
                 if d in line:
                     h[d] = 0
+        # now counting daemons not found as running
         total = 0
         for d in daemons:
             total += h[d]
