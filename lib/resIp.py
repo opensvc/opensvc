@@ -104,9 +104,9 @@ class Ip(Res.Resource):
         if ':' in self.addr:
             return
         if not which("arping"):
-            self.log.warning("arp annouce skipped. install 'arping'")
+            self.log.warning("arp announce skipped. install 'arping'")
             return
-        cmd = ["arping", "-U", "-c", "1", "-I", self.ipDev, "-s", self.addr, "0.0.0.0"]
+        cmd = ["arping", "-U", "-c", "1", "-I", self.ipDev, "-s", self.addr, self.addr]
         self.log.info(' '.join(cmd))
         qcall(cmd)
 
