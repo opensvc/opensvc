@@ -4,7 +4,7 @@ from rcUtilities import which
 def change_root_pw(pw):
     if which('chpasswd') is not None:
         cmd = ['chpasswd']
-        _input = "root:"+pw
+        _input = "root:"+pw+"\n"
     else:
         cmd = ['passwd', '--stdin', 'root']
         _input = pw
