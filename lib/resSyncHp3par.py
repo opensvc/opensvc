@@ -117,6 +117,9 @@ class syncHp3par(resSync.Sync):
     def syncupdate(self):
         self.syncrcopygroup()
 
+    def syncrevert(self):
+        self.setrcopygroup_revert()
+
     def syncresume(self):
         self.startrcopygroup()
 
@@ -149,6 +152,13 @@ class syncHp3par(resSync.Sync):
 
     def stop(self):
         pass
+
+    def setrcopygroup_revert(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] != 'Primary-Rev':
+           self.log.error("rcopy group %s role is not Primary-Rev. refuse to setrcopygroup revert" % self.rcg)
+           return
+        self._cmd("setrcopygroup reverse -f -waittask -stopgroups -local -current %s" % self.rcg, log=True)
 
     def setrcopygroup_failover(self):
         data = self.showrcopy()

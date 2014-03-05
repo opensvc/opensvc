@@ -1788,6 +1788,9 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.hp3par", "syncswap")
         self.sub_set_action("sync.nexenta", "syncswap")
 
+    def syncrevert(self):
+        self.sub_set_action("sync.hp3par", "syncrevert")
+
     def syncresume(self):
         self.sub_set_action("sync.netapp", "syncresume")
         self.sub_set_action("sync.symsrdfs", "syncresume")

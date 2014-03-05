@@ -70,6 +70,7 @@ action_desc = {
       'syncfullsync': 'trigger a full copy of the volume to its target',
       'syncupdate': 'trigger a one-time resync of the volume to its target',
       'syncresume': 're-establish a broken storage hardware-assisted synchronization',
+      'syncrevert': 'revert to the pre-failover data (looses current data)',
       'syncverify': 'trigger a one-time checksum-based verify of the volume and its target',
       'syncall': 'combo action, chaining syncnodes-syncdrp-syncupdate.  --force bypass the schedule check.',
       'push': 'push service configuration to database',
