@@ -1461,6 +1461,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('nexenta', svc, conf)
     add_syncs_resources('symclone', svc, conf)
     add_syncs_resources('symsrdfs', svc, conf)
+    add_syncs_resources('hp3par', svc, conf)
     add_syncs_resources('ibmdssnap', svc, conf)
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
@@ -1701,6 +1702,47 @@ def add_syncs_evasnap(svc, conf, s):
     except:
         sc = __import__('resSyncEvasnap')
     r = sc.syncEvasnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_hp3par(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['mode'] = conf_get_string_scope(svc, conf, s, 'mode')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have mode set" % s)
+        return
+
+    try:
+        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have array set" % s)
+        return
+
+    rcg_names = {}
+    for node in svc.nodes | svc.drpnodes:
+        array = conf_get_string_scope(svc, conf, s, 'array', impersonate=node)
+        rcg = conf_get_string_scope(svc, conf, s, 'rcg', impersonate=node)
+        rcg_names[array] = rcg
+
+    if len(rcg_names) == 0:
+        svc.log.error("config file section %s must have rcg set" % s)
+        return
+
+    kwargs['rcg_names'] = rcg_names
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncHp3par'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncHp3par')
+    r = sc.syncHp3par(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 

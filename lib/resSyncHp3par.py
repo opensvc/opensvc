@@ -1,0 +1,323 @@
+#
+# Copyright (c) 2014 Christophe Varoqui <christophe.varoqui@opensvc.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+import os
+
+from rcGlobalEnv import rcEnv
+import rcExceptions as ex
+import rcStatus
+import time
+import resSync
+import datetime
+import rcHp3par as rc
+
+class syncHp3par(resSync.Sync):
+    def __init__(self,
+                 rid=None,
+                 array=None,
+                 mode=None,
+                 rcg_names={},
+                 sync_max_delay=None,
+                 sync_interval=None,
+                 sync_days=None,
+                 sync_period=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.hp3par",
+                              sync_max_delay=sync_max_delay,
+                              sync_interval=sync_interval,
+                              sync_days=sync_days,
+                              sync_period=sync_period,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
+        self.array = array
+        self.rcg_names = rcg_names
+        self.rcg = rcg_names[array]
+        self.mode = mode
+        self.label = "hp3par %s %s"%(mode, self.rcg)
+        try:
+            self.array_obj = rc.Hp3pars(objects=[self.array]).arrays[0]
+        except Exception as e:
+            raise ex.excInitError(str(e))
+
+    def __str__(self):
+        return "%s array=%s mode=%s rcg=%s" % (
+                resSync.Sync.__str__(self),
+                self.array,
+                self.mode,
+                self.rcg)
+
+    def _cmd(self, cmd, target=None, log=False):
+        if target is None:
+            array_obj = self.array_obj
+        else:
+            if not hasattr(self, 'remote_array_obj'):
+                try:
+                    self.remote_array_obj = rc.Hp3pars(objects=[target]).arrays[0]
+                except Exception as e:
+                    raise ex.excError(str(e))
+            array_obj = self.remote_array_obj
+
+        if log:
+            if target is not None:
+                suffix = " (on " + target + ")"
+            else:
+                suffix = ""
+            self.log.info(cmd+suffix)
+        out, err = array_obj.rcmd(cmd, log=self.log)
+        if not log:
+            return out, err
+        if len(out) > 0:
+            self.log.info(out)
+        if len(err) > 0:
+            self.log.error(err)
+            raise ex.excError()
+        return out, err
+
+    def can_sync(self, target=None, s=None):
+        data = self.showrcopy()
+        last = data['vv'][0]['LastSyncTime']
+        if self.skip_sync(datetime.datetime.now()-last):
+            return False
+        return True
+
+    def syncresync(self):
+        self.syncupdate()
+
+    def syncswap(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] == 'Primary':
+            self.log.error("rcopy group %s role is Primary. refuse to swap")
+            raise ex.excError()
+        self.stoprcopygroup()
+        self.setrcopygroup_reverse()
+        self.startrcopygroup()
+
+    def syncupdate(self):
+        self.syncrcopygroup()
+
+    def syncresume(self):
+        self.startrcopygroup()
+
+    def syncquiesce(self):
+        self.stoprcopygroup()
+
+    def syncbreak(self):
+        self.stoprcopygroup()
+
+    def start(self):
+        data = self.showrcopy()
+        target = data['rcg']['Target']
+        if self.is_splitted(target):
+            self.log.info("we are split from %s array" % target)
+            self.start_splitted()
+        else:
+            self.log.info("we are joined with %s array" % target)
+            self.start_joined()
+
+    def start_joigned(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] == 'Primary':
+            self.log.info("rcopy group %s role is already Primary. skip" % self.rcg)
+            return
+        self.stoprcopygroup()
+        self.setrcopygroup_reverse()
+
+    def start_splitted(self):
+        self.setrcopygroup_failover()
+
+    def stop(self):
+        pass
+
+    def setrcopygroup_failover(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] == 'Primary-Rev':
+           self.log.info("rcopy group %s role is already Primary-Rev. skip setrcopygroup failover" % self.rcg)
+           return
+        self._cmd("setrcopygroup failover -f -waittask %s" % self.rcg, log=True)
+
+    def setrcopygroup_reverse(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] == 'Primary':
+            self.log.info("rcopy group %s role is already Primary. skip setrcopygroup reverse" % self.rcg)
+            return
+        self._cmd("setrcopygroup reverse -f -waittask %s" % self.rcg, log=True)
+
+    def syncrcopygroup(self):
+        data = self.showrcopy()
+        if data['rcg']['Role'] != 'Primary':
+            self.log.error("rcopy group %s role is not Primary. refuse to sync" % self.rcg)
+            raise ex.excError()
+        self._cmd("syncrcopy -w %s" % self.rcg, log=True)
+
+    def startrcopygroup(self):
+        data = self.showrcopy()
+        if data['rcg']['Status'] == "Started":
+            self.log.info("rcopy group %s is already stopped. skip stoprcopygroup" % self.rcg)
+            return
+        if data['rcg']['Role'] != 'Primary':
+            self.log.error("rcopy group %s role is not Primary. refuse to start rcopy" % self.rcg)
+            raise ex.excError()
+        self._cmd("startrcopygroup %s" % self.rcg, log=True)
+
+    def stoprcopygroup(self):
+        data = self.showrcopy()
+        if data['rcg']['Status'] == "Stopped":
+            self.log.info("rcopy group %s is already stopped. skip stoprcopygroup" % self.rcg)
+            return
+        if data['rcg']['Role'] == "Primary":
+            self._cmd("stoprcopygroup -f %s" % self.rcg, log=True)
+        else:
+            target = data['rcg']['Target']
+            self._cmd("stoprcopygroup -f %s" % self.rcg_names[target], target=target, log=True)
+
+    def is_splitted(self, target):
+        data = self.showrcopy_links()
+        for h in data:
+            if h['Target'] != target:
+                continue
+            if h['Status'] == "Up":
+                return False
+        return True
+
+    def showrcopy_links(self):
+        """
+        Target,Node,Address,Status,Options
+        baie-pra.cgr.fr,0:2:4,20240002AC00992B,Down,
+        baie-pra.cgr.fr,1:2:3,21230002AC00992B,Down,
+        receive,0:2:4,20240002AC00992B,Up,
+        receive,1:2:3,21230002AC00992B,Up,
+        """
+        out, err = self._cmd("showrcopy links")
+        cols = ["Target", "Node", "Address", "Status", "Options"]
+        lines = out.split('\n')
+        data = []
+        for line in lines:
+            v = line.strip().split(",")
+            if len(v) != len(cols):
+                continue
+            h = {}
+            for a, b in zip(cols, v):
+                h[a] = b
+            data.append(h)
+        return data
+
+    def showrcopy(self, refresh=False):
+        """
+	Remote Copy System Information
+	Status: Started, Normal
+
+	Group Information
+
+	Name        ,Target    ,Status  ,Role      ,Mode    ,Options
+	RCG.SVCTEST1,baie-pra.cgr.fr,Started,Primary,Periodic,"Last-Sync 2014-03-05 10:19:42 CET , Period 5m, auto_recover,over_per_alert"
+	 ,LocalVV     ,ID  ,RemoteVV    ,ID  ,SyncStatus   ,LastSyncTime
+	 ,LXC.SVCTEST1.DATA01,2706,LXC.SVCTEST1.DATA01,2718,Synced,2014-03-05 10:19:42 CET
+	 ,LXC.SVCTEST1.DATA02,2707,LXC.SVCTEST1.DATA02,2719,Synced,2014-03-05 10:19:42 CET
+
+        """
+        if not refresh and hasattr(self, "showrcopy_cache"):
+            return self.showrcopy_cache
+
+        out, err = self._cmd("showrcopy groups %s" % self.rcg)
+        cols_rcg = ["Name", "Target", "Status", "Role", "Mode"]
+        cols_vv = ["LocalVV", "ID", "RemoteVV", "ID", "SyncStatus", "LastSyncTime"]
+        lines = out.split('\n')
+
+        # RCG status
+        rcg_s = lines[0]
+        options_start = rcg_s.index('"')
+        rcg_options = rcg_s[options_start+1:-1].split(",")
+        rcg_options = map(lambda x: x.strip(), rcg_options)
+        rcg_v = rcg_s[:options_start].split(",")
+        rcg_data = {}
+        for a, b in zip(cols_rcg, rcg_v):
+            rcg_data[a] = b
+        rcg_data["Options"] = rcg_options
+
+        # VV status
+        vv_l = []
+        for line in lines[1:]:
+            v = line.strip().strip(",").split(",")
+            if len(v) != len(cols_vv):
+                continue
+            vv_data = {}
+            for a, b in zip(cols_vv, v):
+                vv_data[a] = b
+            vv_data['LastSyncTime'] = self.lastsync_s_to_datetime(vv_data['LastSyncTime'])
+            vv_l.append(vv_data)
+        data = {'rcg': rcg_data, 'vv': vv_l}   
+        self.showrcopy_cache = data
+        return self.showrcopy_cache
+
+    def lastsync_s_to_datetime(self, s):
+        try:
+            d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S %Z")
+        except ValueError:
+            # workaround hp-ux python 2.6
+            s = s.replace("CET", "MET")
+            d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S %Z")
+        return d
+
+    def _status(self, verbose=False):
+        try:
+            data = self.showrcopy(refresh=True)
+        except ex.excError as e:
+            self.status_log(str(e))
+            return rcStatus.UNDEF
+        elapsed = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay)
+        r = None
+        if data['rcg']['Status'] != "Started":
+            self.status_log("rcopy group status is not Started (%s)"%data['rcg']['Status'])
+            r = rcStatus.WARN
+        if self.mode == "async" and data['rcg']['Mode'] != "Periodic":
+            self.status_log("rcopy group mode is not Periodic (%s)"%data['rcg']['Mode'])
+            r = rcStatus.WARN
+        if self.mode == "sync" and data['rcg']['Mode'] != "Sync":
+            self.status_log("rcopy group mode is not Sync (%s)"%data['rcg']['Mode'])
+            r = rcStatus.WARN
+        if self.mode == "async":
+            l = [o for o in data['rcg']['Options'] if o.startswith('Period ')]
+            if len(l) == 0:
+                self.status_log("rcopy group period option is not set")
+                r = rcStatus.WARN
+        if 'auto_recover' not in data['rcg']['Options']:
+            self.status_log("rcopy group auto_recover option is not set")
+            r = rcStatus.WARN
+        for vv in data['vv']:
+            if vv['SyncStatus'] != 'Synced':
+                self.status_log("vv %s SyncStatus is not Synced (%s)"%(vv['LocalVV'], vv['SyncStatus']))
+                r = rcStatus.WARN
+            if vv['LastSyncTime'] < elapsed:
+                self.status_log("vv %s last sync too old (%s)"%(vv['LocalVV'], vv['LastSyncTime'].strftime("%Y-%m-%d %H:%M")))
+                r = rcStatus.WARN
+
+        if r is not None:
+            return r
+        
+        return rcStatus.UP
+
+if __name__ == "__main__":
+    o = syncHp3par(rid="sync#1", mode="async", array="baie-pra", rcg="RCG.SVCTEST1")
+    print(o)

@@ -108,6 +108,7 @@ class Svc(Resource, Freezer):
                              "sync.rsync",
                              "sync.symclone",
                              "sync.symsrdfs",
+                             "sync.hp3par",
                              "sync.ibmdssnap",
                              "sync.evasnap",
                              "sync.dcssnap",
@@ -1419,6 +1420,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("sync.symsrdfs", "start")
+        self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.loop", "start")
         self.sub_set_action("disk.gandi", "start")
@@ -1783,11 +1785,13 @@ class Svc(Resource, Freezer):
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
         self.sub_set_action("sync.symsrdfs", "syncswap")
+        self.sub_set_action("sync.hp3par", "syncswap")
         self.sub_set_action("sync.nexenta", "syncswap")
 
     def syncresume(self):
         self.sub_set_action("sync.netapp", "syncresume")
         self.sub_set_action("sync.symsrdfs", "syncresume")
+        self.sub_set_action("sync.hp3par", "syncresume")
         self.sub_set_action("sync.dcsckpt", "syncresume")
         self.sub_set_action("sync.nexenta", "syncresume")
 
@@ -1813,11 +1817,13 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.netapp", "syncbreak")
         self.sub_set_action("sync.nexenta", "syncbreak")
         self.sub_set_action("sync.symclone", "syncbreak")
+        self.sub_set_action("sync.hp3par", "syncbreak")
         self.sub_set_action("sync.ibmdssnap", "syncbreak")
         self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
         self.sub_set_action("sync.netapp", "syncupdate")
+        self.sub_set_action("sync.hp3par", "syncupdate")
         self.sub_set_action("sync.nexenta", "syncupdate")
         self.sub_set_action("sync.dcsckpt", "syncupdate")
         self.sub_set_action("sync.dds", "syncupdate")
@@ -1843,7 +1849,7 @@ class Svc(Resource, Freezer):
     def can_sync(self, target=None):
         ret = False
         rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
-                  "sync.rsync", "sync.btrfs"]
+                  "sync.rsync", "sync.btrfs", "sync.hp3par"]
         for rt in rtypes:
             for r in self.get_resources(rt):
                 try:

@@ -3,6 +3,7 @@ import json
 import rcExceptions as ex
 import ConfigParser
 from subprocess import *
+import time
 
 pathlib = os.path.dirname(__file__)
 pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
@@ -11,22 +12,46 @@ pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 if pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+pathbin
 
-def rcmd(cmd, manager, username, key):
+def reformat(s):
+    lines = s.split('\n')
+    for i, line in enumerate(lines):
+        if '%' in line:
+            # skip prompt
+            x = line.index("%") + 2
+            if x < len(line):
+                line = line[x:]
+            elif x == len(line):
+                line = ""
+        lines[i] = line
+    s = '\n'.join(lines)
+    s = s.replace("Pseudo-terminal will not be allocated because stdin is not a terminal.", "")
+    return s.strip()
+
+def rcmd(cmd, manager, username, key, log=None):
     _cmd = ['ssh', '-i', key, '@'.join((username, manager))]
     cmd = 'setclienv csvtable 1 ; setclienv nohdtot 1 ; ' + cmd + ' ; exit'
+    return _rcmd(_cmd, cmd, log=log)
+
+def _rcmd(_cmd, cmd, log=None, retry=10):
     p = Popen(_cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
     p.stdin.write(cmd)
     out, err = p.communicate()
-    if p.returncode != 0:
-        print(cmd)
-        print(out)
-        raise ex.excError("ssh command execution error")
+    out = reformat(out)
+    err = reformat(err)
 
-    if '%' in out:
-        # skip prompt
-        i = out.index("%") + 2
-        if i < len(out):
-            out = out[i:]
+    if p.returncode != 0:
+        if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
+            if log is not None:
+                log.info("3par connection refused. try #%d" % retry)
+            time.sleep(1)
+            return _rcmd(_cmd, cmd, log=log, retry=retry-1)
+        if log is not None:
+            if len(out) > 0: log.info(out)
+            if len(err) > 0: log.error(err)
+        else:
+            print(cmd)
+            print(out)
+        raise ex.excError("3par command execution error")
 
     return out, err
 
@@ -79,8 +104,8 @@ class Hp3par(object):
         self.key = key
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
 
-    def rcmd(self, cmd):
-        return rcmd(cmd, self.name, self.username, self.key)
+    def rcmd(self, cmd, log=None):
+        return rcmd(cmd, self.name, self.username, self.key, log=log)
 
     def serialize(self, s, cols):
         l = []
