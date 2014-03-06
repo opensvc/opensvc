@@ -139,7 +139,7 @@ class syncHp3par(resSync.Sync):
             self.log.info("we are joined with %s array" % target)
             self.start_joined()
 
-    def start_joigned(self):
+    def start_joined(self):
         data = self.showrcopy()
         if data['rcg']['Role'] == 'Primary':
             self.log.info("rcopy group %s role is already Primary. skip" % self.rcg)
