@@ -208,9 +208,16 @@ class App(Res.Resource):
             return
         if self.script is None:
             raise ex.excError("script %s does not exist"%self.script)
-        if self.is_up() == 0:
+
+        try:
+            status = self.is_up()
+        except:
+            status = 1
+
+        if status == 0:
             self.log.info("%s is already started" % self.label)
             return
+
         r = self.run('start')
         if r != 0:
             raise ex.excError()
