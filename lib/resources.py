@@ -451,6 +451,10 @@ class ResourceSet(Resource):
                 except exc.excAbortAction:
                     break
 
+    def sort_resources(self, resources, action):
+        resources.sort(lambda x, y: cmp(x.rid, y.rid))
+        return resources
+
 
 if __name__ == "__main__":
     for c in (Resource,ResourceSet) :

@@ -81,6 +81,9 @@ class RsetApps(Res.ResourceSet):
 
     def sort_resources(self, resources, action):
         attr = action + '_seq'
+        l = [r for r in resources if hasattr(r, attr)]
+        if len(l) != len(resources):
+            attr = 'rid'
         resources.sort(lambda x, y: cmp(getattr(x, attr), getattr(y, attr)))
         return resources
 
@@ -174,6 +177,9 @@ class App(Res.Resource):
     def is_up(self):
         if self.script is None:
             raise StatusNA()
+        if not os.path.exists(self.script):
+            self.status_log("script does not exist")
+            raise StatusNA()
         if self.uid is None:
             raise StatusWARN()
         if self.gid is None:
@@ -262,6 +268,8 @@ class App(Res.Resource):
     def set_perms(self):
         if self.uid is None or self.gid is None:
             return
+        if not os.path.exists(self.script):
+            return
         s = os.stat(self.script)
         if s.st_uid != self.uid or s.st_gid != self.gid:
             self.log.info("set %s ownership to uid %d gid %d"%(self.script, self.uid, self.gid))
@@ -320,7 +328,11 @@ class App(Res.Resource):
                 return ret
         except OSError as e:
             if e.errno == 8:
-                self.log.error("%s execution error (Exec format error)"%self.script)
+                if not return_out and not dedicated_log:
+                    self.status_log("exec format error")
+                    raise StatusWARN()
+                else:
+                    self.log.error("%s execution error (Exec format error)"%self.script)
                 return 1
             else:
                 self.svc.save_exc()
