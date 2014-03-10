@@ -73,7 +73,7 @@ class RsetApps(Res.ResourceSet):
             self.containerize()
         try:
             Res.ResourceSet.action(self, action=action, tags=tags, xtags=xtags)
-        except:
+        except Exception as e:
             if action == "stop":
                 self.log.info("there were errors during app stop. please check the quality of the scripts. continuing anyway.")
                 return
@@ -138,9 +138,11 @@ class App(Res.Resource):
         self.script_exec = True
 
     def on_add(self):
+        self.validate_user()
+
+    def validate_on_action(self):
         self.validate_script_path()
         self.validate_script_exec()
-        self.validate_user()
 
     def validate_user(self):
         if self.run_as is None:
@@ -210,6 +212,8 @@ class App(Res.Resource):
         return l
 
     def start(self):
+        self.validate_on_action()
+
         if self.start_seq is None:
             return
         if self.script is None:
@@ -230,15 +234,19 @@ class App(Res.Resource):
         self.can_rollback = True
 
     def stop(self):
+        self.validate_on_action()
+
         if self.stop_seq is None:
             return
         if self.script is None:
-            raise ex.excError("script %s does not exist"%self.script)
+            return
         r = self.run('stop')
         if r != 0:
             raise ex.excError()
 
     def _status(self, verbose=False):
+        self.validate_on_action()
+
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk.scsireserv", "hb"]))
         if str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
@@ -263,6 +271,8 @@ class App(Res.Resource):
     def set_executable(self):
         if self.script_exec: 
             return
+        if not os.path.exists(self.script):
+            return
         self.vcall(['chmod', '+x', self.script])
 
     def set_perms(self):
@@ -282,6 +292,19 @@ class App(Res.Resource):
     def run(self, action, dedicated_log=True, return_out=False):
         if self.script is None:
             return 1
+
+        if not os.path.exists(self.script):
+            if action == "start":
+                self.log.error("script %s does not exist. can't run %s action" % (self.script, action))
+                return 1
+            elif action == "stop":
+                self.log.info("script %s does not exist. hosting fs might already be down" % self.script)
+                return 0
+            elif return_out: 
+                return 0
+            else:
+                self.status_log("script %s does not exist" % self.script)
+                raise StatusWARN()
 
         self.set_perms()
         self.set_executable()

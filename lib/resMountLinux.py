@@ -351,6 +351,8 @@ class Mount(Res.Mount):
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return
+        if not os.path.exists(self.mountPoint):
+            raise execError('mount point %s does not exist' % self.mountPoint)
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
