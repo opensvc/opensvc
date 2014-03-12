@@ -255,6 +255,12 @@ class syncHp3par(resSync.Sync):
         cols_vv = ["LocalVV", "ID", "RemoteVV", "ID", "SyncStatus", "LastSyncTime"]
         lines = out.split('\n')
 
+        if "does not exist" in err:
+            raise ex.excError("rcg does not exist")
+
+        if len(out) == 0:
+            raise ex.excError("unable to fetch rcg status")
+
         # RCG status
         rcg_s = lines[0]
         options_start = rcg_s.index('"')
