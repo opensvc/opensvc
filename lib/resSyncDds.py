@@ -159,8 +159,9 @@ class syncDds(resSync.Sync):
             self.do_fullsync(n)
 
     def do_fullsync(self, node):
+        dst = self.dsts[node]
         cmd1 = ['dd', 'if='+self.snap1, 'bs=1M']
-        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+self.dst]
+        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+dst]
         self.log.info(' '.join(cmd1 + ["|"] + cmd2))
         p1 = Popen(cmd1, stdout=PIPE)
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
@@ -198,9 +199,10 @@ class syncDds(resSync.Sync):
             self._push_statefile(s)
 
     def apply_delta(self, node):
+        dst = self.dsts[node]
         extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
                        self.snap2]
-        merge_cmd = ['dds', '--merge', '--dest', self.dst, '-v']
+        merge_cmd = ['dds', '--merge', '--dest', dst, '-v']
         merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
         self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
         p1 = Popen(extract_cmd, stdout=PIPE)
@@ -327,8 +329,9 @@ class syncDds(resSync.Sync):
         ps = []
         self.log.info("start checksum threads. please be patient.")
         for n in self.targets:
+            dst = self.dsts[n]
             queues[n] = Queue()
-            p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
+            p = Process(target=self.checksum, args=(n, dst, queues[n]))
             p.start()
             ps.append(p)
         self.checksum(rcEnv.nodename, self.snap1)
@@ -390,7 +393,7 @@ class syncDds(resSync.Sync):
                  rid=None,
                  target=None,
                  src=None,
-                 dst=None,
+                 dsts={},
                  delta_store=None,
                  sender=None,
                  snap_size=0,
@@ -417,7 +420,7 @@ class syncDds(resSync.Sync):
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
         self.src = src
-        self.dst = dst
+        self.dsts = dsts
         self.snap_size = snap_size
         if delta_store is None:
             self.delta_store = rcEnv.pathvar

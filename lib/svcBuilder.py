@@ -1554,10 +1554,16 @@ def add_syncs_dds(svc, conf, s):
         svc.log.error("config file section %s must have src set" % s)
         return
 
-    try:
-        kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
-    except ex.OptNotFound:
-        kwargs['dst'] = conf.get(s, 'src')
+    dsts = {}
+    for node in svc.nodes | svc.drpnodes:
+        dst = conf_get_string_scope(svc, conf, s, 'dst', impersonate=node)
+        dsts[node] = dst
+
+    if len(dsts) == 0:
+        for node in svc.nodes | svc.drpnodes:
+            dsts[node] = kwargs['src']
+    
+    kwargs['dsts'] = dsts
 
     try:
         kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
