@@ -57,9 +57,13 @@ class syncHp3par(resSync.Sync):
         self.mode = mode
         self.label = "hp3par %s %s"%(mode, self.rcg)
         try:
-            self.array_obj = rc.Hp3pars(objects=[self.array]).arrays[0]
+            arrays = rc.Hp3pars(objects=[self.array])
         except Exception as e:
             raise ex.excInitError(str(e))
+        if len(arrays.arrays) == 1:
+            self.array_obj = arrays.arrays[0]
+        else:
+            self.array_obj = None
 
     def __str__(self):
         return "%s array=%s mode=%s rcg=%s" % (
@@ -70,8 +74,10 @@ class syncHp3par(resSync.Sync):
 
     def _cmd(self, cmd, target=None, log=False):
         if target is None:
+            array_name = self.array
             array_obj = self.array_obj
         else:
+            array_name = target
             if not hasattr(self, 'remote_array_obj'):
                 try:
                     self.remote_array_obj = rc.Hp3pars(objects=[target]).arrays[0]
@@ -79,6 +85,8 @@ class syncHp3par(resSync.Sync):
                     raise ex.excError(str(e))
             array_obj = self.remote_array_obj
 
+        if array_obj is None:
+            raise ex.excError("array %s is not accessible" % array_name)
         if log:
             if target is not None:
                 suffix = " (on " + target + ")"
@@ -297,11 +305,16 @@ class syncHp3par(resSync.Sync):
         return d
 
     def _status(self, verbose=False):
+        if self.array_obj is None:
+            self.status_log("array %s is not accessible" % self.array)
+            return rcStatus.WARN
+
         try:
             data = self.showrcopy(refresh=True)
         except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.UNDEF
+
         elapsed = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay)
         r = None
         if data['rcg']['Status'] != "Started":
