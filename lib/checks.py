@@ -63,6 +63,7 @@ class checks(check):
             self.check_list.append(c)
         elif isinstance(c, checks):
             self.check_list += c.check_list
+        return self
 
     def register_local_checkers(self):
         import os
