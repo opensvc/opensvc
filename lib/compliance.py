@@ -232,9 +232,7 @@ class Compliance(object):
         if self.svcname is not None:
             flag = '.'.join((flag, self.svcname))
         if self.skip_action is not None and \
-           self.skip_action("compliance", 'comp_check_interval', flag,
-                            period_option='comp_check_period',
-                            days_option='comp_check_days'):
+           self.skip_action("compliance_check", fname=flag):
             return
         if self.updatecomp:
             self.node.updatecomp()

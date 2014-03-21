@@ -42,6 +42,26 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+class SchedNoDefault(Exception):
+    pass
+
+class SchedSyntaxError(Exception):
+    pass
+
+class SchedOpts(object):
+    def __init__(self, section,
+                 fname=None,
+                 interval_option="push_interval",
+                 period_option="push_period",
+                 days_option="push_days"):
+        self.section = section
+        self.fname = fname
+        if self.fname is None:
+            self.fname = "last_"+section+"_push"
+        self.interval_option = interval_option
+        self.period_option = period_option
+        self.days_option = days_option
+
 class Options(object):
     def __init__(self):
         self.cron = False
@@ -86,9 +106,9 @@ class Node(Svc, Freezer):
           'comp_check_interval': 241,
           'comp_check_days': '["sunday"]',
           'comp_check_period': '["02:00", "06:00"]',
-          'rotate_root_pw_interval': 0,
-          'rotate_root_pw_days': '[]',
-          'rotate_root_pw_period': '[]',
+          'no_interval': 0,
+          'no_days': '[]',
+          'no_period': '[]',
         }
         self.svcs = None
         try:
@@ -108,6 +128,7 @@ class Node(Svc, Freezer):
             'scanscsi': 'scan the scsi hosts in search of new disks',
             'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
             'rotate_root_pw': "set a new root password and store it in the collector",
+            'print_schedule': "print the node tasks schedule",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
@@ -199,6 +220,31 @@ class Node(Svc, Freezer):
         self.os = rcos.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
+	self.scheduler_actions = {
+	 "syncservices": SchedOpts("syncservices"),
+	 "checks": SchedOpts("checks"),
+	 "pushstats": SchedOpts("stats"),
+	 "pushpkg": SchedOpts("packages"),
+	 "pushpatch": SchedOpts("patches"),
+	 "pushasset": SchedOpts("asset"),
+	 "pushnsr": SchedOpts("nsr", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushhp3par": SchedOpts("hp3par", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushibmds": SchedOpts("ibmds", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushdcs": SchedOpts("dcs", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushhds": SchedOpts("hds", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushnecism": SchedOpts("necism", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pusheva": SchedOpts("eva", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushibmsvc": SchedOpts("ibmsvc", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushvioserver": SchedOpts("vioserver", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushsym": SchedOpts("sym", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushbrocade": SchedOpts("brocade", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushdisks": SchedOpts("disks"),
+	 "pushservices": SchedOpts("svcconf"),
+	 "push_appinfo": SchedOpts("appinfo"),
+	 "compliance_check": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
+	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days")
+        }
+
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -620,9 +666,9 @@ class Node(Svc, Freezer):
 
         return self.skip_probabilistic(period, interval)
 
-    def skip_action_period(self, section, option):
+    def sched_get_period(self, section, option):
         if option is None:
-            return False
+            raise SchedNoDefault
 
         if self.config.has_section(section) and \
            self.config.has_option(section, 'period'):
@@ -630,11 +676,43 @@ class Node(Svc, Freezer):
         elif self.config.has_option('DEFAULT', option):
             period_s = self.config.get('DEFAULT', option)
         else:
-            return False
+            raise SchedNoDefault
 
         try:
             period = json.loads(period_s)
         except:
+            raise SchedSyntaxError
+
+        return period
+
+    def sched_get_days(self, section, option):
+        if option is None:
+            raise SchedNoDefault
+
+        if self.config.has_section(section) and \
+           self.config.has_option(section, 'days'):
+            days_s = self.config.get(section, 'days')
+        elif self.config.has_option('DEFAULT', option):
+            days_s = self.config.get('DEFAULT', option)
+        else:
+            raise SchedNoDefault
+
+        try:
+            days = json.loads(days_s)
+        except:
+            raise SchedSyntaxError
+
+        return days
+
+    def skip_action_period(self, section, option):
+        if option is None:
+            return False
+
+        try:
+            period = self.sched_get_period(section, option)
+        except SchedNoDefault:
+            return False
+        except SchedSyntaxError:
             print("malformed parameter value: %s.period"%section, file=sys.stderr)
             return True
 
@@ -643,21 +721,16 @@ class Node(Svc, Freezer):
 
         return True
 
+
     def skip_action_days(self, section, option):
         if option is None:
             return False
 
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'days'):
-            days_s = self.config.get(section, 'days')
-        elif self.config.has_option('DEFAULT', option):
-            days_s = self.config.get('DEFAULT', option)
-        else:
-            return False
-
         try:
-            days = json.loads(days_s)
-        except:
+            days = self.sched_get_days(section, option)
+        except SchedNoDefault:
+            return False
+        except SchedSyntaxError:
             print("malformed parameter value: %s.days"%section, file=sys.stderr)
             return True
 
@@ -666,7 +739,7 @@ class Node(Svc, Freezer):
 
         return True
 
-    def get_interval(self, section, option, cmdline_parm):
+    def sched_get_interval(self, section, option, cmdline_parm=None):
         # get interval from config file
         if self.config.has_section(section) and \
            self.config.has_option(section, 'interval'):
@@ -682,10 +755,17 @@ class Node(Svc, Freezer):
 
         return interval
 
-    def skip_action(self, section, option, fname,
-                    cmdline_parm=None,
-                    period_option=None,
-                    days_option=None):
+    def skip_action(self, action, section=None, fname=None, interval_option=None, period_option=None, days_option=None, cmdline_parm=None):
+        if section is None:
+            section = self.scheduler_actions[action].section
+        if fname is None:
+            fname = self.scheduler_actions[action].fname
+        if interval_option is None:
+            interval_option = self.scheduler_actions[action].interval_option
+        if period_option is None:
+            period_option = self.scheduler_actions[action].period_option
+        if days_option is None:
+            days_option = self.scheduler_actions[action].days_option
 
         def err(msg):
             print('%s: skip:'%section, msg, '(--force to bypass)')
@@ -706,7 +786,7 @@ class Node(Svc, Freezer):
             err('out of allowed days')
             return True
 
-        interval = self.get_interval(section, option, cmdline_parm)
+        interval = self.sched_get_interval(section, interval_option, cmdline_parm)
         timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
 
         # check if we are in allowed days of week
@@ -740,10 +820,72 @@ class Node(Svc, Freezer):
 
         return False
 
+    def print_schedule(self):
+        print("%-22s  %-21s  %-20s %10s  %s" % ("action", "last", "        days", "interval", "period"))
+        print("%-22s  %-21s  %-20s %10s  %s" % ("", "", "Su Mo Tu We Th Fr Sa", "", ""))
+        print("%-22s  %-21s  %-20s %10s  %s" % ("------", "----", "--------------------", "--------", "------"))
+        for a in sorted(self.scheduler_actions):
+            self._print_schedule(a)
+
+    def _print_schedule(self, a):
+        section = self.scheduler_actions[a].section
+        period_option = self.scheduler_actions[a].period_option
+        days_option = self.scheduler_actions[a].days_option
+        interval_option = self.scheduler_actions[a].interval_option
+        fname = self.scheduler_actions[a].fname
+
+        try:
+            period = self.sched_get_period(section, period_option)
+            if len(period) == 0:
+                period_s = "-"
+            elif type(period[0]) == list:
+                period_s = ', '.join(map(lambda x: '->'.join(x), period))
+            else:
+                period_s = '->'.join(period)
+                
+        except SchedNoDefault:
+            period_s = "anytime"
+        except SchedSyntaxError:
+            period_s = "malformed"
+
+        try:
+            days_s = ""
+            days = self.sched_get_days(section, days_option)
+            for i in ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]:
+                if i in days:
+                    days_s += " X "
+                else:
+                    days_s += "   "
+            days_s = days_s.rstrip()
+        except SchedNoDefault:
+            days_s = "anyday"
+        except SchedSyntaxError:
+            days_s = "malformed"
+
+        try:
+            interval = self.sched_get_interval(section, interval_option)
+            if interval == 0:
+                interval_s = "-"
+            else:
+                interval_s = str(interval)
+        except SchedNoDefault:
+            interval = "anytime"
+        except SchedSyntaxError:
+            interval = "malformed"
+
+        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
+        try:
+            with open(timestamp_f, 'r') as f:
+                last_s = f.read()
+                last_s = last_s.split('.')[0]
+        except:
+            last_s = "-"
+
+
+        print("%-22s  %-21s  %-20s %10s  %s" % (a, last_s, days_s, interval_s, period_s))
+
     def pushstats(self):
-        if self.skip_action('stats', 'push_interval', 'last_stats_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushstats"):
             return
 
         if self.config.has_section('stats'):
@@ -788,133 +930,85 @@ class Node(Svc, Freezer):
                                 disable=disable)
 
     def pushpkg(self):
-        if self.skip_action('packages', 'push_interval', 'last_pkg_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushpkg"):
             return
-
         self.collector.call('push_pkg')
 
     def pushpatch(self):
-        if self.skip_action('patches', 'push_interval', 'last_patch_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushpatch"):
             return
-
         self.collector.call('push_patch')
 
     def pushasset(self):
-        if self.skip_action('asset', 'push_interval', 'last_asset_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushasset"):
             return
-
         self.collector.call('push_asset', self)
 
     def pushnsr(self):
-        if self.skip_action('nsr', 'push_interval', 'last_nsr_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushnsr"):
             return
-
         self.collector.call('push_nsr')
 
     def pushhp3par(self):
-        if self.skip_action('hp3par', 'push_interval', 'last_hp3par_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushhp3par"):
             return
-
         self.collector.call('push_hp3par', self.options.objects)
 
     def pushibmds(self):
-        if self.skip_action('ibmds', 'push_interval', 'last_ibmds_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushibmds"):
             return
-
         self.collector.call('push_ibmds', self.options.objects)
 
     def pushdcs(self):
-        if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushdcs"):
             return
-
         self.collector.call('push_dcs', self.options.objects)
 
     def pushhds(self):
-        if self.skip_action('hds', 'push_interval', 'last_hds_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushhds"):
             return
-
         self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
-        if self.skip_action('necism', 'push_interval', 'last_necism_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushnecism"):
             return
-
         self.collector.call('push_necism', self.options.objects)
 
     def pusheva(self):
-        if self.skip_action('eva', 'push_interval', 'last_eva_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pusheva"):
             return
-
         self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
-        if self.skip_action('ibmsvc', 'push_interval', 'last_ibmsvc_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushibmsvc"):
             return
-
         self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
-        if self.skip_action('vioserver', 'push_interval', 'last_vioserver_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushvioserver"):
             return
-
         self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
-        if self.skip_action('sym', 'push_interval', 'last_sym_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushsym"):
             return
-
         self.collector.call('push_sym', self.options.objects)
 
     def pushbrocade(self):
-        if self.skip_action('brocade', 'push_interval', 'last_brocade_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushbrocade"):
             return
-
         self.collector.call('push_brocade', self.options.objects)
 
     def auto_rotate_root_pw(self):
-        if self.skip_action('rotate_root_pw', 'rotate_root_pw_interval', 'last_rotate_root_pw',
-                            period_option='rotate_root_pw_period',
-                            days_option='rotate_root_pw_days'):
+        if self.skip_action("auto_rotate_root_pw"):
             return
         self.rotate_root_pw()
 
     def pushdisks(self):
-        if self.skip_action('disks', 'push_interval', 'last_disks_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushdisks"):
             return
-
         if self.svcs is None:
             self.build_services()
-
         self.collector.call('push_disks', self)
 
     def need_sync(self):
@@ -925,7 +1019,10 @@ class Node(Svc, Freezer):
             ts = '_'.join(('last_sync',
                            self.config.get(s, 'svcname'),
                            self.config.get(s, 'rid')))
-            if self.skip_action(s, 'sync_interval', ts,
+            if self.skip_action("need_sync",
+                                section=s,
+                                fname=ts,
+                                interval_option='sync_interval',
                                 period_option='sync_period',
                                 days_option='sync_days'):
                     continue
@@ -970,11 +1067,8 @@ class Node(Svc, Freezer):
             svc.action('presync')
 
     def pushservices(self):
-        if self.skip_action('svcconf', 'push_interval', 'last_svcconf_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushservices"):
             return
-
         if self.svcs is None:
             self.build_services()
         for svc in self.svcs:
@@ -982,11 +1076,8 @@ class Node(Svc, Freezer):
             svc.action('push')
 
     def push_appinfo(self):
-        if self.skip_action('appinfo', 'push_interval', 'last_appinfo_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("push_appinfo"):
             return
-
         if self.svcs is None:
             self.build_services()
         for svc in self.svcs:
@@ -999,11 +1090,8 @@ class Node(Svc, Freezer):
         print(m.hostid())
 
     def checks(self):
-        if self.skip_action('checks', 'push_interval', 'last_checks_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("checks"):
             return
-
         import checks
         if self.svcs is None:
             self.build_services()
