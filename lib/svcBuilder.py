@@ -1464,6 +1464,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('hp3par', svc, conf)
     add_syncs_resources('ibmdssnap', svc, conf)
     add_syncs_resources('evasnap', svc, conf)
+    add_syncs_resources('necismsnap', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
     add_syncs_resources('dcsckpt', svc, conf)
     add_syncs_resources('dds', svc, conf)
@@ -1670,6 +1671,34 @@ def add_syncs_dcssnap(svc, conf, s):
     except:
         sc = __import__('resSyncDcsSnap')
     r = sc.syncDcsSnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_necismsnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['devs'] = conf_get_string_scope(svc, conf, s, 'devs')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have devs set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncNecIsmSnap'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncNecIsmSnap')
+    r = sc.syncNecIsmSnap(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 

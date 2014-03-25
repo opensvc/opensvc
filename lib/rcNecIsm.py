@@ -4,21 +4,103 @@ import os
 
 class Nec(object):
     arrays = []
-    def get_bin(self):
-        candidates = ['iSMcc_view', 'iSMview']
+    view_bin = None
+    sc_query_bin = None
+    sc_linkinfo_bin = None
+    sc_unlink_bin = None
+    sc_link_bin = None
+    sc_create_bin = None
+
+    def get_bin(self, bin_attr, candidates):
+        if getattr(self, bin_attr) is not None:
+            return
         for bin in candidates:
             if which(bin) is not None:
-                self.bin = bin
+                setattr(self, bin_attr, bin)
                 break
-        if self.bin is None:
+        if getattr(self, bin_attr) is None:
             raise ex.excError('Can not find %s program in PATH' % ' or '.join(candidates))
 
+    def get_view_bin(self):
+        self.get_bin('view_bin', ['iSMcc_view', 'iSMview'])
+
+    def get_sc_query_bin(self):
+        self.get_bin('sc_query_bin', ['iSMsc_query'])
+
+    def get_sc_linkinfo_bin(self):
+        self.get_bin('sc_linkinfo_bin', ['iSMsc_linkinfo'])
+
+    def get_sc_link_bin(self):
+        self.get_bin('sc_link_bin', ['iSMsc_link'])
+
+    def get_sc_create_bin(self):
+        self.get_bin('sc_create_bin', ['iSMsc_create'])
+
+    def get_sc_unlink_bin(self):
+        self.get_bin('sc_unlink_bin', ['iSMsc_unlink'])
+
+    def view_cmd(self, cmd, on_array=True):
+	self.get_view_bin()
+        cmd = [self.view_bin] + cmd
+        if on_array:
+            cmd += [self.name]
+        return justcall(cmd)
+
+    def sc_query_cmd(self, cmd):
+	self.get_sc_query_bin()
+        cmd = [self.sc_query_bin] + cmd
+        return justcall(cmd)
+
+    def sc_linkinfo_cmd(self, cmd):
+	self.get_sc_linkinfo_bin()
+        cmd = [self.sc_linkinfo_bin] + cmd
+        return justcall(cmd)
+
+    def sc_unlink_cmd(self, cmd):
+	self.get_sc_unlink_bin()
+        cmd = [self.sc_unlink_bin] + cmd
+        self.log.info(' '.join(cmd))
+        return justcall(cmd)
+
+    def sc_link_cmd(self, cmd):
+	self.get_sc_link_bin()
+        cmd = [self.sc_link_bin] + cmd
+        self.log.info(' '.join(cmd))
+        return justcall(cmd)
+
+    def sc_create_cmd(self, cmd):
+	self.get_sc_create_bin()
+        cmd = [self.sc_create_bin] + cmd
+        self.log.info(' '.join(cmd))
+        return justcall(cmd)
+
+    def sc_create_ld(self, bv, sv):
+        cmd = ['-bv', bv, '-sv', sv, '-bvflg', 'ld', '-svflg', 'ld']
+        out, err, ret = self.sc_create_cmd(cmd)
+        self.log.info(out)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def sc_unlink_ld(self, ld):
+        cmd = ['-lv', ld, '-lvflg', 'ld']
+        out, err, ret = self.sc_unlink_cmd(cmd)
+        self.log.info(out)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def sc_link_ld(self, sv, ld):
+        cmd = ['-lv', ld, '-sv', sv, '-lvflg', 'ld', '-svflg', 'ld']
+        out, err, ret = self.sc_link_cmd(cmd)
+        self.log.info(out)
+        if ret != 0:
+            raise ex.excError(err)
+
     def get_arrays(self):
-        cmd = [self.bin, '-d']
-        out, err, ret = justcall(cmd)
+        cmd = ['-d']
+        out, err, ret = self.view_cmd(cmd, on_array=False)
         if ret != 0:
             self.refresh_vollist()
-        out, err, ret = justcall(cmd)
+        out, err, ret = self.view_cmd(cmd, on_array=False)
         if ret != 0:
             raise ex.excError(err)
 
@@ -50,6 +132,73 @@ Optima3600        Optima7_LMW                       ready
                 continue
             self.arrays.append(NecIsm(l[1]))
 
+    def sc_linkinfo_ld(self, vol):
+        """
+
+Specified Volume Information
+SV:LD Name      : test_src_0000_SV0014
+   Type         : LX
+   Special File : -
+   State        : link   (test_src_0000_LV0064)
+   Mode         : nr
+
+Destination Volume Information
+    LV:test_src_0000_LV0050     LX link   (test_src_0000_SV0016)    rw
+    LV:test_src_0000_LV005A     LX link   (test_src_0000_SV0015)    rw
+    LV:test_src_0000_LV0064     LX link   (test_src_0000_SV0014)    rw
+
+"""
+        cmd = ['-vol', vol, '-volflg', 'ld', '-lcl']
+        out, err, ret = self.sc_linkinfo_cmd(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        data = {'dst': []}
+        for line in out.split('\n'):
+            if line.startswith('SV:LD Name'):
+                data['SV:LD Name'] = line.split(': ')[1]
+            elif line.strip().startswith('Type'):
+                data['Type'] = line.split(': ')[1]
+            elif line.strip().startswith('Special File'):
+                data['Special File'] = line.split(': ')[1]
+            elif line.strip().startswith('State'):
+                data['State'] = line.split(': ')[1]
+            elif line.strip().startswith('Mode'):
+                data['Mode'] = line.split(': ')[1]
+            elif line.strip().startswith('LV:'):
+                data['dst'].append(line.split(':')[1])
+        return data
+
+    def sc_query_ld(self, sv):
+        """
+BV Information
+    LD Name      : test_src_0000
+    Type         : LX
+    Special File : /dev/sdc
+    State        : normal
+    Reserve Area : -
+
+SV Information
+  LX:test_src_0000_SV0014    ( -1) snap/active   [2014/03/24 11:16:16] link
+        """
+        cmd = ['-sv', sv, '-svflg', 'ld']
+        out, err, ret = self.sc_query_cmd(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        data = {'sv': []}
+        for line in out.split('\n'):
+            if line.strip().startswith('LD Name'):
+                data['LD Name'] = line.split(': ')[1]
+            elif line.strip().startswith('Type'):
+                data['Type'] = line.split(': ')[1]
+            elif line.strip().startswith('Special File'):
+                data['Special File'] = line.split(': ')[1]
+            elif line.strip().startswith('State'):
+                data['State'] = line.split(': ')[1]
+            elif line.strip().startswith('Reserve Area'):
+                data['Reserve Area'] = line.split(': ')[1]
+            elif line.strip().startswith('LX:'):
+                data['sv'].append(line[line.index(':')+1:])
+        return data
 
 class NecIsms(Nec):
     def __init__(self, objects=[]):
@@ -59,8 +208,6 @@ class NecIsms(Nec):
         else:
             self.filtering = False
         self.index = 0
-        self.bin = None
-        self.get_bin()
         self.get_arrays()
 
     def __iter__(self):
@@ -82,19 +229,16 @@ class NecIsm(Nec):
     def __init__(self, name):
         self.keys = ['all']
         self.name = name
-        self.get_bin()
-
-    def _cmd(self, cmd):
-        cmd = [self.bin] + cmd + [self.name]
-        return justcall(cmd)
 
     def get_all(self):
         cmd = ['-all']
-        out, err, ret = self._cmd(cmd)
+        out, err, ret = self.view_cmd(cmd)
         return out
 
 if __name__ == "__main__":
     o = NecIsms()
     for necism in o:
         print(necism.get_all())
+        #print(o.sc_linkinfo_ld("test_src_0000_SV0014"))
+        #print(o.sc_query_ld("test_src_0000_SV0014"))
 

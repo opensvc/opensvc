@@ -111,6 +111,7 @@ class Svc(Resource, Freezer):
                              "sync.hp3par",
                              "sync.ibmdssnap",
                              "sync.evasnap",
+                             "sync.necismsnap",
                              "sync.dcssnap",
                              "sync.dcsckpt",
                              "sync.dds",
@@ -1813,6 +1814,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.symclone", "syncresync")
         self.sub_set_action("sync.ibmdssnap", "syncresync")
         self.sub_set_action("sync.evasnap", "syncresync")
+        self.sub_set_action("sync.necismsnap", "syncresync")
         self.sub_set_action("sync.dcssnap", "syncresync")
         self.sub_set_action("sync.dds", "syncresync")
 
