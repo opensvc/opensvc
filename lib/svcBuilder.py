@@ -2157,7 +2157,7 @@ def add_apps_sysv(svc, conf):
             if r.script.startswith(os.sep):
                 rscript = r.script
             else:
-                rscript = os.path.join(initd, script)
+                rscript = os.path.join(initd, r.script)
             rscript = os.path.realpath(rscript)
             if rscript == script:
                 return r
@@ -2196,9 +2196,11 @@ def add_apps_sysv(svc, conf):
             h[script] = init_app(script)
         h[script]['check'] = get_seq(os.path.basename(f))
 
+    if "app" not in svc.type2resSets:
+        svc += resApp.RsetApps("app")
+
     for script, kwargs in h.items():
         r = resApp.App(**kwargs)
-        #add_triggers(svc, r, conf, s)
         svc += r
 
 def setup_logging():

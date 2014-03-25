@@ -70,7 +70,10 @@ class RsetApps(Res.ResourceSet):
 
     def action(self, action=None, tags=set([]), xtags=set([])):
         if action == 'start' and self.type == "app":
+            import svcBuilder
+            svcBuilder.add_apps_sysv(self.svc, self.svc.config)
             self.containerize()
+
         try:
             Res.ResourceSet.action(self, action=action, tags=tags, xtags=xtags)
         except Exception as e:
@@ -99,6 +102,7 @@ class RsetApps(Res.ResourceSet):
             print(e)
             raise
         container.containerize(self)
+
 
 class App(Res.Resource):
     def __init__(self, rid=None,
@@ -160,6 +164,9 @@ class App(Res.Resource):
         self.gid = ui.pw_gid
 
     def validate_script_exec(self):
+        if self.script is None:
+            self.script_exec = False
+            return
         if which(self.script) is None:
             self.status_log("script %s is not executable" % self.script)
             self.script_exec = False
