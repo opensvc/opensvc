@@ -4,6 +4,8 @@ import rcExceptions as ex
 import ConfigParser
 from subprocess import *
 import time
+import urllib
+import urllib2
 
 pathlib = os.path.dirname(__file__)
 pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
@@ -27,7 +29,67 @@ def reformat(s):
     s = s.replace("Pseudo-terminal will not be allocated because stdin is not a terminal.", "")
     return s.strip()
 
-def rcmd(cmd, manager, username, key, log=None):
+def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
+    url = 'https://%s/api/cmd/' % manager
+    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+    header = { 'User-Agent' : user_agent }
+
+    values = {
+      'array' : array,
+      'cmd' : cmd,
+      'svcname' : svcname,
+      'uuid' : uuid,
+    }
+
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data, header)
+
+    try:
+        f = urllib2.build_opener().open(req)
+        response = f.read()
+        #response = urllib2.urlopen(req)
+    except Exception as e:
+        return "", str(e)
+    
+    try:
+        d = json.loads(response)
+        ret = d['ret']
+        out = d['out']
+        err = d['err']
+    except:
+        ret = 1
+        out = ""
+        err = "unexpected proxy response format (not json)"
+
+    if ret != 0:
+        raise ex.excError("proxy error: %s" % err)
+
+    return out, err
+
+def cli_cmd(cmd, array, pwf, log=None):
+    cmd = ['cli', '-sys', array, '-pwf', pwf, '-nohdtot', '-csvtable'] + cmd.split()
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    out = reformat(out)
+    err = reformat(err)
+
+    if p.returncode != 0:
+        if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
+            if log is not None:
+                log.info("3par connection refused. try #%d" % retry)
+            time.sleep(1)
+            return _rcmd(_cmd, cmd, log=log, retry=retry-1)
+        if log is not None:
+            if len(out) > 0: log.info(out)
+            if len(err) > 0: log.error(err)
+        else:
+            print(cmd)
+            print(out)
+        raise ex.excError("3par command execution error")
+
+    return out, err
+
+def ssh_cmd(cmd, manager, username, key, log=None):
     _cmd = ['ssh', '-i', key, '@'.join((username, manager))]
     cmd = 'setclienv csvtable 1 ; setclienv nohdtot 1 ; ' + cmd + ' ; exit'
     return _rcmd(_cmd, cmd, log=log)
@@ -56,6 +118,8 @@ def _rcmd(_cmd, cmd, log=None, retry=10):
     return out, err
 
 class Hp3pars(object):
+    allowed_methods = ("ssh", "proxy")
+
     def __init__(self, objects=[]):
         self.objects = objects
         if len(objects) > 0:
@@ -70,23 +134,59 @@ class Hp3pars(object):
         conf = ConfigParser.RawConfigParser()
         conf.read(cf)
         m = {}
+
         for s in conf.sections():
             if not conf.has_option(s, "type") or \
                conf.get(s, "type") != "hp3par":
                 continue
+
             if self.filtering and not s in self.objects:
                 continue
+
+            username = None
+            manager = None
+            key = None
+            pwf = None
+
+            try:
+                method = conf.get(s, 'method')
+            except:
+                method = "ssh"
+
+            if method not in self.allowed_methods:
+                print("invalid method. allowed methods: %s" % ', '.join(self.allowed_methods))
+                continue
+
+            kwargs = {}
+            try:
+                manager = conf.get(s, 'manager')
+                kwargs['manager'] = manager
+            except:
+                if method in ("proxy", "ssh"):
+                    print("error parsing section", s)
+                    continue
+
             try:
                 username = conf.get(s, 'username')
                 key = conf.get(s, 'key')
-                m[s] = [username, key]
+                kwargs['username'] = username
+                kwargs['key'] = key
             except:
-                print("error parsing section", s)
-                pass
+                if method in ("ssh"):
+                    print("error parsing section", s)
+                    continue
+
+            try:
+                key = conf.get(s, 'pwf')
+                kwargs['pwf'] = pwf
+            except:
+                if method in ("cli"):
+                    print("error parsing section", s)
+                    continue
+
+            self.arrays.append(Hp3par(s, method, **kwargs))
+
         del(conf)
-        for name, creds in m.items():
-            username, key = creds
-            self.arrays.append(Hp3par(name, username, key))
 
     def __iter__(self):
         return self
@@ -98,14 +198,44 @@ class Hp3pars(object):
         return self.arrays[self.index-1]
 
 class Hp3par(object):
-    def __init__(self, name, username, key):
+    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, svcname=""):
         self.name = name
+        self.manager = manager
+        self.method = method
         self.username = username
+        self.pwf = pwf
+        self.svcname = svcname
         self.key = key
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
+        self.uuid = None
+
+    def get_uuid(self):
+        if self.uuid is not None:
+            return self.uuid
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+        pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
+        nodeconf = os.path.join(pathetc, 'node.conf')
+        config = ConfigParser.RawConfigParser()
+        config.read(nodeconf)
+        try:
+            self.uuid = config.get("node", "uuid")
+        except:
+            pass
+        return self.uuid
 
     def rcmd(self, cmd, log=None):
-        return rcmd(cmd, self.name, self.username, self.key, log=log)
+        if self.method == "ssh":
+            return ssh_cmd(cmd, self.manager, self.username, self.key, log=log)
+        elif self.method == "cli":
+            return cli_cmd(cmd, self.name, self.pwf, log=log)
+        elif self.method == "proxy":
+            self.get_uuid()
+            return proxy_cmd(cmd, self.name, self.manager, self.svcname, uuid=self.uuid, log=log)
+        else:
+            raise ex.excError("unsupported method %s set in auth.conf for array %s" % (self.method, self.name))
 
     def serialize(self, s, cols):
         l = []

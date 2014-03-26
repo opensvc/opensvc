@@ -29,6 +29,7 @@ class syncHp3par(resSync.Sync):
     def __init__(self,
                  rid=None,
                  array=None,
+                 method=None,
                  mode=None,
                  rcg_names={},
                  sync_max_delay=None,
@@ -55,6 +56,7 @@ class syncHp3par(resSync.Sync):
         self.rcg_names = rcg_names
         self.rcg = rcg_names[array]
         self.mode = mode
+        self.method = method
         self.label = "hp3par %s %s"%(mode, self.rcg)
         try:
             arrays = rc.Hp3pars(objects=[self.array])
@@ -66,11 +68,15 @@ class syncHp3par(resSync.Sync):
             self.array_obj = None
 
     def __str__(self):
-        return "%s array=%s mode=%s rcg=%s" % (
+        return "%s array=%s method=%s mode=%s rcg=%s" % (
                 resSync.Sync.__str__(self),
                 self.array,
+                self.method,
                 self.mode,
                 self.rcg)
+
+    def on_add(self):
+        self.array_obj.svcname = self.svc.svcname
 
     def _cmd(self, cmd, target=None, log=False):
         if target is None:
