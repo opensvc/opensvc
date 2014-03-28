@@ -296,7 +296,7 @@ class Mount(Res.Mount):
             if the file has already been binded to a loop re-use
             the loopdev to avoid allocating another one
         """
-        if self.fsType in self.netfs:
+        if self.fsType in self.netfs or self.device == "none":
             # TODO showmount -e
             pass
         else:

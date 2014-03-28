@@ -66,6 +66,9 @@ class Mount(Res.Resource):
     def start(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
             return
+        if self.device == "none":
+            # for pseudo fs
+            return
         if not os.path.exists(self.device):
             self.log.error("device does not exist %s" % self.device)
             raise ex.excError
@@ -78,6 +81,9 @@ class Mount(Res.Resource):
             self.log.info("create missing mountpoint %s" % self.mountPoint)
 
     def fsck(self):
+        if self.fsType in ("", "none"):
+            # bind mounts are in this case
+            return
         if self.fsType not in self.fsck_h:
             self.log.info("fsck not implemented for %s"%self.fsType)
             return
