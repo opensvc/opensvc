@@ -433,7 +433,7 @@ class ResourceSet(Resource):
             # CODE TO KILL ASAP
             resources.sort(reverse=True)
 
-        if self.parallel and len(resources) > 1:
+        if self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
             ps = {}
             for r in resources:
                 p = Process(target=self.action_job, args=(r, action,))
