@@ -83,6 +83,8 @@ class RsetApps(Res.ResourceSet):
             raise
 
     def sort_resources(self, resources, action):
+        if action == "rollback":
+            action = "stop"
         attr = action + '_seq'
         l = [r for r in resources if hasattr(r, attr)]
         if len(l) != len(resources):
@@ -344,7 +346,11 @@ class App(Res.Resource):
                     f.close()
                     return 1
                 _len = datetime.now() - t
-                self.log.info('%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf))
+                msg = '%s done in %s - ret %d - logs in %s' % (action, _len, p.returncode, outf)
+                if p.returncode == 0:
+                    self.log.info(msg)
+                else:
+                    self.log.error(msg)
                 f.close()
                 return p.returncode
             elif return_out:
