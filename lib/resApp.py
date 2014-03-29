@@ -175,6 +175,7 @@ class App(Res.Resource):
 
     def validate_script_path(self):
         if os.path.exists(self.script):
+            self.script = os.path.realpath(self.script)
             return
         if self.script != os.path.basename(self.script):
             self.status_log("script %s does not exist" % self.script)
@@ -182,6 +183,7 @@ class App(Res.Resource):
             return
         self.script = os.path.join(self.svc.initd, self.script)
         if os.path.exists(self.script):
+            self.script = os.path.realpath(self.script)
             return
         self.status_log("script %s does not exist" % self.script)
 
@@ -202,22 +204,22 @@ class App(Res.Resource):
         return r
 
     def info(self):
+        self.validate_on_action()
         if self.info_seq is None:
             return []
         l = []
         s = self.run('info', dedicated_log=False, return_out=True)
-        name = os.path.basename(os.path.realpath(self.script))
         if type(s) != str or len(s) == 0:
-            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, "Error", "info not implemented in launcher"])
+            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, "Error", "info not implemented in launcher"])
             return l
         for line in s.split('\n'):
             if len(line) == 0:
                 continue
             v = line.split(":")
             if len(v) < 2:
-                l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, "Error", "parsing: %s"%line])
+                l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, "Error", "parsing: %s"%line])
                 continue
-            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, name, v[0].strip(), ":".join(v[1:]).strip()])
+            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, v[0].strip(), ":".join(v[1:]).strip()])
         return l
 
     def start(self):
