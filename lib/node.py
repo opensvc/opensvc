@@ -1611,6 +1611,8 @@ class Node(Svc, Freezer):
                     s.cluster = True
                     s.action('toc')
                     s.action(s.monitor_action)
+                except ex.excSignal:
+                    break
 
         if self.options.parallel:
             for svcname in p:
