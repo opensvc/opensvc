@@ -319,6 +319,7 @@ class Svc(Resource, Freezer):
                  else:
                      if rstype == t:
                          rsets.append(rs)
+         rsets.sort()
          return rsets
 
     def has_res_set(self, type, strict=False):
@@ -395,7 +396,7 @@ class Svc(Resource, Freezer):
              app.1
              app
         """
-        if "stop" in action:
+        if "stop" in action or action == "rollback":
             reverse = True
         else:
             reverse = False
