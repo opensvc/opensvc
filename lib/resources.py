@@ -333,6 +333,9 @@ class ResourceSet(Resource):
         for r in resources:
             self += r
 
+    def __cmp__(self, other):
+        return cmp(self.type, other.type)
+
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
         Example 2 : iadd a single Resource : R+=ip1
