@@ -25,6 +25,7 @@ import rcExceptions as exc
 import rcStatus
 import logging
 import rcUtilities
+import sys
 from rcGlobalEnv import rcEnv
 
 class Resource(object):
@@ -433,23 +434,40 @@ class ResourceSet(Resource):
             resources.sort(reverse=True)
 
         if self.parallel and len(resources) > 1:
-            ps = []
+            ps = {}
             for r in resources:
-                p = Process(target=r.action, args=(action,))
+                p = Process(target=self.action_job, args=(r, action,))
                 p.start()
                 r.log.info("action %s started in child process %d"%(action, p.pid))
-                ps.append(p)
-            for p in ps:
+                ps[r.rid] = p
+            for p in ps.values():
                 p.join()
-            for p in ps:
-                if p.exitcode != 0:
-                    raise exc.excError
+            err = 0
+            for r in resources:
+                p = ps[r.rid]
+                if p.exitcode == 1 and not r.optional:
+                    err += 1
+                elif p.exitcode == 2:
+                    # can_rollback resource property is lost with the thread
+                    # the action_job tells us what to do with it through its exitcode
+                    r.can_rollback = True
+            if err > 0:
+                raise exc.excError
         else:
             for r in resources:
                 try:
                     r.action(action)
                 except exc.excAbortAction:
                     break
+
+    def action_job(self, r, action):
+        try:
+            getattr(r, action)()
+        except:
+            sys.exit(1)
+        if r.can_rollback:
+            sys.exit(2)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
