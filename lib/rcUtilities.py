@@ -207,7 +207,7 @@ def qcall(argv=['/bin/false']) :
     """qcall Launch Popen it args disgarding output and stderr"""
     if not argv:
         return (0, '')
-    process = Popen(argv, stdout=None, stderr=None, close_fds=close_fds)
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode
 
