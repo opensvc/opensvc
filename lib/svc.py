@@ -568,7 +568,7 @@ class Svc(Resource, Freezer):
         l = []
         cr = {}
         for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
+            for r in [_r for _r in sorted(rs.resources) if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 l.append((rid, status, label, log, monitor, disable, optional, encap))
                 if rid.startswith("container") and rid in encap_res_status:
@@ -610,7 +610,7 @@ class Svc(Resource, Freezer):
 
         l = []
         for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
+            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('sync')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
                     status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
@@ -632,7 +632,7 @@ class Svc(Resource, Freezer):
 
         l = []
         for rs in self.get_res_sets(self.status_types):
-            for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
+            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('hb')]:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 if rid in encap_res_status:
                     status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))

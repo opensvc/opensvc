@@ -92,9 +92,9 @@ class Resource(object):
 
     def __cmp__(self, other):
         """resources needed to be started or stopped in a specific order
-        should redefine that. For now consider all resources of a set equals
+        should redefine that.
         """
-        return 0
+        return cmp(self.rid, other.rid)
 
     def print_exc(self):
         import traceback

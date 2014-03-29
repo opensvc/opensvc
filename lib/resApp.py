@@ -143,6 +143,13 @@ class App(Res.Resource):
 
         self.script_exec = True
 
+    def __cmp__(self, other):
+        if other.start_seq is None:
+            return self
+        if self.start_seq is None:
+            return other
+        return cmp(self.start_seq, other.start_seq)
+
     def on_add(self):
         self.validate_user()
 
