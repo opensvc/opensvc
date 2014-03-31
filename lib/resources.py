@@ -425,8 +425,14 @@ class ResourceSet(Resource):
             resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
         else:
             resources = self.resources
+
         resources = [r for r in resources if self.tag_match(r.tags, tags)]
         self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
+
+        if action == "startstandby":
+            # filter out resource not in standby mode
+            resources = [r for r in resources if rcEnv.nodename in r.always_on]
+
         if hasattr(self, "sort_resources"):
             resources = self.sort_resources(resources, action)
         elif action in ["fs", "start", "startstandby", "provision"]:
