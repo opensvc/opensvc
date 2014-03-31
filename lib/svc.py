@@ -851,7 +851,7 @@ class Svc(Resource, Freezer):
             except Exception as e:
                 self.log.error("restart resource failed: " + str(e))
                 return False
-            if r.is_up():
+            if r._status() == rcStatus.UP:
                 self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
                 return True
             if i + 1 < r.restart:
