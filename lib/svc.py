@@ -844,13 +844,13 @@ class Svc(Resource, Freezer):
         if not hasattr(r, 'start'):
             self.log.error("resource restart configured on resource %s with no 'start' action support"%r.rid)
             return False
+        import time
         for i in range(r.restart):
             try:
                 self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.restart))
                 r.start()
             except Exception as e:
                 self.log.error("restart resource failed: " + str(e))
-                return False
             if r._status() == rcStatus.UP:
                 self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
                 return True
