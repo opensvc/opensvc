@@ -156,9 +156,19 @@ class Ip(Res.Resource):
     def allow_start(self):
         ifconfig = rcIfconfig.ifconfig()
         intf = ifconfig.interface(self.ipDev)
-        if intf is None or not intf.flag_up:
-            self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
+        if intf is None:
+            self.log.error("interface %s not found. Cannot stack over it." % self.ipDev)
             raise ex.IpDevDown(self.ipDev)
+        if not intf.flag_up:
+            if hasattr(intf, 'groupname') and intf.groupname != "":
+                l = [ i for i in ifconfig.get_matching_interfaces('groupname', intf.groupname) if i.flag_up]
+                if len(l) == 1:
+                    self.log.info("switch %s to valid alternate path %s" % (self.ipDev, l[0].name))
+                    intf = l[0]
+                    self.ipDev = l[0].name
+            else:
+                self.log.error("interface %s is not up. Cannot stack over it." % self.ipDev)
+                raise ex.IpDevDown(self.ipDev)
         if self.is_up() is True:
             self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
             raise ex.IpAlreadyUp(self.addr)
@@ -239,6 +249,9 @@ class Ip(Res.Resource):
             self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                         self.addr,\
                                                         self.log)
+        if self.stacked_dev is None:
+            raise ex.excError
+
         arp_announce = True
         try:
             (ret, out, err) = self.startip_cmd()
@@ -275,6 +288,9 @@ class Ip(Res.Resource):
             self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
                                                         self.addr,\
                                                         self.log)
+        if self.stacked_dev is None:
+            raise ex.excError
+
         try:
             (ret, out, err) = self.stopip_cmd()
         except ex.excNotSupported:

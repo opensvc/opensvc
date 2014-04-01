@@ -75,6 +75,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ip6addr = []
                 i.ip6mask = []
                 i.hwaddr = ''
+                i.groupname = ''
                 i.flag_up = False
                 i.flag_broadcast = False
                 i.flag_running = False
@@ -98,6 +99,7 @@ class ifconfig(rcIfconfig.ifconfig):
                     elif p == 'netmask' : i.mask=v
                     elif p == 'broadcast' : i.bcast=v
                     elif p == 'ether' : i.hwaddr=v
+                    elif p == 'groupname' : i.groupname=v
                     elif p == 'inet6' :
                         (a, m) = v.split('/')
                         i.ip6addr += [a]
