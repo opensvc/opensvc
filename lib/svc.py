@@ -153,9 +153,9 @@ class Svc(Resource, Freezer):
         subset_section = 'subset#' + rtype
         if not self.config.has_section(subset_section):
             return False
-        from svcBuilder import conf_get_string_scope
+        from svcBuilder import conf_get_boolean_scope
         try:
-            return conf_get_string_scope(self, self.config, subset_section, "parallel")
+            return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
         except Exception as e:
             return False
 
