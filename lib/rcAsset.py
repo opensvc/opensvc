@@ -327,6 +327,23 @@ class Asset(object):
         print("host mode (%s)"%source)
         print("  %s"%s)
 
+    def get_sec_zone(self):
+        s = None
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'sec_zone')
+            source = self.s_config
+        except:
+            pass
+        self.print_sec_zone(s, source)
+        return s
+
+    def print_sec_zone(self, s, source):
+        if s is None:
+            return
+        print("security zone (%s)"%source)
+        print("  %s"%s)
+
     def get_environnement(self):
         s = None
         source = self.s_default
@@ -638,6 +655,9 @@ class Asset(object):
         d['host_mode'] = self.get_host_mode()
         d['enclosure'] = self.get_enclosure()
         d['listener_port'] = self.get_listener_port()
+        sec_zone = self.get_sec_zone()
+        if sec_zone is not None:
+            d['sec_zone'] = sec_zone
         environnement = self.get_environnement()
         if environnement is not None:
             d['environnement'] = environnement
