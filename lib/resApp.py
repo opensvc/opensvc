@@ -145,9 +145,9 @@ class App(Res.Resource):
 
     def __cmp__(self, other):
         if other.start_seq is None:
-            return self
+            return 1
         if self.start_seq is None:
-            return other
+            return 0
         return cmp(self.start_seq, other.start_seq)
 
     def on_add(self):
