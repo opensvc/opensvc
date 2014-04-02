@@ -2072,21 +2072,33 @@ def add_app(svc, conf, s):
         kwargs['start'] = conf_get_int_scope(svc, conf, s, 'start')
     except ex.OptNotFound:
         pass
+    except:
+        svc.log.error("config file section %s param %s must be an integer" % (s, 'start'))
+        return
 
     try:
         kwargs['stop'] = conf_get_int_scope(svc, conf, s, 'stop')
     except ex.OptNotFound:
         pass
+    except:
+        svc.log.error("config file section %s param %s must be an integer" % (s, 'stop'))
+        return
 
     try:
         kwargs['check'] = conf_get_int_scope(svc, conf, s, 'check')
     except ex.OptNotFound:
         pass
+    except:
+        svc.log.error("config file section %s param %s must be an integer" % (s, 'check'))
+        return
 
     try:
         kwargs['info'] = conf_get_int_scope(svc, conf, s, 'info')
     except ex.OptNotFound:
         pass
+    except:
+        svc.log.error("config file section %s param %s must be an integer" % (s, 'info'))
+        return
 
     try:
         kwargs['run_as'] = conf_get_string_scope(svc, conf, s, 'run_as')
