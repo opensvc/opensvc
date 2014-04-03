@@ -23,7 +23,7 @@ from rcGlobalEnv import rcEnv
 import os
 import rcStatus
 import rcExceptions as ex
-from rcUtilities import justcall
+from rcUtilities import justcall, which
 
 class Hb(resHb.Hb):
     """ HeartBeat ressource
@@ -169,10 +169,29 @@ class Hb(resHb.Hb):
         for d in daemons:
             h[d] = 1
         # ckecking running daemons 
-        for line in out.split('\n'):
-            for d in daemons:
-                if d in line:
-                    h[d] = 0
+        lines = [ l for l in out.split('\n') if "heart" in l or "nmond" in l ]
+        if which("pargs"):
+            # solaris ps command truncates long lines
+            # disk-based hb tend to have long args
+            import re
+            regex = re.compile('argv.*: ')
+            for line in lines:
+                v = line.split()
+                if len(v) < 3:
+                    continue
+                pid = v[1]
+                cmd = ['pargs', pid]
+                out, err, ret = justcall(cmd)
+                if ret != 0:
+                    continue
+                s = ' '.join([ regex.sub('', l) for l in out.split('\n') if l.startswith('argv') ])
+		if s in h:
+                    h[s] = 0
+        else:
+            for line in lines:
+                for d in daemons:
+                    if line.endswith(d):
+                        h[d] = 0
         # now counting daemons not found as running
         total = 0
         for d in daemons:
