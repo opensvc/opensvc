@@ -34,8 +34,10 @@ def cgroup_capable(res):
     res.log.info("system does not support containerization")
     return False
 
-def set_cgroup(res, name, value):
+def set_cgroup(res, name, value, force=False):
     if value is None:
+        return
+    if not force and get_cgroup(res, name).strip() == value:
         return
     path = os.path.join(res.cgroup, name)
     if not os.path.exists(path):
@@ -138,8 +140,8 @@ def containerize(res):
         set_cgroup(res, 'cpu.shares', cpu_share)
         set_cgroup(res, 'cpuset.mems', v_mems)
         set_mem_cgroup(res)
-        set_cgroup(res, 'tasks', pid)
+        set_cgroup(res, 'tasks', pid, force=True)
     except:
         res.log.error("containerization in '%s' cgroup failed"%res.svc.svcname)
         raise ex.excError
-    res.log.info("containerized in '%s' cgroup, with limits cpu[%s], mem[%s]:"%(res.svc.svcname, v_cpus, v_mems))
+    res.log.info("container '%s' settings: cpu[%s], mem[%s]"%(res.svc.svcname, v_cpus, v_mems))
