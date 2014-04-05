@@ -2311,22 +2311,6 @@ def build(name):
         svc.postsnap_trigger = defaults["postsnap_trigger"].split()
 
     #
-    # containerization options
-    #
-    if "containerize" in defaults:
-        svc.containerize = bool(defaults["containerize"])
-    if "container_cpus" in defaults:
-        svc.container_cpus = defaults["container_cpus"]
-    if "container_cpu_shares" in defaults:
-        svc.container_cpu_shares = defaults["container_cpu_shares"]
-    if "container_mems" in defaults:
-        svc.container_mems = defaults["container_mems"]
-    if "container_mem_limit" in defaults:
-        svc.container_mem_limit = defaults["container_mem_limit"]
-    if "container_vmem_limit" in defaults:
-        svc.container_vmem_limit = defaults["container_vmem_limit"]
-
-    #
     # Store useful properties
     #
     svc.logfile = logfile
@@ -2353,6 +2337,39 @@ def build(name):
         svc.encap = True
     else:
         svc.encap = False
+
+    #
+    # containerization options
+    #
+    try:
+        svc.containerize = conf_get_boolean_scope(svc, conf, "DEFAULT", 'containerize')
+    except ex.OptNotFount:
+        svc.containerize = False
+
+    try:
+        svc.container_cpus = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpus")
+    except ex.OptNotFount:
+        pass
+
+    try:
+        svc.container_cpu_shares = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpu_shares")
+    except ex.OptNotFount:
+        pass
+
+    try:
+        svc.container_mems = conf_get_string_scope(svc, conf, "DEFAULT", "container_mems")
+    except ex.OptNotFount:
+        pass
+
+    try:
+        svc.container_mem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_mem_limit")
+    except ex.OptNotFount:
+        pass
+
+    try:
+        svc.container_vmem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_vmem_limit")
+    except ex.OptNotFount:
+        pass
 
     try:
         svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()
