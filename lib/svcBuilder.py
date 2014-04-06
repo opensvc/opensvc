@@ -2343,32 +2343,32 @@ def build(name):
     #
     try:
         svc.containerize = conf_get_boolean_scope(svc, conf, "DEFAULT", 'containerize')
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         svc.containerize = False
 
     try:
         svc.container_cpus = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpus")
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         pass
 
     try:
         svc.container_cpu_shares = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpu_shares")
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         pass
 
     try:
         svc.container_mems = conf_get_string_scope(svc, conf, "DEFAULT", "container_mems")
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         pass
 
     try:
         svc.container_mem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_mem_limit")
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         pass
 
     try:
         svc.container_vmem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_vmem_limit")
-    except ex.OptNotFount:
+    except ex.OptNotFound:
         pass
 
     try:
