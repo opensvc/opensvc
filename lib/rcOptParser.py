@@ -86,7 +86,7 @@ action_desc = {
       'stonith': 'command provided to the heartbeat daemon to fence peer node in case of split brain',
      },
     'Service configuration': {
-      'install': 'install a service using the configuration file pointed by --enfile. used by master services when pushing the envfile to their slave.',
+      'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',
       'create': 'create a new service configuration file. --interactive triggers the interactive mode',
       'update': 'update definitions in an existing service configuration file',
       'delete': 'delete resources passed through --rid in services passed through --service',
