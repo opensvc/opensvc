@@ -614,6 +614,10 @@ def add_vg(svc, conf, s):
             kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
         except ex.OptNotFound:
             pass
+        try:
+            kwargs['dummy'] = conf_get_boolean_scope(svc, conf, s, 'dummy')
+        except ex.OptNotFound:
+            pass
     elif vgtype == 'Gandi':
         try:
             kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
