@@ -194,7 +194,7 @@ class Vg(resVgRaw.Vg):
             self.status_log("%s not found"%', '.join(self.devs_not_found))
             r |= True
         if self.dummy:
-            return r
+            return not r
         self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
