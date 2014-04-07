@@ -202,11 +202,15 @@ def get_restart(conf, section, svc):
     return 0
 
 def get_disabled(conf, section, svc):
-    if not conf.has_section(section):
-        if conf.has_option('DEFAULT', 'disable'):
-            return conf.getboolean("DEFAULT", "disable")
-        else:
-            return False
+    if conf.has_option('DEFAULT', 'disable'):
+        svc_disable = conf.getboolean("DEFAULT", "disable")
+
+    if svc_disable is True:
+        return True
+
+    if section == "":
+        return svc_disable
+
     try:
         r = conf_get_boolean_scope(svc, conf, section, 'disable')
         return r
