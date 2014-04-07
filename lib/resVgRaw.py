@@ -23,6 +23,7 @@ import pwd
 import grp
 import stat
 import sys
+import glob
 
 class Vg(resDg.Dg):
     def __init__(self,
@@ -64,8 +65,9 @@ class Vg(resDg.Dg):
             self.str_types = (str)
         
         for dev in devs:
-            if os.path.exists(dev):
-                self.devs.add(dev)
+            l = set(glob.glob(dev))
+            if len(l) > 0:
+                self.devs |= l
             else:
                 self.devs_not_found.add(dev)
 
