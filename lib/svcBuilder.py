@@ -204,6 +204,8 @@ def get_restart(conf, section, svc):
 def get_disabled(conf, section, svc):
     if conf.has_option('DEFAULT', 'disable'):
         svc_disable = conf.getboolean("DEFAULT", "disable")
+    else:
+        svc_disable = False
 
     if svc_disable is True:
         return True
