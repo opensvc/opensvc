@@ -302,6 +302,15 @@ class Node(Svc, Freezer):
                 if svc.collector_outdated():
                     svc.action('push')
 
+        if 'svcnames' in kwargs:
+            if type(kwargs['svcnames']) == list:
+                n = len(kwargs['svcnames'])
+            else:
+                n = 1
+            if len(self.svcs) != n:
+                raise ex.excError("building error")
+
+
     def close(self):
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
