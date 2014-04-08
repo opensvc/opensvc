@@ -1982,7 +1982,31 @@ class Svc(Resource, Freezer):
         for r in self.get_resources():
             r.setup_environ()
 
+    def expand_rid(self, rid):
+        l = []
+        for e in self.resources_by_id.keys():
+            if e is None:
+                continue
+            if '#' not in e:
+                if e == rid:
+                    l.append(e)
+                else:
+                    continue
+            elif e[:e.index('#')] == rid:
+                l.append(e)
+        return l
+            
+    def expand_rids(self, rid):
+        l = []
+        for e in set(rid):
+            if '#' in e:
+                l.append(e)
+                continue
+            l += self.expand_rid(e)
+        return l
+
     def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
+        rid = self.expand_rids(rid)
         self.action_rid = rid
         if self.node is None:
             self.node = node.Node()
