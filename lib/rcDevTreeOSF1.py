@@ -69,7 +69,7 @@ drivedata: 0
     def get_disks(self):
         for devname in self.di.h:
             if self.di.h[devname]['size'] in [0, 2, 30, 45]:
-                return
+                continue
             d = self.add_dev(devname, self.di.h[devname]['size'], "linear")
             d.set_alias(self.di.h[devname]['wwid'])
             d.set_devpath('/dev/rdisk/'+devname)
