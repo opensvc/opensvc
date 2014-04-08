@@ -335,9 +335,6 @@ if action in ['create', 'update']:
             if len(node.svcs) == 1:
                 node.svcs[0].action("provision")
     _exit(r)
-elif action in ['disable', 'enable', 'delete']:
-    r = getattr(svcBuilder, action)(svcnames, rid)
-    _exit(r)
 
 node.options.parallel = options.parallel
 node.options.waitlock = options.parm_waitlock

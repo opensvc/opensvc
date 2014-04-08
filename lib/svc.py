@@ -25,7 +25,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -153,7 +153,6 @@ class Svc(Resource, Freezer):
         subset_section = 'subset#' + rtype
         if not self.config.has_section(subset_section):
             return False
-        from svcBuilder import conf_get_boolean_scope
         try:
             return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
         except Exception as e:
@@ -355,6 +354,9 @@ class Svc(Resource, Freezer):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
+          "delete",
+          "enable",
+          "disable",
           "status",
           "print_status",
           "print_disklist",
@@ -1981,6 +1983,7 @@ class Svc(Resource, Freezer):
             r.setup_environ()
 
     def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
+        self.action_rid = rid
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
@@ -2039,9 +2042,6 @@ class Svc(Resource, Freezer):
           'set',
           'push',
           'push_appinfo',
-          'enable',
-          'disable',
-          'delete',
           'print_env_mtime',
           'print_status',
           'print_disklist',
@@ -2321,6 +2321,43 @@ class Svc(Resource, Freezer):
         except:
             return 1
         return 0
+
+    def set_disable(self, rids=[], disable=True):
+        if len(rids) == 0:
+            rids = ['DEFAULT']
+        for rid in rids:
+            if rid != 'DEFAULT' and not self.config.has_section(rid):
+                self.log.error("service", svcname, "has not resource", rid)
+                continue
+            self.config.set(rid, "disable", disable)
+        try:
+            f = open(self.pathenv, 'w')
+        except:
+            self.log.error("failed to open", self.pathenv, "for writing")
+            return 1
+    
+        #
+        # if we set DEFAULT.disable = True,
+        # we don't want res#n.disable = False
+        #
+        if len(rids) == 0 and disable:
+            for s in self.config.sections():
+                if self.config.has_option(s, "disable") and \
+                   self.config.getboolean(s, "disable") == False:
+                    self.config.remove_option(s, "disable")
+    
+        self.config.write(f)
+        return 0
+
+    def enable(self):
+        return self.set_disable(self.action_rid, False)
+
+    def disable(self):
+        return self.set_disable(self.action_rid, True)
+
+    def delete(self):
+        from svcBuilder import delete
+        return delete([self.svcname], self.action_rid)
 
 if __name__ == "__main__" :
     for c in (Svc,) :

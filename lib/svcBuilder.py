@@ -2606,62 +2606,6 @@ def build_services(status=None, svcnames=[],
         services[svc.svcname] = svc
     return [ s for n ,s in sorted(services.items()) ]
 
-def toggle_one(svcname, rids=[], disable=True):
-    if len(svcname) == 0:
-        print("service name must not be empty", file=sys.stderr)
-        return 1
-    if svcname not in list_services():
-        print("service", svcname, "does not exist", file=sys.stderr)
-        return 1
-    if len(rids) == 0:
-        rids = ['DEFAULT']
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    conf = ConfigParser.RawConfigParser()
-    conf.read(envfile)
-    for rid in rids:
-        if rid != 'DEFAULT' and not conf.has_section(rid):
-            print("service", svcname, "has not resource", rid, file=sys.stderr)
-            continue
-        conf.set(rid, "disable", disable)
-    try:
-       f = open(envfile, 'w')
-    except:
-        print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
-
-    #
-    # if we set DEFAULT.disable = True,
-    # we don't want res#n.disable = False
-    #
-    if len(rids) == 0 and disable:
-        for s in conf.sections():
-            if conf.has_option(s, "disable") and \
-               conf.getboolean(s, "disable") == False:
-                conf.remove_option(s, "disable")
-
-    conf.write(f)
-    return 0
-
-def disable_one(svcname, rids=[]):
-    return toggle_one(svcname, rids, disable=True)
-
-def disable(svcnames, rid=[]):
-    fix_default_section(svcnames)
-    r = 0
-    for svcname in svcnames:
-        r |= disable_one(svcname, rid)
-    return r
-
-def enable_one(svcname, rids=[]):
-    return toggle_one(svcname, rids, disable=False)
-
-def enable(svcnames, rid=[]):
-    fix_default_section(svcnames)
-    r = 0
-    for svcname in svcnames:
-        r |= enable_one(svcname, rid)
-    return r
-
 def delete_one(svcname, rids=[]):
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
