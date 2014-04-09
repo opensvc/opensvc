@@ -2035,7 +2035,7 @@ class Svc(Resource, Freezer):
           'print_disklist',
           'print_devlist',
           'json_status',
-          'json_disklist'
+          'json_disklist',
           'json_devlist'
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
@@ -2045,6 +2045,8 @@ class Svc(Resource, Freezer):
           'resource_monitor',
           'presync',
           'postsync',
+          'syncdrp',
+          'syncnodes',
           'syncall'
         ]
         if action not in actions_list_allow_on_frozen and \
