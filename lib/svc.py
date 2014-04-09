@@ -277,7 +277,7 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resources(self, _type=None, strict=False):
+    def get_resources(self, _type=None, strict=False, discard_disabled=True):
          if _type is None:
              rsets = self.resSets
          else:
@@ -288,7 +288,7 @@ class Svc(Resource, Freezer):
              for r in rs.resources:
                  if not self.encap and 'encap' in r.tags:
                      continue
-                 if r.disabled:
+                 if discard_disabled and r.disabled:
                      continue
                  resources.append(r)
          return resources
@@ -1245,15 +1245,18 @@ class Svc(Resource, Freezer):
     def cluster_mode_safety_net(self):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
-        all_disabled = True
-        for r in self.get_resources('hb'):
+        n_hb = 0
+        n_hb_enabled = 0
+        for r in self.get_resources('hb', discard_disabled=False):
+            n_hb += 1
             if not r.disabled:
-                all_disabled = False
-        if all_disabled:
+                n_hb_enabled += 1
+        if n_hb > 0 and n_hb_enabled == 0 and self.cluster:
+            raise ex.excError("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
+        if n_hb_enabled == 0:
             return
         if not self.cluster:
-            self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
-            raise ex.excError
+            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 
     def starthb(self):
         self.master_starthb()
@@ -2058,7 +2061,8 @@ class Svc(Resource, Freezer):
             try:
                 if action not in actions_list_allow_on_cluster:
                     self.cluster_mode_safety_net()
-            except ex.excError:
+            except ex.excError as e:
+                self.log.error(str(e))
                 return 1
 
         self.setup_environ()
