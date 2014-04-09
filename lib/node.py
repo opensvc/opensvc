@@ -1617,9 +1617,7 @@ class Node(Svc, Freezer):
                 try:
                     err += s.action(action, rid=rid, tags=tags, waitlock=self.options.waitlock)
                 except s.exMonitorAction:
-                    s.cluster = True
                     s.action('toc')
-                    s.action(s.monitor_action)
                 except ex.excSignal:
                     break
 

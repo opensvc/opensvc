@@ -878,6 +878,7 @@ class Svc(Resource, Freezer):
         
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
+        getattr(self, self.monitor_action)()
         
     def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
@@ -2040,6 +2041,7 @@ class Svc(Resource, Freezer):
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
           'boot',
+          'toc',
           'startstandby',
           'resource_monitor',
           'presync',
