@@ -1147,7 +1147,6 @@ class Svc(Resource, Freezer):
                 self.log.info("start failed. try to start standby")
                 self.startstandby()
         else:
-            self.cluster = True
             self.startstandby()
 
     def shutdown(self):
