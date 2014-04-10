@@ -1139,14 +1139,21 @@ class Svc(Resource, Freezer):
         return True
         
     def boot(self):
-        if rcEnv.nodename in self.autostart_node:
-            try:
-                self.start()
-            except ex.excError as e:
-                self.log.error(str(e))
-                self.log.info("start failed. try to start standby")
-                self.startstandby()
-        else:
+        if rcEnv.nodename not in self.autostart_node:
+            self.startstandby()
+            return
+
+        l = self.get_resources('hb')
+        if len(l) > 0:
+            self.log.warning("cluster nodes should not be in autostart_nodes for HA configuration")
+            self.startstandby()
+            return
+
+        try:
+            self.start()
+        except ex.excError as e:
+            self.log.error(str(e))
+            self.log.info("start failed. try to start standby")
             self.startstandby()
 
     def shutdown(self):
