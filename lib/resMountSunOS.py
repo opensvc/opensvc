@@ -82,6 +82,10 @@ class Mount(Res.Mount):
         self.Mounts = None
         Res.Mount.start(self)
 
+        if self.fsType == 'zfs' :
+            if zfs_getprop(self.device, 'canmount' ) != 'noauto' :
+                self.log.info("fs(%s %s) should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.device, self.mountPoint, self.device))
+
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
