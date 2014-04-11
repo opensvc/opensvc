@@ -83,7 +83,7 @@ class Mount(Res.Mount):
         Res.Mount.start(self)
 
         if self.fsType == 'zfs' :
-            if zfs_getprop(self.device, 'canmount' ) != 'noauto' :
+            if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
                 self.log.info("fs(%s %s) should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.device, self.mountPoint, self.device))
 
         if self.is_up() is True:
