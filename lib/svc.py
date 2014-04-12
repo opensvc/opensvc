@@ -2367,6 +2367,7 @@ class Svc(Resource, Freezer):
             if rid != 'DEFAULT' and not self.config.has_section(rid):
                 self.log.error("service", svcname, "has not resource", rid)
                 continue
+            self.log.info("set %s.disable = %s" % (rid, str(disable)))
             self.config.set(rid, "disable", disable)
         try:
             f = open(self.pathenv, 'w')
@@ -2382,6 +2383,7 @@ class Svc(Resource, Freezer):
             for s in self.config.sections():
                 if self.config.has_option(s, "disable") and \
                    self.config.getboolean(s, "disable") == False:
+                    self.log.info("remove %s.disable = false" % s)
                     self.config.remove_option(s, "disable")
     
         self.config.write(f)
