@@ -53,7 +53,7 @@ filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
 filehandler.setFormatter(fileformatter)
 log = logging.getLogger("xmlrpc")
 log.addHandler(filehandler)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 log.debug("logger setup")
 
 try:
@@ -79,13 +79,13 @@ def call_worker(q):
             if e is None:
                 break
             fn, args, kwargs = e
-            o.log.debug("xmlrpc async %s"%fn)
+            o.log.info("xmlrpc async %s"%fn)
             try:
                 _b = datetime.now()
                 getattr(o.proxy, fn)(*args, **kwargs)
                 _e = datetime.now()
                 _d = _e - _b
-                o.log.debug("xmlrpc async %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+                o.log.info("xmlrpc async %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
                 continue
             except Exception as _e:
                 _e = datetime.now()
@@ -153,7 +153,7 @@ class Collector(object):
 
     def submit(self, fn, *args, **kwargs):
         self.init_worker()
-        self.log.debug("enqueue %s"%fn)
+        self.log.info("enqueue %s"%fn)
         self.queue.put((fn, args, kwargs), block=True)
 
     def call(self, *args, **kwargs):
@@ -161,7 +161,7 @@ class Collector(object):
         self.init(fn)
         if len(self.proxy_methods) == 0:
             return
-        self.log.debug("call %s"%fn)
+        self.log.info("call %s"%fn)
         if len(args) > 1:
             args = args[1:]
         else:
@@ -184,7 +184,7 @@ class Collector(object):
             buff = getattr(self, fn)(*args, **kwargs)
             _e = datetime.now()
             _d = _e - _b
-            self.log.debug("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+            self.log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
             return buff
         except Exception as e:
             _e = datetime.now()
@@ -219,53 +219,8 @@ class Collector(object):
                          'comp_list_moduleset',
                          'comp_show_status',
                          'comp_log_actions']
-        self.method_cache = os.path.join(pathosvc, "var", "collector")
         self.auth_node = True
         self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
-
-    def load_method_cache(self):
-        if not os.path.exists(self.method_cache):
-            self.log.error("missing %s"%self.method_cache)
-            raise ex.excError
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
-        conf = ConfigParser.RawConfigParser()
-        conf.read(self.method_cache)
-        if not conf.has_section("methods"):
-            self.log.error("missing 'methods' section of %s"%self.method_cache)
-            raise ex.excError
-        if not conf.has_option("methods", "feed"):
-            self.log.error("missing 'feed' option in 'methods' section of %s"%self.method_cache)
-            raise ex.excError
-        if not conf.has_option("methods", "compliance"):
-            self.log.error("missing 'compliance' option in 'methods' section of %s"%self.method_cache)
-            raise ex.excError
-        self.proxy_methods = conf.get("methods", "feed").split(',')
-        self.comp_proxy_methods = conf.get("methods", "compliance").split(',')
-        self.log.debug("%s loaded"%self.method_cache)
-        self.log.debug("%d feed methods"%len(self.proxy_methods))
-        self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
-
-    def write_method_cache(self):
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
-        conf = ConfigParser.RawConfigParser()
-        conf.add_section('methods')
-        if len(self.proxy_methods) > 0:
-            conf.set('methods', 'feed', ','.join(self.proxy_methods))
-        if len(self.comp_proxy_methods) > 0:
-            conf.set('methods', 'compliance', ','.join(self.comp_proxy_methods))
-        f = open(self.method_cache, 'w')
-        conf.write(f)
-        self.log.debug("%s refreshed"%self.method_cache)
-
-    def get_methods(self):
-        self.get_methods_dbopensvc()
-        self.get_methods_dbcompliance()
 
     def get_methods_dbopensvc(self):
         if rcEnv.dbopensvc == "None":
@@ -321,49 +276,21 @@ class Collector(object):
         except:
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
 
-        utils = __import__('rcUtilities'+rcEnv.sysname)
-
-        if fn is None:
-            try:
-                
-                if not utils.check_ping(dbopensvc_ip):
-                    self.log.error("could not ping %s. disable collector updates."%dbopensvc_ip)
-                    raise
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
-            except:
-                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-            try:
-                if not utils.check_ping(dbcompliance_ip):
-                    self.log.error("could not ping %s. disable collector updates."%dbcompliance_ip)
-                    raise
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
-            except:
-                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-        elif fn not in self.comp_fns:
-            try:
-                if not utils.check_ping(dbopensvc_ip):
-                    self.log.error("could not ping %s. disable collector updates."%dbopensvc_ip)
-                    raise
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
-            except:
-                self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-        else:
-            try:
-                if not utils.check_ping(dbcompliance_ip):
-                    self.log.error("could not ping %s. disable collector updates."%dbopensvc_ip)
-                    raise
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
-            except:
-                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
-
-        self.log.debug("feed proxy %s"%str(self.proxy))
-        self.log.debug("compliance proxy %s"%str(self.comp_proxy))
-
         try:
-            self.load_method_cache()
-        except ex.excError:
-            self.get_methods()
-            self.write_method_cache()
+            self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            self.get_methods_dbopensvc()
+        except:
+            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+
+        if fn in self.comp_fns:
+            try:
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+                self.get_methods_dbcompliance()
+            except:
+                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+
+        self.log.info("feed proxy %s"%str(self.proxy))
+        self.log.info("compliance proxy %s"%str(self.comp_proxy))
 
         if "register_node" not in self.proxy_methods:
             self.auth_node = False
@@ -380,7 +307,7 @@ class Collector(object):
                 self.log.debug("worker already stopped (not alive)")
                 return
         except AssertionError:
-            self.log.debug("don't stop worker (not a child of this process)")
+            self.log.error("don't stop worker (not a child of this process)")
             return
             
         self.log.debug("give poison pill to worker")
@@ -404,7 +331,7 @@ class Collector(object):
             return
         self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue,))
         self.worker.start()
-        self.log.debug("worker started")
+        self.log.info("worker started")
 
     def begin_action(self, svc, action, begin, sync=True):
         try:
