@@ -90,7 +90,10 @@ class Eva(object):
         return sssu(cmd, self.manager, self.username, self.password, array=self.name)
 
     def stripxml(self, buff):
-        buff = buff[buff.index("<object>"):]
+        try:
+            buff = buff[buff.index("<object>"):]
+        except:
+            buff = ""
         lines = buff.split('\n')
         for i, line in enumerate(lines):
             if line.startswith("\\"):
