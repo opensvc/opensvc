@@ -27,6 +27,9 @@ class DevTree(rcDevTree.DevTree):
         self.dm_h = {}
         if not os.path.exists("/dev/mapper"):
             return self.dm_h
+        cmd = ['dmsetup', 'mknodes']
+        p = Popen(cmd)
+        p.communicate()
         devpaths = glob.glob("/dev/mapper/*")
         devpaths.remove('/dev/mapper/control')
         for devpath in devpaths:

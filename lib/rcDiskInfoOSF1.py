@@ -16,6 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
+from __future__ import print_function
 from rcUtilities import justcall
 import rcDiskInfo
 import re
@@ -66,6 +67,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                 path_count = 0
             elif 'WWID' in e:
                 wwid = e.split(":")[-1].replace('-','').lower()
+                wwid = wwid.strip('"').replace(" ", "_")
             elif regex_path.match(e) is not None and 'valid' in e:
                 path_count += 1
         if path_count >= 0:
@@ -110,3 +112,6 @@ class diskInfo(rcDiskInfo.diskInfo):
     def disk_size(self, dev):
         return self.get(dev, 'size')
 
+if __name__ == "__main__":
+    di = diskInfo()
+    print(di.h.items())
