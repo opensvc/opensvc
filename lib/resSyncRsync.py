@@ -216,6 +216,9 @@ class Rsync(resSync.Sync):
         """ Checks are ordered by cost
         """
 
+        if self.skip or self.is_disabled():
+            return set([])
+
         """ DRP nodes are not allowed to sync nodes nor drpnodes
         """
         if rcEnv.nodename in self.svc.drpnodes:
@@ -357,7 +360,7 @@ class Rsync(resSync.Sync):
         rtargets = {0: set([])}
         need_snap = False
         for i, r in enumerate(rset.resources):
-            if r.is_disabled():
+            if self.skip or r.is_disabled():
                 continue
             rtargets[i] = set([])
             if action == "syncnodes":
