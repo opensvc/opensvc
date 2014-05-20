@@ -9,6 +9,7 @@ import sys
 import json
 import pwd
 from subprocess import *
+from utilities import which
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -49,6 +50,9 @@ class CompPackages(object):
             self.pkg_del = self.apt_del_pkg
         elif vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
              (vendor == 'Oracle' and self.sysname == 'Linux'):
+            if which("yum") is None:
+                print >>sys.stderr, "package manager not found (yum)"
+                raise ComplianceError()
             self.get_installed_packages = self.rpm_get_installed_packages
             self.pkg_add = self.yum_fix_pkg
             self.pkg_del = self.yum_del_pkg
@@ -283,7 +287,9 @@ Java14.ext                                                         ALL  @@S:Java
         for line in out.split('\n'):
             if not line.startswith('ii'):
                 continue
-            l.append(line.split()[1])
+            pkgname = line.split()[1]
+            pkgname = pkgname.split(':')[0]
+            l.append(pkgname)
         return l
 
     def yum_del_pkg(self, pkg):
@@ -393,6 +399,8 @@ if __name__ == "__main__":
             print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
             print >>sys.stderr, syntax
             RET = RET_ERR
+    except ComplianceError:
+        sys.exit(RET_ERR)
     except NotApplicable:
         sys.exit(RET_NA)
     except:
