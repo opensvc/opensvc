@@ -1,7 +1,7 @@
 #!/opt/opensvc/bin/python
 """ 
 OSVC_COMP_VULN_11_117=\
-[{"pkgname": "kernel", "minver": "2.6.18-238.19.1.el5"},\
+[{"pkgname": "kernel", "minver": "2.6.18-238.19.1.el5", "firstver": "2.6.18-238"},\
  {"pkgname": "kernel-xen", "minver": "2.6.18-238.19.1.el5"}]
 """
 
@@ -271,7 +271,7 @@ class CompVuln(object):
             l[v[0]] = [(v[1], "")]
         return l
 
-    def apt_fixable_pkg(self, pkg, version):
+    def apt_fixable_pkg(self, pkg):
         # TODO
         return RET_NA
 
@@ -324,7 +324,7 @@ class CompVuln(object):
     def apt_fix_pkg(self, pkg):
         if self.check_pkg(pkg, verbose=False) == RET_OK:
             return RET_OK
-        r = call(['apt-get', 'install', '-y', pkg["pkgname"]])
+        r = call(['apt-get', 'install', '-y', '--allow-unauthenticated', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
         self.need_pushpkg = True
@@ -374,6 +374,11 @@ class CompVuln(object):
         ok = []
         minver = self.workaround_python_cmp(pkg['minver'])
         target = V(minver)
+        if 'firstver' in pkg:
+            firstver = self.workaround_python_cmp(pkg['firstver'])
+        else:
+            firstver = "0"
+        firstver_v = V(firstver)
         candidates = map(lambda x: [name]+list(x), self.installed_packages[name])
 
         for _name, vers, arch in candidates:
@@ -382,7 +387,7 @@ class CompVuln(object):
             if actual > max_v or max == "0":
                 max = vers
                 max_v = actual
-            if target <= actual:
+            if target <= actual or firstver_v > actual:
                 ok.append((_name, vers, arch))
 
         if max == "0":
