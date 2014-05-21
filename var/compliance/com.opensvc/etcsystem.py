@@ -188,7 +188,7 @@ class EtcSystem(object):
         return RET_OK
 
 if __name__ == "__main__":
-    """ test: OSVC_COMP_SYSCTL='[{"key": "net.unix.max_dgram_qlen", "value": [">=", 9]}, {"key": "kernel.ctrl-alt-del", "value": ["=", 1]}, {"key": "kernel.printk", "value": [[], [] , [], [">=", 12]]}]' ./sysctl.py OSVC_COMP_SYSCTL check
+    """ test: OSVC_COMP_TEST_ETCSYSTEM_1='[{"value": "0x3C", "key": "ssd:ssd_io_time", "op": "="}, {"value": 21, "key": "ssd:ssd_max_throttle", "op": "="}]' ./etcsystem.py OSVC_COMP_TEST check
     """
     syntax = """syntax:
       %s PREFIX check|fixable|fix"""%sys.argv[0]
