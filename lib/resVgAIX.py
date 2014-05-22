@@ -197,6 +197,7 @@ class Vg(resDg.Dg):
         self.do_import()
         self.do_activate()
         self.do_dumpcfg()
+        self.can_rollback = True
 
     def do_stop(self):
         self.do_dumpcfg()
