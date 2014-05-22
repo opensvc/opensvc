@@ -235,7 +235,10 @@ class Resource(object):
         return self.rstatus
 
     def status_log(self, text):
-        self.status_log_str += "# " + text + "\n"
+        msg = "# " + text + "\n"
+        if msg in self.status_log_str:
+            return
+        self.status_log_str += msg
 
     def status_quad(self):
         r = self.status(verbose=True)
