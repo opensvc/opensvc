@@ -178,7 +178,7 @@ class Container(Res.Resource):
             raise ex.excError
         where = self.where_up()
         if where is not None:
-            self.log.info("container %s already started on %s" % (self.name, where))
+            self.log.info("container %s already started on %s" % (self.label, where))
             return
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()
@@ -194,7 +194,7 @@ class Container(Res.Resource):
             self.log.error("could not resolve %s to an ip address"%self.name)
             raise ex.excError
         if self.is_down():
-            self.log.info("container %s already stopped" % self.name)
+            self.log.info("container %s already stopped" % self.label)
             return
         self.container_stop()
         try:
