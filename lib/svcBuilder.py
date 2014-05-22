@@ -1290,19 +1290,19 @@ def add_containers_docker(svc, conf, s):
     kwargs = {}
 
     try:
-        kwargs['image'] = conf_get_string_scope(svc, conf, s, 'image')
+        kwargs['run_image'] = conf_get_string_scope(svc, conf, s, 'run_image')
     except ex.OptNotFound:
-        svc.log.error("'image' parameter is mandatory in section %s"%s)
+        svc.log.error("'run_image' parameter is mandatory in section %s"%s)
         return
 
     try:
-        kwargs['command'] = conf_get_string_scope(svc, conf, s, 'command')
+        kwargs['run_command'] = conf_get_string_scope(svc, conf, s, 'run_command')
     except ex.OptNotFound:
-        svc.log.error("'command' parameter is mandatory in section %s"%s)
+        svc.log.error("'run_command' parameter is mandatory in section %s"%s)
         return
 
     try:
-        kwargs['volumes'] = conf_get_string_scope(svc, conf, s, 'volumes')
+        kwargs['run_args'] = conf_get_string_scope(svc, conf, s, 'run_args')
     except ex.OptNotFound:
         pass
 

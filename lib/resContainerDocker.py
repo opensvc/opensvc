@@ -62,19 +62,25 @@ class Docker(resContainer.Container):
             raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
-    def add_volumes(self):
-        if self.volumes is None:
+    def add_run_args(self):
+        if self.run_args is None:
             return []
-        l = self.volumes.split(',')
-        for e in l:
-            if ':' in e:
+        l = self.run_args.split()
+        for e, i in enumerate(l):
+            if e != '-p':
+                continue
+            if len(l) < i + 2:
+                # bad
+                break
+            volarg = l[i+1]
+            if ':' in volarg:
                 # mapping ... check source dir presence
-                v = e.split(':')
+                v = volarg.split(':')
                 if len(v) != 3:
-                    raise ex.excError("mapping %s should be formatted as <src>:<dst>:<ro|rw>" % (e))
+                    raise ex.excError("mapping %s should be formatted as <src>:<dst>:<ro|rw>" % (volarg))
                 if not os.path.exists(v[0]):
-                    raise ex.excError("source dir of mapping %s does not exist" % (e))
-        return ['-v', self.volumes]
+                    raise ex.excError("source dir of mapping %s does not exist" % (volarg))
+        return l
 
     def get_container_id_by_name(self):
         cmd = self.docker_cmd + ['ps', '-a']
@@ -99,8 +105,8 @@ class Docker(resContainer.Container):
         if action == 'start':
             if container_id is None:
                 cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
-                cmd += self.add_volumes()
-                cmd += [self.image, self.command]
+                cmd += self.add_run_args()
+                cmd += [self.run_image, self.run_command]
             else:
                 cmd += ['start', container_id]
         elif action == 'stop':
@@ -154,19 +160,19 @@ class Docker(resContainer.Container):
         return {'vcpus': str(vcpus), 'vmem': '0'}
 
     def image_userfriendly_name(self):
-        if ':' in self.image:
-            return self.image
+        if ':' in self.run_image:
+            return self.run_image
         cmd = self.docker_cmd + ['images']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            return self.image
+            return self.run_image
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 3:
                 continue
-            if l[2] == self.image:
+            if l[2] == self.run_image:
                 return l[0]+':'+l[1]
-        return self.image
+        return self.run_image
         
     def check_manual_boot(self):
         return True
@@ -218,9 +224,9 @@ class Docker(resContainer.Container):
 
     def __init__(self,
                  rid,
-                 image,
-                 command,
-                 volumes=None,
+                 run_image,
+                 run_command,
+                 run_args=None,
                  guestos="Linux",
                  optional=False,
                  disabled=False,
@@ -242,9 +248,9 @@ class Docker(resContainer.Container):
                                         tags=tags,
                                         always_on=always_on)
 
-        self.image = image
-        self.command = command
-        self.volumes = volumes
+        self.run_image = run_image
+        self.run_command = run_command
+        self.run_args = run_args
         self.max_wait_for_dockerd = 5
 
     def on_add(self):
