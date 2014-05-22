@@ -231,6 +231,15 @@ try:
 except ex.excError:
     build_err = True
 
+docker_argv = None
+if len(sys.argv) > 1 and 'docker' in sys.argv:
+    pos = sys.argv.index('docker')
+    if len(sys.argv) > pos + 1:
+        docker_argv = sys.argv[pos+1:]
+    else:
+        docker_argv = []
+    sys.argv = sys.argv[:pos+1]
+
 (options, args) = parser.parse_args()
 if action is not None:
     args = ['stonith']
@@ -351,6 +360,8 @@ for s in node.svcs:
     else:
         s.cluster = options.cluster
     s.destination_node = options.parm_destination_node
+    if docker_argv is not None:
+        s.docker_argv = docker_argv
 
 err = node.do_svcs_action(action, rid, tags)
 

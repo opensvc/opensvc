@@ -2137,7 +2137,9 @@ class Svc(Resource, Freezer):
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action
-                getattr(self, action)()
+                err = getattr(self, action)()
+                if err is None:
+                    err = 0
                 self.running_action = None
             else:
                 self.log.error("unsupported action")
@@ -2401,6 +2403,22 @@ class Svc(Resource, Freezer):
         from svcBuilder import delete
         return delete([self.svcname], self.action_rid)
 
+    def docker(self):
+        import sys
+        import subprocess
+        containers = self.get_resources('container')
+        if not hasattr(self, "docker_argv"):
+            print("no docker command arguments supplied", file=sys.stderr)
+            return 1
+        for r in containers:
+            if hasattr(r, "docker_cmd"):
+                cmd = r.docker_cmd + self.docker_argv
+                p = subprocess.Popen(cmd)
+                p.communicate()
+                return p.returncode
+        print("this service has no docker resource", file=sys.stderr)
+        return 1
+        
 if __name__ == "__main__" :
     for c in (Svc,) :
         help(c)
