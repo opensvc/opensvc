@@ -89,6 +89,7 @@ class Svc(Resource, Freezer):
                              "container.esx",
                              "container.ovm",
                              "container.lxc",
+                             "container.docker",
                              "container.vz",
                              "container.srp",
                              "container.zone",
@@ -1626,6 +1627,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.vcloud", "shutdown")
         self.sub_set_action("container.jail", "shutdown")
         self.sub_set_action("container.lxc", "shutdown")
+        self.sub_set_action("container.docker", "shutdown")
         self.sub_set_action("container.vz", "shutdown")
         self.sub_set_action("container.srp", "shutdown")
         self.refresh_ip_status()

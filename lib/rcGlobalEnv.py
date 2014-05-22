@@ -167,7 +167,7 @@ class rcEnv:
     vt_cloud = ['vcloud', 'openstack']
     vt_libvirt = ['kvm']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx'] + vt_cloud
-    vt_container = ['zone', 'lxc', 'jail', 'vz', 'srp']
+    vt_container = ['zone', 'lxc', 'jail', 'vz', 'srp', 'docker']
     vt_supported = vt_vm + vt_container
 
     dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(dbopensvc_host, dbopensvc_port, dbopensvc_app)

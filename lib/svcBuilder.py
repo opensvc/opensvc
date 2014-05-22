@@ -1286,6 +1286,42 @@ def add_containers_lxc(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_containers_docker(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['image'] = conf_get_string_scope(svc, conf, s, 'image')
+    except ex.OptNotFound:
+        svc.log.error("'image' parameter is mandatory in section %s"%s)
+        return
+
+    try:
+        kwargs['command'] = conf_get_string_scope(svc, conf, s, 'command')
+    except ex.OptNotFound:
+        svc.log.error("'command' parameter is mandatory in section %s"%s)
+        return
+
+    try:
+        kwargs['volumes'] = conf_get_string_scope(svc, conf, s, 'volumes')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerDocker')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    r = m.Docker(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
 def add_containers_ovm(svc, conf, s):
     kwargs = {}
 
