@@ -58,7 +58,6 @@ class Dg(Res.Resource):
 
     def start(self):
         self.do_start()
-        self.can_rollback = True
 
     def _status(self, verbose=False):
         if rcEnv.nodename in self.always_on:

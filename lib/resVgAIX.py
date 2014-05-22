@@ -107,6 +107,7 @@ class Vg(resDg.Dg):
     def do_start(self):
         self.do_import()
         self.do_activate()
+        self.can_rollback = True
 
     def do_stop(self):
         self.do_deactivate()

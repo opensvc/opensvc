@@ -202,6 +202,7 @@ class Vg(resDg.Dg):
         self.log.info("attach gandi volume %s"%self.name)
         c = self.get_cloud()
         c.driver.ex_node_attach_disk(node, disk)
+        self.can_rollback = True
 
     def do_stop(self):
         try:

@@ -73,10 +73,11 @@ class Vg(resDg.Dg):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             ret = self.do_startvol()
-            if self == 0 :
+            if ret == 0 :
                 return 0
             else:
                 return ret
+        self.can_rollback = True
         for flag in [ '-t', '-tC', '-tCf']:
             cmd = [ 'vxdg', flag, 'import', self.name ]
             (ret, out, err) = self.vcall(cmd)
