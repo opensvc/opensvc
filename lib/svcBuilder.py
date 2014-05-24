@@ -1298,8 +1298,7 @@ def add_containers_docker(svc, conf, s):
     try:
         kwargs['run_command'] = conf_get_string_scope(svc, conf, s, 'run_command')
     except ex.OptNotFound:
-        svc.log.error("'run_command' parameter is mandatory in section %s"%s)
-        return
+        pass
 
     try:
         kwargs['run_args'] = conf_get_string_scope(svc, conf, s, 'run_args')

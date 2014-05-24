@@ -276,7 +276,7 @@ class Docker(resContainer.Container):
     def __init__(self,
                  rid,
                  run_image,
-                 run_command,
+                 run_command="",
                  run_args=None,
                  guestos="Linux",
                  optional=False,
