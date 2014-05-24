@@ -100,19 +100,18 @@ class Docker(resContainer.Container):
                 return line.split()[0]
 
     def docker(self, action):
-        container_id = self.get_container_id_by_name()
         cmd = self.docker_cmd + []
         if action == 'start':
-            if container_id is None:
+            if self.container_id is None:
                 cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
                 cmd += self.add_run_args()
                 cmd += [self.run_image, self.run_command]
             else:
-                cmd += ['start', container_id]
+                cmd += ['start', self.container_id]
         elif action == 'stop':
-            cmd += ['stop', container_id]
+            cmd += ['stop', self.container_id]
         elif action == 'kill':
-            cmd += ['kill', container_id]
+            cmd += ['kill', self.container_id]
         else:
             self.log.error("unsupported docker action: %s" % action)
             return 1
@@ -121,12 +120,31 @@ class Docker(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
+        if action == 'start':
+            self.container_id = self.get_container_id_by_name()
+
     def container_start(self):
         self.docker_start()
         self.docker('start')
 
     def container_stop(self):
         self.docker('stop')
+
+    def stop(self):
+        resContainer.Container.stop(self)
+        self.docker_stop()
+ 
+    def _status(self, verbose=False):
+        s = resContainer.Container._status(self, verbose)
+        try:
+            inspect = self.docker_inspect(self.container_id)
+        except Exception as e:
+            return s
+        running_image = inspect['Image'][:12]
+        if self.run_image != running_image:
+            self.status_log("the running container is based on image '%s' instead of '%s'")
+            s = rcStatus._merge(s, rcStatus.WARN)
+        return s
 
     def container_forcestop(self):
         self.docker('kill')
@@ -138,15 +156,18 @@ class Docker(resContainer.Container):
         if self.docker_data_dir is None:
             self.status_log("DEFAULT.docker_data_dir must be defined")
 
-        try:
-            container_id = self.get_container_id_by_name()
-        except Exception as e:
-            self.status_log(str(e))
+        if not self.docker_running():
+            self.status_log("docker daemon is not running")
+            return False
+
+        if self.container_id is None:
+            self.status_log("can not find container id")
             return False
 
         cmd = self.docker_cmd + ['ps', '-q']
         out, err, ret = justcall(cmd)
-        if container_id in out.replace('\n', ' ').split():
+
+        if self.container_id in out.replace('\n', ' ').split():
             return True
         return False
 
@@ -183,12 +204,39 @@ class Docker(resContainer.Container):
             return False
         return True
 
-
     def docker_inspect(self, id):
         cmd = self.docker_cmd + ['inspect', id]
         out, err, ret = justcall(cmd)
         data = json.loads(out)
         return data[0]
+
+    def docker_stop(self):
+        if not self.docker_running():
+            return
+        if self.docker_data_dir is None:
+            return
+        if not os.path.exists(self.docker_pid_file):
+            return
+
+        cmd = self.docker_cmd + ['ps', '-q']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return
+
+        if len(out) > 0:
+            # skip stop ... daemon still handles containers
+            return
+
+        try:
+            with open(self.docker_pid_file, 'r') as f:
+                pid = int(f.read())
+        except:
+            self.log.warning("can't read %s. skip docker daemon kill" % self.docker_pid_file)
+            return
+
+        self.log.info("no more container handled by docker daemon. shut it down")
+        import signal
+        os.kill(pid, signal.SIGTERM)
 
     def docker_start(self):
         if self.docker_running():
@@ -202,6 +250,8 @@ class Docker(resContainer.Container):
                '-g', self.docker_data_dir,
                '-p', self.docker_pid_file]
 
+        self.log.info("starting docker daemon")
+        self.log.info(" ".join(cmd))
         import subprocess
         subprocess.Popen(['nohup'] + cmd,
                  stdout=open('/dev/null', 'w'),
@@ -212,6 +262,7 @@ class Docker(resContainer.Container):
         import time
         for i in range(self.max_wait_for_dockerd):
             if self.docker_running():
+                self.container_id = self.get_container_id_by_name()
                 return
             time.sleep(1)
 
@@ -264,8 +315,13 @@ class Docker(resContainer.Container):
         self.docker_socket_uri = 'unix://' + self.docker_socket
         self.docker_data_dir = self.svc.config.defaults().get('docker_data_dir')
         self.docker_cmd = ['docker', '-H', self.docker_socket_uri]
-        self.docker_start()
-        self.label = self.image_userfriendly_name()
+        self.label = ""
+        try:
+            self.container_id = self.get_container_id_by_name()
+            self.label += self.container_id + "@"
+        except Exception as e:
+            self.container_id = None
+        self.label += self.image_userfriendly_name()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
