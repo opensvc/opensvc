@@ -121,6 +121,7 @@ class Vg(resDg.Dg):
             return 0
         self.remove_tags()
         self.add_tags()
+        self.can_rollback = True
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
