@@ -238,7 +238,7 @@ class Docker(resContainer.Container):
         import signal
         os.kill(pid, signal.SIGTERM)
 
-    def docker_start(self):
+    def docker_start(self, verbose=True):
         if self.docker_running():
             return
         if self.docker_data_dir is None:
@@ -250,8 +250,9 @@ class Docker(resContainer.Container):
                '-g', self.docker_data_dir,
                '-p', self.docker_pid_file]
 
-        self.log.info("starting docker daemon")
-        self.log.info(" ".join(cmd))
+        if verbose:
+            self.log.info("starting docker daemon")
+            self.log.info(" ".join(cmd))
         import subprocess
         subprocess.Popen(['nohup'] + cmd,
                  stdout=open('/dev/null', 'w'),

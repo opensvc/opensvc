@@ -2412,6 +2412,7 @@ class Svc(Resource, Freezer):
             return 1
         for r in containers:
             if hasattr(r, "docker_cmd"):
+                r.docker_start(verbose=False)
                 cmd = r.docker_cmd + self.docker_argv
                 p = subprocess.Popen(cmd)
                 p.communicate()
