@@ -45,6 +45,27 @@ class CompProcess(object):
 
         self.load_ps()
 
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
+
     def load_ps_args(self):
         self.ps_args = {}
         cmd = ['ps', '-e', '-o', 'pid,uid,user,args']
@@ -100,6 +121,10 @@ class CompProcess(object):
         self.process = l
 
     def _validate_process(self, process):
+        for i in 'comm', 'uid', 'args', 'user':
+            if i not in process:
+                continue
+            process[i] = self.subst(process[i])
         if 'comm' not in process and 'args' not in process:
             print >>sys.stderr, process, 'rule is malformed ... nor comm nor args key present'
             return RET_ERR

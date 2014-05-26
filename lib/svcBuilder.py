@@ -202,11 +202,17 @@ def get_restart(conf, section, svc):
     return 0
 
 def get_disabled(conf, section, svc):
-    if not conf.has_section(section):
-        if conf.has_option('DEFAULT', 'disable'):
-            return conf.getboolean("DEFAULT", "disable")
-        else:
-            return False
+    if conf.has_option('DEFAULT', 'disable'):
+        svc_disable = conf.getboolean("DEFAULT", "disable")
+    else:
+        svc_disable = False
+
+    if svc_disable is True:
+        return True
+
+    if section == "":
+        return svc_disable
+
     try:
         r = conf_get_boolean_scope(svc, conf, section, 'disable')
         return r
@@ -612,6 +618,10 @@ def add_vg(svc, conf, s):
             pass
         try:
             kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['dummy'] = conf_get_boolean_scope(svc, conf, s, 'dummy')
         except ex.OptNotFound:
             pass
     elif vgtype == 'Gandi':
@@ -1272,6 +1282,41 @@ def add_containers_lxc(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Lxc(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
+def add_containers_docker(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['run_image'] = conf_get_string_scope(svc, conf, s, 'run_image')
+    except ex.OptNotFound:
+        svc.log.error("'run_image' parameter is mandatory in section %s"%s)
+        return
+
+    try:
+        kwargs['run_command'] = conf_get_string_scope(svc, conf, s, 'run_command')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['run_args'] = conf_get_string_scope(svc, conf, s, 'run_args')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerDocker')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    r = m.Docker(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -2595,62 +2640,6 @@ def build_services(status=None, svcnames=[],
             continue
         services[svc.svcname] = svc
     return [ s for n ,s in sorted(services.items()) ]
-
-def toggle_one(svcname, rids=[], disable=True):
-    if len(svcname) == 0:
-        print("service name must not be empty", file=sys.stderr)
-        return 1
-    if svcname not in list_services():
-        print("service", svcname, "does not exist", file=sys.stderr)
-        return 1
-    if len(rids) == 0:
-        rids = ['DEFAULT']
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    conf = ConfigParser.RawConfigParser()
-    conf.read(envfile)
-    for rid in rids:
-        if rid != 'DEFAULT' and not conf.has_section(rid):
-            print("service", svcname, "has not resource", rid, file=sys.stderr)
-            continue
-        conf.set(rid, "disable", disable)
-    try:
-       f = open(envfile, 'w')
-    except:
-        print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
-
-    #
-    # if we set DEFAULT.disable = True,
-    # we don't want res#n.disable = False
-    #
-    if len(rids) == 0 and disable:
-        for s in conf.sections():
-            if conf.has_option(s, "disable") and \
-               conf.getboolean(s, "disable") == False:
-                conf.remove_option(s, "disable")
-
-    conf.write(f)
-    return 0
-
-def disable_one(svcname, rids=[]):
-    return toggle_one(svcname, rids, disable=True)
-
-def disable(svcnames, rid=[]):
-    fix_default_section(svcnames)
-    r = 0
-    for svcname in svcnames:
-        r |= disable_one(svcname, rid)
-    return r
-
-def enable_one(svcname, rids=[]):
-    return toggle_one(svcname, rids, disable=False)
-
-def enable(svcnames, rid=[]):
-    fix_default_section(svcnames)
-    r = 0
-    for svcname in svcnames:
-        r |= enable_one(svcname, rid)
-    return r
 
 def delete_one(svcname, rids=[]):
     if len(svcname) == 0:

@@ -54,7 +54,7 @@ class Resource(object):
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
-        self.restart = restart
+        self.nb_restart = restart
         self.log = logging.getLogger(self.log_label())
         self.rstatus = None
         self.always_on = always_on
@@ -235,7 +235,10 @@ class Resource(object):
         return self.rstatus
 
     def status_log(self, text):
-        self.status_log_str += "# " + text + "\n"
+        msg = "# " + text + "\n"
+        if msg in self.status_log_str:
+            return
+        self.status_log_str += msg
 
     def status_quad(self):
         r = self.status(verbose=True)

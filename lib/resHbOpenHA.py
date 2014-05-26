@@ -100,16 +100,18 @@ class Hb(resHb.Hb):
             self.log.error("open-ha daemons are not running")
             return 'unknown'
         service_state = os.path.join(self.svcdir, self.cluster_name(), 'STATE.'+nodename)
+        if not os.path.exists(service_state):
+            self.status_log("%s does not exist"%service_state)
+            return 'unknown'
         try:
             f = open(service_state, 'r')
             buff = f.read().strip(' \n')
             f.close()
-        except:
-            import traceback
-            traceback.print_exc()
+        except Exception as e:
+            self.status_log(str(e))
             return 'unknown'
         if len(buff) < 1:
-            self.log.error("%s is corrupted"%service_state)
+            self.status_log("%s is corrupted"%service_state)
             return 'unknown'
         if buff[0] in self.state:
             return self.state[buff[0]]

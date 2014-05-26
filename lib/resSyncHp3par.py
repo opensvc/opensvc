@@ -198,7 +198,7 @@ class syncHp3par(resSync.Sync):
     def startrcopygroup(self):
         data = self.showrcopy()
         if data['rcg']['Status'] == "Started":
-            self.log.info("rcopy group %s is already stopped. skip stoprcopygroup" % self.rcg)
+            self.log.info("rcopy group %s is already started. skip startrcopygroup" % self.rcg)
             return
         if data['rcg']['Role'] != 'Primary':
             self.log.error("rcopy group %s role is not Primary. refuse to start rcopy" % self.rcg)

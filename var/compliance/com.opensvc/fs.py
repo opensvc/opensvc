@@ -507,7 +507,7 @@ class CompFs(object):
                 print "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
                 return 0
         if verbose:
-            print >>sys.stderr, "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
+            print >>sys.stderr, "%s@%s resource not found in fstab"%(fs['mnt'], fs['devpath'])
         return 1
 
     def check_fs_svc(self, fs, verbose=False):

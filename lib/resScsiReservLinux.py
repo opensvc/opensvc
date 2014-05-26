@@ -38,8 +38,14 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             return False
         return True
 
+    def set_read_only(self, val):
+        if rcEnv.sysname != "Linux":
+            return
+        os.environ["SG_PERSIST_O_RDONLY"] = val
+
     def ack_unit_attention(self, d):
         i = self.preempt_timeout
+        self.set_read_only(0)
         while i>0:
             i -= 1
             cmd = [ 'sg_persist', '-n', '-r', d ]
@@ -60,6 +66,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return 0
 
     def disk_registered(self, disk):
+        self.set_read_only(1)
         cmd = [ 'sg_persist', '-n', '-k', disk ]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -69,6 +76,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return False
 
     def disk_register(self, disk):
+        self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-sark='+self.hostid, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
@@ -76,6 +84,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return ret
 
     def disk_unregister(self, disk):
+        self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', '--register-ignore', '--param-rk='+self.hostid, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
@@ -83,6 +92,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return ret
 
     def get_reservation_key(self, disk):
+        self.set_read_only(1)
         cmd = [ 'sg_persist', '-n', '-r', disk ]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -95,6 +105,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         raise Exception()
 
     def disk_reserved(self, disk):
+        self.set_read_only(1)
         cmd = [ 'sg_persist', '-n', '-r', disk ]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -104,6 +115,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return False
 
     def disk_release(self, disk):
+        self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', '--release', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
@@ -111,6 +123,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return ret
 
     def disk_reserve(self, disk):
+        self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
@@ -123,6 +136,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             preempt_opt = '--preempt'
         else:
             preempt_opt = '--preempt-abort'
+        self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', preempt_opt, '--param-sark='+oldkey, '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:

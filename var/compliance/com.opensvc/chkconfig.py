@@ -1,5 +1,8 @@
 from subprocess import *
 import sys
+import os
+
+os.environ['LANG'] = 'C'
 
 class InitError(Exception):
     pass
@@ -90,7 +93,8 @@ class Chkconfig(object):
                     print >>sys.stderr, "service", service, "at runlevel", level, "is in state", curstate, "! target state is", state
                 r |= 1
             else:
-                print "service", service, "at runlevel", level, "is in state", curstate
+                if verbose:
+                    print "service", service, "at runlevel", level, "is in state", curstate
         return r
             
     def fix_state(self, service, levels, state, seq=None):

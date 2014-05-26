@@ -103,6 +103,7 @@ class Pool(resDg.Dg):
                 self.log.info("import %s: FallBack Long Way" %self.name)
         cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
         (ret, out, err) = self.vcall(cmd)
+        self.can_rollback = True
         return ret
 
     def do_stop(self):

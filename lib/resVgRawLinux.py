@@ -28,7 +28,8 @@ class Vg(resVgRaw.Vg):
                  devs=set([]),
                  user="root",
                  group="root",
-                 perm="660", type=None,
+                 perm="660",
+                 dummy=False,
                  optional=False,
                  disabled=False,
                  tags=set([]),
@@ -51,8 +52,10 @@ class Vg(resVgRaw.Vg):
                              monitor=monitor,
                              restart=restart,
                              subset=subset)
+        self.dummy = dummy
         self.min_raw = 1
         self.raws = {}
+        self.sys_devs = {}
 
     def get_devs_t(self):
         self.devs_t = {}
@@ -190,6 +193,8 @@ class Vg(resVgRaw.Vg):
         if len(self.devs_not_found) > 0:
             self.status_log("%s not found"%', '.join(self.devs_not_found))
             r |= True
+        if self.dummy:
+            return not r
         self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
@@ -216,6 +221,8 @@ class Vg(resVgRaw.Vg):
             else: return rcStatus.DOWN
 
     def do_start(self):
+        if self.dummy:
+            return
         self.lock()
         self.get_raws()
         for dev in self.devs:
@@ -262,6 +269,8 @@ class Vg(resVgRaw.Vg):
         self.unlock()
 
     def do_stop(self):
+        if self.dummy:
+            return
         self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
@@ -279,3 +288,38 @@ class Vg(resVgRaw.Vg):
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
                     raise ex.excError
+
+    def load_sys_devs(self):
+        import glob
+        if self.sys_devs != {}:
+            return
+        for e in glob.glob('/sys/block/*/dev'):
+            with open(e, 'r') as f:
+                dev = e.replace('/sys/block/', '').replace('/dev', '')
+                dev_t = f.read().strip()
+                self.sys_devs[dev_t] = '/dev/'+dev
+
+    def disklist(self):
+        sys_devs = self.devlist()
+        from rcUtilitiesLinux import devs_to_disks
+        return devs_to_disks(self, sys_devs)
+
+    def devlist(self):
+        """ Admins can set arbitrary named devices, for example /dev/oracle/DGREDO_MYSID.
+            Resolve those names into well known systems device names, so that they can be
+            found in the DevTree
+        """
+        if not self.dummy:
+            return self.devs
+        sys_devs = set([])
+        self.load_sys_devs()
+        self.get_devs_t()
+        for dev in self.devs:
+            if dev not in self.devs_t:
+                continue
+            dev_t = ':'.join(map(str, self.devs_t[dev]))
+            if dev_t not in self.sys_devs:
+                continue
+            sys_dev = self.sys_devs[dev_t]
+            sys_devs.add(sys_dev)
+        return sys_devs

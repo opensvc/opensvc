@@ -25,7 +25,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
 import rcExceptions as ex
 import xmlrpcClient
 import os
@@ -89,6 +89,7 @@ class Svc(Resource, Freezer):
                              "container.esx",
                              "container.ovm",
                              "container.lxc",
+                             "container.docker",
                              "container.vz",
                              "container.srp",
                              "container.zone",
@@ -153,7 +154,6 @@ class Svc(Resource, Freezer):
         subset_section = 'subset#' + rtype
         if not self.config.has_section(subset_section):
             return False
-        from svcBuilder import conf_get_boolean_scope
         try:
             return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
         except Exception as e:
@@ -278,7 +278,7 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resources(self, _type=None, strict=False):
+    def get_resources(self, _type=None, strict=False, discard_disabled=True):
          if _type is None:
              rsets = self.resSets
          else:
@@ -289,7 +289,7 @@ class Svc(Resource, Freezer):
              for r in rs.resources:
                  if not self.encap and 'encap' in r.tags:
                      continue
-                 if r.disabled:
+                 if discard_disabled and r.disabled:
                      continue
                  resources.append(r)
          return resources
@@ -355,6 +355,9 @@ class Svc(Resource, Freezer):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
+          "delete",
+          "enable",
+          "disable",
           "status",
           "print_status",
           "print_disklist",
@@ -839,22 +842,22 @@ class Svc(Resource, Freezer):
         self.log.debug("monitored resources are up")
 
     def restart_resource(self, r):
-        if r.restart == 0:
+        if r.nb_restart == 0:
             return False
         if not hasattr(r, 'start'):
             self.log.error("resource restart configured on resource %s with no 'start' action support"%r.rid)
             return False
         import time
-        for i in range(r.restart):
+        for i in range(r.nb_restart):
             try:
-                self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.restart))
+                self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.nb_restart))
                 r.start()
             except Exception as e:
                 self.log.error("restart resource failed: " + str(e))
             if r._status() == rcStatus.UP:
                 self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
                 return True
-            if i + 1 < r.restart:
+            if i + 1 < r.nb_restart:
                 time.sleep(1)
         return False
 
@@ -876,6 +879,7 @@ class Svc(Resource, Freezer):
         
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
+        getattr(self, self.monitor_action)()
         
     def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
@@ -1136,15 +1140,21 @@ class Svc(Resource, Freezer):
         return True
         
     def boot(self):
-        if rcEnv.nodename in self.autostart_node:
-            try:
-                self.start()
-            except ex.excError as e:
-                self.log.error(str(e))
-                self.log.info("start failed. try to start standby")
-                self.startstandby()
-        else:
-            self.cluster = True
+        if rcEnv.nodename not in self.autostart_node:
+            self.startstandby()
+            return
+
+        l = self.get_resources('hb')
+        if len(l) > 0:
+            self.log.warning("cluster nodes should not be in autostart_nodes for HA configuration")
+            self.startstandby()
+            return
+
+        try:
+            self.start()
+        except ex.excError as e:
+            self.log.error(str(e))
+            self.log.info("start failed. try to start standby")
             self.startstandby()
 
     def shutdown(self):
@@ -1243,15 +1253,18 @@ class Svc(Resource, Freezer):
     def cluster_mode_safety_net(self):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
-        all_disabled = True
-        for r in self.get_resources('hb'):
+        n_hb = 0
+        n_hb_enabled = 0
+        for r in self.get_resources('hb', discard_disabled=False):
+            n_hb += 1
             if not r.disabled:
-                all_disabled = False
-        if all_disabled:
+                n_hb_enabled += 1
+        if n_hb > 0 and n_hb_enabled == 0 and self.cluster:
+            raise ex.excError("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
+        if n_hb_enabled == 0:
             return
         if not self.cluster:
-            self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
-            raise ex.excError
+            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 
     def starthb(self):
         self.master_starthb()
@@ -1614,6 +1627,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.vcloud", "shutdown")
         self.sub_set_action("container.jail", "shutdown")
         self.sub_set_action("container.lxc", "shutdown")
+        self.sub_set_action("container.docker", "shutdown")
         self.sub_set_action("container.vz", "shutdown")
         self.sub_set_action("container.srp", "shutdown")
         self.refresh_ip_status()
@@ -1980,7 +1994,32 @@ class Svc(Resource, Freezer):
         for r in self.get_resources():
             r.setup_environ()
 
+    def expand_rid(self, rid):
+        l = []
+        for e in self.resources_by_id.keys():
+            if e is None:
+                continue
+            if '#' not in e:
+                if e == rid:
+                    l.append(e)
+                else:
+                    continue
+            elif e[:e.index('#')] == rid:
+                l.append(e)
+        return l
+            
+    def expand_rids(self, rid):
+        l = []
+        for e in set(rid):
+            if '#' in e:
+                l.append(e)
+                continue
+            l += self.expand_rid(e)
+        return l
+
     def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
+        rid = self.expand_rids(rid)
+        self.action_rid = rid
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
@@ -2008,15 +2047,18 @@ class Svc(Resource, Freezer):
           'print_disklist',
           'print_devlist',
           'json_status',
-          'json_disklist'
+          'json_disklist',
           'json_devlist'
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
           'boot',
+          'toc',
           'startstandby',
           'resource_monitor',
           'presync',
           'postsync',
+          'syncdrp',
+          'syncnodes',
           'syncall'
         ]
         if action not in actions_list_allow_on_frozen and \
@@ -2028,7 +2070,8 @@ class Svc(Resource, Freezer):
             try:
                 if action not in actions_list_allow_on_cluster:
                     self.cluster_mode_safety_net()
-            except ex.excError:
+            except ex.excError as e:
+                self.log.error(str(e))
                 return 1
 
         self.setup_environ()
@@ -2039,9 +2082,6 @@ class Svc(Resource, Freezer):
           'set',
           'push',
           'push_appinfo',
-          'enable',
-          'disable',
-          'delete',
           'print_env_mtime',
           'print_status',
           'print_disklist',
@@ -2097,7 +2137,9 @@ class Svc(Resource, Freezer):
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action
-                getattr(self, action)()
+                err = getattr(self, action)()
+                if err is None:
+                    err = 0
                 self.running_action = None
             else:
                 self.log.error("unsupported action")
@@ -2322,6 +2364,61 @@ class Svc(Resource, Freezer):
             return 1
         return 0
 
+    def set_disable(self, rids=[], disable=True):
+        if len(rids) == 0:
+            rids = ['DEFAULT']
+        for rid in rids:
+            if rid != 'DEFAULT' and not self.config.has_section(rid):
+                self.log.error("service", svcname, "has not resource", rid)
+                continue
+            self.log.info("set %s.disable = %s" % (rid, str(disable)))
+            self.config.set(rid, "disable", disable)
+        try:
+            f = open(self.pathenv, 'w')
+        except:
+            self.log.error("failed to open", self.pathenv, "for writing")
+            return 1
+    
+        #
+        # if we set DEFAULT.disable = True,
+        # we don't want res#n.disable = False
+        #
+        if len(rids) == 0 and disable:
+            for s in self.config.sections():
+                if self.config.has_option(s, "disable") and \
+                   self.config.getboolean(s, "disable") == False:
+                    self.log.info("remove %s.disable = false" % s)
+                    self.config.remove_option(s, "disable")
+    
+        self.config.write(f)
+        return 0
+
+    def enable(self):
+        return self.set_disable(self.action_rid, False)
+
+    def disable(self):
+        return self.set_disable(self.action_rid, True)
+
+    def delete(self):
+        from svcBuilder import delete
+        return delete([self.svcname], self.action_rid)
+
+    def docker(self):
+        import sys
+        import subprocess
+        containers = self.get_resources('container')
+        if not hasattr(self, "docker_argv"):
+            print("no docker command arguments supplied", file=sys.stderr)
+            return 1
+        for r in containers:
+            if hasattr(r, "docker_cmd"):
+                cmd = r.docker_cmd + self.docker_argv
+                p = subprocess.Popen(cmd)
+                p.communicate()
+                return p.returncode
+        print("this service has no docker resource", file=sys.stderr)
+        return 1
+        
 if __name__ == "__main__" :
     for c in (Svc,) :
         help(c)
