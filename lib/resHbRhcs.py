@@ -54,7 +54,7 @@ class Hb(resHb.Hb):
                 continue
 
             # package found
-            if rcEnv.nodename != l[1].strip():
+            if rcEnv.nodename != self.svc.member_to_nodename(l[1].strip()):
                 return rcStatus.DOWN
             elif l[-1].strip() != "started":
                 return rcStatus.DOWN
