@@ -179,6 +179,17 @@ class KeywordPkgName(Keyword):
                   text="The wrapped cluster package name, as known to the cluster manager in charge."
                 )
 
+class KeywordDockerDataDir(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_data_dir",
+                  required=False,
+                  order=12,
+                  text="The directory where the private docker daemon must store its data."
+                )
+
 class KeywordContainerType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -189,6 +200,42 @@ class KeywordContainerType(Keyword):
                   text="The type of container.",
                   required=True,
                   order=1
+                )
+
+class KeywordDockerRunImage(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="run_image",
+                  order=9,
+                  required=False,
+                  depends=[('type', ["docker"])],
+                  text="The docker image pull, and run the container with."
+                )
+
+class KeywordDockerRunCommand(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="run_command",
+                  order=1,
+                  required=False,
+                  depends=[('type', ["docker"])],
+                  text="The command to execute in the docker container on run."
+                )
+
+class KeywordDockerRunArgs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="run_args",
+                  order=2,
+                  required=False,
+                  depends=[('type', ["docker"])],
+                  text="Extra arguments to pass to the docker run command, like volume and port mappings."
                 )
 
 class KeywordVirtinst(Keyword):
@@ -1673,6 +1720,7 @@ class KeyDict(KeywordStore):
 
         self += KeywordMode()
         self += KeywordPkgName()
+        self += KeywordDockerDataDir()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
@@ -1766,6 +1814,9 @@ class KeyDict(KeywordStore):
         self += KeywordCloudId()
         self += KeywordVmUuid()
         self += KeywordVirtinst()
+        self += KeywordDockerRunCommand()
+        self += KeywordDockerRunImage()
+        self += KeywordDockerRunArgs()
         self += KeywordSnap()
         self += KeywordSnapof()
         self += KeywordContainerOrigin()
