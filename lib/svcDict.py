@@ -163,8 +163,20 @@ class KeywordMode(Keyword):
                   required=True,
                   order=10,
                   default="hosted",
-                  candidates=["hosted"],
+                  candidates=["hosted", "sg", "vcs", "rhcs"],
                   text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
+                )
+
+class KeywordPkgName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="pkg_name",
+                  required=False,
+                  order=11,
+                  depends=[('mode', ["vcs", "sg", "rhcs"])],
+                  text="The wrapped cluster package name, as known to the cluster manager in charge."
                 )
 
 class KeywordContainerType(Keyword):
@@ -1660,6 +1672,7 @@ class KeyDict(KeywordStore):
             self += kw_always_on(r)
 
         self += KeywordMode()
+        self += KeywordPkgName()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
