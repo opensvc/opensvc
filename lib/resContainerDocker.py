@@ -199,9 +199,6 @@ class Docker(resContainer.Container):
         return True
 
     def check_capabilities(self):
-        if not which('docker'):
-            self.status_log("docker is not in PATH")
-            return False
         return True
 
     def docker_inspect(self, id):
@@ -315,7 +312,7 @@ class Docker(resContainer.Container):
         self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
         self.docker_socket_uri = 'unix://' + self.docker_socket
         self.docker_data_dir = self.svc.config.defaults().get('docker_data_dir')
-        self.docker_cmd = ['docker', '-H', self.docker_socket_uri]
+        self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
         self.label = ""
         try:
             self.container_id = self.get_container_id_by_name()
@@ -323,6 +320,14 @@ class Docker(resContainer.Container):
         except Exception as e:
             self.container_id = None
         self.label += self.image_userfriendly_name()
+
+    def docker_exe(self):
+        if which("docker.io"):
+            return "docker.io"
+        elif which("docker"):
+            return "docker"
+        else:
+            raise ex.excInit("docker executable not found")
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
