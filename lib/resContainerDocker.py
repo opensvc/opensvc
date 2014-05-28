@@ -142,7 +142,7 @@ class Docker(resContainer.Container):
             return s
         running_image = inspect['Image'][:12]
         if self.run_image != running_image:
-            self.status_log("the running container is based on image '%s' instead of '%s'")
+            self.status_log("the running container is based on image '%s' instead of '%s'"%(running_image, self.run_image))
             s = rcStatus._merge(s, rcStatus.WARN)
         return s
 
