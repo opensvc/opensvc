@@ -62,6 +62,11 @@ class Docker(resContainer.Container):
             raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
+    def docker_data_dir_resource(self):
+        for resource in self.svc.get_resources('fs'):
+            if resource.mountPoint.startswith(self.docker_data_dir):
+                return resource
+
     def add_run_args(self):
         if self.run_args is None:
             return []
@@ -236,13 +241,20 @@ class Docker(resContainer.Container):
         os.kill(pid, signal.SIGTERM)
 
     def docker_start(self, verbose=True):
+        # Sanity checks before deciding to start the daemon
         if self.docker_running():
             return
+
         if self.docker_data_dir is None:
             return
-        if not os.path.exists(self.docker_data_dir):
+
+        resource = self.docker_data_dir_resource()
+        if resource is not None and resource._status() != rcStatus.UP:
+            if verbose:
+                self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, resource._status()))
             return
 
+        # Now we can start the daemon, creating its data dir if necessary
         cmd = self.docker_cmd + ['-r=false', '-d',
                '-g', self.docker_data_dir,
                '-p', self.docker_pid_file]
