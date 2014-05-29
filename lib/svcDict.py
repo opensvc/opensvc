@@ -1511,7 +1511,7 @@ class KeywordStore(dict):
             if key.default is None:
                 sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
                 raise MissKeyNoDefault()
-            print("Implicitely add [%s]"%rid, key.keyword, "=", key.default)
+            print("Implicitely add [%s] %s = %s" % (rid, key.keyword, str(key.default)))
             completion[key.keyword] = key.default
 
         """
