@@ -63,9 +63,14 @@ class Docker(resContainer.Container):
         return out, err, ret
 
     def docker_data_dir_resource(self):
+        mntpts = []
+        mntpt_res = {}
         for resource in self.svc.get_resources('fs'):
-            if resource.mountPoint.startswith(self.docker_data_dir):
-                return resource
+            mntpts.append(resource.mountPoint)
+            mntpt_res[resource.mountPoint] = resource
+        for mntpt in sorted(mntpts, reverse=True):
+            if mntpt.startswith(self.docker_data_dir):
+                return mntpt_res[mntpt]
 
     def add_run_args(self):
         if self.run_args is None:
@@ -139,16 +144,40 @@ class Docker(resContainer.Container):
         resContainer.Container.stop(self)
         self.docker_stop()
  
+    def get_run_image_id(self):
+        if len(self.run_image) == 12 and re.match('[a-z0-9]*', self.run_image):
+            return self.run_image
+        try:
+            image_name, image_tag = self.run_image.split(':')
+        except:
+            image_name, image_tag = [self.run_image, "latest"]
+
+        cmd = self.docker_cmd + ['images', image_name]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return self.run_image
+        for line in out.split('\n'):
+            l = line.split()
+            if len(l) < 3:
+                continue
+            if l[0] == image_name and l[1] == image_tag:
+                return l[2]
+        return self.run_image
+
+
     def _status(self, verbose=False):
         s = resContainer.Container._status(self, verbose)
         try:
             inspect = self.docker_inspect(self.container_id)
         except Exception as e:
             return s
-        running_image = inspect['Image'][:12]
-        if self.run_image != running_image:
-            self.status_log("the running container is based on image '%s' instead of '%s'"%(running_image, self.run_image))
+        running_image_id = str(inspect['Image'][:12])
+        run_image_id = self.get_run_image_id()
+
+        if run_image_id != running_image_id:
+            self.status_log("the running container is based on image '%s' instead of '%s'"%(running_image_id, run_image_id))
             s = rcStatus._merge(s, rcStatus.WARN)
+
         return s
 
     def container_forcestop(self):
@@ -345,6 +374,5 @@ class Docker(resContainer.Container):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def provision(self):
-        m = __import__("provDocker")
-        prov = m.ProvisioningDocker(self)
-        prov.provisioner()
+        # docker resources are naturally provisioned
+        self.start()
