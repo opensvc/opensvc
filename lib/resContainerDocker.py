@@ -30,6 +30,8 @@ from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
 
+from svcBuilder import conf_get_string_scope
+
 os.environ['LANG'] = 'C'
 
 class Docker(resContainer.Container):
@@ -287,6 +289,7 @@ class Docker(resContainer.Container):
         cmd = self.docker_cmd + ['-r=false', '-d',
                '-g', self.docker_data_dir,
                '-p', self.docker_pid_file]
+        cmd += self.docker_daemon_args
 
         if verbose:
             self.log.info("starting docker daemon")
@@ -352,7 +355,14 @@ class Docker(resContainer.Container):
         self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
         self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
         self.docker_socket_uri = 'unix://' + self.docker_socket
-        self.docker_data_dir = self.svc.config.defaults().get('docker_data_dir')
+        try:
+            self.docker_data_dir = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_data_dir')
+        except ex.OptNotFound:
+            self.docker_data_dir = None
+        try:
+            self.docker_daemon_args = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_daemon_args').split()
+        except ex.OptNotFound:
+            self.docker_daemon_args = []
         self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
         self.label = ""
         try:
