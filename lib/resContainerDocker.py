@@ -23,6 +23,7 @@ from subprocess import *
 import sys
 import rcStatus
 import json
+import re
 import resources as Res
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall
