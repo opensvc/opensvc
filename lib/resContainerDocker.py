@@ -282,8 +282,8 @@ class Docker(resContainer.Container):
 
         resource = self.docker_data_dir_resource()
         if resource is not None and resource._status() != rcStatus.UP:
-            if verbose:
-                self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, resource._status()))
+            state= rcStatus.status_str(resource._status())
+            self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, state))
             return
 
         # Now we can start the daemon, creating its data dir if necessary
