@@ -118,7 +118,9 @@ class Docker(resContainer.Container):
             if self.container_id is None:
                 cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
                 cmd += self.add_run_args()
-                cmd += [self.run_image, self.run_command]
+                cmd += [self.run_image]
+                if self.run_command is not None and self.run_command != "":
+                    cmd += [self.run_command]
             else:
                 cmd += ['start', self.container_id]
         elif action == 'stop':
@@ -319,7 +321,7 @@ class Docker(resContainer.Container):
     def __init__(self,
                  rid,
                  run_image,
-                 run_command="",
+                 run_command=None,
                  run_args=None,
                  guestos="Linux",
                  optional=False,
