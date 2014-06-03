@@ -56,7 +56,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ip6addr += [ip6addr]
                 i.ip6mask += ['']
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.intf = []
         out = Popen(['ipconfig', '/all'], stdout=PIPE).communicate()[0]
         self.parse(out)

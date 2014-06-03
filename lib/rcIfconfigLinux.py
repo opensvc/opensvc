@@ -218,11 +218,46 @@ class ifconfig(rcIfconfig.ifconfig):
             prevprev = prev
             prev = w
 
-    def __init__(self):
+    def get_mcast(self):
+        cmd = ['netstat', '-gn']
+        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        return self.parse_mcast(out)
+
+    def parse_mcast(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for i, line in enumerate(lines):
+            if line.startswith('--'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for line in lines:
+            try:
+                intf, refcnt, addr = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        return data
+
+    def __init__(self, mcast=False):
         self.intf = []
+        if mcast:
+            self.mcast_data = self.get_mcast()
         if which('ip'):
             out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0]
             self.parse_ip(out)
         else:
             out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
             self.parse_ifconfig(out)
+
+if __name__ == "__main__":
+    ifaces = ifconfig(mcast=True)
+

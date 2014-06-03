@@ -571,10 +571,9 @@ class Asset(object):
         return d
 
     def get_lan(self):
+        args = {'mcast': True}
         if rcEnv.sysname == 'HP-UX':
-            args = [True]
-        else:
-            args = []
+            args['hwaddr'] = True
         rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
         ifconfig = rcIfconfig.ifconfig(*args)
         lan = {}
@@ -606,6 +605,19 @@ class Asset(object):
                      'mask': intf.ip6mask[i],
                     }
                 lan[intf.hwaddr] += [d]
+            if intf.name in ifconfig.mcast_data:
+                for addr in ifconfig.mcast_data[intf.name]:
+                    if ':' in addr:
+                        addr_type = 'ipv6'
+                    else:
+                        addr_type = 'ipv4'
+                    d = {'type': addr_type,
+                         'intf': intf.name,
+                         'addr': addr,
+                         'mask': "",
+                        }
+                    lan[intf.hwaddr] += [d]
+
                 
         self.print_lan(lan)
         return lan
@@ -614,7 +626,11 @@ class Asset(object):
         print "lan (probe)"
         for h, l in lan.items():
             for d in l:
-                print "  %s %-8s %-5s %s/%s"%(h, d['intf'], d['type'], d['addr'], d['mask'])
+                if d['mask'] != "":
+                    addr_mask = "%s/%s" % (d['addr'], d['mask'])
+                else:
+                    addr_mask = d['addr']
+                print("  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask))
 
     def get_asset_dict(self):
         d = {}
