@@ -55,7 +55,7 @@ class ifconfig(rcIfconfig.ifconfig):
 	        i.ipaddr.append(ip)
 	        i.mask.append(intf_cf.IPsubnet[idx])
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.wmi = wmi.WMI()
         self.intf = []
         for n, nc in zip(self.wmi.Win32_NetworkAdapter(), self.wmi.Win32_NetworkAdapterConfiguration()):

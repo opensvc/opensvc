@@ -75,7 +75,7 @@ class ifconfig(rcIfconfig.ifconfig):
             prevprev = prev
             prev = w
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.intf = []
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
         self.parse(out)

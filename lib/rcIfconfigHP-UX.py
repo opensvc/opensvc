@@ -87,7 +87,7 @@ class ifconfig(rcIfconfig.ifconfig):
 
             prev = w
 
-    def __init__(self, hwaddr=False):
+    def __init__(self, hwaddr=False, mcast=False):
         self.intf = []
         intf_list = []
         self.hwaddr = {}
