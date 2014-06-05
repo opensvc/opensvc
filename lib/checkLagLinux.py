@@ -21,6 +21,7 @@ import json
 import glob
 import datetime
 from rcGlobalEnv import rcEnv
+from rcIfconfigLinux import ifconfig
 
 """
 Ethernet Channel Bonding Driver: v3.4.0 (October 7, 2008)
@@ -54,8 +55,15 @@ class check(checks.check):
         l = glob.glob(self.bonding_p+'/*')
         if len(l) == 0:
             return self.undef
+        ifg = ifconfig()
         r = []
         for bond in l:
+            ifname = os.path.basename(bond)
+            intf = ifg.interface(ifname)
+            if intf is None:
+                continue
+            if len(intf.ipaddr) + len(intf.ip6addr) == 0:
+                continue
             r += self.do_check_bond(bond)
         return r
 
