@@ -1,6 +1,6 @@
 import os
 import glob
-from rcUtilities import justcall
+from rcUtilities import call
 
 class ExInit(Exception):
     pass
@@ -106,7 +106,7 @@ class Fdmn(object):
         self.free = 0
 
         cmd = ['showfdmn', name]
-        out, err, ret = justcall(cmd)
+        out, err, ret = call(cmd)
         if ret != 0:
             raise ExInit()
         d = {}
@@ -135,7 +135,7 @@ class Fdmn(object):
                 pass
 
         cmd = ['showfsets', '-k', name]
-        out, err, ret = justcall(cmd)
+        out, err, ret = call(cmd)
         if ret != 0:
             raise ExInit()
         lines = out.split('\n')

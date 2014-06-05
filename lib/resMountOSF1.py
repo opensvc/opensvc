@@ -117,6 +117,10 @@ class Mount(Res.Mount):
     def disklist(self):
         if '#' in self.device:
             dom, fset = self.device.split('#')
+            for r in self.svc.get_resources('disk.vg'):
+                if r.name == dom:
+                    # no need to compute device list: the vg resource will do the job
+                    return set([])
             import rcAdvfs
             try:
                 o = rcAdvfs.Fdmns()
