@@ -116,6 +116,8 @@ class Docker(resContainer.Container):
         cmd = self.docker_cmd + []
         if action == 'start':
             if self.container_id is None:
+                self.container_id = self.get_container_id_by_name()
+            if self.container_id is None:
                 cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
                 cmd += self.add_run_args()
                 cmd += [self.run_image]
