@@ -19,6 +19,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+import os
 import resources as Res
 import uuid
 import re
