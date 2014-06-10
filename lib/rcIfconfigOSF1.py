@@ -37,7 +37,7 @@ def ipv4_bitmask(s):
         
 class ifconfig(rcIfconfig.ifconfig):
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.intf = []
         out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)

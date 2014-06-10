@@ -23,13 +23,45 @@ import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
 
-    def __init__(self, ifconfig=None):
+    def __init__(self, ifconfig=None, mcast=False):
         self.intf = []
+        if mcast:
+            self.mcast_data = self.get_mcast()
         if ifconfig is not None:
             out = ifconfig
         else:
             out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
+
+    def get_mcast(self):
+        cmd = ['netstat', '-gn']
+        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        return self.parse_mcast(out)
+
+    def parse_mcast(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for i, line in enumerate(lines):
+            if line.startswith('--'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for line in lines:
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        return data
+
 
     def set_hwaddr(self, i):
         if i is None or i.hwaddr != '' or ':' not in i.name:

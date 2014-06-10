@@ -108,8 +108,9 @@ class ifconfig(object):
             s += str(intf)
 	return s
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.intf = []
+        self.mcast_data = {}
 
     def next_stacked_dev(self,dev):
         """Return the first available interfaceX:Y on  interfaceX

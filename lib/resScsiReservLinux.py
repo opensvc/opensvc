@@ -19,6 +19,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+import os
 import resources as Res
 import uuid
 import re
@@ -41,7 +42,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
     def set_read_only(self, val):
         if rcEnv.sysname != "Linux":
             return
-        os.environ["SG_PERSIST_O_RDONLY"] = val
+        os.environ["SG_PERSIST_O_RDONLY"] = str(val)
 
     def ack_unit_attention(self, d):
         i = self.preempt_timeout
