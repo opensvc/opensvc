@@ -915,7 +915,11 @@ class Svc(Resource, Freezer):
             self.log.info("skip start in container %s: the encap service is configured to start on container boot."%container.name)
             return '', '', 0
 
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
+        options = []
+        if self.options.dry_run:
+            options.append('--dry-run')
+
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
@@ -2096,7 +2100,8 @@ class Svc(Resource, Freezer):
         ]
         if action in actions_list_no_log or \
            'compliance' in action or \
-           'collector' in action:
+           'collector' in action or \
+           self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
             if action == "syncall" or "syncupdate": kwargs = {}

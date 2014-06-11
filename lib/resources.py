@@ -141,23 +141,33 @@ class Resource(object):
     def action_triggers(self, type, action):
         attr = type+"_"+action
         if hasattr(self, attr):
+            if self.svc.options.dry_run:
+                self.log.info("exec trigger %s" % getattr(self, attr))
+                return
             self.vcall(getattr(self, attr))
+
+    def action_main(self, action):
+        if self.svc.options.dry_run:
+            self.log.info("%s %s"%(action, self.label))
+            return
+        getattr(self, action)()
 
     def do_action(self, action):
         self.log.debug('do_action: action=%s res=%s'%(action, self.rid))
         if hasattr(self, action):
             if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
-                if hasattr(self, action+'standby'):
-                    getattr(self, action+'standby')()
+                standby_action = action+'standby'
+                if hasattr(self, standby_action):
+                    self.action_main(standby_action)
                     return
                 else:
                     self.log.info("skip '%s' on standby resource (--force to override)"%action)
                     return
             self.setup_environ()
             self.action_triggers("pre", action)
-            getattr(self, action)()
+            self.action_main(action)
             self.action_triggers("post", action)
-            if "start" in action or "stop" in action or "sync" in action or action == "provision":
+            if self.svc.options.dry_run and "start" in action or "stop" in action or "sync" in action or action == "provision":
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True)
@@ -477,7 +487,7 @@ class ResourceSet(Resource):
 
     def action_job(self, r, action):
         try:
-            getattr(r, action)()
+            getattr(r, 'action')(action)
         except:
             sys.exit(1)
         if r.can_rollback:
