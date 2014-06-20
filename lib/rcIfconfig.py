@@ -106,6 +106,7 @@ class ifconfig(object):
 	s = ""
         for intf in self.intf:
             s += str(intf)
+	s += "\nmcast: " + str(self.mcast_data) 
 	return s
 
     def __init__(self, mcast=False):

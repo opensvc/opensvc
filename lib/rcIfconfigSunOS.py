@@ -51,7 +51,32 @@ class ifconfig(rcIfconfig.ifconfig):
         if len(lines) == i+1:
             return data
         lines = lines[i+1:]
-        for line in lines:
+        for i, line in enumerate(lines):
+	    if len(line) == 0:
+	        break 
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+	if len(lines) <= i + 1:
+	    return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+            if line.startswith('--'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+	    if len(line) == 0:
+	        break 
             try:
                 intf, addr, refcnt = line.split()
             except:
@@ -141,6 +166,5 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    #help(ifconfig)
-    for i in ifconfig().intf:
-        print(i)
+    ifaces = ifconfig(mcast=True)
+    print(ifaces)
