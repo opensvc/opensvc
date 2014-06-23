@@ -116,6 +116,7 @@ class check(checks.check):
         r = []
         slot = ""
         for line in lines:
+            line = line.strip()
             if 'Adapter:' in line:
                 l = line.split()
                 slot = 'slot'+l[-1]
