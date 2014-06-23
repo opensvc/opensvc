@@ -24,6 +24,15 @@ class check(checks.check):
         /dev/rdsk/c6t600507680280809AB0000000000000E7d0s2
                 Total Path Count: 4
                 Operational Path Count: 4
+        /scsi_vhci/disk@g60050768018085d7e0000000000004e5
+                Total Path Count: 1
+                Operational Path Count: 1
+        /dev/rdsk/c6t60050768018085D7E0000000000004E4d0s2
+                Total Path Count: 1
+                Operational Path Count: 1
+        /dev/rdsk/c6t60050768018085D7E00000000000056Bd0s2
+                Total Path Count: 4
+                Operational Path Count: 4
     """
     chk_type = "mpath"
     svcdevs = {}
@@ -54,22 +63,34 @@ class check(checks.check):
         for line in lines:
             if "/dev/" in line:
                 # new mpath
-                # - store previous
+                # - remember current dev
+                # - remember current wwid
                 # - reset path counter
+                dev = line.strip()
+                wwid = line[line.index('t')+1:line.rindex('d')]
+                n = 0
+            elif '/disk@g' in line:
+                # unmapped dev
+                # - remember current dev
+                # - remember current wwid
+                # - reset path counter
+                dev = line.strip()
+                wwid = '_'+line[line.index('@g')+2:]
+                n = 0
+            if "Total Path Count:" in line:
+                continue
+            if "Operational Path Count:" in line:
+                # - store current dev if valid
+                # - then:
+                    # - reset path counter
+                    # - reset dev
+                n = int(line.split(':')[-1].strip())
                 if dev is not None:
                     r.append({'chk_instance': wwid,
                               'chk_value': str(n),
                               'chk_svcname': self.find_svc(dev),
                              })
-                n = 0
-                dev = line.strip()
-                wwid = line[line.index('t')+1:line.rindex('d')]
-            if "Operational Path Count:" in line:
-                n = int(line.split(':')[-1].strip())
-        if dev is not None:
-            r.append({'chk_instance': wwid,
-                      'chk_value': str(n),
-                      'chk_svcname': self.find_svc(dev),
-                     })
+                    dev = None
+                    n = 0
         return r
 
