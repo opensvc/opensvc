@@ -2773,8 +2773,9 @@ def create(svcname, resources=[], interactive=False, provision=False):
     conf.write(f)
 
     initdir = svcname+'.dir'
-    if not os.path.exists(initdir):
-        os.makedirs(initdir)
+    svcinitdir = os.path.join(rcEnv.pathetc, initdir)
+    if not os.path.exists(svcinitdir):
+        os.makedirs(svcinitdir)
     fix_app_link(svcname)
     fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
 
