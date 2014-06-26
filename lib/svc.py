@@ -219,6 +219,7 @@ class Svc(Resource, Freezer):
     def svclock(self, action=None, timeout=30, delay=5):
         suffix = None
         list_actions_no_lock = [
+          'docker',
           'push',
           'push_appinfo',
           'print_status',
