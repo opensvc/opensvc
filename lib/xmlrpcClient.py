@@ -194,9 +194,9 @@ class Collector(object):
     
     def __init__(self, worker=False):
         self.proxy = None
-        self.proxy_method = None
+        self.proxy_methods = []
         self.comp_proxy = None
-        self.comp_proxy_method = None
+        self.comp_proxy_methods = []
 
         self._worker = worker
         self.worker = None
