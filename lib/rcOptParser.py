@@ -80,6 +80,7 @@ action_desc = {
       'switch': 'stop the service on the local node and start on the remote node. --to <node> specify the remote node to switch the service to.',
       'migrate': 'live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.',
       'json_status': 'provide the resource and aggregated status in json format, for use by tier tools',
+      'json_env': 'provide the service configuration in json format, for use by tier tools',
       'json_disklist': 'provide the service disk list in json format, for use by tier tools',
       'json_devlist': 'provide the service device list in json format, for use by tier tools',
       'resource_monitor': 'detect monitored resource failures and trigger monitor_action',

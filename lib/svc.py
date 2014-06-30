@@ -233,7 +233,8 @@ class Svc(Resource, Freezer):
           'print_devlist',
           'json_status',
           'json_disklist',
-          'json_devlist'
+          'json_devlist',
+          'json_env'
         ]
         if action in list_actions_no_lock:
             # no need to serialize this action
@@ -364,10 +365,10 @@ class Svc(Resource, Freezer):
           "print_devlist",
           "json_disklist",
           "json_devlist",
+          "json_env",
           "push_appinfo",
           "push",
           "json_status",
-          "json_disklist",
           "group_status",
           "presync",
           "postsync",
@@ -526,6 +527,30 @@ class Svc(Resource, Freezer):
         for g in ss:
             d[g] = str(ss[g])
         print(json.dumps(d))
+
+    def json_env(self):
+        import json
+        svcenv = {}
+        tmp = {}
+        self.load_config()
+        config = self.config
+
+        defaults = config.defaults()
+        for key in defaults.iterkeys():
+            tmp[key] = defaults[key]
+
+        svcenv['DEFAULT'] = tmp
+        config._defaults = {}
+
+        sections = config.sections()
+        for section in sections:
+            options = config.options(section)
+            tmpsection = {}
+            for option in options:
+                if config.has_option(section, option):
+                    tmpsection[option] = config.get(section, option)
+            svcenv[section] = tmpsection
+        print(json.dumps(svcenv))
 
     def print_status(self):
         """print() each resource status for a service
@@ -876,11 +901,11 @@ class Svc(Resource, Freezer):
     def stonith(self):
         self.sub_set_action('stonith.ilo', 'start')
         self.sub_set_action('stonith.callout', 'start')
-        
+
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
         getattr(self, self.monitor_action)()
-        
+
     def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
             try:
@@ -964,7 +989,7 @@ class Svc(Resource, Freezer):
                 for r in rs.resources:
                     if not self.encap and 'encap' in r.tags:
                         gs['resources'][r.rid] = {'status': 'down'}
-            
+
             groups = set(["app", "sync"])
             for g in groups:
                 gs[g] = 'n/a'
@@ -1008,7 +1033,7 @@ class Svc(Resource, Freezer):
         self.encap_json_status_cache[container.rid] = gs
 
         return gs
-        
+
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
                      excluded_groups=set([])):
@@ -1142,7 +1167,7 @@ class Svc(Resource, Freezer):
         elif defaults.get('autostart_node') in (container.name, 'encapnodes'):
             return False
         return True
-        
+
     def boot(self):
         if rcEnv.nodename not in self.autostart_node:
             self.startstandby()
@@ -2011,7 +2036,7 @@ class Svc(Resource, Freezer):
             elif e[:e.index('#')] == rid:
                 l.append(e)
         return l
-            
+
     def expand_rids(self, rid):
         l = []
         for e in set(rid):
@@ -2191,7 +2216,7 @@ class Svc(Resource, Freezer):
             self.rollback()
         except:
             self.log.error("rollback %s failed"%action)
- 
+
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
         import tempfile
@@ -2384,7 +2409,7 @@ class Svc(Resource, Freezer):
         except:
             self.log.error("failed to open", self.pathenv, "for writing")
             return 1
-    
+
         #
         # if we set DEFAULT.disable = True,
         # we don't want res#n.disable = False
@@ -2395,7 +2420,7 @@ class Svc(Resource, Freezer):
                    self.config.getboolean(s, "disable") == False:
                     self.log.info("remove %s.disable = false" % s)
                     self.config.remove_option(s, "disable")
-    
+
         self.config.write(f)
         return 0
 
@@ -2425,7 +2450,7 @@ class Svc(Resource, Freezer):
                 return p.returncode
         print("this service has no docker resource", file=sys.stderr)
         return 1
-        
+
 if __name__ == "__main__" :
     for c in (Svc,) :
         help(c)
