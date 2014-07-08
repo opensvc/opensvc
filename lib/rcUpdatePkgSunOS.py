@@ -1,9 +1,18 @@
 from subprocess import *
 from rcUtilitiesSunOS import get_os_ver
+import os
 
 repo_subdir = "pkg"
 
 def update(fpath):
+    # check downloaded package integrity
+    cmd = ['pkgchk', '-d', fpath, 'all']
+    print(' '.join(cmd))
+    p = Popen(cmd)
+    p.communicate()
+    if p.returncode != 0:
+        return 1
+
     cmd = ['pkgrm', '-n', 'opensvc']
     print(' '.join(cmd))
     p = Popen(cmd)
@@ -14,10 +23,6 @@ def update(fpath):
         opts = ''
     else:
         opts = '-G'
-    cmd = ['pkgadd', opts, '-d', fpath, 'all']
-    print(' '.join(cmd))
-    p = Popen(cmd, stdout=PIPE, stdin=PIPE)
-    while p.returncode is None:
-        p.stdin.write("y\n")
-        p.poll()
-    return p.returncode
+    cmd = 'echo y | pkgadd %s -d %s all' % (opts, fpath)
+    print(cmd)
+    return os.system(cmd)
