@@ -473,6 +473,10 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_svc_moduleset', self.svcname, moduleset)
             else:
                 d = self.collector.call('comp_attach_moduleset', moduleset)
+            if d is None:
+                print("Failed to attach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -492,6 +496,10 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_svc_moduleset', self.svcname, moduleset)
             else:
                 d = self.collector.call('comp_detach_moduleset', moduleset)
+            if d is None:
+                print("Failed to detach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -511,6 +519,10 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_svc_ruleset', self.svcname, ruleset)
             else:
                 d = self.collector.call('comp_attach_ruleset', ruleset)
+            if d is None:
+                print("Failed to attach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -530,6 +542,10 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_svc_ruleset', self.svcname, ruleset)
             else:
                 d = self.collector.call('comp_detach_ruleset', ruleset)
+            if d is None:
+                print("Failed to detach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
