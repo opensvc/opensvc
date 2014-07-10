@@ -148,7 +148,11 @@ class Resource(object):
 
     def action_main(self, action):
         if self.svc.options.dry_run:
-            self.log.info("%s %s"%(action, self.label))
+            if self.rset.parallel:
+                header = "+ "
+            else:
+                header = ""
+            self.log.info("%s%s %s"%(header, action, self.label))
             return
         getattr(self, action)()
 
@@ -458,7 +462,7 @@ class ResourceSet(Resource):
             # CODE TO KILL ASAP
             resources.sort(reverse=True)
 
-        if self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
+        if not self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
             ps = {}
             for r in resources:
                 p = Process(target=self.action_job, args=(r, action,))
@@ -479,6 +483,8 @@ class ResourceSet(Resource):
             if err > 0:
                 raise exc.excError
         else:
+            if self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
+                r.log.info("entering parallel subset")
             for r in resources:
                 try:
                     r.action(action)
