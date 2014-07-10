@@ -2579,6 +2579,7 @@ def build(name):
     except (ex.excInitError, ex.excError) as e:
         log.error(str(e))
         return None
+    rcLogger.set_streamformatter(svc)
     return svc
 
 def is_service(f):
