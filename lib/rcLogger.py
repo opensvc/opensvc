@@ -24,17 +24,17 @@ from rcGlobalEnv import *
 min_resource_name_len = 8
 
 def set_streamformatter(svc):
-    maxlen = get_max_ressource_name_len(svc) + len(svc.svcname) + 1
+    maxlen = get_max_ressource_name_len(svc)
     streamformatter = logging.Formatter("%(asctime)s %(levelname)-7s %(name)-"+str(maxlen)+"s %(message)s", datefmt="%H:%M:%S")
     handler = svc.log.handlers[1]
     handler.setFormatter(streamformatter)
 
 def get_max_ressource_name_len(svc):
     maxlen = min_resource_name_len
-    for rid in svc.resources_by_id:
-        if rid is None:
+    for r in svc.resources_by_id.values():
+        if r is None:
             continue
-        l = len(rid)
+        l = len(r.log_label())
         if l > maxlen:
             maxlen = l
     return maxlen
