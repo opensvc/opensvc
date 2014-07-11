@@ -23,7 +23,7 @@
 
 from rcGlobalEnv import rcEnv
 import resDg
-from rcUtilities import qcall
+from rcUtilities import justcall
 import os
 import rcExceptions as ex
 
@@ -67,8 +67,10 @@ class Vg(resDg.Dg):
         if not self.has_it():
             return False
         cmd = [ 'showfdmn', self.name ]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
+            if len(err) > 0:
+                self.status_log(err)
             return False
         if 'not active' in out:
             return False
