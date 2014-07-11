@@ -2034,6 +2034,10 @@ def add_syncs_netapp(svc, conf, s):
     svc += r
 
 def add_syncs_rsync(svc, conf, s):
+    if s.startswith("sync#i"):
+        # internal syncs have their own dedicated add function
+        return
+
     options = []
     kwargs = {}
     kwargs['src'] = []
