@@ -52,6 +52,7 @@ class Options(object):
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
+        self.dry_run = False
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Freezer):
