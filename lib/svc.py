@@ -828,6 +828,7 @@ class Svc(Resource, Freezer):
         return rset_status
 
     def resource_monitor(self):
+        self.purge_status_last()
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
         has_hb = False
@@ -2112,8 +2113,9 @@ class Svc(Resource, Freezer):
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            self.log.debug("purge all resource status file caches")
-            self.purge_status_last()
+            if not self.options.dry_run:
+                self.log.debug("purge all resource status file caches")
+                self.purge_status_last()
 
         self.setup_environ()
         self.setup_signal_handlers()
