@@ -522,10 +522,10 @@ class ResourceSet(Resource):
             resources = self.resources
 
         resources = [r for r in resources if self.tag_match(r.tags, tags)]
-        self.log.debug("resources after tags[%s] filter: %s"%(str(tags), str(resources)))
+        self.log.debug("resources after tags[%s] filter: %s"%(str(tags), ','.join([r.rid for r in resources])))
 
         resources = [r for r in resources if not r.disabled]
-        self.log.debug("resources after 'disable' filter: %s"% str(resources))
+        self.log.debug("resources after 'disable' filter: %s"% ','.join([r.rid for r in resources]))
 
         if action == "startstandby":
             # filter out resource not in standby mode
