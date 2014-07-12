@@ -33,11 +33,31 @@ GREEN = 32
 RED = 31
 YELLOW = 33
 
-def colorize(color, text):
-    #if os.isatty(1):
-    #    return '\033['+str(color)+'m'+text+'\033[m'
-    #else:
-    return text
+class color:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
+def colorize(s, lpad=10):
+    if type(s) == Status:
+        s = str(s)
+    fmt = "%-"+str(lpad)+"s"
+    if not os.isatty(1):
+        return fmt%s
+    if s == "warn":
+        return color.YELLOW + fmt%s + color.END
+    elif s.endswith("down"):
+        return color.RED + fmt%s + color.END
+    elif s.endswith("up"):
+        return color.GREEN + fmt%s + color.END
+    return fmt%s
 
 _status_value = {
     'up': UP,
@@ -52,9 +72,9 @@ _status_value = {
 }
 
 _status_str = {
-    UP: colorize(GREEN, 'up'),
-    DOWN: colorize(RED, 'down'),
-    WARN: colorize(YELLOW, 'warn'),
+    UP: 'up',
+    DOWN: 'down',
+    WARN: 'warn',
     NA: 'n/a',
     TODO: 'todo',
     UNDEF: 'undef',

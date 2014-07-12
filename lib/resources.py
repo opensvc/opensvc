@@ -244,6 +244,8 @@ class Resource(object):
         if self.disabled:
             self.status_log("disabled")
             return rcStatus.NA
+        if self.rstatus is None and not refresh:
+            self.rstatus = self.load_status_last()
         if self.rstatus is None or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
@@ -270,9 +272,30 @@ class Resource(object):
             os.makedirs(dirname)
         return fpath
 
+    def purge_status_last(self):
+        try:
+            os.unlink(self.fpath_status_last())
+        except:
+            pass
+
+    def load_status_last(self):
+        try:
+            with open(self.fpath_status_last(), 'r') as f:
+                lines = f.read().split("\n")
+                status_str = lines[0]
+                s = rcStatus.status_value(status_str)
+                if len(lines) > 1:
+                    self.status_log_str = '\n'.join(lines[1:])
+        except:
+            s = None
+        return s
+
     def write_status_last(self):
         with open(self.fpath_status_last(), 'w') as f:
-            f.write(rcStatus.status_str(self.rstatus)+'\n')
+            s = rcStatus.status_str(self.rstatus)+'\n'
+            if len(self.status_log_str) > 1:
+                s += self.status_log_str+'\n'
+            f.write(s)
 
     def write_status_history(self):
         fpath = self.fpath_status_history()
@@ -436,6 +459,10 @@ class ResourceSet(Resource):
 
     def post_action(self, rset=None, action=None):
         pass
+
+    def purge_status_last(self):
+        for r in self.resources:
+            r.purge_status_last()
 
     def status(self, verbose=False):
         """aggregate status a ResourceSet

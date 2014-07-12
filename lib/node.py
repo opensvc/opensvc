@@ -365,6 +365,10 @@ class Node(Svc, Freezer):
             raise Exception()
         self.load_config()
 
+    def purge_status_last(self):
+        for s in self.svcs:
+            s.purge_status_last()
+
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)

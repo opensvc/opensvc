@@ -136,7 +136,6 @@ class Svc(Resource, Freezer):
         self.scsicheckreserv = self.prstatus
         self.resources_by_id = {}
         self.rset_status_cache = None
-        self.print_status_fmt = "%-14s %-8s %s"
         self.presync_done = False
         self.presnap_trigger = None
         self.postsnap_trigger = None
@@ -149,6 +148,10 @@ class Svc(Resource, Freezer):
         """order by service name
         """
         return cmp(self.svcname, other.svcname)
+
+    def purge_status_last(self):
+        for rset in self.resSets:
+            rset.purge_status_last()
 
     def get_subset_parallel(self, rtype):
         subset_section = 'subset#' + rtype
@@ -366,10 +369,10 @@ class Svc(Resource, Freezer):
           "print_devlist",
           "json_disklist",
           "json_devlist",
+          "json_status",
           "json_env",
           "push_appinfo",
           "push",
-          "json_status",
           "group_status",
           "presync",
           "postsync",
@@ -567,7 +570,7 @@ class Svc(Resource, Freezer):
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
-            print(fmt%(rid, flags, status, label))
+            print(fmt%(rid, flags, rcStatus.colorize(status), label))
             if len(log) > 0:
                 print('\n'.join(wrap(log,
                                      initial_indent = subpfx,
@@ -578,10 +581,10 @@ class Svc(Resource, Freezer):
                 )
 
         print(self.svcname)
-        fmt = "%-20s %4s %-8s %s"
-        print(fmt%("overall", '', str(self.group_status()['overall']), ''))
-        fmt = "|- %-17s %4s %-8s %s"
-        print(fmt%("avail", '', str(self.group_status()['avail']), ''))
+        fmt = "%-20s %4s %-10s %s"
+        print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
+        fmt = "|- %-17s %4s %-10s %s"
+        print(fmt%("avail", '', rcStatus.colorize(self.group_status()['avail']), ''))
 
         encap_res_status = {}
         for container in self.get_resources('container'):
@@ -610,14 +613,14 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-8s %s"
-                    pfx = "|     %-14s %4s %-8s "%('','','')
+                    fmt = "|  '- %-14s %4s %-10s %s"
+                    pfx = "|     %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-8s %s"
-                    pfx = "|  |  %-14s %4s %-8s "%('','','')
+                    fmt = "|  |- %-14s %4s %-10s %s"
+                    pfx = "|  |  %-14s %4s %-10s "%('','','')
                     if e[0] in cr:
-                        subpfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                        subpfx = "|  |  |  %-11s %4s %-10s "%('','','')
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
@@ -626,15 +629,15 @@ class Svc(Resource, Freezer):
                     if _last >= 0:
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
-                                fmt = "|  |  '- %-11s %4s %-8s %s"
-                                pfx = "|  |     %-11s %4s %-8s "%('','','')
+                                fmt = "|  |  '- %-11s %4s %-10s %s"
+                                pfx = "|  |     %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
                             else:
-                                fmt = "|  |  |- %-11s %4s %-8s %s"
-                                pfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                                fmt = "|  |  |- %-11s %4s %-10s %s"
+                                pfx = "|  |  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
-        fmt = "|- %-17s %4s %-8s %s"
+        fmt = "|- %-17s %4s %-10s %s"
         print(fmt%("sync", '', str(self.group_status()['sync']), ''))
 
         l = []
@@ -648,15 +651,15 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-8s %s"
-                    pfx = "|     %-14s %4s %-8s "%('','','')
+                    fmt = "|  '- %-14s %4s %-10s %s"
+                    pfx = "|     %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-8s %s"
-                    pfx = "|  |  %-14s %4s %-8s "%('','','')
+                    fmt = "|  |- %-14s %4s %-10s %s"
+                    pfx = "|  |  %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
 
-        fmt = "'- %-17s %4s %-8s %s"
+        fmt = "'- %-17s %4s %-10s %s"
         print(fmt%("hb", '', str(self.group_status()['hb']), ''))
 
         l = []
@@ -670,12 +673,12 @@ class Svc(Resource, Freezer):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "   '- %-14s %4s %-8s %s"
-                    pfx = "      %-14s %4s %-8s "%('','','')
+                    fmt = "   '- %-14s %4s %-10s %s"
+                    pfx = "      %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "   |- %-14s %4s %-8s %s"
-                    pfx = "   |  %-14s %4s %-8s "%('','','')
+                    fmt = "   |- %-14s %4s %-10s %s"
+                    pfx = "   |  %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):
@@ -2104,6 +2107,13 @@ class Svc(Resource, Freezer):
             except ex.excError as e:
                 self.log.error(str(e))
                 return 1
+            #
+            # here we know we will run a resource state-changing action
+            # purge the resource status file cache, so that we don't take
+            # decision on outdated information
+            #
+            self.log.debug("purge all resource status file caches")
+            self.purge_status_last()
 
         self.setup_environ()
         self.setup_signal_handlers()
@@ -2120,6 +2130,7 @@ class Svc(Resource, Freezer):
           'json_status',
           'json_disklist',
           'json_devlist',
+          'json_env',
           'status',
           'group_status',
           'resource_monitor'
