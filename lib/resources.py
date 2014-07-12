@@ -21,6 +21,7 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
+import os
 import rcExceptions as exc
 import rcStatus
 import logging
@@ -246,7 +247,57 @@ class Resource(object):
         if self.rstatus is None or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
+            self.write_status()
         return self.rstatus
+
+    def write_status(self):
+        self.write_status_last()
+        self.write_status_history()
+
+    def fpath_status_last(self):
+        dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
+        fname = "resource.status.last." + self.rid
+        fpath = os.path.join(dirname, fname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        return fpath
+
+    def fpath_status_history(self):
+        dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
+        fname = "resource.status.history." + self.rid
+        fpath = os.path.join(dirname, fname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        return fpath
+
+    def write_status_last(self):
+        with open(self.fpath_status_last(), 'w') as f:
+            f.write(rcStatus.status_str(self.rstatus)+'\n')
+
+    def write_status_history(self):
+        fpath = self.fpath_status_history()
+        try:
+            with open(fpath, 'r') as f:
+                lines = f.readlines()
+                last = lines[-1].split(" | ")[-1].strip("\n")
+        except:
+            last = None
+        current = rcStatus.status_str(self.rstatus)
+        if current == last:
+            return
+        import logging
+        log = logging.getLogger("status_history")
+        logformatter = logging.Formatter("%(asctime)s | %(message)s")
+        logfilehandler = logging.handlers.RotatingFileHandler(
+          fpath,
+          maxBytes=512000,
+          backupCount=1,
+        )
+        logfilehandler.setFormatter(logformatter)
+        log.addHandler(logfilehandler)
+        log.error(current)
+        logfilehandler.close()
+        log.removeHandler(logfilehandler)
 
     def status_log(self, text):
         msg = "# " + text + "\n"
