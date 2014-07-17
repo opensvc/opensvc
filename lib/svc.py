@@ -2142,8 +2142,9 @@ class Svc(Resource, Freezer):
           'resource_monitor'
         ]
         if action in actions_list_no_log or \
-           'compliance' in action or \
-           'collector' in action or \
+           action.startswith("compliance") or \
+           action.startswith("collector") or \
+           action.startswith("docker") or \
            self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
