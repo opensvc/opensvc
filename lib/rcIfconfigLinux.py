@@ -220,11 +220,16 @@ class ifconfig(rcIfconfig.ifconfig):
             prev = w
 
     def get_mcast(self):
-        cmd = ['netstat', '-gn']
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
-        return self.parse_mcast(out)
+        if which('netstat'):
+            cmd = ['netstat', '-gn']
+            out = Popen(cmd, stdout=PIPE).communicate()[0]
+            return self.parse_mcast_netstat(out)
+        elif which('ip'):
+            cmd = ['ip', 'maddr']
+            out = Popen(cmd, stdout=PIPE).communicate()[0]
+            return self.parse_mcast_ip(out)
 
-    def parse_mcast(self, out):
+    def parse_mcast_netstat(self, out):
         lines = out.split('\n')
         found = False
         data = {}
@@ -248,6 +253,27 @@ class ifconfig(rcIfconfig.ifconfig):
                 data[intf] += [addr]
         return data
 
+    def parse_mcast_ip(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for line in lines:
+            if not line.startswith("	"):
+                # new interface
+                try:
+                    name = line.split(":")[-1].strip()
+                except Exception as e:
+                    print(e)
+                    break
+                if name == "":
+                    continue
+                data[name] = []
+                continue
+            if "inet" not in line:
+                continue
+            data[name].append(line.split()[-1])
+        return data
+
     def __init__(self, mcast=False):
         self.intf = []
         if mcast:
@@ -261,4 +287,5 @@ class ifconfig(rcIfconfig.ifconfig):
 
 if __name__ == "__main__":
     ifaces = ifconfig(mcast=True)
+    print(ifaces)
 
