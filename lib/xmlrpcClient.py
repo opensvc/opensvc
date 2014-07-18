@@ -385,6 +385,8 @@ class Collector(object):
         for line in lines.split(';;EOL\n'):
             if line.count(';;') != 4:
                 continue
+            if ";;status_history;;" in line:
+                continue
             date = line.split(';;')[0]
     
             """Push to database the previous line, so that begin and end
