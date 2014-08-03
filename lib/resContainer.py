@@ -81,6 +81,9 @@ class Container(Res.Resource):
     def getaddr(self):
         if hasattr(self, 'addr'):
             return
+        if len(self.name) == 0:
+            # explicitely disabled (ex: docker)
+            return
         try:
             a = socket.getaddrinfo(self.name, None)
             if len(a) == 0:

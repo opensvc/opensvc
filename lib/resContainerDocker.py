@@ -335,7 +335,7 @@ class Docker(resContainer.Container):
                  always_on=set([])):
         resContainer.Container.__init__(self,
                                         rid=rid,
-                                        name="127.0.0.1",
+                                        name="",
                                         type="container.docker",
                                         guestos=guestos,
                                         optional=optional,
