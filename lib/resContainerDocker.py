@@ -383,7 +383,7 @@ class Docker(resContainer.Container):
         elif which("docker"):
             return "docker"
         else:
-            raise ex.excInit("docker executable not found")
+            raise ex.excInitError("docker executable not found")
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
