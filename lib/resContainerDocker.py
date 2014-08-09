@@ -108,8 +108,8 @@ class Docker(resContainer.Container):
         except:
             return
         for line in lines[1:]:
-            name = line[start:].strip()
-            if name == self.container_name:
+            names = line[start:].strip().split(',')
+            if self.container_name in names:
                 return line.split()[0]
 
     def docker(self, action):
