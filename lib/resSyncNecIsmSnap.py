@@ -87,7 +87,11 @@ class syncNecIsmSnap(resSync.Sync):
             self.status_log("unable to query SV:%s" % sv)
             return
         svinfo = data['sv'][0]
-        begin = svinfo.index('[')+1
+        try:
+            begin = svinfo.index('[')+1
+        except:
+            self.status_log("unable to get timestamp for SV:%s" % sv)
+            return
         end = svinfo.index(']')
         ts_s = svinfo[begin:end]
         ts = datetime.datetime.strptime(ts_s, "%Y/%m/%d %H:%M:%S")
