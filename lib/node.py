@@ -76,6 +76,7 @@ class Options(object):
         self.ruleset_date = ""
         self.waitlock = 60
         self.parallel = False
+        self.objects = []
         os.environ['LANG'] = 'C'
 
 class Node(Svc, Freezer):
