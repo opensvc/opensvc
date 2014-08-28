@@ -1,6 +1,7 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
-"Module implement Linux specific ip management"
 
 import resIp as Res
 import rcExceptions as ex
@@ -39,7 +37,7 @@ class Ip(Res.Ip):
                 raise ex.excError
             cmd = ['ifconfig', self.ipDev, 'inet6', '/'.join([self.addr, self.mask]), 'add']
         else:
-            cmd = ['ifconfig', self.ipDev, 'inet', self.addr, 'netmask', self.mask, 'add']
+            cmd = ['ifconfig', self.ipDev, 'inet', self.addr, 'netmask', '0xffffffff', 'add']
         return self.vcall(cmd)
 
     def stopip_cmd(self):
