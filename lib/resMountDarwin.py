@@ -1,6 +1,7 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
 
 import os
 
@@ -29,6 +28,16 @@ import rcExceptions as ex
 from stat import *
 
 def try_umount(self):
+    cmd = ['diskutil', 'umount', self.mountPoint]
+    (ret, out, err) = self.vcall(cmd, err_to_info=True)
+    if ret == 0:
+        return 0
+
+    cmd = ['diskutil', 'umount', 'force', self.mountPoint]
+    (ret, out, err) = self.vcall(cmd, err_to_info=True)
+    if ret == 0:
+        return 0
+
     cmd = ['umount', self.mountPoint]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
@@ -161,16 +170,20 @@ class Mount(Res.Mount):
         self.fsck()
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
-        if self.fsType != "":
-            fstype = ['-t', self.fsType]
-        else:
-            fstype = []
-        if self.mntOpt != "":
-            mntopt = ['-o', self.mntOpt]
-        else:
-            mntopt = []
-        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-        (ret, out, err) = self.vcall(cmd)
+        try:
+            cmd = ['diskutil', 'mount', '-mountPoint', self.mountPoint , self.device]
+            (ret, out, err) = self.vcall(cmd)
+        except:
+            if self.fsType != "":
+                fstype = ['-t', self.fsType]
+            else:
+                fstype = []
+            if self.mntOpt != "":
+                mntopt = ['-o', self.mntOpt]
+            else:
+                mntopt = []
+            cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
+            (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.Mounts = None
