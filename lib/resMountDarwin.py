@@ -104,7 +104,7 @@ class Mount(Res.Mount):
                            restart=restart,
                            subset=subset)
         self.fsck_h = {
-            'ufs': {'bin': 'fsck', 'cmd': ['fsck', '-t', 'ufs', '-p', self.device]},
+            'hfs': {'bin': 'fsck', 'cmd': ['diskutil', 'repairVolume', self.device]},
         }
 
     def killfuser(self, dir):
