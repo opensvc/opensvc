@@ -2,7 +2,7 @@ from subprocess import *
 from rcUtilitiesSunOS import get_os_ver
 import os
 
-repo_subdir = "pkg"
+repo_subdir = "sunos-pkg"
 
 def update(fpath):
     # check downloaded package integrity
