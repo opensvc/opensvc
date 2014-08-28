@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +32,24 @@ class Asset(rcAsset.Asset):
                 l = line.split(':')
                 if len(l) != 2: continue
                 self.info[l[0].strip()] = l[1].strip()
+        self.memslots = 0
+        self.membanks = 0
+        self._collect_memory_info()
+
+    def _collect_memory_info(self):
+        (out, err, ret) = justcall(['system_profiler', 'SPMemoryDataType'])
+        if ret == 0:
+            inBlock = False
+            for line in out.split('\n'):
+                line = line.strip()
+                if not inBlock and line.startswith("BANK"):
+                    inBlock = True
+                    self.memslots += 1
+                if inBlock and line.startswith("Status"):
+                    l = line.split(':')
+                    if 'OK' in l[1].strip():
+                        self.membanks += 1
+                    inBlock = False
 
     def _get_mem_bytes(self):
         if 'Memory' not in self.info:
@@ -47,10 +66,10 @@ class Asset(rcAsset.Asset):
         return str(size)
 
     def _get_mem_banks(self):
-        return '0'
+        return str(self.membanks)
 
     def _get_mem_slots(self):
-        return '0'
+        return str(self.memslots)
 
     def _get_os_vendor(self):
         return 'Apple'
