@@ -148,8 +148,9 @@ class Module(object):
             if not line:
                 _fe.seek(fep)
                 return None
+            _line = color.RED + 'ERR: ' + color.END + line
             line = 'ERR: '+line
-            sys.stdout.write(line)
+            sys.stdout.write(_line)
             sys.stdout.flush()
             return line
 
