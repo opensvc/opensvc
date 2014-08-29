@@ -45,6 +45,11 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
+def _colorize(s, c=None):
+    if c is None:
+        return s
+    return c + s + color.END
+
 def colorize(s, lpad=10):
     if type(s) == Status:
         s = str(s)
@@ -52,11 +57,11 @@ def colorize(s, lpad=10):
     if not os.isatty(1):
         return fmt%s
     if s == "warn":
-        return color.YELLOW + fmt%s + color.END
+        return _colorize(fmt%s, color.YELLOW)
     elif s.endswith("down"):
-        return color.RED + fmt%s + color.END
+        return _colorize(fmt%s, color.RED)
     elif s.endswith("up"):
-        return color.GREEN + fmt%s + color.END
+        return _colorize(fmt%s, color.GREEN)
     return fmt%s
 
 _status_value = {
