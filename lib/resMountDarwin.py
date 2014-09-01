@@ -24,6 +24,7 @@ import rcMountsDarwin as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
 from rcGlobalEnv import rcEnv
+from rcLoopDarwin import file_to_loop
 import rcExceptions as ex
 from stat import *
 
@@ -89,6 +90,8 @@ class Mount(Res.Mount):
                  restart=0,
                  subset=None):
         self.Mounts = None
+        self.loopdevice = None
+        self.isloop = False
         Res.Mount.__init__(self,
                            rid,
                            mountPoint,
@@ -120,7 +123,27 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mountPoint)
+        ret = self.Mounts.has_mount(self.device, self.mountPoint)
+        if ret:
+            return True
+
+        if self.fsType not in self.netfs:
+            try:
+                st = os.stat(self.device)
+                mode = st[ST_MODE]
+            except:
+                self.log.debug("can not stat %s" % self.device)
+                return False
+
+            if S_ISREG(mode):
+                # might be a loopback mount
+                devs = file_to_loop(self.device)
+                for dev in devs:
+                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    if ret:
+                        return True
+
+        return False
 
     def realdev(self):
         dev = None
@@ -163,27 +186,49 @@ class Mount(Res.Mount):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
         Res.Mount.start(self)
+
+        if self.fsType in self.netfs or self.device == "none":
+            # TODO showmount -e
+            pass
+        else:
+            try:
+                mode = os.stat(self.device)[ST_MODE]
+                if S_ISREG(mode):
+                    devs = file_to_loop(self.device)
+                    if len(devs) > 0:
+                        self.loopdevice = devs[0]
+                    self.isloop = True
+            except:
+                self.log.debug("can not stat %s" % self.device)
+                return False
+
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
-        self.fsck()
+        
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
-        try:
-            cmd = ['diskutil', 'mount', '-mountPoint', self.mountPoint , self.device]
+
+        if self.isloop is True:
+            cmd = ['hdiutil', 'attach', '-mountpoint', self.mountPoint , self.device]
             (ret, out, err) = self.vcall(cmd)
-        except:
-            if self.fsType != "":
-                fstype = ['-t', self.fsType]
-            else:
-                fstype = []
-            if self.mntOpt != "":
-                mntopt = ['-o', self.mntOpt]
-            else:
-                mntopt = []
-            cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-            (ret, out, err) = self.vcall(cmd)
+        else:
+            self.fsck()
+            try:
+                cmd = ['diskutil', 'mount', '-mountPoint', self.mountPoint , self.device]
+                (ret, out, err) = self.vcall(cmd)
+            except:
+                if self.fsType != "":
+                    fstype = ['-t', self.fsType]
+                else:
+                    fstype = []
+                if self.mntOpt != "":
+                    mntopt = ['-o', self.mntOpt]
+                else:
+                    mntopt = []
+                cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
+                (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.Mounts = None
