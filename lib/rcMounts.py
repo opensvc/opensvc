@@ -1,6 +1,7 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +22,8 @@ class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
         self.dev = dev.rstrip('/')
         self.mnt = mnt.rstrip('/')
+        if mnt is '/':
+            self.mnt = mnt
         self.type = type
         self.mnt_opt = mnt_opt
 
