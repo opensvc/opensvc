@@ -20,7 +20,7 @@
 
 import os
 
-import rcMountsFreeBSD as rcMounts
+import rcMountsDarwin as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount
 from rcGlobalEnv import rcEnv
