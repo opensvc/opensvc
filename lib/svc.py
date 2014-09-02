@@ -407,7 +407,7 @@ class Svc(Resource, Freezer):
              app.1
              app
         """
-        if "stop" in action or action == "rollback":
+        if "stop" in action or action in ("rollback", "shutdown"):
             reverse = True
         else:
             reverse = False
