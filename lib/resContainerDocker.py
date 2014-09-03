@@ -108,8 +108,8 @@ class Docker(resContainer.Container):
         except:
             return
         for line in lines[1:]:
-            name = line[start:].strip()
-            if name == self.container_name:
+            names = line[start:].strip().split(',')
+            if self.container_name in names:
                 return line.split()[0]
 
     def docker(self, action):
@@ -335,7 +335,7 @@ class Docker(resContainer.Container):
                  always_on=set([])):
         resContainer.Container.__init__(self,
                                         rid=rid,
-                                        name="127.0.0.1",
+                                        name="",
                                         type="container.docker",
                                         guestos=guestos,
                                         optional=optional,
@@ -383,7 +383,7 @@ class Docker(resContainer.Container):
         elif which("docker"):
             return "docker"
         else:
-            raise ex.excInit("docker executable not found")
+            raise ex.excInitError("docker executable not found")
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

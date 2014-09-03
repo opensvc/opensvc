@@ -9,6 +9,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
 from rcPrintTable import print_table
+from rcStatus import color, _colorize
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -88,7 +89,7 @@ class Module(object):
         self.context.action_log_vals.append(vals)
 
     def action(self, action):
-        print(banner(self.name))
+        self.print_bold(banner(self.name))
 
         if action not in ['check', 'fix', 'fixable']:
             print('action %s not supported')
@@ -119,7 +120,7 @@ class Module(object):
         start = datetime.datetime.now()
         cmd = [self.executable, action]
         log = ''
-        print("ACTION:   %s"%action)
+        self.print_bold("ACTION:   %s"%action)
         print("START:    %s"%str(start))
         print("COMMAND:  %s"%' '.join(cmd))
         print("LOG:")
@@ -147,8 +148,9 @@ class Module(object):
             if not line:
                 _fe.seek(fep)
                 return None
+            _line = color.RED + 'ERR: ' + color.END + line
             line = 'ERR: '+line
-            sys.stdout.write(line)
+            sys.stdout.write(_line)
             sys.stdout.flush()
             return line
 
@@ -193,10 +195,21 @@ class Module(object):
         _fo.close()
         _fe.close()
         end = datetime.datetime.now()
-        print("RCODE:    %d"%p.returncode)
+        self.print_rcode(p.returncode)
         print("DURATION: %s"%str(end-start))
         self.log_action(log, p.returncode, action)
         return p.returncode
+
+    def print_bold(self, s):
+        print(_colorize(s, color.BOLD))
+
+    def print_rcode(self, r):
+        if r == 1:
+            print(_colorize("RCODE:    %d"%r, color.RED))
+        elif r == 0:
+            print(_colorize("RCODE:    %d"%r, color.GREEN))
+        else:
+            print("RCODE:    %d"%r)
 
     def check(self):
         return self.action('check')
@@ -247,6 +260,9 @@ class Compliance(object):
         o.context = self
         o.rset_md5 = self.rset_md5
         return self
+
+    def print_bold(self, s):
+        print(_colorize(s, color.BOLD))
 
     def set_rset_md5(self):
         self.rset_md5 = ""
@@ -390,7 +406,7 @@ class Compliance(object):
                 return ''
             return '\n%s'%'\n'.join(map(lambda x: ' '+x, l))
 
-        print(banner("digest"))
+        self.print_bold(banner("digest"))
         print("%d n/a%s"%(n_na, modules(na)))
         print("%d passed%s"%(n_passed, modules(passed)))
         print("%d error%s%s"%(n_errors, _s(n_errors), modules(errors)))

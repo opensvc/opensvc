@@ -52,6 +52,7 @@ class Options(object):
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
+        self.dry_run = False
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Freezer):
@@ -235,6 +236,7 @@ class Svc(Resource, Freezer):
           'print_env_mtime',
           'print_disklist',
           'print_devlist',
+          'printsvc',
           'json_status',
           'json_disklist',
           'json_devlist',
@@ -367,6 +369,7 @@ class Svc(Resource, Freezer):
           "print_status",
           "print_disklist",
           "print_devlist",
+          'printsvc',
           "json_disklist",
           "json_devlist",
           "json_status",
@@ -404,7 +407,7 @@ class Svc(Resource, Freezer):
              app.1
              app
         """
-        if "stop" in action or action == "rollback":
+        if "stop" in action or action in ("rollback", "shutdown"):
             reverse = True
         else:
             reverse = False
@@ -2129,6 +2132,7 @@ class Svc(Resource, Freezer):
           'print_status',
           'print_disklist',
           'print_devlist',
+          'printsvc',
           'json_status',
           'json_disklist',
           'json_devlist',
@@ -2138,8 +2142,9 @@ class Svc(Resource, Freezer):
           'resource_monitor'
         ]
         if action in actions_list_no_log or \
-           'compliance' in action or \
-           'collector' in action or \
+           action.startswith("compliance") or \
+           action.startswith("collector") or \
+           action.startswith("docker") or \
            self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
         elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:

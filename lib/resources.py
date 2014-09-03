@@ -172,7 +172,8 @@ class Resource(object):
             self.action_triggers("pre", action)
             self.action_main(action)
             self.action_triggers("post", action)
-            if self.svc.options.dry_run and "start" in action or "stop" in action or "sync" in action or action == "provision":
+            if not self.svc.options.dry_run and \
+               ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action == "provision"):
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True)

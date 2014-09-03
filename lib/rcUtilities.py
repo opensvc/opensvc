@@ -85,7 +85,7 @@ def which(program):
 
     fpath, fname = os.path.split(program)
     if fpath:
-        if is_exe(program):
+        if os.path.isfile(program) and is_exe(program):
             return program
     else:
         for path in os.environ["PATH"].split(os.pathsep):

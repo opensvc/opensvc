@@ -44,7 +44,10 @@ def parse_data(data):
 def print_table(data, width=20, table=False):
     if table:
         from tabulate import tabulate
-        print tabulate(data, headers="firstrow", tablefmt="simple")
+        try:
+            print(tabulate(data, headers="firstrow", tablefmt="simple"))
+        except UnicodeEncodeError:
+            print(tabulate(data, headers="firstrow", tablefmt="simple").encode("utf-8"))
         return
     if not isinstance(data, list):
         data = parse_data(data)

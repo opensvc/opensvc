@@ -36,7 +36,26 @@ format:
 
 """
 
-def listpkg():
+def listpkg_ips():
+    if which('uname') is None:
+        return []
+    cmd = ['uname', '-p']
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
+    arc = out.split('\n')[0]
+    if which('pkg') is None:
+        return []
+    cmd = ['pkg', 'list', '-H']
+    (ret, out, err) = call(cmd, errlog=False, cache=True)
+    lines = []
+    for line in out.split('\n'):
+        l = line.split()
+        if len(l) != 3:
+            continue
+        x = [rcEnv.nodename, l[0], l[1], arc, "ips", ""]
+        lines.append(x)
+    return lines
+
+def listpkg_legacy():
     if which('pkginfo') is None:
         return []
     cmd = ['pkginfo', '-l']
@@ -49,7 +68,7 @@ def listpkg():
         l = map(lambda x: x.strip(), l)
         f = l[0]
         if f == "PKGINST":
-            x = [rcEnv.nodename, l[1], "", ""]
+            x = [rcEnv.nodename, l[1], "", "", "pkg", ""]
         elif f == "VERSION":
             x[2] = l[1]
         elif f == "ARCH":
@@ -57,18 +76,18 @@ def listpkg():
             lines.append(x)
 
     for i, x in enumerate(lines):
-        # pkg type
-        lines[i].append("pkg")
-
         # pkg install date
         try:
             t = os.stat("/var/sadm/pkg/"+x[1])[ST_MTIME]
             t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
             t = ""
-        lines[i].append(t)
+        lines[i][5] = t
 
     return lines
+
+def listpkg():
+    return listpkg_legacy() + listpkg_ips()
 
 def listpatch():
     """

@@ -1,0 +1,81 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+. $PATH_SCRIPT/make.lib
+
+MACOSBUILD=$OSVC/tmp/macos
+PKGLOC=$MACOSBUILD/tmppkg
+
+[ ! -d $PKGLOC ] && {
+        mkdir -p $PKGLOC || exit 1
+}
+
+OUTPUTPKG=output-$VERSION-$RELEASE.pkg
+FINALPKG=opensvc-$VERSION-$RELEASE.pkg
+
+echo "===> Preparing CHROOT <$CHROOT>"
+prepare_chroot || exit 1
+
+echo "===> MACOSBUILD <$MACOSBUILD>"
+
+#
+# scripts postinstall/preinstall/...
+SCRIPTS_D=$MACOSBUILD/scripts
+POSTINSTALL=$SCRIPTS_D/postinstall
+
+[ ! -d $SCRIPTS_D ] && {
+        mkdir -p $SCRIPTS_D || exit 1
+}
+
+cp $CHROOT/opt/opensvc/bin/postinstall $POSTINSTALL
+chmod 755 $POSTINSTALL
+
+echo "===> Building intermediate package <$PKGLOC/$OUTPUTPKG>"
+pkgbuild --root $CHROOT --scripts $SCRIPTS_D --identifier com.opensvc.agent --version $VERSION-$RELEASE --ownership recommended $PKGLOC/$OUTPUTPKG
+
+#
+# distribution file 
+XML_D=$MACOSBUILD/xml
+XMLDISTRIB=$XML_D/opensvc.distribution.xml
+
+[ ! -d $XML_D ] && {
+	mkdir -p $XML_D || exit 1
+}
+
+echo "===> Building distribution file <$XMLDISTRIB>"
+
+cat - <<-EOF >$XMLDISTRIB
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>OpenSVC Agent</title>
+    <organization>OpenSVC</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true" />
+    <!-- List all component packages -->
+    <pkg-ref id="com.opensvc.agent"
+             version="$VERSION-$RELEASE"
+             auth="root">$OUTPUTPKG</pkg-ref>
+    <!-- List them again here. They can now be organized
+         as a hierarchy if you want. -->
+    <choices-outline>
+        <line choice="com.opensvc.agent"/>
+    </choices-outline>
+    <!-- Define each choice above -->
+    <choice
+        id="com.opensvc.agent"
+        visible="false"
+        title="OpenSVC Agent daemon"
+        description="These are the tools to drive OpenSVC services"
+        start_selected="true">
+      <pkg-ref id="com.opensvc.agent"/>
+    </choice>
+</installer-gui-script>
+EOF
+
+echo "===> Building final package <$FINALPKG>"
+productbuild --distribution $XMLDISTRIB --package-path $PKGLOC --version $VERSION-$RELEASE $MACOSBUILD/../$FINALPKG
+echo "===> Build terminated, package location <$OSVC/tmp/$FINALPKG>"
+
+[ -x $PATH_SCRIPT/release_macos_pkg ] && $PATH_SCRIPT/release_macos_pkg $OSVC/tmp/$FINALPKG
+
+rm -rf $MACOSBUILD
