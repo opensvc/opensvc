@@ -693,7 +693,6 @@ def add_vg(svc, conf, s):
 
 def add_vmdg(svc, conf, s):
     kwargs = {}
-    s = 'vmdg'
 
     try:
         kwargs['container_id'] = conf_get_string_scope(svc, conf, s, 'container_id')
