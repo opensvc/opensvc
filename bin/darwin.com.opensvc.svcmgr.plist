@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.opensvc.svcmgr</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/opensvc/bin/opensvc.init.Darwin</string>
+		<string>start</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/opt/opensvc/log/svcmgr_boot_stderr.log</string>
+	<key>StandardOutPath</key>
+	<string>/opt/opensvc/log/svcmgr_boot_stdout.log</string>
+</dict>
+</plist>
