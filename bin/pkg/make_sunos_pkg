@@ -194,4 +194,4 @@ rm $REPODIR/postinstall
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
 
-[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg /tmp/$P $IPSP
+[ -x $REPODIR/release_sunos_pkg ] && $REPODIR/release_sunos_pkg /tmp/$P $IPSP
