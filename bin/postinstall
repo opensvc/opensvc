@@ -469,7 +469,7 @@ def missing_dir(sub):
     pathd = os.path.join(pathsvc, sub)
     if not os.path.exists(pathd):
 	print "create dir", pathd
-	os.makedirs(pathd, 755)
+	os.makedirs(pathd, 0755)
 
 def missing_dirs():
     logit("Begin")
