@@ -228,6 +228,7 @@ class SmfCfgS(object):
             else:
                 if verbose:
                     print >>sys.stderr, 'NOK: %s Prop %s values Do Not match, got:[%s], expected:[%s]' %(s,p,rvs,self.smfs[s][p]['val'])
+                r |= RET_ERR
         else:
             vv = self.smfs[s][p]['val'].split()
             m = True
@@ -269,11 +270,29 @@ class SmfCfgS(object):
         cmds = []
         for s in self.smfs:
             for p in self.smfs[s]:
+                added = False
                 rx,c = self.check_smf_prop_cre(s, p, verbose=verbose)
+                vx = self.smfs[s][p]['val'].split()
                 if c:
                    if rx == 0 :
-                       print '%s try to add prop %s = %s' %(s,p,self.smfs[s][p]['val'])
-                       cmds += ['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', self.smfs[s][p]['val']]
+                       print '%s try to add %s %s: = %s' %(s,p,self.smfs[s][p]['typ'],self.smfs[s][p]['val'])
+                       if len(vx) > 1:
+                           sxok = True
+                           for v in vx:
+                               if not (v.startswith('"') and v.endswith('"')):
+                                    """
+                                    sxok = False
+                                    break
+                                    """
+                           if sxok:
+                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', '(%s)'%self.smfs[s][p]['val']])
+                                added = True
+                           else:
+                                print >>sys.stderr, 'NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val'])
+                                r |= RET_ERR
+                       else:
+                           cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', self.smfs[s][p]['val']])
+                           added = True
                    else:
                        print >>sys.stderr, 'NOK: %s cannot add prop %s without a valid type' %(s,p)
                        r |= RET_ERR 
@@ -281,12 +300,28 @@ class SmfCfgS(object):
                    ry = self.check_smf_prop_val(s, p, verbose=verbose)
                    if ry != 0:
                        print '%s try to fix %s = %s' %(s,p,self.smfs[s][p]['val'])
-                       cmds += ['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['val']]
-                if len(cmds) != 0:
+                       if len(vx) > 1:
+                           sxok = True
+                           for v in vx:
+                               if not (v.startswith('"') and v.endswith('"')):
+                                    """
+                                    sxok = False
+                                    break
+                                    """
+                           if sxok:
+                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '(%s)'%self.smfs[s][p]['val']])
+                                added = True
+                           else:
+                                print >>sys.stderr, 'NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val'])
+                                r |= RET_ERR
+                       else:
+                           cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['val']])
+                           added = True
+                if added:
                    if self.smfs[s][p]['rel']:
-                       cmds += ['/usr/sbin/svcadm', 'refresh' ,s]
+                       cmds.append(['/usr/sbin/svcadm', 'refresh' ,s])
                        if self.smfs[s][p]['slp'] != 0:
-                           cmds += ['/usr/bin/sleep' , '%d'%self.smfs[s][p]['slp']]
+                           cmds.append(['/usr/bin/sleep' , '%d'%self.smfs[s][p]['slp']])
         for cmd in cmds:
             print 'EXEC:', ' '.join(cmd)
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -303,7 +338,7 @@ class SmfCfgS(object):
         return r
 
     def fix(self):
-        if self.osver < 11:
+        if self.osver < 5.11:
             return RET_NA
         r = self.fix_smfs()
         return r
@@ -332,3 +367,4 @@ if __name__ == "__main__":
         sys.exit(RET_ERR)
 
     sys.exit(RET)
+
