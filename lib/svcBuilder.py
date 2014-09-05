@@ -2232,7 +2232,7 @@ def add_apps_sysv(svc, conf):
         return s
 
     h = {}
-    for f in glob.glob(os.path.join(initd, 'S*')):
+    for f in glob.glob(os.path.join(initd, 'S[0-9]*')):
         script = os.path.realpath(f)
         if find_app(script) is not None:
             continue
@@ -2240,7 +2240,7 @@ def add_apps_sysv(svc, conf):
             h[script] = init_app(script)
         h[script]['start'] = get_seq(os.path.basename(f))
 
-    for f in glob.glob(os.path.join(initd, 'K*')):
+    for f in glob.glob(os.path.join(initd, 'K[0-9]*')):
         script = os.path.realpath(f)
         if find_app(script) is not None:
             continue
@@ -2248,7 +2248,7 @@ def add_apps_sysv(svc, conf):
             h[script] = init_app(script)
         h[script]['stop'] = get_seq(os.path.basename(f))
 
-    for f in glob.glob(os.path.join(initd, 'C*')):
+    for f in glob.glob(os.path.join(initd, 'C[0-9]*')):
         script = os.path.realpath(f)
         if find_app(script) is not None:
             continue
