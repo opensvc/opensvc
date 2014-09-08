@@ -765,6 +765,8 @@ def chmod_directories():
         for dirname, dirnames, filenames in os.walk(pathsvc):
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
+                if dirpath.startswith('/opt/opensvc/var/btrfs'):
+                    continue
 		try:
                     os.chmod(dirpath, 0755)
 		    msg = "Setting %s permissions to 0755" % dirpath
@@ -790,10 +792,14 @@ def dump_install_content():
 	for dirname, dirnames, filenames in os.walk(pathsvc):
 	    for subdirname in dirnames:
 		dirpath = os.path.join(dirname, subdirname)
+                if dirpath.startswith('/opt/opensvc/var/btrfs'):
+                    continue
                 log_file_info(dirpath)
 
             for filename in filenames:
 	        filepath = os.path.join(dirname, filename)
+                if filepath.startswith('/opt/opensvc/var/btrfs'):
+                    continue
 		log_file_info(filepath)
 
 try:
