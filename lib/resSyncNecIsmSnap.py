@@ -161,12 +161,34 @@ class syncNecIsmSnap(resSync.Sync):
             else:
                 self.array.sc_unlink_ld(ld)
 
+    def get_changing_snap(self, src):
+        bv_detail = self.array.sc_query_bv_detail(src)
+        l = []
+        for sv, data in bv_detail['sv'].items():
+            if data['Snap State'].endswith('ing'):
+                l.append(':'.join((sv, data['Snap State'])))
+        return l
+
+    def wait_for_changing_snap(self, src):
+        retry = 40
+        while retry > 0:
+            changing_snap = self.get_changing_snap(src)
+            if len(changing_snap) == 0:
+                return
+            self.log.info("SV are changing states : %s. Wait 30sec before retry" % ', '.join(changing_snap))
+            retry -= 1
+            try:
+                time.sleep(30)
+            except:
+                return
+
     def create(self):
         for sv, ld in self.svld:
             try:
                 src = self.array.sc_query_ld(sv)['LD Name']
             except:
                 raise ex.excError("can not determine source LD for SV:%s" % sv)
+            self.wait_for_changing_snap(src)
             self.array.sc_create_ld(src, sv)
 
     def link(self):

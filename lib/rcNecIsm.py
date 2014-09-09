@@ -200,6 +200,86 @@ SV Information
                 data['sv'].append(line[line.index(':')+1:])
         return data
 
+    def sc_query_bv_detail(self, bv):
+        """
+        BV Information
+            LD Name      : xxxxxxxxxxx_00CC
+            Type         : LX
+            Special File : /dev/sdaq
+            State        : normal
+            Reserve Area : -
+        
+        Pair Information
+            SV:LD Name              : xxxxxxxxxxx_00cc_SV00ce
+               Type                 : LX
+               Generation(Attribute): -1(normal)
+               Snap State           : snap/active        [2014/09/09 17:27:45]
+               Create   Start Time  : 2014/09/09 17:27:45
+               Processing Data Size : -
+               Snapshot Data Size   : 47.4GB
+               SV Guard             : off
+               LV Link Status       : link
+            LV:LD Name              : xxxxxxxxxxx_00cc_LV00cf
+               Type                 : LX
+               Special File         : /dev/sdar
+               LV Access            : rw
+            SV:LD Name              : xxxxxxxxxxx_00cc_SV00cd
+               Type                 : LX
+               Generation(Attribute): -2(normal)
+               Snap State           : snap/active        [2014/09/09 17:19:12]
+               Create   Start Time  : 2014/09/09 17:19:12
+               Processing Data Size : -
+               Snapshot Data Size   : 11.6GB
+               SV Guard             : off
+               LV Link Status       : link
+            LV:LD Name              : xxxxxxxxxxx_00cc_LV00d0
+               Type                 : LX
+               LV Access            : rw
+        """
+        cmd = ['-bv', bv, '-bvflg', 'ld', '-detail']
+        out, err, ret = self.sc_query_cmd(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        data = {
+          'sv': {},
+          'lv': {}
+        }
+        section = ""
+        for line in out.split('\n'):
+            line = line.strip()
+            if line.startswith("BV Information"):
+                section = "bvinfo"
+                continue
+            elif line.startswith("Pair Information"):
+                section = "pairinfo"
+                continue
+
+            if section == "bvinfo" and line.startswith("LD Name"):
+                data['LD Name'] = line.split(': ')[1]
+            elif section == "bvinfo" and line.startswith("State"):
+                data['State'] = line.split(': ')[1]
+
+            elif section.startswith("pairinfo") and line.startswith("SV:LD Name"):
+                ld_name = line.split(': ')[1]
+                if ld_name not in data['sv']:
+                    data['sv'][ld_name] = {}
+                section = "pairinfo_sv"
+            elif section == "pairinfo_sv" and line.startswith("Snap State"):
+                data['sv'][ld_name]["Snap State"] = line.split(': ')[1]
+
+
+            elif section.startswith("pairinfo") and line.startswith("LV:LD Name"):
+                ld_name = line.split(': ')[1]
+                if ld_name not in data['lv']:
+                    data['lv'][ld_name] = {}
+                section = "pairinfo_lv"
+            elif section == "pairinfo_lv" and line.startswith("Type"):
+                data['lv'][ld_name]["Type"] = line.split(': ')[1]
+
+        return data
+
+
+
 class NecIsms(Nec):
     def __init__(self, objects=[]):
         self.objects = objects
