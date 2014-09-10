@@ -181,6 +181,8 @@ class App(Res.Resource):
             self.script_exec = False
 
     def validate_script_path(self):
+        if self.script is None:
+            return
         if not self.script.startswith('/'):
             self.script = os.path.join(self.svc.initd, self.script)
         if os.path.exists(self.script):
@@ -230,7 +232,7 @@ class App(Res.Resource):
         if self.start_seq is None:
             return
         if self.script is None:
-            raise ex.excError("script %s does not exist"%self.script)
+            raise ex.excError("script does not exist")
 
         try:
             status = self.is_up()
