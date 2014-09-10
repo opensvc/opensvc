@@ -319,6 +319,7 @@ class Node(Svc, Freezer):
     def _setup_sync_conf(self):
         h = {}
         self.build_services()
+        self.config = ConfigParser.RawConfigParser()
         for svc in self.svcs:
             for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
                 for r in rs.resources:
