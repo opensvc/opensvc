@@ -28,7 +28,7 @@ except NameError:
 
 def make_sure_path_exists(path):
     try:
-        os.makedirs(path)
+        os.makedirs(path, 0755)
     except OSError, exception:
         if exception.errno != errno.EEXIST:
             raise
@@ -44,16 +44,17 @@ pathetc = os.path.join(pathsvc, 'etc')
 pathvar = os.path.join(pathsvc, 'var')
 pathtmp = os.path.join(pathsvc, 'tmp')
 pathlib = os.path.join(pathsvc, 'lib')
+pathlog = os.path.join(pathsvc, 'log')
 
-make_sure_path_exists(pathtmp)
+make_sure_path_exists(pathlog)
 
 def logit(msg):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     timestamp = str(datetime.datetime.now())
-    osvtmp = os.path.join(pathtmp, 'OpenSVC.postinstall.log')
+    osvlog = os.path.join(pathlog, 'postinstall.log')
     content = '['+calframe[1][3]+']['+timestamp+'] '+msg
-    f = open(osvtmp, 'a')
+    f = open(osvlog, 'a')
     f.write(content+'\n')
     f.close()
 
@@ -436,8 +437,8 @@ def install_rc():
         src = '/opt/opensvc/bin/opensvc.init.AIX'
         activate = activate_AIX
     elif sysname == "Darwin":
-        rc = '/System/Library/LaunchDaemons/opensvc.plist'
-        src = '/opt/opensvc/bin/opensvc.init.Darwin'
+        rc = '/Library/LaunchDaemons/com.opensvc.svcmgr.plist'
+        src = '/opt/opensvc/bin/darwin.com.opensvc.svcmgr.plist'
         activate = activate_Darwin
     elif sysname == 'Windows':
         return False
@@ -469,7 +470,7 @@ def missing_dir(sub):
     pathd = os.path.join(pathsvc, sub)
     if not os.path.exists(pathd):
 	print "create dir", pathd
-	os.makedirs(pathd, 755)
+	os.makedirs(pathd, 0755)
 
 def missing_dirs():
     logit("Begin")
@@ -755,6 +756,50 @@ def purge_collector_api_cache():
     if os.path.exists(fname):
         os.unlink(fname)
 
+def chmod_directories():
+    logit("Begin")
+    if sysname == 'Windows':
+	logit("Skip : unsupported on Windows")
+        return
+    else:
+        for dirname, dirnames, filenames in os.walk(pathsvc):
+            if dirname.startswith('/opt/opensvc/var'):
+                continue
+            for subdirname in dirnames:
+                dirpath = os.path.join(dirname, subdirname)
+		try:
+                    os.chmod(dirpath, 0755)
+		    msg = "Setting %s permissions to 0755" % dirpath
+                except:
+		    msg = "Error while trying to set %s permissions to 0755" % dirpath
+                logit(msg)
+
+def log_file_info(path):
+    try:
+        info = os.lstat(path)
+    except:
+	msg = "Error while trying to get [%s] os.lstat information" % path
+        logit(msg)
+	return
+    string = "uid[%d] gid[%d] perms[%s] file[%s]" % (info.st_uid, info.st_gid, oct(info.st_mode & 0777), path)
+    logit(string)
+
+def dump_install_content():
+    logit("Begin")
+    if sysname == 'Windows':
+        return
+    else:
+	for dirname, dirnames, filenames in os.walk(pathsvc):
+            if dirname.startswith('/opt/opensvc/var'):
+                continue
+	    for subdirname in dirnames:
+		dirpath = os.path.join(dirname, subdirname)
+                log_file_info(dirpath)
+
+            for filename in filenames:
+	        filepath = os.path.join(dirname, filename)
+		log_file_info(filepath)
+
 try:
     install_pythonlink()
     move_usr_to_opt()
@@ -769,6 +814,8 @@ try:
     move_host_mode()
     nodeconf_params()
     purge_collector_api_cache()
+    chmod_directories()
+    dump_install_content()
 except:
     save_exc()
     sys.exit(1)
