@@ -107,7 +107,31 @@ class Ip(Res.Ip):
                     b = b / 2
         return '/'+str(cnt)
         
+    def wait_net_smf(self, max_wait=30):
+        r = 0
+        prev_s = None
+        while True:
+            s = self.get_smf_status("network/routing-setup")
+            if s == "online":
+                break
+            if s != prev_s or prev_s is None:
+                self.log.info("waiting for network/routing-setup online state. current state: %s" % s)
+            prev_s = s
+            r += 1
+            if r > max_wait:
+                self.log.error("timeout waiting for network/routing-setup online state")
+                break
+            time.sleep(1)
+
+    def get_smf_status(self, fmri):
+        cmd = ["/usr/bin/svcs", "-H", "-o", "state", fmri]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return "undef"
+
     def startip_cmd(self):
+        self.wait_net_smf()
         ret, out, err = (0, '', '')
         cmd = ['ipadm', 'show-if', self.stacked_dev]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
