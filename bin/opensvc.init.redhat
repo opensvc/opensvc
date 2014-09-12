@@ -12,8 +12,13 @@
 # Source function library.
 . /etc/init.d/functions
 
+DEFAULTS="/etc/sysconfig/opensvc"
+
+# Include opensvc defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
 osvc_path=/opt/opensvc/bin
-osvc_opts="--parallel"
+osvc_opts=${osvc_opts:---parallel}
 allservices=${osvc_path}/allservices
 
 case $1 in

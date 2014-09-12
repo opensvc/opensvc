@@ -9,7 +9,7 @@
 # Short-Description:    OpenSVC services startup script
 ### END INIT INFO
 
-DEFAULTS="/etc/default/opensvc"
+DEFAULTS="/etc/sysconfig/opensvc"
 
 # Include opensvc defaults if available
 [ -r "$DEFAULTS" ] && . "$DEFAULTS"

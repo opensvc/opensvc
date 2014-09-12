@@ -7,7 +7,6 @@ import glob
 import sys
 import tempfile
 import inspect
-import datetime
 
 python_names = ['python2.7', 'python2.6']
 python_paths = [
@@ -51,7 +50,12 @@ make_sure_path_exists(pathlog)
 def logit(msg):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    timestamp = str(datetime.datetime.now())
+    try:
+        import datetime
+        timestamp = str(datetime.datetime.now())
+    except:
+        timestamp = '?'
+
     osvlog = os.path.join(pathlog, 'postinstall.log')
     content = '['+calframe[1][3]+']['+timestamp+'] '+msg
     f = open(osvlog, 'a')
@@ -389,18 +393,42 @@ def update_file(filename, srctext, replacetext):
         print line.rstrip('\n')
     fileinput.close()
 
+def install_params(path2file):
+    logit("Begin")
+    """ install template file with tunable variables
+    """
+    if os.path.exists(path2file):
+        return
+
+    try:
+        f = open(path2file, "w")
+    except:
+        import traceback
+        traceback.print_exc()
+    else:
+        f.write("# This is the OpenSVC startup configuration file\n")
+        f.write("# You may need to adapt parameters to fit your environment\n")
+        f.write("# This file is not modified during software upgrades\n")
+        f.write("# If empty, default settings are used in the init script\n\n\n")
+        f.write("# arguments passed to the allservices boot command at system boot\n")
+        f.write("#osvc_opts=\n")
+        f.close()
+ 
 def install_rc():
     logit("Begin")
     """install startup script
     """
+    params = None
 
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.debian'
         activate = activate_debian
     elif os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.debian'
+        params = '/etc/sysconfig/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.suse'
         activate = activate_redhat
     elif os.path.exists('/etc/redhat-release'):
         try:
@@ -415,6 +443,7 @@ def install_rc():
         else:
             rc = '/etc/init.d/opensvc'
             activate = activate_redhat
+        params = '/etc/sysconfig/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.redhat'
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
@@ -422,6 +451,7 @@ def install_rc():
         activate = activate_hpux
     elif sysname == "SunOS":
         rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
     elif sysname == "OSF1":
@@ -430,6 +460,7 @@ def install_rc():
         activate = activate_OSF1
     elif sysname == "FreeBSD":
         rc = '/etc/rc.d/opensvc'
+        params = '/etc/defaults/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.FreeBSD'
         activate = activate_FreeBSD
     elif sysname == "AIX":
@@ -438,6 +469,7 @@ def install_rc():
         activate = activate_AIX
     elif sysname == "Darwin":
         rc = '/Library/LaunchDaemons/com.opensvc.svcmgr.plist'
+        params = '/etc/defaults/opensvc'
         src = '/opt/opensvc/bin/darwin.com.opensvc.svcmgr.plist'
         activate = activate_Darwin
     elif sysname == 'Windows':
@@ -451,6 +483,10 @@ def install_rc():
 
     shutil.copyfile(src, rc)
     os.chmod(rc, 0755)
+
+    if params is not None and not os.path.exists(params):
+        install_params(params)
+        
     activate()
 
 def gen_keys():
