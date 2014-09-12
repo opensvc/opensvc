@@ -451,6 +451,7 @@ def install_rc():
         activate = activate_hpux
     elif sysname == "SunOS":
         rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.SunOS'
         activate = activate_SunOS
     elif sysname == "OSF1":
