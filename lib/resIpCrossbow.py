@@ -134,23 +134,17 @@ class Ip(Res.Ip):
         self.wait_net_smf()
         ret, out, err = (0, '', '')
         cmd = ['ipadm', 'show-if', self.stacked_dev]
-        p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         _out = p.communicate()[0].split("\n")
         if len(_out) < 2:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        n = 5
-        while n != 0:
-            cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
-            r, o, e = self.vcall(cmd)
-            if r == 0:
-                break
-            self.log.error("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
-            time.sleep(5)
-            n -= 1
+        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
+        r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=['ipadm', 'show-if' ]
             self.vcall(cmd)
+            raise ex.excError("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
         ret += r
         out += o
         err += e
