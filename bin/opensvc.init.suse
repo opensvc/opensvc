@@ -1,0 +1,29 @@
+#!/bin/sh -e
+
+### BEGIN INIT INFO
+# Provides:             opensvc
+# Required-Start:       $network
+# Required-Stop:        
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    OpenSVC services startup script
+### END INIT INFO
+
+DEFAULTS="/etc/sysconfig/opensvc"
+
+# Include opensvc defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
+osvc_path=/opt/opensvc/bin
+osvc_opts=${osvc_opts:---parallel}
+allservices=${osvc_path}/allservices
+
+case $1 in
+start)
+        ${osvc_path}/nodemgr pushasset
+	${allservices} ${osvc_opts} boot
+	;;
+stop)
+	${allservices} ${osvc_opts} shutdown
+	;;
+esac

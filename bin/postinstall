@@ -427,7 +427,8 @@ def install_rc():
         activate = activate_debian
     elif os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.debian'
+        params = "/etc/sysconfig/opensvc"
+        src = '/opt/opensvc/bin/opensvc.init.suse'
         activate = activate_redhat
     elif os.path.exists('/etc/redhat-release'):
         try:
