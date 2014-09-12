@@ -469,6 +469,7 @@ def install_rc():
         activate = activate_AIX
     elif sysname == "Darwin":
         rc = '/Library/LaunchDaemons/com.opensvc.svcmgr.plist'
+        params = '/etc/defaults/opensvc'
         src = '/opt/opensvc/bin/darwin.com.opensvc.svcmgr.plist'
         activate = activate_Darwin
     elif sysname == 'Windows':
