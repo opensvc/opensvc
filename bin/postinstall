@@ -393,13 +393,36 @@ def update_file(filename, srctext, replacetext):
         print line.rstrip('\n')
     fileinput.close()
 
+def install_params(path2file):
+    logit("Begin")
+    """ install template file with tunable variables
+    """
+    if os.path.exists(path2file):
+        return
+
+    try:
+        f = open(path2file, "w")
+    except:
+        import traceback
+        traceback.print_exc()
+    else:
+        f.write("# This is the OpenSVC startup configuration file\n")
+        f.write("# You may need to adapt parameters to fit your environment\n")
+        f.write("# This file is not modified during software upgrades\n")
+        f.write("# If empty, default settings are used in the init script\n\n\n")
+        f.write("# arguments passed to the allservices boot command at system boot\n")
+        f.write("#osvc_opts=\n")
+        f.close()
+ 
 def install_rc():
     logit("Begin")
     """install startup script
     """
+    params = None
 
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.debian'
         activate = activate_debian
     elif os.path.exists('/etc/SuSE-release'):
@@ -455,6 +478,10 @@ def install_rc():
 
     shutil.copyfile(src, rc)
     os.chmod(rc, 0755)
+
+    if params is not None and not os.path.exists(params):
+        install_params(params)
+        
     activate()
 
 def gen_keys():
