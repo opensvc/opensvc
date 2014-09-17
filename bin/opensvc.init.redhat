@@ -4,7 +4,7 @@
 #
 # Starts the services driven by OpenSVC
 #
-# chkconfig: 345 99 01
+# chkconfig: 2345 99 01
 # description: Starts the services driven by OpenSVC whose
 #              autostart node is this node.
 # processname:

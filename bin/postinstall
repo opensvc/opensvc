@@ -299,27 +299,70 @@ def activate_chkconfig(svc):
         return False
     return True
 
-def activate_ovm():
+def activate_systemd(launcher):
     logit("Begin")
-    activate_chkconfig('zopensvc')
+    systemdsvc = 'opensvc-agent.service'
+    
+    # populate systemd tree with opensvc unit file
+    src = os.path.join(pathbin, 'systemd.opensvc-agent.service')
+    dst = os.path.join('/etc/systemd/system/', systemdsvc)
+    shutil.copyfile(src, dst)
+    os.chmod(dst, 0644)
+    
+    # add symlink to resolve systemd service call
+    systemd_call = '/opt/opensvc/bin/opensvc.init'
+    if not os.path.islink(systemd_call):
+        if os.path.exists(systemd_call):
+            os.unlink(systemd_call)
+        msg = "create link %s -> %s"%(systemd_call, launcher)
+        logit(msg)
+        try:
+            os.symlink(launcher, systemd_call)
+        except:
+            logit("Error while trying to create opensvc.init symlink")
 
-def activate_redhat():
-    logit("Begin")
-    activate_chkconfig('opensvc')
-
-def activate_debian():
-    logit("Begin")
-    cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
+    # reload systemd configuration
+    cmd = ['systemctl', '-q', 'daemon-reload']
     ret = os.system(' '.join(cmd))
     if ret > 0:
-        return False
-    cmd = ['update-rc.d', 'opensvc', 'defaults', '99', '01']
+        logit("WARN : Problem during systemctl reload")
+    
+    # enable opensvc agent startup through systemd
+    cmd = ['systemctl', '-q', 'enable', systemdsvc]
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
+        logit("WARN : Problem during systemctl enable")
+
+
+def systemd_mgmt():
+    logit("Begin")
+    cmd = ['systemctl', '--version', '>>/dev/null', '2>&1']
     ret = os.system(' '.join(cmd))
     if ret > 0:
         return False
     return True
 
-def activate_hpux():
+def activate_ovm(launcher):
+    logit("Begin")
+    activate_chkconfig('zopensvc')
+
+def activate_redhat(launcher):
+    logit("Begin")
+    activate_chkconfig('opensvc')
+
+def activate_debian(launcher):
+    logit("Begin")
+    cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
+        return False
+    cmd = ['update-rc.d', 'opensvc', 'defaults']
+    ret = os.system(' '.join(cmd))
+    if ret > 0:
+        return False
+    return True
+
+def activate_hpux(launcher):
     logit("Begin")
     rc = "/sbin/init.d/opensvc"
     links = ["/sbin/rc1.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
@@ -340,7 +383,7 @@ def activate_hpux():
         traceback.print_exc()
     return True
 
-def activate_AIX():
+def activate_AIX(launcher):
     logit("Begin")
     rc = "/etc/rc.d/init.d/opensvc"
     links = ["/etc/rc.d/rc2.d/S990opensvc"]
@@ -352,7 +395,7 @@ def activate_AIX():
             os.symlink(rc, l)
     return True
 
-def activate_OSF1():
+def activate_OSF1(launcher):
     logit("Begin")
     rc = "/sbin/init.d/opensvc"
     links = ["/sbin/rc0.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
@@ -363,7 +406,7 @@ def activate_OSF1():
 	    os.symlink(rc, l)
     return True
 
-def activate_SunOS():
+def activate_SunOS(launcher):
     logit("Begin")
     rc = "/etc/init.d/opensvc"
     links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
@@ -374,11 +417,11 @@ def activate_SunOS():
             os.symlink(rc, l)
     return True
 
-def activate_FreeBSD():
+def activate_FreeBSD(launcher):
     logit("Begin")
     return True
 
-def activate_Darwin():
+def activate_Darwin(launcher):
     logit("Begin")
     return True
 
@@ -419,18 +462,33 @@ def install_rc():
     """install startup script
     """
     params = None
+    copyrc = True
 
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.debian'
-        activate = activate_debian
+        if systemd_mgmt():
+            logit("Debian with systemd")
+            copyrc = False
+            activate = activate_systemd
+        else:
+            logit("Debian with update-rc.d (rely on insserv)")
+            activate = activate_debian
     elif os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.suse'
-        activate = activate_redhat
+        if systemd_mgmt():
+            logit("SuSE with systemd")
+            copyrc = False
+            activate = activate_systemd
+        else:
+            logit("SuSE with chkconfig (rely on insserv)")
+            activate = activate_redhat       
     elif os.path.exists('/etc/redhat-release'):
+        params = '/etc/sysconfig/opensvc'
+        src = '/opt/opensvc/bin/opensvc.init.redhat'
         try:
             f = open('/etc/redhat-release', 'r')
             buff = f.read()
@@ -442,9 +500,14 @@ def install_rc():
             activate = activate_ovm
         else:
             rc = '/etc/init.d/opensvc'
-            activate = activate_redhat
-        params = '/etc/sysconfig/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.redhat'
+            if systemd_mgmt():
+                logit("Red Hat with systemd")
+                copyrc = False
+                activate = activate_systemd
+            else:
+                logit("Red Hat with chkconfig (rely on insserv)")
+                activate = activate_redhat    
+
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
         src = '/opt/opensvc/bin/opensvc.init.hpux'
@@ -481,13 +544,16 @@ def install_rc():
     if os.path.islink(rc):
         os.unlink(rc)
 
-    shutil.copyfile(src, rc)
-    os.chmod(rc, 0755)
+    if copyrc:
+        logit("Copying src launcher script to rc")
+        shutil.copyfile(src, rc)
+        os.chmod(rc, 0755)
 
     if params is not None and not os.path.exists(params):
+        logit("Installing default parameters file")
         install_params(params)
         
-    activate()
+    activate(src)
 
 def gen_keys():
     logit("Begin")
