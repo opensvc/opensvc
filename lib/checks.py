@@ -51,6 +51,7 @@ class checks(check):
         self.register('checkRaidMegaRaid')
         self.register('checkRaidSas2')
         self.register('checkFmFmadm')
+        self.register('checkFmOpenManage')
         self.register('checkMce')
         self.register('checkZpool')
         self.register('checkBtrfsDevStats')
