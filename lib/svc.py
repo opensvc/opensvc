@@ -2151,6 +2151,9 @@ class Svc(Resource, Freezer):
             if action == "syncall" or "syncupdate": kwargs = {}
             elif action == "syncnodes": kwargs = {'target': 'nodes'}
             elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
+            if not self.can_sync(**kwargs):
+                self.log.debug("nothing to sync for the service for now")
+                return 0
             try:
                 # timeout=1, delay=1 => immediate response
                 self.svclock(action, timeout=1, delay=1)
@@ -2158,11 +2161,7 @@ class Svc(Resource, Freezer):
                 if not self.cron:
                     self.log.info("%s action is already running"%action)
                 return 0
-            if self.can_sync(**kwargs):
-                err = self.do_logged_action(action, waitlock=waitlock)
-            else:
-                err = 0
-                self.log.debug("nothing to sync for the service for now")
+            err = self.do_logged_action(action, waitlock=waitlock)
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
