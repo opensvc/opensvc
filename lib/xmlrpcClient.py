@@ -867,10 +867,12 @@ class Collector(object):
                 print("%s collection is disabled in node configuration"%stat)
                 continue
             h[stat] = sp.get(stat)
+            print("%s stats: %d samples" % (stat, len(h[stat][1])))
         import cPickle
         args = [cPickle.dumps(h)]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
+        print("pushing")
         self.proxy.insert_stats(*args)
     
     def push_asset(self, node, sync=True):
