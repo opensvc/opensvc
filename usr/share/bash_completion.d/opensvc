@@ -32,7 +32,7 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="configure create disklist freeze frozen mount postsync presync print_status print_service edit_service prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance"
+        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit_service prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -55,7 +55,7 @@ _svcmgr()
 		local opts="monitor"
 		;;
 	    print|json)
-		local opts="disklist status"
+		local opts="disklist status resource"
 		;;
             *)
                 ;;
@@ -115,6 +115,9 @@ _svcmgr()
             "compliance detach")
 		local opts="moduleset ruleset"
 		;;
+            "print resource")
+		local opts="status"
+		;;
             *)
                 ;;
         esac
@@ -158,6 +161,9 @@ _svcmgr()
 		;;
             "compliance list ruleset")
 		local opts="--ruleset"
+		;;
+            "print resource status")
+		local opts="--rid"
 		;;
         esac
     elif [ $COMP_CWORD -eq 5 ]; then

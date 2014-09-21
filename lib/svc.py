@@ -228,6 +228,7 @@ class Svc(Resource, Freezer):
           'push',
           'push_appinfo',
           'print_status',
+          'print_resource_status',
           'status',
           'freeze',
           'frozen',
@@ -369,6 +370,7 @@ class Svc(Resource, Freezer):
           "disable",
           "status",
           "print_status",
+          'print_resource_status',
           "print_disklist",
           "print_devlist",
           'print_config',
@@ -561,6 +563,18 @@ class Svc(Resource, Freezer):
                     tmpsection[option] = config.get(section, option)
             svcenv[section] = tmpsection
         print(json.dumps(svcenv))
+
+    def print_resource_status(self):
+        if len(self.action_rid) != 1:
+            print("only one resource id is allowed", file=sys.stderr)
+            return 1
+        for rid in self.action_rid:
+            if rid not in self.resources_by_id:
+                print("resource not found")
+                continue
+            r = self.resources_by_id[rid]
+            print(rcStatus.colorize(rcStatus.status_str(r.status())))
+        return 0
 
     def print_status(self):
         """print() each resource status for a service
@@ -2102,6 +2116,7 @@ class Svc(Resource, Freezer):
           'print_config',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
           'json_status',
@@ -2151,6 +2166,7 @@ class Svc(Resource, Freezer):
           'push_appinfo',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
           'print_config',
