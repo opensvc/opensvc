@@ -213,6 +213,10 @@ class Vg(resVgRaw.Vg):
         return not r
 
     def _status(self, verbose=False):
+        if self.dummy:
+            if not self.has_it():
+                return rcStatus.WARN
+            return rcStatus.NA
         if rcEnv.nodename in self.always_on:
             if self.is_up(): return rcStatus.STDBY_UP
             else: return rcStatus.STDBY_DOWN
