@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenSVC Agent
+Documentation=http://docs.opensvc.com/ file:/opt/opensvc/usr/share/doc/
+
+[Service]
+Type=idle
+Environment="PATH=/opt/opensvc/bin:/opt/opensvc/etc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/opensvc/bin/opensvc.init start
+ExecStop=/opt/opensvc/bin/opensvc.init stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

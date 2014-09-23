@@ -28,6 +28,7 @@ from rcUtilities import justcall
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
 import rcExceptions as ex
 import xmlrpcClient
+import sys
 import os
 import signal
 import lock
@@ -227,6 +228,7 @@ class Svc(Resource, Freezer):
           'push',
           'push_appinfo',
           'print_status',
+          'print_resource_status',
           'status',
           'freeze',
           'frozen',
@@ -236,7 +238,8 @@ class Svc(Resource, Freezer):
           'print_env_mtime',
           'print_disklist',
           'print_devlist',
-          'printsvc',
+          'print_config',
+          'edit_config',
           'json_status',
           'json_disklist',
           'json_devlist',
@@ -367,9 +370,11 @@ class Svc(Resource, Freezer):
           "disable",
           "status",
           "print_status",
+          'print_resource_status',
           "print_disklist",
           "print_devlist",
-          'printsvc',
+          'print_config',
+          'edit_config',
           "json_disklist",
           "json_devlist",
           "json_status",
@@ -558,6 +563,18 @@ class Svc(Resource, Freezer):
                     tmpsection[option] = config.get(section, option)
             svcenv[section] = tmpsection
         print(json.dumps(svcenv))
+
+    def print_resource_status(self):
+        if len(self.action_rid) != 1:
+            print("only one resource id is allowed", file=sys.stderr)
+            return 1
+        for rid in self.action_rid:
+            if rid not in self.resources_by_id:
+                print("resource not found")
+                continue
+            r = self.resources_by_id[rid]
+            print(rcStatus.colorize(rcStatus.status_str(r.status())))
+        return 0
 
     def print_status(self):
         """print() each resource status for a service
@@ -1900,8 +1917,25 @@ class Svc(Resource, Freezer):
     def syncverify(self):
         self.sub_set_action("sync.dds", "syncverify")
 
-    def printsvc(self):
-        print(str(self))
+    def print_config(self):
+        try:
+            with open(self.pathenv, 'r') as f:
+                print(f.read())
+        except Exception as e:
+            print(s, file=sys.stderr)
+
+    def edit_config(self):
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        return os.system(' '.join((editor, self.pathenv)))
 
     def can_sync(self, target=None):
         ret = False
@@ -2078,9 +2112,11 @@ class Svc(Resource, Freezer):
           'frozen',
           'push',
           'push_appinfo',
-          'printsvc',
+          'edit_config',
+          'print_config',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
           'json_status',
@@ -2130,9 +2166,11 @@ class Svc(Resource, Freezer):
           'push_appinfo',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
-          'printsvc',
+          'print_config',
+          'edit_config',
           'json_status',
           'json_disklist',
           'json_devlist',
@@ -2345,7 +2383,6 @@ class Svc(Resource, Freezer):
 
     def unset(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2369,7 +2406,6 @@ class Svc(Resource, Freezer):
 
     def get(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2389,7 +2425,6 @@ class Svc(Resource, Freezer):
 
     def set(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2453,7 +2488,6 @@ class Svc(Resource, Freezer):
         return delete([self.svcname], self.action_rid)
 
     def docker(self):
-        import sys
         import subprocess
         containers = self.get_resources('container')
         if not hasattr(self, "docker_argv"):

@@ -255,6 +255,9 @@ class App(Res.Resource):
             return
         if self.script is None:
             return
+        if self.status() == rcStatus.DOWN:
+            self.log.info("%s is already stopped" % self.label)
+            return
         r = self.run('stop')
         if r != 0:
             raise ex.excError()

@@ -21,7 +21,8 @@ from rcGlobalEnv import *
 
 action_desc = {
     'Service actions': {
-      'printsvc': 'display service live configuration',
+      'print_config': 'display service current configuration',
+      'edit_config': 'edit service configuration',
       'boot': 'start a service if executed on the primary node (or one of the primary nodes in case of a flex service), startstandby if not',
       'shutdown': 'stop a service, disabling the background database logging',
       'start': 'start a service, chaining startip-diskstart-startapp',
@@ -43,6 +44,7 @@ action_desc = {
       'enable': 'enable resources passed through --rid in services passed through --service. Specifying no resource enables the whole service.',
       'status': 'return service overall status code',
       'print_status': 'display service resource status',
+      'print_resource_status': 'display a specific service resource status, pointed by --rid',
       'print_env_mtime': 'display service env file modification time',
       'freeze': 'set up a flag to block actions on this service',
       'thaw': 'remove the flag to unblock actions on this service',
