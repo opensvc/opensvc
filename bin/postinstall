@@ -44,6 +44,7 @@ pathvar = os.path.join(pathsvc, 'var')
 pathtmp = os.path.join(pathsvc, 'tmp')
 pathlib = os.path.join(pathsvc, 'lib')
 pathlog = os.path.join(pathsvc, 'log')
+pathusr = os.path.join(pathsvc, 'usr')
 
 make_sure_path_exists(pathlog)
 
@@ -855,7 +856,7 @@ def save_exc():
 def purge_collector_api_cache():
     logit("Begin")
     fname = os.path.join(pathvar, "collector")
-    if os.path.exists(fname):
+    if os.path.exists(fname) and os.path.isfile(fname):
         os.unlink(fname)
 
 def chmod_directories():
@@ -863,17 +864,15 @@ def chmod_directories():
     if sysname == 'Windows':
 	logit("Skip : unsupported on Windows")
         return
-    else:
-        for dirname, dirnames, filenames in os.walk(pathsvc):
-            if dirname.startswith('/opt/opensvc/var'):
-                continue
+    for d in (pathbin, pathlib, pathusr):
+        for dirname, dirnames, filenames in os.walk(d):
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
-		try:
+                try:
                     os.chmod(dirpath, 0755)
-		    msg = "Setting %s permissions to 0755" % dirpath
+                    msg = "Setting %s permissions to 0755" % dirpath
                 except:
-		    msg = "Error while trying to set %s permissions to 0755" % dirpath
+                    msg = "Error while trying to set %s permissions to 0755" % dirpath
                 logit(msg)
 
 def log_file_info(path):
@@ -890,17 +889,14 @@ def dump_install_content():
     logit("Begin")
     if sysname == 'Windows':
         return
-    else:
-	for dirname, dirnames, filenames in os.walk(pathsvc):
-            if dirname.startswith('/opt/opensvc/var'):
-                continue
-	    for subdirname in dirnames:
-		dirpath = os.path.join(dirname, subdirname)
+    for d in (pathbin, pathlib, pathusr):
+        for dirname, dirnames, filenames in os.walk(d):
+            for subdirname in dirnames:
+                dirpath = os.path.join(dirname, subdirname)
                 log_file_info(dirpath)
-
             for filename in filenames:
-	        filepath = os.path.join(dirname, filename)
-		log_file_info(filepath)
+                filepath = os.path.join(dirname, filename)
+                log_file_info(filepath)
 
 try:
     install_pythonlink()
