@@ -85,6 +85,7 @@ class Svc(Resource, Freezer):
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.status_types = ["container.hpvm",
                              "container.kvm",
+                             "container.amazon",
                              "container.openstack",
                              "container.vcloud",
                              "container.xen",
@@ -1677,6 +1678,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("container.esx", "shutdown")
         self.sub_set_action("container.ovm", "shutdown")
         self.sub_set_action("container.kvm", "shutdown")
+        self.sub_set_action("container.amazon", "shutdown")
         self.sub_set_action("container.openstack", "shutdown")
         self.sub_set_action("container.vcloud", "shutdown")
         self.sub_set_action("container.jail", "shutdown")

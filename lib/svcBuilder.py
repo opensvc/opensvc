@@ -1111,6 +1111,64 @@ def add_containers_vcloud(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_containers_amazon(svc, conf, s):
+    kwargs = {}
+
+    # mandatory keywords
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        kwargs['name'] = svc.svcname
+
+    try:
+        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+    except ex.OptNotFound:
+        svc.log.error("cloud_id must be set in section %s"%s)
+        return
+
+    # optional keywords
+    try:
+        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+    except ex.OptNotFound:
+        pass
+
+    # provisioning keywords
+    try:
+        kwargs['image_id'] = conf_get_string_scope(svc, conf, s, 'image_id')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['size'] = conf_get_string_scope(svc, conf, s, 'size')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['key_name'] = conf_get_string_scope(svc, conf, s, 'key_name')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['subnet'] = conf_get_string_scope(svc, conf, s, 'subnet')
+    except ex.OptNotFound:
+        pass
+
+    m = __import__('resContainerAmazon')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    r = m.CloudVm(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
+
 def add_containers_openstack(svc, conf, s):
     kwargs = {}
 
