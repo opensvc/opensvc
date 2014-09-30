@@ -69,6 +69,8 @@ class syncIbmdsSnap(resSync.Sync):
         s = 'mkflash -dev %s -persist' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
+        else:
+            s += ' -nocp'
         l = [s]
         if options is not None:
             l.append(options)
@@ -82,6 +84,8 @@ class syncIbmdsSnap(resSync.Sync):
         s = 'resyncflash -dev %s -persist -record' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
+        else:
+            s += ' -nocp'
         l = [s]
         if options is not None:
             l.append(options)
