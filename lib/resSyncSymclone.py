@@ -19,7 +19,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, justcall
 import rcExceptions as ex
 import rcStatus
 import time
@@ -40,8 +40,10 @@ class syncSymclone(resSync.Sync):
 
     def get_symld(self):
         cmd = ['/usr/symcli/bin/symld', '-g', self.symdg, 'list', '-v']
-        (ret, out, err) = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
+            if len(err) > 0:
+                self.status_log(err.strip())
             raise ex.excError
         ld = {}
         for line in out.split('\n'):
@@ -85,12 +87,12 @@ class syncSymclone(resSync.Sync):
             if pair in self.active_pairs:
                 continue
             cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+pair
-            (ret, out, err) = self.call(cmd)
+            out, err, ret = justcall(cmd)
             if ret == 0:
                 self.active_pairs.append(pair)
                 continue
             cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copyinprog']+pair
-            (ret, out, err) = self.call(cmd)
+            out, err, ret = justcall(cmd)
             if ret == 0:
                 self.active_pairs.append(pair)
                 continue
@@ -206,8 +208,11 @@ class syncSymclone(resSync.Sync):
                 self.last = last
 
     def _status(self, verbose=False):
-        self.get_syminfo()
-        self.get_last()
+        try:
+            self.get_syminfo()
+            self.get_last()
+        except:
+            return rcStatus.WARN
 
         if self.last is None:
             return rcStatus.DOWN
