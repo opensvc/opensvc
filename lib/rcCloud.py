@@ -1,4 +1,5 @@
 import socket
+import rcExceptions as ex
 
 class Cloud(object):
     def __init__(self, s, auth):
@@ -13,6 +14,6 @@ class Cloud(object):
         try:
             nodes = self.driver.list_nodes()
         except socket.error as e:
-            raise ex.excExecError("error connecting to %s cloud url"%s)
+            raise ex.excError("error connecting to %s cloud url (%s)"%(self.cid, str(e)))
         return nodes
 
