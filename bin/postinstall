@@ -10,7 +10,8 @@ import inspect
 
 python_names = ['python2.7', 'python2.6']
 python_paths = [
-  os.path.join(os.sep, "opt", "python-2.6.4", "bin", "python")
+  os.path.join(os.sep, "opt", "python-2.6.4", "bin", "python"),
+  os.path.join(os.sep, "usr", "local", "bin", "python2.6")
 ]
 
 try:
