@@ -177,8 +177,8 @@ class Vg(resDg.Dg):
             n = rcEnv.nodename
         try:
             nodes = c.driver.list_nodes()
-        except:
-            raise ex.excError()
+        except Exception as e:
+            raise ex.excError(str(e))
         for node in nodes:
             if node.name == n:
                 return node
