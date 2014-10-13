@@ -171,6 +171,23 @@ class Lxc(resContainer.Container):
         return self.is_up(nodename)
 
     def is_up(self, nodename=None):
+        if which("lxc-ps"):
+            return self.is_up_ps(nodename=nodename)
+        else:
+            return self.is_up_info(nodename=nodename)
+
+    def is_up_info(self, nodename=None):
+        cmd = ['lxc-info', '--name', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if 'RUNNING' in out:
+            return True
+        return False
+
+    def is_up_ps(self, nodename=None):
         cmd = ['lxc-ps', '--name', self.name]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
