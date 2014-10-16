@@ -783,12 +783,9 @@ class Node(Svc, Freezer):
             days_option = self.scheduler_actions[action].days_option
 
         def err(msg):
-            print('%s: skip:'%section, msg, '(--force to bypass)')
+            print('%s: skip:'%section, msg)
 
         if not self.options.cron:
-            return False
-
-        if self.options.force:
             return False
 
         # check if we are in allowed period
@@ -815,10 +812,7 @@ class Node(Svc, Freezer):
             err('checks passed but skip to level collector load')
             return True
 
-        # don't update the timestamp in force mode
-        # to not perturb the schedule
-        if not self.options.force:
-            self.timestamp(timestamp_f, interval)
+        self.timestamp(timestamp_f, interval)
 
         # ok. we have some action to perform.
         # now wait for a random delay <5min to not overload the
@@ -937,7 +931,7 @@ class Node(Svc, Freezer):
         # to now
         interval = 1440 + now - start
 
-        return self.collector.call('push_stats', force=self.options.force,
+        return self.collector.call('push_stats',
                                 stats_dir=self.options.stats_dir,
                                 stats_start=self.options.begin,
                                 stats_end=self.options.end,

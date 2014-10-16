@@ -842,7 +842,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
-    def push_stats(self, force=False, interval=None, stats_dir=None,
+    def push_stats(self, interval=None, stats_dir=None,
                    stats_start=None, stats_end=None, sync=True, disable=None):
         try:
             s = __import__('rcStats'+rcEnv.sysname)

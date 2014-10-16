@@ -137,7 +137,7 @@ class Sync(Res.Resource):
         return False
 
     def skip_sync(self, ts):
-        if self.svc.force:
+        if not self.svc.cron:
             return False
         if self.sync_interval == 0:
             self.log.info('skip sync: disabled by sync_interval = 0')
