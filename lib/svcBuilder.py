@@ -1572,7 +1572,27 @@ def add_syncs(svc, conf):
     add_syncs_resources('dds', svc, conf)
     add_syncs_resources('zfs', svc, conf)
     add_syncs_resources('btrfs', svc, conf)
+    add_syncs_resources('docker', svc, conf)
     add_mandatory_syncs(svc, conf)
+
+def add_syncs_docker(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split(' ')
+    except ex.OptNotFound:
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+
+    m = __import__('resSyncDocker')
+    r = m.SyncDocker(**kwargs)
+    svc += r
 
 def add_syncs_btrfs(svc, conf, s):
     kwargs = {}

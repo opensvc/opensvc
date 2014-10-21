@@ -22,6 +22,7 @@ from subprocess import *
 
 import sys
 import rcStatus
+import rcDocker
 import json
 import re
 import resources as Res
@@ -35,7 +36,7 @@ from svcBuilder import conf_get_string_scope
 
 os.environ['LANG'] = 'C'
 
-class Docker(resContainer.Container):
+class Docker(resContainer.Container, rcDocker.DockerLib):
 
     def files_to_sync(self):
         return []
@@ -95,51 +96,6 @@ class Docker(resContainer.Container):
                     raise ex.excError("source dir of mapping %s does not exist" % (volarg))
         return l
 
-    def get_container_id_by_name(self):
-        cmd = self.docker_cmd + ['ps', '-a']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError(err)
-        lines = out.split('\n')
-        if len(lines) < 2:
-            return
-        try:
-            start = lines[0].index('NAMES')
-        except:
-            return
-        for line in lines[1:]:
-            names = line[start:].strip().split(',')
-            if self.container_name in names:
-                return line.split()[0]
-
-    def docker(self, action):
-        cmd = self.docker_cmd + []
-        if action == 'start':
-            if self.container_id is None:
-                self.container_id = self.get_container_id_by_name()
-            if self.container_id is None:
-                cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
-                cmd += self.add_run_args()
-                cmd += [self.run_image]
-                if self.run_command is not None and self.run_command != "":
-                    cmd += [self.run_command]
-            else:
-                cmd += ['start', self.container_id]
-        elif action == 'stop':
-            cmd += ['stop', self.container_id]
-        elif action == 'kill':
-            cmd += ['kill', self.container_id]
-        else:
-            self.log.error("unsupported docker action: %s" % action)
-            return 1
-
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
-
-        if action == 'start':
-            self.container_id = self.get_container_id_by_name()
-
     def container_start(self):
         self.docker_start()
         self.docker('start')
@@ -151,27 +107,6 @@ class Docker(resContainer.Container):
         resContainer.Container.stop(self)
         self.docker_stop()
  
-    def get_run_image_id(self):
-        if len(self.run_image) == 12 and re.match('[a-z0-9]*', self.run_image):
-            return self.run_image
-        try:
-            image_name, image_tag = self.run_image.split(':')
-        except:
-            image_name, image_tag = [self.run_image, "latest"]
-
-        cmd = self.docker_cmd + ['images', image_name]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return self.run_image
-        for line in out.split('\n'):
-            l = line.split()
-            if len(l) < 3:
-                continue
-            if l[0] == image_name and l[1] == image_tag:
-                return l[2]
-        return self.run_image
-
-
     def _status(self, verbose=False):
         s = resContainer.Container._status(self, verbose)
         try:
@@ -221,103 +156,10 @@ class Docker(resContainer.Container):
             vcpus = len(cpu_set.split(','))
         return {'vcpus': str(vcpus), 'vmem': '0'}
 
-    def image_userfriendly_name(self):
-        if ':' in self.run_image:
-            return self.run_image
-        cmd = self.docker_cmd + ['images']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return self.run_image
-        for line in out.split('\n'):
-            l = line.split()
-            if len(l) < 3:
-                continue
-            if l[2] == self.run_image:
-                return l[0]+':'+l[1]
-        return self.run_image
-        
     def check_manual_boot(self):
         return True
 
     def check_capabilities(self):
-        return True
-
-    def docker_inspect(self, id):
-        cmd = self.docker_cmd + ['inspect', id]
-        out, err, ret = justcall(cmd)
-        data = json.loads(out)
-        return data[0]
-
-    def docker_stop(self):
-        if not self.docker_running():
-            return
-        if self.docker_data_dir is None:
-            return
-        if not os.path.exists(self.docker_pid_file):
-            return
-
-        cmd = self.docker_cmd + ['ps', '-q']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return
-
-        if len(out) > 0:
-            # skip stop ... daemon still handles containers
-            return
-
-        try:
-            with open(self.docker_pid_file, 'r') as f:
-                pid = int(f.read())
-        except:
-            self.log.warning("can't read %s. skip docker daemon kill" % self.docker_pid_file)
-            return
-
-        self.log.info("no more container handled by docker daemon. shut it down")
-        import signal
-        os.kill(pid, signal.SIGTERM)
-
-    def docker_start(self, verbose=True):
-        # Sanity checks before deciding to start the daemon
-        if self.docker_running():
-            return
-
-        if self.docker_data_dir is None:
-            return
-
-        resource = self.docker_data_dir_resource()
-        if resource is not None and resource._status() != rcStatus.UP:
-            state= rcStatus.status_str(resource._status())
-            self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, state))
-            return
-
-        # Now we can start the daemon, creating its data dir if necessary
-        cmd = self.docker_cmd + ['-r=false', '-d',
-               '-g', self.docker_data_dir,
-               '-p', self.docker_pid_file]
-        cmd += self.docker_daemon_args
-
-        if verbose:
-            self.log.info("starting docker daemon")
-            self.log.info(" ".join(cmd))
-        import subprocess
-        subprocess.Popen(['nohup'] + cmd,
-                 stdout=open('/dev/null', 'w'),
-                 stderr=open('/dev/null', 'a'),
-                 preexec_fn=os.setpgrp
-                 )
-
-        import time
-        for i in range(self.max_wait_for_dockerd):
-            if self.docker_running():
-                self.container_id = self.get_container_id_by_name()
-                return
-            time.sleep(1)
-
-    def docker_running(self):
-        cmd = self.docker_cmd + ['info']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return False
         return True
 
     def __init__(self,
@@ -354,21 +196,7 @@ class Docker(resContainer.Container):
     def on_add(self):
         self.container_name = self.svc.svcname+'.'+self.rid
         self.container_name = self.container_name.replace('#', '.')
-        self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
-        if not os.path.exists(self.docker_var_d):
-            os.makedirs(self.docker_var_d)
-        self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
-        self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
-        self.docker_socket_uri = 'unix://' + self.docker_socket
-        try:
-            self.docker_data_dir = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_data_dir')
-        except ex.OptNotFound:
-            self.docker_data_dir = None
-        try:
-            self.docker_daemon_args = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_daemon_args').split()
-        except ex.OptNotFound:
-            self.docker_daemon_args = []
-        self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
+        rcDocker.DockerLib.on_add(self)
         self.label = ""
         try:
             self.container_id = self.get_container_id_by_name()
@@ -377,17 +205,10 @@ class Docker(resContainer.Container):
             self.container_id = None
         self.label += self.image_userfriendly_name()
 
-    def docker_exe(self):
-        if which("docker.io"):
-            return "docker.io"
-        elif which("docker"):
-            return "docker"
-        else:
-            raise ex.excInitError("docker executable not found")
-
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def provision(self):
         # docker resources are naturally provisioned
         self.start()
+

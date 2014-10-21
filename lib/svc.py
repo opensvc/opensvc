@@ -121,6 +121,7 @@ class Svc(Resource, Freezer):
                              "sync.dds",
                              "sync.zfs",
                              "sync.btrfs",
+                             "sync.docker",
                              "sync.netapp",
                              "sync.nexenta",
                              "app",
@@ -158,6 +159,8 @@ class Svc(Resource, Freezer):
 
     def get_subset_parallel(self, rtype):
         subset_section = 'subset#' + rtype
+        if not hasattr(self, "config"):
+            self.load_config()
         if not self.config.has_section(subset_section):
             return False
         try:
@@ -420,7 +423,7 @@ class Svc(Resource, Freezer):
         sets = sorted(sets, lambda x, y: cmp(x.type, y.type), reverse=reverse)
 
         for r in sets:
-            if action in list_actions_no_pre_action:
+            if action in list_actions_no_pre_action or r.skip:
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
@@ -460,7 +463,7 @@ class Svc(Resource, Freezer):
                     break
 
         for r in sets:
-            if action in list_actions_no_post_action:
+            if action in list_actions_no_post_action or r.skip:
                 break
             try:
                 r.post_action(r, action)
@@ -1841,6 +1844,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
+        self.sub_set_action("sync.docker", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
         self.sub_set_action("sync.symsrdfs", "syncnodes")
         self.remote_postsync()
@@ -1850,6 +1854,7 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
+        self.sub_set_action("sync.docker", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
         self.sub_set_action("sync.symsrdfs", "syncdrp")
         self.remote_postsync()
@@ -1942,7 +1947,7 @@ class Svc(Resource, Freezer):
     def can_sync(self, target=None):
         ret = False
         rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
-                  "sync.rsync", "sync.btrfs", "sync.hp3par"]
+                  "sync.rsync", "sync.docker", "sync.btrfs", "sync.hp3par"]
         for rt in rtypes:
             for r in self.get_resources(rt):
                 try:
@@ -1957,11 +1962,13 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncnodes")
+        self.sub_set_action("sync.docker", "syncnodes")
         self.sub_set_action("sync.dds", "syncnodes")
         self.sub_set_action("sync.symsrdfs", "syncnodes")
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
         self.sub_set_action("sync.btrfs", "syncdrp")
+        self.sub_set_action("sync.docker", "syncdrp")
         self.sub_set_action("sync.dds", "syncdrp")
         self.syncupdate()
         self.remote_postsync()
