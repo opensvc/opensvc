@@ -1318,7 +1318,7 @@ class Svc(Resource, Freezer):
             if not r.disabled:
                 n_hb_enabled += 1
         if n_hb > 0 and n_hb_enabled == 0 and self.cluster:
-            raise ex.excError("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
+            raise ex.excAbortAction("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
         if n_hb_enabled == 0:
             return
         if not self.cluster:
@@ -2153,6 +2153,9 @@ class Svc(Resource, Freezer):
             try:
                 if action not in actions_list_allow_on_cluster:
                     self.cluster_mode_safety_net()
+            except ex.excAbortAction as e:
+                self.log.info(str(e))
+                return 0
             except ex.excError as e:
                 self.log.error(str(e))
                 return 1
