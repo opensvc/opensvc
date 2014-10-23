@@ -242,11 +242,20 @@ class Resource(object):
         return rcStatus.UNDEF
 
     def status(self, verbose=False, refresh=False):
+        # refresh param: used by do_action() to force a res status re-eval
+        # self.svc.options.refresh: used to purge disk cache
         if self.disabled:
             self.status_log("disabled")
             return rcStatus.NA
-        if self.rstatus is None and not refresh:
+
+        if self.rstatus is not None and not refresh:
+            return self.rstatus
+
+        if self.svc.options.refresh or refresh:
+            self.purge_status_last()
+        else:
             self.rstatus = self.load_status_last()
+
         if self.rstatus is None or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)

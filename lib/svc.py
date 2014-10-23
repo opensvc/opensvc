@@ -54,6 +54,7 @@ class Options(object):
         self.module = ""
         self.ruleset_date = ""
         self.dry_run = False
+        self.refresh = False
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Freezer):
@@ -972,6 +973,8 @@ class Svc(Resource, Freezer):
         options = []
         if self.options.dry_run:
             options.append('--dry-run')
+        if self.options.refresh:
+            options.append('--refresh')
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
