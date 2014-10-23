@@ -663,7 +663,7 @@ class Svc(Resource, Freezer):
                                 print_res(_e, fmt, pfx)
 
         fmt = "|- %-17s %4s %-10s %s"
-        print(fmt%("sync", '', str(self.group_status()['sync']), ''))
+        print(fmt%("sync", '', rcStatus.colorize(str(self.group_status()['sync'])), ''))
 
         l = []
         for rs in self.get_res_sets(self.status_types, strict=True):
@@ -685,7 +685,7 @@ class Svc(Resource, Freezer):
                     print_res(e, fmt, pfx)
 
         fmt = "'- %-17s %4s %-10s %s"
-        print(fmt%("hb", '', str(self.group_status()['hb']), ''))
+        print(fmt%("hb", '', rcStatus.colorize(str(self.group_status()['hb'])), ''))
 
         l = []
         for rs in self.get_res_sets(self.status_types):

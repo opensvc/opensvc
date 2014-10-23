@@ -62,6 +62,8 @@ def colorize(s, lpad=10):
         return _colorize(fmt%s, color.RED)
     elif s.endswith("up"):
         return _colorize(fmt%s, color.GREEN)
+    elif s == "n/a":
+        return _colorize(fmt%s, color.PURPLE)
     return fmt%s
 
 _status_value = {
