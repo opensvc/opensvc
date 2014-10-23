@@ -227,11 +227,9 @@ if len(options.parm_svcs) > 0:
 else:
     node.build_services()
 
-if options.upddb:
-    node.purge_status_last()
-
 for s in node.svcs:
     s.options.debug = options.debug
+    s.options.refresh = options.upddb
 
 if options.verbose:
     svcmon_verbose(node.svcs)
