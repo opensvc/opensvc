@@ -88,8 +88,9 @@ class DevTree(rcDevTree.DevTree):
             try:
                 wwid = line[line.index('(')+2:line.index(')')]
             except ValueError:
-                wwid = line.split()[0]
+                wwid = line.split()[0][1:]
             self.wwid_h[devname] = wwid
+        print(self.wwid_h)
         return self.wwid_h
 
     def get_mp(self):

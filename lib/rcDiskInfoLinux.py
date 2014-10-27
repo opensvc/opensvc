@@ -37,13 +37,12 @@ class diskInfo(rcDiskInfo.diskInfo):
         return '.'.join((rcEnv.nodename, id))
 
     def disk_id(self, dev):
-        regex = re.compile(r'/dev/mapper/[0-9a-f]{17}')
         if 'cciss' in dev:
             id = self.cciss_id(dev)
         elif dev.startswith('/dev/mapper/3'):
             id = dev.replace('/dev/mapper/3', '')
-        elif dev.startswith('/dev/mapper/') and regex.match(dev) is not None:
-            id = dev.replace('/dev/mapper/', '')
+        elif dev.startswith('/dev/mapper/2'):
+            id = dev.replace('/dev/mapper/2', '')
         else:
             id = self.scsi_id(dev)
         if len(id) == 0:
@@ -133,15 +132,12 @@ class diskInfo(rcDiskInfo.diskInfo):
             scsi_id = '/lib/udev/scsi_id'
         else:
             return ""
-        regex = re.compile(r'[0-9a-f]{17}')
         cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
-            if id.startswith('3'):
+            if id.startswith('3') or id.startswith('2'):
                 id = id[1:]
-            elif regex.match(id) is not None:
-                pass
             else:
                 id = self.prefix_local(id)
             self.disk_ids[dev] = id
@@ -151,10 +147,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
-            if id.startswith('3'):
+            if id.startswith('3') or id.startswith('2'):
                 id = id[1:]
-            elif regex.match(id) is not None:
-                pass
             else:
                 id = self.prefix_local(id)
             self.disk_ids[dev] = id
