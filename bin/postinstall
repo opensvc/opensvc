@@ -860,6 +860,8 @@ def purge_collector_api_cache():
         os.unlink(fname)
 
 def chmod_directories():
+    if not hasattr(os, "walk"):
+        return
     logit("Begin")
     if sysname == 'Windows':
 	logit("Skip : unsupported on Windows")
@@ -888,6 +890,8 @@ def log_file_info(path):
 def dump_install_content():
     logit("Begin")
     if sysname == 'Windows':
+        return
+    if not hasattr(os, "walk"):
         return
     for d in (pathbin, pathlib, pathusr):
         for dirname, dirnames, filenames in os.walk(d):
