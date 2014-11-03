@@ -60,12 +60,18 @@ class check(checks.check):
                 if len(l) < 2:
                     continue
                 dev = l[-1]
-            if "World Wide Identifier" in line:
+            elif line.startswith("World Wide Identifier"):
                 wwid = line.split()[-1].replace("0x","")
-            if "SCSI transport protocol" in line:
+            elif line.startswith("SCSI transport protocol"):
                 proto = line.split("=")[-1]
-            if "State" in line and ("ACTIVE" in line or "UNOPEN" in line or 'STANDBY' in line):
-                n += 1
+            elif line.startswith("State"):
+                state = line.split("=")[-1].strip()
+            elif line.startswith("Last Open or Close state"):
+                last_known_state = line.split("=")[-1].strip()
+                if state in ("ACTIVE", "STANDBY"):
+                    n += 1
+                elif state == "UNOPEN" and last_known_state in ("ACTIVE", "STANDBY"):
+                    n += 1
         if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=' and "Virtual" not in proto:
             r.append({'chk_instance': wwid,
                       'chk_value': str(n),
