@@ -90,7 +90,6 @@ class DevTree(rcDevTree.DevTree):
             except ValueError:
                 wwid = line.split()[0][1:]
             self.wwid_h[devname] = wwid
-        print(self.wwid_h)
         return self.wwid_h
 
     def get_mp(self):
