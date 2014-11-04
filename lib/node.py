@@ -130,6 +130,7 @@ class Node(Svc, Freezer):
             'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
             'rotate_root_pw': "set a new root password and store it in the collector",
             'print_schedule': "print the node tasks schedule",
+            'wol': "forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
@@ -1107,6 +1108,34 @@ class Node(Svc, Freezer):
         c = checks.checks(self.svcs)
         c.node = self
         c.do_checks()
+
+    def wol(self):
+        import rcWakeOnLan
+        if self.options.mac is None:
+            print("missing parameter. set --mac argument. multiple mac addresses must be separated by comma", file=sys.stderr)
+            print("example 1 : --mac 00:11:22:33:44:55", file=sys.stderr)
+            print("example 2 : --mac 00:11:22:33:44:55,66:77:88:99:AA:BB", file=sys.stderr)
+            return 1
+        if self.options.broadcast is None:
+            print("missing parameter. set --broadcast argument. needed to identify accurate network to use", file=sys.stderr)
+            print("example 1 : --broadcast 10.25.107.255", file=sys.stderr)
+            print("example 2 : --broadcast 192.168.1.5,10.25.107.255", file=sys.stderr)
+            return 1
+        macs = self.options.mac.split(',')
+        broadcasts = self.options.broadcast.split(',')
+        for brdcast in broadcasts:
+            for mac in macs:
+                req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast)
+                if not req.check_broadcast():
+                    print("Error : skipping broadcast address <%s>, not in the expected format 123.123.123.123"%req.broadcast, file=sys.stderr)
+                    break
+                if not req.check_mac():
+                    print("Error : skipping mac address <%s>, not in the expected format 00:11:22:33:44:55"%req.mac, file=sys.stderr)
+                    continue
+                if req.send():
+                    print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
+                else:
+                    print("Error while trying to send Wake On Lan packet to mac address <%s>"%req.mac, file=sys.stderr)
 
     def unset(self):
         if self.options.param is None:
