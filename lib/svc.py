@@ -1821,16 +1821,20 @@ class Svc(Resource):
 
         self.need_postsync = set([])
 
-    def remote_action(self, node, action, waitlock=60):
+    def remote_action(self, node, action, waitlock=60, sync=False):
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
         if self.cluster:
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
         rcmd += ['--waitlock', str(waitlock)] + action.split()
-        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         cmd = rcEnv.rsh.split() + [node] + rcmd
-        self.node.cmdworker.enqueue(cmd)
+        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+        if sync:
+            out, err, ret = justcall(cmd)
+            return out, err, ret
+        else:
+            self.node.cmdworker.enqueue(cmd)
 
     def presync(self):
         """ prepare files to send to slave nodes in var/.
@@ -2519,9 +2523,13 @@ class Svc(Resource):
         return 1
 
     def freeze(self):
+        for r in self.get_resources("hb"):
+            r.freeze()
         self.freezer.freeze()
 
     def thaw(self):
+        for r in self.get_resources("hb"):
+            r.thaw()
         self.freezer.thaw()
 
     def frozen(self):

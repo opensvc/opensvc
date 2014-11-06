@@ -24,6 +24,10 @@ import os
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import justcall, which
+import time
+
+class excDoLocalAfterRemote(Exception):
+    pass
 
 class Hb(resHb.Hb):
     """ HeartBeat ressource
@@ -84,7 +88,7 @@ class Hb(resHb.Hb):
     def service_local_status(self):
         return self.service_status(rcEnv.nodename)
 
-    def service_remote_status(self):
+    def get_peer(self):
         if len(self.svc.nodes) != 2:
             self.log.error("HA cluster must have 2 nodes")
             raise ex.excError
@@ -93,6 +97,10 @@ class Hb(resHb.Hb):
             self.log.error("local node is not in cluster")
             raise ex.excError
         peer = nodes[0]
+        return peer
+
+    def service_remote_status(self):
+        peer = self.get_peer()
         return self.service_status(peer)
 
     def service_status(self, nodename):
@@ -207,6 +215,99 @@ class Hb(resHb.Hb):
         if status == 'unknown':
             return True
         return False
+
+    def print_remote(self, out, err):
+        peer = self.get_peer()
+        s = out+err
+        s = s.replace(self.svc.svcname.upper(), peer.upper()+"."+self.svc.svcname.upper())
+        print(s)
+
+    def freeze(self):
+        """
+          --force disables the remote node status check
+          it is set on remote actions
+        """
+        do_local = True
+        do_remote = True
+        local_status = self.service_local_status()
+        remote_status = self.service_remote_status()
+        peer = self.get_peer()
+
+        if local_status in ['frozen_stop', 'start_ready']:
+            self.log.info("local already frozen")
+            do_local = False
+
+        if not self.svc.force and remote_status in ['frozen_stop', 'start_ready']:
+            self.log.info("remote already frozen")
+            do_remote = False
+        if self.svc.force:
+            do_remote = False
+
+        if not do_local and not do_remote:
+            return
+
+        if not self.svc.force and remote_status == 'stopped' and local_status == 'started':
+            out, err, ret = self.svc.remote_action(peer, "freeze --force", sync=True)
+            self.print_remote(out, err)
+            do_remote = False
+            if ret != 0:
+                raise ex.excError(err)
+
+        if local_status in ['stopped', 'start_failed', 'stop_failed']:
+            self.service_action('freeze-stop')
+            time.sleep(2)
+        elif local_status in ['started']:
+            self.service_action('freeze-start')
+            time.sleep(2)
+
+        if do_remote:
+            out, err, ret = self.svc.remote_action(peer, "freeze --force", sync=True)
+            self.print_remote(out, err)
+            if ret != 0:
+                raise ex.excError(err)
+
+
+    def thaw(self):
+        """
+          --force disables the remote node status check
+          it is set on remote actions
+        """
+        do_local = True
+        do_remote = True
+        local_status = self.service_local_status()
+        remote_status = self.service_remote_status()
+        peer = self.get_peer()
+
+        if local_status not in ['frozen_stop', 'start_ready']:
+            self.log.info("local already unfrozen")
+            do_local = False
+
+        if not self.svc.force and remote_status not in ['frozen_stop', 'start_ready']:
+            self.log.info("remote already unfrozen")
+            do_remote = False
+        if self.svc.force:
+            do_remote = False
+
+        if not do_local and not do_remote:
+            return
+
+        if not self.svc.force and remote_status == 'start_ready' and local_status == 'frozen_stop':
+            out, err, ret = self.svc.remote_action(peer, "thaw --force", sync=True)
+            self.print_remote(out, err)
+            do_remote = False
+            if ret != 0:
+                raise ex.excError(err)
+
+        self.service_action('unfreeze')
+        time.sleep(2)
+
+        if do_remote:
+            out, err, ret = self.svc.remote_action(peer, "thaw --force", sync=True)
+            self.print_remote(out, err)
+            if ret != 0:
+                raise ex.excError(err)
+
+
 
     def __status(self, verbose=False):
         if not os.path.exists(self.service_cmd):

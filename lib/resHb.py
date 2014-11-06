@@ -60,6 +60,12 @@ class Hb(Res.Resource):
     def __str__(self):
         return "%s" % (Res.Resource.__str__(self))
 
+    def freeze(self):
+        pass
+
+    def thaw(self):
+        pass
+
     def stop(self):
         pass
 
