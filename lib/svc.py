@@ -57,7 +57,7 @@ class Options(object):
         self.refresh = False
         os.environ['LANG'] = 'C'
 
-class Svc(Resource, Freezer):
+class Svc(Resource):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
@@ -135,7 +135,7 @@ class Svc(Resource, Freezer):
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
         self.log = rcLogger.initLogger(self.svcname.upper())
-        Freezer.__init__(self, svcname)
+        self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
@@ -2517,6 +2517,15 @@ class Svc(Resource, Freezer):
                 return p.returncode
         print("this service has no docker resource", file=sys.stderr)
         return 1
+
+    def freeze(self):
+        self.freezer.freeze()
+
+    def thaw(self):
+        self.freezer.thaw()
+
+    def frozen(self):
+        return self.freezer.frozen()
 
 if __name__ == "__main__" :
     for c in (Svc,) :
