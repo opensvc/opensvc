@@ -167,10 +167,34 @@ class Container(Res.Resource):
                 return node
         return
 
+    def abort_start_ping(self):
+        if len(self.name) == 0:
+            # docker container for exemple
+            return False
+
+        try:
+            self.getaddr()
+            u = __import__("rcUtilities"+rcEnv.sysname)
+            ping = u.check_ping
+            self.log.info("test %s ip %s availability"%(self.name, self.addr))
+            if ping(self.addr):
+                return True
+        except:
+            self.log.info("could not resolve %s to an ip address. skip ip availability test."%self.name)
+
+        return False
+
     def abort_start(self):
+        if self.is_up():
+            return False
+
+        if self.abort_start_ping():
+            return True
+
         nodename = self.where_up()
         if nodename is not None and nodename != rcEnv.nodename:
             return True
+
         return False
 
     def start(self):
