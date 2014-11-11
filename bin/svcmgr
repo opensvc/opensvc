@@ -126,6 +126,8 @@ parser.add_option("-p", "--parallel", default=False, action="store_true", dest="
                   help="start actions on specified services in parallel")
 parser.add_option("--ignore-affinity", default=False, action="store_true", dest="ignore_affinity",
                   help="ignore service anti-affinity with other services check")
+parser.add_option("--remote", default=False, action="store_true", dest="remote",
+                  help="flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
 parser.add_option("--cron", default=False, action="store_true", dest="cron",
@@ -355,6 +357,7 @@ node.options.waitlock = options.parm_waitlock
 for s in node.svcs:
     s.options = options
     s.force = options.force
+    s.remote = options.remote
     s.cron = options.cron
     s.options.slaves = options.slaves
     s.options.slave = slave

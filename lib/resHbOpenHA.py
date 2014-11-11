@@ -224,7 +224,7 @@ class Hb(resHb.Hb):
 
     def freeze(self):
         """
-          --force disables the remote node status check
+          --remote disables the remote node status check
           it is set on remote actions
         """
         do_local = True
@@ -237,17 +237,17 @@ class Hb(resHb.Hb):
             self.log.info("local already frozen")
             do_local = False
 
-        if not self.svc.force and remote_status in ['frozen_stop', 'start_ready']:
+        if not self.svc.remote and remote_status in ['frozen_stop', 'start_ready']:
             self.log.info("remote already frozen")
             do_remote = False
-        if self.svc.force:
+        if self.svc.remote:
             do_remote = False
 
         if not do_local and not do_remote:
             return
 
-        if not self.svc.force and remote_status == 'stopped' and local_status == 'started':
-            out, err, ret = self.svc.remote_action(peer, "freeze --force", sync=True)
+        if not self.svc.remote and remote_status == 'stopped' and local_status == 'started':
+            out, err, ret = self.svc.remote_action(peer, "freeze --remote", sync=True)
             self.print_remote(out, err)
             do_remote = False
             if ret != 0:
@@ -261,7 +261,7 @@ class Hb(resHb.Hb):
             time.sleep(2)
 
         if do_remote:
-            out, err, ret = self.svc.remote_action(peer, "freeze --force", sync=True)
+            out, err, ret = self.svc.remote_action(peer, "freeze --remote", sync=True)
             self.print_remote(out, err)
             if ret != 0:
                 raise ex.excError(err)
@@ -269,7 +269,7 @@ class Hb(resHb.Hb):
 
     def thaw(self):
         """
-          --force disables the remote node status check
+          --remote disables the remote node status check
           it is set on remote actions
         """
         do_local = True
@@ -282,32 +282,159 @@ class Hb(resHb.Hb):
             self.log.info("local already unfrozen")
             do_local = False
 
-        if not self.svc.force and remote_status not in ['frozen_stop', 'start_ready']:
+        if not self.svc.remote and remote_status not in ['frozen_stop', 'start_ready']:
             self.log.info("remote already unfrozen")
             do_remote = False
-        if self.svc.force:
+        if self.svc.remote:
             do_remote = False
 
         if not do_local and not do_remote:
             return
 
-        if not self.svc.force and remote_status == 'start_ready' and local_status == 'frozen_stop':
-            out, err, ret = self.svc.remote_action(peer, "thaw --force", sync=True)
+        if not self.svc.remote and remote_status == 'start_ready' and local_status == 'frozen_stop':
+            out, err, ret = self.svc.remote_action(peer, "thaw --remote", sync=True)
             self.print_remote(out, err)
             do_remote = False
             if ret != 0:
                 raise ex.excError(err)
 
-        self.service_action('unfreeze')
-        time.sleep(2)
+        if local_status in ['frozen_stop', 'start_ready']:
+            self.service_action('unfreeze')
+            time.sleep(2)
 
         if do_remote:
-            out, err, ret = self.svc.remote_action(peer, "thaw --force", sync=True)
+            out, err, ret = self.svc.remote_action(peer, "thaw --remote", sync=True)
             self.print_remote(out, err)
             if ret != 0:
                 raise ex.excError(err)
 
 
+    def wait_for_state(self, states, timeout=10, remote=False):
+        if remote:
+            node = "remote"
+        else:
+            node = "local"
+        self.log.info("waiting for %s state to become either %s"%(node, ' or '.join(states)))
+        for i in range(timeout):
+            if remote:
+                status = self.service_remote_status()
+            else:
+                status = self.service_local_status()
+            if status in states:
+                return
+            time.sleep(1)
+        raise ex.excError("waited %d seconds for %s state to become either %s. current state: %s"%(timeout, node, ' or '.join(states), status))
+
+    def switch(self):
+        if self.svc.cluster:
+            """
+            if called by the heartbeat daemon, don't drive the hb service
+            """
+            return
+
+        local_status = self.service_local_status()
+        remote_status = self.service_remote_status()
+        peer = self.get_peer()
+        if local_status == "started":
+            try:
+                self.stop()
+            except ex.excEndAction:
+                pass
+            self.wait_for_state(["stopped", "stop_failed", "stopping", "frozen_stop"])
+            local_status = self.service_local_status()
+            if local_status == "stop_failed":
+                raise ex.excError("local state is stop_failed")
+            remote_status = self.service_remote_status()
+            if not self.svc.remote and remote_status in ['stopped', 'frozen_stop']:
+                out, err, ret = self.svc.remote_action(peer, "start --remote", sync=True)
+                self.print_remote(out, err)
+                if ret != 0:
+                    raise ex.excError(err)
+            self.wait_for_state(["started", "start_failed", "starting"], remote=True)
+        elif remote_status == "started":
+            if not self.svc.remote:
+                out, err, ret = self.svc.remote_action(peer, "stop --remote", sync=True)
+                self.print_remote(out, err)
+                if ret != 0:
+                    raise ex.excError(err)
+            self.wait_for_state(["stopped", "stop_failed", "stopping", "frozen_stop"], remote=True)
+            remote_status = self.service_remote_status()
+            if remote_status == "stop_failed":
+                raise ex.excError("remote state is stop_failed")
+            self.start()
+            self.wait_for_state(["started", "start_failed", "starting"])
+        else:
+            raise ex.excError("cannot switch in current state: %s/%s"%(local_state,remote_state))
+
+        self.thaw()
+        raise ex.excEndAction("heartbeat actions done")
+
+    def start(self):
+        if self.svc.cluster:
+            """
+            if called by the heartbeat daemon, don't drive the hb service
+            """
+            return
+
+        local_status = self.service_local_status()
+        remote_status = self.service_remote_status()
+        peer = self.get_peer()
+
+        if remote_status == 'started':
+            raise ex.excError("already started on peer node")
+
+        if remote_status == 'start_failed':
+            raise ex.excError("start_failed on peer node. please investigate the reason and freeze-stop the service on peer node before trying to start.")
+
+        if remote_status == 'start_ready':
+            raise ex.excError("start_ready on peer node. please stop the service on the peer node before trying to start.")
+
+        if local_status == 'started':
+            raise ex.excEndAction("already started")
+
+        if local_status == 'start_failed':
+            raise ex.excError("start_failed on local node. please investigate the reason and freeze-stop the service on local node before trying to start.")
+
+        if not self.svc.remote and remote_status == 'stopped':
+            out, err, ret = self.svc.remote_action(peer, "freeze --remote", sync=True)
+            self.print_remote(out, err)
+            do_remote = False
+            if ret != 0:
+                raise ex.excError(err)
+            
+        if local_status not in ('frozen_stop', 'start_ready'):
+            raise ex.excError("%s on local node. unexpected state"%local_status)
+
+        self.service_action("unfreeze")
+
+        self.wait_for_state(['starting', 'started', 'start_failed'])
+        self.thaw()
+        
+        raise ex.excEndAction("heartbeat actions done")
+
+    def stop(self):
+        if self.svc.cluster:
+            """
+            if called by the heartbeat daemon, don't drive the hb service
+            """
+            return
+
+        local_status = self.service_local_status()
+        remote_status = self.service_remote_status()
+        peer = self.get_peer()
+
+        if not self.svc.remote and remote_status != 'frozen_stop':
+            out, err, ret = self.svc.remote_action(peer, "stop --remote", sync=True)
+            if ret != 0:
+                raise ex.excError(err)
+
+        if local_status == 'frozen_stop':
+            raise ex.excEndAction("already frozen stop")
+
+        self.svc.svcunlock()
+        self.service_action('freeze-stop')
+
+        raise ex.excEndAction("heartbeat actions done")
 
     def __status(self, verbose=False):
         if not os.path.exists(self.service_cmd):

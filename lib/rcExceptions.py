@@ -82,6 +82,10 @@ class syncSnapMountError(Exception):
     """ Error mounting fs => clean up
     """
 
+class excEndAction(Exception):
+    """ End multi-resource action. Not an error.
+    """
+
 class excAbortAction(Exception):
     """ Abort multi-resource action
     """

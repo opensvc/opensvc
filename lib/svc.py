@@ -47,6 +47,7 @@ class Options(object):
         self.master = False
         self.cron = False
         self.force = False
+        self.remote = False
         self.ignore_affinity = False
         self.debug = False
         self.disable_rollback = False
@@ -430,15 +431,9 @@ class Svc(Resource):
                 r.log.debug("start %s pre_action"%r.type)
                 r.pre_action(r, action)
             except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise
+                raise
             except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+                raise
             except:
                 self.save_exc()
                 raise ex.excError
@@ -446,38 +441,22 @@ class Svc(Resource):
         if ns and self.postsnap_trigger is not None:
             (ret, out, err) = self.vcall(self.postsnap_trigger)
             if ret != 0:
-                raise ex.excError
+                raise ex.excError(err)
 
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
-            try:
-                r.action(action, tags=tags, xtags=xtags)
-            except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise
-            except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+            r.action(action, tags=tags, xtags=xtags)
 
         for r in sets:
             if action in list_actions_no_post_action or r.skip:
                 break
             try:
+                r.log.debug("start %s post_action"%r.type)
                 r.post_action(r, action)
             except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise ex.excError
+                raise
             except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+                raise
             except:
                 self.save_exc()
                 raise ex.excError
@@ -1259,6 +1238,7 @@ class Svc(Resource):
         return _fn
 
     def start(self):
+        self.master_starthb()
         self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -1273,14 +1253,12 @@ class Svc(Resource):
         self.startcontainer()
         self.master_startapp()
         self.slave_start()
-        self.master_starthb()
 
     @_slave_action
     def slave_start(self):
         self.encap_cmd(['start'], verbose=True)
 
     def rollback(self):
-        self.rollbackhb()
         self.encap_cmd(['rollback'], verbose=True)
         try:
             self.rollbackapp()
@@ -1311,7 +1289,16 @@ class Svc(Resource):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
-    def cluster_mode_safety_net(self):
+    def hb_handled_action(self, action):
+        """
+        Used to determine if we can allow this action on a frozen service.
+        """
+        for r in self.get_resources("hb"):
+            if hasattr(r, action):
+                return True
+        return False
+
+    def cluster_mode_safety_net(self, action):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
         n_hb = 0
@@ -1325,6 +1312,9 @@ class Svc(Resource):
         if n_hb_enabled == 0:
             return
         if not self.cluster:
+            for r in self.get_resources("hb"):
+                if hasattr(r, action):
+                    getattr(r, action)()
             raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 
     def starthb(self):
@@ -1350,10 +1340,6 @@ class Svc(Resource):
     @_master_action
     def master_stophb(self):
         self.master_hb('stop')
-
-    @_master_action
-    def rollbackhb(self):
-        self.master_hb('rollback')
 
     def master_hb(self, action):
         self.sub_set_action("hb", action)
@@ -1783,7 +1769,6 @@ class Svc(Resource):
         self.master_startstandbyshare()
         self.startstandbycontainer()
         self.master_startstandbyapp()
-        self.master_starthb()
 
     @_slave_action
     def slave_startstandby(self):
@@ -2152,6 +2137,7 @@ class Svc(Resource):
           'syncall'
         ]
         if action not in actions_list_allow_on_frozen and \
+           not self.hb_handled_action(action) and \
            'compliance' not in action and \
            'collector' not in action:
             if self.frozen():
@@ -2159,7 +2145,7 @@ class Svc(Resource):
                 return 1
             try:
                 if action not in actions_list_allow_on_cluster:
-                    self.cluster_mode_safety_net()
+                    self.cluster_mode_safety_net(action)
             except ex.excAbortAction as e:
                 self.log.info(str(e))
                 return 0
@@ -2250,8 +2236,14 @@ class Svc(Resource):
             else:
                 self.log.error("unsupported action")
                 err = 1
+        except ex.excEndAction as e:
+            s = "'%s' action ended by last resource"%action
+            if len(str(e)) > 0:
+                s += ": %s"%str(e)
+            self.log.info(s)
+            err = 0
         except ex.excAbortAction as e:
-            s = "'%s' action stopped on execution error"%action
+            s = "'%s' action aborted by last resource"%action
             if len(str(e)) > 0:
                 s += ": %s"%str(e)
             self.log.error(s)
@@ -2356,6 +2348,7 @@ class Svc(Resource):
         self.remote_action(node=self.destination_node, action='prstart --master')
 
     def switch(self):
+        self.sub_set_action("hb", "switch")
         if not hasattr(self, "destination_node"):
             self.log.error("a destination node must be provided for the switch action")
             raise ex.excError
