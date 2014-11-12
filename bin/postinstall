@@ -562,8 +562,18 @@ def gen_keys():
     if sysname == 'Windows':
         return
     home = os.path.expanduser("~root")
-    priv = os.path.join(home, ".ssh", "id_dsa")
-    pub = os.path.join(home, ".ssh", "id_dsa.pub")
+    logit("gen_keys(): home <%s>"%home)
+    if "PKG_INSTALL_ROOT" in os.environ:
+        if sysname == 'SunOS' and os.environ['PKG_INSTALL_ROOT'] != '/':
+	    home = os.environ['PKG_INSTALL_ROOT'] + os.path.expanduser("~root")
+	    logit("gen_keys(): SunOS and relocatable install home <%s>"%home)
+    sshhome = os.path.join(home, ".ssh")
+    logit("gen_keys(): sshhome <%s>"%sshhome)
+    if not os.path.exists(sshhome):
+	print "create dir", sshhome
+	os.makedirs(sshhome, 0700)
+    priv = os.path.join(sshhome, "id_dsa")
+    pub = os.path.join(sshhome, "id_dsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
         return
     cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '""', '-f', priv]
