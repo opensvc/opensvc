@@ -19,7 +19,7 @@ import checks
 import os
 import re
 from rcUtilities import justcall
-from rcUtilitiesSunOS import get_os_ver
+from rcUtilitiesSunOS import get_solaris_version
 from rcGlobalEnv import rcEnv
 
 """
@@ -123,7 +123,7 @@ class check(checks.check):
             return "OK"
 
     def do_check(self):
-        self.osver = get_os_ver()
+        self.osver = get_solaris_version()
         self.ifs = []
         cmd = ['/usr/sbin/ifconfig', '-a']
         out, err, ret = justcall(cmd)
