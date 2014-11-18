@@ -75,32 +75,6 @@ def add_sudo_rsync_path(options):
             new.append(w)
     return new
 
-def sync_timestamp(self, node):
-    sync_timestamp_f = get_timestamp_filename(self, node)
-    sync_timestamp_d = os.path.dirname(sync_timestamp_f)
-    sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
-    sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
-    sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
-    if not os.path.isdir(sync_timestamp_d):
-        os.makedirs(sync_timestamp_d, 0o755)
-    if not os.path.isdir(sync_timestamp_d_src):
-        os.makedirs(sync_timestamp_d_src, 0o755)
-    with open(sync_timestamp_f, 'w') as f:
-        f.write(str(self.svc.action_start_date)+'\n')
-    import shutil
-    shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
-    shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-    ruser = self.svc.node.get_ruser(node)
-    if ruser != "root":
-        options = add_sudo_rsync_path(self.options)
-    else:
-        options = self.options
-    if '-e' not in options:
-        options += ['-e', rcEnv.rsh]
-    cmd = ['rsync'] + options + bwlimit_option(self)
-    cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
-    self.call(cmd)
-
 def get_timestamp(self, node):
     ts = None
     sync_timestamp_f = get_timestamp_filename(self, node)
@@ -115,15 +89,6 @@ def get_timestamp(self, node):
         self.log.info("failed get last sync date for %s to %s"%(self.src, node))
         return ts
     return ts
-
-def bwlimit_option(self):
-    if self.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+str(self.bwlimit) ]
-    elif self.svc.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+str(self.svc.bwlimit) ]
-    else:
-        bwlimit = []
-    return bwlimit
 
 class Rsync(resSync.Sync):
     """Defines a rsync job from local node to its remote nodes. Target nodes
@@ -224,6 +189,53 @@ class Rsync(resSync.Sync):
 
         return targets
 
+    def bwlimit_option(self):
+        if self.bwlimit is not None:
+            bwlimit = [ '--bwlimit='+str(self.bwlimit) ]
+        elif self.svc.bwlimit is not None:
+            bwlimit = [ '--bwlimit='+str(self.svc.bwlimit) ]
+        else:
+            bwlimit = []
+        return bwlimit
+
+    def mangle_options(self, ruser):
+        if ruser != "root":
+            options = add_sudo_rsync_path(self.options)
+        else:
+            options = self.options
+        options += self.bwlimit_option()
+        if '-e' in options:
+            return options
+
+        if rcEnv.rsh.startswith("/usr/bin/ssh") and rcEnv.sysname == "SunOS":
+            # SunOS "ssh -n" doesn't work with rsync
+            rsh = rcEnv.rsh.replace("-n", "")
+        else:
+            rsh = rcEnv.rsh
+        options += ['-e', rsh]
+        return options
+
+    def sync_timestamp(self, node):
+        sync_timestamp_f = get_timestamp_filename(self, node)
+        sync_timestamp_d = os.path.dirname(sync_timestamp_f)
+        sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
+        sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
+        sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
+        if not os.path.isdir(sync_timestamp_d):
+            os.makedirs(sync_timestamp_d, 0o755)
+        if not os.path.isdir(sync_timestamp_d_src):
+            os.makedirs(sync_timestamp_d_src, 0o755)
+        with open(sync_timestamp_f, 'w') as f:
+            f.write(str(self.svc.action_start_date)+'\n')
+        import shutil
+        shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
+        shutil.copy2(sync_timestamp_f, sched_timestamp_f)
+        ruser = self.svc.node.get_ruser(node)
+        options = self.mangle_options(ruser)
+        cmd = ['rsync'] + options
+        cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
+        self.call(cmd)
+
     def sync(self, target):
         if target not in self.target.keys():
             if not self.svc.cron:
@@ -257,18 +269,11 @@ class Rsync(resSync.Sync):
                 self.log.info("no files to sync")
             raise ex.syncNoFilesToSync
 
-        bwlimit = bwlimit_option(self)
-
         for node in targets:
             ruser = self.svc.node.get_ruser(node)
             dst = ruser + '@' + node + ':' + self.dst
-            if ruser != "root":
-                options = add_sudo_rsync_path(self.options)
-            else:
-                options = self.options
-            if '-e' not in options:
-                options += ['-e', rcEnv.rsh]
-            cmd = ['rsync'] + options + bwlimit + src
+            options = self.mangle_options(ruser)
+            cmd = ['rsync'] + options + src
             cmd.append(dst)
             if self.rid.startswith("sync#i"):
                 (ret, out, err) = self.call(cmd)
@@ -277,7 +282,7 @@ class Rsync(resSync.Sync):
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue
-            sync_timestamp(self, node)
+            self.sync_timestamp(node)
             self.svc.need_postsync |= set([node])
         return
 
