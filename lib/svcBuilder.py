@@ -30,6 +30,7 @@ from rcUtilities import *
 import rcLogger
 import resSyncRsync
 import rcExceptions as ex
+import rcUtilities
 import platform
 
 try:
@@ -1493,7 +1494,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
         if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
+            kwargs['options'] += rcUtilities.cmdline2list(conf.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
@@ -1525,7 +1526,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
         if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += conf.get(kwargs['rid'], 'options').split()
+            kwargs['options'] += rcUtilities.cmdline2list(conf.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)

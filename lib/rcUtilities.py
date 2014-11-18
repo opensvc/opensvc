@@ -254,6 +254,90 @@ def printplus(obj):
     else:
         print obj
 
+def cmdline2list(cmdline):
+    """
+    Translate a command line string into a list of arguments, using
+    using the same rules as the MS C runtime:
+
+    1) Arguments are delimited by white space, which is either a
+       space or a tab.
+    
+    2) A string surrounded by double quotation marks is
+       interpreted as a single argument, regardless of white space
+       contained within.  A quoted string can be embedded in an
+       argument.
+
+    3) A double quotation mark preceded by a backslash is
+       interpreted as a literal double quotation mark.
+
+    4) Backslashes are interpreted literally, unless they
+       immediately precede a double quotation mark.
+
+    5) If backslashes immediately precede a double quotation mark,
+       every pair of backslashes is interpreted as a literal
+       backslash.  If the number of backslashes is odd, the last
+       backslash escapes the next double quotation mark as
+       described in rule 3.
+    """
+
+    # See
+    # http://msdn.microsoft.com/library/en-us/vccelng/htm/progs_12.asp
+
+    # Step 1: Translate all literal quotes into QUOTE.  Justify number
+    # of backspaces before quotes.
+    tokens = []
+    bs_buf = ""
+    QUOTE = 1 # \", literal quote
+    for c in cmdline:
+        if c == '\\':
+            bs_buf += c
+        elif c == '"' and bs_buf:
+            # A quote preceded by some number of backslashes.
+            num_bs = len(bs_buf)
+            tokens.extend(["\\"] * (num_bs//2))
+            bs_buf = ""
+            if num_bs % 2:
+                # Odd.  Quote should be placed literally in array
+                tokens.append(QUOTE)
+            else:
+                # Even.  This quote serves as a string delimiter
+                tokens.append('"')
+
+        else:
+            # Normal character (or quote without any preceding
+            # backslashes)
+            if bs_buf:
+                # We have backspaces in buffer.  Output these.
+                tokens.extend(list(bs_buf))
+                bs_buf = ""
+
+            tokens.append(c)
+
+    # Step 2: split into arguments
+    result = [] # Array of strings
+    quoted = False
+    arg = [] # Current argument
+    tokens.append(" ")
+    for c in tokens:
+        if c == '"':
+            # Toggle quote status
+            quoted = not quoted
+        elif c == QUOTE:
+            arg.append('"')
+        elif c in (' ', '\t'):
+            if quoted:
+                arg.append(c)
+            else:
+                # End of argument.  Output, if anything.
+                if arg:
+                    result.append(''.join(arg))
+                    arg = []
+        else:
+            # Normal character
+            arg.append(c)
+
+    return result
+
 
 if __name__ == "__main__":
     print("call(('id','-a'))")
