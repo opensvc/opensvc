@@ -1215,7 +1215,7 @@ class Svc(Resource):
                 return
             if self.running_action not in ('migrate', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.slaves or \
                self.options.slave is not None or \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
@@ -1231,7 +1231,7 @@ class Svc(Resource):
                self.running_action not in ('migrate', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.master or \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 fn(self)
@@ -2246,8 +2246,8 @@ class Svc(Resource):
             s = "'%s' action aborted by last resource"%action
             if len(str(e)) > 0:
                 s += ": %s"%str(e)
-            self.log.error(s)
-            err = 1
+            self.log.info(s)
+            err = 0
         except ex.excError as e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
