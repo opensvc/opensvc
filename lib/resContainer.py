@@ -171,9 +171,12 @@ class Container(Res.Resource):
         if len(self.name) == 0:
             # docker container for exemple
             return False
-
         try:
             self.getaddr()
+            if not hasattr(self, 'addr'):
+                Container.getaddr(self)
+            if not hasattr(self, 'addr'):
+                raise ex.excError()
             u = __import__("rcUtilities"+rcEnv.sysname)
             ping = u.check_ping
             self.log.info("test %s ip %s availability"%(self.name, self.addr))

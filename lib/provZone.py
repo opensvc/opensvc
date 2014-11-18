@@ -1,6 +1,7 @@
 #
 # Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
 # Copyright (c) 2011 Cyril Galibern <cyril.galibern@opensvc.com>
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@ from rcZfs import Dataset
 import rcZone
 from rcExceptions import excError
 from rcGlobalEnv import rcEnv
-from rcUtilitiesSunOS import get_os_ver
+from rcUtilitiesSunOS import get_solaris_version
 from rcUtilities import justcall
 import shutil
 
@@ -375,7 +376,7 @@ class ProvisioningZone(Provisioning):
         - create sysidcfg
         - if need_boot boot and wait multiuser
         """
-        self.osver = get_os_ver()
+        self.osver = get_solaris_version()
         self.zone_configure()
 
         if self.osver >= 11:

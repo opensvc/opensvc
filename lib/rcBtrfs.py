@@ -68,13 +68,13 @@ class Btrfs(object):
         cmd = ['rmdir', path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            raise ExecError("error removing dir %s:\n"%path+err)
+            raise ExecError("error removing dir %s:\n%s"%(path,err))
 
     def dir_exists(self, path):
         cmd = ['test', '-d', path]
         out, err, ret = self.justcall(cmd)
         if ret > 1:
-            raise ExecError("error joining remote node %s\n"%(self.node,err))
+            raise ExecError("error joining remote node %s:\n%s"%(self.node, err))
         if ret == 1:
             return False
         return True

@@ -2665,6 +2665,8 @@ def build(name):
     return svc
 
 def is_service(f):
+    if os.name == 'nt':
+        return True
     svcmgr = os.path.join(rcEnv.pathsvc, 'bin', 'svcmgr')
     if os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
@@ -2677,18 +2679,15 @@ def list_services():
         print("create dir %s"%rcEnv.pathetc)
         os.makedirs(rcEnv.pathetc)
 
-    if os.name == 'nt':
-        s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-        s = map(lambda x: os.path.basename(x).replace('.env',''), s)
-        return s
+    s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+    s = map(lambda x: os.path.basename(x).replace('.env',''), s)
 
-    # posix
-    s = []
-    for name in os.listdir(rcEnv.pathetc):
+    l = []
+    for name in s:
         if not is_service(os.path.join(rcEnv.pathetc, name)):
             continue
-        s.append(name)
-    return s
+        l.append(name)
+    return l
 
 def build_services(status=None, svcnames=[],
                    onlyprimary=False, onlysecondary=False):
