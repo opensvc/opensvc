@@ -89,7 +89,10 @@ class SyncBtrfs(resSync.Sync):
     def init_src_btrfs(self):
         if self.src_btrfs is not None:
             return
-        self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, log=self.log)
+        try:
+            self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, log=self.log)
+        except rcBtrfs.ExecError as e:
+            raise ex.excError(str(e))
 
     def pre_action(self, rset, action):
         """Prepare snapshots
@@ -149,7 +152,10 @@ class SyncBtrfs(resSync.Sync):
 
     def get_dst_info(self, node):
         if node not in self.dst_btrfs:
-            self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, log=self.log, node=node)
+            try:
+                self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, log=self.log, node=node)
+            except rcBtrfs.ExecError as e:
+                raise ex.excError(str(e))
             #self.dst_btrfs[node].setup_snap()
         subvol = self.src_subvol.replace('/','_')
         base = self.dst_btrfs[node].snapdir + '/' + subvol
