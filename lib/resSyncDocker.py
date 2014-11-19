@@ -110,7 +110,11 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
             if not self.remote_node_type(node, target):
                 self.targets -= set([node])
                 continue
-            if not self.remote_fs_mounted(node):
+            try:
+                mounted = self.remote_fs_mounted(node)
+            except ex.excError:
+                mounted = False
+            if not mounted:
                 self.targets -= set([node])
 
     def can_sync(self, target=None):
