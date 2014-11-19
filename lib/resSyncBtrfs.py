@@ -86,7 +86,9 @@ class SyncBtrfs(resSync.Sync):
         self.dst_btrfs = {}
         self.src_btrfs = None
 
-    def on_add(self):
+    def init_src_btrfs(self):
+        if self.src_btrfs is not None:
+            return
         self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, log=self.log)
 
     def pre_action(self, rset, action):
@@ -107,6 +109,7 @@ class SyncBtrfs(resSync.Sync):
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
+        self.init_src_btrfs()
         for i, r in enumerate(rset.resources):
             if r.is_disabled():
                 continue
@@ -127,6 +130,7 @@ class SyncBtrfs(resSync.Sync):
                 self.target, self.src)
 
     def create_snap(self, snap_orig, snap):
+        self.init_src_btrfs()
         try:
             self.src_btrfs.snapshot(snap_orig, snap, readonly=True, recursive=self.recursive)
         except rcBtrfs.ExistError:
@@ -136,6 +140,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError
 
     def get_src_info(self):
+        self.init_src_btrfs()
         subvol = self.src_subvol.replace('/','_')
         base = self.src_btrfs.snapdir + '/' + subvol
         self.src_snap_sent = base + '@sent'
@@ -189,6 +194,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError
 
     def syncfullsync(self):
+        self.init_src_btrfs()
         try:
             self.sanity_checks()
         except ex.excError:
@@ -258,6 +264,7 @@ class SyncBtrfs(resSync.Sync):
             self.log.info(buff[0])
 
     def remove_snap(self, node=None):
+        self.init_src_btrfs()
         if node is not None:
             o = self.dst_btrfs[node]
             subvol = self.dst_snap_sent
@@ -271,6 +278,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError()
 
     def rename_snap(self, node=None):
+        self.init_src_btrfs()
         if node is None:
             o = self.src_btrfs
             src = self.src_snap_tosend
@@ -329,6 +337,7 @@ class SyncBtrfs(resSync.Sync):
         self.rename_snap(node)
 
     def _syncupdate(self, action):
+        self.init_src_btrfs()
         try:
             self.sanity_checks()
         except ex.excError:
@@ -423,6 +432,7 @@ class SyncBtrfs(resSync.Sync):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
+        self.init_src_btrfs()
         self.snap_uuid = self.src_btrfs.get_transid(snap)
 
     def set_statefile(self):
