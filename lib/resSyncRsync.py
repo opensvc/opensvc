@@ -291,6 +291,11 @@ class Rsync(resSync.Sync):
            trigger action() on each one
         """
 
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         """Don't sync PRD services when running on !PRD node
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
@@ -303,7 +308,7 @@ class Rsync(resSync.Sync):
         targets = set([])
         rtargets = {0: set([])}
         need_snap = False
-        for i, r in enumerate(rset.resources):
+        for i, r in enumerate(resources):
             if self.skip or r.is_disabled():
                 continue
             rtargets[i] = set([])
@@ -340,6 +345,11 @@ class Rsync(resSync.Sync):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(rset.resources) == 0:
+            return
+
         if hasattr(rset, 'snaps'):
             rset.snaps.snap_cleanup(rset)
 

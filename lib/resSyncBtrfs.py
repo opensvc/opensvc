@@ -60,7 +60,7 @@ class SyncBtrfs(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        self.label = "btrfs of %s to %s"%(src, target)
+        self.label = "btrfs of %s to %s"%(src, ", ".join(target))
         self.target = target
         self.sender = sender
         self.recursive = recursive
@@ -100,6 +100,11 @@ class SyncBtrfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         if not action.startswith('sync'):
             return
 
@@ -113,9 +118,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excAbortAction
 
         self.init_src_btrfs()
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
                 continue
             r.get_targets(action)

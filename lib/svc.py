@@ -433,7 +433,7 @@ class Svc(Resource):
             except ex.excError:
                 raise
             except ex.excAbortAction:
-                raise
+                continue
             except:
                 self.save_exc()
                 raise ex.excError
@@ -456,7 +456,7 @@ class Svc(Resource):
             except ex.excError:
                 raise
             except ex.excAbortAction:
-                raise
+                continue
             except:
                 self.save_exc()
                 raise ex.excError

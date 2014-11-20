@@ -29,15 +29,18 @@ import resSync
 
 class syncDds(resSync.Sync):
     def pre_action(self, rset, action):
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         """Don't sync PRD services when running on !PRD node
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        for i, r in enumerate(resources):
             if not r.svc_syncable():
                 return
             r.get_info()

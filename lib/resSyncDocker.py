@@ -76,7 +76,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
 
     def get_remote_images(self, node):
         ruser = self.svc.node.get_ruser(node)
-        cmd = rcEnv.rsh.split()+['-l', ruser, node, '--', '/opt/opensvc/bin/svcmgr', '-s', self.svc.svcname, "docker", "images"]
+        cmd = rcEnv.rsh.split()+['-l', ruser, node, '--', '/opt/opensvc/bin/svcmgr', '-s', self.svc.svcname, "docker", "images", "-a"]
         out, err, ret = justcall(cmd)
         images = []
         for line in out.split('\n'):

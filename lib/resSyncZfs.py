@@ -73,13 +73,16 @@ class SyncZfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
                 continue
             r.get_info()
