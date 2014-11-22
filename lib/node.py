@@ -1260,16 +1260,14 @@ class Node(Svc, Freezer):
         import urllib
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
-        except IOError:
-            import traceback
-            e = sys.exc_info()
+        except IOError as e:
+            print("download failed", ":", e[1], file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
                 pass
             if self.options.cron:
                 return 0
-            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
             try:
@@ -1341,14 +1339,12 @@ class Node(Svc, Freezer):
         import urllib
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf)
-        except IOError:
+        except IOError as e:
+            print("download failed", ":", e[1], file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
                 pass
-            import traceback
-            e = sys.exc_info()
-            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
             try:
