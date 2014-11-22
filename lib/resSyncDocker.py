@@ -55,6 +55,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
         self.label = "docker img sync to %s" % ", ".join(target)
         self.target = target
         self.images = []
+        self.image_id_name = {}
 
     def get_docker_data_dir_svc_fs(self):
         l = []
@@ -72,6 +73,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
         for r in self.svc.get_resources("container.docker"):
             image = r.run_image
             image_id = self.get_run_image_id(image)
+            self.image_id_name[image_id] = r.run_image
             self.images.append(image_id)
 
     def get_remote_images(self, node):
@@ -155,7 +157,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
 
     def save_load(self, node, image):
         ruser = self.svc.node.get_ruser(node)
-        save_cmd = ["/opt/opensvc/bin/svcmgr", "-s", self.svc.svcname, "docker", "save", image]
+        save_cmd = ["/opt/opensvc/bin/svcmgr", "-s", self.svc.svcname, "docker", "save", self.image_id_name[image]]
         load_cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', "/opt/opensvc/bin/svcmgr", "-s", self.svc.svcname, "docker", "load"]
         self.log.info(' '.join(save_cmd) + " | " + ' '.join(load_cmd))
         p1 = Popen(save_cmd, stdout=PIPE)
