@@ -266,6 +266,8 @@ class Hb(resHb.Hb):
             if ret != 0:
                 raise ex.excError(err)
 
+        self.status(refresh=True)
+
 
     def thaw(self):
         """
@@ -307,6 +309,8 @@ class Hb(resHb.Hb):
             self.print_remote(out, err)
             if ret != 0:
                 raise ex.excError(err)
+
+        self.status(refresh=True)
 
 
     def wait_for_state(self, states, timeout=10, remote=False):
