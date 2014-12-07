@@ -107,7 +107,6 @@ class Mount(Res.Mount):
             'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
             'ext3': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
             'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
-            'xfs': {'bin': 'xfs_repair', 'cmd': ['xfs_repair', '-o', 'force_geometry', self.device], 'allowed_ret': [0]},
         }
         self.loopdevice = None
 
