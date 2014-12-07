@@ -8,14 +8,14 @@ def major(driver):
     try:
         f = open(path)
     except:
-        raise
+        return -1
     for line in f.readlines():
         words = line.split()
         if len(words) == 2 and words[1] == driver:
             f.close()
             return int(words[0])
     f.close()
-    raise
+    return -1
 
 def get_blockdev_sd_slaves(syspath):
     slaves = set()
