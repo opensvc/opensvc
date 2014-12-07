@@ -19,9 +19,10 @@ regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
 class Module(object):
     pattern = '^S*[0-9]+-*%(name)s$'
 
-    def __init__(self, name):
+    def __init__(self, name, autofix=False):
         self.name = name
         self.executable = None
+        self.autofix = autofix
 
         dl = os.listdir(comp_dir)
         match = []
@@ -230,6 +231,8 @@ class Compliance(object):
         self.module_o = {}
         self.module = []
         self.updatecomp = False
+        self.moduleset = None
+        self.data = None
         self.action_log_vals = []
         self.action_log_vars = [
           'run_nodename',
@@ -240,15 +243,18 @@ class Compliance(object):
           'rset_md5',
           'run_svcname']
 
-    def compliance_check(self):
+    def compliance_auto(self):
         flag = "last_comp_check"
         if self.svcname is not None:
             flag = '.'.join((flag, self.svcname))
         if self.skip_action is not None and \
-           self.skip_action("compliance_check", fname=flag):
+           self.skip_action("compliance_auto", fname=flag):
             return
         if self.updatecomp:
             self.node.updatecomp()
+        self.do_auto()
+
+    def compliance_check(self):
         self.do_checks()
 
     def __iadd__(self, o):
@@ -273,15 +279,25 @@ class Compliance(object):
         if self.options.moduleset != "" and self.options.module != "":
             raise ex.excError('--moduleset and --module are exclusive')
 
-        if self.options.moduleset == "" and self.options.module == "":
-            self.moduleset = self.get_moduleset()
-        else:
-            self.moduleset = self.options.moduleset.split(',')
-            self.module = self.options.module.split(',')
-        if len(self.moduleset) > 0 and hasattr(self.options, "attach") and self.options.attach:
-            self._compliance_attach_moduleset(self.moduleset)
+        if self.data is None:
+            if self.options.moduleset == "" and self.options.module == "":
+                self.data = self.get_comp_data()
+            else:
+                modulesets = self.options.moduleset.split(',')
+                self.data = self.get_comp_data(modulesets)
+
+                if self.options.module != "":
+                    modules = [(m, False) for m in self.options.module.split(',')]
+                    self.data['modulesets']['user.defined'] = modules
+                else:
+                    modules = []
+
+                if len(modulesets) > 0 and \
+                   hasattr(self.options, "attach") and self.options.attach:
+                    self._compliance_attach_moduleset(modulesets)
+
         self.module = self.merge_moduleset_modules()
-        self.ruleset = self.get_ruleset()
+        self.ruleset = self.data['rulesets']
         self.setup_env()
         self.set_rset_md5()
 
@@ -290,9 +306,9 @@ class Compliance(object):
             raise ex.excError('modules [%s] are not present in %s'%(
                                ','.join(self.module), comp_dir))
 
-        for module in self.module:
+        for module, autofix in self.module:
             try:
-                self += Module(module)
+                self += Module(module, autofix)
             except ex.excInitError as e:
                 print(e, file=sys.stderr)
 
@@ -333,9 +349,9 @@ class Compliance(object):
 
     def get_moduleset(self):
         if self.svcname is not None:
-            moduleset = self.collector.call('comp_get_svc_moduleset', self.svcname)
+            moduleset = self.collector.call('comp_get_svc_moduleset_data', self.svcname)
         else:
-            moduleset = self.collector.call('comp_get_moduleset')
+            moduleset = self.collector.call('comp_get_moduleset_data')
         if moduleset is None:
             raise ex.excError('could not fetch moduleset')
         return moduleset
@@ -376,15 +392,22 @@ class Compliance(object):
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
-    def merge_moduleset_modules(self):
-        modules = self.get_moduleset_modules(self.moduleset)
-        return set(self.module + modules) - set([''])
+    def get_comp_data(self, modulesets=[]):
+        if self.svcname is not None:
+            return self.collector.call('comp_get_svc_data', self.svcname, modulesets)
+        else:
+            return self.collector.call('comp_get_data', modulesets)
 
-    def get_moduleset_modules(self, m):
-        moduleset = self.collector.call('comp_get_moduleset_modules', m)
-        if moduleset is None:
-            raise ex.excError('could not expand moduleset modules')
-        return moduleset
+    def merge_moduleset_modules(self):
+        l = [] 
+        for ms, data in self.data['modulesets'].items():
+            for module, autofix in data:
+                if (module, autofix) not in l:
+                    l.append((module, autofix))
+                elif autofix and (module, False) in l:
+                    l.remove((module, False))
+                    l.append((module, True))
+        return l
 
     def digest_errors(self, err):
         passed = [m for m in err if err[m] == 0]
@@ -417,10 +440,14 @@ class Compliance(object):
 
     def compliance_show_moduleset(self):
         self.moduleset = self.get_moduleset()
-        for ms in self.moduleset:
+        for ms, data in self.moduleset.items():
             print(ms+':')
-            for m in self.get_moduleset_modules(ms):
-                print(' %s'%m)
+            for module, autofix in data:
+                if autofix:
+                    s = " (autofix)"
+                else:
+                    s = ""
+                print(' %s%s' % (module, s))
 
     def compliance_show_ruleset(self):
         self.ruleset = self.get_ruleset()
@@ -433,13 +460,22 @@ class Compliance(object):
         self.init()
         start = datetime.datetime.now()
         for module in self.ordered_module:
-            err[module] = getattr(self.module_o[module], action)()
+            _action = action
+            if action == "auto":
+                if self.module_o[module].autofix:
+                    _action = "fix"
+                else:
+                    _action = "check"
+            err[module] = getattr(self.module_o[module], _action)()
         r = self.digest_errors(err)
         end = datetime.datetime.now()
         print("total duration: %s"%str(end-start))
         self.unsetup_env()
         self.collector.call('comp_log_actions', self.action_log_vars, self.action_log_vals)
         return r
+
+    def do_auto(self):
+        return self.do_run('auto')
 
     def do_checks(self):
         return self.do_run('check')

@@ -44,7 +44,7 @@ for action in n.scheduler_actions:
 for s in n.svcs:
     s.cron = True
     try:
-        s.action('compliance_check')
+        s.action('compliance_auto')
     except:
         import traceback
         traceback.print_exc()

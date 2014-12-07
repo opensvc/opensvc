@@ -168,6 +168,7 @@ class Node(Svc, Freezer):
             'prkey':          'show persistent reservation key of this node',
           },
           'Compliance': {
+            'compliance_auto': 'run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
@@ -243,7 +244,7 @@ class Node(Svc, Freezer):
 	 "pushdisks": SchedOpts("disks"),
 	 "pushservices": SchedOpts("svcconf"),
 	 "push_appinfo": SchedOpts("appinfo"),
-	 "compliance_check": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
+	 "compliance_auto": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
 	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days")
         }
 
@@ -478,7 +479,7 @@ class Node(Svc, Freezer):
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
-            if self.options.cron and a == "compliance_check" and \
+            if self.options.cron and a == "compliance_auto" and \
                self.config.has_option('compliance', 'auto_update') and \
                self.config.getboolean('compliance', 'auto_update'):
                 o.updatecomp = True

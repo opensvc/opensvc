@@ -201,9 +201,10 @@ class Collector(object):
         self._worker = worker
         self.worker = None
         self.queue = None
-        self.comp_fns = ['comp_get_moduleset_modules',
-                         'comp_get_moduleset',
-                         'comp_get_svc_moduleset',
+        self.comp_fns = ['comp_get_moduleset_data',
+                         'comp_get_svc_moduleset_data',
+                         'comp_get_data',
+                         'comp_get_svc_data',
                          'comp_attach_moduleset',
                          'comp_attach_svc_moduleset',
                          'comp_detach_moduleset',
@@ -1174,23 +1175,29 @@ class Collector(object):
     def register_node(self, sync=True):
         return self.proxy.register_node(rcEnv.nodename)
     
-    def comp_get_moduleset_modules(self, moduleset, sync=True):
-        args = [moduleset]
+    def comp_get_data(self, modulesets=[], sync=True):
+        args = [rcEnv.nodename, modulesets]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_moduleset_modules(*args)
-    
-    def comp_get_moduleset(self, sync=True):
+        return self.comp_proxy.comp_get_data(*args)
+
+    def comp_get_svc_data(self, svcname, modulesets=[], sync=True):
+        args = [rcEnv.nodename, svcname, modulesets]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        return self.comp_proxy.comp_get_svc_data(*args)
+
+    def comp_get_moduleset_data(self, sync=True):
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_moduleset(*args)
+        return self.comp_proxy.comp_get_moduleset_data(*args)
     
-    def comp_get_svc_moduleset(self, svc, sync=True):
+    def comp_get_svc_moduleset_data(self, svc, sync=True):
         args = [svc]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_svc_moduleset(*args)
+        return self.comp_proxy.comp_get_svc_moduleset_data(*args)
     
     def comp_attach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
