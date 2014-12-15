@@ -100,7 +100,7 @@ class Node(Svc, Freezer):
           'host_mode': 'TST',
           'push_interval': 121,
           'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
-          'push_period': '["04:00", "06:00"]',
+          'push_period': '["00:00", "06:00"]',
           'sync_interval': 121,
           'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'sync_period': '["04:00", "06:00"]',
@@ -162,6 +162,7 @@ class Node(Svc, Freezer):
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
             'push_appinfo':   'push services application launchers appinfo key/value pairs to collector',
+            'sysreport':      'push system report to the collector for archiving and diff analysis',
             'checks':         'run node sanity checks, push results to collector',
           },
           'Misc': {
@@ -244,6 +245,7 @@ class Node(Svc, Freezer):
 	 "pushdisks": SchedOpts("disks"),
 	 "pushservices": SchedOpts("svcconf"),
 	 "push_appinfo": SchedOpts("appinfo"),
+	 "sysreport": SchedOpts("sysreport"),
 	 "compliance_auto": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
 	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days")
         }
@@ -1094,6 +1096,17 @@ class Node(Svc, Freezer):
         for svc in self.svcs:
             svc.cron = self.options.cron
             svc.action('push_appinfo')
+
+    def sysreport(self):
+        if self.skip_action("sysreport"):
+            return
+        from rcGlobalEnv import rcEnv
+        try:
+            m = __import__('rcSysReport'+rcEnv.sysname)
+        except ImportError:
+            print("sysreport is not supported on this os")
+            return
+        m.SysReport(node=self).sysreport(force=self.options.force)
 
     def prkey(self):
         from rcGlobalEnv import rcEnv

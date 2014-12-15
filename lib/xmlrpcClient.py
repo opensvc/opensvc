@@ -54,7 +54,6 @@ filehandler.setFormatter(fileformatter)
 log = logging.getLogger("xmlrpc")
 log.addHandler(filehandler)
 log.setLevel(logging.INFO)
-log.debug("logger setup")
 
 try:
     if sys.version_info[0] >= 3:
@@ -843,38 +842,14 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
-    def push_stats(self, interval=None, stats_dir=None,
-                   stats_start=None, stats_end=None, sync=True, disable=None):
-        try:
-            s = __import__('rcStats'+rcEnv.sysname)
-        except ImportError:
-            return
-
-        try:
-            sp = s.StatsProvider(interval=interval,
-                                 stats_dir=stats_dir,
-                                 stats_start=stats_start,
-                                 stats_end=stats_end)
-        except ValueError as e:
-            print(str(e))
-            return 1
-        except Exception as e:
-            print(e)
-            raise
-        h = {}
-        for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
-                     'blockdev', 'netdev', 'netdev_err', 'svc', 'fs_u']:
-            if disable is not None and stat in disable:
-                print("%s collection is disabled in node configuration"%stat)
-                continue
-            h[stat] = sp.get(stat)
-            print("%s stats: %d samples" % (stat, len(h[stat][1])))
-        import cPickle
-        args = [cPickle.dumps(h)]
+    def send_sysreport(self, fpath, sync=True):
+        with open(fpath, 'rb') as f:
+            binary = xmlrpclib.Binary(f.read())
+        args = [os.path.basename(fpath), binary]
+        print("archive length:", len(binary.data))
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        print("pushing")
-        self.proxy.insert_stats(*args)
+        self.proxy.send_sysreport(*args)
     
     def push_asset(self, node, sync=True):
         try:
