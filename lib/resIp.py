@@ -232,16 +232,19 @@ class Ip(Res.Resource):
             intf = ifconfig.interface(self.ipDev)
             if intf is None:
                 self.log.error("netmask parameter is mandatory with 'noalias' tag")
+                self.unlock()
                 raise ex.excError
             self.mask = intf.mask
         if self.mask == '':
             self.log.error("No netmask set on parent interface %s" % self.ipDev)
+            self.unlock()
             raise ex.excError
         elif isinstance(self.mask, list):
             if len(self.mask) > 0:
                 self.mask = self.mask[0]
             else:
                 self.log.error("No netmask set on parent interface %s" % self.ipDev)
+                self.unlock()
                 raise ex.excError
         if 'noalias' in self.tags:
             self.stacked_dev = self.ipDev
@@ -250,6 +253,8 @@ class Ip(Res.Resource):
                                                         self.addr,\
                                                         self.log)
         if self.stacked_dev is None:
+            self.log.error("could not determine a stacked dev for parent interface %s" % self.ipDev)
+            self.unlock()
             raise ex.excError
 
         arp_announce = True
