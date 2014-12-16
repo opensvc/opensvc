@@ -3,8 +3,9 @@ import os
 import shutil
 import glob
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, cmdline2list
+from rcUtilities import which, cmdline2list
 from stat import *
+from subprocess import *
 
 class SysReport(object):
     def __init__(self, node=None):
@@ -126,13 +127,9 @@ class SysReport(object):
             return
         fname = self.cmdlist2fname(l)
         cmd_d = os.path.join(self.collect_cmd_d, fname)
-        if not os.path.exists(cmd_d):
-            os.makedirs(cmd_d)
-        out, err, ret = justcall(l)
-        self.write(os.path.join(cmd_d, 'cmd'), cmd)
-        self.write(os.path.join(cmd_d, 'out'), out)
-        self.write(os.path.join(cmd_d, 'err'), err)
-        self.write(os.path.join(cmd_d, 'ret'), str(ret))
+        p = Popen(l, stdout=PIPE, stderr=STDOUT)
+        out, err = p.communicate()
+        self.write(os.path.join(cmd_d), out)
 
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
