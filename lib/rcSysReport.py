@@ -9,7 +9,12 @@ from subprocess import *
 
 class SysReport(object):
     def __init__(self, node=None):
-        self.todo = []
+        self.todo = [
+          ('FILE', '/opt/opensvc/etc/node.conf'),
+          ('GLOB', '/opt/opensvc/etc/*env'),
+          ('DIR', '/opt/opensvc/etc/sysreport.conf.d'),
+        ]
+
         self.changed = []
         self.full = []
         self.sysreport_conf_d = os.path.join(rcEnv.pathetc, "sysreport.conf.d")
