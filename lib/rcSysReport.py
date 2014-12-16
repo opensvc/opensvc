@@ -208,6 +208,9 @@ class SysReport(object):
         else:
             to_send = self.changed
             self.changed_report()
+        if len(to_send) == 0:
+            print("no change to report")
+            return
         tmpf = self.archive(to_send)
         print("sending archive", tmpf)
         self.node.collector.call(self.send_rpc, tmpf)
