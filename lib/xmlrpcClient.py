@@ -842,11 +842,16 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
-    def send_sysreport(self, fpath, sync=True):
-        with open(fpath, 'rb') as f:
-            binary = xmlrpclib.Binary(f.read())
-        args = [os.path.basename(fpath), binary]
-        print("archive length:", len(binary.data))
+    def send_sysreport(self, fpath, deleted, sync=True):
+        args = []
+        if fpath is None:
+            args += ["", ""]
+        else:
+            with open(fpath, 'rb') as f:
+                binary = xmlrpclib.Binary(f.read())
+            args = [os.path.basename(fpath), binary]
+            print("archive length:", len(binary.data))
+        args += [deleted]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.send_sysreport(*args)

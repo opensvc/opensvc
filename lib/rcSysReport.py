@@ -16,6 +16,7 @@ class SysReport(object):
         ]
 
         self.changed = []
+        self.deleted = []
         self.full = []
         self.sysreport_conf_d = os.path.join(rcEnv.pathetc, "sysreport.conf.d")
         self.sysreport_d = os.path.join(rcEnv.pathvar, "sysreport")
@@ -139,11 +140,18 @@ class SysReport(object):
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
             return
-        dst_d = os.path.join(self.collect_file_d) + os.path.dirname(fpath)
+        dst_d = self.collect_file_d + os.path.dirname(fpath)
         fname = os.path.basename(fpath)
         dst_f = os.path.join(dst_d, fname)
         if not os.path.exists(dst_d):
             os.makedirs(dst_d)
+
+        # file deleted
+        if os.path.exists(dst_f) and not os.path.exists(fpath):
+            self.deleted.append(fpath)
+            os.unlink(dst_f)
+            return
+
         try:
             with open(fpath, 'r') as f:
                 buff = f.read()
@@ -157,8 +165,24 @@ class SysReport(object):
         shutil.copy2(fpath, dst_f)
         self.full.append(dst_f)
 
+    def delete_collected(self, fpaths):
+        for fpath in fpaths:
+            self.delete_collected_one(fpath)
+
+    def delete_collected_one(self, fpath):
+        fp = self.collect_file_d + fpath
+        os.unlink(fp)
+
     def collect_glob(self, fpath):
-        for fp in glob.glob(fpath):
+        fpaths = glob.glob(fpath)
+        dst_fpaths = glob.glob(self.collect_file_d+fpath)
+        n = len(self.collect_file_d)
+        dst_fpaths = map(lambda x: x[n:], dst_fpaths)
+        deleted = set(dst_fpaths) - set(fpaths)
+        if len(deleted) > 0:
+            self.deleted += list(deleted)
+            self.delete_collected(deleted)
+        for fp in fpaths:
             self.collect_file(fp)
 
     def collect_dir(self, fpath):
@@ -167,15 +191,29 @@ class SysReport(object):
         if not os.path.isdir(fpath):
             print(" err: not a directory")
             return
-        self.recurse_dir(fpath)
+        fpaths = self.find_files(fpath)
+        dst_fpaths = self.find_files(self.collect_file_d+fpath)
+        n = len(self.collect_file_d)
+        dst_fpaths = map(lambda x: x[n:], dst_fpaths)
+        deleted = set(dst_fpaths) - set(fpaths)
+        if len(deleted) > 0:
+            self.deleted += list(deleted)
+            self.delete_collected(deleted)
 
-    def recurse_dir(self, fpath):
+        for fpath in fpaths:
+            self.collect_file(fpath)
+
+    def find_files(self, fpath):
+        l = []
+        if not os.path.exists(fpath):
+            return l
         for item in os.listdir(fpath):
             _fpath = os.path.join(fpath, item)
             if os.path.isdir(_fpath):
-                self.recurse_dir(_fpath)
+                l += self.find_files(_fpath)
             elif not os.path.islink(_fpath):
-                self.collect_file(_fpath)
+                l.append(_fpath)
+        return l
 
     def collect(self, item):
         i_type, i_ref = item
@@ -202,20 +240,35 @@ class SysReport(object):
             self.collect(item)
         self.send(force)
 
+    def deleted_report(self):
+        print("files deleted:")
+        for fpath in sorted(self.deleted):
+            print("  "+fpath)
+
     def send(self, force=False):
         if force:
             to_send = self.full
         else:
             to_send = self.changed
             self.changed_report()
-        if len(to_send) == 0:
+
+        if len(self.deleted) > 0:
+            self.deleted_report()
+
+        if len(to_send) == 0 and len(self.deleted) == 0:
             print("no change to report")
             return
-        tmpf = self.archive(to_send)
-        print("sending archive", tmpf)
-        self.node.collector.call(self.send_rpc, tmpf)
-        print("deleting archive", tmpf)
-        os.unlink(tmpf)
+
+        if len(to_send) > 0:
+            tmpf = self.archive(to_send)
+        else:
+            tmpf = None
+
+        print("sending sysreport")
+        self.node.collector.call(self.send_rpc, tmpf, self.deleted)
+
+        if tmpf is not None:
+            os.unlink(tmpf)
 
     def archive(self, l):
         import tarfile
