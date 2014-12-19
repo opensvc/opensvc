@@ -89,7 +89,7 @@ class SysReport(object):
                         self.todo.append(t)
 
     def cmdlist2fname(self, l):
-        fname = '_'.join(l)
+        fname = '(space)'.join(l)
         fname = fname.replace('|','(pipe)')
         fname = fname.replace('&','(amp)')
         fname = fname.replace('$','(dollar)')
