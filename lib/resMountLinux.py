@@ -116,6 +116,11 @@ class Mount(Res.Mount):
         if ret:
             return True
 
+        # might be defined as a symlink. Linux display realpaths in /proc/mounts
+        ret = self.Mounts.has_mount(self.device, os.path.realpath(self.mountPoint))
+        if ret:
+            return True
+
         # might be mount using a /dev/mapper/ name too
         l = self.device.split('/')
         if len(l) == 4 and l[2] != "mapper":
