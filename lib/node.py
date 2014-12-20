@@ -98,7 +98,7 @@ class Node(Svc, Freezer):
         self.config_defaults = {
           'clusters': '',
           'host_mode': 'TST',
-          'push_interval': 121,
+          'push_interval': 361,
           'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
           'push_period': '["00:00", "06:00"]',
           'sync_interval': 121,
