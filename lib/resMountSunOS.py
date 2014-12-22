@@ -18,9 +18,10 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
+"""SunOS specific mounts"""
 
 import os
+import time
 
 import rcStatus
 import rcMountsSunOS as rcMounts
@@ -121,13 +122,23 @@ class Mount(Res.Mount):
 
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
-        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-        (ret, out, err) = self.vcall(cmd)
-        if ret != 0:
-            self.Mounts = None
-            raise ex.excError
+
+        for i in range(3):
+            self.try_mount(fstype, mntopt)
+            if ret == 0: break
+            time.sleep(1)
+
         self.Mounts = None
+
+        if ret != 0:
+            raise ex.excError
+
         self.can_rollback = True
+
+    def try_mount(self, fstype, mntopt):
+        cmd = ['mount'] + fstype + mntopt + [self.device, self.mountPoint]
+        ret, out, err = self.vcall(cmd)
+        return ret
 
     def try_umount(self):
         if self.fsType == 'zfs' :
