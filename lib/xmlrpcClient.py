@@ -200,8 +200,8 @@ class Collector(object):
         self._worker = worker
         self.worker = None
         self.queue = None
-        self.comp_fns = ['comp_get_moduleset_data',
-                         'comp_get_svc_moduleset_data',
+        self.comp_fns = ['comp_get_data_moduleset',
+                         'comp_get_svc_data_moduleset',
                          'comp_get_data',
                          'comp_get_svc_data',
                          'comp_attach_moduleset',
@@ -1167,17 +1167,17 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         return self.comp_proxy.comp_get_svc_data(*args)
 
-    def comp_get_moduleset_data(self, sync=True):
+    def comp_get_data_moduleset(self, sync=True):
         args = [rcEnv.nodename]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_moduleset_data(*args)
+        return self.comp_proxy.comp_get_data_moduleset(*args)
     
-    def comp_get_svc_moduleset_data(self, svc, sync=True):
+    def comp_get_svc_data_moduleset(self, svc, sync=True):
         args = [svc]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_svc_moduleset_data(*args)
+        return self.comp_proxy.comp_get_svc_data_moduleset(*args)
     
     def comp_attach_moduleset(self, moduleset, sync=True):
         args = [rcEnv.nodename, moduleset]
