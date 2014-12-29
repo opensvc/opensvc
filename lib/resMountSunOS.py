@@ -124,7 +124,7 @@ class Mount(Res.Mount):
             os.makedirs(self.mountPoint, 0o755)
 
         for i in range(3):
-            self.try_mount(fstype, mntopt)
+            ret = self.try_mount(fstype, mntopt)
             if ret == 0: break
             time.sleep(1)
 
