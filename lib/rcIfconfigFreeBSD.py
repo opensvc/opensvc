@@ -72,6 +72,10 @@ class ifconfig(rcIfconfig.ifconfig):
             prev = w
 
     def __init__(self, mcast=False):
-        self.intf = []
+        rcIfconfig.ifconfig.__init__(self, mcast=mcast)
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
         self.parse(out)
+
+if __name__ == "__main__":
+    o = ifconfig()
+    print o
