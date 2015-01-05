@@ -94,7 +94,7 @@ class Module(object):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
         for rule in self.ruleset.values():
-            if rule["filter"] != "explicit attachment" or ( \
+            if rule["filter"] != "explicit attachment via moduleset" or ( \
                self.moduleset in self.context.data["modset_rset_relations"]  and \
                rule['name'] in self.context.data["modset_rset_relations"][self.moduleset]
                ):
