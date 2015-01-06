@@ -1272,8 +1272,15 @@ class Node(Svc, Freezer):
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
+        kwargs = {}
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
+            import ssl
+            context = ssl._create_unverified_context()
+            kwargs['context'] = context
+        except:
+            pass
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
         except IOError as e:
             print("download failed", ":", e[1], file=sys.stderr)
             try:
@@ -1351,8 +1358,15 @@ class Node(Svc, Freezer):
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
+        kwargs = {}
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
+            import ssl
+            context = ssl._create_unverified_context()
+            kwargs['context'] = context
+        except:
+            pass
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
         except IOError as e:
             print("download failed", ":", e[1], file=sys.stderr)
             try:
