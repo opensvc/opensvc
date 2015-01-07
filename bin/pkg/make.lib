@@ -65,6 +65,7 @@ function prepare_chroot {
 	EXCL="$EXCL --exclude='var/lock/*'"
 	EXCL="$EXCL --exclude='var/cache/*'"
 	EXCL="$EXCL --exclude=lib/rcLocalEnv.py"
+	EXCL="$EXCL --exclude=*.swp"
 	cd $OSVC || return 1
 	tar cf - $EXCL bin lib usr var/compliance/*com.opensvc* | tar xf - -C $CHROOT/opt/opensvc || return 1
 	echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || return 1
