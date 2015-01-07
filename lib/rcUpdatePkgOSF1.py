@@ -6,7 +6,7 @@ repo_subdir = "tar"
 
 def update(fpath):
     oldpath = os.getcwd()
-    os.chdir(os.sep, "opt")
+    os.chdir(os.path.join(os.sep, "opt"))
     tar = tarfile.open(fpath)
     try:
         tar.extractall()
