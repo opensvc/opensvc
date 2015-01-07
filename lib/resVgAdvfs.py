@@ -30,15 +30,29 @@ import rcExceptions as ex
 import re
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = 'fdmn ' + name
-        resDg.Dg.__init__(self, rid=rid, name=name,
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.vg',
                           always_on=always_on,
-                          optional=optional, disabled=disabled, tags=tags,
-                          monitor=monitor)
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def disklist_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
