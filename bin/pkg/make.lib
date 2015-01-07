@@ -41,7 +41,7 @@ function prepare_chroot {
 	#
 	# prepare skeleton (data.tar.gz)
 	#
-	[ "${CHROOT%%noarch}" != "$CHROOT" ] && $SUDO rm -rf $CHROOT
+	echo $CHROOT | grep noarch >/dev/null 2>&1 && $SUDO rm -rf $CHROOT
 	mkdir -p $CHROOT/opt/opensvc/etc || return 1
 	mkdir -p $CHROOT/opt/opensvc/var || return 1
 	mkdir -p $CHROOT/opt/opensvc/log || return 1
