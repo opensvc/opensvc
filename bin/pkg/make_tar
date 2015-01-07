@@ -9,7 +9,7 @@ CHROOT=$CHROOT/opensvc-$VERSION.$RELEASE
 prepare_chroot || exit 1
 
 cd $CHROOT || exit 1
-echo "create $(realpath $TAR)"
+echo "create $(readlink -f $TAR)"
 tar cf $TAR . || exit 1
 
 [ -x $PATH_SCRIPT/release_tar ] && $PATH_SCRIPT/release_tar $TAR
