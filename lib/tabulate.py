@@ -25,10 +25,14 @@ else:
     _text_type = str
     _binary_type = bytes
 
-
 __all__ = ["tabulate"]
 __version__ = "0.6"
 
+def __text_type(s):
+    try:
+       return unicode(s, errors="ignore")
+    except:
+       return s
 
 Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
 
@@ -376,7 +380,7 @@ def _format(val, valtype, floatfmt, missingval=u""):
         return missingval
 
     if valtype in [int, _binary_type, _text_type]:
-        return u"{0}".format(val)
+        return u"{0}".format(__text_type(val))
     elif valtype is float:
         return format(float(val), floatfmt)
     else:
@@ -653,7 +657,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     # optimization: look for ANSI control codes once,
     # enable smart width functions only if a control code is found
     plain_text = u'\n'.join(['\t'.join(map(_text_type, headers))] + \
-                            [u'\t'.join(map(_text_type, row)) for row in list_of_lists])
+                            [u'\t'.join(map(__text_type, row)) for row in list_of_lists])
     has_invisible = re.search(_invisible_codes, plain_text)
     if has_invisible:
         width_fn = _visible_width
