@@ -170,6 +170,7 @@ class Node(Svc, Freezer):
           },
           'Compliance': {
             'compliance_auto': 'run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+            'compliance_env': 'show the compliance modules environment variables.',
             'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',

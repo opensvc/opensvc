@@ -105,7 +105,7 @@ class Module(object):
     def action(self, action):
         self.print_bold(banner(self.name))
 
-        if action not in ['check', 'fix', 'fixable']:
+        if action not in ['check', 'fix', 'fixable', 'env']:
             print('action %s not supported')
             return 1
 
@@ -128,7 +128,18 @@ class Module(object):
                 self.do_action('fixable')
         elif action == 'fixable':
             r = self.do_action('fixable')
+        elif action == 'env':
+            r = self.do_env()
         return r
+
+    def do_env(self):
+        a = []
+        self.setup_env()
+        for var in sorted(os.environ):
+            val = os.environ[var]
+            a.append('%s=%s'%(var, val))
+        print('\n'.join(a))
+        return 0
 
     def do_action(self, action):
         start = datetime.datetime.now()
@@ -226,6 +237,9 @@ class Module(object):
         else:
             print("RCODE:    %d"%r)
 
+    def env(self):
+        return self.action('env')
+
     def check(self):
         return self.action('check')
 
@@ -287,6 +301,9 @@ class Compliance(object):
         if self.updatecomp:
             self.node.updatecomp()
         self.do_auto()
+
+    def compliance_env(self):
+        self.do_run('env')
 
     def compliance_check(self):
         self.do_checks()
@@ -522,6 +539,8 @@ class Compliance(object):
                 else:
                     _action = "check"
             err[module] = getattr(self.module_o[module], _action)()
+        if action == "env":
+            return 0
         r = self.digest_errors(err)
         end = datetime.datetime.now()
         print("total duration: %s"%str(end-start))

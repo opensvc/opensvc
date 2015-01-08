@@ -40,7 +40,7 @@ _svcmgr()
 		local opts="json ack alerts checks events status list show asset networks disks"
 		;;
 	    compliance)
-		local opts="check fixable fix show list attach detach"
+		local opts="check fixable fix show list attach detach env"
 		;;
 	    push)
 		local opts="appinfo"
@@ -107,6 +107,9 @@ _svcmgr()
 		local opts="--module --moduleset --attach"
 		;;
             "compliance check")
+		local opts="--module --moduleset"
+		;;
+            "compliance env")
 		local opts="--module --moduleset"
 		;;
             "compliance attach")
@@ -220,7 +223,7 @@ _nodemgr()
 		local opts="json ack alerts checks events status list show asset networks disks"
 		;;
 	    compliance)
-		local opts="check fixable fix show list attach detach"
+		local opts="check fixable fix show list attach detach env"
 		;;
 	    push)
 		local opts="appinfo"
@@ -293,6 +296,9 @@ _nodemgr()
 		local opts="--module --moduleset --attach"
 		;;
             "compliance check")
+		local opts="--module --moduleset"
+		;;
+            "compliance env")
 		local opts="--module --moduleset"
 		;;
             "compliance attach")

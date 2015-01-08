@@ -100,6 +100,7 @@ action_desc = {
      },
     'Compliance': {
       'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+      'compliance_env': 'show the compliance modules environment variables.',
       'compliance_fix': 'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
       'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
       'compliance_show_status': 'show compliance modules status',
