@@ -62,7 +62,7 @@ def print_table(data, width=20, table=False):
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
-            val = '\n'.join(wrap(unicode(d[i]),
+            val = '\n'.join(wrap(unicode(d[i], errors="ignore"),
                        initial_indent = "",
                        subsequent_indent = subsequent_indent,
                        width=78
