@@ -140,6 +140,8 @@ class SysReport(object):
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
             return
+        if os.path.islink(fpath):
+            return
         dst_d = self.collect_file_d + os.path.dirname(fpath)
         fname = os.path.basename(fpath)
         dst_f = os.path.join(dst_d, fname)
