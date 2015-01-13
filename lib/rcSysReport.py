@@ -183,7 +183,10 @@ class SysReport(object):
             self.deleted += list(deleted)
             self.delete_collected(deleted)
         for fp in fpaths:
-            self.collect_file(fp)
+            if os.path.isfile(fp):
+                self.collect_file(fp)
+            elif os.path.isdir(fp):
+                self.collect_dir(fp)
 
     def collect_dir(self, fpath):
         if not os.path.exists(fpath):
