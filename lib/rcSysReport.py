@@ -133,7 +133,7 @@ class SysReport(object):
             return
         fname = self.cmdlist2fname(l)
         cmd_d = os.path.join(self.collect_cmd_d, fname)
-        p = Popen(l, stdout=PIPE, stderr=STDOUT)
+        p = Popen(l, stdout=PIPE, stderr=STDOUT, close_fds=True)
         out, err = p.communicate()
         self.write(os.path.join(cmd_d), out)
 
