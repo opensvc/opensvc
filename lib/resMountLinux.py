@@ -360,13 +360,12 @@ class Mount(Res.Mount):
                     (self.device, self.mountPoint))
             return
         if not os.path.exists(self.mountPoint):
-            raise execError('mount point %s does not exist' % self.mountPoint)
+            raise ex.excError('mount point %s does not exist' % self.mountPoint)
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
-            self.log.error('failed to umount %s'%self.mountPoint)
-            raise ex.excError
+            raise ex.excError('failed to umount %s'%self.mountPoint)
         self.Mounts = None
 
 if __name__ == "__main__":
