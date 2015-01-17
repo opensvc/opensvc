@@ -39,6 +39,34 @@ try:
 except:
     mp = False
 
+def run_as_popen_kwargs(fpath):
+    if rcEnv.sysname == "Windows":
+        return {}
+    try:
+        st = os.stat(fpath)
+    except Exception as e:
+        raise ex.excError(str(e))
+    cwd = rcEnv.pathtmp
+    user_uid = st[stat.ST_UID]
+    user_gid = st[stat.ST_GID]
+    import pwd
+    user_name = pwd.getpwuid(st[stat.ST_UID])[0]
+    pw_record = pwd.getpwnam(user_name)
+    user_name      = pw_record.pw_name
+    user_home_dir  = pw_record.pw_dir
+    env = os.environ.copy()
+    env['HOME']  = user_home_dir
+    env['LOGNAME']  = user_name
+    env['PWD']  = cwd
+    env['USER']  = user_name
+    return {'preexec_fn': demote(user_uid, user_gid), 'cwd': cwd, 'env': env}
+
+def demote(user_uid, user_gid):
+    def result():
+        os.setgid(user_gid)
+        os.setuid(user_uid)
+    return result
+
 class StatusWARN(Exception):
     pass
 
@@ -113,7 +141,6 @@ class App(Res.Resource):
                  stop=None,
                  check=None,
                  info=None,
-                 run_as=None,
                  timeout=None,
                  optional=False,
                  disabled=False,
@@ -136,7 +163,6 @@ class App(Res.Resource):
         self.stop_seq = stop
         self.check_seq = check
         self.info_seq = info
-        self.run_as = run_as
         self.timeout = timeout
         self.label = os.path.basename(script)
         self.always_on = always_on
@@ -150,27 +176,9 @@ class App(Res.Resource):
             return 0
         return cmp(self.start_seq, other.start_seq)
 
-    def on_add(self):
-        self.validate_user()
-
     def validate_on_action(self):
         self.validate_script_path()
         self.validate_script_exec()
-
-    def validate_user(self):
-        if self.run_as is None:
-            self.uid = 0
-            self.gid = 0
-            return
-        try:
-            ui = pwd.getpwnam(self.run_as)
-        except:
-            self.status_log("run_as %s issue: the user does not exist" % self.run_as)
-            self.uid = None
-            self.gid = None
-            return
-        self.uid = ui.pw_uid
-        self.gid = ui.pw_gid
 
     def validate_script_exec(self):
         if self.script is None:
@@ -197,10 +205,6 @@ class App(Res.Resource):
         if not os.path.exists(self.script):
             self.status_log("script does not exist")
             raise StatusNA()
-        if self.uid is None:
-            raise StatusWARN()
-        if self.gid is None:
-            raise StatusWARN()
         if self.check_seq is None:
             self.status_log("check disabled")
             raise StatusNA()
@@ -293,20 +297,6 @@ class App(Res.Resource):
             return
         self.vcall(['chmod', '+x', self.script])
 
-    def set_perms(self):
-        if self.uid is None or self.gid is None:
-            return
-        if not os.path.exists(self.script):
-            return
-        s = os.stat(self.script)
-        if s.st_uid != self.uid or s.st_gid != self.gid:
-            self.log.info("set %s ownership to uid %d gid %d"%(self.script, self.uid, self.gid))
-            os.chown(self.script, self.uid, self.gid)
-        if self.run_as is not None and not s.st_mode & stat.S_ISUID:
-            self.vcall(['chmod', '+s', self.script])
-        elif self.run_as is None and s.st_mode & stat.S_ISUID:
-            self.vcall(['chmod', '-s', self.script])
-
     def run(self, action, dedicated_log=True, return_out=False):
         if self.script is None:
             return 1
@@ -324,17 +314,22 @@ class App(Res.Resource):
                 self.status_log("script %s does not exist" % self.script)
                 raise StatusWARN()
 
-        self.set_perms()
         self.set_executable()
 
         cmd = [self.script, action]
         try:
             if dedicated_log:
-                self.log.info('spawn: %s' % ' '.join(cmd))
                 outf = os.path.join(rcEnv.pathtmp, 'svc_'+self.svc.svcname+'_'+os.path.basename(self.script)+'.log')
                 f = open(outf, 'w')
+                kwargs = {
+                  'stdin': None,
+                  'stdout': f.fileno(),
+                  'stderr': f.fileno(),
+                }
+                kwargs.update(run_as_popen_kwargs(self.script))
+                self.log.info('exec %s as user %s' % (' '.join(cmd), kwargs.get("env").get("LOGNAME")))
                 t = datetime.now()
-                p = Popen(cmd, stdin=None, stdout=f.fileno(), stderr=f.fileno())
+                p = Popen(cmd, **kwargs)
                 try:
                     if self.timeout is None:
                         p.communicate()
