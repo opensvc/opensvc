@@ -41,6 +41,21 @@ def parse_data(data):
         rows.append(row)
     return [labels]+rows
 
+def convert(s):
+    try:
+        return unicode(s)
+    except:
+        pass
+    try:
+        return unicode(s, errors="ignore")
+    except:
+        pass
+    try:
+        return str(s)
+    except:
+        pass
+    return s
+
 def print_table(data, width=20, table=False):
     if table:
         from tabulate import tabulate
@@ -62,7 +77,7 @@ def print_table(data, width=20, table=False):
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
-            val = '\n'.join(wrap(unicode(d[i], errors="ignore"),
+            val = '\n'.join(wrap(convert(d[i]),
                        initial_indent = "",
                        subsequent_indent = subsequent_indent,
                        width=78
