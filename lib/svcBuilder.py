@@ -2228,11 +2228,6 @@ def add_app(svc, conf, s):
         return
 
     try:
-        kwargs['run_as'] = conf_get_string_scope(svc, conf, s, 'run_as')
-    except ex.OptNotFound:
-        pass
-
-    try:
         kwargs['timeout'] = conf_get_int_scope(svc, conf, s, 'timeout')
     except ex.OptNotFound:
         pass
