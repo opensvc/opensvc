@@ -6,6 +6,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, cmdline2list
 from stat import *
 from subprocess import *
+import json
 
 class SysReport(object):
     def __init__(self, node=None):
@@ -23,6 +24,8 @@ class SysReport(object):
         self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
         self.collect_cmd_d = os.path.join(self.collect_d, "cmd")
         self.collect_file_d = os.path.join(self.collect_d, "file")
+        self.collect_stat = os.path.join(self.collect_file_d, "stat")
+        self.stat_changed = False
         self.root_uid = 0
         self.root_gid = 0
         self.node = node
@@ -35,6 +38,7 @@ class SysReport(object):
         self.init_dir(self.collect_file_d)
         self.init_dir(self.sysreport_conf_d)
         self.merge_todo()
+        self.load_stat()
 
     def init_dir(self, fpath):
         self.init_collect_d(fpath)
@@ -58,6 +62,33 @@ class SysReport(object):
         if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
             print("set dir", self.collect_d, "ownership to", self.root_uid, self.root_gid)
             os.chown(self.collect_d, self.root_uid, self.root_gid)
+
+    def load_stat(self):
+        try:
+            self.stat = _load_stat(self)
+        except:
+            self.stat = {}
+
+    def _load_stat(self):
+        with open(self.collect_stat, "r") as f:
+            buff = f.read()
+        l = json.loads(buff)
+        stat = {}
+        for e in l:
+            stat[e["fpath"]] = e
+        return stat
+
+    def write_stat(self):
+        if not self.stat_changed:
+            return
+        self._write_stat()
+
+    def _write_stat(self):
+        l = []
+        for fpath in sorted(self.stat.keys()):
+            l.append(self.stat[fpath])
+        with open(self.collect_stat, "w") as f:
+            f.write(json.dumps(l, sort_keys=True, separators=[", ", ": "], indent=4))
 
     def merge_todo(self):
         for root, dnames, fnames in os.walk(self.sysreport_conf_d):
@@ -137,6 +168,44 @@ class SysReport(object):
         out, err = p.communicate()
         self.write(os.path.join(cmd_d), out)
 
+    def get_stat(self, fpath):
+        st = os.stat(fpath)
+        stat = {
+          "fpath": fpath,
+          "realpath": os.path.realpath(fpath),
+          "mode": oct(st[ST_MODE]),
+          "uid": st[ST_UID],
+          "gid": st[ST_GID],
+          "dev": st[ST_DEV],
+          "nlink": st[ST_NLINK],
+          "mtime": st[ST_MTIME],
+          "ctime": st[ST_CTIME],
+        }
+        return stat
+
+    def push_stat(self, fpath):
+        stat = self.get_stat(fpath)
+        cached_stat = self.stat.get(fpath)
+        if cached_stat is None:
+            self.stat[fpath] = stat
+            self.stat_changed = True
+            if self.collect_stat not in self.changed:
+                self.changed.append(self.collect_stat)
+            if self.collect_stat not in self.full:
+                self.full.append(self.collect_stat)
+            #print("  add %s stat info"%fpath)
+            return
+        for p in ("realpath", "mode", "uid", "gid", "major", "minor", "nlink", "mtime", "ctime"):
+            if stat[p] != cached_stat[p]:
+                self.stat[fpath] = stat
+                self.stat_changed = True
+                if self.collect_stat not in self.changed:
+                    self.changed.append(self.collect_stat)
+                if self.collect_stat not in self.full:
+                    self.full.append(self.collect_stat)
+                #print("  change %s stat info"%fpath)
+                return
+
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
             return
@@ -152,7 +221,16 @@ class SysReport(object):
         if os.path.exists(dst_f) and not os.path.exists(fpath):
             self.deleted.append(fpath)
             os.unlink(dst_f)
+            if fpath in self.stat:
+                delete(self.stat[fpath])
+                self.stat_changed = True
+                if self.collect_stat not in self.changed:
+                    self.changed.append(self.collect_stat)
+                if self.collect_stat not in self.full:
+                    self.full.append(self.collect_stat)
             return
+
+        self.push_stat(fpath)
 
         try:
             with open(fpath, 'r') as f:
@@ -243,6 +321,7 @@ class SysReport(object):
         print("collect directory is", self.collect_d)
         for item in self.todo:
             self.collect(item)
+        self.write_stat()
         self.send(force)
 
     def deleted_report(self):
