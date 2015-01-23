@@ -2120,6 +2120,7 @@ class Svc(Resource):
           'print_resource_status',
           'print_disklist',
           'print_devlist',
+          'json_env',
           'json_status',
           'json_disklist',
           'json_devlist'
