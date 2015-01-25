@@ -82,4 +82,7 @@ def print_table(data, width=20, table=False):
                        subsequent_indent = subsequent_indent,
                        width=78
                   ))
-            print(" %s = %s" % (label.ljust(max_label_len), val))
+            try:
+                print(" %s = %s" % (label.ljust(max_label_len), val))
+            except UnicodeEncodeError:
+                print(" %s = %s" % (label.ljust(max_label_len), val.encode("utf-8")))
