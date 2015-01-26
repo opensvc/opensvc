@@ -11,20 +11,20 @@ import json
 class SysReport(object):
     def __init__(self, node=None):
         self.todo = [
-          ('FILE', '/opt/opensvc/etc/node.conf'),
-          ('GLOB', '/opt/opensvc/etc/*env'),
-          ('DIR', '/opt/opensvc/etc/sysreport.conf.d'),
+          ('INC', '/opt/opensvc/etc/node.conf'),
+          ('INC', '/opt/opensvc/etc/*env'),
+          ('INC', '/opt/opensvc/etc/sysreport.conf.d'),
         ]
 
         self.changed = []
         self.deleted = []
-        self.full = []
         self.sysreport_conf_d = os.path.join(rcEnv.pathetc, "sysreport.conf.d")
         self.sysreport_d = os.path.join(rcEnv.pathvar, "sysreport")
         self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
         self.collect_cmd_d = os.path.join(self.collect_d, "cmd")
         self.collect_file_d = os.path.join(self.collect_d, "file")
         self.collect_stat = os.path.join(self.collect_file_d, "stat")
+        self.full = [self.collect_stat]
         self.stat_changed = False
         self.root_uid = 0
         self.root_gid = 0
@@ -37,8 +37,8 @@ class SysReport(object):
         self.init_dir(self.collect_cmd_d)
         self.init_dir(self.collect_file_d)
         self.init_dir(self.sysreport_conf_d)
-        self.merge_todo()
         self.load_stat()
+        self.merge_todo()
 
     def init_dir(self, fpath):
         self.init_collect_d(fpath)
@@ -65,7 +65,7 @@ class SysReport(object):
 
     def load_stat(self):
         try:
-            self.stat = _load_stat(self)
+            self.stat = self._load_stat()
         except:
             self.stat = {}
 
@@ -106,18 +106,71 @@ class SysReport(object):
                 with open(fpath, 'r') as f:
                     buff = f.read()
                 for line in buff.split("\n"):
+                    line = line.strip()
                     if line.startswith("FILE"):
-                        t = ("FILE", line[4:].strip())
+                        t = ("INC", line[4:].strip())
                     elif line.startswith("CMD"):
                         t = ("CMD", line[3:].strip())
                     elif line.startswith("DIR"):
-                        t = ("DIR", line[3:].strip())
+                        t = ("INC", line[3:].strip())
                     elif line.startswith("GLOB"):
-                        t = ("GLOB", line[4:].strip())
+                        t = ("INC", line[4:].strip())
+                    elif line.startswith("INC"):
+                        t = ("INC", line[3:].strip())
+                    elif line.startswith("EXC"):
+                        t = ("EXC", line[3:].strip())
+                    elif line == "":
+                        continue
+                    elif line.startswith("#"):
+                        continue
+                    elif line.startswith(";"):
+                        continue
                     else:
+                        print("unsupported item type:", line)
                         continue
                     if t not in self.todo:
                         self.todo.append(t)
+
+        # expand
+        inc = set([])
+        exc = set([])
+        self.cmds = set([])
+        for mode, s in self.todo:
+            if mode == "CMD":
+                self.cmds.add(s)
+                continue
+            l = []
+            for _s in glob.glob(s):
+                if os.path.isdir(_s):
+                    l += self.find_files(_s)
+                else:
+                    l.append(_s)
+            if mode == "INC":
+                inc |= set(l)
+            elif mode == "EXC":
+                exc |= set(l)
+        self.files = inc - exc
+
+        # find deleted
+        dst_files = self.find_files(self.collect_file_d)
+        n = len(self.collect_file_d)
+        dst_files = map(lambda x: x[n:], dst_files)
+        self.deleted = set(dst_files) - self.files - set(["/stat"])
+
+        # order file lists
+        self.files = sorted(list(self.files))
+        self.deleted = sorted(list(self.deleted))
+
+        # purge stat info of deleted files
+        for fpath in self.deleted:
+            if fpath in self.stat:
+                del(self.stat[fpath])
+                self.stat_changed = True
+                if self.collect_stat not in self.changed:
+                    self.changed.append(self.collect_stat)
+                if self.collect_stat not in self.full:
+                    self.full.append(self.collect_stat)
+ 
 
     def cmdlist2fname(self, l):
         fname = '(space)'.join(l)
@@ -195,7 +248,7 @@ class SysReport(object):
                 self.full.append(self.collect_stat)
             #print("  add %s stat info"%fpath)
             return
-        for p in ("realpath", "mode", "uid", "gid", "major", "minor", "nlink", "mtime", "ctime"):
+        for p in ("realpath", "mode", "uid", "gid", "dev", "nlink", "mtime", "ctime"):
             if stat[p] != cached_stat[p]:
                 self.stat[fpath] = stat
                 self.stat_changed = True
@@ -216,19 +269,6 @@ class SysReport(object):
         dst_f = os.path.join(dst_d, fname)
         if not os.path.exists(dst_d):
             os.makedirs(dst_d)
-
-        # file deleted
-        if os.path.exists(dst_f) and not os.path.exists(fpath):
-            self.deleted.append(fpath)
-            os.unlink(dst_f)
-            if fpath in self.stat:
-                delete(self.stat[fpath])
-                self.stat_changed = True
-                if self.collect_stat not in self.changed:
-                    self.changed.append(self.collect_stat)
-                if self.collect_stat not in self.full:
-                    self.full.append(self.collect_stat)
-            return
 
         self.push_stat(fpath)
 
@@ -253,39 +293,6 @@ class SysReport(object):
         fp = self.collect_file_d + fpath
         os.unlink(fp)
 
-    def collect_glob(self, fpath):
-        fpaths = glob.glob(fpath)
-        dst_fpaths = glob.glob(self.collect_file_d+fpath)
-        n = len(self.collect_file_d)
-        dst_fpaths = map(lambda x: x[n:], dst_fpaths)
-        deleted = set(dst_fpaths) - set(fpaths)
-        if len(deleted) > 0:
-            self.deleted += list(deleted)
-            self.delete_collected(deleted)
-        for fp in fpaths:
-            if os.path.isfile(fp):
-                self.collect_file(fp)
-            elif os.path.isdir(fp):
-                self.collect_dir(fp)
-
-    def collect_dir(self, fpath):
-        if not os.path.exists(fpath):
-            return
-        if not os.path.isdir(fpath):
-            print(" err: not a directory")
-            return
-        fpaths = self.find_files(fpath)
-        dst_fpaths = self.find_files(self.collect_file_d+fpath)
-        n = len(self.collect_file_d)
-        dst_fpaths = map(lambda x: x[n:], dst_fpaths)
-        deleted = set(dst_fpaths) - set(fpaths)
-        if len(deleted) > 0:
-            self.deleted += list(deleted)
-            self.delete_collected(deleted)
-
-        for fpath in fpaths:
-            self.collect_file(fpath)
-
     def find_files(self, fpath):
         l = []
         if not os.path.exists(fpath):
@@ -298,20 +305,6 @@ class SysReport(object):
                 l.append(_fpath)
         return l
 
-    def collect(self, item):
-        i_type, i_ref = item
-        print("  collecting", i_type, i_ref)
-        if i_type == 'CMD':
-            self.collect_cmd(i_ref)
-        elif i_type == 'FILE':
-            self.collect_file(i_ref)
-        elif i_type == 'DIR':
-            self.collect_dir(i_ref)
-        elif i_type == 'GLOB':
-            self.collect_glob(i_ref)
-        else:
-            print("unsupported item type", i_type, "for ref", i_ref)
-
     def sysreport(self, force=False):
         self.node.collector.init(self.send_rpc)
         if self.node.collector.proxy is None:
@@ -319,8 +312,11 @@ class SysReport(object):
             return 1
         self.init()
         print("collect directory is", self.collect_d)
-        for item in self.todo:
-            self.collect(item)
+        for fpath in self.files:
+            self.collect_file(fpath)
+        for cmd in self.cmds:
+            self.collect_cmd(cmd)
+        self.delete_collected(self.deleted)
         self.write_stat()
         self.send(force)
 
