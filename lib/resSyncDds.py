@@ -202,6 +202,8 @@ class syncDds(resSync.Sync):
             self._push_statefile(s)
 
     def apply_delta(self, node):
+        if not which('dds'):
+            raise ex.excError("dds executable not found")
         dst = self.dsts[node]
         extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
                        self.snap2]
