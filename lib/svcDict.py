@@ -976,7 +976,7 @@ class KeywordVgType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas'],
+                  candidates=['veritas', 'raw', 'rados'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -1001,6 +1001,79 @@ class KeywordVgOptions(Keyword):
                   required=False,
                   provisioning=True,
                   text="The vgcreate options to use upon vg provisioning."
+                )
+
+class KeywordVgClientId(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="client_id",
+                  depends=[('type', ["rados"])],
+                  text="Client id to use for authentication with the rados servers"
+                )
+
+class KeywordVgKeyring(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="keyring",
+                  required=False,
+                  depends=[('type', ["rados"])],
+                  text="keyring to look for the client id secret for authentication with the rados servers"
+                )
+
+class KeywordVgLock(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="lock",
+                  candidates=["exclusive", "shared", "None"],
+                  depends=[('type', ["rados"])],
+                  text="Locking mode for the rados images"
+                )
+
+class KeywordVgLockSharedTag(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="lock_shared_tag",
+                  depends=[('type', ["rados"]), ('lock', ['shared'])],
+                  text="The tag to use upon rados image locking in shared mode"
+                )
+
+class KeywordVgSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="size",
+                  provisioning=True,
+                  depends=[('type', ["rados"])],
+                  text="The rados block device size in MB"
+                )
+
+class KeywordVgImages(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="images",
+                  depends=[('type', ["rados"])],
+                  text="The rados image names handled by this vg resource. whitespace separated."
+                )
+
+class KeywordVgPool(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="pool",
+                  depends=[('type', ["rados"])],
+                  text="The rados pool name"
                 )
 
 class KeywordVgDsf(Keyword):
@@ -1772,6 +1845,13 @@ class KeyDict(KeywordStore):
         self += KeywordVgType()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
+        self += KeywordVgPool()
+        self += KeywordVgImages()
+        self += KeywordVgClientId()
+        self += KeywordVgKeyring()
+        self += KeywordVgLock()
+        self += KeywordVgLockSharedTag()
+        self += KeywordVgSize()
         self += KeywordVgOptions()
         self += KeywordVgScsireserv()
         self += KeywordVgPvs()

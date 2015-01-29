@@ -260,6 +260,9 @@ class Mount(Res.Mount):
         if dev is None:
             return set([])
 
+        if dev.startswith("/dev/rbd"):
+            return set([])
+
         try:
             self.dm_major = major('device-mapper')
         except:

@@ -607,6 +607,32 @@ def add_vg(svc, conf, s):
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
 
+    if vgtype == 'Rados':
+        vgtype += rcEnv.sysname
+        try:
+            kwargs['pool'] = conf_get_string_scope(svc, conf, s, 'pool')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+        except ex.OptNotFound:
+            pass
+        try:
+            lock_shared_tag = conf_get_string_scope(svc, conf, s, 'lock_shared_tag')
+        except ex.OptNotFound:
+            lock_shared_tag = None
+        try:
+            lock = conf_get_string_scope(svc, conf, s, 'lock')
+        except ex.OptNotFound:
+            lock = None
     if vgtype == 'Raw':
         vgtype += rcEnv.sysname
         try:
@@ -656,7 +682,7 @@ def add_vg(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
-        if not vgtype.startswith("Raw") and vgtype != "Gandi":
+        if not vgtype.startswith("Raw") and not vgtype.startswith("Rados") and vgtype != "Gandi":
             svc.log.error("vgname must be set in section %s"%s)
             return
 
@@ -691,6 +717,17 @@ def add_vg(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
+
+    if not lock:
+        return
+
+    # rados locking resource
+    kwargs["rid"] = kwargs["rid"]+"lock"
+    kwargs["lock"] = lock
+    kwargs["lock_shared_tag"] = lock_shared_tag
+    r = vg.VgLock(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
 
 def add_vmdg(svc, conf, s):
     kwargs = {}
