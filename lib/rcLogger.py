@@ -41,6 +41,8 @@ def get_max_ressource_name_len(svc):
 
 def initLogger(name):
     log = logging.getLogger(name)
+    if name in rcEnv.logging_initialized:
+        return log
     name_width = len(name) + min_resource_name_len
 
     """Common log formatter
@@ -75,4 +77,5 @@ def initLogger(name):
             rcEnv.loglevel = logging.INFO
             log.setLevel(logging.INFO)
 
+    rcEnv.logging_initialized.append(name)
     return log
