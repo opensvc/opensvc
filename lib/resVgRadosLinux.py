@@ -19,6 +19,7 @@ import resDg
 import os
 import rcStatus
 import rcExceptions as ex
+import json
 from rcGlobalEnv import *
 
 class Vg(resDg.Dg):
@@ -82,27 +83,17 @@ class Vg(resDg.Dg):
         if not refresh and hasattr(self, "mapped_data"):
             return self.mapped_data
         self.modprobe()
-        cmd = ["rbd", "showmapped"]
+        cmd = ["rbd", "showmapped", "--format", "json"]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError("rbd showmapped failed")
+        try:
+            _data = json.loads(out)
+        except Exception as e:
+            raise ex.excError(str(e))
         data = {}
-        lines = out.split("\n")
-        if len(lines) < 2:
-            return data
-        header = lines[0].split()
-        for line in lines[1:]:
-            if len(line) == 0:
-                continue
-            l = line.split()
-            img_data = {}
-            for i, h in enumerate(header):
-                img_data[h] = l[i]
-            if "pool" not in img_data:
-                continue
-            if "image" not in img_data:
-                continue
-            data[(img_data["pool"], img_data["image"])] = img_data
+        for id, img_data in _data.items():
+            data[(img_data["pool"], img_data["name"])] = img_data
         self.mapped_data = data
         return data
 
@@ -245,30 +236,15 @@ class VgLock(Vg):
     def locklist(self, image):
         if not self.has_it(image):
             return {}
-        cmd = self.rbd_rcmd()+["lock", "list", image]
+        cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError("rbd lock list failed")
-        lines = out.split("\n")
         data = {}
-        if len(lines) < 2:
-            return data
-        for i, line in enumerate(lines):
-            if line.startswith("Locker"):
-                break
-        header = lines[i].split()
-        if len(lines) < i+2:
-            return data
-        for line in lines[i+1:]:
-            if len(line) == 0:
-                continue
-            l = line.split()
-            img_data = {}
-            for i, h in enumerate(header):
-                img_data[h] = l[i]
-            if "ID" not in img_data:
-                continue
-            data[img_data["ID"]] = img_data
+        try:
+            data = json.loads(out)
+        except Exception as e:
+            raise ex.excError(str(e))
         return data
 
 
@@ -305,7 +281,7 @@ class VgLock(Vg):
         if rcEnv.nodename not in data:
             self.log.info(image+"@"+self.pool+" is already unlocked")
             return
-        cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["Locker"]]
+        cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("failed to unlock %s: %s"%self.devname(image))
