@@ -21,6 +21,7 @@ import rcStatus
 import rcExceptions as ex
 import json
 from rcGlobalEnv import *
+from rcUtilities import justcall
 
 class Vg(resDg.Dg):
     def __init__(self,
@@ -84,9 +85,9 @@ class Vg(resDg.Dg):
             return self.mapped_data
         self.modprobe()
         cmd = ["rbd", "showmapped", "--format", "json"]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("rbd showmapped failed")
+            raise ex.excError("rbd showmapped failed: "+err)
         try:
             _data = json.loads(out)
         except Exception as e:
