@@ -336,20 +336,20 @@ else:
    tags = set([])
 
 if action in ['create', 'update']:
-    r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+    data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
     if options.provision:
-        if action == 'create':
-            # force a refresh of node.svcs
-            # don't push to the collector yet
-            del(node.svcs)
-            node.svcs = None
-            try:
-                node.build_services(svcnames=svcnames, autopush=False)
-            except ex.excError:
-                build_err = True
-            if len(node.svcs) == 1:
-                node.svcs[0].action("provision")
-    _exit(r)
+        rid = data.get("rid", [])
+        # force a refresh of node.svcs
+        # don't push to the collector yet
+        del(node.svcs)
+        node.svcs = None
+        try:
+            node.build_services(svcnames=svcnames, autopush=False)
+        except ex.excError:
+            build_err = True
+        if len(node.svcs) == 1:
+            node.svcs[0].action("provision", rid=rid)
+    _exit(data["ret"])
 
 node.options.parallel = options.parallel
 node.options.waitlock = options.parm_waitlock

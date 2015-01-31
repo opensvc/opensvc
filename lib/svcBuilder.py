@@ -592,6 +592,7 @@ def add_vg(svc, conf, s):
     section. Vg objects are stored in a list in the service object.
     """
     kwargs = {}
+    lock = None
 
     try:
         vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
@@ -632,7 +633,7 @@ def add_vg(svc, conf, s):
         try:
             lock = conf_get_string_scope(svc, conf, s, 'lock')
         except ex.OptNotFound:
-            lock = None
+            pass
     if vgtype == 'Raw':
         vgtype += rcEnv.sysname
         try:
@@ -2791,26 +2792,26 @@ def delete(svcnames, rid=[]):
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if len(svcname) != 1:
         print("you must specify a single service name with the 'create' action", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     svcname = svcname[0]
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if svcname in list_services():
         print("service", svcname, "already exists", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     if os.path.exists(envfile):
         print(envfile, "already exists", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     try:
        f = open(envfile, 'w')
     except:
         print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
+        return {"ret": 1}
 
     defaults = {}
     sections = {}
@@ -2822,16 +2823,16 @@ def create(svcname, resources=[], interactive=False, provision=False):
             d = json.loads(r)
         except:
             print("can not parse resource:", r, file=sys.stderr)
-            return 1
+            return {"ret": 1}
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             l = section.split('#')
             if len(l) != 2:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             rtype = l[1]
             if rtype in rtypes:
                 rtypes[rtype] += 1
@@ -2867,14 +2868,14 @@ def create(svcname, resources=[], interactive=False, provision=False):
             sections[section].update(keys.update(section, d))
     except (MissKeyNoDefault, KeyInvalidValue):
         if not interactive:
-            return 1
+            return {"ret": 1}
 
     try:
         if interactive:
             defaults, sections = keys.form(defaults, sections)
     except KeyboardInterrupt:
         sys.stderr.write("Abort\n")
-        return 1
+        return {"ret": 1}
 
     conf = ConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
@@ -2897,17 +2898,17 @@ def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if len(svcname) != 1:
-        print("you must specify a single service name with the 'create' action", file=sys.stderr)
-        return 1
+        print("you must specify a single service name with the 'update' action", file=sys.stderr)
+        return {"ret": 1}
     svcname = svcname[0]
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if svcname not in list_services():
         print("service", svcname, "does not exist", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     sections = {}
     rtypes = {}
@@ -2928,27 +2929,33 @@ def update(svcname, resources=[], interactive=False, provision=False):
                 continue
             sections[section][o] = v
 
+    from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+    keys = KeyDict(provision=provision)
+
     import json
+    rid = []
     for r in resources:
         try:
             d = json.loads(r)
         except:
             print("can not parse resource:", r, file=sys.stderr)
-            return 1
+            return {"ret": 1}
+        is_resource = False
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             l = section.split('#')
             if len(l) != 2:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             del(d['rid'])
             if section in sections:
                 sections[section].update(d)
             else:
                 sections[section] = d
+            is_resource = True
         elif 'rtype' in d:
             # new resource allocation, auto-allocated rid index
             if d['rtype'] in rtypes:
@@ -2963,8 +2970,17 @@ def update(svcname, resources=[], interactive=False, provision=False):
             section = '#'.join((d['rtype'], ridx))
             del(d['rtype'])
             sections[section] = d
+            is_resource = True
         else:
             defaults.update(d)
+
+        if is_resource:
+            try:
+                sections[section].update(keys.update(section, d))
+            except (MissKeyNoDefault, KeyInvalidValue):
+                if not interactive:
+                    return {"ret": 1}
+            rid.append(section)
 
     conf = ConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
@@ -2976,12 +2992,13 @@ def update(svcname, resources=[], interactive=False, provision=False):
         f = open(envfile, 'w')
     except:
         print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
+        return {"ret": 1}
 
     conf.write(f)
 
     fix_app_link(svcname)
     fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    return {"ret": 0, "rid": rid}
 
 def fix_app_link(svcname):
     os.chdir(rcEnv.pathetc)
