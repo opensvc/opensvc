@@ -1045,6 +1045,18 @@ class KeywordVgLockSharedTag(Keyword):
                   text="The tag to use upon rados image locking in shared mode"
                 )
 
+class KeywordVgImageFormat(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="image_format",
+                  provisioning=True,
+                  depends=[('type', ["rados"])],
+                  default="2",
+                  text="The rados image format"
+                )
+
 class KeywordVgSize(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1053,7 +1065,7 @@ class KeywordVgSize(Keyword):
                   keyword="size",
                   provisioning=True,
                   depends=[('type', ["rados"])],
-                  text="The rados block device size in MB"
+                  text="The rados image size in MB"
                 )
 
 class KeywordVgImages(Keyword):
@@ -1852,6 +1864,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgLock()
         self += KeywordVgLockSharedTag()
         self += KeywordVgSize()
+        self += KeywordVgImageFormat()
         self += KeywordVgOptions()
         self += KeywordVgScsireserv()
         self += KeywordVgPvs()
