@@ -208,7 +208,8 @@ class Resource(object):
         if self.skip and (\
              action.startswith("start") or \
              action.startswith("stop") or \
-             action.startswith("sync") \
+             action.startswith("sync") or \
+             action == "provision"
            ):
             self.log.debug('action: skip action on filtered-out resource')
             return True
