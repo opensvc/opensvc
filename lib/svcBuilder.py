@@ -611,10 +611,6 @@ def add_vg(svc, conf, s):
     if vgtype == 'Rados':
         vgtype += rcEnv.sysname
         try:
-            kwargs['pool'] = conf_get_string_scope(svc, conf, s, 'pool')
-        except ex.OptNotFound:
-            pass
-        try:
             kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
         except ex.OptNotFound:
             pass
@@ -1986,12 +1982,6 @@ def add_syncs_radossnap(svc, conf, s):
         kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
     except ex.OptNotFound:
         pass
-
-    try:
-        kwargs['pool'] = conf_get_string_scope(svc, conf, s, 'pool')
-    except ex.OptNotFound:
-        svc.log.error("config file section %s must have pool set" % s)
-        return
 
     try:
         kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()

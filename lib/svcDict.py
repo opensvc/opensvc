@@ -1078,16 +1078,6 @@ class KeywordVgImages(Keyword):
                   text="The rados image names handled by this vg resource. whitespace separated."
                 )
 
-class KeywordVgPool(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="vg",
-                  keyword="pool",
-                  depends=[('type', ["rados"])],
-                  text="The rados pool name"
-                )
-
 class KeywordVgDsf(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1857,7 +1847,6 @@ class KeyDict(KeywordStore):
         self += KeywordVgType()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
-        self += KeywordVgPool()
         self += KeywordVgImages()
         self += KeywordVgClientId()
         self += KeywordVgKeyring()

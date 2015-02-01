@@ -27,7 +27,6 @@ class Vg(resDg.Dg):
     def __init__(self,
                  rid=None,
                  type="disk.vg",
-                 pool=None,
                  images=set([]),
                  client_id=None,
                  keyring=None,
@@ -50,7 +49,6 @@ class Vg(resDg.Dg):
                           restart=restart,
                           subset=subset)
 
-        self.pool = pool
         self.images = images
         self.keyring = keyring
         if not client_id.startswith("client."):
@@ -59,8 +57,16 @@ class Vg(resDg.Dg):
         self.label = self.fmt_label()
         self.modprobe_done = False
 
+    def validate_image_fmt(self):
+        l = []
+        for image in self.images:
+            if "/" not in image:
+                l.append(image)
+        if len(l):
+            raise ex.excError("wrong format (expected pool/image): "+", ".join(l))
+        
     def fmt_label(self):
-        s = "rados images in pool "+self.pool+": "
+        s = "rados images: "
         s += ", ".join(self.images)
         return s
 
@@ -94,39 +100,46 @@ class Vg(resDg.Dg):
             raise ex.excError(str(e))
         data = {}
         for id, img_data in _data.items():
-            data[(img_data["pool"], img_data["name"])] = img_data
+            data[img_data["pool"]+"/"+img_data["name"]] = img_data
         self.mapped_data = data
         return data
 
     def rbd_rcmd(self):
-        l = ["rbd", "-n", self.client_id, "-p", self.pool]
+        l = ["rbd", "-n", self.client_id]
         if self.keyring:
             l += ["--keyring", self.keyring]
         return l
 
     def exists(self, image):
         cmd = self.rbd_rcmd()+["info", image]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return False
         return True
 
     def has_it(self, image):
         mapped = self.showmapped()
-        if (self.pool, image) in mapped:
+        if image in mapped:
             return True
         return False
 
     def up_count(self):
         mapped = self.showmapped()
-        n = 0
+        l = []
         for image in self.images:
-            if (self.pool, image) in mapped:
-                n += 1
-        return n
+            if image in mapped:
+                l.append(image)
+        return l
 
     def _status(self, verbose=False):
-        n = self.up_count()
+        try:
+            self.validate_image_fmt()
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+        l = self.up_count()
+        n = len(l)
+        unmapped = sorted(list(set(self.images) - set(l)))
         if n == len(self.images):
             if rcEnv.nodename in self.always_on:
                 return rcStatus.STDBY_UP
@@ -136,15 +149,16 @@ class Vg(resDg.Dg):
                 return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
+            self.status_log("unmapped: "+", ".join(unmapped))
             return rcStatus.WARN
 
     def devname(self, image):
-        return os.path.join(os.sep, "dev", "rbd", self.pool, image)
+        return os.path.join(os.sep, "dev", "rbd", image)
 
     def do_start_one(self, image):
         mapped = self.showmapped()
-        if (self.pool, image) in mapped:
-            self.log.info(image+"@"+self.pool+" is already mapped")
+        if image in mapped:
+            self.log.info(image+" is already mapped")
             return
         cmd = self.rbd_rcmd()+["map", image]
         ret, out, err = self.vcall(cmd)
@@ -152,6 +166,7 @@ class Vg(resDg.Dg):
             raise ex.excError("failed to map %s"%self.devname(image))
 
     def do_start(self):
+        self.validate_image_fmt()
         for image in self.images:
             self.do_start_one(image)
             self.can_rollback = True
@@ -159,15 +174,17 @@ class Vg(resDg.Dg):
 
     def do_stop_one(self, image):
         mapped = self.showmapped()
-        if (self.pool, image) not in mapped:
-            self.log.info(image+"@"+self.pool+" is already unmapped")
+        if image not in mapped:
+            self.log.info(image+" is already unmapped")
             return
         cmd = ["rbd", "unmap", self.devname(image)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("failed to unmap %s"%self.devname(image))
 
+
     def do_stop(self):
+        self.validate_image_fmt()
         for image in self.images:
             self.do_stop_one(image)
         self.showmapped(refresh=True)
@@ -175,7 +192,7 @@ class Vg(resDg.Dg):
     def disklist(self):
         l = set([])
         for image in self.images:
-            s = ".".join(("rbd", self.pool, image))
+            s = ".".join(("rbd", image.replace("/", ".")))
             l.add(s)
         return l
 
@@ -196,7 +213,6 @@ class VgLock(Vg):
     def __init__(self,
                  rid=None,
                  type="disk.lock",
-                 pool=None,
                  images=set([]),
                  client_id=None,
                  keyring=None,
@@ -216,7 +232,6 @@ class VgLock(Vg):
         Vg.__init__(self,
                     rid=rid,
                     type=type,
-                    pool=pool,
                     images=images,
                     client_id=client_id,
                     keyring=keyring,
@@ -239,7 +254,7 @@ class VgLock(Vg):
         if not self.has_it(image):
             return {}
         cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("rbd lock list failed")
         data = {}
@@ -275,13 +290,13 @@ class VgLock(Vg):
                 return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
-            self.rstatus_log("unlocked: "+", ".join(self.unlocked))
+            self.status_log("unlocked: "+", ".join(self.unlocked))
             return rcStatus.WARN
 
     def do_stop_one(self, image):
         data = self.locklist(image)
         if rcEnv.nodename not in data:
-            self.log.info(image+"@"+self.pool+" is already unlocked")
+            self.log.info(image+" is already unlocked")
             return
         cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
         ret, out, err = self.vcall(cmd)
@@ -291,7 +306,7 @@ class VgLock(Vg):
     def do_start_one(self, image):
         data = self.locklist(image)
         if rcEnv.nodename in data:
-            self.log.info(image+"@"+self.pool+" is already locked")
+            self.log.info(image+" is already locked")
             return
         cmd = self.rbd_rcmd()+["lock", "add", image, rcEnv.nodename]
         if self.lock_shared_tag:
