@@ -1,10 +1,5 @@
 from provisioning import Provisioning
-import os
-import json
 import rcExceptions as ex
-from stat import *
-from rcUtilities import justcall
-import glob
 
 class ProvisioningVg(Provisioning):
     def __init__(self, r):
