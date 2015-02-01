@@ -1600,6 +1600,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('rsync', svc, conf)
     add_syncs_resources('netapp', svc, conf)
     add_syncs_resources('nexenta', svc, conf)
+    add_syncs_resources('radossnap', svc, conf)
     add_syncs_resources('symclone', svc, conf)
     add_syncs_resources('symsrdfs', svc, conf)
     add_syncs_resources('hp3par', svc, conf)
@@ -1972,6 +1973,45 @@ def add_syncs_symsrdfs(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
+
+def add_syncs_radossnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['pool'] = conf_get_string_scope(svc, conf, s, 'pool')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have pool set" % s)
+        return
+
+    try:
+        kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have images set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncRados'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncRados')
+    r = sc.syncRadosSnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
 
 def add_syncs_symclone(svc, conf, s):
     kwargs = {}

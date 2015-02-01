@@ -26,7 +26,7 @@ from rcUtilities import justcall
 class Vg(resDg.Dg):
     def __init__(self,
                  rid=None,
-                 type=None,
+                 type="disk.vg",
                  pool=None,
                  images=set([]),
                  client_id=None,
@@ -41,7 +41,7 @@ class Vg(resDg.Dg):
         
         resDg.Dg.__init__(self,
                           rid=rid,
-                          type="disk.vg",
+                          type=type,
                           optional=optional,
                           disabled=disabled,
                           tags=tags,
@@ -154,6 +154,7 @@ class Vg(resDg.Dg):
     def do_start(self):
         for image in self.images:
             self.do_start_one(image)
+            self.can_rollback = True
         self.showmapped(refresh=True)
 
     def do_stop_one(self, image):
@@ -194,7 +195,7 @@ class Vg(resDg.Dg):
 class VgLock(Vg):
     def __init__(self,
                  rid=None,
-                 type=None,
+                 type="disk.lock",
                  pool=None,
                  images=set([]),
                  client_id=None,
@@ -214,7 +215,7 @@ class VgLock(Vg):
 
         Vg.__init__(self,
                     rid=rid,
-                    type="disk.vg",
+                    type=type,
                     pool=pool,
                     images=images,
                     client_id=client_id,
@@ -285,7 +286,7 @@ class VgLock(Vg):
         cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to unlock %s: %s"%self.devname(image))
+            raise ex.excError("failed to unlock %s"%self.devname(image))
 
     def do_start_one(self, image):
         data = self.locklist(image)
@@ -297,7 +298,7 @@ class VgLock(Vg):
             cmd += ["--shared", self.lock_shared_tag]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to lock %s: %s"%self.devname(image))
+            raise ex.excError("failed to lock %s"%self.devname(image))
 
     def provision(self):
         return
