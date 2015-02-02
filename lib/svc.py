@@ -105,6 +105,7 @@ class Svc(Resource):
                              "disk.loop",
                              "disk.gandi",
                              "disk.scsireserv",
+                             "disk.lock",
                              "disk.vg",
                              "disk.lv",
                              "disk.zpool",
@@ -113,6 +114,7 @@ class Svc(Resource):
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.rados",
                              "sync.symsrdfs",
                              "sync.hp3par",
                              "sync.ibmdssnap",
@@ -1411,6 +1413,7 @@ class Svc(Resource):
     @_master_action
     def master_stopvg(self):
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.lock", "stop")
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     def startvg(self):
@@ -1424,6 +1427,7 @@ class Svc(Resource):
     @_master_action
     def master_startvg(self):
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
+        self.sub_set_action("disk.lock", "start")
         self.sub_set_action("disk.vg", "start")
 
     def startpool(self):
@@ -1472,6 +1476,7 @@ class Svc(Resource):
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("disk.lock", "startstandby")
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
 
@@ -1489,6 +1494,7 @@ class Svc(Resource):
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
+        self.sub_set_action("disk.lock", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
 
@@ -1504,6 +1510,7 @@ class Svc(Resource):
     def master_stopdisk(self):
         self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.lock", "stop")
         self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
@@ -1514,6 +1521,7 @@ class Svc(Resource):
     def master_shutdowndisk(self):
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "shutdown")
+        self.sub_set_action("disk.lock", "shutdown")
         self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
@@ -1523,6 +1531,7 @@ class Svc(Resource):
     def rollbackdisk(self):
         self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "rollback")
+        self.sub_set_action("disk.lock", "rollback")
         self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
@@ -1880,6 +1889,7 @@ class Svc(Resource):
         self.sub_set_action("sync.netapp", "syncresync")
         self.sub_set_action("sync.nexenta", "syncresync")
         self.sub_set_action("sync.symclone", "syncresync")
+        self.sub_set_action("sync.rados", "syncresync")
         self.sub_set_action("sync.ibmdssnap", "syncresync")
         self.sub_set_action("sync.evasnap", "syncresync")
         self.sub_set_action("sync.necismsnap", "syncresync")

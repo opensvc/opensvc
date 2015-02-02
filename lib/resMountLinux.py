@@ -100,8 +100,10 @@ class Mount(Res.Mount):
             1    - File system errors corrected
             32   - E2fsck canceled by user request
         """
-        if self.device.startswith("/dev/disk/by-"):
-            self.device = os.path.realpath(self.device)
+        dev_realpath = os.path.realpath(self.device)
+        if self.device.startswith("/dev/disk/by-") or dev_realpath.startswith("/dev/rbd"):
+            self.device = dev_realpath
+
 
         self.fsck_h = {
             'ext2': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
@@ -256,6 +258,9 @@ class Mount(Res.Mount):
     def disklist(self):
         dev = self.realdev()
         if dev is None:
+            return set([])
+
+        if dev.startswith("/dev/rbd"):
             return set([])
 
         try:

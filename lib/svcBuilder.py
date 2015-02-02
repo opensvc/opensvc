@@ -592,6 +592,7 @@ def add_vg(svc, conf, s):
     section. Vg objects are stored in a list in the service object.
     """
     kwargs = {}
+    lock = None
 
     try:
         vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
@@ -607,6 +608,28 @@ def add_vg(svc, conf, s):
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
 
+    if vgtype == 'Rados':
+        vgtype += rcEnv.sysname
+        try:
+            kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+        except ex.OptNotFound:
+            pass
+        try:
+            lock_shared_tag = conf_get_string_scope(svc, conf, s, 'lock_shared_tag')
+        except ex.OptNotFound:
+            lock_shared_tag = None
+        try:
+            lock = conf_get_string_scope(svc, conf, s, 'lock')
+        except ex.OptNotFound:
+            pass
     if vgtype == 'Raw':
         vgtype += rcEnv.sysname
         try:
@@ -656,7 +679,7 @@ def add_vg(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
-        if not vgtype.startswith("Raw") and vgtype != "Gandi":
+        if not vgtype.startswith("Raw") and not vgtype.startswith("Rados") and vgtype != "Gandi":
             svc.log.error("vgname must be set in section %s"%s)
             return
 
@@ -691,6 +714,17 @@ def add_vg(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
+
+    if not lock:
+        return
+
+    # rados locking resource
+    kwargs["rid"] = kwargs["rid"]+"lock"
+    kwargs["lock"] = lock
+    kwargs["lock_shared_tag"] = lock_shared_tag
+    r = vg.VgLock(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
 
 def add_vmdg(svc, conf, s):
     kwargs = {}
@@ -1562,6 +1596,8 @@ def add_syncs(svc, conf):
     add_syncs_resources('rsync', svc, conf)
     add_syncs_resources('netapp', svc, conf)
     add_syncs_resources('nexenta', svc, conf)
+    add_syncs_resources('radossnap', svc, conf)
+    add_syncs_resources('radosclone', svc, conf)
     add_syncs_resources('symclone', svc, conf)
     add_syncs_resources('symsrdfs', svc, conf)
     add_syncs_resources('hp3par', svc, conf)
@@ -1934,6 +1970,72 @@ def add_syncs_symsrdfs(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
+
+def add_syncs_radosclone(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['pairs'] = conf_get_string_scope(svc, conf, s, 'pairs').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have pairs set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncRados'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncRados')
+    r = sc.syncRadosClone(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_radossnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have images set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncRados'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncRados')
+    r = sc.syncRadosSnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
 
 def add_syncs_symclone(svc, conf, s):
     kwargs = {}
@@ -2754,26 +2856,26 @@ def delete(svcnames, rid=[]):
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if len(svcname) != 1:
         print("you must specify a single service name with the 'create' action", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     svcname = svcname[0]
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if svcname in list_services():
         print("service", svcname, "already exists", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     if os.path.exists(envfile):
         print(envfile, "already exists", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     try:
        f = open(envfile, 'w')
     except:
         print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
+        return {"ret": 1}
 
     defaults = {}
     sections = {}
@@ -2785,16 +2887,16 @@ def create(svcname, resources=[], interactive=False, provision=False):
             d = json.loads(r)
         except:
             print("can not parse resource:", r, file=sys.stderr)
-            return 1
+            return {"ret": 1}
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             l = section.split('#')
             if len(l) != 2:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             rtype = l[1]
             if rtype in rtypes:
                 rtypes[rtype] += 1
@@ -2830,14 +2932,14 @@ def create(svcname, resources=[], interactive=False, provision=False):
             sections[section].update(keys.update(section, d))
     except (MissKeyNoDefault, KeyInvalidValue):
         if not interactive:
-            return 1
+            return {"ret": 1}
 
     try:
         if interactive:
             defaults, sections = keys.form(defaults, sections)
     except KeyboardInterrupt:
         sys.stderr.write("Abort\n")
-        return 1
+        return {"ret": 1}
 
     conf = ConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
@@ -2855,22 +2957,23 @@ def create(svcname, resources=[], interactive=False, provision=False):
         os.makedirs(svcinitdir)
     fix_app_link(svcname)
     fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    return {"ret": 0}
 
 def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if len(svcname) != 1:
-        print("you must specify a single service name with the 'create' action", file=sys.stderr)
-        return 1
+        print("you must specify a single service name with the 'update' action", file=sys.stderr)
+        return {"ret": 1}
     svcname = svcname[0]
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     if svcname not in list_services():
         print("service", svcname, "does not exist", file=sys.stderr)
-        return 1
+        return {"ret": 1}
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
     sections = {}
     rtypes = {}
@@ -2891,27 +2994,33 @@ def update(svcname, resources=[], interactive=False, provision=False):
                 continue
             sections[section][o] = v
 
+    from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+    keys = KeyDict(provision=provision)
+
     import json
+    rid = []
     for r in resources:
         try:
             d = json.loads(r)
         except:
             print("can not parse resource:", r, file=sys.stderr)
-            return 1
+            return {"ret": 1}
+        is_resource = False
         if 'rid' in d:
             section = d['rid']
             if '#' not in section:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             l = section.split('#')
             if len(l) != 2:
                 print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
-                return 1
+                return {"ret": 1}
             del(d['rid'])
             if section in sections:
                 sections[section].update(d)
             else:
                 sections[section] = d
+            is_resource = True
         elif 'rtype' in d:
             # new resource allocation, auto-allocated rid index
             if d['rtype'] in rtypes:
@@ -2926,8 +3035,17 @@ def update(svcname, resources=[], interactive=False, provision=False):
             section = '#'.join((d['rtype'], ridx))
             del(d['rtype'])
             sections[section] = d
+            is_resource = True
         else:
             defaults.update(d)
+
+        if is_resource:
+            try:
+                sections[section].update(keys.update(section, d))
+            except (MissKeyNoDefault, KeyInvalidValue):
+                if not interactive:
+                    return {"ret": 1}
+            rid.append(section)
 
     conf = ConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
@@ -2939,12 +3057,13 @@ def update(svcname, resources=[], interactive=False, provision=False):
         f = open(envfile, 'w')
     except:
         print("failed to open", envfile, "for writing", file=sys.stderr)
-        return 1
+        return {"ret": 1}
 
     conf.write(f)
 
     fix_app_link(svcname)
     fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    return {"ret": 0, "rid": rid}
 
 def fix_app_link(svcname):
     os.chdir(rcEnv.pathetc)

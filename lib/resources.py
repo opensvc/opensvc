@@ -208,7 +208,8 @@ class Resource(object):
         if self.skip and (\
              action.startswith("start") or \
              action.startswith("stop") or \
-             action.startswith("sync") \
+             action.startswith("sync") or \
+             action == "provision"
            ):
             self.log.debug('action: skip action on filtered-out resource')
             return True
@@ -553,6 +554,8 @@ class ResourceSet(Resource):
         if not self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
             ps = {}
             for r in resources:
+                if not r.can_rollback and action == "rollback":
+                    continue
                 p = Process(target=self.action_job, args=(r, action,))
                 p.start()
                 r.log.info("action %s started in child process %d"%(action, p.pid))
@@ -561,6 +564,8 @@ class ResourceSet(Resource):
                 p.join()
             err = 0
             for r in resources:
+                if r.rid not in ps:
+                    continue
                 p = ps[r.rid]
                 if p.exitcode == 1 and not r.optional:
                     err += 1
