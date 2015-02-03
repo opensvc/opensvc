@@ -1121,10 +1121,16 @@ class Collector(object):
             print(e)
             return 1
         for sym in syms:
-            vals = []
+            # can be too big for a single rpc
             for key in sym.keys:
-                vals.append(getattr(sym, 'get_'+key)())
-            args = [sym.sid, sym.keys, vals]
+                vars = [key]
+                vals = [getattr(sym, 'get_'+key)()]
+                args = [sym.sid, vars, vals]
+                if self.auth_node:
+                    args += [(rcEnv.uuid, rcEnv.nodename)]
+                self.proxy.update_sym_xml(*args)
+            # signal all files are received
+            args = [sym.sid, [], []]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_sym_xml(*args)
