@@ -589,7 +589,7 @@ class Asset(object):
     def get_lan(self):
         kwargs = {'mcast': True}
         if rcEnv.sysname == 'HP-UX':
-            args['hwaddr'] = True
+            kwargs['hwaddr'] = True
         rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
         ifconfig = rcIfconfig.ifconfig(**kwargs)
         lan = {}
