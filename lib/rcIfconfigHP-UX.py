@@ -87,10 +87,70 @@ class ifconfig(rcIfconfig.ifconfig):
 
             prev = w
 
+    def get_mcast(self):
+        cmd = ['netstat', '-gn']
+        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        return self.parse_mcast(out)
+
+    def parse_mcast(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for i, line in enumerate(lines):
+            if line.startswith('Name'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+            if len(line) == 0:
+                break
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if addr == "*":
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        if len(lines) <= i + 1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+            if line.startswith('Name'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+            if len(line) == 0:
+                break
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if addr == "*":
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        return data
+
     def __init__(self, hwaddr=False, mcast=False):
         self.intf = []
         intf_list = []
         self.hwaddr = {}
+        if mcast:
+            self.mcast_data = self.get_mcast()
         if hwaddr:
             lines = Popen(['lanscan', '-i', '-a'], stdout=PIPE).communicate()[0].split('\n')
             for line in lines:
