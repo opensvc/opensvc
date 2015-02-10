@@ -1,8 +1,10 @@
 #!/opt/opensvc/bin/python
 
 import sys
+import os
 from rcGlobalEnv import rcEnv
 from rcNode import node_get_hostmode
+from textwrap import TextWrapper
 
 class MissKeyNoDefault(Exception):
      pass
@@ -21,10 +23,14 @@ class Keyword(object):
                  candidates=None,
                  depends=[],
                  text="",
+                 example="foo",
                  provisioning=False):
         self.section = section
         self.keyword = keyword
-        self.rtype = rtype
+        if rtype is None or type(rtype) == list:
+            self.rtype = rtype
+        else:
+            self.rtype = [rtype]
         self.order = order
         self.at = at
         self.required = required
@@ -32,6 +38,7 @@ class Keyword(object):
         self.candidates = candidates
         self.depends = depends
         self.text = text
+        self.example = example
         self.provisioning = provisioning
 
     def __cmp__(self, o):
@@ -41,8 +48,41 @@ class Keyword(object):
             return 0
         return 1
 
+    def template(self):
+        wrapper = TextWrapper(subsequent_indent="#%15s"%"", width=78)
+
+        depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
+        if depends == "":
+            depends = None
+
+        if type(self.candidates) in (list, tuple, set):
+            candidates = " | ".join(map(lambda x: str(x), self.candidates))
+        else:
+            candidates = str(self.candidates)
+        s = '#\n'
+        s += "# keyword:       %s\n"%self.keyword
+        s += "# ----------------------------------------------------------------------------\n"
+        s += "#  required:     %s\n"%str(self.required)
+        s += "#  provisioning: %s\n"%str(self.provisioning)
+        s += "#  default:      %s\n"%str(self.default)
+        s += "#  candidates:   %s\n"%candidates
+        s += "#  depends:      %s\n"%depends
+        s += "#  scopable:     %s\n"%str(self.at)
+        s += '#\n'
+        if self.text:
+            wrapper = TextWrapper(subsequent_indent="#%9s"%"", width=78)
+            s += wrapper.fill("#  desc:  "+self.text) + "\n"
+        s += '#\n'
+        if self.default is not None:
+            val = self.default
+        elif self.candidates and len(self.candidates) > 0:
+            val = self.candidates[0]
+        else:
+            val = self.example
+        s += ";" + self.keyword + " = " + str(val) + "\n\n"
+        return s
+
     def __str__(self):
-        from textwrap import TextWrapper
         wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
 
         depends = ""
@@ -67,6 +107,7 @@ class Keyword(object):
             s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ' or '@encapnodes '\n"
             s += "to specify a scope-specific value.\n"
             s += "You will be prompted for new values until you submit an empty value.\n"
+        s += "\n"
         return s
 
     def form(self, d):
@@ -103,19 +144,11 @@ class Keyword(object):
             if len(val) == 0:
                 if req_satisfied:
                     return d
-                if default is None:
-                    if self.required:
-                        print("value required")
-                        continue
-                    # keyword is optional, leave dictionary untouched
-                    return d
-                else:
-                    val = default
-                if self.candidates is not None and \
-                   val not in self.candidates:
-                    print("invalid value")
+                if default is None and self.required:
+                    print("value required")
                     continue
-                d[self.keyword] = val
+                # keyword is optional, leave dictionary untouched
+                return d
             elif self.at and val[0] == '@':
                 l = val.split()
                 if len(l) < 2:
@@ -128,7 +161,7 @@ class Keyword(object):
                 d[self.keyword] = val
                 req_satisfied = True
             if self.at:
-                # loop for more key@node = values
+                # loop for more key@<scope> = values
                 print("More '%s' ? <enter> to step to the next parameter."%self.keyword)
                 continue
             else:
@@ -160,7 +193,7 @@ class KeywordMode(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="mode",
-                  required=True,
+                  required=False,
                   order=10,
                   default="hosted",
                   candidates=["hosted", "sg", "vcs", "rhcs"],
@@ -185,9 +218,72 @@ class KeywordDockerDataDir(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="docker_data_dir",
+                  at=True,
                   required=False,
                   order=12,
-                  text="The directory where the private docker daemon must store its data."
+                  text="if the service has docker-type container resources, the service handles the startup of a private docker daemon. Its socket is /opt/opensvc/var/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
+                  example="/srv/svc1/data/docker"
+                )
+
+class KeywordDockerDaemonArgs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_daemon_args",
+                  at=True,
+                  required=False,
+                  order=12,
+                  text="If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
+                  example="--ip 1.2.3.4"
+                )
+
+class KeywordSubsetParallel(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="subset",
+                  keyword="parallel",
+                  candidates=(True, False),
+                  default=False,
+                  text="If set to true, actions are executed in parallel amongst the subset member resources.",
+                  required=False,
+                  order=2
+                )
+
+class KeywordStonithType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="stonith",
+                  keyword="type",
+                  candidates=["ilo", "callout"],
+                  text="The type of stonith.",
+                  required=True,
+                  order=1
+                )
+
+class KeywordStonithTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="stonith",
+                  keyword="target",
+                  text="The server management console to pass the stonith command to, as defined in the corresponding auth.conf section title.",
+                  required=True,
+                  order=2
+                )
+
+class KeywordStonithCalloutCmd(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="stonith",
+                  rtype="callout",
+                  keyword="cmd",
+                  text="The command to execute on target to stonith.",
+                  required=True,
+                  order=3
                 )
 
 class KeywordContainerType(Keyword):
@@ -210,8 +306,9 @@ class KeywordDockerRunImage(Keyword):
                   keyword="run_image",
                   order=9,
                   required=False,
-                  depends=[('type', ["docker"])],
-                  text="The docker image pull, and run the container with."
+                  rtype="docker",
+                  text="The docker image pull, and run the container with.",
+                  example="83f2a3dd2980"
                 )
 
 class KeywordDockerRunCommand(Keyword):
@@ -222,8 +319,9 @@ class KeywordDockerRunCommand(Keyword):
                   keyword="run_command",
                   order=1,
                   required=False,
-                  depends=[('type', ["docker"])],
-                  text="The command to execute in the docker container on run."
+                  rtype="docker",
+                  text="The command to execute in the docker container on run.",
+                  example="/opt/tomcat/bin/catalina.sh"
                 )
 
 class KeywordDockerRunArgs(Keyword):
@@ -234,8 +332,9 @@ class KeywordDockerRunArgs(Keyword):
                   keyword="run_args",
                   order=2,
                   required=False,
-                  depends=[('type', ["docker"])],
-                  text="Extra arguments to pass to the docker run command, like volume and port mappings."
+                  rtype="docker",
+                  text="Extra arguments to pass to the docker run command, like volume and port mappings.",
+                  example="-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
                 )
 
 class KeywordVirtinst(Keyword):
@@ -244,7 +343,7 @@ class KeywordVirtinst(Keyword):
                   self,
                   section="container",
                   keyword="virtinst",
-                  depends=[('type', ["kvm", "xen", "ovm"])],
+                  rtype=["kvm", "xen", "ovm"],
                   text="The virt-install command to use to create the container.",
                   required=True,
                   provisioning=True
@@ -256,7 +355,7 @@ class KeywordSnap(Keyword):
                   self,
                   section="container",
                   keyword="snap",
-                  depends=[('type', ["kvm", "xen", "ovm", "zone", "esx"])],
+                  rtype=["kvm", "xen", "ovm", "zone", "esx"],
                   text="The target snapshot/clone full path containing the new container disk files.",
                   required=True,
                   provisioning=True
@@ -268,7 +367,7 @@ class KeywordSnapof(Keyword):
                   self,
                   section="container",
                   keyword="snapof",
-                  depends=[('type', ["kvm", "xen", "ovm", "zone", "esx"])],
+                  rtype=["kvm", "xen", "ovm", "zone", "esx"],
                   text="The snapshot origin full path containing the reference container disk files.",
                   required=True,
                   provisioning=True
@@ -280,10 +379,35 @@ class KeywordContainerOrigin(Keyword):
                   self,
                   section="container",
                   keyword="container_origin",
-                  depends=[('type', ["zone"])],
+                  rtype="zone",
                   text="The origin container having the reference container disk files.",
                   required=True,
                   provisioning=True
+                )
+
+class KeywordJailRoot(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="jailroot",
+                  rtype="jail",
+                  text="Sets the root fs directory of the container",
+                  required=True,
+                  provisioning=False
+                )
+
+class KeywordLxcCf(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="cf",
+                  rtype="lxc",
+                  text="Defines a lxc configuration file in a non-standard location.",
+                  required=False,
+                  provisioning=True,
+                  example="/srv/mycontainer/config"
                 )
 
 class KeywordRootfs(Keyword):
@@ -292,7 +416,7 @@ class KeywordRootfs(Keyword):
                   self,
                   section="container",
                   keyword="rootfs",
-                  depends=[('type', ["lxc", "vz", "zone"])],
+                  rtype=["lxc", "vz", "zone"],
                   text="Sets the root fs directory of the container",
                   required=True,
                   provisioning=True
@@ -304,7 +428,7 @@ class KeywordTemplate(Keyword):
                   self,
                   section="container",
                   keyword="template",
-                  depends=[('type', ["lxc", "vz", "zone"])],
+                  rtype=["lxc", "vz", "zone"],
                   text="Sets the url of the template unpacked into the container root fs.",
                   required=True,
                   provisioning=True
@@ -317,8 +441,43 @@ class KeywordVmName(Keyword):
                   section="container",
                   keyword="name",
                   order=2,
-                  depends=[('type', rcEnv.vt_supported)],
+                  rtype=rcEnv.vt_supported,
                   text="This need to be set if the virtual machine name is different from the service name."
+                )
+
+class KeywordGuestos(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="guestos",
+                  rtype=rcEnv.vt_supported,
+                  order=11,
+                  candidates=["unix", "windows"],
+                  default=None,
+                  text="The operating system in the virtual machine."
+                )
+
+class KeywordJailIps(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="ips",
+                  rtype="jail",
+                  order=11,
+                  text="The ipv4 addresses of the jail."
+                )
+
+class KeywordJailIp6s(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="ip6s",
+                  rtype="jail",
+                  order=11,
+                  text="The ipv6 addresses of the jail."
                 )
 
 class KeywordSharedIpGroup(Keyword):
@@ -328,7 +487,7 @@ class KeywordSharedIpGroup(Keyword):
                   section="container",
                   keyword="shared_ip_group",
                   order=11,
-                  depends=[('type', rcEnv.vt_cloud)],
+                  rtype=rcEnv.vt_cloud,
                   text="The cloud shared ip group name to allocate a public ip from."
                 )
 
@@ -339,7 +498,7 @@ class KeywordSize(Keyword):
                   section="container",
                   keyword="size",
                   order=11,
-                  depends=[('type', rcEnv.vt_cloud)],
+                  rtype=rcEnv.vt_cloud,
                   text="The cloud vm size, as known to the cloud manager. Example: tiny."
                 )
 
@@ -350,7 +509,7 @@ class KeywordKeyName(Keyword):
                   section="container",
                   keyword="key_name",
                   order=11,
-                  depends=[('type', rcEnv.vt_cloud)],
+                  rtype=rcEnv.vt_cloud,
                   text="The key name, as known to the cloud manager, to trust in the provisioned vm."
                 )
 
@@ -361,7 +520,7 @@ class KeywordSrpPrmCores(Keyword):
                   section="container",
                   keyword="prm_cores",
                   order=11,
-                  depends=[('type', 'srp')],
+                  rtype="srp",
                   default=1,
                   provisioning=True,
                   text="The number of core to bind the SRP container to."
@@ -374,7 +533,7 @@ class KeywordSrpIp(Keyword):
                   section="container",
                   keyword="ip",
                   order=11,
-                  depends=[('type', 'srp')],
+                  rtype="srp",
                   provisioning=True,
                   text="The ip name or addr used to create the SRP container."
                 )
@@ -386,7 +545,7 @@ class KeywordSrpRootpath(Keyword):
                   section="container",
                   keyword="rootpath",
                   order=11,
-                  depends=[('type', 'srp')],
+                  rtype="srp",
                   provisioning=True,
                   text="The path of the SRP container root filesystem."
                 )
@@ -398,7 +557,7 @@ class KeywordCloudId(Keyword):
                   section="container",
                   keyword="cloud_id",
                   order=11,
-                  depends=[('type', rcEnv.vt_cloud)],
+                  rtype=rcEnv.vt_cloud,
                   text="The cloud id as configured in node.conf. Example: cloud#1."
                 )
 
@@ -409,8 +568,48 @@ class KeywordVmUuid(Keyword):
                   section="container",
                   keyword="uuid",
                   order=11,
-                  depends=[('type', "ovm")],
+                  rtype="ovm",
                   text="The virtual machine unique identifier used to pass commands on the VM."
+                )
+
+class KeywordAntiAffinity(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="anti_affinity",
+                  order=15,
+                  required=False,
+                  default=None,
+                  text="A whitespace separated list of services this service is not allowed to be started on the same node. The svcmgr --ignore-affinity option can be set to override this policy.",
+                  example="svc1 svc2"
+                )
+
+class KeywordNoPreemptAbort(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="no_preempt_abort",
+                  order=15,
+                  at=True,
+                  required=False,
+                  candidates=[True, False],
+                  default=False,
+                  text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+                )
+
+class KeywordCluster(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="cluster",
+                  order=15,
+                  required=False,
+                  default=None,
+                  text="The symbolic name of the cluster. Used to label shared disks represented to tiers-2 consumers like containers.",
+                  example="cluster1"
                 )
 
 class KeywordClusterType(Keyword):
@@ -510,7 +709,7 @@ class KeywordAutostartNode(Keyword):
                   section="DEFAULT",
                   keyword="autostart_node",
                   order=20,
-                  required=True,
+                  required=False,
                   default=rcEnv.nodename,
                   text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
                 )
@@ -522,7 +721,8 @@ class KeywordDrpnode(Keyword):
                   section="DEFAULT",
                   keyword="drpnode",
                   order=21,
-                  text="The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources."
+                  text="The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources.",
+                  example="node1"
                 )
 
 class KeywordDrpnodes(Keyword):
@@ -532,7 +732,8 @@ class KeywordDrpnodes(Keyword):
                   section="DEFAULT",
                   keyword="drpnodes",
                   order=21,
-                  text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources."
+                  text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
+                  example="node1 node2"
                 )
 
 class KeywordApp(Keyword):
@@ -562,6 +763,7 @@ class KeywordScsireserv(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="scsireserv",
+                  at=True,
                   order=25,
                   default=False,
                   candidates=(True, False),
@@ -575,7 +777,8 @@ class KeywordBwlimit(KeywordInteger):
                   section="DEFAULT",
                   keyword="bwlimit",
                   order=25,
-                  text="Bandwidth limit in KB applied to all rsync transfers. Leave empty to enforce no limit."
+                  text="Bandwidth limit in KB applied to all rsync transfers. Leave empty to enforce no limit.",
+                  example="3000"
                 )
 
 class KeywordSyncInterval(KeywordInteger):
@@ -607,7 +810,8 @@ class KeywordPresnapTrigger(Keyword):
                   section="DEFAULT",
                   keyword="presnap_trigger",
                   order=28,
-                  text="Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like)."
+                  text="Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like).",
+                  example="/srv/svc1/etc/init.d/pre_snap.sh"
                 )
 
 class KeywordPostsnapTrigger(Keyword):
@@ -617,7 +821,22 @@ class KeywordPostsnapTrigger(Keyword):
                   section="DEFAULT",
                   keyword="postsnap_trigger",
                   order=29,
-                  text="Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'."
+                  text="Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'.",
+                  example="/srv/svc1/etc/init.d/post_snap.sh"
+                )
+
+class KeywordMonitorAction(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="monitor_action",
+                  at=True,
+                  order=30,
+                  default=None,
+                  candidates=("reboot", "crash", "freezestop"),
+                  text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp.",
+                  example="reboot"
                 )
 
 class KeywordContainerize(Keyword):
@@ -640,7 +859,8 @@ class KeywordContainerCpus(KeywordInteger):
                   keyword="container_cpus",
                   order=31,
                   depends=[('containerize', [True])],
-                  text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2"
+                  text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
+                  example="0-2"
                 )
 
 class KeywordContainerMems(KeywordInteger):
@@ -651,7 +871,8 @@ class KeywordContainerMems(KeywordInteger):
                   keyword="container_mems",
                   order=31,
                   depends=[('containerize', [True])],
-                  text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2"
+                  text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
+                  example="0-2"
                 )
 
 class KeywordContainerCpuShare(KeywordInteger):
@@ -662,7 +883,8 @@ class KeywordContainerCpuShare(KeywordInteger):
                   keyword="container_cpu_share",
                   order=31,
                   depends=[('containerize', [True])],
-                  text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services."
+                  text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
+                  example="512"
                 )
 
 class KeywordContainerMemLimit(KeywordInteger):
@@ -673,7 +895,8 @@ class KeywordContainerMemLimit(KeywordInteger):
                   keyword="container_mem_limit",
                   order=31,
                   depends=[('containerize', [True])],
-                  text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing."
+                  text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
+                  example="512000000"
                 )
 
 class KeywordContainerVmemLimit(KeywordInteger):
@@ -684,7 +907,81 @@ class KeywordContainerVmemLimit(KeywordInteger):
                   keyword="container_vmem_limit",
                   order=31,
                   depends=[('containerize', [True])],
-                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit."
+                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit.",
+                  example="1024000000"
+                )
+
+class KeywordAppScript(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="script",
+                  at=True,
+                  order=9,
+                  required=True,
+                  text="Full path to the app launcher script. Or its basename if the file is hosted in the <svcname>.d path."
+                )
+
+class KeywordAppTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="timeout",
+                  order=9,
+                  at=True,
+                  required=True,
+                  text="Wait for <n> seconds max before declaring the app launcher action a failure. If no timeout is specified, the agent waits indefinitely for the app launcher to return. The timeout parameter can be coupled with optional=True to not abort a service start when an app launcher did not return.",
+                  example="180"
+                )
+
+class KeywordAppStart(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="start",
+                  at=True,
+                  order=10,
+                  required=False,
+                  text="Start up sequencing number."
+                )
+
+class KeywordAppStop(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="stop",
+                  at=True,
+                  order=11,
+                  required=False,
+                  text="Stop sequencing number."
+                )
+
+class KeywordAppCheck(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="check",
+                  at=True,
+                  order=11,
+                  required=False,
+                  text="Check up sequencing number."
+                )
+
+class KeywordAppInfo(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="info",
+                  at=True,
+                  order=12,
+                  required=False,
+                  text="Info up sequencing number."
                 )
 
 class KeywordSyncType(Keyword):
@@ -695,9 +992,80 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "dds", "netapp", "symsrdfs", "zfs", "symclone"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap"),
                   default="rsync",
                   text="Point a sync driver to use."
+                )
+
+class KeywordSyncDockerTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="target",
+                  rtype="docker",
+                  order=11,
+                  at=True,
+                  required=True,
+                  default=None,
+                  candidates=["nodes", "drpnodes", "nodes drpnodes"],
+                  text="Destination nodes of the sync."
+                )
+
+class KeywordSyncBtrfsSrc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="src",
+                  rtype="btrfs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="Source subvolume of the sync."
+                )
+
+class KeywordSyncBtrfsDst(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dst",
+                  rtype="btrfs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="Destination subvolume of the sync."
+                )
+
+class KeywordSyncBtrfsTarget(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="target",
+                  rtype="btrfs",
+                  order=11,
+                  at=True,
+                  required=True,
+                  default=None,
+                  candidates=["nodes", "drpnodes", "nodes drpnodes"],
+                  text="Destination nodes of the sync."
+                )
+
+class KeywordSyncBtrfsRecursive(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="recursive",
+                  rtype="btrfs",
+                  order=10,
+                  at=True,
+                  required=False,
+                  default=False,
+                  candidates=[True, False],
+                  text="Also replicate subvolumes in the src tree."
                 )
 
 class KeywordSyncZfsSrc(Keyword):
@@ -874,6 +1242,30 @@ class KeywordSyncSyncInterval(KeywordInteger):
                   text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. If no set in a resource section, fallback to the value set in the 'default' section. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
                 )
 
+class KeywordSyncSyncDays(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="sync_days",
+                  default=None,
+                  at=True,
+                  text="Set the days this resource synchronization is allowed.",
+                  example='["monday", "friday"]'
+                )
+
+class KeywordSyncSyncPeriod(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="sync",
+                  keyword="sync_period",
+                  default=None,
+                  at=True,
+                  text="Set the time ranges this resource synchronization is allowed.",
+                  example='[["04:00", "06:00"], ["18:00", "20:00"]]'
+                )
+
 class KeywordSyncSyncMaxDelay(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
@@ -905,7 +1297,8 @@ class KeywordIpZone(Keyword):
                   order=12,
                   at=True,
                   required=False,
-                  text="The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context."
+                  text="The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context.",
+                  example="zone1"
                 )
 
 class KeywordIpType(Keyword):
@@ -942,7 +1335,7 @@ class KeywordIpIpdevext(Keyword):
                   order=12,
                   at=True,
                   required=False,
-                  default="v4",
+                  example="v4",
                   text="The interface name extension for crossbow ipadm configuration."
                 )
 
@@ -952,8 +1345,10 @@ class KeywordIpNetmask(Keyword):
                   self,
                   section="ip",
                   keyword="netmask",
+                  at=True,
                   order=13,
-                  text="If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64."
+                  text="If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
+                  example="255.255.255.0"
                 )
 
 class KeywordIpGateway(Keyword):
@@ -978,6 +1373,20 @@ class KeywordVgType(Keyword):
                   required=False,
                   candidates=['veritas', 'raw', 'rados'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordVgRawDevs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  rtype="raw",
+                  keyword="devs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="a list of device paths, whitespace separated. Those devices are listed as owned by the service and scsi reservation policy is applied to them.",
+                  example="/dev/mapper/svc.d0 /dev/mapper/svc.d1"
                 )
 
 class KeywordVgVgname(Keyword):
@@ -1009,7 +1418,7 @@ class KeywordVgClientId(Keyword):
                   self,
                   section="vg",
                   keyword="client_id",
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   text="Client id to use for authentication with the rados servers"
                 )
 
@@ -1020,7 +1429,7 @@ class KeywordVgKeyring(Keyword):
                   section="vg",
                   keyword="keyring",
                   required=False,
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   text="keyring to look for the client id secret for authentication with the rados servers"
                 )
 
@@ -1031,7 +1440,7 @@ class KeywordVgLock(Keyword):
                   section="vg",
                   keyword="lock",
                   candidates=["exclusive", "shared", "None"],
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   text="Locking mode for the rados images"
                 )
 
@@ -1041,7 +1450,8 @@ class KeywordVgLockSharedTag(Keyword):
                   self,
                   section="vg",
                   keyword="lock_shared_tag",
-                  depends=[('type', ["rados"]), ('lock', ['shared'])],
+                  rtype="rados",
+                  depends=[('lock', ['shared'])],
                   text="The tag to use upon rados image locking in shared mode"
                 )
 
@@ -1052,7 +1462,7 @@ class KeywordVgImageFormat(Keyword):
                   section="vg",
                   keyword="image_format",
                   provisioning=True,
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   default="2",
                   text="The rados image format"
                 )
@@ -1064,7 +1474,7 @@ class KeywordVgSize(Keyword):
                   section="vg",
                   keyword="size",
                   provisioning=True,
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   text="The rados image size in MB"
                 )
 
@@ -1074,7 +1484,7 @@ class KeywordVgImages(Keyword):
                   self,
                   section="vg",
                   keyword="images",
-                  depends=[('type', ["rados"])],
+                  rtype="rados",
                   text="The rados image names handled by this vg resource. whitespace separated."
                 )
 
@@ -1131,6 +1541,30 @@ class KeywordPoolTags(Keyword):
                   text=""
                 )
 
+class KeywordVmdgContainerid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vmdg",
+                  keyword="container_id",
+                  at=True,
+                  required=False,
+                  text="The id of the container whose configuration to extract the disk mapping from."
+                )
+
+class KeywordVmdgContainerType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vmdg",
+                  keyword="type",
+                  at=True,
+                  required=False,
+                  candidates=["ldom"],
+                  default=None,
+                  text="The type of the container whose configuration to extract the disk mapping from."
+                )
+
 class KeywordVmdgScsireserv(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1161,6 +1595,44 @@ class KeywordDrbdRes(Keyword):
                   keyword="res",
                   order=11,
                   text="The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
+                )
+
+class KeywordShareType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="share",
+                  keyword="type",
+                  candidates=["nfs"],
+                  text="The type of share.",
+                  required=True,
+                  order=1
+                )
+
+class KeywordSharePath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="share",
+                  keyword="path",
+                  rtype="nfs",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="The fullpath of the directory to share."
+                )
+
+class KeywordShareNfsOpts(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="share",
+                  keyword="opts",
+                  rtype="nfs",
+                  order=11,
+                  at=True,
+                  required=True,
+                  text="The NFS share export options, as they woud be set in /etc/exports or passed to Solaris share command."
                 )
 
 class KeywordFsDev(Keyword):
@@ -1319,26 +1791,274 @@ class KeywordSyncNetappUser(Keyword):
                   text="Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
                 )
 
-class KeywordSyncSymsrdfsSymdg(Keyword):
+class KeywordSyncIbmdssnapPairs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="sync",
-                  keyword="symdg",
-                  rtype="symsrdfs",
+                  keyword="pairs",
+                  at=True,
+                  rtype="ibmdssnap",
                   required=True,
-                  text="Name of the symmetrix device group where the source and target SRDF devices are grouped."
+                  text="Whitespace-separated list of device pairs.",
+                  example="0065:0073 0066:0074"
                 )
 
-class KeywordSyncSymsrdfsRdfg(Keyword):
+class KeywordSyncIbmdssnapArray(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="sync",
-                  keyword="rdfg",
-                  rtype="symsrdfs",
+                  keyword="array",
+                  at=True,
+                  rtype="ibmdssnap",
                   required=True,
-                  text="Number of the symmetrix rdf group where the source and target SRDF/S devices are paired."
+                  text="The name of the array holding the source devices and their paired devices.",
+                  example="IBM.2243-12ABC00"
+                )
+
+class KeywordSyncIbmdssnapBgcopy(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="bgcopy",
+                  at=True,
+                  rtype="ibmdssnap",
+                  candidates=[True, False],
+                  required=True,
+                  text="Initiate a background copy of the source data block to the paired devices upon resync."
+                )
+
+class KeywordSyncIbmdssnapRecording(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="recording",
+                  at=True,
+                  rtype="ibmdssnap",
+                  candidates=[True, False],
+                  required=True,
+                  text="Track only changed data blocks instead of copying the whole source data to the paired devices."
+                )
+
+class KeywordSyncNexentaName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="name",
+                  at=True,
+                  rtype="nexenta",
+                  required=True,
+                  text="The name of the Nexenta autosync configuration."
+                )
+
+class KeywordSyncNexentaFiler(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="filer",
+                  at=True,
+                  rtype="nexenta",
+                  required=True,
+                  text="The name of the Nexenta local head. Must be set for each node using the scoping syntax."
+                )
+
+class KeywordSyncNexentaPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="path",
+                  at=True,
+                  rtype="nexenta",
+                  required=True,
+                  text="The path of the zfs to synchronize, as seen by the Nexenta heads."
+                )
+
+class KeywordSyncNexentaReversible(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="reversible",
+                  at=True,
+                  rtype="nexenta",
+                  candidates=[True, False],
+                  required=True,
+                  text="Defines if the replication link can be reversed. Set to no for prd to drp replications to protect production data."
+                )
+
+class KeywordSyncHp3parArray(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="array",
+                  rtype="hp3par",
+                  required=True,
+                  text="Name of the HP 3par array to send commands to."
+                )
+
+class KeywordSyncHp3parMode(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="mode",
+                  rtype="hp3par",
+                  required=True,
+                  candidates=["async", "sync"],
+                  default="async",
+                  text="Replication mode: Synchronous or Asynchronous"
+                )
+
+class KeywordSyncHp3parMethod(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="method",
+                  rtype="hp3par",
+                  required=False,
+                  candidates=["ssh", "cli"],
+                  default="ssh",
+                  text="The method to use to submit commands to the arrays."
+                )
+
+class KeywordSyncHp3parRcg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="rcg",
+                  rtype="hp3par",
+                  required=True,
+                  text="Name of the HP 3par remote copy group. The scoping syntax must be used to fully describe the replication topology."
+                )
+
+class KeywordSyncDcsckptDcs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dcs",
+                  rtype="dcsckpt",
+                  required=True,
+                  text="Whitespace-separated list of DataCore heads, as seen by the manager."
+                )
+
+class KeywordSyncDcsckptManager(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="manager",
+                  rtype="dcsckpt",
+                  required=True,
+                  text="The DataCore manager name runing a ssh daemon, as set in the auth.conf section title."
+                )
+
+class KeywordSyncDcsckptPairs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="pairs",
+                  rtype="dcsckpt",
+                  required=True,
+                  text="A json-formatted list of dictionaries representing the source and destination device pairs. Each dictionary must have the 'src', 'dst_ckpt' keys."
+                )
+
+class KeywordSyncDcssnapDcs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dcs",
+                  rtype="dcssnap",
+                  required=True,
+                  text="Whitespace-separated list of DataCore heads, as seen by the manager."
+                )
+
+class KeywordSyncDcssnapManager(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="manager",
+                  rtype="dcssnap",
+                  required=True,
+                  text="The DataCore manager name runing a ssh daemon, as set in the auth.conf section title."
+                )
+
+class KeywordSyncDcssnapSnapname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="snapname",
+                  rtype="dcssnap",
+                  required=True,
+                  text="Whitespace-separated list of snapshot device names, as seen by the DataCore manager."
+                )
+
+class KeywordSyncEvasnapEvaname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="eva_name",
+                  rtype="evasnap",
+                  required=True,
+                  text="Name of the HP EVA array hosting the source and snapshot devices."
+                )
+
+class KeywordSyncEvasnapSnapname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="snap_name",
+                  rtype="evasnap",
+                  required=True,
+                  text="Name of the snapshot objectname as seen in sssu."
+                )
+
+class KeywordSyncEvasnapPairs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="pairs",
+                  rtype="evasnap",
+                  required=True,
+                  text="A json-formatted list of dictionaries representing the device pairs. Each dict must have the 'src', 'dst' and 'mask' keys. The mask key value is a list of \\<hostpath>\\<lunid> strings."
+                )
+
+class KeywordSyncNecismsnapArray(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="array",
+                  rtype="necism",
+                  required=True,
+                  text="Name of the NEC ISM array to send commands to."
+                )
+
+class KeywordSyncNecismsnapDevs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="devs",
+                  rtype="necism",
+                  required=True,
+                  text="A whitespace-separated list of SV:LD."
                 )
 
 class KeywordSyncSymcloneSymdg(Keyword):
@@ -1352,12 +2072,37 @@ class KeywordSyncSymcloneSymdg(Keyword):
                   text="Name of the symmetrix device group where the source and target devices are grouped."
                 )
 
+class KeywordSyncSymSrdfsSymdg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symdg",
+                  at=True,
+                  rtype="symsrdfs",
+                  required=True,
+                  text="Name of the symmetrix device group where the source and target devices are grouped."
+                )
+
+class KeywordSyncSymSrdfsRdfg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="rdfg",
+                  at=True,
+                  rtype="symsrdfs",
+                  required=True,
+                  text="Name of the RDF group paring the source and target devices."
+                )
+
 class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="sync",
                   keyword="precopy_timeout",
+                  at=True,
                   rtype="symclone",
                   required=True,
                   default=300,
@@ -1373,8 +2118,9 @@ class KeywordSyncSymcloneSymdevs(Keyword):
                   rtype="symclone",
                   required=True,
                   at=True,
-                  default=300,
-                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename."
+                  default=None,
+                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename.",
+                  example="000000000198:0060 000000000198:0061",
                 )
 
 class KeywordSyncDdsSrc(Keyword):
@@ -1470,17 +2216,60 @@ class Section(object):
             s += str(keyword)
         return s
 
+    def template(self):
+        k = self.getkey("type")
+        if k is None:
+            return self._template()
+        if k.candidates is None:
+            return self._template()
+        s = ""
+        for t in k.candidates:
+            s += self._template(t)
+        return s
+
+    def _template(self, rtype=None):
+        section = self.section
+        dpath = os.path.join(os.path.dirname(__file__), "..", "usr", "share", "doc")
+        fpath = os.path.join(dpath, "template."+section+".env.gz")
+        if rtype:
+            section += ", type "+rtype
+            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".env.gz")
+        s = "#"*78 + "\n"
+        s += "# %-74s #\n" % " "
+        s += "# %-74s #\n" % section
+        s += "# %-74s #\n" % " "
+        s += "#"*78 + "\n\n"
+        if section == "DEFAULT":
+            s += "[%s]\n" % self.section
+        else:
+            s += "[%s#0]\n" % self.section
+        if rtype is not None:
+            s += ";type = " + rtype + "\n\n"
+        for keyword in sorted(self.getkeys(rtype)):
+            s += keyword.template()
+        for keyword in sorted(self.getprovkeys(rtype)):
+            s += keyword.template()
+        if rtype is not None:
+            for keyword in sorted(self.getkeys()):
+                if keyword.keyword == "type":
+                    continue
+                s += keyword.template()
+        import gzip
+        with gzip.open(fpath, "wb") as f:
+            f.write(s)
+        return s
+
     def getkeys(self, rtype=None):
         if rtype is None:
             return [k for k in self.keywords if k.rtype is None and not k.provisioning]
         else:
-            return [k for k in self.keywords if k.rtype == rtype and not k.provisioning]
+            return [k for k in self.keywords if k.rtype and rtype in k.rtype and not k.provisioning]
 
     def getprovkeys(self, rtype=None):
         if rtype is None:
             return [k for k in self.keywords if k.rtype is None and k.provisioning]
         else:
-            return [k for k in self.keywords if k.rtype == rtype and k.provisioning]
+            return [k for k in self.keywords if k.rtype and rtype in k.rtype and k.provisioning]
 
     def getkey(self, keyword, rtype=None):
         if '@' in keyword:
@@ -1488,9 +2277,14 @@ class Section(object):
             if len(l) != 2:
                 return None
             keyword, node = l
-        for k in self.keywords:
-            if k.keyword == keyword and k.rtype == rtype:
-                return k
+        if rtype:
+            for k in self.keywords:
+                if k.keyword == keyword and k.rtype and rtype in k.rtype:
+                    return k
+        else:
+            for k in self.keywords:
+                if k.keyword == keyword:
+                    return k
         return None
 
 class KeywordStore(dict):
@@ -1518,6 +2312,10 @@ class KeywordStore(dict):
         for section in self.sections:
             s += str(self.sections[section])
         return s
+
+    def print_templates(self):
+        for section in sorted(self.sections.keys()):
+            print(self.sections[section].template())
 
     def required_keys(self, section, rtype=None):
         if section not in self.sections:
@@ -1589,28 +2387,12 @@ class KeywordStore(dict):
             print("Implicitely add [%s] %s = %s" % (rid, key.keyword, str(key.default)))
             completion[key.keyword] = key.default
 
-        """
-        # do we have a provisioning for for this resource ?
-        prov = self.get_provisioning_class(section, completion)
-
-        if prov is not None:
-            # is provisioning needed ?
-            tmp = {rid: completion}
-            if prov(rid, tmp).validate():
-                print(rid, "resource is valid")
-            elif prov(rid, tmp).provisioner():
-                print(rid, "resource provisioned")
-            else:
-                print(rid, "resource provisioning failed")
-        """
-
         # purge unknown keywords and provisioning keywords
         completion = self.purge_keywords_from_dict(completion, section)
 
         return completion
 
     def form_sections(self, sections):
-        from textwrap import TextWrapper
         wrapper = TextWrapper(subsequent_indent="%18s"%"", width=78)
         candidates = set(self.sections.keys()) - set(['DEFAULT'])
 
@@ -1674,81 +2456,10 @@ class KeywordStore(dict):
                         sections[rid] = {}
                     sections[rid] = key.form(sections[rid])
 
-            """
-            # do we have a provisioning for for this resource ?
-            prov = self.get_provisioning_class(section, sections[rid])
-
-            if prov is None:
-                continue
-
-            # is provisioning needed ?
-            if prov(rid, sections).validate():
-                print(rid, "resource is valid")
-                continue
-
-            # toggle provisioning keywords
-            # either --provision or user said so on prompt
-            if not self.provision:
-                tmp = {}
-                tmp = KeywordProvision().form(tmp)
-                if tmp['provision'] == "no":
-                    continue
-
-            provkeys = self.sections[section].getprovkeys()
-            if len(provkeys) > 0:
-                print("\nProvisioning keywords\n")
-            for key in sorted(provkeys):
-                if rid not in sections:
-                    sections[rid] = {}
-                sections[rid] = key.form(sections[rid])
-
-            if 'type' in sections[rid]:
-                specific_provkeys = self.sections[section].getprovkeys(rtype=sections[rid]['type'])
-                if len(specific_provkeys) > 0:
-                    print("\nProvisioning keywords specific to the '%s' driver\n"%sections[rid]['type'])
-                for key in sorted(specific_provkeys):
-                    if rid not in sections:
-                        sections[rid] = {}
-                    sections[rid] = key.form(sections[rid])
-
-            # now we have everything needed to provision. just do it.
-            prov(rid, sections).provisioner()
-            """
-
             # purge the provisioning keywords
             sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
 
         return defaults, sections
-
-    """
-    def get_provisioning_class(self, section, d):
-        mod_prefix = 'prov'
-        class_prefix = 'Provisioning'
-        rtype = ""
-        if section == 'DEFAULT':
-            section = ""
-            if 'mode' in d:
-                rtype = d['mode']
-        else:
-            section = section[0].upper() + section[1:].lower()
-            if 'type' in d:
-                rtype = d['type']
-        if len(rtype) > 2:
-            rtype = rtype[0].upper() + rtype[1:].lower()
-        try:
-            m = __import__(mod_prefix+section+rtype)
-            return getattr(m, class_prefix+section+rtype)
-        except ImportError:
-            import traceback
-            traceback.print_exc()
-            pass
-        try:
-            m = __import__(mod_prefix+section)
-            return getattr(m, class_prefix+section)
-        except ImportError:
-            print(mod_prefix+section+rtype, "nor", mod_prefix+section, "provisioning modules not implemented")
-            return None
-    """
 
 class KeyDict(KeywordStore):
     def __init__(self, provision=False):
@@ -1756,24 +2467,54 @@ class KeyDict(KeywordStore):
 
         import os
 
+        def kw_tags(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="tags",
+                  at=True,
+                  candidates=None,
+                  default=None,
+                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service."
+                )
+        def kw_subset(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="subset",
+                  at=True,
+                  default=None,
+                  text="Assign the resource to a specific subset."
+                )
+        def kw_restart(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="restart",
+                  at=True,
+                  default=0,
+                  text="The agent will try to restart a resource n times before falling back to the monitor action."
+                )
+        def kw_monitor(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="monitor",
+                  at=True,
+                  candidates=(True, False),
+                  default=False,
+                  text="A monitored resource will trigger a node suicide if the service has a heartbeat resource in up state"
+                )
         def kw_disable(resource):
             return Keyword(
                   section=resource,
                   keyword="disable",
+                  at=True,
                   candidates=(True, False),
                   default=False,
                   text="A disabled resource will be ignored on service startup and shutdown."
-                )
-        def kw_disable_on(resource):
-            return Keyword(
-                  section=resource,
-                  keyword="disable_on",
-                  text="A list of nodenames where to consider the 'disable' value is True. Also supports the 'nodes' and 'drpnodes' special values."
                 )
         def kw_optional(resource):
             return Keyword(
                   section=resource,
                   keyword="optional",
+                  at=True,
                   candidates=(True, False),
                   default=False,
                   text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
@@ -1785,17 +2526,105 @@ class KeyDict(KeywordStore):
                   candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
                   text="Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
                 )
+        def kw_pre_start(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_start",
+                  at=True,
+                  text="A script to execute before the resource start action"
+                )
+        def kw_post_start(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_start",
+                  at=True,
+                  text="A script to execute after the resource start action"
+                )
+        def kw_pre_stop(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_stop",
+                  at=True,
+                  text="A script to execute before the resource stop action"
+                )
+        def kw_post_stop(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_stop",
+                  at=True,
+                  text="A script to execute after the resource stop action"
+                )
+        def kw_pre_syncnodes(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_syncnodes",
+                  at=True,
+                  text="A script to execute before the resource syncnodes action"
+                )
+        def kw_post_syncnodes(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_syncnodes",
+                  at=True,
+                  text="A script to execute after the resource syncnodes action"
+                )
+        def kw_pre_syncdrp(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_syncdrp",
+                  at=True,
+                  text="A script to execute before the resource syncdrp action"
+                )
+        def kw_post_syncdrp(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_syncdrp",
+                  at=True,
+                  text="A script to execute after the resource syncdrp action"
+                )
+        def kw_pre_syncresync(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_syncresync",
+                  at=True,
+                  text="A script to execute before the resource syncresync action"
+                )
+        def kw_post_syncresync(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_syncresync",
+                  at=True,
+                  text="A script to execute after the resource syncresync action"
+                )
 
         for r in ["sync", "ip", "fs", "vg", "hb", "pool", "vmdg", "drbd",
-                  "loop", "vdisk"]:
+                  "loop", "disk", "share", "vdisk", "container", "pool",
+                  "app"]:
+            self += kw_restart(r)
+            self += kw_tags(r)
+            self += kw_subset(r)
+            self += kw_monitor(r)
             self += kw_disable(r)
-            self += kw_disable_on(r)
             self += kw_optional(r)
             self += kw_always_on(r)
+            self += kw_pre_start(r)
+            self += kw_post_start(r)
+            self += kw_pre_stop(r)
+            self += kw_post_stop(r)
+            self += kw_pre_syncnodes(r)
+            self += kw_post_syncnodes(r)
+            self += kw_pre_syncdrp(r)
+            self += kw_post_syncdrp(r)
+            self += kw_pre_syncresync(r)
+            self += kw_post_syncresync(r)
 
         self += KeywordMode()
         self += KeywordPkgName()
         self += KeywordDockerDataDir()
+        self += KeywordDockerDaemonArgs()
+        self += KeywordAntiAffinity()
+        self += KeywordNoPreemptAbort()
+        self += KeywordCluster()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
@@ -1814,6 +2643,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncMaxDelay()
         self += KeywordPresnapTrigger()
         self += KeywordPostsnapTrigger()
+        self += KeywordMonitorAction()
         self += KeywordContainerize()
         self += KeywordContainerCpus()
         self += KeywordContainerMems()
@@ -1821,6 +2651,11 @@ class KeyDict(KeywordStore):
         self += KeywordContainerMemLimit()
         self += KeywordContainerVmemLimit()
         self += KeywordSyncType()
+        self += KeywordSyncDockerTarget()
+        self += KeywordSyncBtrfsSrc()
+        self += KeywordSyncBtrfsDst()
+        self += KeywordSyncBtrfsTarget()
+        self += KeywordSyncBtrfsRecursive()
         self += KeywordSyncZfsSrc()
         self += KeywordSyncZfsDst()
         self += KeywordSyncZfsTarget()
@@ -1836,6 +2671,8 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncDstfs()
         self += KeywordSyncRsyncBwlimit()
         self += KeywordSyncSyncInterval()
+        self += KeywordSyncSyncDays()
+        self += KeywordSyncSyncPeriod()
         self += KeywordSyncSyncMaxDelay()
         self += KeywordIpType()
         self += KeywordIpIpname()
@@ -1845,6 +2682,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpGateway()
         self += KeywordIpZone()
         self += KeywordVgType()
+        self += KeywordVgRawDevs()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
         self += KeywordVgImages()
@@ -1860,6 +2698,8 @@ class KeyDict(KeywordStore):
         self += KeywordPoolPoolname()
         self += KeywordPoolTags()
         self += KeywordVmdgScsireserv()
+        self += KeywordVmdgContainerid()
+        self += KeywordVmdgContainerType()
         self += KeywordDrbdScsireserv()
         self += KeywordDrbdRes()
         self += KeywordFsType()
@@ -1873,12 +2713,43 @@ class KeyDict(KeywordStore):
         self += KeywordFsTags()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
+        self += KeywordAppScript()
+        self += KeywordAppTimeout()
+        self += KeywordAppStart()
+        self += KeywordAppStop()
+        self += KeywordAppCheck()
+        self += KeywordAppInfo()
+        self += KeywordSyncNexentaName()
+        self += KeywordSyncNexentaFiler()
+        self += KeywordSyncNexentaPath()
+        self += KeywordSyncNexentaReversible()
         self += KeywordSyncNetappFiler()
         self += KeywordSyncNetappPath()
         self += KeywordSyncNetappUser()
+        self += KeywordSyncIbmdssnapPairs()
+        self += KeywordSyncIbmdssnapArray()
+        self += KeywordSyncIbmdssnapBgcopy()
+        self += KeywordSyncIbmdssnapRecording()
+        self += KeywordSyncSymSrdfsSymdg()
+        self += KeywordSyncSymSrdfsRdfg()
         self += KeywordSyncSymcloneSymdg()
         self += KeywordSyncSymclonePrecopyTimeout()
         self += KeywordSyncSymcloneSymdevs()
+        self += KeywordSyncDcsckptDcs()
+        self += KeywordSyncDcsckptManager()
+        self += KeywordSyncDcsckptPairs()
+        self += KeywordSyncDcssnapDcs()
+        self += KeywordSyncDcssnapManager()
+        self += KeywordSyncDcssnapSnapname()
+        self += KeywordSyncNecismsnapArray()
+        self += KeywordSyncNecismsnapDevs()
+        self += KeywordSyncEvasnapEvaname()
+        self += KeywordSyncEvasnapSnapname()
+        self += KeywordSyncEvasnapPairs()
+        self += KeywordSyncHp3parArray()
+        self += KeywordSyncHp3parRcg()
+        self += KeywordSyncHp3parMode()
+        self += KeywordSyncHp3parMethod()
         self += KeywordSyncDdsSrc()
         self += KeywordSyncDdsDst()
         self += KeywordSyncDdsTarget()
@@ -1886,9 +2757,18 @@ class KeyDict(KeywordStore):
         self += KeywordVdiskPath()
         self += KeywordHbType()
         self += KeywordHbName()
+        self += KeywordSubsetParallel()
+        self += KeywordStonithType()
+        self += KeywordStonithTarget()
+        self += KeywordStonithCalloutCmd()
         self += KeywordContainerType()
         self += KeywordVmName()
+        self += KeywordGuestos()
         self += KeywordRootfs()
+        self += KeywordLxcCf()
+        self += KeywordJailRoot()
+        self += KeywordJailIps()
+        self += KeywordJailIp6s()
         self += KeywordTemplate()
         self += KeywordSharedIpGroup()
         self += KeywordSize()
@@ -1905,9 +2785,12 @@ class KeyDict(KeywordStore):
         self += KeywordSrpIp()
         self += KeywordSrpRootpath()
         self += KeywordSrpPrmCores()
+        self += KeywordShareType()
+        self += KeywordSharePath()
+        self += KeywordShareNfsOpts()
 
 if __name__ == "__main__":
     store = KeyDict()
-    print(store)
+    store.print_templates()
     #print(store.DEFAULT.app)
     #print(store['DEFAULT'])
