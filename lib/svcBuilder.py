@@ -142,41 +142,51 @@ def get_tags(conf, section, svc):
 
 def get_optional(conf, section, svc):
     if not conf.has_section(section):
-        if conf.has_option('DEFAULT', 'optional'):
-            return conf.getboolean("DEFAULT", "optional")
-        else:
+        try:
+            return conf_get_boolean_scope(svc, conf, "DEFAULT", "optional")
+        except:
             return False
-    if conf.has_option(section, 'optional'):
-        return conf.getboolean(section, "optional")
-    nodes = set([])
+
+    # deprecated
     if conf.has_option(section, 'optional_on'):
+        nodes = set([])
         l = conf.get(section, "optional_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
             else: nodes |= set([i])
-    if rcEnv.nodename in nodes:
-        return True
-    return False
+        if rcEnv.nodename in nodes:
+            return True
+        return False
+
+    try:
+        return conf_get_boolean_scope(svc, conf, section, "optional")
+    except:
+        return False
 
 def get_monitor(conf, section, svc):
     if not conf.has_section(section):
-        if conf.has_option('DEFAULT', 'monitor'):
-            return conf.getboolean("DEFAULT", "monitor")
-        else:
+        try:
+            return conf_get_boolean_scope(svc, conf, "DEFAULT", "monitor")
+        except:
             return False
-    if conf.has_option(section, 'monitor'):
-        return conf.getboolean(section, "monitor")
-    nodes = set([])
+
+    # deprecated 
     if conf.has_option(section, 'monitor_on'):
+        nodes = set([])
         l = conf.get(section, "monitor_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
             else: nodes |= set([i])
-    if rcEnv.nodename in nodes:
-        return True
-    return False
+        if rcEnv.nodename in nodes:
+            return True
+        return False
+
+    try:
+        return conf_get_boolean_scope(svc, conf, section, "monitor")
+    except:
+        return False
 
 def get_subset(conf, section, svc):
     if not conf.has_section(section):
@@ -219,6 +229,8 @@ def get_disabled(conf, section, svc):
         return r
     except ex.OptNotFound:
         pass
+
+    # deprecated
     nodes = set([])
     if conf.has_option(section, 'disable_on'):
         l = conf.get(section, "disable_on").split()
