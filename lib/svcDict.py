@@ -1307,10 +1307,11 @@ class KeywordIpType(Keyword):
                   self,
                   section="ip",
                   keyword="type",
-                  candidates=['crossbow'],
+                  candidates=[None, 'crossbow'],
                   text="The opensvc ip driver name.",
                   required=False,
-                  order=10
+                  order=10,
+                  example="crossbow",
                 )
 
 class KeywordIpIpdev(Keyword):
