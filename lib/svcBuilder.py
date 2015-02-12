@@ -52,6 +52,8 @@ rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
 rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
 rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
 
+if 'PATH' not in os.environ:
+    os.environ['PATH'] = ""
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
