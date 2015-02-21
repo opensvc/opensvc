@@ -27,6 +27,7 @@ import rcStatus
 import logging
 import rcUtilities
 import sys
+import time
 from rcGlobalEnv import rcEnv
 
 class Resource(object):
@@ -176,7 +177,7 @@ class Resource(object):
                ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action == "provision"):
                 """ refresh resource status cache after changing actions
                 """
-                self.status(refresh=True)
+                self.status(refresh=True, restart=False)
             return
 
         """Every class inheriting resource should define start() stop() status()
@@ -242,7 +243,7 @@ class Resource(object):
     def _status(self, verbose=False):
         return rcStatus.UNDEF
 
-    def status(self, verbose=False, refresh=False):
+    def status(self, verbose=False, refresh=False, restart=True):
         # refresh param: used by do_action() to force a res status re-eval
         # self.svc.options.refresh: used to purge disk cache
         if self.disabled:
@@ -252,16 +253,64 @@ class Resource(object):
         if self.rstatus is not None and not refresh:
             return self.rstatus
 
+        last_status = self.load_status_last()
+
         if self.svc.options.refresh or refresh:
             self.purge_status_last()
         else:
-            self.rstatus = self.load_status_last()
+            self.rstatus = last_status
 
         if self.rstatus is None or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
             self.write_status()
+
+        if restart:
+            self.do_restart(last_status)
+
         return self.rstatus
+
+    def do_restart(self, last_status):
+        restart_last_status = (
+          rcStatus.UP,
+          rcStatus.STDBY_UP,
+          rcStatus.STDBY_UP_WITH_UP,
+          rcStatus.STDBY_UP_WITH_DOWN
+        )
+        no_restart_status = (
+          rcStatus.UP,
+          rcStatus.STDBY_UP,
+          rcStatus.NA,
+          rcStatus.UNDEF,
+          rcStatus.STDBY_UP_WITH_UP,
+          rcStatus.STDBY_UP_WITH_DOWN,
+          rcStatus.TODO
+        )
+        if self.nb_restart == 0:
+            return
+        if self.rstatus in no_restart_status:
+            return
+        if last_status not in restart_last_status:
+            return
+
+        if not hasattr(self, 'start'):
+            self.log.error("resource restart configured on resource %s with no 'start' action support"%self.rid)
+            return
+
+        for i in range(self.nb_restart):
+            try:
+                self.log.info("restart resource %s. try number %d/%d"%(self.rid, i+1, self.nb_restart))
+                self.action("start")
+            except Exception as e:
+                self.log.error("restart resource failed: " + str(e))
+            self.rstatus = self._status()
+            self.write_status()
+            if self.rstatus == rcStatus.UP:
+                self.log.info("monitored resource %s restarted."%self.rid)
+                return
+            if i + 1 < self.nb_restart:
+                time.sleep(1)
+        return
 
     def write_status(self):
         self.write_status_last()
@@ -555,6 +604,8 @@ class ResourceSet(Resource):
             ps = {}
             for r in resources:
                 if not r.can_rollback and action == "rollback":
+                    continue
+                if r.skip or r.disabled:
                     continue
                 p = Process(target=self.action_job, args=(r, action,))
                 p.start()

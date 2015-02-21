@@ -834,14 +834,10 @@ class Svc(Resource):
         return rset_status
 
     def resource_monitor(self):
-        self.purge_status_last()
+        self.options.refresh = True
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
-        has_hb = False
-        for r in self.get_resources('hb'):
-            if not r.disabled:
-                has_hb = True
-        if not has_hb:
+        if not self.ha:
             self.log.debug("no active heartbeat resource. no need to check monitored resources.")
             return
         hb_status = self.group_status_cache['hb']
@@ -860,9 +856,6 @@ class Svc(Resource):
 
         for r in monitored_resources:
             if r.rstatus != rcStatus.UP:
-                if self.restart_resource(r):
-                    # restart suceeded : don't TOC because of this resource
-                    continue
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
                     if len(r.status_log_str) > 0:
@@ -876,26 +869,6 @@ class Svc(Resource):
                 return
 
         self.log.debug("monitored resources are up")
-
-    def restart_resource(self, r):
-        if r.nb_restart == 0:
-            return False
-        if not hasattr(r, 'start'):
-            self.log.error("resource restart configured on resource %s with no 'start' action support"%r.rid)
-            return False
-        import time
-        for i in range(r.nb_restart):
-            try:
-                self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.nb_restart))
-                r.start()
-            except Exception as e:
-                self.log.error("restart resource failed: " + str(e))
-            if r._status() == rcStatus.UP:
-                self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
-                return True
-            if i + 1 < r.nb_restart:
-                time.sleep(1)
-        return False
 
     class exMonitorAction(Exception):
         pass
@@ -1540,6 +1513,8 @@ class Svc(Resource):
 
     def abort_start(self):
         for r in self.get_resources():
+            if r.skip or r.disabled:
+                continue
             if hasattr(r, 'abort_start') and r.abort_start():
                 raise ex.excError("start aborted due to resource %s conflict"%r.rid)
 
@@ -1668,7 +1643,7 @@ class Svc(Resource):
             status change after its own start/stop
         """
         for r in self.get_resources("ip"):
-            r.status(refresh=True)
+            r.status(refresh=True, restart=False)
 
     @_master_action
     def shutdowncontainer(self):
@@ -2168,7 +2143,7 @@ class Svc(Resource):
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            if not self.options.dry_run:
+            if not self.options.dry_run and action != "resource_monitor":
                 self.log.debug("purge all resource status file caches")
                 self.purge_status_last()
 
