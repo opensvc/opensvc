@@ -2234,7 +2234,7 @@ class Section(object):
         fpath = os.path.join(dpath, "template."+section+".env.gz")
         if rtype:
             section += ", type "+rtype
-            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".env.gz")
+            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".env")
         s = "#"*78 + "\n"
         s += "# %-74s #\n" % " "
         s += "# %-74s #\n" % section
@@ -2255,8 +2255,7 @@ class Section(object):
                 if keyword.keyword == "type":
                     continue
                 s += keyword.template()
-        import gzip
-        with gzip.open(fpath, "wb") as f:
+        with open(fpath, "w") as f:
             f.write(s)
         return s
 
