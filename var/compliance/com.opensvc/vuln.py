@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 OSVC_COMP_VULN_11_117=\
 [{"pkgname": "kernel", "minver": "2.6.18-238.19.1.el5", "firstver": "2.6.18-238"},\
@@ -11,6 +11,7 @@ import json
 import pwd
 import sys
 import re
+import tempfile
 from subprocess import *
 from distutils.version import LooseVersion as V
 from utilities import which
@@ -35,10 +36,6 @@ class CompVuln(object):
         self.need_pushpkg = False
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname not in ['Linux', 'HP-UX', 'AIX', 'SunOS']:
-            print >>sys.stderr, 'module not supported on', self.sysname
-            raise NotApplicable()
-
         if 'OSVC_COMP_VULN_STRICT' in os.environ and \
            os.environ['OSVC_COMP_VULN_STRICT'] == "true":
             self.strict = True
@@ -54,14 +51,22 @@ class CompVuln(object):
         self.packages = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:
-                o = json.loads(os.environ[k])
+                o = json.loads(self.subst(os.environ[k]))
             except ValueError:
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
+                continue
+            if type(o) != list:
+                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
+                continue
             for i, d in enumerate(o):
                 o[i]["rule"] = k.replace("OSVC_COMP_", "")
             self.packages += o
 
         if len(self.packages) == 0:
+            raise NotApplicable()
+
+        if self.sysname not in ['Linux', 'HP-UX', 'AIX', 'SunOS']:
+            print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
 
         if 'OSVC_COMP_NODES_OS_VENDOR' not in os.environ:
@@ -80,6 +85,11 @@ class CompVuln(object):
             self.fix_pkg = self.yum_fix_pkg
             self.fixable_pkg = self.yum_fixable_pkg
             self.fix_all = None
+        elif vendor in ['SuSE']:
+            self.get_installed_packages = self.rpm_get_installed_packages
+            self.fix_pkg = self.zyp_fix_pkg
+            self.fixable_pkg = self.zyp_fixable_pkg
+            self.fix_all = None
         elif vendor in ['HP']:
             if self.uri is None:
                 print >>sys.stderr, "URI is not set"
@@ -92,23 +102,206 @@ class CompVuln(object):
             self.get_installed_packages = self.aix_get_installed_packages
             self.fix_pkg = self.aix_fix_pkg
             self.fixable_pkg = self.aix_fixable_pkg
-            self.fix_all = self.aix_fix_all
+            self.fix_all = None
         elif vendor in ['Oracle']:
             self.get_installed_packages = self.sol_get_installed_packages
             self.fix_pkg = self.sol_fix_pkg
             self.fixable_pkg = self.sol_fixable_pkg
-            self.fix_all = self.sol_fix_all
+            self.fix_all = None
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
 
         self.installed_packages = self.get_installed_packages()
 
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v.strip()
+
+    def get_free(self, c):
+        if not os.path.exists(c):
+            return 0
+        cmd = ["df", "-k", c]
+        p = Popen(cmd, stdout=PIPE, stderr=None)
+        out, err = p.communicate()
+        for line in out.split():
+            if "%" in line:
+                l = out.split()
+                for i, w in enumerate(l):
+                    if '%' in w:
+                        break
+                try:
+                    f = int(l[i-1])
+                    return f
+                except:
+                    return 0
+        return 0
+
+    def get_temp_dir(self):
+        if hasattr(self, "tmpd"):
+            return self.tmpd
+        candidates = ["/tmp", "/var/tmp", "/root"]
+        free = {}
+        for c in candidates:
+            free[self.get_free(c)] = c
+        max = sorted(free.keys())[-1]
+        self.tmpd = free[max]
+        print "selected %s as temp dir (%d KB free)" % (self.tmpd, max)
+        return self.tmpd
+
+    def download(self, pkg_name):
+        import urllib
+        import tempfile
+        f = tempfile.NamedTemporaryFile(dir=self.get_temp_dir())
+        dname = f.name
+        f.close()
+        try:
+            os.makedirs(dname)
+        except:
+            pass
+        fname = os.path.join(dname, "file")
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, fname)
+        except IOError:
+            import traceback
+            e = sys.exc_info()
+            try:
+                os.unlink(fname)
+                os.unlink(dname)
+            except:
+                pass
+            raise Exception("download failed: %s" % str(e[1]))
+        if 'invalid file' in headers.values():
+            try:
+                os.unlink(fname)
+                os.unlink(dname)
+            except:
+                pass
+            raise Exception("invalid file")
+        with open(fname, 'r') as f:
+            content = f.read(500)
+        if content.startswith('<') and '404' in content and 'Not Found' in content:
+            try:
+                os.unlink(fname)
+                os.unlink(dname)
+            except:
+                pass
+            raise Exception("not found")
+        import tarfile
+        os.chdir(dname)
+        try:
+            tar = tarfile.open(fname)
+        except:
+            print "not a tarball"
+            return fname
+        try:
+            tar.extractall()
+        except:
+            try:
+                os.unlink(fname)
+                os.unlink(dname)
+            except:
+                pass
+            # must be a pkg
+            return dname
+        tar.close()
+        os.unlink(fname)
+        return dname
+
+    def get_os_ver(self):
+        cmd = ['uname', '-v']
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return 0
+        lines = out.split('\n')
+        if len(lines) == 0:
+            return 0
+        try:
+            osver = float(lines[0])
+        except:
+            osver = 0
+        return osver
+
     def sol_fix_pkg(self, pkg):
-        return RET_NA
+        r = self.check_pkg(pkg)
+        if r == RET_OK:
+            return RET_NA
+
+        if 'repo' not in pkg or len(pkg['repo']) == 0:
+            print >>sys.stderr, "no repo specified in the rule"
+            return RET_NA
+
+        pkg_url = pkg['repo']+"/"+pkg['pkgname']
+        print "download", pkg_url
+        try:
+            dname = self.download(pkg_url)
+        except Exception as e:
+            print >>sys.stderr, e
+            return RET_ERR
+
+        if pkg["pkgname"] in self.installed_packages:
+            os.chdir("/")
+            yes = os.path.dirname(__file__) + "/yes"
+            cmd = '%s | pkgrm %s' % (yes, pkg['pkgname'])
+            print(cmd)
+            r = os.system(cmd)
+            if r != 0:
+                return RET_ERR
+
+        if os.path.isfile(dname):
+            d = dname
+        else:
+            d = "."
+            os.chdir(dname)
+
+        if self.get_os_ver() < 10:
+            opts = ''
+        else:
+            opts = '-G'
+
+        if 'resp' in pkg and len(pkg['resp']) > 0:
+            f = tempfile.NamedTemporaryFile(dir=self.get_temp_dir())
+            resp = f.name
+            f.close()
+            with open(resp, "w") as f:
+                f.write(pkg['resp'])
+        else:
+            resp = "/dev/null"
+        yes = os.path.dirname(__file__) + "/yes"
+        cmd = '%s | pkgadd -r %s %s -d %s all' % (yes, resp, opts, d)
+        print(cmd)
+        r = os.system(cmd)
+        os.chdir("/")
+
+        if os.path.isdir(dname):
+            import shutil
+            shutil.rmtree(dname)
+
+        if r != 0:
+            return RET_ERR
+        return RET_OK
 
     def sol_fixable_pkg(self, pkg):
-        return RET_ERR
+        return 0
 
     def sol_fix_all(self):
         return RET_NA
@@ -141,10 +334,19 @@ class CompVuln(object):
         return l
 
     def aix_fix_pkg(self, pkg):
-        return RET_NA
+        cmd = ['nimclient', '-o', 'cust',
+               '-a', 'lpp_source=%s'%self.uri,
+               '-a', 'installp_flags=agQY',
+               '-a', 'filesets=%s'%pkg['pkgname']]
+        s = " ".join(cmd)
+        print s
+        r = os.system(s)
+        if r != 0:
+            return RET_ERR
+        return RET_OK
 
     def aix_fixable_pkg(self, pkg):
-        return RET_ERR
+        return RET_NA
 
     def aix_fix_all(self):
         return RET_NA
@@ -241,7 +443,7 @@ class CompVuln(object):
         return l
 
     def rpm_get_installed_packages(self):
-        p = Popen(['rpm', '-qa', '--qf', '%{n} %{v}-%{r} %{arch}\n'], stdout=PIPE)
+        p = Popen(['rpm', '-qa', '--qf', '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
             print >>sys.stderr, 'can not fetch installed packages list'
@@ -275,6 +477,9 @@ class CompVuln(object):
         # TODO
         return RET_NA
 
+    def zyp_fixable_pkg(self, pkg):
+        return RET_NA
+
     def yum_fixable_pkg(self, pkg):
         try:
             r = self.check_pkg(pkg, verbose=False)
@@ -305,6 +510,22 @@ class CompVuln(object):
             return RET_ERR
         return RET_OK
 
+    def zyp_fix_pkg(self, pkg):
+        try:
+            r = self.check_pkg(pkg, verbose=False)
+        except LiveKernVulnerable:
+            r = RET_OK
+        if r == RET_OK:
+            return RET_OK
+        if self.fixable_pkg(pkg) == RET_ERR:
+            return RET_ERR
+        r = call(['zypper', 'install', '-y', pkg["pkgname"]])
+        if r != 0:
+            return RET_ERR
+        self.need_pushpkg = True
+        self.installed_packages = self.get_installed_packages()
+        return RET_OK
+
     def yum_fix_pkg(self, pkg):
         try:
             r = self.check_pkg(pkg, verbose=False)
@@ -314,7 +535,7 @@ class CompVuln(object):
             return RET_OK
         if self.fixable_pkg(pkg) == RET_ERR:
             return RET_ERR
-        r = call(['yum', 'install', '-y', pkg["pkgname"]])
+        r = call(['yum', '-y', 'install', pkg["pkgname"]])
         if r != 0:
             return RET_ERR
         self.need_pushpkg = True
@@ -341,6 +562,7 @@ class CompVuln(object):
         s = s.replace('smp', '')
         s = s.replace('PAE', '')
 	s = s.replace('.x86_64','')
+	s = s.replace('.i686','')
         return s
 
     def workaround_python_cmp(self, s):
@@ -374,7 +596,7 @@ class CompVuln(object):
         ok = []
         minver = self.workaround_python_cmp(pkg['minver'])
         target = V(minver)
-        if 'firstver' in pkg:
+        if 'firstver' in pkg and pkg['firstver'] != "":
             firstver = self.workaround_python_cmp(pkg['firstver'])
         else:
             firstver = "0"

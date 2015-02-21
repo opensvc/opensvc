@@ -26,7 +26,7 @@ class Chkconfig(object):
     def load(self):
         self.services = {}
 
-        p = Popen(['/sbin/chkconfig', '--list'], stdout=PIPE)
+        p = Popen(['/sbin/chkconfig', '--list'], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             raise InitError()
@@ -40,7 +40,7 @@ class Chkconfig(object):
                 self.services[words[0]].append(state)
 
     def load_one(self, service):
-        p = Popen(['/sbin/chkconfig', '--list', service], stdout=PIPE)
+        p = Popen(['/sbin/chkconfig', '--list', service], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             if 'not referenced' in out:
@@ -49,7 +49,7 @@ class Chkconfig(object):
             raise InitError()
 
     def activate(self, service):
-        p = Popen(['chkconfig', service, 'on'], stdout=PIPE)
+        p = Popen(['chkconfig', service, 'on'], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             raise SetError()
@@ -58,7 +58,7 @@ class Chkconfig(object):
         curstate = self.get_state(service, level)
         if curstate == state:
             return
-        p = Popen(['chkconfig', '--level', level, service, state], stdout=PIPE)
+        p = Popen(['chkconfig', '--level', level, service, state], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             raise SetError()

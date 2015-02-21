@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 Checks if a process is present, specifying its comm,
 and optionnaly its owner's uid and/or username.

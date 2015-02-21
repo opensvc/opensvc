@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_GROUP_... vars
 which define {'groupname':{'propname':'propval',... }, ...}
@@ -20,6 +20,7 @@ import os
 import sys
 import json
 import grp
+import re
 from subprocess import Popen 
 
 sys.path.append(os.path.dirname(__file__))
@@ -109,6 +110,25 @@ class CompGroup(object):
 
         if len(self.groups) == 0:
             raise NotApplicable
+
+        p = re.compile('%%ENV:\w+%%')
+        for group, d in self.groups.items():
+            for k in d:
+                if type(d[k]) not in [str, unicode]:
+                    continue
+                for m in p.findall(d[k]):
+                    s = m.strip("%").replace('ENV:', '')
+                    if s in os.environ:
+                        v = os.environ[s]
+                    elif 'OSVC_COMP_'+s in os.environ:
+                        v = os.environ['OSVC_COMP_'+s]
+                    else:
+                        print >>sys.stderr, s, 'is not an env variable'
+                        raise NotApplicable()
+                    d[k] = d[k].replace(m, v)
+                if k in ('uid', 'gid'):
+                    d[k] = int(d[k])
+
 
     def fixable(self):
         return RET_NA

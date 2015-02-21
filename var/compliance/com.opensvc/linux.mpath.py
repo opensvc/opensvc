@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
 OSVC_COMP_MPATH='[{"key": "defaults.polling_interval", "op": ">=", "value": 20}, {"key": "device.HP.HSV210.prio", "op": "=", "value": "alua"}]' ./linux.mpath.py OSVC_COMP_MPATH check
@@ -459,8 +459,20 @@ class LinuxMpath(object):
     def restart_daemon(self):
         if not self.need_restart:
             return
+        candidates = [
+          "/etc/init.d/multipathd",
+          "/etc/init.d/multipath-tools",
+        ]
+        fpath = None
+        for i in candidates:
+            if os.path.exists(i):
+                fpath = i
+                break
+        if fpath is None:
+            print >>sys.stderr, "multipath tools startup script not found"
+            return RET_ERR
         print "restarting multipath daemon"
-        cmd = ["/etc/init.d/multipathd", "restart"]
+        cmd = [fpath, "restart"]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if len(err) > 0:

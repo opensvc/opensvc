@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_GROUP_... vars
 which define {'groupname':{'propname':'propval',... }, ...}

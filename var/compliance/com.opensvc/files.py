@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 Verify file content. The collector provides the format with
 wildcards. The module replace the wildcards with contextual
@@ -26,6 +26,7 @@ import json
 import stat
 import re
 import urllib
+import ssl
 import tempfile
 import pwd
 import grp
@@ -96,7 +97,14 @@ class CompFiles(object):
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
         try:
-            fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+            if d['ref'].startswith("https"):
+                try:
+                    context = ssl._create_unverified_context()
+                    fname, headers = urllib.urlretrieve(d['ref'], tmpf, context=context)
+                except:
+                    fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+            else:
+                fname, headers = urllib.urlretrieve(d['ref'], tmpf)
         except IOError:
             import traceback
             e = sys.exc_info()
@@ -169,16 +177,24 @@ class CompFiles(object):
         if f['path'].endswith('/'):
             # don't check content if it's a directory
             return RET_OK
-        if "OSVC_COMP_OS_VENDOR" in os.environ and os.environ['OSVC_COMP_OS_VENDOR'] in ("Linux"):
-            cmd = ['diff', '-u', f['path'], '-']
+        tmpf = tempfile.NamedTemporaryFile()
+        tmpfname = tmpf.name
+        tmpf.close()
+        with open(tmpfname, 'w') as tmpf:
+            tmpf.write(f['fmt'])
+        if "OSVC_COMP_NODES_OS_NAME" in os.environ and os.environ['OSVC_COMP_NODES_OS_NAME'] in ("Linux"):
+            cmd = ['diff', '-u', f['path'], tmpfname]
         else:
-            cmd = ['diff', f['path'], '-']
+            cmd = ['diff', f['path'], tmpfname]
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate(input=f['fmt'])
+        out, err = p.communicate()
+        os.unlink(tmpfname)
         if verbose and len(out) > 0:
-            print >>sys.stderr, " ".join(cmd)
-            print >>sys.stderr, out
-        return p.returncode
+            #print >>sys.stderr, " ".join(cmd)
+            print >>sys.stderr, out.strip('\n')
+        if p.returncode != 0:
+            return RET_ERR
+        return RET_OK
 
     def check_file_mode(self, f, verbose=False):
         if 'mode' not in f:

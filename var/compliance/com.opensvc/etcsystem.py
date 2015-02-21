@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
 OSVC_COMP_ETCSYSTEM='[{"key": "fcp:fcp_offline_delay", "op": ">=", "value": 21}, {"key": "ssd:ssd_io_time", "op": "=", "value": "0x3C"}]' ./etcsystem.py OSVC_COMP_ETCSYSTEM check

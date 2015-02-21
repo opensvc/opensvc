@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_AUTHKEY_... vars
 which define
@@ -18,6 +18,7 @@ import sys
 import json
 import pwd
 import codecs
+import re
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -29,8 +30,9 @@ class CompAuthKeys(object):
         self.prefix = prefix.upper()
         self.authkeys = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
+            s = self.subst(os.environ[k])
             try:
-                self.authkeys += [json.loads(os.environ[k])]
+                self.authkeys += [json.loads(s)]
             except ValueError:
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to authkey list'
 
@@ -45,6 +47,28 @@ class CompAuthKeys(object):
             print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_keys or authorized_keys2)"
             raise NotApplicable()
         self.authfile = authfile
+
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
 
     def sanitize(self, ak):
         if 'user' not in ak:
@@ -97,7 +121,9 @@ class CompAuthKeys(object):
                 cfs.append(os.path.join(os.sep, 'etc', 'sshd_config'))
 
         cfs += [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
-                os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config')]
+                os.path.join(os.sep, 'opt', 'etc', 'sshd_config'),
+                os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config'),
+                os.path.join(os.sep, 'usr', 'local', 'etc', 'sshd_config')]
         cf = None
         for _cf in cfs:
             if os.path.exists(_cf):
@@ -148,7 +174,6 @@ class CompAuthKeys(object):
             if not os.path.exists(p):
                 continue
             with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
-                print p
                 self.installed_keys_d[user] += f.read().split('\n')
         return self.installed_keys_d[user]
 
@@ -254,7 +279,7 @@ class CompAuthKeys(object):
                 continue
 
             with open(p, 'w') as f:
-                f.write('\n'.join(l))
+                f.write('\n'.join(l).encode('utf8'))
                 print 'key', self.truncate_key(ak['key']), 'uninstalled for user', ak['user']
 
         return RET_OK

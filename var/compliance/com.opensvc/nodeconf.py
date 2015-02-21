@@ -1,7 +1,7 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
-OSVC_COMP_NODECONF='[{"key": "node.repopkg", "op": "=", "value": "ftp://servername/opensvc"}, {"key": "node.repocomp", "op": "=", "value": "ftp://servername/"}]' ./nodeconf.py OSVC_COMP_NODECONF check
+OSVC_COMP_NODECONF='[{"key": "node.repopkg", "op": "=", "value": "ftp://iisprddistrib.dsit.sncf.fr/opensvc"}, {"key": "node.repocomp", "op": "=", "value": "ftp://master:MasteR0@iisprddistrib.dsit.sncf.fr/"}]' ./nodeconf.py OSVC_COMP_NODECONF check
 """
 
 import os

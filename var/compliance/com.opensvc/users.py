@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_USER_... vars
 which define {'username':{'propname':'propval',... }, ...}
@@ -105,10 +105,8 @@ class CompUser(object):
 
         self.users = {}
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            s = os.environ[k]
-            s = self.subst(s)
             try:
-                d = json.loads(s)
+                d = json.loads(os.environ[k])
                 for user in d:
                     if user not in self.users:
                         self.users[user] = d[user]
@@ -121,6 +119,24 @@ class CompUser(object):
 
         if len(self.users) == 0:
             raise NotApplicable()
+
+        p = re.compile('%%ENV:\w+%%')
+        for user, d in self.users.items():
+            for k in d:
+                if type(d[k]) not in [str, unicode]:
+                    continue
+                for m in p.findall(d[k]):
+                    s = m.strip("%").replace('ENV:', '')
+                    if s in os.environ:
+                        v = os.environ[s]
+                    elif 'OSVC_COMP_'+s in os.environ:
+                        v = os.environ['OSVC_COMP_'+s]
+                    else:
+                        print >>sys.stderr, s, 'is not an env variable'
+                        raise NotApplicable()
+                    d[k] = d[k].replace(m, v)
+                if k in ('uid', 'gid'):
+                    d[k] = int(d[k])
 
         for user, d in self.users.items():
             if cap_shadow:
@@ -137,28 +153,6 @@ class CompUser(object):
                     del self.users[user]["spassword"]
                 if "password" not in d:
                     self.users[user]["password"] = "x"
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
 
     def fixable(self):
         if not which('usermod'):
@@ -217,6 +211,10 @@ class CompUser(object):
         if type(current) == int and current < 0:
             current += 4294967296
         if target == current:
+            if verbose:
+                print 'user', user, item+':', current
+            return RET_OK
+        elif "passw" in item and target == "!!" and current == "":
             if verbose:
                 print 'user', user, item+':', current
             return RET_OK
@@ -383,7 +381,7 @@ class CompUser(object):
             prop = str(props[item])
             if len(prop) == 0:
                 continue
-            if item.endswith("password") and self.sysname in ("AIX", "SunOS"):
+            if item.endswith("password") and self.sysname in ("AIX", "SunOS", "OSF1"):
                 continue
             cmd = cmd + self.usermod_p[item].split() + [prop]
             if item == "home":
