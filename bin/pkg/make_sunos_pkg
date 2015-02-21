@@ -162,6 +162,13 @@ cd $BASE && git archive --format=tar HEAD | (
 	&& chown -R root:root $TMPARCHIVE		\
 	&& chmod -R og-w $TMPARCHIVE
 	)
+
+for f in $(echo $TMPARCHIVE/usr/share/doc/template*env)
+do
+	echo "gzip $f"
+	gzip $f
+done
+
 cd $REPODIR 
 
 echo "version = \"$VERSION-$RELEASE\"" > $TMPARCHIVE/lib/version.py
