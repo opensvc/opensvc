@@ -31,6 +31,7 @@ class SysReport(object):
         self.node = node
         self.archive_extension = '.tar'
         self.send_rpc = "send_sysreport"
+        self.lstree_rpc = "sysreport_lstree"
 
     def init(self):
         self.init_dir(self.collect_d)
@@ -328,6 +329,9 @@ class SysReport(object):
     def send(self, force=False):
         if force:
             to_send = self.full
+            lstree_data = self.node.collector.call(self.lstree_rpc)
+            n = len(self.collect_d)+1
+            self.deleted = sorted(list(set(lstree_data) - set("file/stat") - set(map(lambda x: x[n:], self.full))))
         else:
             to_send = self.changed
             self.changed_report()

@@ -842,6 +842,13 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.insert_patch(*args)
     
+    def sysreport_lstree(self, sync=True):
+        args = []
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        data = self.proxy.sysreport_lstree(*args)
+        return data
+
     def send_sysreport(self, fpath, deleted, sync=True):
         args = []
         if fpath is None:
