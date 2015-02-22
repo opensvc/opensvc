@@ -2231,7 +2231,7 @@ class Section(object):
     def _template(self, rtype=None):
         section = self.section
         dpath = os.path.join(os.path.dirname(__file__), "..", "usr", "share", "doc")
-        fpath = os.path.join(dpath, "template."+section+".env.gz")
+        fpath = os.path.join(dpath, "template."+section+".env")
         if rtype:
             section += ", type "+rtype
             fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".env")
