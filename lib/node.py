@@ -248,7 +248,8 @@ class Node(Svc, Freezer):
 	 "push_appinfo": SchedOpts("appinfo"),
 	 "sysreport": SchedOpts("sysreport"),
 	 "compliance_auto": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
-	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days")
+	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days"),
+	 "auto_reboot": SchedOpts("reboot", "last_auto_reboot", "no_interval", "no_period", "no_days")
         }
 
 
@@ -775,7 +776,7 @@ class Node(Svc, Freezer):
 
         return interval
 
-    def skip_action(self, action, section=None, fname=None, interval_option=None, period_option=None, days_option=None, cmdline_parm=None):
+    def skip_action(self, action, section=None, fname=None, interval_option=None, period_option=None, days_option=None, cmdline_parm=None, delay=True):
         if section is None:
             section = self.scheduler_actions[action].section
         if fname is None:
@@ -824,7 +825,7 @@ class Node(Svc, Freezer):
         # collector listeners at 10 minutes intervals.
         # only delay for the first action of this Node() object
         # lifespan
-        if not self.delay_done:
+        if not self.delay_done and delay:
             import random
             import time
             delay = int(random.random()*300)
@@ -1017,6 +1018,25 @@ class Node(Svc, Freezer):
         if self.skip_action("auto_rotate_root_pw"):
             return
         self.rotate_root_pw()
+
+    def auto_reboot(self):
+        if self.skip_action("auto_reboot", delay=False):
+            return
+        flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
+        if not os.path.exists(flag):
+            print("%s is not present. no reboot scheduled" % flag)
+            return
+        import stat
+        s = os.stat(flag)
+        if s.st_uid != 0:
+            print("%s does not belong to root. abort scheduled reboot" % flag)
+            return
+        if s.st_mode & stat.S_IWOTH == stat.S_IWOTH:
+            print("%s is world writable. abort scheduled reboot" % flag)
+            return
+        print("remove %s and reboot" % flag)
+        os.unlink(flag)
+        self.reboot()
 
     def pushdisks(self):
         if self.skip_action("pushdisks"):
