@@ -839,9 +839,9 @@ class Node(Svc, Freezer):
         return False
 
     def print_schedule(self):
-        print("%-22s  %-21s  %-20s %10s  %s" % ("action", "last", "        days", "interval", "period"))
-        print("%-22s  %-21s  %-20s %10s  %s" % ("", "", "Su Mo Tu We Th Fr Sa", "", ""))
-        print("%-22s  %-21s  %-20s %10s  %s" % ("------", "----", "--------------------", "--------", "------"))
+        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % (      "",        "",     "",         "        days",         "",       ""))
+        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("action", "section", "last", "Su Mo Tu We Th Fr Sa", "interval", "period"))
+        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("------", "-------", "----", "--------------------", "--------", "------"))
         for a in sorted(self.scheduler_actions):
             self._print_schedule(a)
 
@@ -900,7 +900,7 @@ class Node(Svc, Freezer):
             last_s = "-"
 
 
-        print("%-22s  %-21s  %-20s %10s  %s" % (a, last_s, days_s, interval_s, period_s))
+        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % (a, section, last_s, days_s, interval_s, period_s))
 
     def pushstats(self):
         if self.skip_action("pushstats"):
