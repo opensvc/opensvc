@@ -2252,6 +2252,20 @@ class Svc(Resource):
             self.save_exc()
 
         self.svcunlock()
+
+        if action == "start" and self.cluster and self.ha:
+            """ This situation is typical of a hb-initiated service start.
+                While the hb starts the service, its resource status is warn from
+                opensvc point of view. So after a successful startup, the hb res
+                status would stay warn until the next svcmon.
+                To avoid this drawback we can force from here the hb status.
+            """
+            if err == 0:
+                for r in self.get_resources(['hb']):
+                    if r.disabled:
+                        continue
+                    r.force_status(rcStatus.UP)
+
         return err
 
     def rollback_handler(self, action):

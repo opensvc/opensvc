@@ -243,6 +243,11 @@ class Resource(object):
     def _status(self, verbose=False):
         return rcStatus.UNDEF
 
+    def force_status(self, s):
+        self.rstatus = s
+        self.status_log_str = "forced"
+        self.write_status()
+
     def status(self, verbose=False, refresh=False, restart=True):
         # refresh param: used by do_action() to force a res status re-eval
         # self.svc.options.refresh: used to purge disk cache
