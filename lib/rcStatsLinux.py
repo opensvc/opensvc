@@ -187,8 +187,13 @@ class StatsProvider(rcStats.StatsProvider):
         lines = []
         for line in buff.split('\n'):
            l = line.split()
-           if len(l) != n:
-               continue
+           if fmt > 1:
+               if len(l) != n:
+                   continue
+           else:
+               if len(l) < n:
+                   continue
+               l = l[:n]
            if l[1] == 'kbmemfree':
                continue
            if l[0] == 'Average:':
