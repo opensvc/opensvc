@@ -95,6 +95,7 @@ class Node(Svc, Freezer):
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
         self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
+        self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
           'clusters': '',
           'host_mode': 'TST',
@@ -123,6 +124,8 @@ class Node(Svc, Freezer):
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
+            'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
             'provision': 'provision the resources described in --resource arguments',
             'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
             'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
@@ -1019,23 +1022,43 @@ class Node(Svc, Freezer):
             return
         self.rotate_root_pw()
 
+    def unschedule_reboot(self):
+        if not os.path.exists(self.reboot_flag):
+            print("reboot already not scheduled")
+            return
+        os.unlink(self.reboot_flag)
+        print("reboot unscheduled")
+
+    def schedule_reboot(self):
+        if not os.path.exists(self.reboot_flag):
+            with open(self.reboot_flag, "w") as f: f.write("")
+        import stat
+        s = os.stat(self.reboot_flag)
+        if s.st_uid != 0:
+            os.chown(self.reboot_flag, 0, -1)
+            print("set %s root ownership"%self.reboot_flag)
+        if s.st_mode & stat.S_IWOTH:
+            mode = s.st_mode ^ stat.S_IWOTH
+            os.chmod(self.reboot_flag, mode)
+            print("set %s not world-writable"%self.reboot_flag)
+        print("reboot scheduled")
+
     def auto_reboot(self):
         if self.skip_action("auto_reboot", delay=False):
             return
-        flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
-        if not os.path.exists(flag):
-            print("%s is not present. no reboot scheduled" % flag)
+        if not os.path.exists(self.reboot_flag):
+            print("%s is not present. no reboot scheduled" % self.reboot_flag)
             return
         import stat
-        s = os.stat(flag)
+        s = os.stat(self.reboot_flag)
         if s.st_uid != 0:
-            print("%s does not belong to root. abort scheduled reboot" % flag)
+            print("%s does not belong to root. abort scheduled reboot" % self.reboot_flag)
             return
-        if s.st_mode & stat.S_IWOTH == stat.S_IWOTH:
-            print("%s is world writable. abort scheduled reboot" % flag)
+        if s.st_mode & stat.S_IWOTH:
+            print("%s is world writable. abort scheduled reboot" % self.reboot_flag)
             return
-        print("remove %s and reboot" % flag)
-        os.unlink(flag)
+        print("remove %s and reboot" % self.reboot_flag)
+        os.unlink(self.reboot_flag)
         self.reboot()
 
     def pushdisks(self):
