@@ -15,6 +15,9 @@ class SchedNoDefault(Exception):
 class SchedSyntaxError(Exception): 
     pass 
  
+class SchedExcluded(Exception): 
+    pass 
+ 
 class SchedOpts(object): 
     def __init__(self, section, 
                  fname=None, 
@@ -240,7 +243,10 @@ class Scheduler(object):
         for schedule in schedules:
             try:
                 self._in_schedule(schedule, fname=fname, now=now)
-                return
+                if schedule["exclude"]:
+                    raise SchedExcluded('excluded by schedule member "%s"' % schedule["raw"])
+                else:
+                    return
             except SchedNotAllowed as e:
                 l.append(str(e))
         raise SchedNotAllowed(", ".join(l))
@@ -485,7 +491,7 @@ class Scheduler(object):
 
         tr = []
         for e in s.split(","):
-            if len(e) == 0:
+            if len(e) == 0 or e == "*":
                 d = {
                   "probabilistic": probabilistic,
                   "begin": "00:00",
@@ -526,8 +532,17 @@ class Scheduler(object):
 
         data = []
         for schedule in schedules:
+            schedule_orig = schedule
+            schedule = schedule.strip()
             if len(schedule) == 0:
-                return []
+                continue
+            if schedule.startswith("!"):
+                exclude = True
+                schedule = schedule[1:].strip()
+            else:
+                exclude = False
+            if len(schedule) == 0:
+                continue
             l = schedule.split()
             n = len(l)
             if n == 1:
@@ -563,6 +578,8 @@ class Scheduler(object):
                 }
             else:
                 raise SchedSyntaxError
+            d["exclude"] = exclude
+            d["raw"] = schedule_orig
             data.append(d)
         return data
 
@@ -583,6 +600,8 @@ class Scheduler(object):
         try:
             self.allow_action_schedule(section, option, fname=fname, now=now)
             return False
+        except SchedExcluded:
+            return True
         except:
             return True
 
@@ -610,6 +629,9 @@ class Scheduler(object):
         # check if we are in allowed scheduling period
         try:
             self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
+        except SchedExcluded as e:
+            err(str(e))
+            return True
         except SchedNotAllowed as e:
             err(str(e))
             return True
