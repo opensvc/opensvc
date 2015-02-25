@@ -1533,15 +1533,6 @@ class KeywordPoolPoolname(Keyword):
                   text="The name of the zfs pool"
                 )
 
-class KeywordPoolTags(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="pool",
-                  keyword="tags",
-                  text=""
-                )
-
 class KeywordVmdgContainerid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1723,17 +1714,6 @@ class KeywordFsSnapSize(Keyword):
                   order=14,
                   text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
                 )
-
-class KeywordFsTags(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="fs",
-                  keyword="tags",
-                  text="",
-                  provisioning=True
-                )
-
 
 class KeywordLoopSize(Keyword):
     def __init__(self):
@@ -2696,7 +2676,6 @@ class KeyDict(KeywordStore):
         self += KeywordVgScsireserv()
         self += KeywordVgPvs()
         self += KeywordPoolPoolname()
-        self += KeywordPoolTags()
         self += KeywordVmdgScsireserv()
         self += KeywordVmdgContainerid()
         self += KeywordVmdgContainerType()
@@ -2710,7 +2689,6 @@ class KeyDict(KeywordStore):
         self += KeywordFsSnapSize()
         self += KeywordFsVg()
         self += KeywordFsSize()
-        self += KeywordFsTags()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordAppScript()

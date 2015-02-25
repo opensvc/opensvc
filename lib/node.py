@@ -124,6 +124,7 @@ class Node(Svc, Freezer):
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'schedule_reboot_status': 'tell if the node is scheduled for reboot',
             'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
             'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
             'provision': 'provision the resources described in --resource arguments',
@@ -253,6 +254,45 @@ class Node(Svc, Freezer):
 	 "compliance_auto": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
 	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days"),
 	 "auto_reboot": SchedOpts("reboot", "last_auto_reboot", "no_interval", "no_period", "no_days")
+        }
+        self.calendar_names = {
+          "jan": 1,
+          "feb": 2,
+          "mar": 3,
+          "apr": 4,
+          "may": 5,
+          "jun": 6,
+          "jul": 7,
+          "aug": 8,
+          "sep": 9,
+          "oct": 10,
+          "nov": 11,
+          "dec": 12,
+          "january": 1,
+          "february": 2,
+          "march": 3,
+          "april": 4,
+          "june": 6,
+          "july": 7,
+          "august": 8,
+          "september": 9,
+          "october": 10,
+          "november": 11,
+          "december": 12,
+          "mon": 0,
+          "tue": 1,
+          "wed": 2,
+          "thu": 3,
+          "fri": 4,
+          "sat": 5,
+          "sun": 6,
+          "monday": 0,
+          "tuesday": 1,
+          "wednesday": 2,
+          "thursday": 3,
+          "friday": 4,
+          "saturday": 5,
+          "sunday": 6
         }
 
 
@@ -655,8 +695,8 @@ class Node(Svc, Freezer):
 
     def in_days(self, days):
         now = datetime.datetime.now()
-        today = now.strftime('%A').lower()
-        if today in map(lambda x: x.lower(), days):
+        today = now.weekday()
+        if today in days:
             return True
         return False
 
@@ -709,7 +749,7 @@ class Node(Svc, Freezer):
 
         return period
 
-    def sched_get_days(self, section, option):
+    def sched_get_days_raw(self, section, option):
         if option is None:
             raise SchedNoDefault
 
@@ -721,12 +761,211 @@ class Node(Svc, Freezer):
         else:
             raise SchedNoDefault
 
-        try:
-            days = json.loads(days_s)
-        except:
+        return days_s
+
+    def sched_validate_day(self, day, week, month, now=None):
+        day = self._sched_validate_day(day, now=now)
+        day &= self._sched_validate_week(week, now=now)
+        day &= self._sched_validate_month(month, now=now)
+        return day
+
+    def _sched_validate_day(self, day, now=None):
+        days = set([])
+        for s in day.split(","):
+            days |= self.__sched_validate_day(s, now=now)
+        return days
+
+    def __sched_validate_day(self, day, now=None):
+        n_col = day.count(":")
+        day_of_month = None
+        from_tail = None
+        from_head = None
+        if n_col > 1:
             raise SchedSyntaxError
+        elif n_col == 1:
+            day, day_of_month = day.split(":")
+            if len(day_of_month) == 0:
+                raise SchedSyntaxError
+            if day_of_month in ("first", "1st"):
+                from_head = True
+                day_of_month = 1
+            elif day_of_month in ("second", "2nd"):
+                from_head = True
+                day_of_month = 2
+            elif day_of_month in ("third", "3rd"):
+                from_head = True
+                day_of_month = 3
+            elif day_of_month in ("fourth", "4th"):
+                from_head = True
+                day_of_month = 4
+            elif day_of_month in ("fifth", "5th"):
+                from_head = True
+                day_of_month = 5
+            elif day_of_month == "last":
+                from_tail = True
+                day_of_month = 1
+            elif day_of_month[0] == "-":
+                from_tail = True
+                day_of_month = day_of_month[1:]
+            elif day_of_month[0] == "+":
+                from_head = True
+                day_of_month = day_of_month[1:]
+            try:
+                day_of_month = int(day_of_month)
+            except ValueError:
+                raise SchedSyntaxError
+
+        day = self.sched_expand_value(day)
+
+        if day == "*":
+            allowed_days = set(range(7))
+        else:
+            allowed_days = [ d for d in day if d >= 0 and d <= 6 ]
+
+        if now is None:
+            now = datetime.datetime.now()
+        this_week_day = now.weekday()
+        last_monday = now - datetime.timedelta(days=this_week_day)
+        days = set([])
+        for i in allowed_days:
+            if day_of_month is None:
+                days.add(i)
+                continue
+            _day = last_monday + datetime.timedelta(days=i)
+            _month = _day.month
+            if from_head is True:
+                d1 = _day - datetime.timedelta(days=7*day_of_month)
+                if d1.month != _month:
+                    days.add(i)
+            elif from_tail is True:
+                d1 = _day + datetime.timedelta(days=7*day_of_month)
+                if d1.month != _month:
+                    days.add(i)
+            elif _day.day == day_of_month:
+                days.add(i)
 
         return days
+
+    def _sched_validate_week(self, week, now=None):
+        week = self.sched_expand_value(week)
+
+        if week == "*":
+            return set(range(7))
+
+        allowed_weeks = [ w for w in week if w >= 1 and w <= 53 ]
+        if now is None:
+            now = datetime.datetime.now()
+        this_week_day = now.weekday()
+        last_monday = now - datetime.timedelta(days=this_week_day)
+        days = set([])
+        for i in range(7):
+            _day = last_monday + datetime.timedelta(days=i)
+            print(i, _day, _day.isocalendar()[1])
+            if _day.isocalendar()[1] in allowed_weeks:
+                days.add(i)
+        return days
+
+    def _sched_validate_month(self, month, now=None):
+        if month == "*":
+            return set(range(7))
+
+        allowed_months = set([])
+        for s in month.split(","):
+            if s.startswith("%"):
+                allowed_months |= self.__sched_validate_month(s)
+            else:
+                allowed_months |= self.sched_expand_value(s)
+
+        if now is None:
+            now = datetime.datetime.now()
+        this_week_day = now.weekday()
+        last_monday = now - datetime.timedelta(days=this_week_day)
+        days = set([])
+        for i in range(7):
+            _day = last_monday + datetime.timedelta(days=i)
+            if _day.month in allowed_months:
+                days.add(i)
+        return days
+
+    def __sched_validate_month(self, month):
+        shift = 0
+        try:
+            modulo = month[1:]
+        except:
+            raise SchedSyntaxError
+        n_plus = modulo.count("+")
+        if n_plus > 1:
+            raise SchedSyntaxError
+        if n_plus == 1:
+            modulo, shift = modulo.split("+")
+        try:
+            modulo = int(modulo)
+            shift = int(shift)
+        except ValueError:
+            raise SchedSyntaxError
+        return set([ m for m in range(1,13) if (m + shift) % modulo == 0])
+
+    def _sched_validate_day_of_month(self, day_of_month):
+        if day_of_month == "*":
+            return set(range(7))
+        return set([])
+
+    def sched_to_int(self, s):
+        try:
+            i = int(s)
+            return i
+        except ValueError:
+            s = s.lower()
+            if s not in self.calendar_names:
+                 raise SchedSyntaxError("unknown calendar name")
+            return self.calendar_names[s]
+            
+    def sched_expand_value(self, s):
+        v = set([])
+        if s == "*":
+            return s
+        l = s.split(",")
+        for e in l:
+            n_dash = e.count("-")
+            if n_dash > 1:
+                raise SchedSyntaxError
+            elif n_dash == 0:
+                v.add(self.sched_to_int(e))
+                continue
+            begin, end = e.split("-")
+            begin = self.sched_to_int(begin)
+            end = self.sched_to_int(end)
+            _range = sorted([begin, end])
+            v |= set(range(_range[0], _range[1]+1))
+        return v
+               
+    def sched_get_days(self, section, option, now=None):
+        ndays = set([])
+
+        days = self.sched_get_days_raw(section, option)
+        try:
+            days = json.loads(days)
+        except:
+            pass
+        if type(days) in (str, unicode):
+            days = [days]
+
+        for day in days:
+            l = day.split()
+            n = len(l)
+            if n == 1:
+                _day = l[0]
+                _week = "*"
+                _month = "*"
+            elif n == 2:
+                _day, _week = l
+                _month = "*"
+            elif n == 3:
+                _day, _week, _month = l
+            else:
+                raise SchedSyntaxError
+            ndays |= self.sched_validate_day(_day, _week, _month, now=now)
+        return list(ndays)
 
     def skip_action_period(self, section, option):
         if option is None:
@@ -840,7 +1079,7 @@ class Node(Svc, Freezer):
 
     def print_schedule(self):
         print("%-20s  %-15s  %-21s  %-20s %10s  %s" % (      "",        "",     "",         "        days",         "",       ""))
-        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("action", "section", "last", "Su Mo Tu We Th Fr Sa", "interval", "period"))
+        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("action", "section", "last", "Mo Tu We Th Fr Sa Su", "interval", "period"))
         print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("------", "-------", "----", "--------------------", "--------", "------"))
         for a in sorted(self.scheduler_actions):
             self._print_schedule(a)
@@ -869,7 +1108,7 @@ class Node(Svc, Freezer):
         try:
             days_s = ""
             days = self.sched_get_days(section, days_option)
-            for i in ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]:
+            for i in range(7):
                 if i in days:
                     days_s += " X "
                 else:
@@ -1042,6 +1281,32 @@ class Node(Svc, Freezer):
             os.chmod(self.reboot_flag, mode)
             print("set %s not world-writable"%self.reboot_flag)
         print("reboot scheduled")
+
+    def schedule_reboot_status(self):
+        import stat
+        if not os.path.exists(self.reboot_flag):
+            print("reboot is not scheduled")
+            return
+        s = os.stat(self.reboot_flag)
+        if s.st_uid != 0 or s.st_mode & stat.S_IWOTH:
+            print("reboot is not scheduled")
+            return
+        sch = self.scheduler_actions["auto_reboot"]
+        days = self.sched_get_days_raw(sch.section, sch.days_option)
+        period = self.sched_get_period(sch.section, sch.days_option)
+        print("reboot is scheduled")
+        print("allowed reboot period: %s" % " => ".join(period))
+        print("allowed reboot days: %s" % str(days))
+        now = datetime.datetime.now()
+        max = 100
+        for i in range(100):
+            d = now + datetime.timedelta(days=i)
+            days = self.sched_get_days(sch.section, sch.days_option, now=d)
+            if d.weekday() in days:
+                print("next allowed reboot day:", d.strftime("%a %Y-%m-%d"))
+                break
+        if i == max - 1:
+            print("next allowed reboot day: none in the next %d days" % max)
 
     def auto_reboot(self):
         if self.skip_action("auto_reboot", delay=False):

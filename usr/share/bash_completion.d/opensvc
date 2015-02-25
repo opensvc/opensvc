@@ -313,6 +313,9 @@ _nodemgr()
             "compliance detach")
 		local opts="moduleset ruleset"
 		;;
+            "schedule reboot")
+		local opts="status"
+		;;
             *)
                 ;;
         esac
