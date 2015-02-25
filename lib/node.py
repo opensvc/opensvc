@@ -36,31 +36,12 @@ import rcLogger
 import rcUtilities
 import rcExceptions as ex
 from subprocess import *
+from rcScheduler import *
 
 try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
-
-class SchedNoDefault(Exception):
-    pass
-
-class SchedSyntaxError(Exception):
-    pass
-
-class SchedOpts(object):
-    def __init__(self, section,
-                 fname=None,
-                 interval_option="push_interval",
-                 period_option="push_period",
-                 days_option="push_days"):
-        self.section = section
-        self.fname = fname
-        if self.fname is None:
-            self.fname = "last_"+section+"_push"
-        self.interval_option = interval_option
-        self.period_option = period_option
-        self.days_option = days_option
 
 class Options(object):
     def __init__(self):
@@ -79,7 +60,7 @@ class Options(object):
         self.objects = []
         os.environ['LANG'] = 'C'
 
-class Node(Svc, Freezer):
+class Node(Svc, Freezer, Scheduler):
     """ Defines a cluster node.  It contain list of Svc.
         Implements node-level actions and checks.
     """
@@ -99,18 +80,10 @@ class Node(Svc, Freezer):
         self.config_defaults = {
           'clusters': '',
           'host_mode': 'TST',
-          'push_interval': 361,
-          'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
-          'push_period': '["00:00", "06:00"]',
-          'sync_interval': 121,
-          'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
-          'sync_period': '["04:00", "06:00"]',
-          'comp_check_interval': 241,
-          'comp_check_days': '["sunday"]',
-          'comp_check_period': '["02:00", "06:00"]',
-          'no_interval': 0,
-          'no_days': '[]',
-          'no_period': '[]',
+          'push_schedule': '00:00-06:00@361 mon-sun',
+          'sync_schedule': '04:00-06:00@121 mon-sun',
+          'comp_schedule': '02:00-06:00@241 sun',
+          'no_schedule': '',
         }
         self.svcs = None
         try:
@@ -119,6 +92,7 @@ class Node(Svc, Freezer):
             self.clusters = []
         self.load_config()
         self.options = Options()
+        Scheduler.__init__(self)
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
@@ -236,63 +210,24 @@ class Node(Svc, Freezer):
 	 "pushpkg": SchedOpts("packages"),
 	 "pushpatch": SchedOpts("patches"),
 	 "pushasset": SchedOpts("asset"),
-	 "pushnsr": SchedOpts("nsr", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushhp3par": SchedOpts("hp3par", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushibmds": SchedOpts("ibmds", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushdcs": SchedOpts("dcs", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushhds": SchedOpts("hds", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushnecism": SchedOpts("necism", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pusheva": SchedOpts("eva", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushibmsvc": SchedOpts("ibmsvc", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushvioserver": SchedOpts("vioserver", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushsym": SchedOpts("sym", interval_option="no_interval", period_option="no_period", days_option="no_days"),
-	 "pushbrocade": SchedOpts("brocade", interval_option="no_interval", period_option="no_period", days_option="no_days"),
+	 "pushnsr": SchedOpts("nsr", schedule_option="no_schedule"),
+	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
+	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
+	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
+	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
+	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
+	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
+	 "pushibmsvc": SchedOpts("ibmsvc", schedule_option="no_schedule"),
+	 "pushvioserver": SchedOpts("vioserver", schedule_option="no_schedule"),
+	 "pushsym": SchedOpts("sym", schedule_option="no_schedule"),
+	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
 	 "pushdisks": SchedOpts("disks"),
 	 "pushservices": SchedOpts("svcconf"),
 	 "push_appinfo": SchedOpts("appinfo"),
 	 "sysreport": SchedOpts("sysreport"),
-	 "compliance_auto": SchedOpts("compliance", "last_comp_check", "comp_check_interval", "comp_check_period", "comp_check_days"),
-	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", "last_rotate_root_pw", "no_interval", "no_period", "no_days"),
-	 "auto_reboot": SchedOpts("reboot", "last_auto_reboot", "no_interval", "no_period", "no_days")
-        }
-        self.calendar_names = {
-          "jan": 1,
-          "feb": 2,
-          "mar": 3,
-          "apr": 4,
-          "may": 5,
-          "jun": 6,
-          "jul": 7,
-          "aug": 8,
-          "sep": 9,
-          "oct": 10,
-          "nov": 11,
-          "dec": 12,
-          "january": 1,
-          "february": 2,
-          "march": 3,
-          "april": 4,
-          "june": 6,
-          "july": 7,
-          "august": 8,
-          "september": 9,
-          "october": 10,
-          "november": 11,
-          "december": 12,
-          "mon": 0,
-          "tue": 1,
-          "wed": 2,
-          "thu": 3,
-          "fri": 4,
-          "sat": 5,
-          "sun": 6,
-          "monday": 0,
-          "tuesday": 1,
-          "wednesday": 2,
-          "thursday": 3,
-          "friday": 4,
-          "saturday": 5,
-          "sunday": 6
+	 "compliance_auto": SchedOpts("compliance", fname="last_comp_check", schedule_option="comp_schedule"),
+	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="last_rotate_root_pw", schedule_option="no_schedule"),
+	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
         }
 
 
@@ -539,608 +474,6 @@ class Node(Svc, Freezer):
         else:
             return getattr(self, a)()
 
-    def need_action_interval(self, timestamp_f, delay=10):
-        """ Return False if timestamp is fresher than now-interval
-            Return True otherwize.
-            Zero is a infinite interval
-        """
-        if delay == 0:
-            return False
-        if not os.path.exists(timestamp_f):
-            return True
-        try:
-            with open(timestamp_f, 'r') as f:
-                d = f.read()
-                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
-                limit = last + datetime.timedelta(minutes=delay)
-                if datetime.datetime.now() < limit:
-                    return False
-                else:
-                    return True
-                f.close()
-        except:
-            return True
-
-        # never reach here
-        return True
-
-    def timestamp(self, timestamp_f, interval):
-        timestamp_d = os.path.dirname(timestamp_f)
-        if not os.path.isdir(timestamp_d):
-            os.makedirs(timestamp_d, 0o755)
-        with open(timestamp_f, 'w') as f:
-            f.write(str(datetime.datetime.now())+'\n')
-            f.close()
-        return True
-
-    def skip_action_interval(self, timestamp_f, interval):
-        return not self.need_action_interval(timestamp_f, interval)
-
-    def skip_probabilistic(self, period, interval):
-        if len(period) == 0:
-            return False
-
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
-            return False
-
-        if start > end:
-            end += 1440
-        if now < start:
-            now += 1440
-
-        length = end - start
-
-        if length < 60:
-            # no need to play this game on short allowed periods
-            return False
-
-        if interval <= length:
-            # don't skip if interval <= period length, because the user
-            # expects the action to run multiple times in the period
-            return False
-
-        length -= 11
-        elapsed = now - start
-        elapsed_pct = min(100, int(100.0 * elapsed / length))
-
-        """
-            proba
-              ^
-        100%  |
-         75%  |XXX
-         50%  |XXXX
-         25%  |XXXXXX
-          0%  ----|----|-> elapsed
-             0%  50%  100%
-
-        This algo is meant to level collector's load which peaks
-        when all daily cron trigger at the same minute.
-        """
-        if elapsed_pct < 50:
-            # fixed skip proba for a perfect leveling on the first half-period
-            p = 100.0 - max(1, 1000.0 / length)
-        else:
-            # decreasing skip proba on the second half-period
-            p = 100.0 - min(elapsed_pct, 100)
-
-        import random
-        r = random.random()*100.0
-
-        """
-        print("start:", start)
-        print("end:", end)
-        print("now:", now)
-        print("length:", length)
-        print("elapsed:", elapsed)
-        print("elapsed_pct:", elapsed_pct)
-        print("p:", p)
-        print("r:", r)
-        """
-
-        if r >= p:
-            print("win probabilistic challenge: %d, over %d"%(r, p))
-            return False
-
-        return True
-
-    def get_period_minutes(self, period):
-        start_s, end_s = period
-        try:
-            start_t = time.strptime(start_s, "%H:%M")
-            end_t = time.strptime(end_s, "%H:%M")
-            start = start_t.tm_hour * 60 + start_t.tm_min
-            end = end_t.tm_hour * 60 + end_t.tm_min
-        except:
-            print("malformed time string: %s"%str(period), file=sys.stderr)
-            raise Exception("malformed time string: %s"%str(period))
-        now = datetime.datetime.now()
-        now_m = now.hour * 60 + now.minute
-        return start, end, now_m
-
-    def in_period(self, period):
-        if len(period) == 0:
-            return False
-        if isinstance(period[0], list):
-            r = False
-            for p in period:
-                 if self.in_period(p):
-                     return True
-            return False
-        elif not isinstance(period[0], unicode) or len(period) != 2 or \
-             not isinstance(period[1], unicode):
-            print("malformed period: %s"%str(period), file=sys.stderr)
-            return False
-
-        if len(period) == 0:
-            return True
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
-            return False
-
-        if start <= end:
-            if now >= start and now <= end:
-                return True
-        elif start > end:
-            """
-                  XXXXXXXXXXXXXXXXX
-                  23h     0h      1h
-            """
-            if (now >= start and now <= 1440) or \
-               (now >= 0 and now <= end):
-                return True
-        return False
-
-    def in_days(self, days):
-        now = datetime.datetime.now()
-        today = now.weekday()
-        if today in days:
-            return True
-        return False
-
-    def skip_action_probabilistic(self, section, option, interval):
-        if option is None:
-            return False
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'period'):
-            period_s = self.config.get(section, 'period')
-        elif self.config.has_option('DEFAULT', option):
-            period_s = self.config.get('DEFAULT', option)
-        else:
-            return False
-
-        try:
-            period = json.loads(period_s)
-        except:
-            print("malformed parameter value: %s.period"%section, file=sys.stderr)
-            return True
-
-        if isinstance(period[0], list):
-            matching_period = None
-            for p in period:
-                if self.in_period(p):
-                    matching_period = p
-                    break
-            if matching_period is None:
-                return True
-            period = matching_period
-
-        return self.skip_probabilistic(period, interval)
-
-    def sched_get_period(self, section, option):
-        if option is None:
-            raise SchedNoDefault
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'period'):
-            period_s = self.config.get(section, 'period')
-        elif self.config.has_option('DEFAULT', option):
-            period_s = self.config.get('DEFAULT', option)
-        else:
-            raise SchedNoDefault
-
-        try:
-            period = json.loads(period_s)
-        except:
-            raise SchedSyntaxError
-
-        return period
-
-    def sched_get_days_raw(self, section, option):
-        if option is None:
-            raise SchedNoDefault
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'days'):
-            days_s = self.config.get(section, 'days')
-        elif self.config.has_option('DEFAULT', option):
-            days_s = self.config.get('DEFAULT', option)
-        else:
-            raise SchedNoDefault
-
-        return days_s
-
-    def sched_validate_day(self, day, week, month, now=None):
-        day = self._sched_validate_day(day, now=now)
-        day &= self._sched_validate_week(week, now=now)
-        day &= self._sched_validate_month(month, now=now)
-        return day
-
-    def _sched_validate_day(self, day, now=None):
-        days = set([])
-        for s in day.split(","):
-            days |= self.__sched_validate_day(s, now=now)
-        return days
-
-    def __sched_validate_day(self, day, now=None):
-        n_col = day.count(":")
-        day_of_month = None
-        from_tail = None
-        from_head = None
-        if n_col > 1:
-            raise SchedSyntaxError
-        elif n_col == 1:
-            day, day_of_month = day.split(":")
-            if len(day_of_month) == 0:
-                raise SchedSyntaxError
-            if day_of_month in ("first", "1st"):
-                from_head = True
-                day_of_month = 1
-            elif day_of_month in ("second", "2nd"):
-                from_head = True
-                day_of_month = 2
-            elif day_of_month in ("third", "3rd"):
-                from_head = True
-                day_of_month = 3
-            elif day_of_month in ("fourth", "4th"):
-                from_head = True
-                day_of_month = 4
-            elif day_of_month in ("fifth", "5th"):
-                from_head = True
-                day_of_month = 5
-            elif day_of_month == "last":
-                from_tail = True
-                day_of_month = 1
-            elif day_of_month[0] == "-":
-                from_tail = True
-                day_of_month = day_of_month[1:]
-            elif day_of_month[0] == "+":
-                from_head = True
-                day_of_month = day_of_month[1:]
-            try:
-                day_of_month = int(day_of_month)
-            except ValueError:
-                raise SchedSyntaxError
-
-        day = self.sched_expand_value(day)
-
-        if day == "*":
-            allowed_days = set(range(7))
-        else:
-            allowed_days = [ d for d in day if d >= 0 and d <= 6 ]
-
-        if now is None:
-            now = datetime.datetime.now()
-        this_week_day = now.weekday()
-        last_monday = now - datetime.timedelta(days=this_week_day)
-        days = set([])
-        for i in allowed_days:
-            if day_of_month is None:
-                days.add(i)
-                continue
-            _day = last_monday + datetime.timedelta(days=i)
-            _month = _day.month
-            if from_head is True:
-                d1 = _day - datetime.timedelta(days=7*day_of_month)
-                if d1.month != _month:
-                    days.add(i)
-            elif from_tail is True:
-                d1 = _day + datetime.timedelta(days=7*day_of_month)
-                if d1.month != _month:
-                    days.add(i)
-            elif _day.day == day_of_month:
-                days.add(i)
-
-        return days
-
-    def _sched_validate_week(self, week, now=None):
-        week = self.sched_expand_value(week)
-
-        if week == "*":
-            return set(range(7))
-
-        allowed_weeks = [ w for w in week if w >= 1 and w <= 53 ]
-        if now is None:
-            now = datetime.datetime.now()
-        this_week_day = now.weekday()
-        last_monday = now - datetime.timedelta(days=this_week_day)
-        days = set([])
-        for i in range(7):
-            _day = last_monday + datetime.timedelta(days=i)
-            print(i, _day, _day.isocalendar()[1])
-            if _day.isocalendar()[1] in allowed_weeks:
-                days.add(i)
-        return days
-
-    def _sched_validate_month(self, month, now=None):
-        if month == "*":
-            return set(range(7))
-
-        allowed_months = set([])
-        for s in month.split(","):
-            if s.startswith("%"):
-                allowed_months |= self.__sched_validate_month(s)
-            else:
-                allowed_months |= self.sched_expand_value(s)
-
-        if now is None:
-            now = datetime.datetime.now()
-        this_week_day = now.weekday()
-        last_monday = now - datetime.timedelta(days=this_week_day)
-        days = set([])
-        for i in range(7):
-            _day = last_monday + datetime.timedelta(days=i)
-            if _day.month in allowed_months:
-                days.add(i)
-        return days
-
-    def __sched_validate_month(self, month):
-        shift = 0
-        try:
-            modulo = month[1:]
-        except:
-            raise SchedSyntaxError
-        n_plus = modulo.count("+")
-        if n_plus > 1:
-            raise SchedSyntaxError
-        if n_plus == 1:
-            modulo, shift = modulo.split("+")
-        try:
-            modulo = int(modulo)
-            shift = int(shift)
-        except ValueError:
-            raise SchedSyntaxError
-        return set([ m for m in range(1,13) if (m + shift) % modulo == 0])
-
-    def _sched_validate_day_of_month(self, day_of_month):
-        if day_of_month == "*":
-            return set(range(7))
-        return set([])
-
-    def sched_to_int(self, s):
-        try:
-            i = int(s)
-            return i
-        except ValueError:
-            s = s.lower()
-            if s not in self.calendar_names:
-                 raise SchedSyntaxError("unknown calendar name")
-            return self.calendar_names[s]
-            
-    def sched_expand_value(self, s):
-        v = set([])
-        if s == "*":
-            return s
-        l = s.split(",")
-        for e in l:
-            n_dash = e.count("-")
-            if n_dash > 1:
-                raise SchedSyntaxError
-            elif n_dash == 0:
-                v.add(self.sched_to_int(e))
-                continue
-            begin, end = e.split("-")
-            begin = self.sched_to_int(begin)
-            end = self.sched_to_int(end)
-            _range = sorted([begin, end])
-            v |= set(range(_range[0], _range[1]+1))
-        return v
-               
-    def sched_get_days(self, section, option, now=None):
-        ndays = set([])
-
-        days = self.sched_get_days_raw(section, option)
-        try:
-            days = json.loads(days)
-        except:
-            pass
-        if type(days) in (str, unicode):
-            days = [days]
-
-        for day in days:
-            l = day.split()
-            n = len(l)
-            if n == 1:
-                _day = l[0]
-                _week = "*"
-                _month = "*"
-            elif n == 2:
-                _day, _week = l
-                _month = "*"
-            elif n == 3:
-                _day, _week, _month = l
-            else:
-                raise SchedSyntaxError
-            ndays |= self.sched_validate_day(_day, _week, _month, now=now)
-        return list(ndays)
-
-    def skip_action_period(self, section, option):
-        if option is None:
-            return False
-
-        try:
-            period = self.sched_get_period(section, option)
-        except SchedNoDefault:
-            return False
-        except SchedSyntaxError:
-            print("malformed parameter value: %s.period"%section, file=sys.stderr)
-            return True
-
-        if self.in_period(period):
-            return False
-
-        return True
-
-
-    def skip_action_days(self, section, option):
-        if option is None:
-            return False
-
-        try:
-            days = self.sched_get_days(section, option)
-        except SchedNoDefault:
-            return False
-        except SchedSyntaxError:
-            print("malformed parameter value: %s.days"%section, file=sys.stderr)
-            return True
-
-        if self.in_days(days):
-            return False
-
-        return True
-
-    def sched_get_interval(self, section, option, cmdline_parm=None):
-        # get interval from config file
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'interval'):
-            interval = self.config.getint(section, 'interval')
-        else:
-            interval = self.config.getint('DEFAULT', option)
-
-        # override with command line
-        if cmdline_parm is not None:
-            v = getattr(self.options, cmdline_parm)
-            if v is not None:
-                interval = v
-
-        return interval
-
-    def skip_action(self, action, section=None, fname=None, interval_option=None, period_option=None, days_option=None, cmdline_parm=None, delay=True):
-        if section is None:
-            section = self.scheduler_actions[action].section
-        if fname is None:
-            fname = self.scheduler_actions[action].fname
-        if interval_option is None:
-            interval_option = self.scheduler_actions[action].interval_option
-        if period_option is None:
-            period_option = self.scheduler_actions[action].period_option
-        if days_option is None:
-            days_option = self.scheduler_actions[action].days_option
-
-        def err(msg):
-            print('%s: skip:'%section, msg)
-
-        if not self.options.cron:
-            return False
-
-        # check if we are in allowed period
-        if self.skip_action_period(section, period_option):
-            err('out of allowed periods')
-            return True
-
-        # check if we are in allowed days of week
-        if self.skip_action_days(section, days_option):
-            err('out of allowed days')
-            return True
-
-        interval = self.sched_get_interval(section, interval_option, cmdline_parm)
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
-
-        # check if we are in allowed days of week
-        if self.skip_action_interval(timestamp_f, interval):
-            err('last run < interval')
-            return True
-
-        # probabilistic skip
-        if '#sync#' not in section and \
-           self.skip_action_probabilistic(section, period_option, interval):
-            err('checks passed but skip to level collector load')
-            return True
-
-        self.timestamp(timestamp_f, interval)
-
-        # ok. we have some action to perform.
-        # now wait for a random delay <5min to not overload the
-        # collector listeners at 10 minutes intervals.
-        # only delay for the first action of this Node() object
-        # lifespan
-        if not self.delay_done and delay:
-            import random
-            import time
-            delay = int(random.random()*300)
-            print("delay action for %d secs to level database load"%delay)
-            time.sleep(delay)
-            self.delay_done = True
-
-        return False
-
-    def print_schedule(self):
-        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % (      "",        "",     "",         "        days",         "",       ""))
-        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("action", "section", "last", "Mo Tu We Th Fr Sa Su", "interval", "period"))
-        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % ("------", "-------", "----", "--------------------", "--------", "------"))
-        for a in sorted(self.scheduler_actions):
-            self._print_schedule(a)
-
-    def _print_schedule(self, a):
-        section = self.scheduler_actions[a].section
-        period_option = self.scheduler_actions[a].period_option
-        days_option = self.scheduler_actions[a].days_option
-        interval_option = self.scheduler_actions[a].interval_option
-        fname = self.scheduler_actions[a].fname
-
-        try:
-            period = self.sched_get_period(section, period_option)
-            if len(period) == 0:
-                period_s = "-"
-            elif type(period[0]) == list:
-                period_s = ', '.join(map(lambda x: '->'.join(x), period))
-            else:
-                period_s = '->'.join(period)
-                
-        except SchedNoDefault:
-            period_s = "anytime"
-        except SchedSyntaxError:
-            period_s = "malformed"
-
-        try:
-            days_s = ""
-            days = self.sched_get_days(section, days_option)
-            for i in range(7):
-                if i in days:
-                    days_s += " X "
-                else:
-                    days_s += "   "
-            days_s = days_s.rstrip()
-        except SchedNoDefault:
-            days_s = "anyday"
-        except SchedSyntaxError:
-            days_s = "malformed"
-
-        try:
-            interval = self.sched_get_interval(section, interval_option)
-            if interval == 0:
-                interval_s = "-"
-            else:
-                interval_s = str(interval)
-        except SchedNoDefault:
-            interval = "anytime"
-        except SchedSyntaxError:
-            interval = "malformed"
-
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
-        try:
-            with open(timestamp_f, 'r') as f:
-                last_s = f.read()
-                last_s = last_s.split('.')[0]
-        except:
-            last_s = "-"
-
-
-        print("%-20s  %-15s  %-21s  %-20s %10s  %s" % (a, section, last_s, days_s, interval_s, period_s))
-
     def pushstats(self):
         if self.skip_action("pushstats"):
             return
@@ -1292,21 +625,19 @@ class Node(Svc, Freezer):
             print("reboot is not scheduled")
             return
         sch = self.scheduler_actions["auto_reboot"]
-        days = self.sched_get_days_raw(sch.section, sch.days_option)
-        period = self.sched_get_period(sch.section, sch.days_option)
+        schedule = self.sched_get_schedule_raw(sch.section, sch.schedule_option)
         print("reboot is scheduled")
-        print("allowed reboot period: %s" % " => ".join(period))
-        print("allowed reboot days: %s" % str(days))
+        print("reboot schedule: %s" % schedule)
         now = datetime.datetime.now()
-        max = 100
-        for i in range(100):
-            d = now + datetime.timedelta(days=i)
-            days = self.sched_get_days(sch.section, sch.days_option, now=d)
-            if d.weekday() in days:
-                print("next allowed reboot day:", d.strftime("%a %Y-%m-%d"))
+        _max = 14400
+        self.options.cron = True
+        for i in range(_max):
+            d = now + datetime.timedelta(minutes=i*10)
+            if not self.skip_action("auto_reboot", now=d, delay=False, verbose=False):
+                print("next allowed reboot:", d.strftime("%a %Y-%m-%d %H:%M"))
                 break
-        if i == max - 1:
-            print("next allowed reboot day: none in the next %d days" % max)
+        if i == _max - 1:
+            print("next allowed reboot: none in the next %d days" % (_max/144))
 
     def auto_reboot(self):
         if self.skip_action("auto_reboot", delay=False):
@@ -1344,9 +675,7 @@ class Node(Svc, Freezer):
             if self.skip_action("need_sync",
                                 section=s,
                                 fname=ts,
-                                interval_option='sync_interval',
-                                period_option='sync_period',
-                                days_option='sync_days'):
+                                schedule_option='sync_interval'):
                     continue
             l.append(self.config.get(s, 'svcname'))
         return l
