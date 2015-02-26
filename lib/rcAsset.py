@@ -507,6 +507,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'team_integ')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "team integration")
@@ -517,6 +518,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'team_support')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "team support")
@@ -527,6 +529,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'project')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "project")
