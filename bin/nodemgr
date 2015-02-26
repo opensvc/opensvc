@@ -105,6 +105,12 @@ parser.add_option("--object", default=[], action="append", dest="objects",
 parser.add_option("--mac", default=None,
 		  action="store", dest="mac",
                   help="list of mac addresses, comma separated, used by the 'wol' action")
+parser.add_option("--tag", default=None,
+		  action="store", dest="tag",
+                  help="a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'")
+parser.add_option("--like", default="%",
+		  action="store", dest="like",
+                  help="a sql like filtering expression. leading and trailing wildcards are automatically set.")
 parser.add_option("--broadcast", default=None,
 		  action="store", dest="broadcast",
                   help="list of broadcast addresses, comma separated, used by the 'wol' action")

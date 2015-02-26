@@ -192,6 +192,11 @@ class Node(Svc, Freezer, Scheduler):
             'collector_json_list_nodes': 'same as "collector list nodes", output in JSON',
             'collector_json_list_services': 'same as "collector list services", output in JSON',
             'collector_json_list_filtersets': 'same as "collector list filtersets", output in JSON',
+            'collector_tag': 'set a node tag (pointed by --tag)',
+            'collector_untag': 'unset a node tag (pointed by --tag)',
+            'collector_show_tags': 'list all node tags',
+            'collector_list_tags': 'list all available tags. use --like to filter the output.',
+            'collector_create_tag': 'create a new tag',
           },
         }
         self.collector = xmlrpcClient.Collector()
