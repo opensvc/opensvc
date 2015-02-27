@@ -199,7 +199,9 @@ class Scheduler(object):
             try:
                 self.in_timerange(tr, now=now)
                 self.in_timerange_interval(tr, fname=fname, now=now)
-                self.in_timerange_probabilistic(tr, now=now)
+                if fname is not None:
+                    # fname as None indicates we run in test mode
+                    self.in_timerange_probabilistic(tr, now=now)
                 return
             except SchedNotAllowed as e:
                 l.append(str(e))
@@ -227,6 +229,11 @@ class Scheduler(object):
         raise SchedNotAllowed("not in timerange %s-%s"%(timerange["begin"],timerange["end"]))
 
     def in_timerange_interval(self, timerange, fname=None, now=None):
+        if timerange["interval"] == 0:
+            raise SchedNotAllowed("interval set to 0")
+        if fname is None:
+            # test mode
+            return
         timestamp_f = self.get_timestamp_f(fname)
         if self.skip_action_interval(timestamp_f, timerange["interval"]):
             raise SchedNotAllowed("last run is too soon")
@@ -251,25 +258,6 @@ class Scheduler(object):
                 l.append(str(e))
         raise SchedNotAllowed(", ".join(l))
 
-    def sched_get_period(self, section, option):
-        if option is None:
-            raise SchedNoDefault
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'period'):
-            period_s = self.config.get(section, 'period')
-        elif self.config.has_option('DEFAULT', option):
-            period_s = self.config.get('DEFAULT', option)
-        else:
-            raise SchedNoDefault
-
-        try:
-            period = json.loads(period_s)
-        except:
-            raise SchedSyntaxError
-
-        return period
-
     def sched_convert_to_schedule(self, section):
         days_s = self.config.get(section, 'days')
         period_s = self.config.get(section, 'period')
@@ -277,7 +265,7 @@ class Scheduler(object):
         try:
             days = json.loads(days_s)
         except:
-            return "@0"
+            return ""
         try:
             periods = json.loads(period_s)
             l = []
@@ -367,10 +355,10 @@ class Scheduler(object):
 
         day = self.sched_expand_value(day)
 
-        if day == "*":
-            return
-
-        allowed_days = [ d for d in day if d >= 0 and d <= 6 ]
+        if day in ("*", ""):
+            allowed_days = range(7)
+        else:
+            allowed_days = [ d for d in day if d >= 0 and d <= 6 ]
         if now is None:
             now = datetime.datetime.now()
         this_week_day = now.weekday()
@@ -382,12 +370,22 @@ class Scheduler(object):
             _day = now
             _month = _day.month
             if from_head is True:
-                d1 = _day - datetime.timedelta(days=7*day_of_month)
-                if d1.month == _month:
+                if day == "":
+                    d1 = _day - datetime.timedelta(days=day_of_month)
+                    d2 = _day - datetime.timedelta(days=day_of_month-1)
+                else:
+                    d1 = _day - datetime.timedelta(days=7*day_of_month)
+                    d2 = _day - datetime.timedelta(days=7*(day_of_month-1))
+                if d1.month == _month or d2.month != _month:
                     raise SchedNotAllowed
             elif from_tail is True:
-                d1 = _day + datetime.timedelta(days=7*day_of_month)
-                if d1.month == _month:
+                if day == "":
+                    d1 = _day + datetime.timedelta(days=day_of_month)
+                    d2 = _day + datetime.timedelta(days=day_of_month-1)
+                else:
+                    d1 = _day + datetime.timedelta(days=7*day_of_month)
+                    d2 = _day + datetime.timedelta(days=7*(day_of_month-1))
+                if d1.month == _month or d2.month != _month:
                     raise SchedNotAllowed
             elif _day.day != day_of_month:
                 raise SchedNotAllowed
@@ -456,7 +454,7 @@ class Scheduler(object):
             
     def sched_expand_value(self, s):
         v = set([])
-        if s == "*":
+        if s in ("*", ""):
             return s
         l = s.split(",")
         for e in l:
@@ -475,6 +473,8 @@ class Scheduler(object):
                
     def sched_parse_timerange(self, s, section=None):
         def parse_timerange(s):
+            if s == "*" or s == "":
+                return {"begin": "00:00", "end": "23:59"}
             try:
                 begin, end = s.split("-")
             except:
@@ -521,8 +521,9 @@ class Scheduler(object):
             tr.append(d)
         return tr
 
-    def sched_get_schedule(self, section, option, now=None):
-        schedules = self.sched_get_schedule_raw(section, option)
+    def sched_get_schedule(self, section, option, now=None, schedules=None):
+        if schedules is None:
+            schedules = self.sched_get_schedule_raw(section, option)
         try:
             schedules = json.loads(schedules)
         except:
@@ -686,4 +687,59 @@ class Scheduler(object):
 
         print("%-20s  %-15s  %-21s  %s" % (a, section, last_s, schedule_s))
 
+    def str_to_datetime(self, s):
+        d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")
+        return d
 
+    def test_schedule(self, schedule_s, date_s, expected):
+        d = self.str_to_datetime(date_s)
+        
+        try:
+            schedule = self.sched_get_schedule("dummy", "dummy", schedules=schedule_s)
+        except SchedSyntaxError:
+            print("failed : schedule syntax error %s" % repr(schedule_s))
+            return
+        try:
+            self.in_schedule(schedule, fname=None, now=d)
+            result = True
+            result_s = ""
+        except SchedNotAllowed as e:
+            result = False
+            result_s = "("+str(e)+")"
+        if result == expected:
+            check = "passed"
+        else:
+            check = "failed"
+        print("%s : test '%s' in schedule %-50s expected %s => result %s %s" % (check, date_s, repr(schedule_s), str(expected), str(result), result_s))
+
+if __name__ == "__main__":
+    tests = [
+     ("", "2015-02-27 10:00", False),
+     ("@0", "2015-02-27 10:00", False),
+     ("*@0", "2015-02-27 10:00", False),
+     ("*", "2015-02-27 10:00", True),
+     ("*@61", "2015-02-27 10:00", True),
+     ("09:00-09:20", "2015-02-27 10:00", False),
+     ("09:00-09:20@31", "2015-02-27 10:00", False),
+     ("* *:last", "2015-01-30 10:00", True),
+     ("* *:last", "2015-01-31 10:00", True),
+     ("* *:-1", "2015-01-31 10:00", True),
+     ("* *:-1", "2015-01-24 10:00", False),
+     ("* *:-2", "2015-01-31 10:00", False),
+     ("* :last", "2015-01-30 10:00", False),
+     ("* :last", "2015-01-31 10:00", True),
+     ("* :-1", "2015-01-31 10:00", True),
+     ("* :-2", "2015-01-30 10:00", True),
+     ("* :-2", "2015-01-31 10:00", False),
+     ("* :-2", "2015-01-05 10:00", False),
+     ("* :5", "2015-01-05 10:00", True),
+     ("* :+5", "2015-01-05 10:00", True),
+     ("* :fifth", "2015-01-05 10:00", True),
+     ("* :5", "2015-01-06 10:00", False),
+     ("* :+5", "2015-01-06 10:00", False),
+     ("* :fifth", "2015-01-06 10:00", False),
+    ]
+    sched = Scheduler()
+    for test in tests:
+        sched.test_schedule(*test)
+        
