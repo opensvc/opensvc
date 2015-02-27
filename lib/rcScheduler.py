@@ -470,11 +470,18 @@ class Scheduler(object):
             _range = sorted([begin, end])
             v |= set(range(_range[0], _range[1]+1))
         return v
-               
+
+    def interval_from_timerange(self, tr):
+        begin_m = self.time_to_minutes(tr['begin'])
+        end_m = self.time_to_minutes(tr['end'])
+        return end_m - begin_m
+
     def sched_parse_timerange(self, s, section=None):
         def parse_timerange(s):
             if s == "*" or s == "":
                 return {"begin": "00:00", "end": "23:59"}
+            if "-" not in s:
+                s = "-".join((s,s))
             try:
                 begin, end = s.split("-")
             except:
@@ -482,6 +489,15 @@ class Scheduler(object):
             if begin.count(":") != 1 or \
                end.count(":") != 1:
                 raise SchedSyntaxError
+            begin_m = self.time_to_minutes(begin)
+            end_m = self.time_to_minutes(end)
+            if begin_m > end_m:
+                tmp = end
+                end = begin
+                begin = tmp
+            elif begin_m == end_m:
+                end_m += 10
+                end = "%02d:%02d" % (end_m // 60, end_m % 60)
             return {"begin": begin, "end": end}
 
         if section and "#sync#" in section:
@@ -503,7 +519,7 @@ class Scheduler(object):
             n = e.count("@")
             if n == 0:
                 d = parse_timerange(e)
-                d["interval"] = 0
+                d["interval"] = self.interval_from_timerange(d)
                 d["probabilistic"] = probabilistic
                 tr.append(d)
                 continue
@@ -721,6 +737,14 @@ if __name__ == "__main__":
      ("*@61", "2015-02-27 10:00", True),
      ("09:00-09:20", "2015-02-27 10:00", False),
      ("09:00-09:20@31", "2015-02-27 10:00", False),
+     ("09:00-09:00", "2015-02-27 10:00", False),
+     ("09:20-09:00", "2015-02-27 10:00", False),
+     ("09:00", "2015-02-27 10:00", False),
+     ("09:00-09:20", "2015-02-27 09:09", True),
+     ("09:00-09:20@31", "2015-02-27 09:09", True),
+     ("09:00-09:00", "2015-02-27 09:09", True),
+     ("09:20-09:00", "2015-02-27 09:09", True),
+     ("09:00", "2015-02-27 09:09", True),
      ("* *:last", "2015-01-30 10:00", True),
      ("* *:last", "2015-01-31 10:00", True),
      ("* *:-1", "2015-01-31 10:00", True),
