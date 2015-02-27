@@ -412,10 +412,23 @@ class Scheduler(object):
 
         allowed_months = set([])
         for s in month.split(","):
-            if s.startswith("%"):
-                allowed_months |= self.__sched_validate_month(s)
+            n = s.count("%")
+            if n == 1:
+                month_s, modulo_s = s.split("%")
+            elif n == 0:
+                month_s = s
+                modulo_s = None
             else:
-                allowed_months |= self.sched_expand_value(s)
+                raise SchedSyntaxError("malformed month definition")
+
+            
+            if month_s in ("", "*"):
+                _allowed_months = set(range(12))
+            else:
+                _allowed_months = self.sched_expand_value(month_s)
+            if modulo_s is not None:
+                _allowed_months &= self.__sched_validate_month(modulo_s)
+            allowed_months |= _allowed_months
 
         if now is None:
             now = datetime.datetime.now()
@@ -424,12 +437,8 @@ class Scheduler(object):
             raise SchedNotAllowed("not in allowed months")
         return
 
-    def __sched_validate_month(self, month):
+    def __sched_validate_month(self, modulo):
         shift = 0
-        try:
-            modulo = month[1:]
-        except:
-            raise SchedSyntaxError
         n_plus = modulo.count("+")
         if n_plus > 1:
             raise SchedSyntaxError
@@ -474,7 +483,7 @@ class Scheduler(object):
     def interval_from_timerange(self, tr):
         begin_m = self.time_to_minutes(tr['begin'])
         end_m = self.time_to_minutes(tr['end'])
-        return end_m - begin_m
+        return end_m - begin_m + 1
 
     def sched_parse_timerange(self, s, section=None):
         def parse_timerange(s):
@@ -719,6 +728,9 @@ class Scheduler(object):
             self.in_schedule(schedule, fname=None, now=d)
             result = True
             result_s = ""
+        except SchedSyntaxError:
+            print("failed : schedule syntax error %s" % repr(schedule_s))
+            return
         except SchedNotAllowed as e:
             result = False
             result_s = "("+str(e)+")"
@@ -762,6 +774,12 @@ if __name__ == "__main__":
      ("* :5", "2015-01-06 10:00", False),
      ("* :+5", "2015-01-06 10:00", False),
      ("* :fifth", "2015-01-06 10:00", False),
+     ("* * * jan", "2015-01-06 10:00", True),
+     ("* * * jan-feb", "2015-01-06 10:00", True),
+     ("* * * %2", "2015-01-06 10:00", False),
+     ("* * * %2+1", "2015-01-06 10:00", True),
+     ("* * * jan-feb%2", "2015-01-06 10:00", False),
+     ("* * * jan-feb%2+1", "2015-01-06 10:00", True),
     ]
     sched = Scheduler()
     for test in tests:
