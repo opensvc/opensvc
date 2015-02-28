@@ -330,6 +330,8 @@ class Collector(object):
     def collector_untag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
+        if self.svcname:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_untag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -339,6 +341,8 @@ class Collector(object):
     def collector_tag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
+        if self.svcname:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_tag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -348,6 +352,8 @@ class Collector(object):
     def collector_create_tag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
+        if self.svcname:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_create_tag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -361,7 +367,11 @@ class Collector(object):
 
     def _collector_list_tags(self):
         opts = {'pattern': self.options.like}
+        if self.svcname:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_list_tags', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
         return d['data']
@@ -373,7 +383,11 @@ class Collector(object):
 
     def _collector_show_tags(self):
         opts = {}
+        if self.svcname:
+            opts['svcname'] = self.svcname
         d = self.collector.call('collector_show_tags', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
         return d['data']
@@ -391,6 +405,8 @@ class Collector(object):
     def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_nodes', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
         return d['data']
@@ -408,6 +424,8 @@ class Collector(object):
     def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_services', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
         return d['data']
@@ -425,6 +443,8 @@ class Collector(object):
     def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_filtersets', opts)
+        if d is None:
+            raise ex.excError("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
         return d['data']

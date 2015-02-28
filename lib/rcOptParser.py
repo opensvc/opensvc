@@ -138,6 +138,11 @@ action_desc = {
       'collector_json_disks': 'same as "collector disks", output in JSON',
       'collector_json_alerts': 'same as "collector alerts", output in JSON',
       'collector_json_events': 'same as "collector events", output in JSON',
+      'collector_tag': 'set a service tag (pointed by --tag)',
+      'collector_untag': 'unset a service tag (pointed by --tag)',
+      'collector_show_tags': 'list all service tags',
+      'collector_list_tags': 'list all available tags. use --like to filter the output.',
+      'collector_create_tag': 'create a new tag',
     },
 }
 
