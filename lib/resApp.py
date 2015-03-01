@@ -269,8 +269,9 @@ class App(Res.Resource):
     def _status(self, verbose=False):
         self.validate_on_action()
 
+        n_ref_res = len(self.svc.get_resources(['fs', 'ip', 'container', 'share', 'disk']))
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk.scsireserv", "hb"]))
-        if str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
+        if n_ref_res > 0 and str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
             if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
             return rcStatus.NA
