@@ -1232,38 +1232,16 @@ class KeywordSyncRsyncBwlimit(KeywordInteger):
                   text="Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over 'bwlimit' set in [DEFAULT]."
                 )
 
-class KeywordSyncSyncInterval(KeywordInteger):
+class KeywordSyncSchedule(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="sync",
-                  keyword="sync_interval",
-                  default=30,
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. If no set in a resource section, fallback to the value set in the 'default' section. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
-                )
-
-class KeywordSyncSyncDays(KeywordInteger):
-    def __init__(self):
-        KeywordInteger.__init__(
-                  self,
-                  section="sync",
-                  keyword="sync_days",
+                  keyword="schedule",
                   default=None,
                   at=True,
-                  text="Set the days this resource synchronization is allowed.",
-                  example='["monday", "friday"]'
-                )
-
-class KeywordSyncSyncPeriod(KeywordInteger):
-    def __init__(self):
-        KeywordInteger.__init__(
-                  self,
-                  section="sync",
-                  keyword="sync_period",
-                  default=None,
-                  at=True,
-                  text="Set the time ranges this resource synchronization is allowed.",
-                  example='[["04:00", "06:00"], ["18:00", "20:00"]]'
+                  text="Set the this resource synchronization schedule. See usr/share/doc/node.conf for the schedule syntax reference.",
+                  example='["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
                 )
 
 class KeywordSyncSyncMaxDelay(KeywordInteger):
@@ -2650,9 +2628,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncSnap()
         self += KeywordSyncRsyncDstfs()
         self += KeywordSyncRsyncBwlimit()
-        self += KeywordSyncSyncInterval()
-        self += KeywordSyncSyncDays()
-        self += KeywordSyncSyncPeriod()
+        self += KeywordSyncSchedule()
         self += KeywordSyncSyncMaxDelay()
         self += KeywordIpType()
         self += KeywordIpIpname()

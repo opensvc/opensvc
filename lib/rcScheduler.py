@@ -258,10 +258,10 @@ class Scheduler(object):
                 l.append(str(e))
         raise SchedNotAllowed(", ".join(l))
 
-    def sched_convert_to_schedule(self, section):
-        days_s = self.config.get(section, 'days')
-        period_s = self.config.get(section, 'period')
-        interval_s = self.config.get(section, 'interval')
+    def sched_convert_to_schedule(self, config, section, prefix=""):
+        days_s = config.get(section, prefix+'days')
+        period_s = config.get(section, prefix+'period')
+        interval_s = config.get(section, prefix+'interval')
         try:
             days = json.loads(days_s)
         except:
@@ -269,6 +269,8 @@ class Scheduler(object):
         try:
             periods = json.loads(period_s)
             l = []
+            if type(periods[0]) in (str, unicode):
+                periods = [periods]
             for p in periods:
                 l.append("%s-%s@%s" % (p[0], p[1], interval_s))
             period_s = ",".join(l)
@@ -278,22 +280,27 @@ class Scheduler(object):
               period=period_s,
               days=",".join(days),
             )
-        return s
+        return s.strip()
 
     def sched_get_schedule_raw(self, section, option):
         if option is None:
             raise SchedNoDefault
 
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'schedule'):
-            schedule_s = self.config.get(section, 'schedule')
-        elif self.config.has_section(section) and \
-             self.config.has_option(section, 'days') and \
-             self.config.has_option(section, 'interval') and \
-             self.config.has_option(section, 'period'):
-            schedule_s = self.sched_convert_to_schedule(section)
-        elif self.config.has_option('DEFAULT', option):
-            schedule_s = self.config.get('DEFAULT', option)
+        if hasattr(self, "config"):
+            config = self.config
+        elif hasattr(self, "svc"):
+            config =  self.svc.config
+
+        if config.has_section(section) and \
+           config.has_option(section, 'schedule'):
+            schedule_s = config.get(section, 'schedule')
+        elif config.has_section(section) and \
+             config.has_option(section, 'days') and \
+             config.has_option(section, 'interval') and \
+             config.has_option(section, 'period'):
+            schedule_s = self.sched_convert_to_schedule(config, section)
+        elif config.has_option('DEFAULT', option):
+            schedule_s = config.get('DEFAULT', option)
         else:
             raise SchedNoDefault
 
@@ -618,7 +625,7 @@ class Scheduler(object):
             schedule = self.sched_get_schedule(section, option)
             self.in_schedule(schedule, fname=fname, now=now)
         except SchedNoDefault:
-            return
+            raise SchedNotAllowed("no schedule in section %s and no default schedule"%section)
         except SchedSyntaxError:
             raise SchedNotAllowed("malformed parameter value: %s.schedule"%section)
 
@@ -655,10 +662,7 @@ class Scheduler(object):
         # check if we are in allowed scheduling period
         try:
             self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
-        except SchedExcluded as e:
-            err(str(e))
-            return True
-        except SchedNotAllowed as e:
+        except Exception as e:
             err(str(e))
             return True
 
@@ -676,7 +680,11 @@ class Scheduler(object):
             delay = int(random.random()*300)
             if verbose:
                 print("%-22s        delay action for %d secs to level database load"%(action, delay))
-            time.sleep(delay)
+            try:
+                time.sleep(delay)
+            except KeyboardInterrupt as e:
+                print(e)
+                return True
             self.delay_done = True
 
         return False

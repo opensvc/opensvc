@@ -317,9 +317,7 @@ class Node(Svc, Freezer, Scheduler):
                         self.config.add_section(s)
                     self.config.set(s, 'svcname', svc.svcname)
                     self.config.set(s, 'rid', r.rid)
-                    self.config.set(s, 'interval', r.sync_interval)
-                    self.config.set(s, 'days', json.dumps(r.sync_days))
-                    self.config.set(s, 'period', json.dumps(r.sync_period))
+                    self.config.set(s, 'schedule', r.schedule)
         self.write_dotconfig()
         with open(self.setup_sync_flag, 'w') as f:
             f.write(str(time.time()))
@@ -403,9 +401,7 @@ class Node(Svc, Freezer, Scheduler):
         elif not self.config.has_section('sync'):
             self._setup_sync_conf()
             return
-        elif not self.config.has_option('sync', 'interval') or \
-           not self.config.has_option('sync', 'days') or \
-           not self.config.has_option('sync', 'period'):
+        elif not self.config.has_option('sync', 'schedule'):
             self._setup_sync_conf()
 
     def format_desc(self, action=None):
@@ -480,21 +476,22 @@ class Node(Svc, Freezer, Scheduler):
             return getattr(self, a)()
 
     def pushstats(self):
+        # set stats range to push to "last pushstat => now"
+
+        ts = self.get_timestamp_f(self.scheduler_actions["pushstats"].fname)
+        try:
+            with open(ts, "r") as f:
+                buff = f.read()
+            start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
+            now = datetime.datetime.now()
+            delta = now - start
+            interval = delta.days * 1440 + delta.seconds // 60
+            print("push stats for the last %d minutes since last push" % interval)
+        except Exception as e:
+            interval = 1440
+            print("can not determine last push date. push stats for the last %d minutes" % interval)
+
         if self.skip_action("pushstats"):
-            return
-
-        if self.config.has_section('stats'):
-            period = self.config.get('stats', 'push_period')
-        else:
-            period = self.config.get('DEFAULT', 'push_period')
-        try:
-            period = json.loads(period)
-        except:
-            return
-
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
             return
 
         if self.config.has_option("stats", "disable"):
@@ -512,10 +509,6 @@ class Node(Svc, Freezer, Scheduler):
                     disable = disable.split(' ')
         else:
             disable = []
-
-        # set interval to grab from the begining of the last allowed period
-        # to now
-        interval = 1440 + now - start
 
         return self.collector.call('push_stats',
                                 stats_dir=self.options.stats_dir,
@@ -680,7 +673,8 @@ class Node(Svc, Freezer, Scheduler):
             if self.skip_action("need_sync",
                                 section=s,
                                 fname=ts,
-                                schedule_option='sync_interval'):
+                                schedule_option='sync_schedule',
+                                delay=False):
                     continue
             l.append(self.config.get(s, 'svcname'))
         return l
@@ -704,6 +698,8 @@ class Node(Svc, Freezer, Scheduler):
             self.build_services(svcnames=svcnames)
 
         for svc in self.svcs:
+            if svc.svcname not in svcnames:
+                continue
             p[svc.svcname] = rcCommandWorker.CommandWorker(name=svc.svcname)
             cmd = [os.path.join(rcEnv.pathetc, svc.svcname), 'syncall']
             if self.options.force:
