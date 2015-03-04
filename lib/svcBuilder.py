@@ -313,42 +313,17 @@ def get_sync_args(conf, s, svc):
     kwargs = {}
     defaults = conf.defaults()
     if conf.has_option(s, 'sync_max_delay'):
-        kwargs['sync_max_delay'] = conf.getint(s, 'sync_max_delay')
+        kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, s, 'sync_max_delay')
     elif 'sync_max_delay' in defaults:
-        kwargs['sync_max_delay'] = int(defaults['sync_max_delay'])
-
-    if conf.has_option(s, 'sync_min_delay'):
-        kwargs['sync_interval'] = conf.getint(s, 'sync_min_delay')
-        svc.log.warn("sync_min_delay is deprecated. replace with sync_interval.")
-    elif 'sync_min_delay' in defaults:
-        kwargs['sync_interval'] = int(defaults['sync_min_delay'])
-        svc.log.warn("sync_min_delay is deprecated. replace with sync_interval.")
-
-    if conf.has_option(s, 'sync_interval'):
-        kwargs['sync_interval'] = conf.getint(s, 'sync_interval')
-    elif 'sync_interval' in defaults:
-        kwargs['sync_interval'] = int(defaults['sync_interval'])
-    elif 'sync_max_delay' in kwargs:
-        kwargs['sync_interval'] = kwargs['sync_max_delay']
-
-    import json
-
-    try:
-        if conf.has_option(s, 'sync_period'):
-            kwargs['sync_period'] = json.loads(conf.get(s, 'sync_period'))
-        elif conf.has_option('DEFAULT', 'sync_period'):
-            kwargs['sync_period'] = json.loads(conf.get('DEFAULT', 'sync_period'))
-    except ValueError:
-        svc.log.error("malformed parameter value: %s.%s"%(s, 'sync_period'))
-
-    try:
-        if conf.has_option(s, 'sync_days'):
-            kwargs['sync_days'] = json.loads(conf.get(s, 'sync_days'))
-        elif conf.has_option('DEFAULT', 'sync_days'):
-            kwargs['sync_days'] = json.loads(conf.get('DEFAULT', 'sync_days'))
-    except ValueError:
-        svc.log.error("malformed parameter value: %s.%s"%(s, 'sync_days'))
-
+        kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, 'DEFAULT', 'sync_max_delay')
+    if conf.has_option(s, 'schedule'):
+        kwargs['schedule'] = conf_get_string_scope(svc, conf, s, 'schedule')
+    elif conf.has_option(s, 'sync_period'):
+        # old schedule syntax compatibility
+        from rcScheduler import Scheduler
+        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(conf, s, prefix='sync_')
+    elif 'sync_schedule' in defaults:
+        kwargs['schedule'] = conf_get_string_scope(svc, conf, 'DEFAULT', 'sync_schedule')
     return kwargs
 
 def add_resources(restype, svc, conf):
