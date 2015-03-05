@@ -240,8 +240,8 @@ class Scheduler(object):
         return
 
     def _in_schedule(self, schedule, fname=None, now=None):
-        self.in_timeranges(schedule, fname=fname, now=now)
         self.in_days(schedule, now=now)
+        self.in_timeranges(schedule, fname=fname, now=now)
 
     def in_schedule(self, schedules, fname=None, now=None):
         if len(schedules) == 0:
@@ -642,7 +642,7 @@ class Scheduler(object):
         timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
         return timestamp_f
 
-    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, delay=True, now=None, verbose=True):
+    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True):
         if section is None:
             section = self.scheduler_actions[action].section
         if fname is None:
@@ -669,23 +669,6 @@ class Scheduler(object):
         # update the timestamp file
         timestamp_f = self.get_timestamp_f(fname)
         self.timestamp(timestamp_f)
-
-        # ok. we have some action to perform.
-        # now wait for a random delay <5min to not overload the
-        # collector listeners at 10 minutes intervals.
-        # only delay for the first action of this Node() object
-        # lifespan
-        if not self.delay_done and delay:
-            import random
-            delay = int(random.random()*300)
-            if verbose:
-                print("%-22s        delay action for %d secs to level database load"%(action, delay))
-            try:
-                time.sleep(delay)
-            except KeyboardInterrupt as e:
-                print(e)
-                return True
-            self.delay_done = True
 
         return False
 

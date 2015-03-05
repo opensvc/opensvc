@@ -46,11 +46,17 @@ def monunlock(lockfd):
     unlock(lockfd)
 
 def lock(timeout=30, delay=5, lockfile=None):
-    for i in range(timeout//delay):
+    if timeout == 0 or delay == 0:
+        l = [1]
+    else:
+        l = range(timeout//delay)
+    for i in l:
+        if i > 0:
+            time.sleep(delay)
         try:
             return lock_nowait(lockfile)
         except lockAcquire:
-            time.sleep(delay)
+            pass
     raise lockTimeout
 
 def lock_nowait(lockfile=None):
