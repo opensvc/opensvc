@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
 import os, sys
 import logging
 from subprocess import *
@@ -36,11 +37,11 @@ def ximport(base):
 
     return __import__(base)
 
-def fork(fn, kwargs):
+def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     if os.fork() > 0:
         """ return to parent execution
         """
-        return pid
+        return
 
     """ separate the son from the father
     """
@@ -55,7 +56,37 @@ def fork(fn, kwargs):
     except:
         os._exit(1)
 
-    fn(**kwargs)
+    if serialize:
+        from lock import lock, unlock
+        lockfile=os.path.join(rcEnv.pathvar, "fork_"+fn.__name__+".lock")
+        try:
+            fd = lock(lockfile=lockfile, timeout=1, delay=1)
+        except Exception as e:
+            print("%s is already running" % fn.__name__)
+            os._exit(0)
+
+    # now wait for a random delay to not DoS the collector.
+    if delay > 0:
+        import random
+        import time
+        delay = int(random.random()*delay)
+        print("delay '%s' for %d secs to level database load"%(fn.__name__, delay))
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt as e:
+            print(e)
+            os._exit(1)
+
+    try:
+        fn(*args, **kwargs)
+    except Exception as e:
+        if serialize:
+            unlock(fd)
+        print(e, file=sys.stderr)
+        os._exit(1)
+
+    if serialize:
+        unlock(fd)
     os._exit(0)
 
 def check_privs():
@@ -243,16 +274,16 @@ def printplus(obj):
     # Dict
     if isinstance(obj, dict):
         for k, v in sorted(obj.items()):
-            print u'{0}: {1}'.format(k, v)
+            print(u'{0}: {1}'.format(k, v))
 
     # List or tuple            
     elif isinstance(obj, list) or isinstance(obj, tuple):
         for x in obj:
-            print x
+            print(x)
 
     # Other
     else:
-        print obj
+        print(obj)
 
 def cmdline2list(cmdline):
     """

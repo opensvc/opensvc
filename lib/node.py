@@ -70,7 +70,6 @@ class Node(Svc, Freezer, Scheduler):
 
     def __init__(self):
         self.auth_config = None
-        self.delay_done = False
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
@@ -235,6 +234,15 @@ class Node(Svc, Freezer, Scheduler):
 	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
         }
 
+
+    def scheduler_fork(fn):
+        def _fn(*args, **kwargs):
+            self = args[0]
+            if self.options.cron:
+                rcUtilities.fork(fn, args, kwargs, serialize=True)
+            else:
+                fn(*args, **kwargs)
+        return _fn
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -486,14 +494,19 @@ class Node(Svc, Freezer, Scheduler):
             now = datetime.datetime.now()
             delta = now - start
             interval = delta.days * 1440 + delta.seconds // 60
-            print("push stats for the last %d minutes since last push" % interval)
+            #print("push stats for the last %d minutes since last push" % interval)
         except Exception as e:
             interval = 1440
-            print("can not determine last push date. push stats for the last %d minutes" % interval)
+            #print("can not determine last push date. push stats for the last %d minutes" % interval)
+        if interval < 21:
+            interval = 21
 
         if self.skip_action("pushstats"):
             return
+        self.task_pushstats(interval)
 
+    @scheduler_fork
+    def task_pushstats(self, interval):
         if self.config.has_option("stats", "disable"):
             disable = self.config.get("stats", "disable")
         else:
@@ -520,76 +533,136 @@ class Node(Svc, Freezer, Scheduler):
     def pushpkg(self):
         if self.skip_action("pushpkg"):
             return
+        self.task_pushpkg()
+
+    @scheduler_fork
+    def task_pushpkg(self):
         self.collector.call('push_pkg')
 
     def pushpatch(self):
         if self.skip_action("pushpatch"):
             return
+        self.task_pushpatch()
+
+    @scheduler_fork
+    def task_pushpatch(self):
         self.collector.call('push_patch')
 
     def pushasset(self):
         if self.skip_action("pushasset"):
             return
+        self.task_pushasset()
+
+    @scheduler_fork
+    def task_pushasset(self):
         self.collector.call('push_asset', self)
 
     def pushnsr(self):
         if self.skip_action("pushnsr"):
             return
+        self.task_pushnsr()
+
+    @scheduler_fork
+    def task_pushnsr(self):
         self.collector.call('push_nsr')
 
     def pushhp3par(self):
         if self.skip_action("pushhp3par"):
             return
+        self.task_pushhp3par()
+
+    @scheduler_fork
+    def task_pushhp3par(self):
         self.collector.call('push_hp3par', self.options.objects)
 
     def pushibmds(self):
         if self.skip_action("pushibmds"):
             return
+        self.task_pushibmds()
+
+    @scheduler_fork
+    def task_pushibmds(self):
         self.collector.call('push_ibmds', self.options.objects)
 
     def pushdcs(self):
         if self.skip_action("pushdcs"):
             return
+        self.task_pushdcs()
+
+    @scheduler_fork
+    def task_pushdcs(self):
         self.collector.call('push_dcs', self.options.objects)
 
     def pushhds(self):
         if self.skip_action("pushhds"):
             return
+        self.task_pushhds()
+
+    @scheduler_fork
+    def task_pushhds(self):
         self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
         if self.skip_action("pushnecism"):
             return
+        self.task_pushnecism()
+
+    @scheduler_fork
+    def task_pushnecism(self):
         self.collector.call('push_necism', self.options.objects)
 
     def pusheva(self):
         if self.skip_action("pusheva"):
             return
+        self.task_pusheva()
+
+    @scheduler_fork
+    def task_pusheva(self):
         self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
         if self.skip_action("pushibmsvc"):
             return
+        self.task_pushibmsvc()
+
+    @scheduler_fork
+    def task_pushibmsvc(self):
         self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
         if self.skip_action("pushvioserver"):
             return
+        self.task_pushvioserver()
+
+    @scheduler_fork
+    def task_pushvioserver(self):
         self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
         if self.skip_action("pushsym"):
             return
+        self.task_pushsym()
+
+    @scheduler_fork
+    def task_pushsym(self):
         self.collector.call('push_sym', self.options.objects)
 
     def pushbrocade(self):
         if self.skip_action("pushbrocade"):
             return
+        self.task_pushbrocade()
+
+    @scheduler_fork
+    def task_pushbrocade(self):
         self.collector.call('push_brocade', self.options.objects)
 
     def auto_rotate_root_pw(self):
         if self.skip_action("auto_rotate_root_pw"):
             return
+        self.task_auto_rotate_root_pw()
+
+    @scheduler_fork
+    def task_auto_rotate_root_pw(self):
         self.rotate_root_pw()
 
     def unschedule_reboot(self):
@@ -631,15 +704,19 @@ class Node(Svc, Freezer, Scheduler):
         self.options.cron = True
         for i in range(_max):
             d = now + datetime.timedelta(minutes=i*10)
-            if not self.skip_action("auto_reboot", now=d, delay=False, verbose=False):
+            if not self.skip_action("auto_reboot", now=d, verbose=False):
                 print("next allowed reboot:", d.strftime("%a %Y-%m-%d %H:%M"))
                 break
         if i == _max - 1:
             print("next allowed reboot: none in the next %d days" % (_max/144))
 
     def auto_reboot(self):
-        if self.skip_action("auto_reboot", delay=False):
+        if self.skip_action("auto_reboot"):
             return
+        self.task_auto_reboot()
+
+    @scheduler_fork
+    def task_auto_reboot(self):
         if not os.path.exists(self.reboot_flag):
             print("%s is not present. no reboot scheduled" % self.reboot_flag)
             return
@@ -658,6 +735,10 @@ class Node(Svc, Freezer, Scheduler):
     def pushdisks(self):
         if self.skip_action("pushdisks"):
             return
+        self.task_pushdisks()
+
+    @scheduler_fork
+    def task_pushdisks(self):
         if self.svcs is None:
             self.build_services()
         self.collector.call('push_disks', self)
@@ -673,8 +754,7 @@ class Node(Svc, Freezer, Scheduler):
             if self.skip_action("need_sync",
                                 section=s,
                                 fname=ts,
-                                schedule_option='sync_schedule',
-                                delay=False):
+                                schedule_option='sync_schedule'):
                     continue
             l.append(self.config.get(s, 'svcname'))
         return l
@@ -711,6 +791,7 @@ class Node(Svc, Freezer, Scheduler):
         for svcname in p:
             p[svcname].stop_worker()
 
+    @scheduler_fork
     def updateservices(self):
         if self.svcs is None:
             self.build_services()
@@ -721,6 +802,10 @@ class Node(Svc, Freezer, Scheduler):
     def pushservices(self):
         if self.skip_action("pushservices"):
             return
+        self.tassk_pushservices()
+
+    @scheduler_fork
+    def task_pushservices(self):
         if self.svcs is None:
             self.build_services()
         for svc in self.svcs:
@@ -730,6 +815,10 @@ class Node(Svc, Freezer, Scheduler):
     def push_appinfo(self):
         if self.skip_action("push_appinfo"):
             return
+        self.task_push_appinfo()
+
+    @scheduler_fork
+    def task_push_appinfo(self):
         if self.svcs is None:
             self.build_services()
         for svc in self.svcs:
@@ -739,6 +828,10 @@ class Node(Svc, Freezer, Scheduler):
     def sysreport(self):
         if self.skip_action("sysreport"):
             return
+        self.task_sysreport()
+
+    @scheduler_fork
+    def task_sysreport(self):
         from rcGlobalEnv import rcEnv
         try:
             m = __import__('rcSysReport'+rcEnv.sysname)
@@ -755,6 +848,10 @@ class Node(Svc, Freezer, Scheduler):
     def checks(self):
         if self.skip_action("checks"):
             return
+        self.task_checks()
+
+    @scheduler_fork
+    def task_checks(self):
         import checks
         if self.svcs is None:
             self.build_services()
