@@ -337,6 +337,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('switch : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
@@ -385,6 +386,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('start : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
@@ -429,6 +431,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('stop : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
