@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2015 Arnaud Veron <arnaud.veron@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,6 +233,7 @@ class Hb(resHb.Hb):
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
         peer = self.get_peer()
+	self.log.debug('freeze: local_status=%s remote_status=%s'%(local_status, remote_status))
 
         if local_status in ['frozen_stop', 'start_ready']:
             self.log.info("local already frozen")
@@ -278,6 +280,7 @@ class Hb(resHb.Hb):
         do_remote = True
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
+	self.log.debug('thaw: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if local_status not in ['frozen_stop', 'start_ready']:
@@ -338,6 +341,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
+	self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
         if local_status == "started":
             try:
@@ -382,6 +386,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
+	self.log.debug('start: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if remote_status == 'started':
@@ -425,6 +430,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
+	self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if not self.svc.remote and remote_status != 'frozen_stop':

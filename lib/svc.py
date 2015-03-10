@@ -1846,6 +1846,8 @@ class Svc(Resource, Scheduler):
 
     def remote_action(self, node, action, waitlock=60, sync=False):
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
+	if self.log.isEnabledFor(logging.DEBUG):
+	    rcmd += ['--debug']
         if self.cluster:
             rcmd += ['--cluster']
         if self.cron:
