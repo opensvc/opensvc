@@ -36,6 +36,7 @@ import rcLogger
 import logging
 import datetime
 import node
+from rcScheduler import *
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -58,7 +59,7 @@ class Options(object):
         self.refresh = False
         os.environ['LANG'] = 'C'
 
-class Svc(Resource):
+class Svc(Resource, Scheduler):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
@@ -137,6 +138,8 @@ class Svc(Resource):
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
+        Scheduler.__init__(self)
+
         self.log = rcLogger.initLogger(self.svcname.upper())
         self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
@@ -151,11 +154,51 @@ class Svc(Resource):
         self.action_start_date = datetime.datetime.now()
         self.monitor_action = None
         self.group_status_cache = None
+        self.config_defaults = {
+          'push_schedule': '00:00-06:00@361 mon-sun',
+          'sync_schedule': '04:00-06:00@121 mon-sun',
+          'comp_schedule': '02:00-06:00@241 sun',
+          'mon_schedule': '@10',
+          'no_schedule': '',
+        }
+        self.scheduler_actions = {
+         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+"_last_comp_check", schedule_option="comp_schedule"),
+         "push_env": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_env", schedule_option="push_schedule"),
+         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_service_status", schedule_option="mon_schedule"),
+        }
 
     def __cmp__(self, other):
         """order by service name
         """
         return cmp(self.svcname, other.svcname)
+
+    def scheduler(self):
+        self.cron = True
+        self.sync_dblogger = True
+        for action in self.scheduler_actions:
+            try:
+                if action == "syncall":
+                    # save the action logging to the collector if syncall
+                    # is not needed
+                    self.sched_syncall()
+                else:
+                    self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
+
+    def post_build(self):
+        syncs = []
+        for r in self.get_resources("sync"):
+            syncs += [SchedOpts(r.rid, fname=self.svcname+"_last_syncall_"+r.rid, schedule_option="sync_schedule")]
+        if len(syncs) > 0:
+            self.scheduler_actions["syncall"] = syncs
+
+        apps = []
+        for r in self.get_resources("app"):
+            apps += [SchedOpts(r.rid, fname=self.svcname+"_last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
+        if len(apps) > 0:
+            self.scheduler_actions["push_appinfo"] = apps
 
     def purge_status_last(self):
         for rset in self.resSets:
@@ -234,15 +277,19 @@ class Svc(Resource):
         list_actions_no_lock = [
           'docker',
           'push',
+          'push_env',
           'push_appinfo',
           'print_status',
           'print_resource_status',
+          'push_service_status',
           'status',
           'freeze',
           'frozen',
           'thaw',
           'get',
           'freezestop',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_disklist',
           'print_devlist',
@@ -263,12 +310,17 @@ class Svc(Resource):
             # compliance modules are allowed to execute actions on the service
             # so give them their own lock
             suffix = "compliance"
+        elif action.startswith("sync"):
+            suffix = "sync"
+
         if self.lockfd is not None:
             # already acquired
             return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
+
+        self.log.debug("acquire service lock %s (timeout %d, delay %d)" % (lockfile, timeout, delay))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
@@ -377,6 +429,8 @@ class Svc(Resource):
           "enable",
           "disable",
           "status",
+          'scheduler',
+          'print_schedule',
           "print_status",
           'print_resource_status',
           "print_disklist",
@@ -1816,6 +1870,8 @@ class Svc(Resource):
         self.presync_done = True
 
     def syncnodes(self):
+        if not self.can_sync({'target': 'nodes'}):
+            return
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
@@ -1826,6 +1882,8 @@ class Svc(Resource):
         self.remote_postsync()
 
     def syncdrp(self):
+        if not self.can_sync({'target': 'drpnodes'}):
+            return
         self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
@@ -1880,6 +1938,8 @@ class Svc(Resource):
         self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
+        if not self.can_sync({}):
+            return
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.hp3par", "syncupdate")
         self.sub_set_action("sync.nexenta", "syncupdate")
@@ -1932,9 +1992,27 @@ class Svc(Resource):
                 except ex.excError:
                     return False
                 if ret: return True
+        self.log.debug("nothing to sync for the service for now")
         return False
 
-    def syncall(self):
+    def sched_syncall(self):
+        data = self.skip_action("syncall", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self.set_skip_resources(keeprid=data["keep"])
+        self.sched_write_timestamp(data["keep"])
+        self._sched_syncall(data["keep"])
+
+    @scheduler_fork
+    def _sched_syncall(self, sched_options):
+        self.action("syncall")
+        self.sched_write_timestamp(sched_options)
+
+    def syncall(self, sched_options=[]):
+        if not self.can_sync({}):
+            return
+        if self.cron:
+            self.sched_delay()
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
@@ -1950,12 +2028,42 @@ class Svc(Resource):
         self.syncupdate()
         self.remote_postsync()
 
-    def push_appinfo(self):
-        self.node.collector.call('push_appinfo', [self])
+    def push_service_status(self):
+        if self.skip_action("push_service_status"):
+            return
+        self.task_push_service_status()
 
+    @scheduler_fork
+    def task_push_service_status(self):
+        if self.cron:
+            self.sched_delay()
+        import rcSvcmon
+        rcSvcmon.svcmon_normal([self])
+
+    def push_appinfo(self):
+        data = self.skip_action("push_appinfo", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self.task_push_appinfo()
+
+    @scheduler_fork
+    def task_push_appinfo(self):
+        if self.cron:
+            self.sched_delay()
+        self.node.collector.call('push_appinfo', [self])
+        self.sched_write_timestamp(self.scheduler_actions["push_appinfo"])
+
+    def push_env(self):
+        if self.skip_action("push_env"):
+            return
+        self.push()
+
+    @scheduler_fork
     def push(self):
         if self.encap:
             return
+        if self.cron:
+            self.sched_delay()
         self.push_encap_env()
         self.node.collector.call('push_all', [self])
         print("send %s to collector ... OK"%self.pathenv)
@@ -2097,8 +2205,11 @@ class Svc(Resource):
           'status',
           'frozen',
           'push',
+          'push_env',
           'push_appinfo',
           'edit_config',
+          'scheduler',
+          'print_schedule',
           'print_config',
           'print_env_mtime',
           'print_status',
@@ -2154,7 +2265,11 @@ class Svc(Resource):
           'get',
           'set',
           'push',
+          'push_env',
           'push_appinfo',
+          'push_service_status',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_status',
           'print_resource_status',
@@ -2176,21 +2291,6 @@ class Svc(Resource):
            action.startswith("docker") or \
            self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
-        elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
-            if action == "syncall" or "syncupdate": kwargs = {}
-            elif action == "syncnodes": kwargs = {'target': 'nodes'}
-            elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
-            if not self.can_sync(**kwargs):
-                self.log.debug("nothing to sync for the service for now")
-                return 0
-            try:
-                # timeout=1, delay=1 => immediate response
-                self.svclock(action, timeout=1, delay=1)
-            except:
-                if not self.cron:
-                    self.log.info("%s action is already running"%action)
-                return 0
-            err = self.do_logged_action(action, waitlock=waitlock)
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
@@ -2207,7 +2307,7 @@ class Svc(Resource):
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
-                o = Compliance(self.node.skip_action, self.options, self.node.collector, self.svcname)
+                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname)
                 getattr(o, action)()
             elif action.startswith("collector_"):
                 from collector import Collector
@@ -2220,7 +2320,7 @@ class Svc(Resource):
                     err = 0
                 self.running_action = None
             else:
-                self.log.error("unsupported action")
+                self.log.error("unsupported action %s" % action)
                 err = 1
         except ex.excEndAction as e:
             s = "'%s' action ended by last resource"%action

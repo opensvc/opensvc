@@ -37,58 +37,6 @@ def ximport(base):
 
     return __import__(base)
 
-def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
-    if os.fork() > 0:
-        """ return to parent execution
-        """
-        return
-
-    """ separate the son from the father
-    """
-    os.chdir('/')
-    os.setsid()
-    os.umask(0)
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-    except:
-        os._exit(1)
-
-    if serialize:
-        from lock import lock, unlock
-        lockfile=os.path.join(rcEnv.pathvar, "fork_"+fn.__name__+".lock")
-        try:
-            fd = lock(lockfile=lockfile, timeout=1, delay=1)
-        except Exception as e:
-            print("%s is already running" % fn.__name__)
-            os._exit(0)
-
-    # now wait for a random delay to not DoS the collector.
-    if delay > 0:
-        import random
-        import time
-        delay = int(random.random()*delay)
-        print("delay '%s' for %d secs to level database load"%(fn.__name__, delay))
-        try:
-            time.sleep(delay)
-        except KeyboardInterrupt as e:
-            print(e)
-            os._exit(1)
-
-    try:
-        fn(*args, **kwargs)
-    except Exception as e:
-        if serialize:
-            unlock(fd)
-        print(e, file=sys.stderr)
-        os._exit(1)
-
-    if serialize:
-        unlock(fd)
-    os._exit(0)
-
 def check_privs():
     if os.name == 'nt':
         return

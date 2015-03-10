@@ -5,6 +5,81 @@ import stat
 import datetime
 import json
 import time
+import random
+
+from rcGlobalEnv import rcEnv
+
+sched_fmt = "[%s] %-45s %s"
+
+def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
+    if os.fork() > 0:
+        """ return to parent execution
+        """
+        return
+
+    """ separate the son from the father
+    """
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            os._exit(0)
+    except:
+        os._exit(1)
+
+    self = args[0]
+    if hasattr(self, "svcname"):
+        title = self.svcname+"."+fn.__name__.lstrip("_")
+    else:
+        title = "node."+fn.__name__.lstrip("_")
+
+    if serialize:
+        lockfile = title+".fork.lock"
+        lockfile = os.path.join(rcEnv.pathlock, lockfile)
+
+        from lock import lock, unlock
+        try:
+            fd = lock(lockfile=lockfile, timeout=0, delay=0)
+            print(sched_fmt % ("fork", title, "lock acquired"))
+        except Exception as e:
+            print(sched_fmt % ("fork", title, "task is already running"))
+            os._exit(0)
+
+    # now wait for a random delay to not DoS the collector.
+    if delay > 0 and not hasattr(self, "svcname"):
+        import random
+        import time
+        delay = int(random.random()*delay)
+        print(sched_fmt % ("fork", title, "delay %d secs to level database load"%delay))
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt as e:
+            print(e)
+            os._exit(1)
+
+    try:
+        fn(*args, **kwargs)
+    except Exception as e:
+        if serialize:
+            unlock(fd)
+        print(e, file=sys.stderr)
+        os._exit(1)
+
+    if serialize:
+        unlock(fd)
+    os._exit(0)
+
+def scheduler_fork(fn):
+    def _fn(*args, **kwargs):
+        self = args[0]
+        if self.options.cron or (hasattr(self, "cron") and self.cron):
+            fork(fn, args, kwargs, serialize=True, delay=59)
+        else:
+            fn(*args, **kwargs)
+    return _fn
 
 class SchedNotAllowed(Exception): 
     pass
@@ -95,7 +170,22 @@ class Scheduler(object):
         # never reach here
         return True
 
+    def sched_delay(self, delay=59):
+        delay = int(random.random()*delay)
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt as e:
+            raise ex.excError("interrupted while waiting for scheduler delay")
+
+    def sched_write_timestamp(self, so):
+        if type(so) != list:
+            so = [so]
+        for _so in so:
+            self.timestamp(_so.fname)
+
     def timestamp(self, timestamp_f):
+        if not timestamp_f.startswith(os.sep):
+            timestamp_f = os.path.join(rcEnv.pathvar, timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
@@ -186,7 +276,6 @@ class Scheduler(object):
             try:
                 t = time.strptime(s, "%H:%M")
             except:
-                print("malformed time string: %s"%str(s), file=sys.stderr)
                 raise Exception("malformed time string: %s"%str(s))
             s = t.tm_hour * 60 + t.tm_min
         return s
@@ -301,6 +390,8 @@ class Scheduler(object):
             schedule_s = self.sched_convert_to_schedule(config, section)
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
+        elif option in self.config_defaults:
+            schedule_s = self.config_defaults[option]
         else:
             raise SchedNoDefault
 
@@ -516,7 +607,7 @@ class Scheduler(object):
                 end = "%02d:%02d" % (end_m // 60, end_m % 60)
             return {"begin": begin, "end": end}
 
-        if section and "#sync#" in section:
+        if section and section.startswith("sync"):
             probabilistic = False
         else:
             probabilistic = True
@@ -639,23 +730,49 @@ class Scheduler(object):
             return True
 
     def get_timestamp_f(self, fname):
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
+        timestamp_f = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'var', fname))
         return timestamp_f
 
-    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True):
+    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
+        if type(self.scheduler_actions[action]) == list:
+            data = {"count": 0, "keep": [], "skip": []}
+            for i, so in enumerate(self.scheduler_actions[action]):
+                if self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose, deferred_write_timestamp=deferred_write_timestamp):
+                    data["skip"].append(so)
+                else:
+                    data["keep"].append(so)
+            data["count"] = i+1
+            return data
+        else:
+            so = self.scheduler_actions[action]
+            return self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose)
+
+    def _skip_action(self, action, so, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
         if section is None:
-            section = self.scheduler_actions[action].section
+            section = so.section
         if fname is None:
-            fname = self.scheduler_actions[action].fname
+            fname = so.fname
         if schedule_option is None:
-            schedule_option = self.scheduler_actions[action].schedule_option
+            schedule_option = so.schedule_option
+
+        if hasattr(self, "svcname"):
+            scheduler = self.svcname
+        else:
+            scheduler = "node"
 
         def err(msg):
             if not verbose:
                 return
-            print('%-22s skip  '%section, msg)
+            print(sched_fmt % ("skip", title(), msg))
 
-        if not self.options.cron:
+        def title():
+            s = ".".join((scheduler, action))
+            if "#" in section:
+                s += "."+section
+            return s
+
+        if not self.options.cron and \
+           (not hasattr(self, "cron") or not self.cron):
             # don't update the timestamp file
             return False
 
@@ -667,9 +784,11 @@ class Scheduler(object):
             return True
 
         # update the timestamp file
-        timestamp_f = self.get_timestamp_f(fname)
-        self.timestamp(timestamp_f)
+        if not deferred_write_timestamp:
+            timestamp_f = self.get_timestamp_f(fname)
+            self.timestamp(timestamp_f)
 
+        print(sched_fmt % ("exec", title(), "timestamp updated"))
         return False
 
     def print_schedule(self):
@@ -679,9 +798,17 @@ class Scheduler(object):
             self._print_schedule(a)
 
     def _print_schedule(self, a):
-        section = self.scheduler_actions[a].section
-        schedule_option = self.scheduler_actions[a].schedule_option
-        fname = self.scheduler_actions[a].fname
+        if type(self.scheduler_actions[a]) == list:
+            for so in self.scheduler_actions[a]:
+                 self.__print_schedule(a, so)
+        else:
+            so = self.scheduler_actions[a]
+            self.__print_schedule(a, so)
+
+    def __print_schedule(self, a, so):
+        section = so.section
+        schedule_option = so.schedule_option
+        fname = so.fname
 
         try:
             schedule_s = self.sched_get_schedule_raw(section, schedule_option)

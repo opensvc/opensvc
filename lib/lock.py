@@ -21,7 +21,7 @@ class lockAcquire(Exception):
     def __init__(self, pid):
         self.pid = pid
 
-def monlock(timeout=30, delay=5, fname='svcmon.lock'):
+def monlock(timeout=0, delay=0, fname='svcmon.lock'):
     lockfile = os.path.join(rcEnv.pathlock, fname)
     try:
         lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)

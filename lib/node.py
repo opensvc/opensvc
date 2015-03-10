@@ -73,7 +73,6 @@ class Node(Svc, Freezer, Scheduler):
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
-        self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
@@ -97,6 +96,7 @@ class Node(Svc, Freezer, Scheduler):
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'scheduler': 'run the node task scheduler',
             'schedule_reboot_status': 'tell if the node is scheduled for reboot',
             'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
             'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
@@ -111,8 +111,6 @@ class Node(Svc, Freezer, Scheduler):
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
-            'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
-            'updateservices': 'refresh var files associated with services',
           },
           'Node configuration edition': {
             'register': 'obtain a registration number from the collector, used to authenticate the node',
@@ -122,7 +120,6 @@ class Node(Svc, Freezer, Scheduler):
           },
           'Push data to the collector': {
             'pushasset':      'push asset information to collector',
-            'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
             'pushdisks':      'push disks usage information to collector',
             'pushpkg':        'push package/version list to collector',
@@ -138,7 +135,6 @@ class Node(Svc, Freezer, Scheduler):
             'pushvioserver':  'push IBM VIO server configuration to collector',
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
-            'push_appinfo':   'push services application launchers appinfo key/value pairs to collector',
             'sysreport':      'push system report to the collector for archiving and diff analysis',
             'checks':         'run node sanity checks, push results to collector',
           },
@@ -208,7 +204,6 @@ class Node(Svc, Freezer, Scheduler):
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
 	self.scheduler_actions = {
-	 "syncservices": SchedOpts("syncservices"),
 	 "checks": SchedOpts("checks"),
 	 "pushstats": SchedOpts("stats"),
 	 "pushpkg": SchedOpts("packages"),
@@ -226,23 +221,12 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushsym": SchedOpts("sym", schedule_option="no_schedule"),
 	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
 	 "pushdisks": SchedOpts("disks"),
-	 "pushservices": SchedOpts("svcconf"),
-	 "push_appinfo": SchedOpts("appinfo"),
 	 "sysreport": SchedOpts("sysreport"),
 	 "compliance_auto": SchedOpts("compliance", fname="last_comp_check", schedule_option="comp_schedule"),
 	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="last_rotate_root_pw", schedule_option="no_schedule"),
 	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
         }
 
-
-    def scheduler_fork(fn):
-        def _fn(*args, **kwargs):
-            self = args[0]
-            if self.options.cron:
-                rcUtilities.fork(fn, args, kwargs, serialize=True)
-            else:
-                fn(*args, **kwargs)
-        return _fn
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -313,39 +297,6 @@ class Node(Svc, Freezer, Scheduler):
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
 
-    def _setup_sync_conf(self):
-        h = {}
-        self.build_services()
-        self.config = ConfigParser.RawConfigParser()
-        for svc in self.svcs:
-            for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
-                for r in rs.resources:
-                    s = '#'.join((svc.svcname, r.rid))
-                    if not self.config.has_section(s):
-                        self.config.add_section(s)
-                    self.config.set(s, 'svcname', svc.svcname)
-                    self.config.set(s, 'rid', r.rid)
-                    self.config.set(s, 'schedule', r.schedule)
-        self.write_dotconfig()
-        with open(self.setup_sync_flag, 'w') as f:
-            f.write(str(time.time()))
-
-    def write_dotconfig(self):
-        for o in self.config_defaults:
-            if self.config.has_option('DEFAULT', o):
-                self.config.remove_option('DEFAULT', o)
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                self.config.remove_section(s)
-        try:
-            fp = open(self.dotnodeconf, 'w')
-            self.config.write(fp)
-            fp.close()
-        except:
-            print("failed to write new %s"%self.dotnodeconf, file=sys.stderr)
-            raise Exception()
-        self.load_config()
-
     def write_config(self):
         for o in self.config_defaults:
             if self.config.has_option('DEFAULT', o):
@@ -369,11 +320,6 @@ class Node(Svc, Freezer, Scheduler):
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
-        try:
-            self.config.read(self.dotnodeconf)
-        except:
-            self._setup_sync_conf()
-            self.write_dotconfig()
 
     def load_auth_config(self):
         if self.auth_config is not None:
@@ -401,16 +347,6 @@ class Node(Svc, Freezer, Scheduler):
             if mtime > last:
                 return True
         return False
-
-    def setup_sync_conf(self):
-        if self.setup_sync_outdated():
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_section('sync'):
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_option('sync', 'schedule'):
-            self._setup_sync_conf()
 
     def format_desc(self, action=None):
         from textwrap import TextWrapper
@@ -482,6 +418,14 @@ class Node(Svc, Freezer, Scheduler):
             return getattr(o, a)()
         else:
             return getattr(self, a)()
+
+    def scheduler(self):
+        for action in self.scheduler_actions:
+            try:
+                self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
 
     def pushstats(self):
         # set stats range to push to "last pushstat => now"
@@ -743,87 +687,11 @@ class Node(Svc, Freezer, Scheduler):
             self.build_services()
         self.collector.call('push_disks', self)
 
-    def need_sync(self):
-        l = []
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                continue
-            ts = '_'.join(('last_sync',
-                           self.config.get(s, 'svcname'),
-                           self.config.get(s, 'rid')))
-            if self.skip_action("need_sync",
-                                section=s,
-                                fname=ts,
-                                schedule_option='sync_schedule'):
-                    continue
-            l.append(self.config.get(s, 'svcname'))
-        return l
-
     def shutdown(self):
         print("TODO")
 
     def reboot(self):
         print("TODO")
-
-    def syncservices(self):
-        self.setup_sync_conf()
-        svcnames = self.need_sync()
-        if len(svcnames) == 0:
-            return
-
-        from multiprocessing import Process
-        p = {}
-
-        if self.svcs is None:
-            self.build_services(svcnames=svcnames)
-
-        for svc in self.svcs:
-            if svc.svcname not in svcnames:
-                continue
-            p[svc.svcname] = rcCommandWorker.CommandWorker(name=svc.svcname)
-            cmd = [os.path.join(rcEnv.pathetc, svc.svcname), 'syncall']
-            if self.options.force:
-                cmd.append('--force')
-            if self.options.cron:
-                cmd.append('--cron')
-            p[svc.svcname].enqueue(cmd)
-
-        for svcname in p:
-            p[svcname].stop_worker()
-
-    @scheduler_fork
-    def updateservices(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('presync')
-
-    def pushservices(self):
-        if self.skip_action("pushservices"):
-            return
-        self.tassk_pushservices()
-
-    @scheduler_fork
-    def task_pushservices(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push')
-
-    def push_appinfo(self):
-        if self.skip_action("push_appinfo"):
-            return
-        self.task_push_appinfo()
-
-    @scheduler_fork
-    def task_push_appinfo(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push_appinfo')
 
     def sysreport(self):
         if self.skip_action("sysreport"):

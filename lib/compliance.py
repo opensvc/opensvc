@@ -6,10 +6,11 @@ import re
 import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner, fork
+from rcUtilities import is_exe, justcall, banner
 from subprocess import *
 from rcPrintTable import print_table
 from rcStatus import color, _colorize
+from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -291,21 +292,9 @@ class Compliance(object):
         os.environ.clear()
         os.environ.update(self.env_bkp)
 
-    def scheduler_fork(fn):
-        def _fn(*args, **kwargs):
-            self = args[0]
-            if self.options.cron:
-                fork(fn, args, kwargs, serialize=True)
-            else:
-                fn(*args, **kwargs)
-        return _fn
-
     def compliance_auto(self):
-        flag = "last_comp_check"
-        if self.svcname is not None:
-            flag = '.'.join((flag, self.svcname))
         if self.skip_action is not None and \
-           self.skip_action("compliance_auto", fname=flag):
+           self.skip_action("compliance_auto"):
             return
         self.task_compliance_auto()
 

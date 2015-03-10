@@ -156,13 +156,6 @@ def install_cron_unix():
     agt = os.path.join(pathbin, 'perfagt.'+sysname)
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
-           'reset_sched': False,
-           'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/svcmon ] && /opt/opensvc/bin/svcmon --updatedb --maxdelaydb 120 >/dev/null 2>&1",
-           'marker': 'svcmon --updatedb',
-           'ok': False
-    },{
-           'sched': "0,10,20,30,40,50 * * * *",
            'reset_sched': True,
            'user': "",
            'cmd': "[ -x /opt/opensvc/bin/cron/opensvc ] && /opt/opensvc/bin/cron/opensvc >/dev/null 2>&1",
@@ -176,7 +169,7 @@ def install_cron_unix():
            'marker': agt,
            'ok': False
     }]
-    remove_entries = ['bin/nodemgr compliance check']
+    remove_entries = ['bin/nodemgr compliance check', 'bin/svcmon ']
 
     purge = []
     root_crontab = False
@@ -208,7 +201,6 @@ def install_cron_unix():
                 if root_crontab == '/etc/cron.d/opensvc':
                     ce[0]['user'] = "root"
                     ce[1]['user'] = "root"
-                    ce[2]['user'] = "root"
             elif os.path.exists(loc):
                 purge.append(loc)
 
@@ -217,12 +209,11 @@ def install_cron_unix():
         return False
 
     ce[0]['full'] = ' '.join([ce[0]['sched'], ce[0]['user'], ce[0]['cmd']])
-    ce[1]['full'] = ' '.join([ce[1]['sched'], ce[1]['user'], ce[1]['cmd']])
 
     if os.path.exists(agt):
-        ce[2]['full'] = ' '.join([ce[2]['sched'], ce[2]['user'], ce[2]['cmd']])
+        ce[1]['full'] = ' '.join([ce[1]['sched'], ce[1]['user'], ce[1]['cmd']])
     else:
-        ce[2]['full'] = None
+        ce[1]['full'] = None
 
     new = False
     if os.path.exists(root_crontab):

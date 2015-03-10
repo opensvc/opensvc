@@ -31,22 +31,13 @@ pathlib = os.path.join(pathsvc, 'lib')
 sys.path.append(pathlib)
 
 import node
+
 n = node.Node()
 n.options.cron = True
 
-for action in n.scheduler_actions:
-    try:
-        n.action(action)
-    except:
-        import traceback
-        traceback.print_exc()
-
+n.scheduler()
+n.build_services()
 for s in n.svcs:
-    s.cron = True
-    try:
-        s.action('compliance_auto')
-    except:
-        import traceback
-        traceback.print_exc()
+    s.scheduler()
 
 n.close()

@@ -2748,6 +2748,7 @@ def build(name):
         log.error(str(e))
         return None
     rcLogger.set_streamformatter(svc)
+    svc.post_build()
     return svc
 
 def is_service(f):

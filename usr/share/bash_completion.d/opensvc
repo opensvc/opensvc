@@ -32,7 +32,7 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit_service prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance"
+        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit_service prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance scheduler"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -55,7 +55,7 @@ _svcmgr()
 		local opts="monitor"
 		;;
 	    print|json)
-		local opts="disklist status resource"
+		local opts="disklist status resource schedule"
 		;;
             *)
                 ;;
@@ -212,7 +212,7 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown provision prkey updateservices updatepkg updatecomp scanscsi dequeue schedule unschedule"
+        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
