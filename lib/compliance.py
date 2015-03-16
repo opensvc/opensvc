@@ -382,8 +382,6 @@ class Compliance(object):
 
         if not os.path.exists(comp_dir):
             os.makedirs(comp_dir, 0o755)
-            raise ex.excError('modules [%s] are not present in %s'%(
-                               ','.join(self.module), comp_dir))
 
         for module, autofix, moduleset in self.module:
             try:
