@@ -31,7 +31,7 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
         os._exit(1)
 
     self = args[0]
-    if hasattr(self, "svcname"):
+    if hasattr(self, "svcname") and self.svcname is not None:
         title = self.svcname+"."+fn.__name__.lstrip("_")
     else:
         title = "node."+fn.__name__.lstrip("_")
