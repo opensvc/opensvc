@@ -17,6 +17,8 @@
 #
 from rcGlobalEnv import rcEnv
 import os
+from subprocess import *
+import datetime
 
 class Asset(object):
     s_config = "node configuration file"
@@ -648,6 +650,37 @@ class Asset(object):
                     addr_mask = d['addr']
                 print("  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask))
 
+    def get_last_boot(self):
+        os.environ["LANG"] = "C"
+        cmd = ["/usr/bin/uptime"]
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        l = out.split()
+
+        i = 0
+        for s in ("days,", "day(s),"):
+            try:
+                i = l.index(s)
+                break
+            except:
+                pass
+
+        if i == 0:
+            last = datetime.datetime.now()
+
+        try:
+            last = datetime.datetime.now() - datetime.timedelta(days=int(l[i-1]))
+        except:
+            return
+
+        last = last.strftime("%Y-%m-%d")
+        self.print_last_boot(last)
+        return last
+
+    def print_last_boot(self, last):
+        print("last boot (probe)")
+        print("  %s" % last)
+
     def get_asset_dict(self):
         d = {}
         d['nodename'] = rcEnv.nodename
@@ -671,6 +704,9 @@ class Asset(object):
         d['host_mode'] = self.get_host_mode()
         d['enclosure'] = self.get_enclosure()
         d['listener_port'] = self.get_listener_port()
+        last_boot = self.get_last_boot()
+        if last_boot is not None:
+            d['last_boot'] = last_boot
         sec_zone = self.get_sec_zone()
         if sec_zone is not None:
             d['sec_zone'] = sec_zone
