@@ -918,6 +918,8 @@ class Node(Svc, Freezer, Scheduler):
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
         compp = os.path.join(rcEnv.pathvar, 'compliance')
+        if not os.path.exists(compp):
+            os.makedirs(compp, 0o755)
         import shutil
         try:
             shutil.rmtree(backp)
