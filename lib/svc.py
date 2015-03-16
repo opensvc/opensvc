@@ -1872,7 +1872,7 @@ class Svc(Resource, Scheduler):
         self.presync_done = True
 
     def syncnodes(self):
-        if not self.can_sync({'target': 'nodes'}):
+        if not self.can_sync('nodes'):
             return
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
@@ -1884,7 +1884,7 @@ class Svc(Resource, Scheduler):
         self.remote_postsync()
 
     def syncdrp(self):
-        if not self.can_sync({'target': 'drpnodes'}):
+        if not self.can_sync('drpnodes'):
             return
         self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
@@ -1940,7 +1940,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
-        if not self.can_sync({}):
+        if not self.can_sync():
             return
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.hp3par", "syncupdate")
@@ -2011,7 +2011,7 @@ class Svc(Resource, Scheduler):
         self.sched_write_timestamp(sched_options)
 
     def syncall(self, sched_options=[]):
-        if not self.can_sync({}):
+        if not self.can_sync():
             return
         if self.cron:
             self.sched_delay()
