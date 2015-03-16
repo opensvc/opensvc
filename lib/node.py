@@ -420,6 +420,7 @@ class Node(Svc, Freezer, Scheduler):
             return getattr(self, a)()
 
     def scheduler(self):
+        self.options.cron = True
         for action in self.scheduler_actions:
             try:
                 self.action(action)

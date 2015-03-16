@@ -33,9 +33,8 @@ sys.path.append(pathlib)
 import node
 
 n = node.Node()
-n.options.cron = True
-
 n.scheduler()
+
 n.build_services()
 for s in n.svcs:
     s.scheduler()
