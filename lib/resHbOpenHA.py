@@ -196,7 +196,7 @@ class Hb(resHb.Hb):
                 if ret != 0:
                     continue
                 s = ' '.join([ regex.sub('', l) for l in out.split('\n') if l.startswith('argv') ])
-		if s in h:
+                if s in h:
                     h[s] = 0
         else:
             for line in lines:
@@ -233,7 +233,7 @@ class Hb(resHb.Hb):
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
         peer = self.get_peer()
-	self.log.debug('freeze: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('freeze: local_status=%s remote_status=%s'%(local_status, remote_status))
 
         if local_status in ['frozen_stop', 'start_ready']:
             self.log.info("local already frozen")
@@ -280,7 +280,7 @@ class Hb(resHb.Hb):
         do_remote = True
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('thaw: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('thaw: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if local_status not in ['frozen_stop', 'start_ready']:
@@ -341,7 +341,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
         if local_status == "started":
             try:
@@ -386,7 +386,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('start: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('start: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if remote_status == 'started':
@@ -430,7 +430,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if not self.svc.remote and remote_status != 'frozen_stop':
