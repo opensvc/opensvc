@@ -158,7 +158,7 @@ class Svc(Resource, Scheduler):
           'push_schedule': '00:00-06:00@361 mon-sun',
           'sync_schedule': '04:00-06:00@121 mon-sun',
           'comp_schedule': '02:00-06:00@241 sun',
-          'mon_schedule': '@10',
+          'mon_schedule': '@9',
           'no_schedule': '',
         }
         self.scheduler_actions = {
