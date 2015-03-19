@@ -72,6 +72,9 @@ class Hb(Res.Resource):
     def start(self):
         pass
 
+    def shutdown(self):
+        raise ex.excEndAction("shutdown action is not allowed on heartbeat-driven services")
+
     def __status(self, verbose=False):
         return rcStatus.UNDEF
 
