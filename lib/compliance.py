@@ -344,6 +344,8 @@ class Compliance(object):
 
         if self.data is None:
             self.data = self.get_comp_data()
+            if self.data is None:
+                raise ex.excError("could not fetch compliance data from the collector")
             modulesets = []
             if self.options.moduleset != "":
                 # purge unspecified modulesets
