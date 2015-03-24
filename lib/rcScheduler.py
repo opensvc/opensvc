@@ -146,26 +146,19 @@ class Scheduler(object):
           "sunday": 6
         }
 
-    def need_action_interval(self, timestamp_f, delay=10):
+    def need_action_interval(self, last, delay=10):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
         """
         if delay == 0:
             return False
-        if not os.path.exists(timestamp_f):
+        if last is None:
             return True
-        try:
-            with open(timestamp_f, 'r') as f:
-                d = f.read()
-                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
-                limit = last + datetime.timedelta(minutes=delay)
-                if datetime.datetime.now() < limit:
-                    return False
-                else:
-                    return True
-                f.close()
-        except:
+        limit = last + datetime.timedelta(minutes=delay)
+        if datetime.datetime.now() < limit:
+            return False
+        else:
             return True
 
         # never reach here
@@ -195,8 +188,8 @@ class Scheduler(object):
             f.close()
         return True
 
-    def skip_action_interval(self, timestamp_f, interval):
-        return not self.need_action_interval(timestamp_f, interval)
+    def skip_action_interval(self, last, interval):
+        return not self.need_action_interval(last, interval)
 
     def in_timerange_probabilistic(self, timerange, now=None):
         if not timerange.get("probabilistic", False):
@@ -281,14 +274,14 @@ class Scheduler(object):
             s = t.tm_hour * 60 + t.tm_min
         return s
 
-    def in_timeranges(self, schedule, fname=None, now=None):
+    def in_timeranges(self, schedule, fname=None, now=None, last=None):
         if len(schedule["timeranges"]) == 0:
             raise SchedNotAllowed("no timeranges")
         l = []
         for tr in schedule["timeranges"]:
             try:
                 self.in_timerange(tr, now=now)
-                self.in_timerange_interval(tr, fname=fname, now=now)
+                self.in_timerange_interval(tr, fname=fname, now=now, last=last)
                 if fname is not None:
                     # fname as None indicates we run in test mode
                     self.in_timerange_probabilistic(tr, now=now)
@@ -318,28 +311,43 @@ class Scheduler(object):
                 return
         raise SchedNotAllowed("not in timerange %s-%s"%(timerange["begin"],timerange["end"]))
 
-    def in_timerange_interval(self, timerange, fname=None, now=None):
+    def get_last(self, fname):
+        timestamp_f = self.get_timestamp_f(fname)
+        if not os.path.exists(timestamp_f):
+            return
+        try:
+            with open(timestamp_f, 'r') as f:
+                d = f.read()
+                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
+                return last
+        except:
+            return
+
+    def in_timerange_interval(self, timerange, fname=None, now=None, last=None):
         if timerange["interval"] == 0:
             raise SchedNotAllowed("interval set to 0")
         if fname is None:
             # test mode
             return
-        timestamp_f = self.get_timestamp_f(fname)
-        if self.skip_action_interval(timestamp_f, timerange["interval"]):
+        if last is None:
+            last = self.get_last(fname)
+        if last is None:
+            return
+        if self.skip_action_interval(last, timerange["interval"]):
             raise SchedNotAllowed("last run is too soon")
         return
 
-    def _in_schedule(self, schedule, fname=None, now=None):
+    def _in_schedule(self, schedule, fname=None, now=None, last=None):
         self.in_days(schedule, now=now)
-        self.in_timeranges(schedule, fname=fname, now=now)
+        self.in_timeranges(schedule, fname=fname, now=now, last=last)
 
-    def in_schedule(self, schedules, fname=None, now=None):
+    def in_schedule(self, schedules, fname=None, now=None, last=None):
         if len(schedules) == 0:
             raise SchedNotAllowed("no schedule")
         l = []
         for schedule in schedules:
             try:
-                self._in_schedule(schedule, fname=fname, now=now)
+                self._in_schedule(schedule, fname=fname, now=now, last=last)
                 if schedule["exclude"]:
                     raise SchedExcluded('excluded by schedule member "%s"' % schedule["raw"])
                 else:
@@ -708,22 +716,22 @@ class Scheduler(object):
             data.append(d)
         return data
 
-    def allow_action_schedule(self, section, option, fname=None, now=None):
+    def allow_action_schedule(self, section, option, fname=None, now=None, last=None):
         if option is None:
             return
         if now is None:
             now = datetime.datetime.now()
         try:
             schedule = self.sched_get_schedule(section, option)
-            self.in_schedule(schedule, fname=fname, now=now)
+            self.in_schedule(schedule, fname=fname, now=now, last=last)
         except SchedNoDefault:
             raise SchedNotAllowed("no schedule in section %s and no default schedule"%section)
         except SchedSyntaxError:
             raise SchedNotAllowed("malformed parameter value: %s.schedule"%section)
 
-    def skip_action_schedule(self, section, option, fname=None, now=None):
+    def skip_action_schedule(self, section, option, fname=None, now=None, last=None):
         try:
-            self.allow_action_schedule(section, option, fname=fname, now=now)
+            self.allow_action_schedule(section, option, fname=fname, now=now, last=last)
             return False
         except SchedExcluded:
             return True
