@@ -2428,12 +2428,21 @@ def add_apps_sysv(svc, conf):
         r = resApp.App(**kwargs)
         svc += r
 
-def setup_logging():
+def setup_logging(svcnames):
     """Setup logging to stream + logfile, and logfile rotation
     class Logger instance name: 'log'
     """
     global log
-    log = rcLogger.initLogger('INIT')
+    max_svcname_len = 0
+
+    # compute max svcname length to align logging stream output
+    for svcname in svcnames:
+        n = len(svcname)
+        if n > max_svcname_len:
+            max_svcname_len = n
+
+    rcLogger.max_svcname_len = max_svcname_len
+    log = rcLogger.initLogger('init')
 
 def build(name):
     """build(name) is in charge of Svc creation
@@ -2444,8 +2453,6 @@ def build(name):
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
-
-    setup_logging()
 
     #
     # node discovery is hidden in a separate module to
@@ -2747,7 +2754,6 @@ def build(name):
     except (ex.excInitError, ex.excError) as e:
         log.error(str(e))
         return None
-    rcLogger.set_streamformatter(svc)
     svc.post_build()
     return svc
 
@@ -2771,6 +2777,8 @@ def list_services():
 
     l = []
     for name in s:
+        if len(s) == 0:
+            continue
         if not is_service(os.path.join(rcEnv.pathetc, name)):
             continue
         l.append(name)
@@ -2781,12 +2789,19 @@ def build_services(status=None, svcnames=[],
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
+
     services = {}
     if type(svcnames) == str:
         svcnames = [svcnames]
-    for name in list_services():
-        if len(svcnames) > 0 and name not in svcnames:
-            continue
+
+    if len(svcnames) == 0:
+        svcnames = list_services()
+    else:
+        svcnames = list(set(list_services()) & set(svcnames))
+
+    setup_logging(svcnames)
+
+    for name in svcnames:
         fix_default_section([name])
         try:
             svc = build(name)
@@ -2808,7 +2823,8 @@ def build_services(status=None, svcnames=[],
         if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
-    return [ s for n ,s in sorted(services.items()) ]
+    rcLogger.set_streamformatter(services.values())
+    return [ s for n, s in sorted(services.items()) ]
 
 def delete_one(svcname, rids=[]):
     if len(svcname) == 0:

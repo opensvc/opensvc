@@ -71,19 +71,19 @@ class Resource(object):
 
         if self.rid is None:
             s += self.type
-            return s.upper()
+            return s
 
         if self.subset is None:
             s += self.rid
-            return s.upper()
+            return s
 
         v = self.rid.split('#')
         if len(v) != 2:
             s += rid
-            return s.upper()
+            return s
 
         s += "%s:%s#%s" % (self.type, self.subset, v[1])
-        return s.upper()
+        return s
        
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,

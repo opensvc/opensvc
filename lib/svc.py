@@ -140,7 +140,7 @@ class Svc(Resource, Scheduler):
                           disabled=disabled, tags=tags)
         Scheduler.__init__(self)
 
-        self.log = rcLogger.initLogger(self.svcname.upper())
+        self.log = rcLogger.initLogger(self.svcname)
         self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
