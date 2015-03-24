@@ -2209,6 +2209,7 @@ class Svc(Resource, Scheduler):
           'push',
           'push_env',
           'push_appinfo',
+          'push_service_status',
           'edit_config',
           'scheduler',
           'print_schedule',
