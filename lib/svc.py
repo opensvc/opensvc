@@ -500,6 +500,7 @@ class Svc(Resource):
         import json
         d = {
               'resources': {},
+              'frozen': self.frozen(),
             }
 
         containers = self.get_resources('container')
