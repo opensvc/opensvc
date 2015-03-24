@@ -561,6 +561,8 @@ class Svc(Resource, Scheduler):
         if len(containers) > 0:
             d['encap'] = {}
             for container in containers:
+                if container.name is None or len(container.name) == 0:
+                    continue
                 try:
                     d['encap'][container.name] = self.encap_json_status(container)
                 except:
@@ -579,7 +581,7 @@ class Svc(Resource, Scheduler):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print(json.dumps(d))
+        print(json.dumps(d, indent=4, separators=(',', ': ')))
 
     def json_env(self):
         import json
@@ -603,7 +605,7 @@ class Svc(Resource, Scheduler):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svcenv[section] = tmpsection
-        print(json.dumps(svcenv))
+        print(json.dumps(svcenv, indent=4, separators=(',', ': ')))
 
     def print_resource_status(self):
         if len(self.action_rid) != 1:
@@ -1147,11 +1149,11 @@ class Svc(Resource, Scheduler):
 
     def json_disklist(self):
         import json
-        print(json.dumps(list(self.disklist())))
+        print(json.dumps(list(self.disklist()), indent=4, separators=(',', ': ')))
 
     def json_devlist(self):
         import json
-        print(json.dumps(list(self.devlist())))
+        print(json.dumps(list(self.devlist()), indent=4, separators=(',', ': ')))
 
     def disklist(self):
         if len(self.disks) == 0:
