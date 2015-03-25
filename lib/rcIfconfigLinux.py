@@ -148,11 +148,19 @@ class ifconfig(rcIfconfig.ifconfig):
                 prev = ''
                 for w in _line:
                     if 'inet' == prev :
-                        ipaddr, mask = w.split('/')
+                        try:
+                            ipaddr, mask = w.split('/')
+                        except:
+                            # tun for example
+                            continue
                         _i.ipaddr += [ipaddr]
                         _i.mask += [octal_to_cidr(mask)]
                     elif 'inet6' == prev:
-                        (ip6addr, ip6mask) = w.split('/')
+                        try:
+                            ip6addr, ip6mask = w.split('/')
+                        except:
+                            # tun for example
+                            continue
                         _i.ip6addr += [ip6addr]
                         _i.ip6mask += [ip6mask]
                     elif 'brd' == prev and 'inet' in line:
