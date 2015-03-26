@@ -251,8 +251,6 @@ class VgLock(Vg):
         return str(self.lock) + " lock on " + Vg.fmt_label(self)
 
     def locklist(self, image):
-        if not self.has_it(image):
-            return {}
         cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -298,10 +296,14 @@ class VgLock(Vg):
         if rcEnv.nodename not in data:
             self.log.info(image+" is already unlocked")
             return
-        cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError("failed to unlock %s"%self.devname(image))
+        i = 0
+        while len(data) > 0 or i>20:
+            i += 1
+            cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError("failed to unlock %s"%self.devname(image))
+            data = self.locklist(image)
 
     def do_start_one(self, image):
         data = self.locklist(image)
