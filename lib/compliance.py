@@ -511,6 +511,9 @@ class Compliance(object):
         def recurse(ms, depth=0):
             prefix=" "*depth
             print(prefix+ms+':')
+            if ms not in data["modulesets"]:
+                print(prefix+" (no modules)")
+                return
             for module, autofix in data["modulesets"][ms]:
                 if autofix:
                     s = " (autofix)"
