@@ -57,6 +57,13 @@ class NodeConf(object):
     def fixable(self):
         return RET_OK
 
+    def unset_val(self, keyname):
+        cmd = ['/opt/opensvc/bin/nodemgr', 'unset', '--param', keyname]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        return p.returncode
+
     def set_val(self, keyname, target):
         if type(target) == int:
             target = str(target)
@@ -93,6 +100,10 @@ class NodeConf(object):
                 r |= RET_ERR
             elif verbose:
                 print "%s=%s on target"%(keyname, str(value))
+        elif op == 'unset':
+            if verbose:
+                print >>sys.stderr, "%s=%s value must be unset"%(keyname, str(value))
+            r |= RET_ERR
         else:
             if type(value) != int:
                 if verbose:
@@ -125,22 +136,35 @@ class NodeConf(object):
             op = key['op']
         target = key['value']
 
-        if op not in ('>=', '<=', '='):
+        if op not in ('>=', '<=', '=', 'unset'):
             if verbose:
-                print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
+                print >>sys.stderr, "'value' list member 0 must be either '=', '>=', '<=' or unset: %s"%str(key)
             return RET_NA
 
         keyname = key['key']
         value = self.get_val(keyname)
 
         if value is None:
-            print >>sys.stderr, "%s key is not set"%keyname
-            return RET_ERR
+            if op == 'unset':
+		 if verbose:
+                     print "%s key is not set"%keyname
+                 return RET_OK
+            else:
+		 if verbose:
+                     print >>sys.stderr, "%s key is not set"%keyname
+                 return RET_ERR
 
         return self._check_key(keyname, target, op, value, verbose)
 
     def fix_key(self, key):
-        return self.set_val(key['key'], key['value'])
+        if 'op' not in key:
+            op = "="
+        else:
+            op = key['op']
+        if op == "unset":
+            return self.unset_val(key['key'])
+        else:
+            return self.set_val(key['key'], key['value'])
 
     def check(self):
         r = 0
