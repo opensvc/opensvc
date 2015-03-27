@@ -2004,8 +2004,6 @@ class Svc(Resource, Scheduler):
         data = self.skip_action("syncall", deferred_write_timestamp=True)
         if len(data["keep"]) == 0:
             return
-        self.set_skip_resources(keeprid=data["keep"])
-        self.sched_write_timestamp(data["keep"])
         self._sched_syncall(data["keep"])
 
     @scheduler_fork
@@ -2013,7 +2011,7 @@ class Svc(Resource, Scheduler):
         self.action("syncall")
         self.sched_write_timestamp(sched_options)
 
-    def syncall(self, sched_options=[]):
+    def syncall(self):
         if not self.can_sync():
             return
         if self.cron:
