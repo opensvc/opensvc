@@ -930,13 +930,14 @@ class Svc(Resource, Scheduler):
             for rid, r in res.items():
                 if not r.get("monitor"):
                     continue
-                monitored_resources.append(rid+"@"+container.name)
+                erid = rid+"@"+container.name
+                monitored_resources.append(erid)
                 if r.get("status") != "up":
                     if len(r.get("log")) > 0:
                         rstatus_log = ''.join((' ', '(', r.get("log").strip().strip("# "), ')'))
                     else:
                         rstatus_log = ''
-                    self.log.info("monitored resource %s is in state %s%s"%(rid, r.get("status"), rstatus_log))
+                    self.log.info("monitored resource %s is in state %s%s"%(erid, r.get("status"), rstatus_log))
 
                     if self.monitor_action is not None and \
                        hasattr(self, self.monitor_action):
