@@ -113,6 +113,8 @@ class Node(Svc, Freezer, Scheduler):
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
           },
           'Node configuration edition': {
+            'edit_config': 'open the node.conf configuration file with the preferred editor',
+            'edit_authconfig': 'open the auth.conf configuration file with the preferred editor',
             'register': 'obtain a registration number from the collector, used to authenticate the node',
             'get': 'get the value of the node configuration parameter pointed by --param',
             'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
@@ -296,6 +298,27 @@ class Node(Svc, Freezer, Scheduler):
     def close(self):
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
+
+    def edit_config(self):
+        cf = os.path.join(rcEnv.pathetc, "node.conf")
+        return self.edit_cf(cf)
+
+    def edit_authconfig(self):
+        cf = os.path.join(rcEnv.pathetc, "auth.conf")
+        return self.edit_cf(cf)
+
+    def edit_cf(self, cf):
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        return os.system(' '.join((editor, cf)))
 
     def write_config(self):
         for o in self.config_defaults:
