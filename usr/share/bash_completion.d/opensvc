@@ -32,7 +32,7 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit_service prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance scheduler"
+        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance scheduler"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -56,6 +56,9 @@ _svcmgr()
 		;;
 	    print|json)
 		local opts="disklist status resource schedule"
+		;;
+	    edit)
+		local opts="config"
 		;;
             *)
                 ;;
