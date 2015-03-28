@@ -63,6 +63,14 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
+    def pre_action(self, rset=None, action=None):
+        if action not in ("stop", "shutdown"):
+            return
+        cwd = os.getcwd()
+        for r in rset.resources:
+            if cwd.startswith(r.mountPoint):
+                raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
+
     def start(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
             return
