@@ -312,18 +312,25 @@ def always_on_nodes_set(svc, conf, section):
 def get_sync_args(conf, s, svc):
     kwargs = {}
     defaults = conf.defaults()
+
     if conf.has_option(s, 'sync_max_delay'):
         kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, s, 'sync_max_delay')
     elif 'sync_max_delay' in defaults:
         kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, 'DEFAULT', 'sync_max_delay')
+
     if conf.has_option(s, 'schedule'):
         kwargs['schedule'] = conf_get_string_scope(svc, conf, s, 'schedule')
-    elif conf.has_option(s, 'sync_period'):
+    elif conf.has_option(s, 'period') or conf.has_option(s, 'sync_period'):
         # old schedule syntax compatibility
         from rcScheduler import Scheduler
         kwargs['schedule'] = Scheduler().sched_convert_to_schedule(conf, s, prefix='sync_')
     elif 'sync_schedule' in defaults:
         kwargs['schedule'] = conf_get_string_scope(svc, conf, 'DEFAULT', 'sync_schedule')
+    elif 'sync_period' in defaults:
+        # old schedule syntax compatibility for internal sync
+        from rcScheduler import Scheduler
+        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(conf, s, prefix='sync_')
+
     return kwargs
 
 def add_resources(restype, svc, conf):
@@ -1522,7 +1529,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
         kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
-        kwargs.update(get_sync_args(conf, 'sync', svc))
+        kwargs.update(get_sync_args(conf, kwargs['rid'], svc))
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
@@ -1554,7 +1561,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
         kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
-        kwargs.update(get_sync_args(conf, 'sync', svc))
+        kwargs.update(get_sync_args(conf, kwargs['rid'], svc))
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 

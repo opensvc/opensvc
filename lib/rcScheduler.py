@@ -357,13 +357,30 @@ class Scheduler(object):
         raise SchedNotAllowed(", ".join(l))
 
     def sched_convert_to_schedule(self, config, section, prefix=""):
-        days_s = config.get(section, prefix+'days')
-        period_s = config.get(section, prefix+'period')
-        interval_s = config.get(section, prefix+'interval')
+        def get_val(param):
+            if not config.has_section(section) or (not config.has_option(section, param) and not config.has_option(section, prefix+param)):
+                # internal syncs
+                c = config.defaults()
+                val = c.get(prefix+param)
+            elif config.has_option(section, prefix+param):
+                val = config.get(section, prefix+param)
+            else:
+                val = config.get(section, param)
+            return str(val)
+
+        days_s = get_val("days")
+        interval_s = get_val("interval")
+        period_s = get_val("period")
+
+        if days_s == "None" or interval_s == "None" or period_s == "None":
+            return ""
+
         try:
             days = json.loads(days_s)
         except:
+            print("invalid days schedule definition in section", section, days_s, file=sys.stderr)
             return ""
+
         try:
             periods = json.loads(period_s)
             l = []
@@ -373,7 +390,8 @@ class Scheduler(object):
                 l.append("%s-%s@%s" % (p[0], p[1], interval_s))
             period_s = ",".join(l)
         except:
-            pass
+            print("invalid periods schedule definition in section", section, file=sys.stderr)
+            return ""
         s = "%(period)s %(days)s" % dict(
               period=period_s,
               days=",".join(days),
@@ -392,11 +410,27 @@ class Scheduler(object):
         if config.has_section(section) and \
            config.has_option(section, 'schedule'):
             schedule_s = config.get(section, 'schedule')
-        elif config.has_section(section) and \
-             config.has_option(section, 'days') and \
-             config.has_option(section, 'interval') and \
-             config.has_option(section, 'period'):
-            schedule_s = self.sched_convert_to_schedule(config, section)
+        elif section.startswith("sync") and config.has_section(section) and (\
+              config.has_option(section, 'sync_days') or \
+              config.has_option(section, 'sync_interval') or \
+              config.has_option(section, 'sync_period') or \
+              config.has_option(section, 'days') or \
+              config.has_option(section, 'interval') or \
+              config.has_option(section, 'period') \
+             ):
+            if section.startswith("sync"):
+                prefix = "sync_"
+            elif section.startswith("app"):
+                prefix = "app_"
+            else:
+                prefix = ""
+            schedule_s = self.sched_convert_to_schedule(config, section, prefix=prefix)
+        elif section.startswith("sync") and not config.has_section(section) and (\
+              'sync_days' in config.defaults() or \
+              'sync_interval' in config.defaults() or \
+              'sync_period' in config.defaults() \
+             ):
+            schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
         elif option in self.config_defaults:
