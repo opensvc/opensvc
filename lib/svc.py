@@ -155,9 +155,9 @@ class Svc(Resource, Scheduler):
         self.monitor_action = None
         self.group_status_cache = None
         self.config_defaults = {
-          'push_schedule': '00:00-06:00@361 mon-sun',
-          'sync_schedule': '04:00-06:00@121 mon-sun',
-          'comp_schedule': '00:00-06:00@361 mon-sun',
+          'push_schedule': '00:00-06:00@361',
+          'sync_schedule': '04:00-06:00@121',
+          'comp_schedule': '00:00-06:00@361',
           'mon_schedule': '@9',
           'no_schedule': '',
         }
@@ -2018,7 +2018,7 @@ class Svc(Resource, Scheduler):
             for r in self.get_resources(rt):
                 try:
                     ret |= r.can_sync(target)
-                except ex.excError:
+                except ex.excError as e:
                     return False
                 if ret: return True
         self.log.debug("nothing to sync for the service for now")

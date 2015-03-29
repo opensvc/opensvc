@@ -404,8 +404,10 @@ class Scheduler(object):
 
         if hasattr(self, "config"):
             config = self.config
+            config_defaults = self.config_defaults
         elif hasattr(self, "svc"):
             config =  self.svc.config
+            config_defaults = self.svc.config_defaults
 
         if config.has_section(section) and \
            config.has_option(section, 'schedule'):
@@ -433,8 +435,8 @@ class Scheduler(object):
             schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
-        elif option in self.config_defaults:
-            schedule_s = self.config_defaults[option]
+        elif option in config_defaults:
+            schedule_s = config_defaults[option]
         else:
             raise SchedNoDefault
 
@@ -769,8 +771,9 @@ class Scheduler(object):
             return False
         except SchedExcluded:
             return True
-        except:
+        except Exception as e:
             return True
+        return True
 
     def get_timestamp_f(self, fname):
         timestamp_f = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'var', fname))
