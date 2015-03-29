@@ -223,7 +223,7 @@ zlib                                                               ALL  @@R:zlib
         for arch in self.known_archs:
             if pkgname.endswith(arch):
                 arch_specified = True
-        cmd = ['zypper', 'packages']
+        cmd = ['zypper', '--non-interactive', 'packages']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:

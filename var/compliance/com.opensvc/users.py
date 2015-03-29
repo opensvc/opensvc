@@ -192,6 +192,8 @@ class CompUser(object):
                 return RET_OK
             if target == "x":
                 return RET_OK
+            if self.sysname in ("AIX"):
+                return RET_OK
         cmd = ['usermod', self.usermod_p[item], str(target)]
         if item == 'home':
             cmd.append('-m')
