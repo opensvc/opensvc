@@ -1856,9 +1856,9 @@ class Svc(Resource, Scheduler):
         self.all_set_action("postsync")
 
     def remote_postsync(self):
-        """ run the remote exec of postsync async because the
-            waitlock timeout is long, and we ourselves still
-            hold the service lock we want to release early.
+        """ release the svc lock at this point because the
+            waitlock timeout is long and we are done touching
+            local data.
         """
         """ action triggered by a remote master node after
             syncnodes and syncdrp. Typically make use of files
@@ -1866,8 +1866,13 @@ class Svc(Resource, Scheduler):
             use a long waitlock timeout to give a chance to
             remote syncs to finish
         """
+        self.svcunlock()
+        if self.cron:
+            sync = False
+        else:
+            sync = True
         for n in self.need_postsync:
-            self.remote_action(n, 'postsync', waitlock=3600)
+            self.remote_action(n, 'postsync', waitlock=3600, sync=sync)
 
         self.need_postsync = set([])
 
