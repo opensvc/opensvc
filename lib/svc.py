@@ -1867,16 +1867,17 @@ class Svc(Resource, Scheduler):
             remote syncs to finish
         """
         self.svcunlock()
-        if self.cron:
-            sync = False
-        else:
-            sync = True
         for n in self.need_postsync:
             self.remote_action(n, 'postsync', waitlock=3600, sync=sync)
 
         self.need_postsync = set([])
 
     def remote_action(self, node, action, waitlock=60, sync=False):
+        if self.cron:
+            # the scheduler action runs forked. don't use the cmdworker
+            # in this context as it may hang
+            sync = True
+
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
 	if self.log.isEnabledFor(logging.DEBUG):
 	    rcmd += ['--debug']
