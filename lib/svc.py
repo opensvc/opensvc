@@ -1868,7 +1868,7 @@ class Svc(Resource, Scheduler):
         """
         self.svcunlock()
         for n in self.need_postsync:
-            self.remote_action(n, 'postsync', waitlock=3600, sync=sync)
+            self.remote_action(n, 'postsync', waitlock=3600)
 
         self.need_postsync = set([])
 
