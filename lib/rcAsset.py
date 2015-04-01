@@ -670,11 +670,11 @@ class Asset(object):
 
         if i == 0:
             last = datetime.datetime.now()
-
-        try:
-            last = datetime.datetime.now() - datetime.timedelta(days=int(l[i-1]))
-        except:
-            return
+        else:
+            try:
+                last = datetime.datetime.now() - datetime.timedelta(days=int(l[i-1]))
+            except:
+                return
 
         last = last.strftime("%Y-%m-%d")
         self.print_last_boot(last)
