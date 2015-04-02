@@ -130,6 +130,9 @@ class Mount(Res.Mount):
             ret = self.Mounts.has_mount(dev, self.mountPoint)
             if ret:
                 return True
+            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+            if ret:
+                return True
 
         if self.fsType not in self.netfs:
             try:
@@ -146,6 +149,9 @@ class Mount(Res.Mount):
                     ret = self.Mounts.has_mount(dev, self.mountPoint)
                     if ret:
                         return True
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+                    if ret:
+                        return True
             elif S_ISBLK(mode):
                 # might be a mount using a /dev/dm-<minor> name too
                 from rcUtilitiesLinux import major
@@ -153,6 +159,9 @@ class Mount(Res.Mount):
                 if os.major(st.st_rdev) == dm_major:
                     dev = '/dev/dm-' + str(os.minor(st.st_rdev))
                     ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    if ret:
+                        return True
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
                     if ret:
                         return True
 
