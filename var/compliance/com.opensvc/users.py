@@ -99,9 +99,18 @@ class CompUser(object):
         else:
             self.initial_passwd = False
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
+
+        if self.sysname == "FreeBSD":
+            self.useradd = ["pw", "useradd"]
+            self.usermod = ["pw", "usermod"]
+            self.userdel = ["pw", "userdel"]
+        else:
+            self.useradd = ["useradd"]
+            self.usermod = ["usermod"]
+            self.userdel = ["userdel"]
 
         self.users = {}
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
@@ -155,8 +164,8 @@ class CompUser(object):
                     self.users[user]["password"] = "x"
 
     def fixable(self):
-        if not which('usermod'):
-            print >>sys.stderr, "usermod program not found"
+        if not which(self.usermod[0]):
+            print >>sys.stderr, self.usermod[0], "program not found"
             return RET_ERR
         return RET_OK
 
@@ -194,10 +203,14 @@ class CompUser(object):
                 return RET_OK
             if self.sysname in ("AIX"):
                 return RET_OK
-        cmd = ['usermod', self.usermod_p[item], str(target)]
+        cmd = [] + self.usermod
+        if self.sysname == "FreeBSD":
+            cmd.append(user)
+        cmd += [self.usermod_p[item], str(target)]
         if item == 'home':
             cmd.append('-m')
-        cmd.append(user)
+        if self.sysname != "FreeBSD":
+            cmd.append(user)
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -376,7 +389,9 @@ class CompUser(object):
             return RET_ERR
 
     def create_user(self, user, props):
-        cmd = ['useradd']
+        cmd = [] + self.useradd
+        if self.sysname == "FreeBSD":
+            cmd += [user]
         for item in props:
             if item == "check_home":
                 continue
@@ -388,7 +403,8 @@ class CompUser(object):
             cmd = cmd + self.usermod_p[item].split() + [prop]
             if item == "home":
                 cmd.append("-m")
-        cmd += [user]
+        if self.sysname != "FreeBSD":
+            cmd += [user]
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -404,7 +420,7 @@ class CompUser(object):
         if user in blacklist:
             print >>sys.stderr, "delete", user, "... cowardly refusing"
             return RET_ERR
-        cmd = ['userdel', user]
+        cmd = self.userdel + [user]
         print list2cmdline(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
