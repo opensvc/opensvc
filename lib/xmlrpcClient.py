@@ -22,6 +22,12 @@ import socket
 socket.setdefaulttimeout(180)
 
 try:
+    import ssl
+    context = ssl._create_unverified_context()
+except:
+    context = None
+
+try:
     import xmlrpclib
 except ImportError:
     import xmlrpc.client as xmlrpclib
@@ -229,9 +235,10 @@ class Collector(object):
         self.log.debug("get dbopensvc method list")
         try:
             if self.proxy is None:
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, context=context)
             self.proxy_methods = self.proxy.system.listMethods()
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
@@ -243,9 +250,10 @@ class Collector(object):
         self.log.debug("get dbcompliance method list")
         try:
             if self.comp_proxy is None:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance, context=context)
             self.comp_proxy_methods = self.comp_proxy.system.listMethods()
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
@@ -277,14 +285,14 @@ class Collector(object):
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
 
         try:
-            self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, context=context)
             self.get_methods_dbopensvc()
         except:
             self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
 
         if fn in self.comp_fns:
             try:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance, context=context)
                 self.get_methods_dbcompliance()
             except:
                 self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
