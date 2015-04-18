@@ -1306,7 +1306,7 @@ class Svc(Resource, Scheduler):
         self.master_startip()
         self.master_startfs()
         self.master_startshare()
-        self.startcontainer()
+        self.master_startcontainer()
         self.master_startapp()
         self.slave_start()
 
@@ -1709,13 +1709,17 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("fs", "rollback", xtags=set(['zone']))
         self.rollbackdisk()
 
+    def startcontainer(self):
+        self.abort_start()
+        self.master_startcontainer()
+
     @_master_action
-    def startstandbycontainer(self):
+    def master_startstandbycontainer(self):
         self.sub_set_action("container", "startstandby")
         self.refresh_ip_status()
 
     @_master_action
-    def startcontainer(self):
+    def master_startcontainer(self):
         self.sub_set_action("container", "start")
         self.refresh_ip_status()
 
@@ -1832,7 +1836,7 @@ class Svc(Resource, Scheduler):
         self.master_startstandbyip()
         self.master_startstandbyfs()
         self.master_startstandbyshare()
-        self.startstandbycontainer()
+        self.master_startstandbycontainer()
         self.master_startstandbyapp()
 
     @_slave_action
