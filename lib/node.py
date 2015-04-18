@@ -461,10 +461,10 @@ class Node(Svc, Freezer, Scheduler):
             start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
             now = datetime.datetime.now()
             delta = now - start
-            interval = delta.days * 1440 + delta.seconds // 60
+            interval = delta.days * 1440 + delta.seconds // 60 + 10
             #print("push stats for the last %d minutes since last push" % interval)
         except Exception as e:
-            interval = 1440
+            interval = 1450
             #print("can not determine last push date. push stats for the last %d minutes" % interval)
         if interval < 21:
             interval = 21
