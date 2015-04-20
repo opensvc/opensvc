@@ -37,6 +37,13 @@ try:
 except ImportError:
     import http.client as httplib
 
+def get_proxy(uri):
+    try:
+        return xmlrpclib.ServerProxy(uri, context=context)
+    except Exception as e:
+        if "__init__" in str(e):
+            return xmlrpclib.ServerProxy(uri)
+
 from datetime import datetime, timedelta
 import os
 import sys
@@ -235,11 +242,11 @@ class Collector(object):
         self.log.debug("get dbopensvc method list")
         try:
             if self.proxy is None:
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, context=context)
+                self.proxy = get_proxy(rcEnv.dbopensvc)
             self.proxy_methods = self.proxy.system.listMethods()
         except Exception as e:
             self.log.error(str(e))
-            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+            self.proxy = get_proxy("https://127.0.0.1/")
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
 
@@ -250,11 +257,11 @@ class Collector(object):
         self.log.debug("get dbcompliance method list")
         try:
             if self.comp_proxy is None:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance, context=context)
+                self.comp_proxy = get_proxy(rcEnv.dbcompliance)
             self.comp_proxy_methods = self.comp_proxy.system.listMethods()
         except Exception as e:
             self.log.error(str(e))
-            self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+            self.comp_proxy = get_proxy("https://127.0.0.1/")
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
@@ -281,21 +288,23 @@ class Collector(object):
             if len(a) == 0:
                 raise Exception
             dbcompliance_ip = a[0][-1][0]
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
 
         try:
-            self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc, context=context)
+            self.proxy = get_proxy(rcEnv.dbopensvc)
             self.get_methods_dbopensvc()
-        except:
-            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        except Exception as e:
+            self.log.error(str(e))
+            self.proxy = get_proxy("https://127.0.0.1/")
 
         if fn in self.comp_fns:
             try:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance, context=context)
+                self.comp_proxy = get_proxy(rcEnv.dbcompliance)
                 self.get_methods_dbcompliance()
             except:
-                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+                self.comp_proxy = get_proxy("https://127.0.0.1/")
 
         self.log.info("feed proxy %s"%str(self.proxy))
         self.log.info("compliance proxy %s"%str(self.comp_proxy))
