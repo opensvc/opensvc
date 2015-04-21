@@ -93,7 +93,7 @@ class Mount(Res.Resource):
             # bind mounts are in this case
             return
         if self.fsType not in self.fsck_h:
-            self.log.info("fsck not implemented for %s"%self.fsType)
+            self.log.debug("no fsck method for %s"%self.fsType)
             return
         bin = self.fsck_h[self.fsType]['bin']
         if which(bin) is None:
