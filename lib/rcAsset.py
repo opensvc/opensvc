@@ -19,6 +19,7 @@ from rcGlobalEnv import rcEnv
 import os
 from subprocess import *
 import datetime
+from rcUtilities import try_decode
 
 class Asset(object):
     s_config = "node configuration file"
@@ -351,6 +352,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'environment')
+            s = try_decode(s)
             source = self.s_config
         except:
             pass

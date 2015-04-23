@@ -317,6 +317,13 @@ def cmdline2list(cmdline):
 
     return result
 
+def try_decode(string, codecs=['utf8', 'latin1']):
+    for i in codecs:
+        try:
+            return string.decode(i)
+        except:
+            pass
+    return string
 
 if __name__ == "__main__":
     print("call(('id','-a'))")
