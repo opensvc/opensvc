@@ -76,6 +76,8 @@ def devs_to_disks(self, devs=set([])):
     """
     disks = set()
     dm_major = major('device-mapper')
+    try: md_major = major('md')
+    except: md_major = 0
     try: lo_major = major('loop')
     except: lo_major = 0
     for dev in devs:
@@ -84,7 +86,11 @@ def devs_to_disks(self, devs=set([])):
         except:
             self.log.error("can not stat %s" % dev)
             raise
-        if os.major(statinfo.st_rdev) == dm_major:
+        if md_major != 0 and os.major(statinfo.st_rdev) == md_major:
+            md = dev.replace("/dev/", "")
+            syspath = '/sys/block/' + md + '/slaves'
+            disks |= get_blockdev_sd_slaves(syspath)
+        elif os.major(statinfo.st_rdev) == dm_major:
             dm = 'dm-' + str(os.minor(statinfo.st_rdev))
             syspath = '/sys/block/' + dm + '/slaves'
             disks |= get_blockdev_sd_slaves(syspath)

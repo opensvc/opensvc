@@ -1350,7 +1350,7 @@ class KeywordVgType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados'],
+                  candidates=['veritas', 'raw', 'rados', 'md'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -1389,6 +1389,16 @@ class KeywordVgOptions(Keyword):
                   required=False,
                   provisioning=True,
                   text="The vgcreate options to use upon vg provisioning."
+                )
+
+class KeywordVgMdUuid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="uuid",
+                  rtype="md",
+                  text="The md uuid to use with mdadm assemble commands"
                 )
 
 class KeywordVgClientId(Keyword):
@@ -2642,6 +2652,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgVgname()
         self += KeywordVgDsf()
         self += KeywordVgImages()
+        self += KeywordVgMdUuid()
         self += KeywordVgClientId()
         self += KeywordVgKeyring()
         self += KeywordVgLock()

@@ -404,6 +404,28 @@ def add_ip(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
+def add_md(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['uuid'] = conf_get_string(svc, conf, s, 'uuid')
+    except ex.OptNotFound:
+        svc.log.error("uuid must be set in section %s"%s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+    mod = __import__('resVgMdLinux')
+    r = mod.Md(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_drbd(svc, conf, s):
     """Parse the configuration file and add a drbd object for each [drbd#n]
     section. Drbd objects are stored in a list in the service object.
@@ -592,17 +614,21 @@ def add_vg(svc, conf, s):
 
     try:
         vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
-        if len(vgtype) > 2:
+        if len(vgtype) >= 2:
             vgtype = vgtype[0].upper() + vgtype[1:].lower()
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
 
     try:
         vgtype = conf_get_string_scope(svc, conf, s, 'type')
-        if len(vgtype) > 2:
+        if len(vgtype) >= 2:
             vgtype = vgtype[0].upper() + vgtype[1:].lower()
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
+
+    if vgtype == 'Md':
+        add_md(svc, conf,s)
+        return
 
     if vgtype == 'Rados':
         vgtype += rcEnv.sysname

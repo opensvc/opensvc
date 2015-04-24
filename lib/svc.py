@@ -110,6 +110,7 @@ class Svc(Resource, Scheduler):
                              "disk.vg",
                              "disk.lv",
                              "disk.zpool",
+                             "disk.md",
                              "share.nfs",
                              "fs",
                              "ip",
@@ -1529,10 +1530,12 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
+        self.sub_set_action("disk.md", "startstandby", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
         self.sub_set_action("disk.lock", "startstandby")
         self.sub_set_action("disk.vg", "startstandby")
         self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
+        self.sub_set_action("disk.md", "startstandby", tags=set(['postvg']))
 
     @_master_action
     def master_startdisk(self):
@@ -1547,10 +1550,12 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("disk.gandi", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
         self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
+        self.sub_set_action("disk.md", "start", tags=set(['prevg']))
         self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
         self.sub_set_action("disk.lock", "start")
         self.sub_set_action("disk.vg", "start")
         self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
+        self.sub_set_action("disk.md", "start", tags=set(['postvg']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -1562,10 +1567,12 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_stopdisk(self):
+        self.sub_set_action("disk.md", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "stop")
         self.sub_set_action("disk.lock", "stop")
         self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
+        self.sub_set_action("disk.md", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "stop")
@@ -1573,20 +1580,24 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_shutdowndisk(self):
+        self.sub_set_action("disk.md", "shutdown", tags=set(['postvg']))
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "shutdown")
         self.sub_set_action("disk.lock", "shutdown")
         self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
+        self.sub_set_action("disk.md", "shutdown", tags=set(['prevg']))
         self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "shutdown")
         self.sub_set_action("disk.gandi", "shutdown")
 
     def rollbackdisk(self):
+        self.sub_set_action("disk.md", "rollback", tags=set(['postvg']))
         self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
         self.sub_set_action("disk.vg", "rollback")
         self.sub_set_action("disk.lock", "rollback")
         self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
+        self.sub_set_action("disk.md", "rollback", tags=set(['prevg']))
         self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.loop", "rollback")
