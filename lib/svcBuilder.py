@@ -641,8 +641,12 @@ def add_vg(svc, conf, s):
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
 
+    if vgtype == 'Drbd':
+        add_drbd(svc, conf, s)
+        return
+
     if vgtype == 'Md':
-        add_md(svc, conf,s)
+        add_md(svc, conf, s)
         return
 
     if vgtype == 'Rados':

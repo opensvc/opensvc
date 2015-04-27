@@ -1350,7 +1350,7 @@ class KeywordVgType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados', 'md'],
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -1574,7 +1574,8 @@ class KeywordDrbdScsireserv(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="drbd",
+                  section="vg",
+                  rtype="drbd",
                   keyword="scsireserv",
                   default=False,
                   candidates=(True, False),
@@ -1585,7 +1586,8 @@ class KeywordDrbdRes(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="drbd",
+                  section="vg",
+                  rtype="drbd",
                   keyword="res",
                   order=11,
                   text="The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
