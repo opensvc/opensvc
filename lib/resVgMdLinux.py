@@ -40,6 +40,7 @@ class Md(resDg.Dg):
                  subset=None):
         self.label = "md " + uuid
         self.uuid = uuid
+        self.shared = shared
         self.mdadm = "/sbin/mdadm"
         resDg.Dg.__init__(self,
                           rid=rid,
@@ -84,7 +85,7 @@ class Md(resDg.Dg):
         pass
 
     def down_state_alerts(self):
-        if not shared:
+        if not self.shared:
             return rcStatus.NA
         devnames = self.md_config_import()
         devnames = set([d for d in devnames if not d.startswith("md")])
@@ -102,14 +103,14 @@ class Md(resDg.Dg):
         return rcStatus.NA
 
     def presync(self):
-        if not shared:
+        if not self.shared:
             return
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "hb"]))
         if self.svc.force or s['overall'].status == rcStatus.UP:
             self.md_config_export()
 
     def files_to_sync(self):
-        if not shared:
+        if not self.shared:
             return []
         return [self.md_config_file_name()]
 
