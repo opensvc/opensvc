@@ -30,8 +30,8 @@ class Drbd(Res.Resource):
     """ Drbd device resource
 
         The tricky part is that drbd devices can be used as PV
-        and LV can be used as drbd base devices. Treat the ordering
-        with 'prevg' and 'postvg' tags.
+        and LV can be used as drbd base devices. Beware of the
+        the ordering deduced from rids and subsets.
 
         Start 'ups' and promotes the drbd devices to primary.
         Stop 'downs' the drbd devices.
@@ -60,8 +60,6 @@ class Drbd(Res.Resource):
         self.drbdadm = None
         self.always_on = always_on
         self.disks = set()
-        if 'prevg' not in self.tags and 'postvg' not in self.tags:
-            tags |= set(['postvg'])
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
