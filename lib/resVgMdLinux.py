@@ -30,6 +30,7 @@ class Md(resDg.Dg):
     def __init__(self,
                  rid=None,
                  uuid=None,
+                 shared=False,
                  optional=False,
                  disabled=False,
                  tags=set([]),
@@ -83,6 +84,8 @@ class Md(resDg.Dg):
         pass
 
     def down_state_alerts(self):
+        if not shared:
+            return rcStatus.NA
         devnames = self.md_config_import()
         devnames = set([d for d in devnames if not d.startswith("md")])
         if len(devnames) == 0:
@@ -99,11 +102,15 @@ class Md(resDg.Dg):
         return rcStatus.NA
 
     def presync(self):
+        if not shared:
+            return
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "hb"]))
         if self.svc.force or s['overall'].status == rcStatus.UP:
             self.md_config_export()
 
     def files_to_sync(self):
+        if not shared:
+            return []
         return [self.md_config_file_name()]
 
     def devpath(self):

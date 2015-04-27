@@ -408,10 +408,25 @@ def add_md(svc, conf, s):
     kwargs = {}
 
     try:
-        kwargs['uuid'] = conf_get_string(svc, conf, s, 'uuid')
+        kwargs['uuid'] = conf_get_string_scope(svc, conf, s, 'uuid')
     except ex.OptNotFound:
         svc.log.error("uuid must be set in section %s"%s)
         return
+
+    try:
+        kwargs['shared'] = conf_get_string_scope(svc, conf, s, 'shared')
+    except ex.OptNotFound:
+        if len(svc.nodes|svc.drpnodes) < 2:
+            kwargs['shared'] = False
+            svc.log.debug("md %s shared param defaults to %s due to single node configuration"%(s, kwargs['shared']))
+        else:
+            l = [ p for p in conf.options(s) if "@" in p ]
+            if len(l) > 0:
+                kwargs['shared'] = False
+                svc.log.debug("md %s shared param defaults to %s due to scoped configuration"%(s, kwargs['shared']))
+            else:
+                kwargs['shared'] = True
+                svc.log.debug("md %s shared param defaults to %s due to unscoped configuration"%(s, kwargs['shared']))
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)

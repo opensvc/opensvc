@@ -1396,9 +1396,23 @@ class KeywordVgMdUuid(Keyword):
         Keyword.__init__(
                   self,
                   section="vg",
+                  required=True,
+                  at=True,
                   keyword="uuid",
                   rtype="md",
                   text="The md uuid to use with mdadm assemble commands"
+                )
+
+class KeywordVgMdShared(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="vg",
+                  keyword="shared",
+                  candidates=(True, False),
+                  at=True,
+                  rtype="md",
+                  text="Trigger additional checks on the passive nodes. If not specified, the shared parameter defaults to True if no multiple nodes and drpnodes are defined and no md section parameter use scoping."
                 )
 
 class KeywordVgClientId(Keyword):
@@ -2653,6 +2667,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgDsf()
         self += KeywordVgImages()
         self += KeywordVgMdUuid()
+        self += KeywordVgMdShared()
         self += KeywordVgClientId()
         self += KeywordVgKeyring()
         self += KeywordVgLock()
