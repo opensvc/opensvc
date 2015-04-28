@@ -45,7 +45,7 @@ class Loop(Res.Resource):
                               restart=restart,
                               subset=subset)
         self.loopFile = loopFile
-        self.label = loopFile
+        self.label = "loop "+loopFile
         self.always_on = always_on
 
     def __str__(self):

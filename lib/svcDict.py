@@ -1346,11 +1346,11 @@ class KeywordVgType(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd'],
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -1358,7 +1358,7 @@ class KeywordVgRawDevs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   rtype="raw",
                   keyword="devs",
                   order=10,
@@ -1372,7 +1372,8 @@ class KeywordVgVgname(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="lvm",
                   keyword="vgname",
                   order=10,
                   required=True,
@@ -1383,7 +1384,8 @@ class KeywordVgOptions(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="lvm",
                   keyword="options",
                   default="",
                   required=False,
@@ -1395,7 +1397,7 @@ class KeywordVgMdUuid(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   required=True,
                   at=True,
                   keyword="uuid",
@@ -1407,7 +1409,7 @@ class KeywordVgMdShared(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="shared",
                   candidates=(True, False),
                   at=True,
@@ -1419,7 +1421,7 @@ class KeywordVgClientId(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="client_id",
                   rtype="rados",
                   text="Client id to use for authentication with the rados servers"
@@ -1429,7 +1431,7 @@ class KeywordVgKeyring(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="keyring",
                   required=False,
                   rtype="rados",
@@ -1440,7 +1442,7 @@ class KeywordVgLock(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="lock",
                   candidates=["exclusive", "shared", "None"],
                   rtype="rados",
@@ -1451,7 +1453,7 @@ class KeywordVgLockSharedTag(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="lock_shared_tag",
                   rtype="rados",
                   depends=[('lock', ['shared'])],
@@ -1462,10 +1464,10 @@ class KeywordVgImageFormat(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="rados",
                   keyword="image_format",
                   provisioning=True,
-                  rtype="rados",
                   default="2",
                   text="The rados image format"
                 )
@@ -1474,10 +1476,10 @@ class KeywordVgSize(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="rados",
                   keyword="size",
                   provisioning=True,
-                  rtype="rados",
                   text="The rados image size in MB"
                 )
 
@@ -1485,9 +1487,9 @@ class KeywordVgImages(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
-                  keyword="images",
+                  section="disk",
                   rtype="rados",
+                  keyword="images",
                   text="The rados image names handled by this vg resource. whitespace separated."
                 )
 
@@ -1495,7 +1497,8 @@ class KeywordVgDsf(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="lvm",
                   keyword="dsf",
                   candidates=(True, False),
                   default=True,
@@ -1506,7 +1509,7 @@ class KeywordVgScsireserv(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   keyword="scsireserv",
                   default=False,
                   candidates=(True, False),
@@ -1517,7 +1520,8 @@ class KeywordVgPvs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
+                  rtype="lvm",
                   keyword="pvs",
                   required=True,
                   text="The list of paths to the physical volumes of the volume group.",
@@ -1528,7 +1532,8 @@ class KeywordPoolPoolname(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="pool",
+                  section="disk",
+                  rtype="pool",
                   keyword="poolname",
                   order=10,
                   at=True,
@@ -1539,54 +1544,19 @@ class KeywordVmdgContainerid(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vmdg",
+                  section="disk",
+                  rtype="vmdg",
                   keyword="container_id",
                   at=True,
                   required=False,
                   text="The id of the container whose configuration to extract the disk mapping from."
                 )
 
-class KeywordVmdgContainerType(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="vmdg",
-                  keyword="type",
-                  at=True,
-                  required=False,
-                  candidates=["ldom"],
-                  default=None,
-                  text="The type of the container whose configuration to extract the disk mapping from."
-                )
-
-class KeywordVmdgScsireserv(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="vmdg",
-                  keyword="scsireserv",
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-
-class KeywordDrbdScsireserv(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="vg",
-                  rtype="drbd",
-                  keyword="scsireserv",
-                  default=False,
-                  candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
-                )
-
 class KeywordDrbdRes(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vg",
+                  section="disk",
                   rtype="drbd",
                   keyword="res",
                   order=11,
@@ -1723,7 +1693,8 @@ class KeywordLoopSize(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="loop",
+                  section="disk",
+                  rtype="loop",
                   keyword="size",
                   required=True,
                   default=10,
@@ -1735,7 +1706,8 @@ class KeywordLoopFile(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="loop",
+                  section="disk",
+                  rtype="loop",
                   keyword="file",
                   required=True,
                   text="The file hosting the disk image to map."
@@ -2156,7 +2128,8 @@ class KeywordVdiskPath(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="vdisk",
+                  section="disk",
+                  rtype="vdisk",
                   keyword="path",
                   required=True,
                   at=True,
@@ -2581,9 +2554,7 @@ class KeyDict(KeywordStore):
                   text="A script to execute after the resource syncresync action"
                 )
 
-        for r in ["sync", "ip", "fs", "vg", "hb", "pool", "vmdg", "drbd",
-                  "loop", "disk", "share", "vdisk", "container", "pool",
-                  "app"]:
+        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
@@ -2680,10 +2651,7 @@ class KeyDict(KeywordStore):
         self += KeywordVgScsireserv()
         self += KeywordVgPvs()
         self += KeywordPoolPoolname()
-        self += KeywordVmdgScsireserv()
         self += KeywordVmdgContainerid()
-        self += KeywordVmdgContainerType()
-        self += KeywordDrbdScsireserv()
         self += KeywordDrbdRes()
         self += KeywordFsType()
         self += KeywordFsDev()

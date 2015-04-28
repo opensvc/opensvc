@@ -49,6 +49,7 @@ class Vdisk(Res.Resource):
                               monitor=monitor,
                               restart=restart,
                               subset=subset)
+        self.label = "vdisk "+name
         self.name = name
         self.always_on = always_on
         self.disks = set()

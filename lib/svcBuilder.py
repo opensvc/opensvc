@@ -621,18 +621,14 @@ def add_loop(svc, conf, s):
     svc += r
 
 def add_vg(svc, conf, s):
+    return add_disk(svc, conf, s)
+
+def add_disk(svc, conf, s):
     """Parse the configuration file and add a vg object for each [vg#n]
     section. Vg objects are stored in a list in the service object.
     """
     kwargs = {}
     lock = None
-
-    try:
-        vgtype = conf_get_string_scope(svc, conf, s, 'vgtype')
-        if len(vgtype) >= 2:
-            vgtype = vgtype[0].upper() + vgtype[1:].lower()
-    except ex.OptNotFound:
-        vgtype = rcEnv.sysname
 
     try:
         vgtype = conf_get_string_scope(svc, conf, s, 'type')
@@ -644,7 +640,18 @@ def add_vg(svc, conf, s):
     if vgtype == 'Drbd':
         add_drbd(svc, conf, s)
         return
-
+    if vgtype == 'Vdisk':
+        add_vdisk(svc, conf, s)
+        return
+    if vgtype == 'Vmdg':
+        add_vmdg(svc, conf, s)
+        return
+    if vgtype == 'Pool':
+        add_pool(svc, conf, s)
+        return
+    if vgtype == 'Loop':
+        add_loop(svc, conf, s)
+        return
     if vgtype == 'Md':
         add_md(svc, conf, s)
         return
@@ -716,23 +723,21 @@ def add_vg(svc, conf, s):
             kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
         except ex.OptNotFound:
             pass
-
-    try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
-    except ex.OptNotFound:
-        if not vgtype.startswith("Raw") and not vgtype.startswith("Rados") and vgtype != "Gandi":
+    elif vgtype == 'Lvm' or vgtype == rcEnv.sysname:
+        try:
+            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
+        except ex.OptNotFound:
             svc.log.error("vgname must be set in section %s"%s)
             return
-
-    try:
-        kwargs['dsf'] = conf_get_boolean_scope(svc, conf, s, 'dsf')
-    except ex.OptNotFound:
-        pass
-
-    try:
-        kwargs['devs'] = set(conf_get_string_scope(svc, conf, s, 'devs').split())
-    except ex.OptNotFound:
-        if vgtype == "Raw":
+        try:
+            kwargs['dsf'] = conf_get_boolean_scope(svc, conf, s, 'dsf')
+        except ex.OptNotFound:
+            pass
+        vgtype = rcEnv.sysname
+    elif vgtype == 'Raw':
+        try:
+            kwargs['devs'] = set(conf_get_string_scope(svc, conf, s, 'devs').split())
+        except ex.OptNotFound:
             svc.log.error("devs must be set in section %s"%s)
             return
 
@@ -2792,15 +2797,19 @@ def build(name):
         add_resources('hb', svc, conf)
         add_resources('stonith', svc, conf)
         add_resources('ip', svc, conf)
-        add_resources('drbd', svc, conf)
-        add_resources('loop', svc, conf)
-        add_resources('vdisk', svc, conf)
-        add_resources('vg', svc, conf)
-        add_resources('vmdg', svc, conf)
-        add_resources('pool', svc, conf)
+        add_resources('disk', svc, conf)
         add_resources('fs', svc, conf)
         add_resources('share', svc, conf)
         add_resources('app', svc, conf)
+
+        # deprecated, folded into "disk"
+        add_resources('vdisk', svc, conf)
+        add_resources('vmdg', svc, conf)
+        add_resources('loop', svc, conf)
+        add_resources('drbd', svc, conf)
+        add_resources('vg', svc, conf)
+        add_resources('pool', svc, conf)
+
         add_apps_sysv(svc, conf)
         add_syncs(svc, conf)
     except (ex.excInitError, ex.excError) as e:

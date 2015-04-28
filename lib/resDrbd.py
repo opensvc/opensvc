@@ -56,7 +56,7 @@ class Drbd(Res.Resource):
                               monitor=monitor,
                               restart=restart)
         self.res = res
-        self.label = res
+        self.label = "drbd "+res
         self.drbdadm = None
         self.always_on = always_on
         self.disks = set()

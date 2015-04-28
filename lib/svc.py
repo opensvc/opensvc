@@ -215,6 +215,7 @@ class Svc(Resource, Scheduler):
             rset.purge_status_last()
 
     def get_subset_parallel(self, rtype):
+        rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
         if not hasattr(self, "config"):
             self.load_config()
@@ -233,15 +234,17 @@ class Svc(Resource, Scheduler):
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
             # triggers
-            rtype = "%s:%s" % (r.type, r.subset)
+            base_type = r.type.split(".")[0]
+            rtype = "%s:%s" % (base_type, r.subset)
         else:
             rtype = r.type
 
         if rtype in self.type2resSets:
+            # the resource set already exists. add resource or resourceset.
             self.type2resSets[rtype] += r
 
         elif hasattr(r, 'resources'):
-            # this is a ResourceSet or ResourceSet-derived class
+            # new ResourceSet or ResourceSet-derived class
             self.resSets.append(r)
             self.type2resSets[rtype] = r
 
@@ -379,26 +382,26 @@ class Svc(Resource, Scheduler):
              l = [_type]
          else:
              l = _type
-         rsets = []
-         for t in l:
-             for rs in self.resSets:
-                 if ':' in rs.type:
-                     # remove subset suffix
-                     rstype = rs.type[:rs.type.index(':')]
+         rsets = {}
+         for rs in self.resSets:
+             if ':' in rs.type and rs.has_resource_with_types(l):
+                 # subset
+                 rsets[rs.type] = rs
+                 continue
+             rs_base_type = rs.type.split(".")[0]
+             if rs.type in l:
+                 # exact match
+                 if rs_base_type in rsets:
+                     rsets[rs_base_type] += rs
                  else:
-                     rstype = rs.type
-                 if '.' in t:
-                     # exact match
-                     if rstype == t:
-                         rsets.append(rs)
-                 elif '.' in rstype and not strict:
-                     # group match
-                     _t = rstype.split('.')
-                     if _t[0] == t:
-                         rsets.append(rs)
+                     rsets[rs_base_type] = rs
+             elif rs_base_type in l and not strict:
+                 # group match
+                 if rs_base_type in rsets:
+                     rsets[rs_base_type] += rs
                  else:
-                     if rstype == t:
-                         rsets.append(rs)
+                     rsets[rs_base_type] = rs
+         rsets = rsets.values()
          rsets.sort()
          return rsets
 
@@ -409,12 +412,10 @@ class Svc(Resource, Scheduler):
             return False
 
     def all_set_action(self, action=None, tags=set([])):
-        """Call action on each member of the subset of specified type
-        """
         self.set_action(self.resSets, action=action, tags=tags)
 
     def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        """Call action on each member of the subset of specified type
+        """ Call action on each member of the subset of specified type
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 

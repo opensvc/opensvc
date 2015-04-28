@@ -35,7 +35,7 @@ class Vg(resVg.Dg):
                  monitor=False,
                  restart=0,
                  subset=None):
-        self.label = name
+        self.label = "vmdg "+str(name)
         self.container_id = container_id
         resVg.Dg.__init__(self,
                           rid=rid,
