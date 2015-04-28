@@ -25,7 +25,7 @@ class CompPackages(object):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch', '*']
 
-        if self.sysname not in ['Linux', 'AIX', 'HP-UX', 'SunOS']:
+        if self.sysname not in ['Linux', 'AIX', 'HP-UX', 'SunOS', 'FreeBSD']:
             print >>sys.stderr, __file__, 'module not supported on', self.sysname
             raise NotApplicable()
 
@@ -76,6 +76,13 @@ class CompPackages(object):
             self.get_installed_packages = self.rpm_get_installed_packages
             self.pkg_add = self.zyp_fix_pkg
             self.pkg_del = self.zyp_del_pkg
+        elif vendor == "FreeBSD":
+            if which("pkg") is None:
+                print >>sys.stderr, "package manager not found (pkg)"
+                raise ComplianceError()
+            self.get_installed_packages = self.freebsd_pkg_get_installed_packages
+            self.pkg_add = self.freebsd_pkg_fix_pkg
+            self.pkg_del = self.freebsd_pkg_del_pkg
         elif vendor in ['IBM']:
             self.get_installed_packages = self.aix_get_installed_packages
             self.pkg_add = self.aix_fix_pkg
@@ -605,6 +612,23 @@ zlib                                                               ALL  @@R:zlib
             pkgs.append(pkgname)
         return pkgs
 
+    def freebsd_pkg_get_installed_packages(self):
+        p = Popen(['pkg', 'info'], stdout=PIPE)
+        (out, err) = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, 'can not fetch installed packages list'
+            return []
+        l = []
+        for line in out.split('\n'):
+            try:
+                i = line.index(" ")
+                line = line[:i]
+                i = line.rindex("-")
+                l.append(line[:i])
+            except ValueError:
+                pass
+        return l
+
     def rpm_get_installed_packages(self):
         p = Popen(['rpm', '-qa', '--qf', '%{NAME}.%{ARCH}\n'], stdout=PIPE)
         (out, err) = p.communicate()
@@ -627,6 +651,28 @@ zlib                                                               ALL  @@R:zlib
             pkgname = pkgname.split(':')[0]
             l.append(pkgname)
         return l
+
+    def freebsd_pkg_del_pkg(self, pkg):
+        cmd = ['pkg', 'remove', '-y', pkg]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            if len(err) > 0:
+                print err
+            return RET_ERR
+        return RET_OK
+
+    def freebsd_pkg_fix_pkg(self, pkg):
+        cmd = ['pkg', 'install', '-y', pkg]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            if len(err) > 0:
+                print err
+            return RET_ERR
+        return RET_OK
 
     def zyp_del_pkg(self, pkg):
         cmd = ['zypper', 'remove', '-y', pkg]

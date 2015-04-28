@@ -1,24 +1,83 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_AUTHKEY_... vars
-which define
-{
- "action": "add",                # optional, defaults to "add"
- "authfile": "authorized_keys",  # optional, defaults to "authorized_keys2"
- "user": "foo",                  # mandatory
- "key": "XXXX..."                # mandatory
-}
-where:
-- user: the username the key authorize to log as
-- key: a single pub key to authorize
+
+data = {
+  "default_prefix": "OSVC_COMP_AUTHKEY_",
+  "example_value": """ 
+    {
+      "action": "add",
+      "authfile": "authorized_keys",
+      "user": "testuser",
+      "key": "ssh-dss AAAAB3NzaC1kc3MAAACBAPiO1jlT+5yrdPLfQ7sYF52NkfCEzT0AUUNIl+14Sbkubqe+TcU7U3taUtiDJ5YOGOzIVFIDGGtwD0AqNHQbvsiS1ywtC5BJ9362FlrpVH4o1nVZPvMxRzz5hgh3HjxqIWqwZDx29qO8Rg1/g1Gm3QYCxqPFn2a5f2AUiYqc1wtxAAAAFQC49iboZGNqssicwUrX6TUrT9H0HQAAAIBo5dNRmTF+Vd/+PI0JUOIzPJiHNKK9rnySlaxSDml9hH2LuDSjYz7BWuNP8UnPOa2pcFA4meDp5u8d5dGOWxkuYO0bLnXwDZuHtDW/ySytjwEaBLPxoqRBAyfyQNlusGsuiqDYRA7j7bS0RxINBxvDw79KdyQhuOn8/lKVG+sjrQAAAIEAoShly/JlGLQxQzPyWADV5RFlaRSPaPvFzcYT3hS+glkVd6yrCbzc30Yc8Ndu4cflQiXSZzRoUMgsy5PzuiH1M8JjwHTGNl8r9OfJpnN/OaAhMpIyA06y1ZZD9iEME3UmthFQoZnfRuE3yxi7bqyXJU4rOq04iyCTpU1UKInPdXQ= testuser"
+    }
+  """,
+  "description": """* Installs or removes ssh public keys from authorized_key files
+* Looks up the authorized_key and authorized_key2 file location in the running sshd daemon configuration.
+* Add user to sshd_config AllowUser and AllowGroup if used
+* Reload sshd if sshd_config has been changed
+""",
+  "form_definition": """
+Desc: |
+  Describe a list of ssh public keys to authorize login as the specified Unix user.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: dict
+    Class: authkey
+
+Inputs:
+  -
+    Id: action
+    Label: Action
+    DisplayModeLabel: action
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Candidates:
+      - add
+      - del
+    Help: Defines wether the public key must be installed or uninstalled.
+
+  -
+    Id: user
+    Label: User
+    DisplayModeLabel: user
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: string
+    Help: Defines the Unix user name who will accept those ssh public keys.
+
+  -
+    Id: key
+    Label: Public key
+    DisplayModeLabel: key
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: text
+    DisplayModeTrim: 60
+    Help: The ssh public key as seen in authorized_keys files.
+
+  -
+    Id: authfile
+    Label: Authorized keys file name
+    DisplayModeLabel: authfile
+    LabelCss: hd16
+    Mandatory: Yes
+    Candidates:
+      - authorized_keys
+      - authorized_keys2
+    Default: authorized_keys2
+    Type: string
+    Help: The authorized_keys file to write the keys into.
 """
+}
 
 import os
 import sys
-import json
 import pwd, grp
 import codecs
-import re
 import datetime
 import shutil
 from subprocess import *
@@ -27,55 +86,22 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompAuthKeys(object):
-    def __init__(self, prefix='OSVC_COMP_AUTHKEY_', authfile="authorized_keys2"):
-        self.prefix = prefix.upper()
-        self.authkeys = []
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            s = self.subst(os.environ[k])
-            try:
-                self.authkeys += [json.loads(s)]
-            except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to authkey list'
+class CompAuthKeys(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
 
-        if len(self.authkeys) == 0:
-            raise NotApplicable()
+    def init(self):
+        self.authkeys = self.get_rules()
 
         for ak in self.authkeys:
             ak['key'] = ak['key'].replace('\n', '')
 
         self.installed_keys_d = {}
-        if authfile not in ("authorized_keys", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_keys or authorized_keys2)"
-            raise NotApplicable()
-        self.authfile = authfile
-
+        self.default_authfile = "authorized_keys2"
         self.allowusers_check_done = []
         self.allowusers_fix_todo = []
         self.allowgroups_check_done = []
         self.allowgroups_fix_todo = []
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
 
     def sanitize(self, ak):
         if 'user' not in ak:
@@ -87,10 +113,10 @@ class CompAuthKeys(object):
         if 'action' not in ak:
             ak['action'] = 'add'
         if 'authfile' not in ak:
-            ak['authfile'] = self.authfile
+            ak['authfile'] = self.default_authfile
         if ak['authfile'] not in ("authorized_keys", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.authfile+")"
-            ak['authfile'] = self.authfile
+            print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.default_authfile+")"
+            ak['authfile'] = self.default_authfile
         for key in ('user', 'key', 'action', 'authfile'):
             ak[key] = ak[key].strip()
         return ak
@@ -500,30 +526,5 @@ class CompAuthKeys(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompAuthKeys(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompAuthKeys)
 
