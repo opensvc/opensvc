@@ -116,7 +116,8 @@ def call(argv=['/bin/false'],
                            #        depending on err_to_warn and
                            #        err_to_info value
          err_to_warn=False,
-         err_to_info=False):
+         err_to_info=False,
+         warn_to_info=False):
     "return(ret, stdout,stderr)"
     if log is None:
         log = logging.getLogger('CALL')
@@ -163,6 +164,8 @@ def call(argv=['/bin/false'],
         elif errlog:
             if ret != 0:
                 log.error('stderr:\n' + buff[1])
+            elif warn_to_info:
+                log.info('command succesful but stderr:\n' + buff[1])
             else:
                 log.warning('command succesful but stderr:\n' + buff[1])
         elif errdebug:
@@ -193,13 +196,15 @@ def qcall(argv=['/bin/false']) :
 def vcall(argv=['/bin/false'],
           log=None,
           err_to_warn=False,
-          err_to_info=False ):
+          err_to_info=False,
+          warn_to_info=False):
     return call(argv,
                 log=log,
                 info=True,
                 outlog=True,
                 err_to_warn=err_to_warn,
-                err_to_info=err_to_info)
+                err_to_info=err_to_info,
+                warn_to_info=warn_to_info)
 
 def getmount(path):
     path = os.path.abspath(path)

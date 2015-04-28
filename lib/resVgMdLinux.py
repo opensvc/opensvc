@@ -27,6 +27,8 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
 from rcUtilities import which, justcall
 
 class Md(resDg.Dg):
+    startup_timeout = 10
+
     def __init__(self,
                  rid=None,
                  uuid=None,
@@ -53,6 +55,13 @@ class Md(resDg.Dg):
                           monitor=monitor,
                           restart=restart,
                           subset=subset)
+
+    def wait_for_fn(self, fn, tmo, delay): 
+        for tick in range(tmo//2): 
+            if fn(): 
+                return 
+            time.sleep(delay) 
+        raise ex.excError("waited too long for devpath creation") 
 
     def md_config_file_name(self):
         return os.path.join(rcEnv.pathvar, 'md_' + self.md_devname() + '.disklist')
@@ -127,13 +136,14 @@ class Md(resDg.Dg):
 
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.md_devpath(), "-u", self.uuid]
-        ret, out, err = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError 
+        self.wait_for_fn(self.has_it, self.startup_timeout, 1)
 
     def manage_stop(self):
         cmd = [self.mdadm, "--manage", self.devpath(), "--stop"]
-        ret, out, err = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError 
 

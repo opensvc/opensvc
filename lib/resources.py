@@ -82,7 +82,7 @@ class Resource(object):
             s += rid
             return s
 
-        s += "%s:%s#%s" % (self.type, self.subset, v[1])
+        s += "%s:%s#%s" % (self.type.split(".")[0], self.subset, v[1])
         return s
        
     def __str__(self):
@@ -410,7 +410,7 @@ class Resource(object):
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
-             outlog=False):
+             warn_to_info=False, outlog=False):
         """Use subprocess module functions to do a call
         """
         return rcUtilities.call(cmd, log=self.log,
@@ -418,15 +418,18 @@ class Resource(object):
                                 info=info, errlog=errlog,
                                 err_to_warn=err_to_warn,
                                 err_to_info=err_to_info,
+                                warn_to_info=warn_to_info,
                                 outlog=outlog)
 
-    def vcall(self, cmd, err_to_warn=False, err_to_info=False):
+    def vcall(self, cmd, err_to_warn=False, err_to_info=False,
+              warn_to_info=False):
         """Use subprocess module functions to do a call and
         log the command line using the resource logger
         """
         return rcUtilities.vcall(cmd, log=self.log,
                                  err_to_warn=err_to_warn,
-                                 err_to_info=err_to_info)
+                                 err_to_info=err_to_info,
+                                 warn_to_info=warn_to_info)
 
     def devlist(self):
         return self.disklist()
@@ -557,6 +560,12 @@ class ResourceSet(Resource):
             return True
         for tag in rtags:
             if tag in keeptags:
+                return True
+        return False
+
+    def has_resource_with_types(self, l):
+        for r in self.resources:
+            if r.type in l:
                 return True
         return False
 
