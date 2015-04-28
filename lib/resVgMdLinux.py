@@ -18,6 +18,7 @@
 #
 import re
 import os
+import time
 import rcExceptions as ex
 import resDg
 import rcStatus
@@ -128,6 +129,7 @@ class Md(resDg.Dg):
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.md_devpath(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd)
+        time.sleep(1)
         if ret != 0:
             raise ex.excError 
 
