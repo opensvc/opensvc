@@ -88,6 +88,8 @@ class Svc(Resource, Scheduler):
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.disk_types = [
          "disk.loop",
+         "disk.raw",
+         "disk.rados",
          "disk.gandi",
          "disk.drbd",
          "disk.md",
@@ -114,6 +116,8 @@ class Svc(Resource, Scheduler):
                              "disk.drbd",
                              "disk.loop",
                              "disk.gandi",
+                             "disk.raw",
+                             "disk.rados",
                              "disk.scsireserv",
                              "disk.lock",
                              "disk.vg",
@@ -391,16 +395,14 @@ class Svc(Resource, Scheduler):
              rs_base_type = rs.type.split(".")[0]
              if rs.type in l:
                  # exact match
-                 if rs_base_type in rsets:
-                     rsets[rs_base_type] += rs
-                 else:
-                     rsets[rs_base_type] = rs
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                 rsets[rs_base_type] += rs
              elif rs_base_type in l and not strict:
                  # group match
-                 if rs_base_type in rsets:
-                     rsets[rs_base_type] += rs
-                 else:
-                     rsets[rs_base_type] = rs
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                 rsets[rs_base_type] += rs
          rsets = rsets.values()
          rsets.sort()
          return rsets
