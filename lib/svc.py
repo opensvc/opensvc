@@ -1204,6 +1204,8 @@ class Svc(Resource, Scheduler):
         """
         disks = set()
         for r in self.get_resources():
+            if r.skip:
+                continue
             disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
@@ -1218,6 +1220,8 @@ class Svc(Resource, Scheduler):
         """
         devs = set()
         for r in self.get_resources():
+            if r.skip:
+                continue
             devs |= r.devlist()
         self.log.debug("found devs %s held by service" % devs)
         return devs
