@@ -780,6 +780,24 @@ def add_vg_compat(svc, conf, s):
     except ex.OptNotFound:
         vgtype = rcEnv.sysname
 
+    if vgtype == 'Drbd':
+        add_drbd(svc, conf, s)
+        return
+    if vgtype == 'Vdisk':
+        add_vdisk(svc, conf, s)
+        return
+    if vgtype == 'Vmdg':
+        add_vmdg(svc, conf, s)
+        return
+    if vgtype == 'Pool':
+        add_pool(svc, conf, s)
+        return
+    if vgtype == 'Loop':
+        add_loop(svc, conf, s)
+        return
+    if vgtype == 'Md':
+        add_md(svc, conf, s)
+        return
     if vgtype == 'Rados':
         add_rados(svc, conf, s)
         return
