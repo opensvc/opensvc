@@ -397,11 +397,13 @@ class Svc(Resource, Scheduler):
                  # exact match
                  if rs_base_type not in rsets:
                      rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
                  rsets[rs_base_type] += rs
              elif rs_base_type in l and not strict:
                  # group match
                  if rs_base_type not in rsets:
                      rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
                  rsets[rs_base_type] += rs
          rsets = rsets.values()
          rsets.sort()
