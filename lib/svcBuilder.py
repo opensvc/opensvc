@@ -442,6 +442,7 @@ def add_md(svc, conf, s):
     r = mod.Md(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
+    add_scsireserv(svc, r, conf, s)
 
 def add_drbd(svc, conf, s):
     """Parse the configuration file and add a drbd object for each [drbd#n]
