@@ -506,12 +506,6 @@ class ResourceSet(Resource):
             """
             r.rset = self
             self.resources.append(r)
-            if hasattr(r, 'pre_action'):
-                r.log.debug("install pre_action")
-                self.pre_action = r.pre_action
-            if hasattr(r, 'post_action'):
-                r.log.debug("install post_action")
-                self.post_action = r.post_action
             if hasattr(r, 'sort_rset'):
                 r.sort_rset(self)
         return (self)
@@ -523,10 +517,28 @@ class ResourceSet(Resource):
         return "%s]" % (output)
 
     def pre_action(self, rset=None, action=None):
-        pass
+        if len(self.resources) == 0:
+            return
+        types_done = []
+        for r in self.resources:
+            if r.type in types_done:
+                continue
+            types_done.append(r.type)
+            if not hasattr(r, "pre_action"):
+                continue
+            r.pre_action(self, action)
 
     def post_action(self, rset=None, action=None):
-        pass
+        if len(self.resources) == 0:
+            return
+        types_done = []
+        for r in self.resources:
+            if r.type in types_done:
+                continue
+            types_done.append(r.type)
+            if not hasattr(r, "post_action"):
+                continue
+            r.post_action(self, action)
 
     def purge_status_last(self):
         for r in self.resources:
