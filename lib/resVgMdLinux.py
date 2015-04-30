@@ -210,7 +210,40 @@ class Md(resDg.Dg):
         if self.devs != set():
             return self.devs
 
-        self.devs = set()
+        devpath = self.devpath()
+        if os.path.exists(devpath):
+            self.devs = self.devlist_active()
+        else:
+            self.devs = self.devlist_inactive()
+        return self.devs
+            
+    def devlist_inactive(self):
+        devs = set()
+
+        cmd = [self.mdadm, "-E", "--scan", "-v"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return devs
+        lines = out.split("\n")
+
+        if len(lines) < 2:
+            return set()
+        inblock = False
+        for line in lines:
+            if "UUID="+self.uuid in line:
+                inblock = True
+                continue
+            if inblock and "devices=" in line:
+                l = line.split("devices=")[-1].split(",")
+                l = map(lambda x: os.path.realpath(x), l)
+                devs |= set(l)
+                break
+
+        self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
+        return devs
+
+    def devlist_active(self):
+        devs = set()
 
         try:
             lines = self.detail().split("\n")
@@ -224,14 +257,12 @@ class Md(resDg.Dg):
                 continue
             devpath = line.split()[-1]
             devpath = os.path.realpath(devpath)
-            self.devs.add(devpath)
+            devs.add(devpath)
 
-        self.log.debug("found devs %s held by md %s" % (self.devs, self.uuid))
-        return self.devs
+        self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
+        return devs
 
     def disklist(self):
-        if not self.has_it():
-            return set()
         if self.disks != set():
             return self.disks
 
