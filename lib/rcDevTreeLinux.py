@@ -14,11 +14,11 @@ class DevTree(rcDevTree.DevTree):
 
     def get_size(self, devpath):
         size = 0
-        with open(devpath+'/size', 'r') as f:
-            try:
+        try:
+            with open(devpath+'/size', 'r') as f:
                 size = int(f.read().strip()) * 512 / 1024 / 1024
-            except:
-                pass
+        except:
+            pass
         return size
 
     def get_dm(self):
