@@ -1545,8 +1545,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.symclone", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
-        self.sub_set_action(self.disk_types, "startstandby")
+        self.sub_set_action(self.disk_types, "startstandby", xtags=set(['zone']))
 
     @_master_action
     def master_startdisk(self):
@@ -1558,8 +1557,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
-        self.sub_set_action(self.disk_types, "start")
+        self.sub_set_action(self.disk_types, "start", xtags=set(['zone']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -1571,19 +1569,16 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_stopdisk(self):
-        self.sub_set_action(self.disk_types, "stop")
-        self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
+        self.sub_set_action(self.disk_types, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     @_master_action
     def master_shutdowndisk(self):
-        self.sub_set_action(self.disk_types, "shutdown")
-        self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
+        self.sub_set_action(self.disk_types, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
 
     def rollbackdisk(self):
-        self.sub_set_action(self.disk_types, "rollback")
-        self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
+        self.sub_set_action(self.disk_types, "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
 
     def abort_start(self):
