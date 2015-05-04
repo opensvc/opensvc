@@ -193,12 +193,17 @@ class Md(resDg.Dg):
             return rcStatus.WARN
         return s
 
+    def pvscan(self):
+        cmd = ["pvscan"]
+        self.vcall(cmd)
+
     def do_start(self):
         if self.is_up():
             self.log.info("md %s is already up" % self.uuid)
             return 0
         self.can_rollback = True
         self.assemble()
+        self.pvscan()
 
     def do_stop(self):
         if not self.is_up():
