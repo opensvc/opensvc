@@ -174,8 +174,12 @@ class Md(resDg.Dg):
         return "unknown"
 
     def has_it(self):
-        state = self.detail_status()
-        if state in ("clean", "active", "active, degraded", "clean, degraded", "clean, degraded, recovering"):
+        state = self.detail_status().split(", ")[0]
+        states = (
+          "clean",
+          "active",
+        )
+        if state in states:
             return True
         return False
 
