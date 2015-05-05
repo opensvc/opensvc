@@ -175,7 +175,7 @@ class Md(resDg.Dg):
 
     def has_it(self):
         state = self.detail_status()
-        if state in ("clean", "active", "active, degraded", "clean, degraded"):
+        if state in ("clean", "active", "active, degraded", "clean, degraded", "clean, degraded, recovering"):
             return True
         return False
 
