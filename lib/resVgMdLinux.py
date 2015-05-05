@@ -138,9 +138,12 @@ class Md(resDg.Dg):
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.md_devpath(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
-        if ret != 0:
+        if ret == 2:
+            self.log.info("no changes were made to the array")
+        elif ret != 0:
             raise ex.excError 
-        self.wait_for_fn(self.has_it, self.startup_timeout, 1)
+        else:
+            self.wait_for_fn(self.has_it, self.startup_timeout, 1)
 
     def manage_stop(self):
         cmd = [self.mdadm, "--manage", self.devpath(), "--stop"]
@@ -172,7 +175,7 @@ class Md(resDg.Dg):
 
     def has_it(self):
         state = self.detail_status()
-        if state in ("clean", "active", "active, degraded"):
+        if state in ("clean", "active", "active, degraded", "clean, degraded"):
             return True
         return False
 
@@ -194,14 +197,14 @@ class Md(resDg.Dg):
         return s
 
     def do_start(self):
-        if self.is_up():
-            self.log.info("md %s is already up" % self.uuid)
+        if self.has_it():
+            self.log.info("md %s is already assembled" % self.uuid)
             return 0
         self.can_rollback = True
         self.assemble()
 
     def do_stop(self):
-        if not self.is_up():
+        if not self.has_it():
             self.log.info("md %s is already down" % self.uuid)
             return
         self.manage_stop()
