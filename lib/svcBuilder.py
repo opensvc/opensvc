@@ -98,7 +98,10 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
          nodename in d['encapnodes']:
         return f(s, o+"@encapnodes")
     elif conf.has_option(s, o):
-        return f(s, o)
+        try:
+            return f(s, o)
+        except Exception as e:
+            raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
     else:
         raise ex.OptNotFound
 
@@ -231,6 +234,9 @@ def get_disabled(conf, section, svc):
         return r
     except ex.OptNotFound:
         pass
+    except Exception as e:
+        print(e, "... consider section as disabled")
+        return True
 
     # deprecated
     nodes = set([])
