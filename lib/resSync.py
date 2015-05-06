@@ -119,7 +119,10 @@ class Sync(Res.Resource, Scheduler):
         if target == 'drpnodes':
             expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
         elif target == 'nodes':
-            expected_type = [self.svc.svctype]
+            if self.svc.svctype in ("PRD", "PPRD"):
+                expected_type = [self.svc.svctype]
+            else:
+                expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD', 'PPRD']))
         else:
             self.log.error('unknown sync target: %s'%target)
             raise ex.excError
