@@ -265,7 +265,7 @@ class Resource(object):
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or refresh:
+        if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
             self.write_status()

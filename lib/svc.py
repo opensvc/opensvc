@@ -2064,6 +2064,7 @@ class Svc(Resource, Scheduler):
         if self.cron:
             self.sched_delay()
         import rcSvcmon
+        self.options.refresh = True
         rcSvcmon.svcmon_normal([self])
 
     def push_appinfo(self):
