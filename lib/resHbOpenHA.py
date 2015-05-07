@@ -372,7 +372,7 @@ class Hb(resHb.Hb):
             self.start()
             self.wait_for_state(["started", "start_failed", "starting"])
         else:
-            raise ex.excError("cannot switch in current state: %s/%s"%(local_state,remote_state))
+            raise ex.excError("cannot switch in current state: %s/%s"%(local_status,remote_status))
 
         self.thaw()
         raise ex.excEndAction("heartbeat actions done")
