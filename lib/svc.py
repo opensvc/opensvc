@@ -1025,6 +1025,8 @@ class Svc(Resource, Scheduler):
             options.append('--dry-run')
         if self.options.refresh:
             options.append('--refresh')
+        if self.options.disable_rollback:
+            options.append('--disable-rollback')
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
