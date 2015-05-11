@@ -436,7 +436,7 @@ class Resource(object):
             if fn():
                 return
             time.sleep(delay)
-        raise ex.excError(errmsg)
+        raise exc.excError(errmsg)
 
     def devlist(self):
         return self.disklist()
