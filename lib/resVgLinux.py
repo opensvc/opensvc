@@ -23,7 +23,7 @@ import resDg
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
-from rcUtilities import which
+from rcUtilities import which, justcall
 
 class Vg(resDg.Dg):
     def __init__(self,
@@ -72,13 +72,27 @@ class Vg(resDg.Dg):
         return False  
 
     def has_it(self):
+        try:
+            self.wait_for_fn(self._has_it, 10, 1, errmsg="vgdisplay is still reporting the vg as not found after 10 seconds")
+        except ex.excError as e:
+            self.log.debug(str(e))
+            return False
+        return True
+
+    def vgdisplay(self):
         """Returns True if the volume is present
         """
         cmd = ['vgdisplay', self.name]
-        (ret, out, err) = self.call(cmd, cache=True, errlog=False)
+        out, err, ret = justcall(cmd)
+        return ret, out, err
+
+    def _has_it(self):
+        ret, out, err = self.vgdisplay()
         if ret == 0:
             return True
-        return False
+        if "not found" in err:
+            return False
+        raise ex.excError(err)
 
     def is_up(self):
         """Returns True if the volume group is present and activated
