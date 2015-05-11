@@ -108,6 +108,15 @@ class Vg(resDg.Dg):
             return True
         return False
 
+    def test_vgs(self):
+        cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
+        out, err, ret = justcall(cmd)
+        if "not found" in err:
+            return False
+        if ret != 0:
+            raise ex.excError
+        return True
+
     def remove_tag(self, tag):
         cmd = [ 'vgchange', '--deltag', '@'+tag, self.name ]
         (ret, out, err) = self.vcall(cmd)
@@ -115,6 +124,7 @@ class Vg(resDg.Dg):
             raise ex.excError
 
     def remove_tags(self, tags=[]):
+        self.wait_for_fn(self.test_vgs, 10, 1, errmsg="vgs is still reporting the vg as not found after 10 seconds")
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
