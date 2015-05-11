@@ -432,7 +432,7 @@ class Resource(object):
                                  warn_to_info=warn_to_info)
 
     def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
-        for tick in range(tmo//2):
+        for tick in range(tmo//delay):
             if fn():
                 return
             time.sleep(delay)
