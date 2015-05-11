@@ -76,7 +76,7 @@ class check(checks.check):
                     wwid = l[0]
                 else:
                     wwid = None
-                if wwid is not None and wwid.startswith('3'):
+                if wwid is not None and len(wwid) in (17, 33) and wwid[0] in ('2', '3', '5'):
                     wwid = wwid[1:]
             if "[active]" in line and line.startswith(' '):
                 n += 1
@@ -126,7 +126,7 @@ class check(checks.check):
                     wwid = l[1][1:-1]
                 else:
                     wwid = l[0]
-                if wwid is not None and wwid.startswith('3'):
+                if wwid is not None and len(wwid) in (17, 33) and wwid[0] in ('2', '3', '5'):
                     wwid = wwid[1:]
             if "[active][ready]" in line or \
                "active ready" in line:
