@@ -116,14 +116,6 @@ class Container(Res.Resource):
             return True
         return False
 
-    def wait_for_fn(self, fn, tmo, delay):
-        for tick in range(tmo//2):
-            if fn():
-                return
-            time.sleep(delay)
-        self.log.error("Waited too long for startup")
-        raise ex.excError
-
     def wait_for_startup(self):
         self.log.info("wait for container up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)

@@ -57,13 +57,6 @@ class Md(resDg.Dg):
                           restart=restart,
                           subset=subset)
 
-    def wait_for_fn(self, fn, tmo, delay): 
-        for tick in range(tmo//2): 
-            if fn(): 
-                return 
-            time.sleep(delay) 
-        raise ex.excError("waited too long for devpath creation") 
-
     def md_config_file_name(self):
         return os.path.join(rcEnv.pathvar, 'md_' + self.md_devname() + '.disklist')
 
@@ -143,7 +136,7 @@ class Md(resDg.Dg):
         elif ret != 0:
             raise ex.excError 
         else:
-            self.wait_for_fn(self.has_it, self.startup_timeout, 1)
+            self.wait_for_fn(self.has_it, self.startup_timeout, 1, errmsg="waited too long for devpath creation")
 
     def manage_stop(self):
         cmd = [self.mdadm, "--manage", self.devpath(), "--stop"]

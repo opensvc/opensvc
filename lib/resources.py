@@ -431,6 +431,13 @@ class Resource(object):
                                  err_to_info=err_to_info,
                                  warn_to_info=warn_to_info)
 
+    def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
+        for tick in range(tmo//2):
+            if fn():
+                return
+            time.sleep(delay)
+        raise ex.excError(errmsg)
+
     def devlist(self):
         return self.disklist()
 
