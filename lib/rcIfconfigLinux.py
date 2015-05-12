@@ -282,11 +282,15 @@ class ifconfig(rcIfconfig.ifconfig):
             data[name].append(line.split()[-1])
         return data
 
-    def __init__(self, mcast=False):
+    def __init__(self, mcast=False, ip_out=None):
         self.intf = []
         if mcast:
             self.mcast_data = self.get_mcast()
-        if which('ip'):
+        else:
+            self.mcast_data = {}
+        if ip_out:
+            self.parse_ip(ip_out)
+        elif which('ip'):
             out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0]
             self.parse_ip(out)
         else:
