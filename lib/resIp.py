@@ -53,12 +53,12 @@ class Ip(Res.Resource):
                               tags=tags,
                               subset=subset,
                               monitor=monitor,
+                              always_on=always_on,
                               restart=restart)
         self.ipDev=ipDev
         self.ipName=ipName
         self.mask=mask
         self.label = ipName + '@' + ipDev
-        self.always_on = always_on
         self.gateway = gateway
 
     def getaddr(self):
@@ -114,6 +114,9 @@ class Ip(Res.Resource):
         except ex.excNotSupported:
             self.status_log("not supported")
             return rcStatus.UNDEF
+        except ex.excError as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
 
     def arp_announce(self):
         if ':' in self.addr:
