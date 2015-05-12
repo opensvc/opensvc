@@ -367,7 +367,7 @@ def add_ip(svc, conf, s):
     try:
         kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
     except ex.OptNotFound:
-        svc.log.debug('ipdev not found in ip section %s'%s)
+        svc.log.error('ipdev not found in ip section %s'%s)
         return
 
     try:
@@ -386,6 +386,11 @@ def add_ip(svc, conf, s):
         pass
 
     try:
+        kwargs['container_rid'] = conf_get_string_scope(svc, conf, s, 'container_rid')
+    except ex.OptNotFound:
+        pass
+
+    try:
         rtype = conf_get_string_scope(svc, conf, s, 'type')
     except ex.OptNotFound:
         rtype = None
@@ -397,6 +402,8 @@ def add_ip(svc, conf, s):
         ip = __import__('resIp'+'Crossbow')
     elif 'zone' in kwargs:
         ip = __import__('resIp'+'Zone')
+    elif "container_rid" in kwargs:
+        ip = __import__('resIp'+'Docker'+rcEnv.sysname)
     else:
         ip = __import__('resIp'+rcEnv.sysname)
 

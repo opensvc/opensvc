@@ -1600,11 +1600,11 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_startstandbyip(self):
-        self.sub_set_action("ip", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("ip", "startstandby", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_startip(self):
-        self.sub_set_action("ip", "start", xtags=set(['zone']))
+        self.sub_set_action("ip", "start", xtags=set(['zone', 'docker']))
 
     def stopip(self):
         self.slave_stopip()
@@ -1616,14 +1616,14 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_stopip(self):
-        self.sub_set_action("ip", "stop", xtags=set(['zone']))
+        self.sub_set_action("ip", "stop", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown", xtags=set(['zone']))
+        self.sub_set_action("ip", "shutdown", xtags=set(['zone', 'docker']))
 
     def rollbackip(self):
-        self.sub_set_action("ip", "rollback", xtags=set(['zone']))
+        self.sub_set_action("ip", "rollback", xtags=set(['zone', 'docker']))
 
     def startshare(self):
         self.master_startshare()
@@ -1753,7 +1753,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("disk", "provision", xtags=set(['zone']))
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
-        self.sub_set_action("ip", "provision", xtags=set(['zone']))
+        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.push()
 
     def startapp(self):

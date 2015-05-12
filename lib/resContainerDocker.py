@@ -100,10 +100,15 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.docker_start()
         self.docker('start')
 
+    def start(self):
+        resContainer.Container.start(self)
+        self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+
     def container_stop(self):
         self.docker('stop')
 
     def stop(self):
+        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
         self.docker_stop()
  
