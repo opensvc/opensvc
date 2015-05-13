@@ -701,6 +701,8 @@ class Collector(object):
                             """ no point pushing to db an empty entry
                             """
                             continue
+                        if disk_id.startswith(rcEnv.nodename+".loop"):
+                            continue
                         disk_size = disks.disk_size(d)
                         if disk_id in dh:
                             dh[disk_id] += used
@@ -747,6 +749,9 @@ class Collector(object):
             if disk_id is None or disk_id == "":
                 """ no point pushing to db an empty entry
                 """
+                continue
+
+            if disk_id.startswith(rcEnv.nodename+".loop"):
                 continue
 
             # Linux Node:devlist() reports paths, so we can have duplicate

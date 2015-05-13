@@ -501,7 +501,7 @@ class DevTree(rcDevTree.DevTree):
         self.add_drbd_relations()
 
     def blacklist(self, devname):
-        bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
+        bl = [r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
         for b in bl:
             if re.match(b, devname):
                 return True
