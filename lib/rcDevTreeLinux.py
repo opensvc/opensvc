@@ -286,6 +286,23 @@ class DevTree(rcDevTree.DevTree):
             return True
         return False
 
+    def get_loop(self):
+        self.loop = {}
+        cmd = ["losetup"]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split("\n"):
+            if not line.startswith("/"):
+                continue
+            l = line.split()
+            if len(l) < 2:
+                continue
+            loop = l[0].replace("/dev/", "")
+            fpath = l[-1]
+            self.loop[loop] = fpath
+
     def dev_type(self, devname):
         t = "linear"
         md_h = self.get_md()
@@ -295,6 +312,21 @@ class DevTree(rcDevTree.DevTree):
         if devname in mp_h:
             return "multipath"
         return t
+
+    def add_loop_relations(self):
+        self.get_loop()
+        from rcMountsLinux import Mounts
+        m = Mounts()
+        for devname, fpath in self.loop.items():
+            parentpath = m.get_fpath_dev(fpath)
+            if parentpath is None:
+                continue
+            d = self.get_dev_by_devpath(parentpath)
+            if d is None:
+                continue
+            d.add_child(devname)
+            c = self.get_dev(devname)
+            c.add_parent(d.devname)
 
     def add_drbd_relations(self):
         if not which("drbdadm") or not os.path.exists('/proc/drbd'):
@@ -499,6 +531,7 @@ class DevTree(rcDevTree.DevTree):
             self.tune_lv_relations()
 
         self.add_drbd_relations()
+        self.add_loop_relations()
 
     def blacklist(self, devname):
         bl = [r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
