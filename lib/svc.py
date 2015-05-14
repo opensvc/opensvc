@@ -1212,17 +1212,17 @@ class Svc(Resource, Scheduler):
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
-    def devlist(self):
+    def devlist(self, filtered=True):
         if len(self.devs) == 0:
-            self.devs = self._devlist()
+            self.devs = self._devlist(filtered=filtered)
         return self.devs
 
-    def _devlist(self):
+    def _devlist(self, filtered=True):
         """List all devs held by all resources of this service
         """
         devs = set()
         for r in self.get_resources():
-            if r.skip:
+            if filtered and r.skip:
                 continue
             devs |= r.devlist()
         self.log.debug("found devs %s held by service" % devs)

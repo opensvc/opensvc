@@ -375,12 +375,33 @@ class Mount(Res.Mount):
             return
         if not os.path.exists(self.mountPoint):
             raise ex.excError('mount point %s does not exist' % self.mountPoint)
+        self.remove_holders()
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
             raise ex.excError('failed to umount %s'%self.mountPoint)
         self.Mounts = None
+
+    def remove_dev_holders(self, devpath, tree):
+        dev = tree.get_dev_by_devpath(devpath)
+        holders_devpaths = set()
+        holder_devs = dev.get_children_bottom_up()
+        for dev in holder_devs:
+            holders_devpaths |= set(dev.devpath)
+        holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
+        if len(holders_handled_by_resources) > 0:
+            raise ex.excError("this resource has holders handled by other resources: %s" % str(holders_handled_by_resources))
+        for dev in holder_devs:
+            dev.remove(self)
+
+    def remove_holders(self):
+        import glob
+        import rcDevTreeLinux
+        tree = rcDevTreeLinux.DevTree()
+        tree.load()
+        dev_realpath = os.path.realpath(self.device)
+        self.remove_dev_holders(dev_realpath, tree)
 
 if __name__ == "__main__":
     for c in (Mount,) :

@@ -73,11 +73,11 @@ class Vg(resDg.Dg):
 
     def has_it(self):
         try:
-            self.wait_for_fn(self._has_it, 10, 1, errmsg="vgdisplay is still reporting the vg as not found after 10 seconds")
+            r = self._has_it()
         except ex.excError as e:
             self.log.debug(str(e))
             return False
-        return True
+        return r
 
     def vgdisplay(self):
         """Returns True if the volume is present
@@ -164,24 +164,32 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
-    def remove_parts(self):
-        if not which('partx'):
-            return
-        cmd = ['lvs', '-o', 'name', '--noheadings', self.name]
-        (ret, out, err) = self.call(cmd)
-        if ret != 0:
-            self.log.error("can not fetch logical volume list from %s"%self.name)
-            return
-        base_cmd = ['kpartx', '-d']
-        for lv in out.split():
-             self.vcall(base_cmd+[os.path.join(os.sep, 'dev', self.name, lv)])
+    def remove_dev_holders(self, devpath, tree):
+        dev = tree.get_dev_by_devpath(devpath)
+        holders_devpaths = set()
+        holder_devs = dev.get_children_bottom_up()
+        for dev in holder_devs:
+            holders_devpaths |= set(dev.devpath)
+        holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
+        if len(holders_handled_by_resources) > 0:
+            raise ex.excError("this resource has holders handled by other resources: %s" % str(holders_handled_by_resources))
+        for dev in holder_devs:
+            dev.remove(self)
+
+    def remove_holders(self):
+        import glob
+        import rcDevTreeLinux
+        tree = rcDevTreeLinux.DevTree()
+        tree.load()
+        for lvdev in glob.glob("/dev/mapper/%s-*"%self.name.replace("-", "--")):
+             self.remove_dev_holders(lvdev, tree)
 
     def do_stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.label)
             return
+        self.remove_holders()
         self.remove_tags([self.tag])
-        self.remove_parts()
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         if ret == 0:
@@ -210,10 +218,19 @@ class Vg(resDg.Dg):
 
         cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
         (ret, out, err) = self.call(cmd, cache=True)
-        if ret != 0:
-            return self.devs
-        self.devs = set(out.split())
-        self.log.debug("found devs %s held by vg %s" % (self.devs, self.name))
+        if ret == 0:
+            self.devs |= set(out.split())
+
+        cmd = ['vgs', '--noheadings', '-o', 'lv_name', self.name]
+        (ret, out, err) = self.call(cmd, cache=True)
+        if ret == 0:
+            lvs = out.split()
+            devs = map(lambda x: "/dev/"+self.name+"/"+x, lvs)
+            self.devs |= set(devs)
+
+        if len(self.devs) > 0:
+            self.log.debug("found devs %s held by vg %s" % (self.devs, self.name))
+
         return self.devs
 
     def disklist(self):

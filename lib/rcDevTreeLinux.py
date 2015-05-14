@@ -6,11 +6,32 @@ import math
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
+import rcExceptions as ex
 di = __import__("rcDiskInfo"+rcEnv.sysname)
 _di = di.diskInfo()
 
+class Dev(rcDevTree.Dev):
+    def remove_loop(self, r):
+        cmd = ["losetup", "-d", self.devpath[0]]
+        ret, out, err = r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def remove_dm(self, r):
+        cmd = ["dmsetup", "remove", self.alias]
+        ret, out, err = r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def remove(self, r):
+        if self.devname.startswith("loop"):
+            return self.remove_loop(r)
+        if self.devname.startswith("dm-"):
+            return self.remove_dm(r)
+
 class DevTree(rcDevTree.DevTree):
     dev_h = {}
+    dev_class = Dev
 
     def get_size(self, devpath):
         size = 0
