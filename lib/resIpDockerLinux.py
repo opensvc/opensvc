@@ -72,6 +72,10 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         cmd = self.docker_cmd + ["exec", self.container_name, "/sbin/ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
+            # if dockerd is not running, return no ip info.
+            # will be interpreted as a down ip resource by is_up().
+            if "no such file or directory":
+                return
             if " running on " in err:
                 return
             raise ex.excError(err)
