@@ -30,8 +30,10 @@ from rcLoopLinux import file_to_loop
 import rcExceptions as ex
 from stat import *
 
-def try_umount(self):
-    cmd = ['umount', self.mountPoint]
+def try_umount(self, mnt=None):
+    if mnt is None:
+        mnt = self.mountPoint
+    cmd = ['umount', mnt]
     (ret, out, err) = self.vcall(cmd, err_to_warn=True)
     if ret == 0:
         return 0
@@ -42,7 +44,7 @@ def try_umount(self):
     """ don't try to kill process using the source of a 
         protected bind mount
     """
-    if protected_mount(self.mountPoint):
+    if protected_mount(mnt):
         return 1
 
     """ best effort kill of all processes that might block
@@ -53,10 +55,10 @@ def try_umount(self):
     (ret, out, err) = self.vcall(cmd)
 
     for i in range(4):
-        cmd = ['fuser', '-kmv', self.mountPoint]
+        cmd = ['fuser', '-kmv', mnt]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        self.log.info('umount %s'%self.mountPoint)
-        cmd = ['umount', self.mountPoint]
+        self.log.info('umount %s'%mnt)
+        cmd = ['umount', mnt]
         ret = qcall(cmd)
         if ret == 0:
             break
@@ -376,6 +378,7 @@ class Mount(Res.Mount):
         if not os.path.exists(self.mountPoint):
             raise ex.excError('mount point %s does not exist' % self.mountPoint)
         self.remove_holders()
+        self.remove_deeper_mounts()
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
@@ -402,6 +405,18 @@ class Mount(Res.Mount):
         tree.load()
         dev_realpath = os.path.realpath(self.device)
         self.remove_dev_holders(dev_realpath, tree)
+
+    def remove_deeper_mounts(self):
+        import rcMountsLinux
+        mounts = rcMountsLinux.Mounts()
+        mnt_realpath = os.path.realpath(self.mountPoint)
+        for m in mounts:
+            _mnt_realpath = os.path.realpath(m.mnt)
+            if _mnt_realpath != mnt_realpath and \
+               _mnt_realpath.startswith(mnt_realpath):
+                ret = try_umount(self, _mnt_realpath)
+                if ret != 0:
+                    break
 
 if __name__ == "__main__":
     for c in (Mount,) :
