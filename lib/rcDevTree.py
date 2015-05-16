@@ -80,6 +80,8 @@ class Dev(object):
         self.parents = []
         self.children = []
 
+        self.removed = False
+
     def __iadd__(self, o):
         pass
 

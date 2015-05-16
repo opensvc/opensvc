@@ -16,14 +16,18 @@ class Dev(rcDevTree.Dev):
         ret, out, err = r.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        self.removed = True
 
     def remove_dm(self, r):
         cmd = ["dmsetup", "remove", self.alias]
         ret, out, err = r.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        self.removed = True
 
     def remove(self, r):
+        if self.removed:
+            return
         if self.devname.startswith("loop"):
             return self.remove_loop(r)
         if self.devname.startswith("dm-"):
