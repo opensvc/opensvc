@@ -65,13 +65,14 @@ class Ip(Res.Resource):
         if hasattr(self, 'addr'):
             return
         try:
+            self.log.debug("resolving %s" % self.ipName)
             a = socket.getaddrinfo(self.ipName, None)
             if len(a) == 0:
-                raise Exception
+                raise ex.excError("could not resolve name %s (empty dns request resultset)" % self.ipName)
             self.addr = a[0][4][0]
-        except:
+        except Exception as e:
             if not self.disabled:
-                raise ex.excError("could not resolve name %s"%self.ipName)
+                raise ex.excError("could not resolve name %s (%s)" % (self.ipName, str(e)))
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
