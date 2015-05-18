@@ -964,7 +964,8 @@ class Svc(Resource, Scheduler):
         if len(monitored_resources) == 0:
             self.log.debug("no monitored resource")
         else:
-            self.log.debug("monitored resources are up (%s)" % ','.join(monitored_resources))
+            rids = ','.join([r.rid for r in monitored_resources])
+            self.log.debug("monitored resources are up (%s)" % rids)
 
     class exMonitorAction(Exception):
         pass
