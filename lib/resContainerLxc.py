@@ -259,6 +259,7 @@ class Lxc(resContainer.Container):
                  name,
                  guestos="Linux",
                  cf=None,
+                 rcmd=None,
                  optional=False,
                  disabled=False,
                  monitor=False,
@@ -279,14 +280,20 @@ class Lxc(resContainer.Container):
                                         tags=tags,
                                         always_on=always_on)
 
-        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
+        if rcmd is not None:
+            self.runmethod = rcmd
+        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [name]
+
+        if "lxc-attach" in ' '.join(self.runmethod):
             # override getaddr from parent class with a noop
             self.getaddr = self.dummy
         else:
-            self.runmethod = rcEnv.rsh.split() + [name]
             # enable ping test on start
             self.ping = self._ping
+
         self.cf = cf
 
     def dummy(self):

@@ -193,6 +193,14 @@ def get_monitor(conf, section, svc):
     except:
         return False
 
+def get_rcmd(conf, section, svc):
+    if not conf.has_section(section):
+        return
+    try:
+        return conf_get_string_scope(svc, conf, section, 'rcmd').split()
+    except ex.OptNotFound:
+        return
+
 def get_subset(conf, section, svc):
     if not conf.has_section(section):
         return
@@ -1545,6 +1553,7 @@ def add_containers_lxc(svc, conf, s):
     m = __import__('resContainerLxc')
 
     kwargs['rid'] = s
+    kwargs['rcmd'] = get_rcmd(conf, s, svc)
     kwargs['subset'] = get_subset(conf, s, svc)
     kwargs['tags'] = get_tags(conf, s, svc)
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
