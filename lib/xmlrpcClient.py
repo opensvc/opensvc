@@ -1182,6 +1182,7 @@ class Collector(object):
         except Exception as e:
             print(e)
             return 1
+        r = 0
         for sym in syms:
             # can be too big for a single rpc
             for key in sym.keys:
@@ -1192,13 +1193,16 @@ class Collector(object):
                     args += [(rcEnv.uuid, rcEnv.nodename)]
                 try:
                     self.proxy.update_sym_xml(*args)
-                except:
+                except Exception as e:
+                    print(sym.sid, key, ":", e)
+                    r = 1
                     continue
             # signal all files are received
             args = [sym.sid, [], []]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_sym_xml(*args)
+        return r
     
     def push_all(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]
