@@ -1190,7 +1190,10 @@ class Collector(object):
                 args = [sym.sid, vars, vals]
                 if self.auth_node:
                     args += [(rcEnv.uuid, rcEnv.nodename)]
-                self.proxy.update_sym_xml(*args)
+                try:
+                    self.proxy.update_sym_xml(*args)
+                except:
+                    continue
             # signal all files are received
             args = [sym.sid, [], []]
             if self.auth_node:
