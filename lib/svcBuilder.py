@@ -829,8 +829,38 @@ def add_vg_compat(svc, conf, s):
     if vgtype == 'Gandi':
         add_gandi(svc, conf, s)
         return
+    if vgtype == 'Veritas':
+        add_veritas(svc, conf, s)
+        return
 
     raise ex.OptNotFound
+
+def add_veritas(svc, conf, s):
+    kwargs = {}
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
+    except ex.OptNotFound:
+        svc.log.error("vgname must be set in section %s"%s)
+        return
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    try:
+        vg = __import__('resVgVeritas')
+    except ImportError:
+        svc.log.error("vg type veritas is not implemented")
+        return
+
+    r = vg.Vg(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+    add_scsireserv(svc, r, conf, s)
 
 def add_vg(svc, conf, s):
     try:
@@ -909,6 +939,9 @@ def add_disk(svc, conf, s):
         return
     if vgtype == 'Gandi':
         add_gandi(svc, conf, s)
+        return
+    if vgtype == 'Veritas':
+        add_veritas(svc, conf, s)
         return
     if vgtype == 'Lvm' or vgtype == rcEnv.sysname:
         add_vg(svc, conf, s)
