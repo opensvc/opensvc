@@ -124,7 +124,8 @@ class Vg(resDg.Dg):
             raise ex.excError
 
     def remove_tags(self, tags=[]):
-        self.wait_for_fn(self.test_vgs, 10, 1, errmsg="vgs is still reporting the vg as not found after 10 seconds")
+        tmo = 30
+        self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
