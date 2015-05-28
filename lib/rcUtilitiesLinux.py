@@ -84,8 +84,8 @@ def devs_to_disks(self, devs=set([])):
         try:
             statinfo = os.stat(dev)
         except:
-            self.log.error("can not stat %s" % dev)
-            raise
+            self.log.warning("can not stat %s" % dev)
+            continue
         if md_major != 0 and os.major(statinfo.st_rdev) == md_major:
             md = dev.replace("/dev/", "")
             syspath = '/sys/block/' + md + '/slaves'
