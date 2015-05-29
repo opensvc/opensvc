@@ -226,7 +226,11 @@ class Vg(resDg.Dg):
         (ret, out, err) = self.call(cmd, cache=True)
         if ret == 0:
             lvs = out.split()
-            devs = map(lambda x: "/dev/"+self.name+"/"+x, lvs)
+            for lv in lvs:
+                devs = []
+                lvp = "/dev/"+self.name+"/"+lv
+                if os.path.exists(lvp):
+                    devs.append(lvp)
             self.devs |= set(devs)
 
         if len(self.devs) > 0:
