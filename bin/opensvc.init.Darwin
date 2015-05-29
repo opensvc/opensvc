@@ -24,7 +24,11 @@ start)
         ${osvc_path}/nodemgr pushasset
         echo
         echo "OpenSVC : Starting Services"
-	${allservices} ${osvc_opts} boot
+	[ "${osvc_background}" == "true" ] && {
+		${allservices} ${osvc_opts} boot &
+	} || {
+		${allservices} ${osvc_opts} boot
+	}
 	;;
 stop)
         echo "OpenSVC : Stopping Services"

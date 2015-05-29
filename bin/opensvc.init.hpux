@@ -28,7 +28,11 @@ start)
 		$agt
 	fi
         ${osvc_path}/nodemgr pushasset
-	${allservices} ${osvc_opts} boot
+	[ "${osvc_background}" == "true" ] && {
+		${allservices} ${osvc_opts} boot &
+	} || {
+		${allservices} ${osvc_opts} boot
+	}
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then

@@ -470,7 +470,15 @@ def install_params(path2file):
         f.write("# This file is not modified during software upgrades\n")
         f.write("# If empty, default settings are used in the init script\n\n\n")
         f.write("# arguments passed to the allservices boot command at system boot\n")
+        f.write("#\n")
         f.write("#osvc_opts=\n")
+        f.write("\n")
+        f.write("#\n")
+        f.write("# If set to true, the OpenSVC launcher will start in the\n")
+        f.write("# background, avoiding timeouts in init managers. The default\n")
+        f.write("# is to launch services in the foreground.\n")
+        f.write("#\n")
+        f.write("#osvc_background=true\n")
         f.close()
  
 def install_rc():
