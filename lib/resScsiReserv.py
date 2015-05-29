@@ -108,6 +108,7 @@ class ScsiReserv(Res.Resource):
         return 0
 
     def register(self):
+        self.log.debug("starting register. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -118,6 +119,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def unregister(self):
+        self.log.debug("starting unregister. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -140,6 +142,7 @@ class ScsiReserv(Res.Resource):
         return 1
 
     def reserve(self):
+        self.log.debug("starting reserve. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -157,6 +160,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def release(self):
+        self.log.debug("starting release. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -168,7 +172,21 @@ class ScsiReserv(Res.Resource):
                 continue
         return r
 
+    def clear(self):
+        self.log.debug("starting clear. prkey %s"%self.hostid)
+        r = 0
+        for d in self.disks:
+            try:
+                r += self.ack_unit_attention(d)
+                if not self.disk_reserved(d):
+                    continue
+                r += self.disk_clear_reservation(d)
+            except ex.excScsiPrNotsupported:
+                continue
+        return r
+
     def checkreserv(self):
+        self.log.debug("starting checkreserv. prkey %s"%self.hostid)
         if self.ack_all_unit_attention() != 0:
             return rcStatus.WARN
         r = rcStatus.Status()
@@ -200,8 +218,11 @@ class ScsiReserv(Res.Resource):
         if not self.scsireserv_supported():
             return
         r = 0
-        r += self.release()
-        r += self.unregister()
+        if hasattr(self, 'disk_clear_reservation'):
+            r += self.clear()
+        else:
+            r += self.release()
+            r += self.unregister()
         return r
 
     def scsicheckreserv(self):
