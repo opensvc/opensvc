@@ -388,6 +388,8 @@ class Mount(Res.Mount):
 
     def remove_dev_holders(self, devpath, tree):
         dev = tree.get_dev_by_devpath(devpath)
+        if dev is None:
+            return
         holders_devpaths = set()
         holder_devs = dev.get_children_bottom_up()
         for dev in holder_devs:
