@@ -144,6 +144,8 @@ class Svc(Resource, Scheduler):
                              "sync.netapp",
                              "sync.nexenta",
                              "app",
+                             "stonith.ilo",
+                             "stonith.callout",
                              "hb.openha",
                              "hb.sg",
                              "hb.rhcs",
@@ -658,6 +660,9 @@ class Svc(Resource, Scheduler):
                                )
                 )
 
+        avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"])
+        accessory_resources = self.get_resources(["hb", "stonith", "sync"])
+
         print(self.svcname)
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
@@ -677,15 +682,14 @@ class Svc(Resource, Scheduler):
 
         l = []
         cr = {}
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in sorted(rs.resources) if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-                if rid.startswith("container") and rid in encap_res_status:
-                    _l = []
-                    for _rid, val in encap_res_status[rid].items():
-                        _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
-                    cr[rid] = _l
+	for r in avail_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
+            if rid.startswith("container") and rid in encap_res_status:
+                _l = []
+                for _rid, val in encap_res_status[rid].items():
+                    _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
+                cr[rid] = _l
 
         last = len(l) - 1
         if last >= 0:
@@ -715,38 +719,17 @@ class Svc(Resource, Scheduler):
                                 pfx = "|  |  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
-        fmt = "|- %-17s %4s %-10s %s"
-        print(fmt%("sync", '', rcStatus.colorize(str(self.group_status()['sync'])), ''))
+        fmt = "`- %-17s %4s %-10s %s"
+        accessory_status = self.group_status()['sync'] + self.group_status()['hb'] + self.group_status()['stonith']
+        print(fmt%("accessory", '', rcStatus.colorize(str(accessory_status)), ''))
 
         l = []
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('sync')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-        last = len(l) - 1
-        if last >= 0:
-            for i, e in enumerate(l):
-                if i == last:
-                    fmt = "|  '- %-14s %4s %-10s %s"
-                    pfx = "|     %-14s %4s %-10s "%('','','')
-                    print_res(e, fmt, pfx)
-                else:
-                    fmt = "|  |- %-14s %4s %-10s %s"
-                    pfx = "|  |  %-14s %4s %-10s "%('','','')
-                    print_res(e, fmt, pfx)
+        for r in accessory_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            if rid in encap_res_status:
+                status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
 
-        fmt = "'- %-17s %4s %-10s %s"
-        print(fmt%("hb", '', rcStatus.colorize(str(self.group_status()['hb'])), ''))
-
-        l = []
-        for rs in self.get_res_sets(self.status_types):
-            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -1120,7 +1103,7 @@ class Svc(Resource, Scheduler):
         return gs
 
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
+                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb", "stonith"]),
                      excluded_groups=set([])):
         from copy import copy
         """print() each resource status for a service
@@ -1134,7 +1117,7 @@ class Svc(Resource, Scheduler):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
+        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
@@ -1153,9 +1136,17 @@ class Svc(Resource, Scheduler):
         elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["avail"].status = rcStatus.STDBY_UP
 
-        # overall status is avail + sync status
+        # overall status is avail + accessory resources status
         # seed overall with avail
         status["overall"] = copy(status["avail"])
+
+        for t in [_t for _t in self.status_types if _t.startswith('stonith')]:
+            if 'stonith' not in groups:
+                continue
+            for r in self.get_res_sets(t, strict=True):
+                s = rset_status[r.type]
+                status['stonith'] += s
+                status["overall"] += s
 
         for t in [_t for _t in self.status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
