@@ -147,6 +147,7 @@ class Hb(resHb.Hb):
         # _not_ os.path.exists(self.cfmon) = True mean that setup is _not_ done
         # in this case, self.process_running() have to return _False_
         if not os.path.exists(self.cfmon):
+            self.log.debug('openha configuration is not complete')
             return False
         buff = ""
         with open(self.cfmon) as f:
@@ -206,6 +207,7 @@ class Hb(resHb.Hb):
         # now counting daemons not found as running
         total = 0
         for d in daemons:
+            self.log.debug('daemon [%s] [%s]'%(d,h[d]))
             total += h[d]
         if total > 0:
             return False
