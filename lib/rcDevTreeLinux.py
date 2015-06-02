@@ -409,9 +409,12 @@ class DevTree(rcDevTree.DevTree):
             d.set_devpath('/dev/'+devname)
 
         # store devt
-        with open("%s/dev"%devpath, 'r') as f:
-            devt = f.read().strip()
-            self.dev_h[devt] = devname
+        try:
+            with open("%s/dev"%devpath, 'r') as f:
+                devt = f.read().strip()
+                self.dev_h[devt] = devname
+        except IOError:
+            pass
 
         # add holders
         holderpaths = glob.glob("%s/holders/*"%devpath)
