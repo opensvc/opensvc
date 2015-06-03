@@ -720,8 +720,7 @@ class Svc(Resource, Scheduler):
                                 print_res(_e, fmt, pfx)
 
         fmt = "`- %-17s %4s %-10s %s"
-        accessory_status = self.group_status()['sync'] + self.group_status()['hb'] + self.group_status()['stonith']
-        print(fmt%("accessory", '', rcStatus.colorize(str(accessory_status)), ''))
+        print(fmt%("accessory", '', '', ''))
 
         l = []
         for r in accessory_resources:
