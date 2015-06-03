@@ -660,8 +660,8 @@ class Svc(Resource, Scheduler):
                                )
                 )
 
-        avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"])
-        accessory_resources = self.get_resources(["hb", "stonith", "sync"])
+        avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"], discard_disabled=False)
+        accessory_resources = self.get_resources(["hb", "stonith", "sync"], discard_disabled=False)
 
         print(self.svcname)
         fmt = "%-20s %4s %-10s %s"
