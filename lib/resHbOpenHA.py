@@ -346,6 +346,8 @@ class Hb(resHb.Hb):
         self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
         if local_status == "started":
+            if remote_status == "frozen_stop":
+                raise ex.excError("remote state is frozen_stop, can't relocate service")
             try:
                 self.stop()
             except ex.excEndAction:
