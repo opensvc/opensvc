@@ -44,7 +44,6 @@ class ScsiReserv(Res.Resource):
                  optional=False,
                  subset=None):
         self.no_preempt_abort = no_preempt_abort
-        self.hostid = '0x'+hostId.hostid()
         self.disks = disks
         if len(disks) == 0:
             self.label = 'preserv 0 scsi disk'
@@ -55,6 +54,7 @@ class ScsiReserv(Res.Resource):
             self.label = ', '.join(disks)
         self.preempt_timeout = 10
         self.prtype = '5'
+        self.hostid = None
         Res.Resource.__init__(self,
                               rid=rid+"pr",
                               type="disk.scsireserv",
@@ -62,6 +62,20 @@ class ScsiReserv(Res.Resource):
                               tags=tags,
                               optional=optional,
                               subset=subset)
+
+    def get_hostid(self):
+        if self.hostid:
+            return
+        try:
+            self.hostid = self.svc.node.config.get("node", "prkey")
+            if len(self.hostid) != 14 or \
+               len(set(self.hostid) - set("0123456789abcdef")) > 0:
+                self.log.error("prkey in node.conf must have 14 significant hex digits (ex: 90520a45138e85)")
+                raise
+        except Exception as e:
+            self.log.debug("can't find a prkey forced in node.conf: %s" % str(e))
+            self.hostid = hostId.hostid()
+        self.hostid = '0x'+self.hostid
 
     def scsireserv_supported(self):
         return False
@@ -231,11 +245,13 @@ class ScsiReserv(Res.Resource):
         return self.checkreserv()
 
     def _status(self, verbose=False):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return rcStatus.NA
         return self.scsicheckreserv()
 
     def start(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         self.can_rollback = True
@@ -243,6 +259,7 @@ class ScsiReserv(Res.Resource):
             raise ex.excError
 
     def stop(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         if self.scsirelease() != 0:
