@@ -22,9 +22,8 @@
 import resources as Res
 from rcGlobalEnv import *
 
-from rcUtilities import qcall, which
+from rcUtilities import qcall, which, getaddr
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
-import socket
 import rcStatus
 import rcExceptions as ex
 import os
@@ -61,18 +60,15 @@ class Ip(Res.Resource):
         self.label = ipName + '@' + ipDev
         self.gateway = gateway
 
-    def getaddr(self):
+    def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
             return
         try:
             self.log.debug("resolving %s" % self.ipName)
-            a = socket.getaddrinfo(self.ipName, None)
-            if len(a) == 0:
-                raise ex.excError("could not resolve name %s (empty dns request resultset)" % self.ipName)
-            self.addr = a[0][4][0]
+            self.addr = getaddr(self.ipName, cache_fallback=cache_fallback, log=self.log)
         except Exception as e:
             if not self.disabled:
-                raise ex.excError("could not resolve name %s (%s)" % (self.ipName, str(e)))
+                raise ex.excError("could not resolve name %s: %s" % (self.ipName, str(e)))
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
@@ -104,8 +100,8 @@ class Ip(Res.Resource):
     def _status(self, verbose=False):
         try:
             self.getaddr()
-        except:
-            self.status_log("could not resolve %s to an ip address"%self.ipName)
+        except Exception as e:
+            self.status_log(str(e))
             return rcStatus.WARN
         try:
             if self.is_up():
@@ -217,11 +213,7 @@ class Ip(Res.Resource):
         return rcIfconfig.ifconfig()
 
     def start(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.ipName)
-            raise ex.excError
+        self.getaddr()
         try:
             self.allow_start()
         except (ex.IpConflict, ex.IpDevDown):
@@ -282,11 +274,7 @@ class Ip(Res.Resource):
             self.arp_announce()
 
     def stop(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.ipName)
-            raise ex.excError
+        self.getaddr(cache_fallback=True)
         if self.is_up() is False:
             self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
             return
