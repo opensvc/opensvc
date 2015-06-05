@@ -215,6 +215,7 @@ class ScsiReserv(Res.Resource):
         return r.status
 
     def scsireserv(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         r = 0
@@ -223,6 +224,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def scsirelease(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         r = 0
@@ -234,6 +236,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def scsicheckreserv(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         return self.checkreserv()
