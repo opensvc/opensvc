@@ -662,11 +662,17 @@ class Svc(Resource, Scheduler):
 
         avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"], discard_disabled=False)
         accessory_resources = self.get_resources(["hb", "stonith", "sync"], discard_disabled=False)
+        n_accessory_resources = len(accessory_resources)
 
         print(self.svcname)
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
-        fmt = "|- %-17s %4s %-10s %s"
+        if n_accessory_resources == 0:
+            fmt = "`- %-17s %4s %-10s %s"
+            head_c = " "
+        else:
+            fmt = "|- %-17s %4s %-10s %s"
+            head_c = "|"
         print(fmt%("avail", '', rcStatus.colorize(self.group_status()['avail']), ''))
 
         encap_res_status = {}
@@ -695,14 +701,14 @@ class Svc(Resource, Scheduler):
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-10s %s"
-                    pfx = "|     %-14s %4s %-10s "%('','','')
+                    fmt = head_c+"  '- %-14s %4s %-10s %s"
+                    pfx = head_c+"     %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-10s %s"
-                    pfx = "|  |  %-14s %4s %-10s "%('','','')
+                    fmt = head_c+"  |- %-14s %4s %-10s %s"
+                    pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
                     if e[0] in cr:
-                        subpfx = "|  |  |  %-11s %4s %-10s "%('','','')
+                        subpfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
@@ -711,16 +717,17 @@ class Svc(Resource, Scheduler):
                     if _last >= 0:
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
-                                fmt = "|  |  '- %-11s %4s %-10s %s"
-                                pfx = "|  |     %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  |  '- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |     %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
                             else:
-                                fmt = "|  |  |- %-11s %4s %-10s %s"
-                                pfx = "|  |  |  %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  |  |- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
-        fmt = "`- %-17s %4s %-10s %s"
-        print(fmt%("accessory", '', '', ''))
+        if n_accessory_resources > 0:
+            fmt = "`- %-17s %4s %-10s %s"
+            print(fmt%("accessory", '', '', ''))
 
         l = []
         for r in accessory_resources:
