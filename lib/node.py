@@ -732,10 +732,26 @@ class Node(Svc, Freezer, Scheduler):
             return
         m.SysReport(node=self).sysreport(force=self.options.force)
 
+    def get_prkey(self):
+        if self.config.has_option("node", "prkey"):
+            hostid = self.config.get("node", "prkey")
+            if len(hostid) != 16 or not hostid.startswith("0x") or \
+               len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
+                raise ex.excError("prkey in node.conf must have 14 significant hex digits (ex: 0x90520a45138e85)")
+            return hostid
+        self.log.info("can't find a prkey forced in node.conf. generate one.")
+        hostid = "0x"+self.hostid()
+        self.config.set('node', 'prkey', hostid)
+        self.write_config()
+        return hostid
+
     def prkey(self):
+        print(self.get_prkey())
+
+    def hostid(self):
         from rcGlobalEnv import rcEnv
         m = __import__('hostid'+rcEnv.sysname)
-        print(m.hostid())
+        return m.hostid()
 
     def checks(self):
         if self.skip_action("checks"):

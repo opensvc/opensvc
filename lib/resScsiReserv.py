@@ -67,15 +67,9 @@ class ScsiReserv(Res.Resource):
         if self.hostid:
             return
         try:
-            self.hostid = self.svc.node.config.get("node", "prkey")
-            if len(self.hostid) != 14 or \
-               len(set(self.hostid) - set("0123456789abcdef")) > 0:
-                self.log.error("prkey in node.conf must have 14 significant hex digits (ex: 90520a45138e85)")
-                raise
+            self.hostid = self.svc.node.get_prkey()
         except Exception as e:
-            self.log.debug("can't find a prkey forced in node.conf: %s" % str(e))
-            self.hostid = hostId.hostid()
-        self.hostid = '0x'+self.hostid
+            raise ex.excError(str(e))
 
     def scsireserv_supported(self):
         return False
@@ -245,7 +239,11 @@ class ScsiReserv(Res.Resource):
         return self.checkreserv()
 
     def _status(self, verbose=False):
-        self.get_hostid()
+        try:
+            self.get_hostid()
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
         if not self.scsireserv_supported():
             return rcStatus.NA
         return self.scsicheckreserv()
