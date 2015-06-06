@@ -131,6 +131,7 @@ class Node(Svc, Freezer, Scheduler):
             'pushnecism':     'push NEC ISM configuration to collector',
             'pushhds':        'push HDS configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
+            'pushfreenas':    'push FreeNAS configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'pushhp3par':     'push HP 3par configuration to collector',
             'pushibmds':      'push IBM DS configuration to collector',
@@ -215,6 +216,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
 	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
 	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
+	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
 	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
 	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
 	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
@@ -551,6 +553,15 @@ class Node(Svc, Freezer, Scheduler):
     @scheduler_fork
     def task_pushibmds(self):
         self.collector.call('push_ibmds', self.options.objects)
+
+    def pushfreenas(self):
+        if self.skip_action("pushfreenas"):
+            return
+        self.task_pushfreenas()
+
+    @scheduler_fork
+    def task_pushfreenas(self):
+        self.collector.call('push_freenas', self.options.objects)
 
     def pushdcs(self):
         if self.skip_action("pushdcs"):

@@ -1133,6 +1133,27 @@ class Collector(object):
             except:
                 print("error pushing", ibmds.name)
 
+    def push_freenas(self, objects=[], sync=True):
+        if 'update_freenas' not in self.proxy_methods:
+           print("'update_freenas' method is not exported by the collector")
+           return
+        m = __import__('rcFreenas')
+        try:
+            arrays = m.Freenass(objects)
+        except:
+            return
+        for array in arrays:
+            vals = []
+            for key in array.keys:
+                vals.append(getattr(array, 'get_'+key)())
+            args = [array.name, array.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            try:
+                self.proxy.update_freenas(*args)
+            except:
+                print("error pushing", array.name)
+
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print("'update_dcs' method is not exported by the collector")
