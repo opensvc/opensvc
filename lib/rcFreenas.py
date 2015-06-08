@@ -65,7 +65,7 @@ class Freenass(object):
     def get_freenas(self, name):
         for array in self.arrays:
             if array.name == name:
-                return freenas
+                return array
         return None
 
 class Freenas(object):
@@ -81,8 +81,13 @@ class Freenas(object):
                      'iscsi_targettoextents',
                      'iscsi_extents']
 
-    def post(self, uri):
-        r = requests.post(self.api+uri, auth=self.auth, verify=verify)
+    def post(self, uri, data=None):
+        api = self.api.replace("api/v1.0", "")+uri
+        s = requests.Session()
+        r = s.get(api)
+        csrf_token = r.cookies['csrftoken']
+        data["csrfmiddlewaretoken"] = csrf_token
+        r = requests.post(api, data=data, auth=self.auth, verify=verify)
         return r.content
 
     def get(self, uri):
@@ -91,6 +96,14 @@ class Freenas(object):
 
     def get_version(self):
         buff = self.get("/system/version")
+        return buff
+
+    def get_volume(self, name):
+        buff = self.get("/storage/volume/%s" % name)
+        return buff
+
+    def get_volume_datasets(self, name):
+        buff = self.get("/storage/volume/%s/datasets" % name)
         return buff
 
     def get_volumes(self):
@@ -109,85 +122,47 @@ class Freenas(object):
         buff = self.get("/services/iscsi/extent")
         return buff
 
+    def add_disk(self, data):
+        self.add_zvol(data)
+
+    def add_zvol(self, data):
+        if 'dataset' not in data:
+            raise ex.excError("'dataset' key is mandatory")
+        if 'size' not in data:
+            raise ex.excError("'size' key is mandatory")
+        buff = self.get_volume(data["volume"])
+        v = json.loads(buff)
+        d = {
+          "zvol_name": data["name"],
+          "zvol_size": str(data["size"])+"MiB",
+          "zvol_compression": "inherit",
+          "zvol_force": "on",
+          "zvol_sparse": "on",
+          "zvol_blocksize": "16K",
+        }
+        print(d)
+        buff = self.post('/storage/zvol/create/%s/'%data["volume"], d)
+        print(buff)
+
     def add_extent(self, data):
-        if 'disk_name' not in data:
+        if 'name' not in data:
             raise ex.excError("'disk_name' key is mandatory")
         if 'size' not in data:
             raise ex.excError("'size' key is mandatory")
-        if 'paths' not in data:
-            raise ex.excError("'paths' key is mandatory")
+        if 'dataset' not in data:
+            raise ex.excError("'dataset' key is mandatory")
+        if 'volume' not in data:
+            raise ex.excError("'volume' key is mandatory")
+        d =   {
+          "iscsi_target_extent_type": "ZVOL",
+          "iscsi_target_extent_name": data["name"],
+#          "iscsi_target_extent_filesize": str(data["size"])+"MB",
+          "iscsi_target_extent_path": "%s/%s/%s" % (data["volume"], data["dataset"], data["name"])
+        }
+        print(d)
+        buff = self.post("/services/iscsi/extent", d)
+        print(buff)
 
-        data['disk_name'] = data['disk_name'] + '.1'
-        l = data['paths'].split(',')
-        paths = []
-        for path in l:
-            if 'iqn' in path:
-                c, s = path.split('-iqn')
-                s = 'iqn' + s
-                paths.append((c, s))
-            elif '-' in path:
-                c, s = path.split('-')
-                paths.append((c, s))
-        if len(paths) == 0:
-            raise ex.excError("no initiator to present to")
-
-        pools = data['dg_name'].split(',')
-        if len(pools) == 2:
-            _pool1 = pools[0].split(':')
-            _pool2 = pools[1].split(':')
-            if len(_pool1) != 2 or len(_pool2) != 2:
-                raise ex.excError("'dg_name' value is misformatted")
-            d = {
-              'disk_name': data['disk_name'],
-              'size': data['size'],
-              'sds1': _pool1[0],
-              'sds2': _pool2[0],
-              'pool1': _pool1[1],
-              'pool2': _pool2[1],
-              'conn': self.conn,
-            }
-            cmd = """$v = Add-FreenasVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB  -EnableRedundancy -FirstServer %(sds1)s -FirstPool "%(pool1)s" -SecondServer %(sds2)s -SecondPool "%(pool2)s" ;""" % d
-        elif len(pools) == 1:
-            _pool1 = pools[0].split(':')
-            if len(_pool1) != 2:
-                raise ex.excError("'dg_name' value is misformatted")
-            d = {
-              'disk_name': data['disk_name'],
-              'size': data['size'],
-              'sds1': _pool1[0],
-              'pool1': _pool1[1],
-              'conn': self.conn,
-            }
-            cmd = """$v = Add-FreenasVirtualDisk -connection %(conn)s -Name "%(disk_name)s" -Size %(size)dGB -Server %(sds1)s -Pool "%(pool1)s" ;""" % d
-        else:
-            raise ex.excError("'dg_name' value is misformatted")
-        for machine in self.get_machines(map(lambda x: x[0], paths)):
-            cmd += " $v | Serve-FreenasVirtualDisk -connection %s -Machine %s -EnableRedundancy ;"""%(self.conn, machine)
-        print(cmd)
-        out, err, ret = self.freenascmd(cmd)
-
-    def get_machines(self, ids):
-        for i, id in enumerate(ids):
-            if 'iqn' in id or ('-' in id and len(id) == 16):
-                # iscsi or already in correct format
-                continue
-            # convert to freenas portname format
-            id = list(id.upper())
-            for j in (14, 12, 10, 8, 6, 4, 2):
-                id.insert(j, '-')
-            id = ''.join(id)
-            ids[i] = id
-        if not hasattr(self, "buff_freenasport"):
-            self.buff_freenasport = self.get_freenasport()
-        machines = set([])
-        for line in self.buff_freenasport.split('\n'):
-            if line.startswith('HostId'):
-                hostid = line.split(': ')[-1].strip()
-            elif line.startswith('Id'):
-                id = line.split(': ')[-1].strip()
-                if id in ids:
-                    machines.add(hostid)
-        return machines
 
 if __name__ == "__main__":
     o = Freenass()
