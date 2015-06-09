@@ -38,7 +38,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = "vg "+name
-        self.tag = '@'+rcEnv.nodename
+        self.tag = rcEnv.nodename
         resDg.Dg.__init__(self,
                           rid=rid,
                           name=name,
@@ -123,42 +123,45 @@ class Vg(resDg.Dg):
         if ret != 0:
             raise ex.excError
 
-    def remove_tags(self, tags=[]):
-        tmo = 30
-        self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
+    def list_tags(self, tags=[]):
+        tmo = 5
+        try:
+            self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
+        except ex.excError as e:
+            self.log.warning(str(e))
+            cmd = ["pvscan"]
+            ret, out, err = self.vcall(cmd)
         cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
         out = out.strip(' \n')
         curtags = out.split(',')
-        if len(tags) > 0:
-            """ remove only specified tags
-            """
-            for tag in tags:
-                tag = tag.lstrip('@')
-                if tag in curtags:
-                   self.remove_tag(tag)
-        else:
-            """ remove all tags
-            """
-            for tag in curtags:
-                if len(tag) == 0:
-                    continue
-                self.remove_tag(tag)
+        return curtags
+
+    def remove_tags(self, tags=[]):
+        for tag in tags:
+            tag = tag.lstrip('@')
+            if len(tag) == 0:
+                continue
+            self.remove_tag(tag)
 
     def add_tags(self):
-        cmd = [ 'vgchange', '--addtag', self.tag, self.name ]
+        cmd = [ 'vgchange', '--addtag', '@'+self.tag, self.name ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def do_start(self):
+        curtags = self.list_tags()
+        tags_to_remove = set(curtags) - set([self.tag])
+        if len(tags_to_remove) > 0:
+            self.remove_tags(tags_to_remove)
+        if self.tag not in curtags:
+            self.add_tags()
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return 0
-        self.remove_tags()
-        self.add_tags()
         self.can_rollback = True
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out, err) = self.vcall(cmd)
@@ -192,7 +195,8 @@ class Vg(resDg.Dg):
             self.log.info("%s is already down" % self.label)
             return
         self.remove_holders()
-        self.remove_tags([self.tag])
+        curtags = self.list_tags()
+        self.remove_tags(curtags)
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         if ret == 0:
