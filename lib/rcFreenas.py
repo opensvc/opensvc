@@ -3,6 +3,8 @@ import os
 import requests
 import ConfigParser
 import json
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 
 pathlib = os.path.dirname(__file__)
 pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
@@ -82,6 +84,13 @@ class Freenas(object):
                      'iscsi_extents']
 
     def post(self, uri, data=None):
+        api = self.api+uri+"/"
+        headers = {'Content-Type': 'application/json'}
+        r = requests.post(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
+        print(r.text)
+        return r.content
+
+    def post2(self, uri, data=None):
         api = self.api.replace("api/v1.0", "")+uri
         s = requests.Session()
         r = s.get(api)
@@ -122,8 +131,18 @@ class Freenas(object):
         buff = self.get("/services/iscsi/extent")
         return buff
 
+    def get_iscsi_target_ids(self, target_names):
+        buff = self.get_iscsi_targets()
+        data = json.loads(buff)
+        l = []
+        for target in data:
+            if target["iscsi_target_name"] in target_names:
+                l.append(target["id"])
+        return l
+
     def add_disk(self, data):
-        self.add_zvol(data)
+        extent_id = self.add_iscsi_extent(data)
+        self.add_iscsi_targets_to_extent(extent_id, data)
 
     def add_zvol(self, data):
         if 'dataset' not in data:
@@ -140,28 +159,40 @@ class Freenas(object):
           "zvol_sparse": "on",
           "zvol_blocksize": "16K",
         }
-        print(d)
         buff = self.post('/storage/zvol/create/%s/'%data["volume"], d)
-        print(buff)
 
-    def add_extent(self, data):
+    def add_iscsi_extent(self, data):
         if 'name' not in data:
             raise ex.excError("'disk_name' key is mandatory")
         if 'size' not in data:
             raise ex.excError("'size' key is mandatory")
-        if 'dataset' not in data:
-            raise ex.excError("'dataset' key is mandatory")
         if 'volume' not in data:
             raise ex.excError("'volume' key is mandatory")
-        d =   {
-          "iscsi_target_extent_type": "ZVOL",
+        d = {
+          "iscsi_target_extent_type": "File",
           "iscsi_target_extent_name": data["name"],
-#          "iscsi_target_extent_filesize": str(data["size"])+"MB",
-          "iscsi_target_extent_path": "%s/%s/%s" % (data["volume"], data["dataset"], data["name"])
+#          "iscsi_target_extent_insecure_tpc": True,
+#          "iscsi_target_extent_blocksize": 512,
+          "iscsi_target_extent_filesize": str(data["size"])+"MB",
+          "iscsi_target_extent_path": "/mnt/%s/%s" % (data["volume"], data["name"]),
         }
-        print(d)
         buff = self.post("/services/iscsi/extent", d)
-        print(buff)
+        extent_id = json.loads(buff)["id"]
+        return extent_id
+
+    def add_iscsi_targets_to_extent(self, extent_id, data):
+        if 'targets' not in data:
+            raise ex.excError("'targets' key is mandatory")
+        target_ids = self.get_iscsi_target_ids(data["targets"])
+        for target_id in target_ids:
+            self.add_iscsi_target_to_extent(target_id, extent_id)
+
+    def add_iscsi_target_to_extent(self, target_id, extent_id):
+        d = {
+          "iscsi_target": target_id,
+          "iscsi_extent": extent_id,
+        }
+        buff = self.post("/services/iscsi/targettoextent", d)
 
 
 if __name__ == "__main__":
