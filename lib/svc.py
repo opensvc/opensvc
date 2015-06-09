@@ -390,7 +390,7 @@ class Svc(Resource, Scheduler):
              l = _type
          rsets = {}
          for rs in self.resSets:
-             if ':' in rs.type and rs.has_resource_with_types(l):
+             if ':' in rs.type and rs.has_resource_with_types(l, strict=strict):
                  # subset
                  rsets[rs.type] = rs
                  continue

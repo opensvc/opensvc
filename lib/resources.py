@@ -582,9 +582,11 @@ class ResourceSet(Resource):
                 return True
         return False
 
-    def has_resource_with_types(self, l):
+    def has_resource_with_types(self, l, strict=False):
         for r in self.resources:
             if r.type in l:
+                return True
+            if not strict and "." in r.type and r.type.split(".")[0] in l:
                 return True
         return False
 
