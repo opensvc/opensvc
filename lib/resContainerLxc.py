@@ -340,7 +340,7 @@ class Lxc(resContainer.Container):
 
         self.cf = cf
 
-    def dummy(self):
+    def dummy(self, cache_fallback=False):
         pass
 
     def on_add(self):
