@@ -22,6 +22,7 @@
 import resHb
 from rcGlobalEnv import rcEnv
 import os
+import logging
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import justcall, which
@@ -154,6 +155,7 @@ class Hb(resHb.Hb):
             buff = f.read()
         daemons = []
         for line in buff.split('\n'):
+            self.log.debug('monitor file [%s]'%line)
             l = line.split()
             if len(l) < 4:
                 continue
@@ -182,6 +184,9 @@ class Hb(resHb.Hb):
             h[d] = 1
         # ckecking running daemons 
         lines = [ l for l in out.split('\n') if "heart" in l or "nmond" in l ]
+        if self.log.isEnabledFor(logging.DEBUG):
+            for line in lines:
+                self.log.debug('ps daemons [%s]'%line)
         if which("pargs"):
             # solaris ps command truncates long lines
             # disk-based hb tend to have long args
