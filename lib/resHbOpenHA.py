@@ -167,13 +167,16 @@ class Hb(resHb.Hb):
                 suffix = '_raw'
             else:
                 suffix = '_dio'
+            self.log.debug('nodename [%s]  monitor nodename [%s]'%(rcEnv.nodename,l[0]))
             if rcEnv.nodename == l[0]:
                 daemon = self.heartd + suffix
                 string = daemon + ' ' + ' '.join(l[2:-1])
+                self.log.debug('append heartd daemon [%s]'%string)
                 daemons.append(string)
             else:
                 daemon = self.heartc + suffix
                 string = daemon + ' ' + ' '.join(l[2:])
+                self.log.debug('append heartc daemon [%s]'%string)
                 daemons.append(string)
         daemons.append(self.nmond)
         (out, err, ret) = justcall(['ps', '-ef'])
