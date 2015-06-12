@@ -27,6 +27,8 @@ class ifconfig(rcIfconfig.ifconfig):
         self.intf = []
         if mcast:
             self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
         if ifconfig is not None:
             out = ifconfig
         else:
