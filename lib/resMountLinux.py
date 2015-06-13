@@ -392,15 +392,14 @@ class Mount(Res.Mount):
             return
         holders_devpaths = set()
         holder_devs = dev.get_children_bottom_up()
-        for dev in holder_devs:
-            if devpath in dev.devpath:
-                continue
-            holders_devpaths |= set(dev.devpath)
+        for holder_dev in holder_devs:
+            holders_devpaths |= set(holder_dev.devpath)
+        holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
         if len(holders_handled_by_resources) > 0:
             raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
-        for dev in holder_devs:
-            dev.remove(self)
+        for holder_dev in holder_devs:
+            holder_dev.remove(self)
 
     def remove_holders(self):
         import glob
