@@ -202,8 +202,6 @@ class Vg(resDg.Dg):
         self.remove_tags(curtags)
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        if ret == 0:
-            return
 
         import time
         for i in range(3, 0, -1):
