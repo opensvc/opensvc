@@ -187,6 +187,8 @@ class Vg(resDg.Dg):
         tree = rcDevTreeLinux.DevTree()
         tree.load()
         for lvdev in glob.glob("/dev/mapper/%s-*"%self.name.replace("-", "--")):
+             if "_rimage_" in lvdev or "_rmeta_" in lvdev:
+                 continue
              self.remove_dev_holders(lvdev, tree)
 
     def do_stop(self):
