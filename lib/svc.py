@@ -668,7 +668,7 @@ class Svc(Resource, Scheduler):
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
         if n_accessory_resources == 0:
-            fmt = "`- %-17s %4s %-10s %s"
+            fmt = "'- %-17s %4s %-10s %s"
             head_c = " "
         else:
             fmt = "|- %-17s %4s %-10s %s"
@@ -726,7 +726,7 @@ class Svc(Resource, Scheduler):
                                 print_res(_e, fmt, pfx)
 
         if n_accessory_resources > 0:
-            fmt = "`- %-17s %4s %-10s %s"
+            fmt = "'- %-17s %4s %-10s %s"
             print(fmt%("accessory", '', '', ''))
 
         l = []
