@@ -2757,15 +2757,11 @@ def build(name):
     mod , svc_class_name = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
     svc = getattr(svcMod, svc_class_name)(**kwargs)
-    svc.svcmode = svcmode
-    if "presnap_trigger" in defaults:
-        svc.presnap_trigger = defaults["presnap_trigger"].split()
-    if "postsnap_trigger" in defaults:
-        svc.postsnap_trigger = defaults["postsnap_trigger"].split()
 
     #
     # Store useful properties
     #
+    svc.svcmode = svcmode
     svc.logfile = logfile
     svc.conf = svcconf
     svc.initd = svcinitd
@@ -2783,6 +2779,21 @@ def build(name):
 
     try:
         svc.encapnodes = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'encapnodes').split())
+    except ex.OptNotFound:
+        pass
+
+    try:
+        svc.presnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'presnap_trigger').split()
+    except ex.OptNotFound:
+        pass
+
+    try:
+        svc.postsnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'postsnap_trigger').split()
+    except ex.OptNotFound:
+        pass
+
+    try:
+        svc.disable_rollback = not conf_get_boolean_scope(svc, conf, 'DEFAULT', "rollback")
     except ex.OptNotFound:
         pass
 

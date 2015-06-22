@@ -84,6 +84,7 @@ class Svc(Resource, Scheduler):
         self.cron = False
         self.force = False
         self.cluster = False
+        self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
         self.disk_types = [
@@ -2399,6 +2400,9 @@ class Svc(Resource, Scheduler):
     def rollback_handler(self, action):
 	if self.options.disable_rollback:
             self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
+            return
+	if self.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
             return
         if 'start' not in action:
             return
