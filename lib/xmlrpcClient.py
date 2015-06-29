@@ -45,6 +45,8 @@ def get_proxy(uri):
             return xmlrpclib.ServerProxy(uri)
 
 from datetime import datetime, timedelta
+import time
+import random
 import os
 import sys
 from rcGlobalEnv import rcEnv
@@ -81,6 +83,42 @@ try:
 except:
     mp = False
 
+def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
+    tries = 5
+    for i in range(tries):
+        try:
+            return _do_call(fn, args, kwargs, log, proxy, mode=mode)
+        except Exception as e:
+            s = str(e)
+            if "retry" in s:
+                # db table changed. retry immediately
+                max_wait = 0
+            elif "restart" in s or "Gateway" in s:
+                # collector overload issues, retry after a random delay
+                max_wait = 3
+            else:
+                # no need to retry at all there, unknown cause
+                raise
+        if max_wait > 0:
+            time.sleep(random.random()*max_wait)
+        log.warning("retry call %s on error %s" % (fn, str(e)))
+    log.error("failed to call %s after %d tries" % (fn, tries))
+
+def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
+    log.info("call remote function %s in %s mode"%(fn, mode))
+    try:
+        _b = datetime.now()
+        buff = getattr(proxy, fn)(*args, **kwargs)
+        _e = datetime.now()
+        _d = _e - _b
+        log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+        return buff
+    except Exception as e:
+        _e = datetime.now()
+        _d = _e - _b
+        err = str(e)
+    log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+
 def call_worker(q):
     e = "foo"
     o = Collector(worker=True)
@@ -91,19 +129,7 @@ def call_worker(q):
             if e is None:
                 break
             fn, args, kwargs = e
-            o.log.info("xmlrpc async %s"%fn)
-            try:
-                _b = datetime.now()
-                getattr(o.proxy, fn)(*args, **kwargs)
-                _e = datetime.now()
-                _d = _e - _b
-                o.log.info("xmlrpc async %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
-                continue
-            except Exception as _e:
-                _e = datetime.now()
-                _d = _e - _b
-                err = str(_e)
-            o.log.error("xmlrpc async %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+            do_call(fn, args, kwargs, o.log, o.proxy, mode="asynchronous")
         o.log.info("shutdown")
     except ex.excSignal:
         o.log.info("interrupted on signal")
@@ -173,7 +199,6 @@ class Collector(object):
         self.init(fn)
         if len(self.proxy_methods) == 0:
             return
-        self.log.info("call %s"%fn)
         if len(args) > 1:
             args = args[1:]
         else:
@@ -191,18 +216,7 @@ class Collector(object):
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             rcEnv.warned = True
             return
-        try:
-            _b = datetime.now()
-            buff = getattr(self, fn)(*args, **kwargs)
-            _e = datetime.now()
-            _d = _e - _b
-            self.log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
-            return buff
-        except Exception as e:
-            _e = datetime.now()
-            _d = _e - _b
-            err = str(e)
-        self.log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+        return do_call(fn, args, kwargs, self.log, self, mode="synchronous")
     
     def __init__(self, worker=False):
         self.proxy = None
