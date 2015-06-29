@@ -2440,6 +2440,7 @@ class Svc(Resource, Scheduler):
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
+        self.log.info(" ".join(sys.argv))
 
         err = self.do_action(action, waitlock=waitlock)
 
