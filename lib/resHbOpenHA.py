@@ -167,8 +167,8 @@ class Hb(resHb.Hb):
                 suffix = '_raw'
             else:
                 suffix = '_dio'
-            self.log.debug('nodename [%s]  monitor nodename [%s]'%(rcEnv.nodename,l[0]))
-            if rcEnv.nodename == l[0]:
+            self.log.debug('nodename [%s]  monitor nodename [%s]'%(rcEnv.nodename,l[0].lower()))
+            if rcEnv.nodename == l[0].lower():
                 daemon = self.heartd + suffix
                 string = daemon + ' ' + ' '.join(l[2:-1])
                 self.log.debug('append heartd daemon [%s]'%string)
