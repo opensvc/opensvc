@@ -25,9 +25,9 @@ class Syms(object):
             sid = symm.find('symid').text
             if self.filtering and sid not in self.objects:
                 continue
-            if model in ['VMAX-1']:
+            if model.startswith('VMAX'):
                 self.syms.append(Vmax(sid))
-            if 'DMX' in model or '3000-M' in model:
+            elif 'DMX' in model or '3000-M' in model:
                 self.syms.append(Dmx(sid))
             else:
                 print("unsupported sym model: %s"%model)
@@ -136,7 +136,7 @@ class Vmax(Sym):
 
     def symaccesscmd(self, cmd):
         if self.aclx is None:
-            cmd += ['-output', 'xml_element']
+            cmd += ['-sid', self.sid, '-output', 'xml_element']
         else:
             cmd += ['-file', self.aclx, '-output', 'xml_element']
         return justcall(cmd)
@@ -157,7 +157,7 @@ class Vmax(Sym):
         return out
 
     def get_sym_view_aclx(self):
-        cmd = ['symaccess', 'list', 'view', '-details']
+        cmd = ['symaccess', 'list', 'view', '-detail']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 

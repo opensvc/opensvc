@@ -44,7 +44,6 @@ class ScsiReserv(Res.Resource):
                  optional=False,
                  subset=None):
         self.no_preempt_abort = no_preempt_abort
-        self.hostid = '0x'+hostId.hostid()
         self.disks = disks
         if len(disks) == 0:
             self.label = 'preserv 0 scsi disk'
@@ -55,6 +54,7 @@ class ScsiReserv(Res.Resource):
             self.label = ', '.join(disks)
         self.preempt_timeout = 10
         self.prtype = '5'
+        self.hostid = None
         Res.Resource.__init__(self,
                               rid=rid+"pr",
                               type="disk.scsireserv",
@@ -62,6 +62,14 @@ class ScsiReserv(Res.Resource):
                               tags=tags,
                               optional=optional,
                               subset=subset)
+
+    def get_hostid(self):
+        if self.hostid:
+            return
+        try:
+            self.hostid = self.svc.node.get_prkey()
+        except Exception as e:
+            raise ex.excError(str(e))
 
     def scsireserv_supported(self):
         return False
@@ -108,6 +116,7 @@ class ScsiReserv(Res.Resource):
         return 0
 
     def register(self):
+        self.log.debug("starting register. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -118,6 +127,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def unregister(self):
+        self.log.debug("starting unregister. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -140,6 +150,7 @@ class ScsiReserv(Res.Resource):
         return 1
 
     def reserve(self):
+        self.log.debug("starting reserve. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -157,6 +168,7 @@ class ScsiReserv(Res.Resource):
         return r
 
     def release(self):
+        self.log.debug("starting release. prkey %s"%self.hostid)
         r = 0
         for d in self.disks:
             try:
@@ -168,7 +180,21 @@ class ScsiReserv(Res.Resource):
                 continue
         return r
 
+    def clear(self):
+        self.log.debug("starting clear. prkey %s"%self.hostid)
+        r = 0
+        for d in self.disks:
+            try:
+                r += self.ack_unit_attention(d)
+                if not self.disk_reserved(d):
+                    continue
+                r += self.disk_clear_reservation(d)
+            except ex.excScsiPrNotsupported:
+                continue
+        return r
+
     def checkreserv(self):
+        self.log.debug("starting checkreserv. prkey %s"%self.hostid)
         if self.ack_all_unit_attention() != 0:
             return rcStatus.WARN
         r = rcStatus.Status()
@@ -189,6 +215,7 @@ class ScsiReserv(Res.Resource):
         return r.status
 
     def scsireserv(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         r = 0
@@ -197,24 +224,35 @@ class ScsiReserv(Res.Resource):
         return r
 
     def scsirelease(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         r = 0
-        r += self.release()
-        r += self.unregister()
+        if hasattr(self, 'disk_clear_reservation'):
+            r += self.clear()
+        else:
+            r += self.release()
+            r += self.unregister()
         return r
 
     def scsicheckreserv(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         return self.checkreserv()
 
     def _status(self, verbose=False):
+        try:
+            self.get_hostid()
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
         if not self.scsireserv_supported():
             return rcStatus.NA
         return self.scsicheckreserv()
 
     def start(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         self.can_rollback = True
@@ -222,6 +260,7 @@ class ScsiReserv(Res.Resource):
             raise ex.excError
 
     def stop(self):
+        self.get_hostid()
         if not self.scsireserv_supported():
             return
         if self.scsirelease() != 0:

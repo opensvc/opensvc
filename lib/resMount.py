@@ -63,6 +63,16 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
+    def pre_action(self, rset=None, action=None):
+        if action not in ("stop", "shutdown"):
+            return
+        cwd = os.getcwd()
+        for r in rset.resources:
+            if r.skip or r.disabled:
+                continue
+            if cwd.startswith(r.mountPoint):
+                raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
+
     def start(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
             return
@@ -85,7 +95,7 @@ class Mount(Res.Resource):
             # bind mounts are in this case
             return
         if self.fsType not in self.fsck_h:
-            self.log.info("fsck not implemented for %s"%self.fsType)
+            self.log.debug("no fsck method for %s"%self.fsType)
             return
         bin = self.fsck_h[self.fsType]['bin']
         if which(bin) is None:

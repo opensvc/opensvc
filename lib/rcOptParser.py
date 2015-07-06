@@ -88,6 +88,8 @@ action_desc = {
       'resource_monitor': 'detect monitored resource failures and trigger monitor_action',
       'stonith': 'command provided to the heartbeat daemon to fence peer node in case of split brain',
       'docker': 'wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon',
+      'print_schedule': "print the service tasks schedule",
+      'scheduler': "run the service task scheduler",
      },
     'Service configuration': {
       'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',

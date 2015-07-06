@@ -100,6 +100,7 @@ class RsetApps(Res.ResourceSet):
         if action == 'start' and self.type == "app":
             import svcBuilder
             svcBuilder.add_apps_sysv(self.svc, self.svc.config)
+            self.resources = self.svc.type2resSets["app"].resources
             self.containerize()
 
         try:

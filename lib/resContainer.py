@@ -20,9 +20,8 @@ import rcStatus
 import resources as Res
 import time
 import rcExceptions as ex
-from rcUtilities import justcall
+from rcUtilities import justcall, getaddr
 from rcGlobalEnv import rcEnv
-import socket
 from subprocess import *
 
 class Container(Res.Resource):
@@ -78,20 +77,18 @@ class Container(Res.Resource):
             self.vmhostname = out.strip()
         return self.vmhostname
 
-    def getaddr(self):
+    def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
             return
         if len(self.name) == 0:
             # explicitely disabled (ex: docker)
             return
         try:
-            a = socket.getaddrinfo(self.name, None)
-            if len(a) == 0:
-                raise Exception
-            self.addr = a[0][4][0]
-        except:
-            if not disabled:
-                raise ex.excInitError
+            self.log.debug("resolving %s" % self.name)
+            self.addr = getaddr(self.name, cache_fallback=cache_fallback, log=self.log)
+        except Exception as e:
+            if not self.disabled:
+                raise ex.excError("could not resolve name %s: %s" % (self.name, str(e)))
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -115,14 +112,6 @@ class Container(Res.Resource):
         if ret == 0:
             return True
         return False
-
-    def wait_for_fn(self, fn, tmo, delay):
-        for tick in range(tmo//2):
-            if fn():
-                return
-            time.sleep(delay)
-        self.log.error("Waited too long for startup")
-        raise ex.excError
 
     def wait_for_startup(self):
         self.log.info("wait for container up status")
@@ -201,11 +190,7 @@ class Container(Res.Resource):
         return False
 
     def start(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.name)
-            raise ex.excError
+        self.getaddr()
         where = self.where_up()
         if where is not None:
             self.log.info("container %s already started on %s" % (self.label, where))
@@ -218,11 +203,7 @@ class Container(Res.Resource):
         self.booted = True
 
     def stop(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.name)
-            raise ex.excError
+        self.getaddr(cache_fallback=True)
         if self.is_down():
             self.log.info("container %s already stopped" % self.label)
             return
@@ -260,7 +241,7 @@ class Container(Res.Resource):
         try:
             self.getaddr()
         except:
-            self.status_log("could not resolve %s to an ip address"%self.name)
+            self.status_log(str(e))
             return rcStatus.WARN
         if not self.check_capabilities():
             self.status_log("node capabilities do not permit this action")

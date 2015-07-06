@@ -19,9 +19,6 @@
 import os
 import sys
 
-class NoRule(Exception):
-    pass
-
 def is_exe(fpath):
     """Returns True if file path is executable, False otherwize
     does not follow symlink
@@ -40,13 +37,4 @@ def which(program):
         if is_exe(exe_file):
             return exe_file
     return None
-
-def get_rule(rule_var):
-    """ Return the value if set in the environment.
-        Print some useful message if not set.
-    """
-    if rule_var not in os.environ:
-        print >>sys.stderr, rule_var, "is not present in this node's ruleset"
-        raise NoRule()
-    return os.environ[rule_var]
 

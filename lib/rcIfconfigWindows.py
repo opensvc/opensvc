@@ -58,6 +58,7 @@ class ifconfig(rcIfconfig.ifconfig):
     def __init__(self, mcast=False):
         self.wmi = wmi.WMI()
         self.intf = []
+        self.mcast_data = {}
         for n, nc in zip(self.wmi.Win32_NetworkAdapter(), self.wmi.Win32_NetworkAdapterConfiguration()):
             self.parse(n, nc)
 

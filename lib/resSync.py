@@ -74,7 +74,7 @@ class Sync(Res.Resource, Scheduler):
     def skip_sync(self, ts):
         if not self.svc.cron:
             return False
-        if self.skip_action_schedule(self.rid, "sync_schedule", ts):
+        if self.skip_action_schedule(self.rid, "sync_schedule", last=ts):
             return True
         return False
 
@@ -119,7 +119,10 @@ class Sync(Res.Resource, Scheduler):
         if target == 'drpnodes':
             expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
         elif target == 'nodes':
-            expected_type = [self.svc.svctype]
+            if self.svc.svctype in ("PRD", "PPRD"):
+                expected_type = [self.svc.svctype]
+            else:
+                expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD', 'PPRD']))
         else:
             self.log.error('unknown sync target: %s'%target)
             raise ex.excError

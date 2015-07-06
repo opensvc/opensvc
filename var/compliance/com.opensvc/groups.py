@@ -76,9 +76,6 @@ blacklist = [
 class CompGroup(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
         self.prefix = prefix.upper()
-        self.groupmod = 'groupmod'
-        self.groupadd = 'groupadd'
-        self.groupdel = 'groupdel'
         self.grt = {
             'gid': 'gr_gid',
         }
@@ -89,15 +86,23 @@ class CompGroup(object):
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname == 'AIX':
-            self.groupmod = 'chgroup'
-            self.groupadd = 'mkgroup'
-            self.groupdel = 'rmgroup'
+        if self.sysname == "FreeBSD":
+            self.groupadd = ["pw", "groupadd"]
+            self.groupmod = ["pw", "groupmod"]
+            self.groupdel = ["pw", "groupdel"]
+        elif self.sysname == 'AIX':
+            self.groupmod = ['chgroup']
+            self.groupadd = ['mkgroup']
+            self.groupdel = ['rmgroup']
             self.groupmod_p = {
                 'gid': 'id',
             }
+        else:
+            self.groupadd = ["groupadd"]
+            self.groupmod = ["groupmod"]
+            self.groupdel = ["groupdel"]
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
 
@@ -129,7 +134,6 @@ class CompGroup(object):
                 if k in ('uid', 'gid'):
                     d[k] = int(d[k])
 
-
     def fixable(self):
         return RET_NA
 
@@ -147,9 +151,12 @@ class CompGroup(object):
         
     def fix_item(self, group, item, target):
         if item in self.groupmod_p:
-            cmd = [getattr(self, 'groupmod')]
+            cmd = [] + self.groupmod
+            if self.sysname == "FreeBSD":
+                cmd += [group]
             cmd += self.fmt_opt(self.groupmod_p[item], str(target))
-            cmd += [group]
+            if self.sysname != "FreeBSD":
+                cmd += [group]
             print ' '.join(cmd)
             p = Popen(cmd)
             out, err = p.communicate()
@@ -213,10 +220,13 @@ class CompGroup(object):
         return r
 
     def create_group(self, group, props):
-        cmd = [getattr(self, 'groupadd')]
+        cmd = [] + self.groupadd
+        if self.sysname == "FreeBSD":
+            cmd += [group]
         for item in self.grt:
             cmd += self.fmt_opt(self.groupmod_p[item], str(props[item]))
-        cmd += [group]
+        if self.sysname != "FreeBSD":
+            cmd += [group]
         print ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -234,7 +244,7 @@ class CompGroup(object):
             groupinfo = grp.getgrnam(group)
         except KeyError:
             return RET_OK
-        cmd = [self.groupdel, group]
+        cmd = self.groupdel + [group]
         print ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()

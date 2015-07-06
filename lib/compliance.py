@@ -6,10 +6,11 @@ import re
 import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner, fork
+from rcUtilities import is_exe, justcall, banner
 from subprocess import *
 from rcPrintTable import print_table
 from rcStatus import color, _colorize
+from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -291,21 +292,9 @@ class Compliance(object):
         os.environ.clear()
         os.environ.update(self.env_bkp)
 
-    def scheduler_fork(fn):
-        def _fn(*args, **kwargs):
-            self = args[0]
-            if self.options.cron:
-                fork(fn, args, kwargs, serialize=True)
-            else:
-                fn(*args, **kwargs)
-        return _fn
-
     def compliance_auto(self):
-        flag = "last_comp_check"
-        if self.svcname is not None:
-            flag = '.'.join((flag, self.svcname))
         if self.skip_action is not None and \
-           self.skip_action("compliance_auto", fname=flag):
+           self.skip_action("compliance_auto"):
             return
         self.task_compliance_auto()
 
@@ -355,6 +344,8 @@ class Compliance(object):
 
         if self.data is None:
             self.data = self.get_comp_data()
+            if self.data is None:
+                raise ex.excError("could not fetch compliance data from the collector")
             modulesets = []
             if self.options.moduleset != "":
                 # purge unspecified modulesets
@@ -393,8 +384,6 @@ class Compliance(object):
 
         if not os.path.exists(comp_dir):
             os.makedirs(comp_dir, 0o755)
-            raise ex.excError('modules [%s] are not present in %s'%(
-                               ','.join(self.module), comp_dir))
 
         for module, autofix, moduleset in self.module:
             try:
@@ -522,6 +511,9 @@ class Compliance(object):
         def recurse(ms, depth=0):
             prefix=" "*depth
             print(prefix+ms+':')
+            if ms not in data["modulesets"]:
+                print(prefix+" (no modules)")
+                return
             for module, autofix in data["modulesets"][ms]:
                 if autofix:
                     s = " (autofix)"

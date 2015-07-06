@@ -45,12 +45,12 @@ class CompRc(object):
 
         vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
         release = os.environ.get('OSVC_COMP_NODES_OS_RELEASE', 'unknown')
-        if vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
+        if vendor in ['CentOS', 'Redhat', 'Red Hat', 'SuSE'] or \
            (vendor == 'Oracle' and self.sysname == 'Linux'):
 
             import chkconfig
             self.o = chkconfig.Chkconfig()
-        elif vendor in ['Ubuntu', 'HP']:
+        elif vendor in ['Ubuntu', 'Debian', 'HP']:
             import sysvinit
             self.o = sysvinit.SysVInit()
         else:

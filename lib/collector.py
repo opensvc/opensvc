@@ -1,3 +1,4 @@
+from __future__ import print_function
 from stat import *
 import os
 import sys
@@ -377,7 +378,11 @@ class Collector(object):
         return d['data']
 
     def collector_show_tags(self):
-        d = self._collector_show_tags()
+        try:
+            d = self._collector_show_tags()
+        except ex.excError as e:
+            print(e, file=sys.stderr)
+            return
         for tag in d:
             print(tag)
 

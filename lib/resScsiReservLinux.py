@@ -123,6 +123,13 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             self.log.error("failed to release disk %s" % disk)
         return ret
 
+    def disk_clear_reservation(self, disk):
+        cmd = [ 'sg_persist', '-n', '--out', '--clear', '--param-rk='+self.hostid, disk ]
+        (ret, out, err) = self.vcall(cmd)
+        if ret != 0:
+            self.log.error("failed to clear reservation on disk %s" % disk)
+        return ret
+
     def disk_reserve(self, disk):
         self.set_read_only(0)
         cmd = [ 'sg_persist', '-n', '--out', '--reserve', '--param-rk='+self.hostid, '--prout-type='+self.prtype, disk ]

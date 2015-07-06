@@ -100,10 +100,15 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.docker_start()
         self.docker('start')
 
+    def start(self):
+        resContainer.Container.start(self)
+        self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+
     def container_stop(self):
         self.docker('stop')
 
     def stop(self):
+        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
         self.docker_stop()
  
@@ -148,13 +153,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         return False
 
     def get_container_info(self):
-        cpu_set = self.get_cf_value("lxc.cgroup.cpuset.cpus")
-        #d = json.loads(response)
-        if cpu_set is None:
-            vcpus = 0
-        else:
-            vcpus = len(cpu_set.split(','))
-        return {'vcpus': str(vcpus), 'vmem': '0'}
+        return {'vcpus': '0', 'vmem': '0'}
 
     def check_manual_boot(self):
         return True

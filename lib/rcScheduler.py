@@ -5,6 +5,82 @@ import stat
 import datetime
 import json
 import time
+import random
+
+from rcGlobalEnv import rcEnv
+
+sched_fmt = "[%s] %-45s %s"
+print_sched_fmt = "%-20s  %-21s  %-24s  %s"
+
+def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
+    if os.fork() > 0:
+        """ return to parent execution
+        """
+        return
+
+    """ separate the son from the father
+    """
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            os._exit(0)
+    except:
+        os._exit(1)
+
+    self = args[0]
+    if hasattr(self, "svcname") and self.svcname is not None:
+        title = self.svcname+"."+fn.__name__.lstrip("_")
+    else:
+        title = "node."+fn.__name__.lstrip("_")
+
+    if serialize:
+        lockfile = title+".fork.lock"
+        lockfile = os.path.join(rcEnv.pathlock, lockfile)
+
+        from lock import lock, unlock
+        try:
+            fd = lock(lockfile=lockfile, timeout=0, delay=0)
+            print(sched_fmt % ("fork", title, "lock acquired"))
+        except Exception as e:
+            print(sched_fmt % ("fork", title, "task is already running"))
+            os._exit(0)
+
+    # now wait for a random delay to not DoS the collector.
+    if delay > 0 and not hasattr(self, "svcname"):
+        import random
+        import time
+        delay = int(random.random()*delay)
+        print(sched_fmt % ("fork", title, "delay %d secs to level database load"%delay))
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt as e:
+            print(e)
+            os._exit(1)
+
+    try:
+        fn(*args, **kwargs)
+    except Exception as e:
+        if serialize:
+            unlock(fd)
+        print(e, file=sys.stderr)
+        os._exit(1)
+
+    if serialize:
+        unlock(fd)
+    os._exit(0)
+
+def scheduler_fork(fn):
+    def _fn(*args, **kwargs):
+        self = args[0]
+        if self.options.cron or (hasattr(self, "cron") and self.cron):
+            fork(fn, args, kwargs, serialize=True, delay=59)
+        else:
+            fn(*args, **kwargs)
+    return _fn
 
 class SchedNotAllowed(Exception): 
     pass
@@ -70,32 +146,40 @@ class Scheduler(object):
           "sunday": 6
         }
 
-    def need_action_interval(self, timestamp_f, delay=10):
+    def need_action_interval(self, last, delay=10):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
         """
         if delay == 0:
             return False
-        if not os.path.exists(timestamp_f):
+        if last is None:
             return True
-        try:
-            with open(timestamp_f, 'r') as f:
-                d = f.read()
-                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
-                limit = last + datetime.timedelta(minutes=delay)
-                if datetime.datetime.now() < limit:
-                    return False
-                else:
-                    return True
-                f.close()
-        except:
+        limit = last + datetime.timedelta(minutes=delay)
+        if datetime.datetime.now() < limit:
+            return False
+        else:
             return True
 
         # never reach here
         return True
 
+    def sched_delay(self, delay=59):
+        delay = int(random.random()*delay)
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt as e:
+            raise ex.excError("interrupted while waiting for scheduler delay")
+
+    def sched_write_timestamp(self, so):
+        if type(so) != list:
+            so = [so]
+        for _so in so:
+            self.timestamp(_so.fname)
+
     def timestamp(self, timestamp_f):
+        if not timestamp_f.startswith(os.sep):
+            timestamp_f = os.path.join(rcEnv.pathvar, timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
@@ -104,8 +188,8 @@ class Scheduler(object):
             f.close()
         return True
 
-    def skip_action_interval(self, timestamp_f, interval):
-        return not self.need_action_interval(timestamp_f, interval)
+    def skip_action_interval(self, last, interval):
+        return not self.need_action_interval(last, interval)
 
     def in_timerange_probabilistic(self, timerange, now=None):
         if not timerange.get("probabilistic", False):
@@ -186,19 +270,18 @@ class Scheduler(object):
             try:
                 t = time.strptime(s, "%H:%M")
             except:
-                print("malformed time string: %s"%str(s), file=sys.stderr)
                 raise Exception("malformed time string: %s"%str(s))
             s = t.tm_hour * 60 + t.tm_min
         return s
 
-    def in_timeranges(self, schedule, fname=None, now=None):
+    def in_timeranges(self, schedule, fname=None, now=None, last=None):
         if len(schedule["timeranges"]) == 0:
             raise SchedNotAllowed("no timeranges")
         l = []
         for tr in schedule["timeranges"]:
             try:
                 self.in_timerange(tr, now=now)
-                self.in_timerange_interval(tr, fname=fname, now=now)
+                self.in_timerange_interval(tr, fname=fname, now=now, last=last)
                 if fname is not None:
                     # fname as None indicates we run in test mode
                     self.in_timerange_probabilistic(tr, now=now)
@@ -228,28 +311,43 @@ class Scheduler(object):
                 return
         raise SchedNotAllowed("not in timerange %s-%s"%(timerange["begin"],timerange["end"]))
 
-    def in_timerange_interval(self, timerange, fname=None, now=None):
+    def get_last(self, fname):
+        timestamp_f = self.get_timestamp_f(fname)
+        if not os.path.exists(timestamp_f):
+            return
+        try:
+            with open(timestamp_f, 'r') as f:
+                d = f.read()
+                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
+                return last
+        except:
+            return
+
+    def in_timerange_interval(self, timerange, fname=None, now=None, last=None):
         if timerange["interval"] == 0:
             raise SchedNotAllowed("interval set to 0")
         if fname is None:
             # test mode
             return
-        timestamp_f = self.get_timestamp_f(fname)
-        if self.skip_action_interval(timestamp_f, timerange["interval"]):
+        if last is None:
+            last = self.get_last(fname)
+        if last is None:
+            return
+        if self.skip_action_interval(last, timerange["interval"]):
             raise SchedNotAllowed("last run is too soon")
         return
 
-    def _in_schedule(self, schedule, fname=None, now=None):
+    def _in_schedule(self, schedule, fname=None, now=None, last=None):
         self.in_days(schedule, now=now)
-        self.in_timeranges(schedule, fname=fname, now=now)
+        self.in_timeranges(schedule, fname=fname, now=now, last=last)
 
-    def in_schedule(self, schedules, fname=None, now=None):
+    def in_schedule(self, schedules, fname=None, now=None, last=None):
         if len(schedules) == 0:
             raise SchedNotAllowed("no schedule")
         l = []
         for schedule in schedules:
             try:
-                self._in_schedule(schedule, fname=fname, now=now)
+                self._in_schedule(schedule, fname=fname, now=now, last=last)
                 if schedule["exclude"]:
                     raise SchedExcluded('excluded by schedule member "%s"' % schedule["raw"])
                 else:
@@ -259,13 +357,30 @@ class Scheduler(object):
         raise SchedNotAllowed(", ".join(l))
 
     def sched_convert_to_schedule(self, config, section, prefix=""):
-        days_s = config.get(section, prefix+'days')
-        period_s = config.get(section, prefix+'period')
-        interval_s = config.get(section, prefix+'interval')
+        def get_val(param):
+            if not config.has_section(section) or (not config.has_option(section, param) and not config.has_option(section, prefix+param)):
+                # internal syncs
+                c = config.defaults()
+                val = c.get(prefix+param)
+            elif config.has_option(section, prefix+param):
+                val = config.get(section, prefix+param)
+            else:
+                val = config.get(section, param)
+            return str(val)
+
+        days_s = get_val("days")
+        interval_s = get_val("interval")
+        period_s = get_val("period")
+
+        if days_s == "None" or interval_s == "None" or period_s == "None":
+            return ""
+
         try:
             days = json.loads(days_s)
         except:
+            print("invalid days schedule definition in section", section, days_s, file=sys.stderr)
             return ""
+
         try:
             periods = json.loads(period_s)
             l = []
@@ -275,7 +390,8 @@ class Scheduler(object):
                 l.append("%s-%s@%s" % (p[0], p[1], interval_s))
             period_s = ",".join(l)
         except:
-            pass
+            print("invalid periods schedule definition in section", section, file=sys.stderr)
+            return ""
         s = "%(period)s %(days)s" % dict(
               period=period_s,
               days=",".join(days),
@@ -288,19 +404,39 @@ class Scheduler(object):
 
         if hasattr(self, "config"):
             config = self.config
+            config_defaults = self.config_defaults
         elif hasattr(self, "svc"):
             config =  self.svc.config
+            config_defaults = self.svc.config_defaults
 
         if config.has_section(section) and \
            config.has_option(section, 'schedule'):
             schedule_s = config.get(section, 'schedule')
-        elif config.has_section(section) and \
-             config.has_option(section, 'days') and \
-             config.has_option(section, 'interval') and \
-             config.has_option(section, 'period'):
-            schedule_s = self.sched_convert_to_schedule(config, section)
+        elif section.startswith("sync") and config.has_section(section) and (\
+              config.has_option(section, 'sync_days') or \
+              config.has_option(section, 'sync_interval') or \
+              config.has_option(section, 'sync_period') or \
+              config.has_option(section, 'days') or \
+              config.has_option(section, 'interval') or \
+              config.has_option(section, 'period') \
+             ):
+            if section.startswith("sync"):
+                prefix = "sync_"
+            elif section.startswith("app"):
+                prefix = "app_"
+            else:
+                prefix = ""
+            schedule_s = self.sched_convert_to_schedule(config, section, prefix=prefix)
+        elif section.startswith("sync") and not config.has_section(section) and (\
+              'sync_days' in config.defaults() or \
+              'sync_interval' in config.defaults() or \
+              'sync_period' in config.defaults() \
+             ):
+            schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
+        elif option in config_defaults:
+            schedule_s = config_defaults[option]
         else:
             raise SchedNoDefault
 
@@ -516,7 +652,7 @@ class Scheduler(object):
                 end = "%02d:%02d" % (end_m // 60, end_m % 60)
             return {"begin": begin, "end": end}
 
-        if section and "#sync#" in section:
+        if section and section.startswith("sync"):
             probabilistic = False
         else:
             probabilistic = True
@@ -616,46 +752,73 @@ class Scheduler(object):
             data.append(d)
         return data
 
-    def allow_action_schedule(self, section, option, fname=None, now=None):
+    def allow_action_schedule(self, section, option, fname=None, now=None, last=None):
         if option is None:
             return
         if now is None:
             now = datetime.datetime.now()
         try:
             schedule = self.sched_get_schedule(section, option)
-            self.in_schedule(schedule, fname=fname, now=now)
+            self.in_schedule(schedule, fname=fname, now=now, last=last)
         except SchedNoDefault:
             raise SchedNotAllowed("no schedule in section %s and no default schedule"%section)
         except SchedSyntaxError:
             raise SchedNotAllowed("malformed parameter value: %s.schedule"%section)
 
-    def skip_action_schedule(self, section, option, fname=None, now=None):
+    def skip_action_schedule(self, section, option, fname=None, now=None, last=None):
         try:
-            self.allow_action_schedule(section, option, fname=fname, now=now)
+            self.allow_action_schedule(section, option, fname=fname, now=now, last=last)
             return False
         except SchedExcluded:
             return True
-        except:
+        except Exception as e:
             return True
+        return True
 
     def get_timestamp_f(self, fname):
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
+        timestamp_f = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'var', fname))
         return timestamp_f
 
-    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True):
+    def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
+        if type(self.scheduler_actions[action]) == list:
+            data = {"count": 0, "keep": [], "skip": []}
+            for i, so in enumerate(self.scheduler_actions[action]):
+                if self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose, deferred_write_timestamp=deferred_write_timestamp):
+                    data["skip"].append(so)
+                else:
+                    data["keep"].append(so)
+            data["count"] = i+1
+            return data
+        else:
+            so = self.scheduler_actions[action]
+            return self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose)
+
+    def _skip_action(self, action, so, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
         if section is None:
-            section = self.scheduler_actions[action].section
+            section = so.section
         if fname is None:
-            fname = self.scheduler_actions[action].fname
+            fname = so.fname
         if schedule_option is None:
-            schedule_option = self.scheduler_actions[action].schedule_option
+            schedule_option = so.schedule_option
+
+        if hasattr(self, "svcname"):
+            scheduler = self.svcname
+        else:
+            scheduler = "node"
 
         def err(msg):
             if not verbose:
                 return
-            print('%-22s skip  '%section, msg)
+            print(sched_fmt % ("skip", title(), msg))
 
-        if not self.options.cron:
+        def title():
+            s = ".".join((scheduler, action))
+            if "#" in section:
+                s += "."+section
+            return s
+
+        if not self.options.cron and \
+           (not hasattr(self, "cron") or not self.cron):
             # don't update the timestamp file
             return False
 
@@ -667,21 +830,31 @@ class Scheduler(object):
             return True
 
         # update the timestamp file
-        timestamp_f = self.get_timestamp_f(fname)
-        self.timestamp(timestamp_f)
+        if not deferred_write_timestamp:
+            timestamp_f = self.get_timestamp_f(fname)
+            self.timestamp(timestamp_f)
 
+        print(sched_fmt % ("exec", title(), "timestamp updated"))
         return False
 
     def print_schedule(self):
-        print("%-20s  %-15s  %-21s  %s" % ("action", "section", "last", "schedule definition"))
-        print("%-20s  %-15s  %-21s  %s" % ("------", "-------", "----", "-------------------"))
+        print(print_sched_fmt % ("action", "last run", "config parameter", "schedule definition"))
+        print(print_sched_fmt % ("------", "--------", "----------------", "-------------------"))
         for a in sorted(self.scheduler_actions):
             self._print_schedule(a)
 
     def _print_schedule(self, a):
-        section = self.scheduler_actions[a].section
-        schedule_option = self.scheduler_actions[a].schedule_option
-        fname = self.scheduler_actions[a].fname
+        if type(self.scheduler_actions[a]) == list:
+            for so in self.scheduler_actions[a]:
+                 self.__print_schedule(a, so)
+        else:
+            so = self.scheduler_actions[a]
+            self.__print_schedule(a, so)
+
+    def __print_schedule(self, a, so):
+        section = so.section
+        schedule_option = so.schedule_option
+        fname = so.fname
 
         try:
             schedule_s = self.sched_get_schedule_raw(section, schedule_option)
@@ -700,8 +873,12 @@ class Scheduler(object):
         except:
             last_s = "-"
 
-
-        print("%-20s  %-15s  %-21s  %s" % (a, section, last_s, schedule_s))
+        if section != "DEFAULT":
+            param = "schedule"
+        else:
+            param = schedule_option
+        param = '.'.join((section, param))
+        print(print_sched_fmt % (a, last_s, param, schedule_s))
 
     def str_to_datetime(self, s):
         d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")

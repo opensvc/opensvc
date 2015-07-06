@@ -241,8 +241,6 @@ class syncEvasnap(resSync.Sync):
 
     def prereq(self):
         import ConfigParser
-        if not which(self.sssubin):
-            raise ex.excError("missing %s"%self.sssubin)
         if not os.path.exists(self.conf):
             raise ex.excError("missing %s"%self.conf)
         self.config = ConfigParser.RawConfigParser()
@@ -258,6 +256,23 @@ class syncEvasnap(resSync.Sync):
         self.manager = self.config.get(self.eva_name, "manager")
         self.username = self.config.get(self.eva_name, "username")
         self.password = self.config.get(self.eva_name, "password")
+        try:
+            self.sssubin = self.config.get(self.eva_name, "bin")
+        except:
+            self.sssubin = None
+
+        if self.sssubin:
+            sssubin = which(self.sssubin)
+        else:
+            sssubin = None
+
+        if not sssubin:
+            raise ex.excError("missing %s"%self.sssubin)
+
+        if not self.sssubin:
+            # sssu in PATH and not specified in auth.conf
+            self.sssubin = sssubin
+
         for pair in self.pairs:
             if 'src' not in pair or 'dst' not in pair or 'mask' not in pair:
                 raise ex.excError("missing parameter in pair %s"%str(pair))
@@ -293,8 +308,7 @@ class syncEvasnap(resSync.Sync):
         self.eva_name = eva_name
         self.snap_name = snap_name
         self.pairs = pairs
-        self.sssubin = os.path.join(rcEnv.pathbin, 'sssu')
-        self.conf = os.path.join(rcEnv.pathetc, 'sssu.conf')
+        self.conf = os.path.join(rcEnv.pathetc, 'auth.conf')
         self._lun_info = {}
 
     def __str__(self):

@@ -109,5 +109,7 @@ class ifconfig(rcIfconfig.ifconfig):
         self.intf = []
         if mcast:
             self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
         self.parse(out)

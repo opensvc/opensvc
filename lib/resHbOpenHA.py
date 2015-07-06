@@ -22,6 +22,7 @@
 import resHb
 from rcGlobalEnv import rcEnv
 import os
+import logging
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import justcall, which
@@ -147,12 +148,14 @@ class Hb(resHb.Hb):
         # _not_ os.path.exists(self.cfmon) = True mean that setup is _not_ done
         # in this case, self.process_running() have to return _False_
         if not os.path.exists(self.cfmon):
+            self.log.debug('openha configuration is not complete')
             return False
         buff = ""
         with open(self.cfmon) as f:
             buff = f.read()
         daemons = []
         for line in buff.split('\n'):
+            self.log.debug('monitor file [%s]'%line)
             l = line.split()
             if len(l) < 4:
                 continue
@@ -164,13 +167,16 @@ class Hb(resHb.Hb):
                 suffix = '_raw'
             else:
                 suffix = '_dio'
-            if rcEnv.nodename == l[0]:
+            self.log.debug('nodename [%s]  monitor nodename [%s]'%(rcEnv.nodename,l[0].lower()))
+            if rcEnv.nodename == l[0].lower():
                 daemon = self.heartd + suffix
                 string = daemon + ' ' + ' '.join(l[2:-1])
+                self.log.debug('append heartd daemon [%s]'%string)
                 daemons.append(string)
             else:
                 daemon = self.heartc + suffix
                 string = daemon + ' ' + ' '.join(l[2:])
+                self.log.debug('append heartc daemon [%s]'%string)
                 daemons.append(string)
         daemons.append(self.nmond)
         (out, err, ret) = justcall(['ps', '-ef'])
@@ -181,6 +187,9 @@ class Hb(resHb.Hb):
             h[d] = 1
         # ckecking running daemons 
         lines = [ l for l in out.split('\n') if "heart" in l or "nmond" in l ]
+        if self.log.isEnabledFor(logging.DEBUG):
+            for line in lines:
+                self.log.debug('ps daemons [%s]'%line)
         if which("pargs"):
             # solaris ps command truncates long lines
             # disk-based hb tend to have long args
@@ -196,7 +205,7 @@ class Hb(resHb.Hb):
                 if ret != 0:
                     continue
                 s = ' '.join([ regex.sub('', l) for l in out.split('\n') if l.startswith('argv') ])
-		if s in h:
+                if s in h:
                     h[s] = 0
         else:
             for line in lines:
@@ -206,6 +215,7 @@ class Hb(resHb.Hb):
         # now counting daemons not found as running
         total = 0
         for d in daemons:
+            self.log.debug('daemon [%s] [%s]'%(d,h[d]))
             total += h[d]
         if total > 0:
             return False
@@ -233,7 +243,7 @@ class Hb(resHb.Hb):
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
         peer = self.get_peer()
-	self.log.debug('freeze: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('freeze: local_status=%s remote_status=%s'%(local_status, remote_status))
 
         if local_status in ['frozen_stop', 'start_ready']:
             self.log.info("local already frozen")
@@ -280,7 +290,7 @@ class Hb(resHb.Hb):
         do_remote = True
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('thaw: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('thaw: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if local_status not in ['frozen_stop', 'start_ready']:
@@ -342,9 +352,11 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('switch: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
         if local_status == "started":
+            if remote_status == "frozen_stop":
+                raise ex.excError("remote state is frozen_stop, can't relocate service")
             try:
                 self.stop()
             except ex.excEndAction:
@@ -376,7 +388,7 @@ class Hb(resHb.Hb):
             self.start()
             self.wait_for_state(["started", "start_failed", "starting"])
         else:
-            raise ex.excError("cannot switch in current state: %s/%s"%(local_state,remote_state))
+            raise ex.excError("cannot switch in current state: %s/%s"%(local_status,remote_status))
 
         self.thaw()
         raise ex.excEndAction("heartbeat actions done")
@@ -391,7 +403,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('start: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('start: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if remote_status == 'started':
@@ -436,7 +448,7 @@ class Hb(resHb.Hb):
 
         local_status = self.service_local_status()
         remote_status = self.service_remote_status()
-	self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
+        self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
         if not self.svc.remote and remote_status != 'frozen_stop':

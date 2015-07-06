@@ -22,6 +22,12 @@ import socket
 socket.setdefaulttimeout(180)
 
 try:
+    import ssl
+    context = ssl._create_unverified_context()
+except:
+    context = None
+
+try:
     import xmlrpclib
 except ImportError:
     import xmlrpc.client as xmlrpclib
@@ -31,7 +37,16 @@ try:
 except ImportError:
     import http.client as httplib
 
+def get_proxy(uri):
+    try:
+        return xmlrpclib.ServerProxy(uri, context=context)
+    except Exception as e:
+        if "__init__" in str(e):
+            return xmlrpclib.ServerProxy(uri)
+
 from datetime import datetime, timedelta
+import time
+import random
 import os
 import sys
 from rcGlobalEnv import rcEnv
@@ -68,6 +83,42 @@ try:
 except:
     mp = False
 
+def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
+    tries = 5
+    for i in range(tries):
+        try:
+            return _do_call(fn, args, kwargs, log, proxy, mode=mode)
+        except Exception as e:
+            s = str(e)
+            if "retry" in s:
+                # db table changed. retry immediately
+                max_wait = 0
+            elif "restart" in s or "Gateway" in s:
+                # collector overload issues, retry after a random delay
+                max_wait = 3
+            else:
+                # no need to retry at all there, unknown cause
+                raise
+        if max_wait > 0:
+            time.sleep(random.random()*max_wait)
+        log.warning("retry call %s on error %s" % (fn, str(e)))
+    log.error("failed to call %s after %d tries" % (fn, tries))
+
+def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
+    log.info("call remote function %s in %s mode"%(fn, mode))
+    try:
+        _b = datetime.now()
+        buff = getattr(proxy, fn)(*args, **kwargs)
+        _e = datetime.now()
+        _d = _e - _b
+        log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+        return buff
+    except Exception as e:
+        _e = datetime.now()
+        _d = _e - _b
+        err = str(e)
+    log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+
 def call_worker(q):
     e = "foo"
     o = Collector(worker=True)
@@ -78,19 +129,7 @@ def call_worker(q):
             if e is None:
                 break
             fn, args, kwargs = e
-            o.log.info("xmlrpc async %s"%fn)
-            try:
-                _b = datetime.now()
-                getattr(o.proxy, fn)(*args, **kwargs)
-                _e = datetime.now()
-                _d = _e - _b
-                o.log.info("xmlrpc async %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
-                continue
-            except Exception as _e:
-                _e = datetime.now()
-                _d = _e - _b
-                err = str(_e)
-            o.log.error("xmlrpc async %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+            do_call(fn, args, kwargs, o.log, o.proxy, mode="asynchronous")
         o.log.info("shutdown")
     except ex.excSignal:
         o.log.info("interrupted on signal")
@@ -160,7 +199,6 @@ class Collector(object):
         self.init(fn)
         if len(self.proxy_methods) == 0:
             return
-        self.log.info("call %s"%fn)
         if len(args) > 1:
             args = args[1:]
         else:
@@ -178,18 +216,7 @@ class Collector(object):
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             rcEnv.warned = True
             return
-        try:
-            _b = datetime.now()
-            buff = getattr(self, fn)(*args, **kwargs)
-            _e = datetime.now()
-            _d = _e - _b
-            self.log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
-            return buff
-        except Exception as e:
-            _e = datetime.now()
-            _d = _e - _b
-            err = str(e)
-        self.log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+        return do_call(fn, args, kwargs, self.log, self, mode="synchronous")
     
     def __init__(self, worker=False):
         self.proxy = None
@@ -229,10 +256,11 @@ class Collector(object):
         self.log.debug("get dbopensvc method list")
         try:
             if self.proxy is None:
-                self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+                self.proxy = get_proxy(rcEnv.dbopensvc)
             self.proxy_methods = self.proxy.system.listMethods()
-        except:
-            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        except Exception as e:
+            self.log.error(str(e))
+            self.proxy = get_proxy("https://127.0.0.1/")
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
 
@@ -243,10 +271,11 @@ class Collector(object):
         self.log.debug("get dbcompliance method list")
         try:
             if self.comp_proxy is None:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+                self.comp_proxy = get_proxy(rcEnv.dbcompliance)
             self.comp_proxy_methods = self.comp_proxy.system.listMethods()
-        except:
-            self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        except Exception as e:
+            self.log.error(str(e))
+            self.comp_proxy = get_proxy("https://127.0.0.1/")
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
@@ -273,21 +302,23 @@ class Collector(object):
             if len(a) == 0:
                 raise Exception
             dbcompliance_ip = a[0][-1][0]
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
 
         try:
-            self.proxy = xmlrpclib.ServerProxy(rcEnv.dbopensvc)
+            self.proxy = get_proxy(rcEnv.dbopensvc)
             self.get_methods_dbopensvc()
-        except:
-            self.proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+        except Exception as e:
+            self.log.error(str(e))
+            self.proxy = get_proxy("https://127.0.0.1/")
 
         if fn in self.comp_fns:
             try:
-                self.comp_proxy = xmlrpclib.ServerProxy(rcEnv.dbcompliance)
+                self.comp_proxy = get_proxy(rcEnv.dbcompliance)
                 self.get_methods_dbcompliance()
             except:
-                self.comp_proxy = xmlrpclib.ServerProxy("https://127.0.0.1/")
+                self.comp_proxy = get_proxy("https://127.0.0.1/")
 
         self.log.info("feed proxy %s"%str(self.proxy))
         self.log.info("compliance proxy %s"%str(self.comp_proxy))
@@ -684,6 +715,8 @@ class Collector(object):
                             """ no point pushing to db an empty entry
                             """
                             continue
+                        if disk_id.startswith(rcEnv.nodename+".loop"):
+                            continue
                         disk_size = disks.disk_size(d)
                         if disk_id in dh:
                             dh[disk_id] += used
@@ -730,6 +763,9 @@ class Collector(object):
             if disk_id is None or disk_id == "":
                 """ no point pushing to db an empty entry
                 """
+                continue
+
+            if disk_id.startswith(rcEnv.nodename+".loop"):
                 continue
 
             # Linux Node:devlist() reports paths, so we can have duplicate
@@ -1111,6 +1147,27 @@ class Collector(object):
             except:
                 print("error pushing", ibmds.name)
 
+    def push_freenas(self, objects=[], sync=True):
+        if 'update_freenas' not in self.proxy_methods:
+           print("'update_freenas' method is not exported by the collector")
+           return
+        m = __import__('rcFreenas')
+        try:
+            arrays = m.Freenass(objects)
+        except:
+            return
+        for array in arrays:
+            vals = []
+            for key in array.keys:
+                vals.append(getattr(array, 'get_'+key)())
+            args = [array.name, array.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            try:
+                self.proxy.update_freenas(*args)
+            except:
+                print("error pushing", array.name)
+
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print("'update_dcs' method is not exported by the collector")
@@ -1160,6 +1217,7 @@ class Collector(object):
         except Exception as e:
             print(e)
             return 1
+        r = 0
         for sym in syms:
             # can be too big for a single rpc
             for key in sym.keys:
@@ -1168,12 +1226,18 @@ class Collector(object):
                 args = [sym.sid, vars, vals]
                 if self.auth_node:
                     args += [(rcEnv.uuid, rcEnv.nodename)]
-                self.proxy.update_sym_xml(*args)
+                try:
+                    self.proxy.update_sym_xml(*args)
+                except Exception as e:
+                    print(sym.sid, key, ":", e)
+                    r = 1
+                    continue
             # signal all files are received
             args = [sym.sid, [], []]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_sym_xml(*args)
+        return r
     
     def push_all(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]

@@ -1,5 +1,6 @@
 import resStonith
 import rcStatus
+from rcUtilities import cmdline2list
 from rcGlobalEnv import rcEnv
 
 class Stonith(resStonith.Stonith):
@@ -22,6 +23,6 @@ class Stonith(resStonith.Stonith):
         self.cmd = cmd
 
     def _start(self):
-        cmd = self.cmd.split(' ')
-        self.vcall(cmd)
+        _cmd = cmdline2list(self.cmd)
+        self.vcall(_cmd)
 

@@ -148,11 +148,19 @@ class ifconfig(rcIfconfig.ifconfig):
                 prev = ''
                 for w in _line:
                     if 'inet' == prev :
-                        ipaddr, mask = w.split('/')
+                        try:
+                            ipaddr, mask = w.split('/')
+                        except:
+                            # tun for example
+                            continue
                         _i.ipaddr += [ipaddr]
                         _i.mask += [octal_to_cidr(mask)]
                     elif 'inet6' == prev:
-                        (ip6addr, ip6mask) = w.split('/')
+                        try:
+                            ip6addr, ip6mask = w.split('/')
+                        except:
+                            # tun for example
+                            continue
                         _i.ip6addr += [ip6addr]
                         _i.ip6mask += [ip6mask]
                     elif 'brd' == prev and 'inet' in line:
@@ -274,11 +282,15 @@ class ifconfig(rcIfconfig.ifconfig):
             data[name].append(line.split()[-1])
         return data
 
-    def __init__(self, mcast=False):
+    def __init__(self, mcast=False, ip_out=None):
         self.intf = []
         if mcast:
             self.mcast_data = self.get_mcast()
-        if which('ip'):
+        else:
+            self.mcast_data = {}
+        if ip_out:
+            self.parse_ip(ip_out)
+        elif which('ip'):
             out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0]
             self.parse_ip(out)
         else:

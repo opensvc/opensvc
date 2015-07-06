@@ -151,6 +151,8 @@ class ifconfig(rcIfconfig.ifconfig):
         self.hwaddr = {}
         if mcast:
             self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
         if hwaddr:
             lines = Popen(['lanscan', '-i', '-a'], stdout=PIPE).communicate()[0].split('\n')
             for line in lines:

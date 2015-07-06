@@ -80,8 +80,14 @@ class Dev(object):
         self.parents = []
         self.children = []
 
+        self.removed = False
+
     def __iadd__(self, o):
         pass
+
+    def remove(self, r):
+        # to implement for each os
+        r.log.info("remove method not implemented for device %s"%self.alias)
 
     def set_alias(self, alias):
         self.alias = alias
@@ -195,7 +201,29 @@ class Dev(object):
             #print(map(lambda x: (x.parent, x.child, x.used, x.get_size(chain+[parent]), x.used), chain+[parent]))
             dev.print_dev_bottom_up(level+1, chain+[parent])
 
+    def get_parents_bottom_up(self, l=[]):
+        for parent in self.parents:
+            dev = self.get_dev(parent.parent)
+            l.append(dev)
+            l = dev.get_parents_bottom_up(l)
+        return l
+
+    def get_children_bottom_up(self):
+        l = self.get_children_top_down()
+        l.reverse()
+        return l
+
+    def get_children_top_down(self):
+        l = []
+        for child in self.children:
+            dev = self.get_dev(child.child)
+            l.append(dev)
+            l += dev.get_children_top_down()
+        return l
+
 class DevTree(object):
+    dev_class = Dev
+
     def __init__(self):
         self.dev = {}
 
@@ -253,7 +281,7 @@ class DevTree(object):
             return self.dev[devname]
         if self.blacklist(devname):
             return
-        d = Dev(devname, size, devtype)
+        d = self.dev_class(devname, size, devtype)
         self += d
         return d
 

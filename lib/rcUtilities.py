@@ -18,7 +18,9 @@
 #
 from __future__ import print_function
 import os, sys
+import datetime
 import logging
+import socket
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
@@ -36,58 +38,6 @@ def ximport(base):
         pass
 
     return __import__(base)
-
-def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
-    if os.fork() > 0:
-        """ return to parent execution
-        """
-        return
-
-    """ separate the son from the father
-    """
-    os.chdir('/')
-    os.setsid()
-    os.umask(0)
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-    except:
-        os._exit(1)
-
-    if serialize:
-        from lock import lock, unlock
-        lockfile=os.path.join(rcEnv.pathvar, "fork_"+fn.__name__+".lock")
-        try:
-            fd = lock(lockfile=lockfile, timeout=1, delay=1)
-        except Exception as e:
-            print("%s is already running" % fn.__name__)
-            os._exit(0)
-
-    # now wait for a random delay to not DoS the collector.
-    if delay > 0:
-        import random
-        import time
-        delay = int(random.random()*delay)
-        print("delay '%s' for %d secs to level database load"%(fn.__name__, delay))
-        try:
-            time.sleep(delay)
-        except KeyboardInterrupt as e:
-            print(e)
-            os._exit(1)
-
-    try:
-        fn(*args, **kwargs)
-    except Exception as e:
-        if serialize:
-            unlock(fd)
-        print(e, file=sys.stderr)
-        os._exit(1)
-
-    if serialize:
-        unlock(fd)
-    os._exit(0)
 
 def check_privs():
     if os.name == 'nt':
@@ -168,7 +118,8 @@ def call(argv=['/bin/false'],
                            #        depending on err_to_warn and
                            #        err_to_info value
          err_to_warn=False,
-         err_to_info=False):
+         err_to_info=False,
+         warn_to_info=False):
     "return(ret, stdout,stderr)"
     if log is None:
         log = logging.getLogger('CALL')
@@ -215,6 +166,8 @@ def call(argv=['/bin/false'],
         elif errlog:
             if ret != 0:
                 log.error('stderr:\n' + buff[1])
+            elif warn_to_info:
+                log.info('command succesful but stderr:\n' + buff[1])
             else:
                 log.warning('command succesful but stderr:\n' + buff[1])
         elif errdebug:
@@ -245,13 +198,15 @@ def qcall(argv=['/bin/false']) :
 def vcall(argv=['/bin/false'],
           log=None,
           err_to_warn=False,
-          err_to_info=False ):
+          err_to_info=False,
+          warn_to_info=False):
     return call(argv,
                 log=log,
                 info=True,
                 outlog=True,
                 err_to_warn=err_to_warn,
-                err_to_info=err_to_info)
+                err_to_info=err_to_info,
+                warn_to_info=warn_to_info)
 
 def getmount(path):
     path = os.path.abspath(path)
@@ -369,6 +324,68 @@ def cmdline2list(cmdline):
 
     return result
 
+def try_decode(string, codecs=['utf8', 'latin1']):
+    for i in codecs:
+        try:
+            return string.decode(i)
+        except:
+            pass
+    return string
+
+def getaddr_cache_set(name, addr):
+    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    cache_f = os.path.join(cache_d, name)
+    with open(cache_f, 'w') as f:
+        f.write(addr)
+    return addr
+
+def getaddr_cache_get(name):
+    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    cache_f = os.path.join(cache_d, name)
+    if not os.path.exists(cache_f):
+        raise Exception("addrinfo cache empty for name %s" % name)
+    cache_mtime = datetime.datetime.fromtimestamp(os.stat(cache_f).st_mtime)
+    limit_mtime = datetime.datetime.now() - datetime.timedelta(minutes=16)
+    if cache_mtime < limit_mtime:
+        raise Exception("addrinfo cache expired for name %s (%s)" % (name, cache_mtime.strftime("%Y-%m-%d %H:%M:%S")))
+    with open(cache_f, 'r') as f:
+        addr = f.read()
+    if addr.count(".") != 3 and ":" not in addr:
+        raise Exception("addrinfo cache corrupted for name %s: %s" % (name, addr))
+    return addr
+
+def getaddr(name, cache_fallback, log=None):
+    if cache_fallback:
+        return getaddr_caching(name, log=log)
+    else:
+        return getaddr_non_caching(name)
+
+def getaddr_non_caching(name, log=None):
+    a = socket.getaddrinfo(name, None)
+    if len(a) == 0:
+        raise Exception("could not resolve name %s: empty dns request resultset" % name)
+    addr = a[0][4][0]
+    try:
+        getaddr_cache_set(name, addr)
+    except Exception as e:
+        if log:
+            log.warning("failed to cache name addr %s, %s: %s"  %(name, addr, str(e)))
+    return addr
+
+def getaddr_caching(name, log=None):
+    try:
+        addr = getaddr_non_caching(name)
+    except Exception as e:
+        if log:
+            log.warning("%s. fallback to cache." % str(e))
+        addr = getaddr_cache_get(name)
+    if log:
+        log.info("fetched %s address for name %s from cache" % (addr, name))
+    return addr
 
 if __name__ == "__main__":
     print("call(('id','-a'))")

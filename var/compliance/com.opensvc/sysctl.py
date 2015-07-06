@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_SYSCTL_... vars
 """
@@ -15,6 +15,8 @@ from comp import *
 
 class Sysctl(object):
     def __init__(self, prefix='OSVC_COMP_SYSCTL_'):
+        if os.uname()[0] != "Linux":
+            raise NotApplicable()
         self.prefix = prefix.upper()
         self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
@@ -110,6 +112,7 @@ class Sysctl(object):
                 continue
             val = self.parse_val(l[1])
             if target == val[index]:
+                done = True
                 continue
             print "sysctl: set %s[%d] = %s"%(keyname, index, str(target))
             val[index] = target
@@ -218,7 +221,7 @@ class Sysctl(object):
         return r
 
 if __name__ == "__main__":
-    """ test: OSVC_COMP_TEST_SYSCTL_1='[{"index": 0, "value": 0, "key": "vm.laptop_mode", "op": "="}, {"index": 0, "value": 0, "key": "kernel.ctrl-alt-del", "op": "="}, {"index": 0, "value": 4, "key": "kernel.printk", "op": "="}, {"index": 3, "value": 5, "key": "kernel.printk", "op": "="}]' ./sysctl.py OSVC_COMP_TEST_SYSCTL check
+    """ test: OSVC_COMP_SYSCTL='[{"key": "net.unix.max_dgram_qlen", "value": [">=", 9]}, {"key": "kernel.ctrl-alt-del", "value": ["=", 1]}, {"key": "kernel.printk", "value": [[], [] , [], [">=", 12]]}]' ./sysctl.py OSVC_COMP_SYSCTL check
     """
     syntax = """syntax:
       %s PREFIX check|fixable|fix"""%sys.argv[0]

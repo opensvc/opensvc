@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/opt/opensvc/bin/python
 
 """
 OSVC_COMP_SERVICES_SVC_NAME=app2.prd OSVC_COMP_SVCCONF_APP2_PRD='[{"value": "fd5373b3d938", "key": "container#1.run_image", "op": "="}, {"value": "/bin/sh", "key": "container#1.run_command", "op": "="}, {"value": "/opt/%%ENV:SERVICES_SVC_NAME%%", "key": "DEFAULT.docker_data_dir", "op": "="}, {"value": "no", "key": "container(type=docker).disable", "op": "="}, {"value": 123, "key": "container(type=docker&&run_command=/bin/sh).newvar", "op": "="}]' ./svcconf.py OSVC_COMP_SVCCONF check

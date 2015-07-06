@@ -73,7 +73,6 @@ class Node(Svc, Freezer, Scheduler):
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
-        self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
@@ -97,6 +96,7 @@ class Node(Svc, Freezer, Scheduler):
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'scheduler': 'run the node task scheduler',
             'schedule_reboot_status': 'tell if the node is scheduled for reboot',
             'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
             'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
@@ -111,10 +111,10 @@ class Node(Svc, Freezer, Scheduler):
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
-            'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
-            'updateservices': 'refresh var files associated with services',
           },
           'Node configuration edition': {
+            'edit_config': 'open the node.conf configuration file with the preferred editor',
+            'edit_authconfig': 'open the auth.conf configuration file with the preferred editor',
             'register': 'obtain a registration number from the collector, used to authenticate the node',
             'get': 'get the value of the node configuration parameter pointed by --param',
             'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
@@ -122,7 +122,6 @@ class Node(Svc, Freezer, Scheduler):
           },
           'Push data to the collector': {
             'pushasset':      'push asset information to collector',
-            'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
             'pushdisks':      'push disks usage information to collector',
             'pushpkg':        'push package/version list to collector',
@@ -132,13 +131,13 @@ class Node(Svc, Freezer, Scheduler):
             'pushnecism':     'push NEC ISM configuration to collector',
             'pushhds':        'push HDS configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
+            'pushfreenas':    'push FreeNAS configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
             'pushhp3par':     'push HP 3par configuration to collector',
             'pushibmds':      'push IBM DS configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
-            'push_appinfo':   'push services application launchers appinfo key/value pairs to collector',
             'sysreport':      'push system report to the collector for archiving and diff analysis',
             'checks':         'run node sanity checks, push results to collector',
           },
@@ -208,7 +207,6 @@ class Node(Svc, Freezer, Scheduler):
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
 	self.scheduler_actions = {
-	 "syncservices": SchedOpts("syncservices"),
 	 "checks": SchedOpts("checks"),
 	 "pushstats": SchedOpts("stats"),
 	 "pushpkg": SchedOpts("packages"),
@@ -218,6 +216,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
 	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
 	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
+	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
 	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
 	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
 	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
@@ -226,23 +225,12 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushsym": SchedOpts("sym", schedule_option="no_schedule"),
 	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
 	 "pushdisks": SchedOpts("disks"),
-	 "pushservices": SchedOpts("svcconf"),
-	 "push_appinfo": SchedOpts("appinfo"),
 	 "sysreport": SchedOpts("sysreport"),
 	 "compliance_auto": SchedOpts("compliance", fname="last_comp_check", schedule_option="comp_schedule"),
 	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="last_rotate_root_pw", schedule_option="no_schedule"),
 	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
         }
 
-
-    def scheduler_fork(fn):
-        def _fn(*args, **kwargs):
-            self = args[0]
-            if self.options.cron:
-                rcUtilities.fork(fn, args, kwargs, serialize=True)
-            else:
-                fn(*args, **kwargs)
-        return _fn
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -313,38 +301,26 @@ class Node(Svc, Freezer, Scheduler):
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
 
-    def _setup_sync_conf(self):
-        h = {}
-        self.build_services()
-        self.config = ConfigParser.RawConfigParser()
-        for svc in self.svcs:
-            for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
-                for r in rs.resources:
-                    s = '#'.join((svc.svcname, r.rid))
-                    if not self.config.has_section(s):
-                        self.config.add_section(s)
-                    self.config.set(s, 'svcname', svc.svcname)
-                    self.config.set(s, 'rid', r.rid)
-                    self.config.set(s, 'schedule', r.schedule)
-        self.write_dotconfig()
-        with open(self.setup_sync_flag, 'w') as f:
-            f.write(str(time.time()))
+    def edit_config(self):
+        cf = os.path.join(rcEnv.pathetc, "node.conf")
+        return self.edit_cf(cf)
 
-    def write_dotconfig(self):
-        for o in self.config_defaults:
-            if self.config.has_option('DEFAULT', o):
-                self.config.remove_option('DEFAULT', o)
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                self.config.remove_section(s)
-        try:
-            fp = open(self.dotnodeconf, 'w')
-            self.config.write(fp)
-            fp.close()
-        except:
-            print("failed to write new %s"%self.dotnodeconf, file=sys.stderr)
-            raise Exception()
-        self.load_config()
+    def edit_authconfig(self):
+        cf = os.path.join(rcEnv.pathetc, "auth.conf")
+        return self.edit_cf(cf)
+
+    def edit_cf(self, cf):
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        return os.system(' '.join((editor, cf)))
 
     def write_config(self):
         for o in self.config_defaults:
@@ -369,11 +345,6 @@ class Node(Svc, Freezer, Scheduler):
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
-        try:
-            self.config.read(self.dotnodeconf)
-        except:
-            self._setup_sync_conf()
-            self.write_dotconfig()
 
     def load_auth_config(self):
         if self.auth_config is not None:
@@ -401,16 +372,6 @@ class Node(Svc, Freezer, Scheduler):
             if mtime > last:
                 return True
         return False
-
-    def setup_sync_conf(self):
-        if self.setup_sync_outdated():
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_section('sync'):
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_option('sync', 'schedule'):
-            self._setup_sync_conf()
 
     def format_desc(self, action=None):
         from textwrap import TextWrapper
@@ -483,6 +444,15 @@ class Node(Svc, Freezer, Scheduler):
         else:
             return getattr(self, a)()
 
+    def scheduler(self):
+        self.options.cron = True
+        for action in self.scheduler_actions:
+            try:
+                self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
+
     def pushstats(self):
         # set stats range to push to "last pushstat => now"
 
@@ -493,10 +463,10 @@ class Node(Svc, Freezer, Scheduler):
             start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
             now = datetime.datetime.now()
             delta = now - start
-            interval = delta.days * 1440 + delta.seconds // 60
+            interval = delta.days * 1440 + delta.seconds // 60 + 10
             #print("push stats for the last %d minutes since last push" % interval)
         except Exception as e:
-            interval = 1440
+            interval = 1450
             #print("can not determine last push date. push stats for the last %d minutes" % interval)
         if interval < 21:
             interval = 21
@@ -583,6 +553,15 @@ class Node(Svc, Freezer, Scheduler):
     @scheduler_fork
     def task_pushibmds(self):
         self.collector.call('push_ibmds', self.options.objects)
+
+    def pushfreenas(self):
+        if self.skip_action("pushfreenas"):
+            return
+        self.task_pushfreenas()
+
+    @scheduler_fork
+    def task_pushfreenas(self):
+        self.collector.call('push_freenas', self.options.objects)
 
     def pushdcs(self):
         if self.skip_action("pushdcs"):
@@ -743,87 +722,11 @@ class Node(Svc, Freezer, Scheduler):
             self.build_services()
         self.collector.call('push_disks', self)
 
-    def need_sync(self):
-        l = []
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                continue
-            ts = '_'.join(('last_sync',
-                           self.config.get(s, 'svcname'),
-                           self.config.get(s, 'rid')))
-            if self.skip_action("need_sync",
-                                section=s,
-                                fname=ts,
-                                schedule_option='sync_schedule'):
-                    continue
-            l.append(self.config.get(s, 'svcname'))
-        return l
-
     def shutdown(self):
         print("TODO")
 
     def reboot(self):
         print("TODO")
-
-    def syncservices(self):
-        self.setup_sync_conf()
-        svcnames = self.need_sync()
-        if len(svcnames) == 0:
-            return
-
-        from multiprocessing import Process
-        p = {}
-
-        if self.svcs is None:
-            self.build_services(svcnames=svcnames)
-
-        for svc in self.svcs:
-            if svc.svcname not in svcnames:
-                continue
-            p[svc.svcname] = rcCommandWorker.CommandWorker(name=svc.svcname)
-            cmd = [os.path.join(rcEnv.pathetc, svc.svcname), 'syncall']
-            if self.options.force:
-                cmd.append('--force')
-            if self.options.cron:
-                cmd.append('--cron')
-            p[svc.svcname].enqueue(cmd)
-
-        for svcname in p:
-            p[svcname].stop_worker()
-
-    @scheduler_fork
-    def updateservices(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('presync')
-
-    def pushservices(self):
-        if self.skip_action("pushservices"):
-            return
-        self.tassk_pushservices()
-
-    @scheduler_fork
-    def task_pushservices(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push')
-
-    def push_appinfo(self):
-        if self.skip_action("push_appinfo"):
-            return
-        self.task_push_appinfo()
-
-    @scheduler_fork
-    def task_push_appinfo(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push_appinfo')
 
     def sysreport(self):
         if self.skip_action("sysreport"):
@@ -840,10 +743,26 @@ class Node(Svc, Freezer, Scheduler):
             return
         m.SysReport(node=self).sysreport(force=self.options.force)
 
+    def get_prkey(self):
+        if self.config.has_option("node", "prkey"):
+            hostid = self.config.get("node", "prkey")
+            if len(hostid) > 18 or not hostid.startswith("0x") or \
+               len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
+                raise ex.excError("prkey in node.conf must have 16 significant hex digits max (ex: 0x90520a45138e85)")
+            return hostid
+        self.log.info("can't find a prkey forced in node.conf. generate one.")
+        hostid = "0x"+self.hostid()
+        self.config.set('node', 'prkey', hostid)
+        self.write_config()
+        return hostid
+
     def prkey(self):
+        print(self.get_prkey())
+
+    def hostid(self):
         from rcGlobalEnv import rcEnv
         m = __import__('hostid'+rcEnv.sysname)
-        print(m.hostid())
+        return m.hostid()
 
     def checks(self):
         if self.skip_action("checks"):
@@ -1049,6 +968,8 @@ class Node(Svc, Freezer, Scheduler):
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
         compp = os.path.join(rcEnv.pathvar, 'compliance')
+        if not os.path.exists(compp):
+            os.makedirs(compp, 0o755)
         import shutil
         try:
             shutil.rmtree(backp)

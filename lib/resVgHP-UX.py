@@ -37,7 +37,7 @@ class Vg(resDg.Dg):
                  monitor=False,
                  restart=0,
                  subset=None):
-        self.label = name
+        self.label = "vg "+name
         self.dsf = dsf
         resDg.Dg.__init__(self,
                           rid=rid,

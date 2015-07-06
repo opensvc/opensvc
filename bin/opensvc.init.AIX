@@ -7,7 +7,11 @@ allservices=${osvc_path}/allservices
 case $1 in
 start)
         ${osvc_path}/nodemgr pushasset
-	${allservices} ${osvc_opts} boot
+	[ "${osvc_background}" == "true" ] && {
+		${allservices} ${osvc_opts} boot &
+	} || {
+		${allservices} ${osvc_opts} boot
+	}
 	;;
 stop)
 	${allservices} ${osvc_opts} shutdown

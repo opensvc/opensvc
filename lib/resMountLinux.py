@@ -30,8 +30,10 @@ from rcLoopLinux import file_to_loop
 import rcExceptions as ex
 from stat import *
 
-def try_umount(self):
-    cmd = ['umount', self.mountPoint]
+def try_umount(self, mnt=None):
+    if mnt is None:
+        mnt = self.mountPoint
+    cmd = ['umount', mnt]
     (ret, out, err) = self.vcall(cmd, err_to_warn=True)
     if ret == 0:
         return 0
@@ -42,7 +44,7 @@ def try_umount(self):
     """ don't try to kill process using the source of a 
         protected bind mount
     """
-    if protected_mount(self.mountPoint):
+    if protected_mount(mnt):
         return 1
 
     """ best effort kill of all processes that might block
@@ -53,10 +55,10 @@ def try_umount(self):
     (ret, out, err) = self.vcall(cmd)
 
     for i in range(4):
-        cmd = ['fuser', '-kmv', self.mountPoint]
+        cmd = ['fuser', '-kmv', mnt]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        self.log.info('umount %s'%self.mountPoint)
-        cmd = ['umount', self.mountPoint]
+        self.log.info('umount %s'%mnt)
+        cmd = ['umount', mnt]
         ret = qcall(cmd)
         if ret == 0:
             break
@@ -130,6 +132,9 @@ class Mount(Res.Mount):
             ret = self.Mounts.has_mount(dev, self.mountPoint)
             if ret:
                 return True
+            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+            if ret:
+                return True
 
         if self.fsType not in self.netfs:
             try:
@@ -146,6 +151,9 @@ class Mount(Res.Mount):
                     ret = self.Mounts.has_mount(dev, self.mountPoint)
                     if ret:
                         return True
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+                    if ret:
+                        return True
             elif S_ISBLK(mode):
                 # might be a mount using a /dev/dm-<minor> name too
                 from rcUtilitiesLinux import major
@@ -153,6 +161,9 @@ class Mount(Res.Mount):
                 if os.major(st.st_rdev) == dm_major:
                     dev = '/dev/dm-' + str(os.minor(st.st_rdev))
                     ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    if ret:
+                        return True
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
                     if ret:
                         return True
 
@@ -366,12 +377,49 @@ class Mount(Res.Mount):
             return
         if not os.path.exists(self.mountPoint):
             raise ex.excError('mount point %s does not exist' % self.mountPoint)
+        self.remove_holders()
+        self.remove_deeper_mounts()
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
             raise ex.excError('failed to umount %s'%self.mountPoint)
         self.Mounts = None
+
+    def remove_dev_holders(self, devpath, tree):
+        dev = tree.get_dev_by_devpath(devpath)
+        if dev is None:
+            return
+        holders_devpaths = set()
+        holder_devs = dev.get_children_bottom_up()
+        for holder_dev in holder_devs:
+            holders_devpaths |= set(holder_dev.devpath)
+        holders_devpaths -= set(dev.devpath)
+        holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
+        if len(holders_handled_by_resources) > 0:
+            raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
+        for holder_dev in holder_devs:
+            holder_dev.remove(self)
+
+    def remove_holders(self):
+        import glob
+        import rcDevTreeLinux
+        tree = rcDevTreeLinux.DevTree()
+        tree.load()
+        dev_realpath = os.path.realpath(self.device)
+        self.remove_dev_holders(dev_realpath, tree)
+
+    def remove_deeper_mounts(self):
+        import rcMountsLinux
+        mounts = rcMountsLinux.Mounts()
+        mnt_realpath = os.path.realpath(self.mountPoint)
+        for m in mounts:
+            _mnt_realpath = os.path.realpath(m.mnt)
+            if _mnt_realpath != mnt_realpath and \
+               _mnt_realpath.startswith(mnt_realpath):
+                ret = try_umount(self, _mnt_realpath)
+                if ret != 0:
+                    break
 
 if __name__ == "__main__":
     for c in (Mount,) :

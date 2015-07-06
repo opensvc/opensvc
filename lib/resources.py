@@ -71,19 +71,19 @@ class Resource(object):
 
         if self.rid is None:
             s += self.type
-            return s.upper()
+            return s
 
         if self.subset is None:
             s += self.rid
-            return s.upper()
+            return s
 
         v = self.rid.split('#')
         if len(v) != 2:
             s += rid
-            return s.upper()
+            return s
 
-        s += "%s:%s#%s" % (self.type, self.subset, v[1])
-        return s.upper()
+        s += "%s:%s#%s" % (self.type.split(".")[0], self.subset, v[1])
+        return s
        
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
@@ -265,7 +265,7 @@ class Resource(object):
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or refresh:
+        if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
             self.write_status()
@@ -410,7 +410,7 @@ class Resource(object):
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
-             outlog=False):
+             warn_to_info=False, outlog=False):
         """Use subprocess module functions to do a call
         """
         return rcUtilities.call(cmd, log=self.log,
@@ -418,15 +418,25 @@ class Resource(object):
                                 info=info, errlog=errlog,
                                 err_to_warn=err_to_warn,
                                 err_to_info=err_to_info,
+                                warn_to_info=warn_to_info,
                                 outlog=outlog)
 
-    def vcall(self, cmd, err_to_warn=False, err_to_info=False):
+    def vcall(self, cmd, err_to_warn=False, err_to_info=False,
+              warn_to_info=False):
         """Use subprocess module functions to do a call and
         log the command line using the resource logger
         """
         return rcUtilities.vcall(cmd, log=self.log,
                                  err_to_warn=err_to_warn,
-                                 err_to_info=err_to_info)
+                                 err_to_info=err_to_info,
+                                 warn_to_info=warn_to_info)
+
+    def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
+        for tick in range(tmo//delay):
+            if fn():
+                return
+            time.sleep(delay)
+        raise exc.excError(errmsg)
 
     def devlist(self):
         return self.disklist()
@@ -503,12 +513,6 @@ class ResourceSet(Resource):
             """
             r.rset = self
             self.resources.append(r)
-            if hasattr(r, 'pre_action'):
-                r.log.debug("install pre_action")
-                self.pre_action = r.pre_action
-            if hasattr(r, 'post_action'):
-                r.log.debug("install post_action")
-                self.post_action = r.post_action
             if hasattr(r, 'sort_rset'):
                 r.sort_rset(self)
         return (self)
@@ -520,10 +524,28 @@ class ResourceSet(Resource):
         return "%s]" % (output)
 
     def pre_action(self, rset=None, action=None):
-        pass
+        if len(self.resources) == 0:
+            return
+        types_done = []
+        for r in self.resources:
+            if r.type in types_done:
+                continue
+            types_done.append(r.type)
+            if not hasattr(r, "pre_action"):
+                continue
+            r.pre_action(self, action)
 
     def post_action(self, rset=None, action=None):
-        pass
+        if len(self.resources) == 0:
+            return
+        types_done = []
+        for r in self.resources:
+            if r.type in types_done:
+                continue
+            types_done.append(r.type)
+            if not hasattr(r, "post_action"):
+                continue
+            r.post_action(self, action)
 
     def purge_status_last(self):
         for r in self.resources:
@@ -557,6 +579,14 @@ class ResourceSet(Resource):
             return True
         for tag in rtags:
             if tag in keeptags:
+                return True
+        return False
+
+    def has_resource_with_types(self, l, strict=False):
+        for r in self.resources:
+            if r.type in l:
+                return True
+            if not strict and "." in r.type and r.type.split(".")[0] in l:
                 return True
         return False
 

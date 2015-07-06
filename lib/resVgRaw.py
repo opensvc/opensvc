@@ -44,7 +44,7 @@ class Vg(resDg.Dg):
         resDg.Dg.__init__(self,
                           rid=rid,
                           name="raw",
-                          type='disk.vg',
+                          type='disk.raw',
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled,

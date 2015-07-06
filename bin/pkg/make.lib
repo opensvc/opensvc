@@ -10,6 +10,7 @@ OFFSET=10000
 HEAD=$(git log -1 --pretty=format:%at || exit 1)
 VERSION=$(git describe --tags --abbrev=0)
 RELEASE=$(git describe --tags|cut -d- -f2)
+[ "$RELEASE" == "$VERSION" ] && RELEASE=0
 
 MASTER=0
 git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1

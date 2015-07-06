@@ -334,9 +334,13 @@ class CompVuln(object):
         return l
 
     def aix_fix_pkg(self, pkg):
+        r = self.check_pkg(pkg)
+        if r == RET_OK:
+            return RET_NA
+
         cmd = ['nimclient', '-o', 'cust',
                '-a', 'lpp_source=%s'%self.uri,
-               '-a', 'installp_flags=agQY',
+               '-a', 'installp_flags=aFQY',
                '-a', 'filesets=%s'%pkg['pkgname']]
         s = " ".join(cmd)
         print s
@@ -470,7 +474,9 @@ class CompVuln(object):
             if not line.startswith('ii'):
                 continue
             v = line.split()[1:3]
-            l[v[0]] = [(v[1], "")]
+            pkgname = v[0]
+            pkgname = pkgname.split(':')[0]
+            l[pkgname] = [(v[1], "")]
         return l
 
     def apt_fixable_pkg(self, pkg):
@@ -509,6 +515,20 @@ class CompVuln(object):
             print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
             return RET_ERR
         return RET_OK
+
+    def tainted(self, pkg):
+        if not pkg["pkgname"].startswith("kernel-") and \
+           not pkg["pkgname"].startswith("linux-image"):
+            return False
+        if self.sysname != 'Linux':
+            return False
+        if not os.path.exists("/proc/sys/kernel/tainted"):
+            return False
+        with open("/proc/sys/kernel/tainted", "r") as f:
+            buff = f.read()
+        if buff == "0":
+            return False
+        return True
 
     def zyp_fix_pkg(self, pkg):
         try:
@@ -583,6 +603,8 @@ class CompVuln(object):
         name = pkg["pkgname"]
 
         if name.startswith("kernel"):
+            if self.tainted(pkg):
+                print name, "booted kernel is tainted", "(%s)"%pkg["rule"]
             kver = self.get_raw_kver()
             for i in ('xen', 'hugemem', 'smp', 'PAE'):
                 if kver.endswith(i) and name != "kernel-"+i:
@@ -655,6 +677,8 @@ class CompVuln(object):
     def fix(self):
         r = 0
         for pkg in self.packages:
+            if self.tainted(pkg):
+                print >>sys.stderr, name, "booted kernel is tainted. not safe to upgrade.", "(%s)"%pkg["rule"]
             r |= self.fix_pkg(pkg)
         if self.fix_all is not None and len(self.fix_list) > 0:
             self.fix_all()

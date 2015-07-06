@@ -17,6 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+import os
 
 class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
@@ -67,6 +68,17 @@ class Mounts:
         if key not in ('mnt', 'dev', 'type'):
             return
         self.mounts.sort(lambda x, y: cmp(getattr(x, key), getattr(y, key)), reverse=reverse)
+
+    def get_fpath_dev(self, fpath):
+        last = False
+        d = fpath
+        while not last:
+            d = os.path.dirname(d)
+            m = self.has_param("mnt", d)
+            if m:
+                return m.dev
+            if d == os.sep:
+                last = True
 
     def __str__(self):
         output="%s" % (self.__class__.__name__)

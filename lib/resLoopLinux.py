@@ -37,7 +37,7 @@ class Loop(Res.Loop):
 
     def start(self):
         if self.is_up():
-            self.log.info("%s is already up" % self.loopFile)
+            self.log.info("%s is already up" % self.label)
             return
         cmd = [ 'losetup', '-f', self.loopFile ]
         (ret, out, err) = self.vcall(cmd)
@@ -49,7 +49,7 @@ class Loop(Res.Loop):
 
     def stop(self):
         if not self.is_up():
-            self.log.info("%s is already down" % self.loopFile)
+            self.log.info("%s is already down" % self.label)
             return 0
         for loop in self.loop:
             cmd = [ 'losetup', '-d', loop ]

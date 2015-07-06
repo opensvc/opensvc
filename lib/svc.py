@@ -36,6 +36,7 @@ import rcLogger
 import logging
 import datetime
 import node
+from rcScheduler import *
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -58,7 +59,7 @@ class Options(object):
         self.refresh = False
         os.environ['LANG'] = 'C'
 
-class Svc(Resource):
+class Svc(Resource, Scheduler):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
@@ -83,8 +84,20 @@ class Svc(Resource):
         self.cron = False
         self.force = False
         self.cluster = False
+        self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
+        self.disk_types = [
+         "disk.loop",
+         "disk.raw",
+         "disk.rados",
+         "disk.gandi",
+         "disk.drbd",
+         "disk.md",
+         "disk.zpool",
+         "disk.lock",
+         "disk.vg",
+        ]
         self.status_types = ["container.hpvm",
                              "container.kvm",
                              "container.amazon",
@@ -104,11 +117,14 @@ class Svc(Resource):
                              "disk.drbd",
                              "disk.loop",
                              "disk.gandi",
+                             "disk.raw",
+                             "disk.rados",
                              "disk.scsireserv",
                              "disk.lock",
                              "disk.vg",
                              "disk.lv",
                              "disk.zpool",
+                             "disk.md",
                              "share.nfs",
                              "fs",
                              "ip",
@@ -129,6 +145,8 @@ class Svc(Resource):
                              "sync.netapp",
                              "sync.nexenta",
                              "app",
+                             "stonith.ilo",
+                             "stonith.callout",
                              "hb.openha",
                              "hb.sg",
                              "hb.rhcs",
@@ -137,7 +155,9 @@ class Svc(Resource):
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
-        self.log = rcLogger.initLogger(self.svcname.upper())
+        Scheduler.__init__(self)
+
+        self.log = rcLogger.initLogger(self.svcname)
         self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
@@ -151,17 +171,58 @@ class Svc(Resource):
         self.action_start_date = datetime.datetime.now()
         self.monitor_action = None
         self.group_status_cache = None
+        self.config_defaults = {
+          'push_schedule': '00:00-06:00@361',
+          'sync_schedule': '04:00-06:00@121',
+          'comp_schedule': '00:00-06:00@361',
+          'mon_schedule': '@9',
+          'no_schedule': '',
+        }
+        self.scheduler_actions = {
+         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+"_last_comp_check", schedule_option="comp_schedule"),
+         "push_env": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_env", schedule_option="push_schedule"),
+         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_service_status", schedule_option="mon_schedule"),
+        }
 
     def __cmp__(self, other):
         """order by service name
         """
         return cmp(self.svcname, other.svcname)
 
+    def scheduler(self):
+        self.cron = True
+        self.sync_dblogger = True
+        for action in self.scheduler_actions:
+            try:
+                if action == "syncall":
+                    # save the action logging to the collector if syncall
+                    # is not needed
+                    self.sched_syncall()
+                else:
+                    self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
+
+    def post_build(self):
+        syncs = []
+        for r in self.get_resources("sync"):
+            syncs += [SchedOpts(r.rid, fname=self.svcname+"_last_syncall_"+r.rid, schedule_option="sync_schedule")]
+        if len(syncs) > 0:
+            self.scheduler_actions["syncall"] = syncs
+
+        apps = []
+        for r in self.get_resources("app"):
+            apps += [SchedOpts(r.rid, fname=self.svcname+"_last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
+        if len(apps) > 0:
+            self.scheduler_actions["push_appinfo"] = apps
+
     def purge_status_last(self):
         for rset in self.resSets:
             rset.purge_status_last()
 
     def get_subset_parallel(self, rtype):
+        rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
         if not hasattr(self, "config"):
             self.load_config()
@@ -180,15 +241,17 @@ class Svc(Resource):
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
             # triggers
-            rtype = "%s:%s" % (r.type, r.subset)
+            base_type = r.type.split(".")[0]
+            rtype = "%s:%s" % (base_type, r.subset)
         else:
             rtype = r.type
 
         if rtype in self.type2resSets:
+            # the resource set already exists. add resource or resourceset.
             self.type2resSets[rtype] += r
 
         elif hasattr(r, 'resources'):
-            # this is a ResourceSet or ResourceSet-derived class
+            # new ResourceSet or ResourceSet-derived class
             self.resSets.append(r)
             self.type2resSets[rtype] = r
 
@@ -234,15 +297,19 @@ class Svc(Resource):
         list_actions_no_lock = [
           'docker',
           'push',
+          'push_env',
           'push_appinfo',
           'print_status',
           'print_resource_status',
+          'push_service_status',
           'status',
           'freeze',
           'frozen',
           'thaw',
           'get',
           'freezestop',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_disklist',
           'print_devlist',
@@ -263,12 +330,17 @@ class Svc(Resource):
             # compliance modules are allowed to execute actions on the service
             # so give them their own lock
             suffix = "compliance"
+        elif action.startswith("sync"):
+            suffix = "sync"
+
         if self.lockfd is not None:
             # already acquired
             return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
+
+        self.log.debug("acquire service lock %s (timeout %d, delay %d)" % (lockfile, timeout, delay))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
@@ -317,26 +389,26 @@ class Svc(Resource):
              l = [_type]
          else:
              l = _type
-         rsets = []
-         for t in l:
-             for rs in self.resSets:
-                 if ':' in rs.type:
-                     # remove subset suffix
-                     rstype = rs.type[:rs.type.index(':')]
-                 else:
-                     rstype = rs.type
-                 if '.' in t:
-                     # exact match
-                     if rstype == t:
-                         rsets.append(rs)
-                 elif '.' in rstype and not strict:
-                     # group match
-                     _t = rstype.split('.')
-                     if _t[0] == t:
-                         rsets.append(rs)
-                 else:
-                     if rstype == t:
-                         rsets.append(rs)
+         rsets = {}
+         for rs in self.resSets:
+             if ':' in rs.type and rs.has_resource_with_types(l, strict=strict):
+                 # subset
+                 rsets[rs.type] = rs
+                 continue
+             rs_base_type = rs.type.split(".")[0]
+             if rs.type in l:
+                 # exact match
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
+                 rsets[rs_base_type] += rs
+             elif rs_base_type in l and not strict:
+                 # group match
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
+                 rsets[rs_base_type] += rs
+         rsets = rsets.values()
          rsets.sort()
          return rsets
 
@@ -347,12 +419,10 @@ class Svc(Resource):
             return False
 
     def all_set_action(self, action=None, tags=set([])):
-        """Call action on each member of the subset of specified type
-        """
         self.set_action(self.resSets, action=action, tags=tags)
 
     def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        """Call action on each member of the subset of specified type
+        """ Call action on each member of the subset of specified type
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
@@ -377,6 +447,8 @@ class Svc(Resource):
           "enable",
           "disable",
           "status",
+          'scheduler',
+          'print_schedule',
           "print_status",
           'print_resource_status',
           "print_disklist",
@@ -500,12 +572,15 @@ class Svc(Resource):
         import json
         d = {
               'resources': {},
+              'frozen': self.frozen(),
             }
 
         containers = self.get_resources('container')
         if len(containers) > 0:
             d['encap'] = {}
             for container in containers:
+                if container.name is None or len(container.name) == 0:
+                    continue
                 try:
                     d['encap'][container.name] = self.encap_json_status(container)
                 except:
@@ -524,7 +599,7 @@ class Svc(Resource):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print(json.dumps(d))
+        print(json.dumps(d, indent=4, separators=(',', ': ')))
 
     def json_env(self):
         import json
@@ -548,7 +623,7 @@ class Svc(Resource):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svcenv[section] = tmpsection
-        print(json.dumps(svcenv))
+        print(json.dumps(svcenv, indent=4, separators=(',', ': ')))
 
     def print_resource_status(self):
         if len(self.action_rid) != 1:
@@ -586,10 +661,19 @@ class Svc(Resource):
                                )
                 )
 
+        avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"], discard_disabled=False)
+        accessory_resources = self.get_resources(["hb", "stonith", "sync"], discard_disabled=False)
+        n_accessory_resources = len(accessory_resources)
+
         print(self.svcname)
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
-        fmt = "|- %-17s %4s %-10s %s"
+        if n_accessory_resources == 0:
+            fmt = "'- %-17s %4s %-10s %s"
+            head_c = " "
+        else:
+            fmt = "|- %-17s %4s %-10s %s"
+            head_c = "|"
         print(fmt%("avail", '', rcStatus.colorize(self.group_status()['avail']), ''))
 
         encap_res_status = {}
@@ -605,28 +689,27 @@ class Svc(Resource):
 
         l = []
         cr = {}
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in sorted(rs.resources) if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-                if rid.startswith("container") and rid in encap_res_status:
-                    _l = []
-                    for _rid, val in encap_res_status[rid].items():
-                        _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
-                    cr[rid] = _l
+	for r in avail_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
+            if rid.startswith("container") and rid in encap_res_status:
+                _l = []
+                for _rid, val in encap_res_status[rid].items():
+                    _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
+                cr[rid] = _l
 
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-10s %s"
-                    pfx = "|     %-14s %4s %-10s "%('','','')
+                    fmt = head_c+"  '- %-14s %4s %-10s %s"
+                    pfx = head_c+"     %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-10s %s"
-                    pfx = "|  |  %-14s %4s %-10s "%('','','')
+                    fmt = head_c+"  |- %-14s %4s %-10s %s"
+                    pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
                     if e[0] in cr:
-                        subpfx = "|  |  |  %-11s %4s %-10s "%('','','')
+                        subpfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
@@ -635,46 +718,25 @@ class Svc(Resource):
                     if _last >= 0:
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
-                                fmt = "|  |  '- %-11s %4s %-10s %s"
-                                pfx = "|  |     %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  |  '- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |     %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
                             else:
-                                fmt = "|  |  |- %-11s %4s %-10s %s"
-                                pfx = "|  |  |  %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  |  |- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
-        fmt = "|- %-17s %4s %-10s %s"
-        print(fmt%("sync", '', rcStatus.colorize(str(self.group_status()['sync'])), ''))
+        if n_accessory_resources > 0:
+            fmt = "'- %-17s %4s %-10s %s"
+            print(fmt%("accessory", '', '', ''))
 
         l = []
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('sync')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-        last = len(l) - 1
-        if last >= 0:
-            for i, e in enumerate(l):
-                if i == last:
-                    fmt = "|  '- %-14s %4s %-10s %s"
-                    pfx = "|     %-14s %4s %-10s "%('','','')
-                    print_res(e, fmt, pfx)
-                else:
-                    fmt = "|  |- %-14s %4s %-10s %s"
-                    pfx = "|  |  %-14s %4s %-10s "%('','','')
-                    print_res(e, fmt, pfx)
+        for r in accessory_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            if rid in encap_res_status:
+                status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
 
-        fmt = "'- %-17s %4s %-10s %s"
-        print(fmt%("hb", '', rcStatus.colorize(str(self.group_status()['hb'])), ''))
-
-        l = []
-        for rs in self.get_res_sets(self.status_types):
-            for r in [_r for _r in sorted(rs.resources) if _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
@@ -850,25 +912,50 @@ class Svc(Resource):
             if r.monitor:
                 monitored_resources.append(r)
 
-        if len(monitored_resources) == 0:
-            self.log.debug("no monitored resource")
-            return
-
         for r in monitored_resources:
             if r.rstatus != rcStatus.UP:
+                if len(r.status_log_str) > 0:
+                    rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
+                else:
+                    rstatus_log = ''
+                self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
+
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
-                    if len(r.status_log_str) > 0:
-                        rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
-                    else:
-                        rstatus_log = ''
-                    self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
                     raise self.exMonitorAction
                 else:
                     self.log.info("Would TOC but no (or unknown) resource monitor action set.")
                 return
 
-        self.log.debug("monitored resources are up")
+        for container in self.get_resources('container'):
+            try:
+                res = self.encap_json_status(container)["resources"]
+            except Exception as e:
+                res = {}
+            for rid, r in res.items():
+                if not r.get("monitor"):
+                    continue
+                erid = rid+"@"+container.name
+                monitored_resources.append(erid)
+                if r.get("status") != "up":
+                    if len(r.get("log")) > 0:
+                        rstatus_log = ''.join((' ', '(', r.get("log").strip().strip("# "), ')'))
+                    else:
+                        rstatus_log = ''
+                    self.log.info("monitored resource %s is in state %s%s"%(erid, r.get("status"), rstatus_log))
+
+                    if self.monitor_action is not None and \
+                       hasattr(self, self.monitor_action):
+                        raise self.exMonitorAction
+                    else:
+                        self.log.info("Would TOC but no (or unknown) resource monitor action set.")
+                    return
+
+        if len(monitored_resources) == 0:
+            self.log.debug("no monitored resource")
+        else:
+            rids = ','.join([r if type(r) in (str, unicode) else r.rid for r in monitored_resources])
+            self.log.debug("monitored resources are up (%s)" % rids)
 
     class exMonitorAction(Exception):
         pass
@@ -929,6 +1016,8 @@ class Svc(Resource):
             options.append('--dry-run')
         if self.options.refresh:
             options.append('--refresh')
+        if self.options.disable_rollback:
+            options.append('--disable-rollback')
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
@@ -1021,7 +1110,7 @@ class Svc(Resource):
         return gs
 
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
+                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb", "stonith"]),
                      excluded_groups=set([])):
         from copy import copy
         """print() each resource status for a service
@@ -1035,7 +1124,7 @@ class Svc(Resource):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
+        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
@@ -1054,9 +1143,17 @@ class Svc(Resource):
         elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["avail"].status = rcStatus.STDBY_UP
 
-        # overall status is avail + sync status
+        # overall status is avail + accessory resources status
         # seed overall with avail
         status["overall"] = copy(status["avail"])
+
+        for t in [_t for _t in self.status_types if _t.startswith('stonith')]:
+            if 'stonith' not in groups:
+                continue
+            for r in self.get_res_sets(t, strict=True):
+                s = rset_status[r.type]
+                status['stonith'] += s
+                status["overall"] += s
 
         for t in [_t for _t in self.status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
@@ -1092,11 +1189,11 @@ class Svc(Resource):
 
     def json_disklist(self):
         import json
-        print(json.dumps(list(self.disklist())))
+        print(json.dumps(list(self.disklist()), indent=4, separators=(',', ': ')))
 
     def json_devlist(self):
         import json
-        print(json.dumps(list(self.devlist())))
+        print(json.dumps(list(self.devlist()), indent=4, separators=(',', ': ')))
 
     def disklist(self):
         if len(self.disks) == 0:
@@ -1108,20 +1205,24 @@ class Svc(Resource):
         """
         disks = set()
         for r in self.get_resources():
+            if r.skip:
+                continue
             disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
-    def devlist(self):
+    def devlist(self, filtered=True):
         if len(self.devs) == 0:
-            self.devs = self._devlist()
+            self.devs = self._devlist(filtered=filtered)
         return self.devs
 
-    def _devlist(self):
+    def _devlist(self, filtered=True):
         """List all devs held by all resources of this service
         """
         devs = set()
         for r in self.get_resources():
+            if filtered and r.skip:
+                continue
             devs |= r.devlist()
         self.log.debug("found devs %s held by service" % devs)
         return devs
@@ -1225,7 +1326,7 @@ class Svc(Resource):
         self.master_startip()
         self.master_startfs()
         self.master_startshare()
-        self.startcontainer()
+        self.master_startcontainer()
         self.master_startapp()
         self.slave_start()
 
@@ -1444,14 +1545,8 @@ class Svc(Resource):
         self.sub_set_action("sync.nexenta", "startstandby")
         self.sub_set_action("sync.symclone", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
-        self.sub_set_action("disk.loop", "startstandby")
-        self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
-        self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
-        self.sub_set_action("disk.lock", "startstandby")
-        self.sub_set_action("disk.vg", "startstandby")
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
+        self.sub_set_action(self.disk_types, "startstandby", xtags=set(['zone']))
 
     @_master_action
     def master_startdisk(self):
@@ -1462,14 +1557,8 @@ class Svc(Resource):
         self.sub_set_action("sync.symsrdfs", "start")
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
-        self.sub_set_action("disk.loop", "start")
-        self.sub_set_action("disk.gandi", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
-        self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
-        self.sub_set_action("disk.lock", "start")
-        self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
+        self.sub_set_action(self.disk_types, "start", xtags=set(['zone']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -1481,35 +1570,17 @@ class Svc(Resource):
 
     @_master_action
     def master_stopdisk(self):
-        self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.lock", "stop")
-        self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "stop")
-        self.sub_set_action("disk.gandi", "stop")
 
     @_master_action
     def master_shutdowndisk(self):
-        self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "shutdown")
-        self.sub_set_action("disk.lock", "shutdown")
-        self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "shutdown")
-        self.sub_set_action("disk.gandi", "shutdown")
 
     def rollbackdisk(self):
-        self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "rollback")
-        self.sub_set_action("disk.lock", "rollback")
-        self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "rollback")
-        self.sub_set_action("disk.gandi", "rollback")
 
     def abort_start(self):
         for r in self.get_resources():
@@ -1528,11 +1599,11 @@ class Svc(Resource):
 
     @_master_action
     def master_startstandbyip(self):
-        self.sub_set_action("ip", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("ip", "startstandby", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_startip(self):
-        self.sub_set_action("ip", "start", xtags=set(['zone']))
+        self.sub_set_action("ip", "start", xtags=set(['zone', 'docker']))
 
     def stopip(self):
         self.slave_stopip()
@@ -1544,14 +1615,14 @@ class Svc(Resource):
 
     @_master_action
     def master_stopip(self):
-        self.sub_set_action("ip", "stop", xtags=set(['zone']))
+        self.sub_set_action("ip", "stop", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown", xtags=set(['zone']))
+        self.sub_set_action("ip", "shutdown", xtags=set(['zone', 'docker']))
 
     def rollbackip(self):
-        self.sub_set_action("ip", "rollback", xtags=set(['zone']))
+        self.sub_set_action("ip", "rollback", xtags=set(['zone', 'docker']))
 
     def startshare(self):
         self.master_startshare()
@@ -1628,13 +1699,17 @@ class Svc(Resource):
         self.sub_set_action("fs", "rollback", xtags=set(['zone']))
         self.rollbackdisk()
 
+    def startcontainer(self):
+        self.abort_start()
+        self.master_startcontainer()
+
     @_master_action
-    def startstandbycontainer(self):
+    def master_startstandbycontainer(self):
         self.sub_set_action("container", "startstandby")
         self.refresh_ip_status()
 
     @_master_action
-    def startcontainer(self):
+    def master_startcontainer(self):
         self.sub_set_action("container", "start")
         self.refresh_ip_status()
 
@@ -1677,7 +1752,7 @@ class Svc(Resource):
         self.sub_set_action("disk", "provision", xtags=set(['zone']))
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
-        self.sub_set_action("ip", "provision", xtags=set(['zone']))
+        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.push()
 
     def startapp(self):
@@ -1751,7 +1826,7 @@ class Svc(Resource):
         self.master_startstandbyip()
         self.master_startstandbyfs()
         self.master_startstandbyshare()
-        self.startstandbycontainer()
+        self.master_startstandbycontainer()
         self.master_startstandbyapp()
 
     @_slave_action
@@ -1775,9 +1850,9 @@ class Svc(Resource):
         self.all_set_action("postsync")
 
     def remote_postsync(self):
-        """ run the remote exec of postsync async because the
-            waitlock timeout is long, and we ourselves still
-            hold the service lock we want to release early.
+        """ release the svc lock at this point because the
+            waitlock timeout is long and we are done touching
+            local data.
         """
         """ action triggered by a remote master node after
             syncnodes and syncdrp. Typically make use of files
@@ -1785,12 +1860,18 @@ class Svc(Resource):
             use a long waitlock timeout to give a chance to
             remote syncs to finish
         """
+        self.svcunlock()
         for n in self.need_postsync:
             self.remote_action(n, 'postsync', waitlock=3600)
 
         self.need_postsync = set([])
 
     def remote_action(self, node, action, waitlock=60, sync=False):
+        if self.cron:
+            # the scheduler action runs forked. don't use the cmdworker
+            # in this context as it may hang
+            sync = True
+
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
 	if self.log.isEnabledFor(logging.DEBUG):
 	    rcmd += ['--debug']
@@ -1818,6 +1899,8 @@ class Svc(Resource):
         self.presync_done = True
 
     def syncnodes(self):
+        if not self.can_sync('nodes'):
+            return
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
@@ -1828,6 +1911,8 @@ class Svc(Resource):
         self.remote_postsync()
 
     def syncdrp(self):
+        if not self.can_sync('drpnodes'):
+            return
         self.presync()
         self.sub_set_action("sync.rsync", "syncdrp")
         self.sub_set_action("sync.zfs", "syncdrp")
@@ -1882,6 +1967,8 @@ class Svc(Resource):
         self.sub_set_action("sync.dcsckpt", "syncbreak")
 
     def syncupdate(self):
+        if not self.can_sync():
+            return
         self.sub_set_action("sync.netapp", "syncupdate")
         self.sub_set_action("sync.hp3par", "syncupdate")
         self.sub_set_action("sync.nexenta", "syncupdate")
@@ -1931,12 +2018,28 @@ class Svc(Resource):
             for r in self.get_resources(rt):
                 try:
                     ret |= r.can_sync(target)
-                except ex.excError:
+                except ex.excError as e:
                     return False
                 if ret: return True
+        self.log.debug("nothing to sync for the service for now")
         return False
 
+    def sched_syncall(self):
+        data = self.skip_action("syncall", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self._sched_syncall(data["keep"])
+
+    @scheduler_fork
+    def _sched_syncall(self, sched_options):
+        self.action("syncall")
+        self.sched_write_timestamp(sched_options)
+
     def syncall(self):
+        if not self.can_sync():
+            return
+        if self.cron:
+            self.sched_delay()
         self.presync()
         self.sub_set_action("sync.rsync", "syncnodes")
         self.sub_set_action("sync.zfs", "syncnodes")
@@ -1952,12 +2055,43 @@ class Svc(Resource):
         self.syncupdate()
         self.remote_postsync()
 
-    def push_appinfo(self):
-        self.node.collector.call('push_appinfo', [self])
+    def push_service_status(self):
+        if self.skip_action("push_service_status"):
+            return
+        self.task_push_service_status()
 
+    @scheduler_fork
+    def task_push_service_status(self):
+        if self.cron:
+            self.sched_delay()
+        import rcSvcmon
+        self.options.refresh = True
+        rcSvcmon.svcmon_normal([self])
+
+    def push_appinfo(self):
+        data = self.skip_action("push_appinfo", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self.task_push_appinfo()
+
+    @scheduler_fork
+    def task_push_appinfo(self):
+        if self.cron:
+            self.sched_delay()
+        self.node.collector.call('push_appinfo', [self])
+        self.sched_write_timestamp(self.scheduler_actions["push_appinfo"])
+
+    def push_env(self):
+        if self.skip_action("push_env"):
+            return
+        self.push()
+
+    @scheduler_fork
     def push(self):
         if self.encap:
             return
+        if self.cron:
+            self.sched_delay()
         self.push_encap_env()
         self.node.collector.call('push_all', [self])
         print("send %s to collector ... OK"%self.pathenv)
@@ -2099,8 +2233,12 @@ class Svc(Resource):
           'status',
           'frozen',
           'push',
+          'push_env',
           'push_appinfo',
+          'push_service_status',
           'edit_config',
+          'scheduler',
+          'print_schedule',
           'print_config',
           'print_env_mtime',
           'print_status',
@@ -2156,7 +2294,11 @@ class Svc(Resource):
           'get',
           'set',
           'push',
+          'push_env',
           'push_appinfo',
+          'push_service_status',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_status',
           'print_resource_status',
@@ -2178,21 +2320,6 @@ class Svc(Resource):
            action.startswith("docker") or \
            self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
-        elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
-            if action == "syncall" or "syncupdate": kwargs = {}
-            elif action == "syncnodes": kwargs = {'target': 'nodes'}
-            elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
-            if not self.can_sync(**kwargs):
-                self.log.debug("nothing to sync for the service for now")
-                return 0
-            try:
-                # timeout=1, delay=1 => immediate response
-                self.svclock(action, timeout=1, delay=1)
-            except:
-                if not self.cron:
-                    self.log.info("%s action is already running"%action)
-                return 0
-            err = self.do_logged_action(action, waitlock=waitlock)
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
@@ -2209,7 +2336,7 @@ class Svc(Resource):
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
-                o = Compliance(self.node.skip_action, self.options, self.node.collector, self.svcname)
+                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname)
                 getattr(o, action)()
             elif action.startswith("collector_"):
                 from collector import Collector
@@ -2222,7 +2349,7 @@ class Svc(Resource):
                     err = 0
                 self.running_action = None
             else:
-                self.log.error("unsupported action")
+                self.log.error("unsupported action %s" % action)
                 err = 1
         except ex.excEndAction as e:
             s = "'%s' action ended by last resource"%action
@@ -2274,6 +2401,9 @@ class Svc(Resource):
 	if self.options.disable_rollback:
             self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
             return
+	if self.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
+            return
         if 'start' not in action:
             return
         rids = [r.rid for r in self.get_resources() if r.can_rollback]
@@ -2310,6 +2440,7 @@ class Svc(Resource):
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
+        self.log.info(" ".join(sys.argv))
 
         err = self.do_action(action, waitlock=waitlock)
 

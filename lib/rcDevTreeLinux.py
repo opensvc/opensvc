@@ -6,19 +6,44 @@ import math
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
+import rcExceptions as ex
 di = __import__("rcDiskInfo"+rcEnv.sysname)
 _di = di.diskInfo()
 
+class Dev(rcDevTree.Dev):
+    def remove_loop(self, r):
+        cmd = ["losetup", "-d", self.devpath[0]]
+        ret, out, err = r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        self.removed = True
+
+    def remove_dm(self, r):
+        cmd = ["dmsetup", "remove", self.alias]
+        ret, out, err = r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        self.removed = True
+
+    def remove(self, r):
+        if self.removed:
+            return
+        if self.devname.startswith("loop"):
+            return self.remove_loop(r)
+        if self.devname.startswith("dm-"):
+            return self.remove_dm(r)
+
 class DevTree(rcDevTree.DevTree):
     dev_h = {}
+    dev_class = Dev
 
     def get_size(self, devpath):
         size = 0
-        with open(devpath+'/size', 'r') as f:
-            try:
+        try:
+            with open(devpath+'/size', 'r') as f:
                 size = int(f.read().strip()) * 512 / 1024 / 1024
-            except:
-                pass
+        except:
+            pass
         return size
 
     def get_dm(self):
@@ -286,6 +311,23 @@ class DevTree(rcDevTree.DevTree):
             return True
         return False
 
+    def get_loop(self):
+        self.loop = {}
+        cmd = ["losetup"]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for line in out.split("\n"):
+            if not line.startswith("/"):
+                continue
+            l = line.split()
+            if len(l) < 2:
+                continue
+            loop = l[0].replace("/dev/", "")
+            fpath = l[-1]
+            self.loop[loop] = fpath
+
     def dev_type(self, devname):
         t = "linear"
         md_h = self.get_md()
@@ -295,6 +337,21 @@ class DevTree(rcDevTree.DevTree):
         if devname in mp_h:
             return "multipath"
         return t
+
+    def add_loop_relations(self):
+        self.get_loop()
+        from rcMountsLinux import Mounts
+        m = Mounts()
+        for devname, fpath in self.loop.items():
+            parentpath = m.get_fpath_dev(fpath)
+            if parentpath is None:
+                continue
+            d = self.get_dev_by_devpath(parentpath)
+            if d is None:
+                continue
+            d.add_child(devname)
+            c = self.get_dev(devname)
+            c.add_parent(d.devname)
 
     def add_drbd_relations(self):
         if not which("drbdadm") or not os.path.exists('/proc/drbd'):
@@ -352,9 +409,12 @@ class DevTree(rcDevTree.DevTree):
             d.set_devpath('/dev/'+devname)
 
         # store devt
-        with open("%s/dev"%devpath, 'r') as f:
-            devt = f.read().strip()
-            self.dev_h[devt] = devname
+        try:
+            with open("%s/dev"%devpath, 'r') as f:
+                devt = f.read().strip()
+                self.dev_h[devt] = devname
+        except IOError:
+            pass
 
         # add holders
         holderpaths = glob.glob("%s/holders/*"%devpath)
@@ -499,9 +559,10 @@ class DevTree(rcDevTree.DevTree):
             self.tune_lv_relations()
 
         self.add_drbd_relations()
+        self.add_loop_relations()
 
     def blacklist(self, devname):
-        bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
+        bl = [r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']
         for b in bl:
             if re.match(b, devname):
                 return True
