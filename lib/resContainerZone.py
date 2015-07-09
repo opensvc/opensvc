@@ -346,6 +346,9 @@ class Zone(resContainer.Container):
         for resource in self.svc.get_resources('fs'):
             mntpts.append(resource.mountPoint)
         for mount in mounts.mounts:
+	    # don't unmount zonepath itself
+	    if mount.mnt == self.zonepath:
+		continue
             if not mount.mnt.startswith(self.zonepath):
                 continue
             # don't umount fs not handled by the service

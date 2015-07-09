@@ -347,6 +347,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('switch : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
@@ -362,9 +363,11 @@ class Hb(resHb.Hb):
                 pass
             self.wait_for_state(["stopped", "stop_failed", "stopping", "frozen_stop"])
             local_status = self.service_local_status()
+	    self.log.debug('switch [local was started]: local_status=%s'%(local_status))
             if local_status == "stop_failed":
                 raise ex.excError("local state is stop_failed")
             remote_status = self.service_remote_status()
+	    self.log.debug('switch [local was started]: remote_status=%s'%(remote_status))
             if not self.svc.remote and remote_status in ['stopped', 'frozen_stop']:
                 out, err, ret = self.svc.remote_action(peer, "start --remote", sync=True)
                 self.print_remote(out, err)
@@ -379,6 +382,7 @@ class Hb(resHb.Hb):
                     raise ex.excError(err)
             self.wait_for_state(["stopped", "stop_failed", "stopping", "frozen_stop"], remote=True)
             remote_status = self.service_remote_status()
+	    self.log.debug('switch [remote was started]: remote_status=%s'%(remote_status))
             if remote_status == "stop_failed":
                 raise ex.excError("remote state is stop_failed")
             self.start()
@@ -394,6 +398,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('start : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
@@ -438,6 +443,7 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
+	    self.log.debug('stop : called by heartbeat daemon, returning.')
             return
 
         local_status = self.service_local_status()
