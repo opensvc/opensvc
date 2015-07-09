@@ -119,10 +119,10 @@ class Sync(Res.Resource, Scheduler):
         if target == 'drpnodes':
             expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
         elif target == 'nodes':
-            if self.svc.svctype in ("PRD", "PPRD"):
-                expected_type = [self.svc.svctype]
+            if self.svc.svctype == "PRD":
+                expected_type = ["PRD"]
             else:
-                expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD', 'PPRD']))
+                expected_type = list(set(rcEnv.allowed_svctype) - set(["PRD"]))
         else:
             self.log.error('unknown sync target: %s'%target)
             raise ex.excError
@@ -146,6 +146,6 @@ class Sync(Res.Resource, Scheduler):
         if cache_remote_node_type[node] in expected_type:
             return True
         self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
-                       (node, cache_remote_node_type[node], str(expected_type)))
+                       (node, cache_remote_node_type[node], ', '.join(expected_type)))
         return False
 
