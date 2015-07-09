@@ -368,6 +368,28 @@ class Mount(Res.Mount):
         self.Mounts = None
         self.can_rollback = True
 
+    def kill_users(self):
+        import glob
+        for p in glob.glob("/proc/*/fd/*") + glob.glob("/proc/*/cwd") + glob.glob("/proc/*/exe"):
+            try:
+                dest = os.path.realpath(p)
+            except:
+                continue
+            if dest.startswith(self.mountPoint):
+                l = p.split("/")
+                try:
+                    pid = int(l[2])
+                except:
+                    continue
+                try:
+                    with open("/proc/%d/cmdline"%pid, "r") as f:
+                        cmdline = f.read()
+                except Exception as e:
+                    self.log.warning(str(e))
+                    cmdline = ""
+                self.log.info("kill -9 %d (cmdline: %s)" % (pid, cmdline))
+                os.kill(pid, 9)
+
     def stop(self):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
@@ -375,7 +397,16 @@ class Mount(Res.Mount):
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
             return
-        if not os.path.exists(self.mountPoint):
+        try:
+            os.stat(self.mountPoint)
+            if not os.path.exists(self.mountPoint):
+                raise ex.excError('mount point %s does not exist' % self.mountPoint)
+        except OSError as e:
+            if e.errno == 5:
+                self.log.warning("I/O error on mount point. try to umount anyway")
+                self.kill_users()
+            else:
+                raise
             raise ex.excError('mount point %s does not exist' % self.mountPoint)
         self.remove_holders()
         self.remove_deeper_mounts()
