@@ -269,6 +269,8 @@ class syncIbmdsSnap(resSync.Sync):
             d = {}
             l = line.split(',')
             for i, key in enumerate(headers):
+                if i not in l:
+                    raise ex.excError("the command dataset does not match its advertized columning")
                 key = key.strip()
                 if headers_multipliers[i] is not None:
                     try:
