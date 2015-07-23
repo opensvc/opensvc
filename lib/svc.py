@@ -929,9 +929,13 @@ class Svc(Resource, Scheduler):
 
         for container in self.get_resources('container'):
             try:
-                res = self.encap_json_status(container)["resources"]
+                encap_status = self.encap_json_status(container)
+                res = encap_status["resources"]
             except Exception as e:
+                encap_status = {}
                 res = {}
+            if encap_status.get("frozen"):
+                continue
             for rid, r in res.items():
                 if not r.get("monitor"):
                     continue
