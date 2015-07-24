@@ -70,12 +70,25 @@ class Zone(resContainer.Container):
                                         always_on=always_on)
         self.label = name
         self.state = None
-        self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
         self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
+        self.zone_cf = "/etc/zones/"+self.name+".xml"
+
+    def on_add(self):
+        self.get_zonepath()
+
+    def get_zonepath(self):
+        if hasattr(self, "zonepath"):
+            return self.zonepath
+        cmd = [ZONECFG, '-z', name, 'info', 'zonepath']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("unable to determine zonepath using %s"%' '.join(cmd))
+        self.zonepath = out.replace("zonepath: ", "").strip()
+        return self.zonepath
 
     def files_to_sync(self):
-        return ["/etc/zones/"+self.name+".xml"]
+        return [self.zone_cf]
 
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
