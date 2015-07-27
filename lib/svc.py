@@ -2334,7 +2334,8 @@ class Svc(Resource, Scheduler):
         err = 0
         try:
             self.svclock(action, timeout=waitlock)
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             return 1
 
         try:
