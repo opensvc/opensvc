@@ -80,7 +80,7 @@ class Zone(resContainer.Container):
     def get_zonepath(self):
         if hasattr(self, "zonepath"):
             return self.zonepath
-        cmd = [ZONECFG, '-z', name, 'info', 'zonepath']
+        cmd = [ZONECFG, '-z', self.name, 'info', 'zonepath']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("unable to determine zonepath using %s"%' '.join(cmd))
