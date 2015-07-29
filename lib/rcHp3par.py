@@ -208,6 +208,7 @@ class Hp3par(object):
         self.key = key
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
         self.uuid = None
+        self.remotecopy = None
 
     def get_uuid(self):
         if self.uuid is not None:
@@ -248,8 +249,22 @@ class Hp3par(object):
                 l.append(h)
         return json.dumps(l)
 
+    def has_remotecopy(self):
+        if self.remotecopy is not None:
+            return self.remotecopy
+        cmd = 'showlicense'
+        s = self.rcmd(cmd)[0].strip("\n")
+        self.remotecopy = False
+        for line in s.split('\n'):
+            if "Remote Copy" in line:
+                self.remotecopy = True
+        return self.remotecopy
+
     def get_showvv(self):
-        cols = ["Name", "VV_WWN", "Prov", "CopyOf", "Tot_Rsvd_MB", "VSize_MB", "UsrCPG", "CreationTime", "RcopyGroup", "RcopyStatus"]
+        if self.has_remotecopy():
+            cols = ["Name", "VV_WWN", "Prov", "CopyOf", "Tot_Rsvd_MB", "VSize_MB", "UsrCPG", "CreationTime", "RcopyGroup", "RcopyStatus"]
+        else:
+            cols = ["Name", "VV_WWN", "Prov", "CopyOf", "Tot_Rsvd_MB", "VSize_MB", "UsrCPG", "CreationTime"]
         cmd = 'showvv -showcols ' + ','.join(cols)
         print("%s: %s"%(self.name, cmd))
         s = self.rcmd(cmd)[0]
