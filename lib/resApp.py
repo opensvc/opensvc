@@ -275,6 +275,7 @@ class App(Res.Resource):
         if n_ref_res > 0 and str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
             if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
+            self.status_log("not evaluated (instance not up)")
             return rcStatus.NA
 
         try:
