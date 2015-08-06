@@ -913,7 +913,7 @@ class Svc(Resource, Scheduler):
                 monitored_resources.append(r)
 
         for r in monitored_resources:
-            if r.rstatus != rcStatus.UP:
+            if r.rstatus not in (rcStatus.UP, rcStatus.NA):
                 if len(r.status_log_str) > 0:
                     rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
                 else:
@@ -941,7 +941,7 @@ class Svc(Resource, Scheduler):
                     continue
                 erid = rid+"@"+container.name
                 monitored_resources.append(erid)
-                if r.get("status") != "up":
+                if r.get("status") not in ("up", "n/a"):
                     if len(r.get("log")) > 0:
                         rstatus_log = ''.join((' ', '(', r.get("log").strip().strip("# "), ')'))
                     else:
