@@ -680,8 +680,10 @@ class Svc(Resource, Scheduler):
         encap_res_status = {}
         for container in self.get_resources('container'):
             try:
-                res = self.encap_json_status(container)['resources']
-                encap_res_status[container.rid] = res
+                js = self.encap_json_status(container)
+                encap_res_status[container.rid] = js["resources"]
+                if js.get("frozen", False):
+                    container.status_log("frozen")
             except ex.excNotAvailable as e:
                 encap_res_status[container.rid] = {}
             except Exception as e:
