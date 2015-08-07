@@ -296,6 +296,7 @@ class Resource(object):
         if self.rstatus in no_restart_status:
             return
         if last_status not in restart_last_status:
+            self.status_log("not restarted because previous status is %s" % rcStatus.status_str(last_status))
             return
 
         if not hasattr(self, 'start'):
@@ -303,7 +304,9 @@ class Resource(object):
             return
 
         if self.svc.frozen():
-            self.log.info("resource restart skipped: service is frozen")
+            s = "resource restart skipped: service is frozen"
+            self.log.info(s)
+            self.status_log(s)
             return
 
         for i in range(self.nb_restart):
