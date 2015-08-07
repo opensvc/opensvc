@@ -666,8 +666,9 @@ class Svc(Resource, Scheduler):
         n_accessory_resources = len(accessory_resources)
 
         print(self.svcname)
+        frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
-        print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), ''))
+        print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), frozen))
         if n_accessory_resources == 0:
             fmt = "'- %-17s %4s %-10s %s"
             head_c = " "
