@@ -302,6 +302,10 @@ class Resource(object):
             self.log.error("resource restart configured on resource %s with no 'start' action support"%self.rid)
             return
 
+        if self.svc.frozen():
+            self.log.info("resource restart skipped: service is frozen")
+            return
+
         for i in range(self.nb_restart):
             try:
                 self.log.info("restart resource %s. try number %d/%d"%(self.rid, i+1, self.nb_restart))
