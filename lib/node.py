@@ -208,6 +208,7 @@ class Node(Svc, Freezer, Scheduler):
         self.log = rcLogger.initLogger(rcEnv.nodename)
 	self.scheduler_actions = {
 	 "checks": SchedOpts("checks"),
+	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
 	 "pushstats": SchedOpts("stats"),
 	 "pushpkg": SchedOpts("packages"),
 	 "pushpatch": SchedOpts("patches"),
@@ -1111,6 +1112,12 @@ class Node(Svc, Freezer, Scheduler):
         return default
 
     def dequeue_actions(self):
+        if self.skip_action("dequeue_actions"):
+            return
+        self.task_dequeue_actions()
+
+    @scheduler_fork
+    def task_dequeue_actions(self):
         actions = self.collector.call('collector_get_action_queue')
         if actions is None:
             return "unable to fetch actions scheduled by the collector"
