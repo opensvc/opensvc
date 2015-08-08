@@ -1121,9 +1121,13 @@ class Node(Svc, Freezer, Scheduler):
         actions = self.collector.call('collector_get_action_queue')
         if actions is None:
             return "unable to fetch actions scheduled by the collector"
+        import re
+        regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
+            out = regex.sub('', out).decode('utf8', 'ignore')
+            err = regex.sub('', err).decode('utf8', 'ignore')
             data.append((action.get('id'), ret, out, err))
         if len(actions) > 0:
             self.collector.call('collector_update_action_queue', data)
