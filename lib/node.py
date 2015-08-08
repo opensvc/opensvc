@@ -1135,7 +1135,7 @@ class Node(Svc, Freezer, Scheduler):
         else:
             nodemgr = os.path.join(rcEnv.pathbin, "nodemgr")
             svcmgr = os.path.join(rcEnv.pathbin, "svcmgr")
-        if action.get("svcname") is None:
+        if action.get("svcname") is None or action.get("svcname") == "":
             cmd = [nodemgr]
         else:
             cmd = [svcmgr, "-s", action.get("svcname")]
