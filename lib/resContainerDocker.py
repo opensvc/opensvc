@@ -44,6 +44,18 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
     def operational(self):
         return True
 
+    def get_rootfs(self):
+        import glob
+        inspect = self.docker_inspect(self.container_id)
+        instance_id = str(inspect['Id'])
+        pattern = str(self.docker_data_dir)+"/*/mnt/"+instance_id
+        l = glob.glob(pattern)
+        if len(l) == 0:
+            raise ex.excError("no candidates rootfs paths matching %s" % pattern)
+        elif len(l) != 1:
+            raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(l))
+        return l[0]
+
     def rcp_from(self, src, dst):
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:
