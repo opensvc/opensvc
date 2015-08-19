@@ -880,7 +880,7 @@ class KeywordContainerCpuShare(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_cpu_share",
+                  keyword="container_cpu_shares",
                   order=31,
                   depends=[('containerize', [True])],
                   text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",

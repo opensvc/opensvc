@@ -25,7 +25,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_containerize_settings
 import rcExceptions as ex
 import xmlrpcClient
 import sys
@@ -261,6 +261,9 @@ class Svc(Resource, Scheduler):
                 R = r.rset_class(type=rtype, resources=[r], parallel=parallel)
             else:
                 R = ResourceSet(type=rtype, resources=[r], parallel=parallel)
+            R.rid = rtype
+            R.svc = self
+            R.containerize_settings = get_containerize_settings(self, "subset#"+rtype)
             self.__iadd__(R)
 
         else:
