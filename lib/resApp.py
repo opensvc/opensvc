@@ -101,7 +101,6 @@ class RsetApps(Res.ResourceSet):
             import svcBuilder
             svcBuilder.add_apps_sysv(self.svc, self.svc.config)
             self.resources = self.svc.type2resSets["app"].resources
-            self.containerize()
 
         try:
             Res.ResourceSet.action(self, action=action, tags=tags, xtags=xtags)
@@ -120,19 +119,6 @@ class RsetApps(Res.ResourceSet):
             attr = 'rid'
         resources.sort(lambda x, y: cmp(getattr(x, attr), getattr(y, attr)))
         return resources
-
-    def containerize(self):
-        if not self.svc.containerize:
-            return
-        try:
-            container = __import__('rcContainer'+rcEnv.sysname)
-        except ImportError:
-            self.log.info("containerization not supported")
-            return
-        except Exception as e:
-            print(e)
-            raise
-        container.containerize(self)
 
 
 class App(Res.Resource):
@@ -232,6 +218,7 @@ class App(Res.Resource):
         return l
 
     def start(self):
+        self.containerize()
         self.validate_on_action()
 
         if self.start_seq is None:
@@ -330,7 +317,8 @@ class App(Res.Resource):
                   'stderr': f.fileno(),
                 }
                 kwargs.update(run_as_popen_kwargs(self.script))
-                self.log.info('exec %s as user %s' % (' '.join(cmd), kwargs.get("env").get("LOGNAME")))
+                user = kwargs.get("env").get("LOGNAME")
+                self.log.info('exec %s as user %s' % (' '.join(cmd), user))
                 t = datetime.now()
                 p = Popen(cmd, **kwargs)
                 try:

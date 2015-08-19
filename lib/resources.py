@@ -483,6 +483,20 @@ class Resource(object):
     def shutdown(self):
         self.stop()
 
+    def containerize(self):
+        if not self.svc.containerize:
+            return
+        try:
+            container = __import__('rcContainer'+rcEnv.sysname)
+        except ImportError:
+            self.log.info("containerization not supported")
+            return
+        except Exception as e:
+            print(e)
+            raise
+        container.containerize(self)
+
+
 class ResourceSet(Resource):
     """ Define Set of same type resources
     Example 1: ResourceSet("fs",[m1,m2])
