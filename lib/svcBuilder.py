@@ -2567,6 +2567,7 @@ def add_app(svc, conf, s):
  
     r = resApp.App(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
 
 def add_apps_sysv(svc, conf):
@@ -2660,6 +2661,43 @@ def add_apps_sysv(svc, conf):
     for script, kwargs in h.items():
         r = resApp.App(**kwargs)
         svc += r
+
+def get_containerize_settings(svc, s):
+    d = {}
+    if s != "DEFAULT":
+        conf = ConfigParser.RawConfigParser()
+        conf.read(svc.conf)
+        for o in conf.defaults():
+            conf.remove_option("DEFAULT", o)
+    else:
+        conf = svc.config
+    try:
+        d["cpus"] = conf_get_string_scope(svc, conf, s, "container_cpus")
+    except ex.OptNotFound:
+        pass
+
+    try:
+        d["cpu_shares"] = conf_get_string_scope(svc, conf, s, "container_cpu_shares")
+    except ex.OptNotFound:
+        pass
+
+    try:
+        d["mems"] = conf_get_string_scope(svc, conf, s, "container_mems")
+    except ex.OptNotFound:
+        pass
+
+    try:
+        d["mem_limit"] = conf_get_string_scope(svc, conf, s, "container_mem_limit")
+    except ex.OptNotFound:
+        pass
+
+    try:
+        d["vmem_limit"] = conf_get_string_scope(svc, conf, s, "container_vmem_limit")
+    except ex.OptNotFound:
+        pass
+
+    return d
+
 
 def setup_logging(svcnames):
     """Setup logging to stream + logfile, and logfile rotation
@@ -2809,31 +2847,7 @@ def build(name):
         svc.containerize = conf_get_boolean_scope(svc, conf, "DEFAULT", 'containerize')
     except ex.OptNotFound:
         svc.containerize = False
-
-    try:
-        svc.container_cpus = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpus")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.container_cpu_shares = conf_get_string_scope(svc, conf, "DEFAULT", "container_cpu_shares")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.container_mems = conf_get_string_scope(svc, conf, "DEFAULT", "container_mems")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.container_mem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_mem_limit")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.container_vmem_limit = conf_get_string_scope(svc, conf, "DEFAULT", "container_vmem_limit")
-    except ex.OptNotFound:
-        pass
+    svc.containerize_settings = get_containerize_settings(svc, "DEFAULT")
 
     try:
         svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()

@@ -198,6 +198,8 @@ __usage = "%prog [options]\n\nDisplay services status"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--service", default="", action="store", dest="parm_svcs",
                   help="comma-separated list of service to display status of")
+parser.add_option("--refresh", default=False, action="store_true", dest="refresh",
+                  help="do not use resource status cache")
 parser.add_option("--updatedb", default=False, action="store_true", dest="upddb",
                   help="update resource status in central database")
 parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
@@ -230,6 +232,8 @@ else:
 for s in node.svcs:
     s.options.debug = options.debug
     s.options.refresh = options.upddb
+    if options.refresh:
+        s.options.refresh = options.refresh
 
 if options.verbose:
     svcmon_verbose(node.svcs)
