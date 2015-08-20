@@ -1028,6 +1028,12 @@ class Svc(Resource, Scheduler):
             options.append('--refresh')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
+        if self.options.parm_rid:
+            options.append('--rid')
+            options.append(self.options.parm_rid)
+        if self.options.parm_tags:
+            options.append('--tags')
+            options.append(self.options.parm_tags)
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
