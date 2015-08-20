@@ -90,6 +90,8 @@ action_desc = {
       'docker': 'wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon',
       'print_schedule': "print the service tasks schedule",
       'scheduler': "run the service task scheduler",
+      'pg_freeze': "freeze the tasks of a process group",
+      'pg_thaw': "thaw the tasks of a process group",
      },
     'Service configuration': {
       'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',

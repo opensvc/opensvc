@@ -483,13 +483,39 @@ class Resource(object):
     def shutdown(self):
         self.stop()
 
+    def _pg_freeze(self):
+        return self._pg_freezer("freeze")
+
+    def _pg_thaw(self):
+        return self._pg_freezer("thaw")
+
+    def _pg_freezer(self, a):
+        if hasattr(self, "svc"):
+            containerize = self.svc.containerize
+        else:
+            containerize = self.containerize
+        if not containerize:
+            return
+        try:
+            container = __import__('rcContainer'+rcEnv.sysname)
+        except ImportError:
+            self.log.info("containerization is not supported on this platform")
+            return
+        except Exception as e:
+            print(e)
+            raise
+        if a == "freeze":
+            container.freeze(self)
+        elif a == "thaw":
+            container.thaw(self)
+
     def containerize(self):
         if not self.svc.containerize:
             return
         try:
             container = __import__('rcContainer'+rcEnv.sysname)
         except ImportError:
-            self.log.info("containerization not supported")
+            self.log.info("containerization is not supported on this platform")
             return
         except Exception as e:
             print(e)

@@ -154,6 +154,42 @@ def get_cgroup_path(o, t):
         os.makedirs(cgp)
     return cgp
 
+def freeze(o):
+    return freezer(o, "FROZEN")
+
+def thaw(o):
+    return freezer(o, "THAWED")
+
+def freezer(o, a):
+    if not cgroup_capable(o):
+        return
+    cgp = get_cgroup_path(o, "freezer")
+    path = os.path.join(cgp, "freezer.state")
+    if hasattr(o, "log"):
+        log = o.log
+    elif hasattr(o, "svc"):
+        log = o.svc.log
+    if not os.path.exists(path):
+        raise ex.excError("freezer control file not found: %s"%path)
+    try:
+        with open(path, "r") as f:
+            buff = f.read()
+    except Exception as e:
+        raise ex.excError(str(e))
+    buff = buff.strip()
+    if buff == a:
+        log.info("%s is already %s" % (path, a))
+        return
+    elif buff == "FREEZING":
+        log.info("%s is currently FREEZING" % path)
+        return
+    try:
+        with open(path, "w") as f:
+            buff = f.write(a)
+    except Exception as e:
+        raise ex.excError(str(e))
+    log.info("%s on %s submited succesfully" % (a, path))
+
 def containerize(res):
     if not cgroup_capable(res):
         return

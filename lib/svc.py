@@ -976,6 +976,20 @@ class Svc(Resource, Scheduler):
     def crash(self):
         self.node.os.crash()
 
+    def pg_freeze(self):
+        if self.options.parm_rid is not None or self.options.parm_tags is not None:
+            self.sub_set_action('app', '_pg_freeze')
+            self.sub_set_action('container', '_pg_freeze')
+        else:
+            self._pg_freeze()
+
+    def pg_thaw(self):
+        if self.options.parm_rid is not None or self.options.parm_tags is not None:
+            self.sub_set_action('app', '_pg_thaw')
+            self.sub_set_action('container', '_pg_thaw')
+        else:
+            self._pg_thaw()
+
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')
 
