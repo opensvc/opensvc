@@ -919,7 +919,7 @@ class Svc(Resource, Scheduler):
                 monitored_resources.append(r)
 
         for r in monitored_resources:
-            if r.rstatus not in (rcStatus.UP, rcStatus.NA):
+            if r.rstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
                 if len(r.status_log_str) > 0:
                     rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
                 else:
