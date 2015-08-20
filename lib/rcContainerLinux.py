@@ -1,4 +1,5 @@
 import os
+import re
 import rcExceptions as ex
 from rcUtilities import justcall
 
@@ -12,8 +13,11 @@ def get_cgroup_mntpt(t):
         l = line.split()
         if len(l) < 6:
             continue
-        if l[4] == 'cgroup' and t in l[5]:
-            return l[2]
+        if l[4] == 'cgroup':
+            mntopts = re.split('\W+',l[5])
+            for opt in mntopts:
+                if t == opt:
+                    return l[2]
     return None
 
 def cgroup_capable(res):
