@@ -2682,6 +2682,11 @@ def get_containerize_settings(svc, s):
         pass
 
     try:
+        d["cpu_quota"] = conf_get_string_scope(svc, conf, s, "container_cpu_quota")
+    except ex.OptNotFound:
+        pass
+
+    try:
         d["mems"] = conf_get_string_scope(svc, conf, s, "container_mems")
     except ex.OptNotFound:
         pass

@@ -79,6 +79,29 @@ def get_cgroup(o, t, name):
         buff = f.read()
     return buff
 
+def set_cpu_quota(o):
+    if not hasattr(o, "containerize_settings"):
+        return
+
+    if 'cpu_quota' not in o.containerize_settings:
+        return
+
+    period = int(get_cgroup(o, 'cpu', 'cpu.cfs_period_us'))
+    #n_cores = int(Asset()._get_cpu_cores())
+    #total_us = period * n_cores
+    if "%" in o.containerize_settings["cpu_quota"]:
+        quota = int(o.containerize_settings["cpu_quota"].strip("%"))
+        tgt_val = period * quota // 100
+    else:
+        tgt_val = int(o.containerize_settings["cpu_quota"])
+    cur_val = int(get_cgroup(o, 'cpu', 'cpu.cfs_quota_us'))
+
+    if tgt_val == cur_val:
+        return
+
+    o.containerize_settings["cpu_cfs_quota_us"] = tgt_val
+    set_cgroup(o, 'cpu', 'cpu.cfs_quota_us', 'cpu_cfs_quota_us')
+
 def set_mem_cgroup(o):
     if not hasattr(o, "containerize_settings"):
         return
@@ -113,8 +136,11 @@ def set_mem_cgroup(o):
             set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
     elif mem_limit is not None:
-        cur_vmem_limit = int(get_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes'))
-        if mem_limit > cur_vmem_limit:
+        try:
+            cur_vmem_limit = int(get_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes'))
+        except ex.excError:
+            cur_vmem_limit = None
+        if cur_vmem_limit and mem_limit > cur_vmem_limit:
             log.error("container_mem_limit must not be greater than current container_vmem_limit (%d)"%cur_vmem_limit)
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
@@ -206,6 +232,7 @@ def _containerize(o):
         set_cgroup(o, 'cpu', 'cpu.shares', 'cpu_shares')
         set_cgroup(o, 'cpuset', 'cpuset.mems', 'mems')
         set_mem_cgroup(o)
+        set_cpu_quota(o)
     except Exception as e:
         try:
             name = o.svcname
