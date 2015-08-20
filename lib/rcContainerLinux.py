@@ -125,6 +125,10 @@ def set_mem_cgroup(o):
     # validate memory limits sanity and order adequately the resize
     # depending on increase/decrease of limits
     #
+    try:
+        cur_vmem_limit = int(get_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes'))
+    except ex.excError:
+        cur_vmem_limit = None
     if mem_limit is not None and vmem_limit is not None:
         if mem_limit > vmem_limit:
             log.error("container_vmem_limit must be greater than container_mem_limit")
@@ -136,10 +140,6 @@ def set_mem_cgroup(o):
             set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
     elif mem_limit is not None:
-        try:
-            cur_vmem_limit = int(get_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes'))
-        except ex.excError:
-            cur_vmem_limit = None
         if cur_vmem_limit and mem_limit > cur_vmem_limit:
             log.error("container_mem_limit must not be greater than current container_vmem_limit (%d)"%cur_vmem_limit)
             raise ex.excError
