@@ -57,6 +57,8 @@ class Options(object):
         self.ruleset_date = ""
         self.dry_run = False
         self.refresh = False
+        self.parm_rid = None
+        self.parm_tags = None
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Scheduler):
