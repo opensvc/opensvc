@@ -1263,6 +1263,7 @@ def add_containers_vbox(svc, conf, s):
 
     r = m.Vbox(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1292,6 +1293,7 @@ def add_containers_xen(svc, conf, s):
 
     r = m.Xen(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1503,6 +1505,7 @@ def add_containers_vz(svc, conf, s):
 
     r = m.Vz(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1533,6 +1536,7 @@ def add_containers_kvm(svc, conf, s):
 
     r = m.Kvm(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1597,6 +1601,7 @@ def add_containers_lxc(svc, conf, s):
 
     r = m.Lxc(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1632,6 +1637,7 @@ def add_containers_docker(svc, conf, s):
 
     r = m.Docker(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1668,6 +1674,7 @@ def add_containers_ovm(svc, conf, s):
 
     r = m.Ovm(**kwargs)
     add_triggers(svc, r, conf, s)
+    r.containerize_settings = get_containerize_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
