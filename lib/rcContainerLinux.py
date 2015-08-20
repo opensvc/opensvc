@@ -91,13 +91,30 @@ def set_cpu_quota(o):
         return
 
     period = int(get_cgroup(o, 'cpu', 'cpu.cfs_period_us'))
-    #n_cores = int(Asset()._get_cpu_cores())
-    #total_us = period * n_cores
-    if "%" in o.containerize_settings["cpu_quota"]:
-        quota = int(o.containerize_settings["cpu_quota"].strip("%"))
-        tgt_val = period * quota // 100
+    v = o.containerize_settings["cpu_quota"]
+
+    if "@" in v:
+        try:
+            quota, cores = v.split("@")
+        except Exception as e:
+            raise ex.excError("malformed cpu quota: %s (%s)" % (v, str(e)))
     else:
-        tgt_val = int(o.containerize_settings["cpu_quota"])
+        cores = 1
+        quota = v
+
+    if cores == "all":
+        import rcAssetLinux
+        cores = int(rcAssetLinux.Asset(None)._get_cpu_cores())
+    else:
+        cores = int(cores)
+
+    total_us = period * cores
+
+    if "%" in quota:
+        quota = int(quota.strip("%"))
+        tgt_val = total_us * quota // 100
+    else:
+        tgt_val = int(quota)
     cur_val = int(get_cgroup(o, 'cpu', 'cpu.cfs_quota_us'))
 
     if tgt_val == cur_val:

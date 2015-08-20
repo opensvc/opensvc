@@ -887,6 +887,18 @@ class KeywordContainerCpuShare(KeywordInteger):
                   example="512"
                 )
 
+class KeywordContainerCpuQuota(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="container_cpu_quota",
+                  order=31,
+                  depends=[('containerize', [True])],
+                  text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
+                  example="50%@all"
+                )
+
 class KeywordContainerMemLimit(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
@@ -2603,6 +2615,7 @@ class KeyDict(KeywordStore):
         self += KeywordContainerCpus()
         self += KeywordContainerMems()
         self += KeywordContainerCpuShare()
+        self += KeywordContainerCpuQuota()
         self += KeywordContainerMemLimit()
         self += KeywordContainerVmemLimit()
         self += KeywordSyncType()
