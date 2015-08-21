@@ -387,8 +387,65 @@ def getaddr_caching(name, log=None):
         log.info("fetched %s address for name %s from cache" % (addr, name))
     return addr
 
+def convert_size(s, _to='', _round=1):
+    l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E'] 
+    if type(s) in (int, float):
+        s = str(s)
+    s = s.strip().replace(",", ".")
+    if len(s) == 0:
+        return 0
+    if s == '0':
+        return 0
+    size = s
+    unit = ""
+    for i, c in enumerate(s):
+        if i == len(s) - 1:
+            break
+        if not c.isdigit() and c != '.':
+            size = s[:i]
+            unit = s[i:].strip()
+            break
+    if 'i' in unit:
+        factor = 1000
+    else:
+        factor = 1024
+    if len(unit) > 0:
+        unit = unit[0]
+    size = float(size)
+
+    try:
+        start_idx = l.index(unit)
+    except:
+        raise Exception("unsupported unit in converted value: %s" % s)
+
+    for i in range(start_idx):
+        size *= factor
+
+    if 'i' in _to:
+        factor = 1000
+    else:
+        factor = 1024
+    if len(_to) > 0:
+        unit = _to[0]
+    else:
+        unit = ''
+    try:
+        end_idx = l.index(unit)
+    except:
+        raise Exception("unsupported target unit: %s" % unit)
+
+    for i in range(end_idx):
+        size /= factor
+
+    size = int(size)
+    d = size % _round
+    if d > 0:
+        size = (size // _round) * _round
+    return size
+
 if __name__ == "__main__":
-    print("call(('id','-a'))")
-    (r,output,err)=call(("/usr/bin/id","-a"))
-    print("status: ", r, "output:", output)
+    #print("call(('id','-a'))")
+    #(r,output,err)=call(("/usr/bin/id","-a"))
+    #print("status: ", r, "output:", output)
+    print(convert_size("10000 KiB", _to='MiB', _round=3))
 

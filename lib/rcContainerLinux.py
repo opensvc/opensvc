@@ -1,7 +1,7 @@
 import os
 import re
 import rcExceptions as ex
-from rcUtilities import justcall
+from rcUtilities import justcall, convert_size
 
 default_cgroup_mntpt = '/cgroup'
 
@@ -128,12 +128,14 @@ def set_mem_cgroup(o):
         return
 
     if 'mem_limit' in o.containerize_settings:
-        mem_limit = int(o.containerize_settings['mem_limit'])
+        mem_limit = convert_size(o.containerize_settings['mem_limit'], _to="", _round=4096)
+        o.containerize_settings['mem_limit'] = mem_limit
     else:
         mem_limit = None
 
     if 'vmem_limit' in o.containerize_settings:
-        vmem_limit = int(o.containerize_settings['vmem_limit'])
+        vmem_limit = convert_size(o.containerize_settings['vmem_limit'], _to="", _round=4096)
+        o.containerize_settings['vmem_limit'] = vmem_limit
     else:
         vmem_limit = None
 
