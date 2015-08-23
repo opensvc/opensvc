@@ -239,6 +239,8 @@ class Container(Res.Resource):
         return not self.is_up()
 
     def _status(self, verbose=False):
+        if self.container_frozen():
+            return rcStatus.WARN
         try:
             self.getaddr()
         except:

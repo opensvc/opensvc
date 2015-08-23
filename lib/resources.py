@@ -210,6 +210,7 @@ class Resource(object):
              action.startswith("start") or \
              action.startswith("stop") or \
              action.startswith("sync") or \
+             action.startswith("_pg_") or \
              action == "provision"
            ):
             self.log.debug('action: skip action on filtered-out resource')
@@ -508,6 +509,16 @@ class Resource(object):
             container.freeze(self)
         elif a == "thaw":
             container.thaw(self)
+
+    def container_frozen(self):
+        if not self.svc.containerize:
+            return False
+        try:
+            container = __import__('rcContainer'+rcEnv.sysname)
+        except ImportError:
+            self.status_log("containerization is not supported on this platform")
+            return False
+        return container.frozen(self)
 
     def containerize(self):
         if not self.svc.containerize:

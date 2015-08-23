@@ -187,6 +187,8 @@ class App(Res.Resource):
         self.script = None
 
     def is_up(self):
+        if self.container_frozen():
+            raise StatusWARN()
         if self.script is None:
             raise StatusNA()
         if not os.path.exists(self.script):

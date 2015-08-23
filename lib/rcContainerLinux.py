@@ -233,6 +233,33 @@ def freezer(o, a):
         raise ex.excError(str(e))
     log.info("%s on %s submited succesfully" % (a, path))
 
+def get_freeze_state(o):
+    if not cgroup_capable(o):
+        return False
+    cgp = get_cgroup_path(o, "freezer")
+    path = os.path.join(cgp, "freezer.state")
+    if not os.path.exists(path):
+        return
+    with open(path, "r") as f:
+        buff = f.read()
+    buff = buff.strip()
+    return buff
+
+def frozen(res):
+    for o in (res.svc, res.rset, res):
+        try:
+            state = get_freeze_state(o)
+        except Exception as e:
+            state = None
+        if state in ("FROZEN", "FREEZING"):
+            try:
+                name = o.svcname
+            except:
+                name = o.rid
+            res.status_log("container %s is %s" % (name, state))
+            return True
+    return False
+
 def containerize(res):
     if not cgroup_capable(res):
         return
