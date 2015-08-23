@@ -453,6 +453,8 @@ class Svc(Resource, Scheduler):
           "disable",
           "status",
           'scheduler',
+          'pg_freeze',
+          'pg_thaw',
           'print_schedule',
           "print_status",
           'print_resource_status',
