@@ -2674,7 +2674,8 @@ def get_containerize_settings(svc, s):
     if s != "DEFAULT":
         conf = ConfigParser.RawConfigParser()
         conf.read(svc.conf)
-        for o in conf.defaults():
+        import copy
+        for o in copy.copy(conf.defaults()):
             conf.remove_option("DEFAULT", o)
     else:
         conf = svc.config
