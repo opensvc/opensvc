@@ -1017,6 +1017,8 @@ class Svc(Resource, Scheduler):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
+        if container.container_frozen():
+            raise ex.excError("can't join a frozen container. abort encap command.")
         vmhostname = container.vm_hostname()
         try:
             autostart_node = conf_get_string_scope(self, self.config, 'DEFAULT', 'autostart_node', impersonate=vmhostname).split()
