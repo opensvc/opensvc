@@ -203,10 +203,25 @@ def freeze(o):
 def thaw(o):
     return freezer(o, "THAWED")
 
+def freezer_lxc(o, a):
+    # lxc-init children tasks are in the freezer cgroup lxc/<container>/
+    cgroup_mntpt = get_cgroup_mntpt("freezer")
+    cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
+    if os.path.exists(cgp):
+        _freezer(o, a, cgp)
+
 def freezer(o, a):
     if not cgroup_capable(o):
         return
     cgp = get_cgroup_path(o, "freezer")
+    _freezer(o, a, cgp)
+    if o.type == "container.lxc":
+        freezer_lxc(o, a)
+    if hasattr(o, "svcname"):
+        for r in o.get_resources("container.lxc"):
+            freezer_lxc(r, a)
+
+def _freezer(o, a, cgp):
     path = os.path.join(cgp, "freezer.state")
     if hasattr(o, "log"):
         log = o.log
