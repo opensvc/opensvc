@@ -51,8 +51,11 @@ class Sym(object):
                      'sym_ficondev_info',
                      'sym_meta_info',
                      'sym_disk_info',
-                     'sym_diskgroup_info']
-
+                     'sym_diskgroup_info',
+                     'sym_pool_info',
+                     'sym_tdev_info',
+                     'sym_srp_info',
+                     'sym_slo_info']
         self.sid = sid
 
     def symcmd(self, cmd):
@@ -108,6 +111,26 @@ class Sym(object):
 
     def get_sym_diskgroup_info(self):
         cmd = ['symdisk', 'list', '-dskgrp_summary']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_pool_info(self):
+        cmd = ['symcfg', '-pool', 'list', '-v']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_tdev_info(self):
+        cmd = ['symcfg', 'list', '-tdev', '-detail']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_srp_info(self):
+        cmd = ['symcfg', 'list', '-srp', '-detail', '-v']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_slo_info(self):
+        cmd = ['symcfg', 'list', '-slo', '-detail', '-v']
         out, err, ret = self.symcmd(cmd)
         return out
 

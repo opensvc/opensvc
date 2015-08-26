@@ -1220,13 +1220,16 @@ class Collector(object):
         r = 0
         for sym in syms:
             # can be too big for a single rpc
+            print(sym.sid)
             for key in sym.keys:
+                print(" extract", key)
                 vars = [key]
                 vals = [getattr(sym, 'get_'+key)()]
                 args = [sym.sid, vars, vals]
                 if self.auth_node:
                     args += [(rcEnv.uuid, rcEnv.nodename)]
                 try:
+                    print(" send   ", key)
                     self.proxy.update_sym_xml(*args)
                 except Exception as e:
                     print(sym.sid, key, ":", e)
