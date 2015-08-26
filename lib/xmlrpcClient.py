@@ -1208,6 +1208,7 @@ class Collector(object):
             self.proxy.update_eva_xml(*args)
     
     def push_sym(self, objects=[], sync=True):
+        import zlib
         if 'update_sym_xml' not in self.proxy_methods:
             print("'update_sym_xml' method is not exported by the collector")
             return 1
@@ -1224,7 +1225,7 @@ class Collector(object):
             for key in sym.keys:
                 print(" extract", key)
                 vars = [key]
-                vals = [getattr(sym, 'get_'+key)()]
+                vals = [xmlrpclib.Binary(zlib.compress(getattr(sym, 'get_'+key)()))]
                 args = [sym.sid, vars, vals]
                 if self.auth_node:
                     args += [(rcEnv.uuid, rcEnv.nodename)]
