@@ -454,6 +454,16 @@ class Node(Svc, Freezer, Scheduler):
                 import traceback
                 traceback.print_exc()
 
+    def get_push_objects(self, s):
+        if len(self.options.objects) > 0:
+            return self.options.objects
+        try:
+            objects = self.config.get(s, "objects").split(",")
+        except Exception as e:
+            objects = ["magix123456"]
+            print(e)
+        return objects
+
     def pushstats(self):
         # set stats range to push to "last pushstat => now"
 
@@ -625,7 +635,8 @@ class Node(Svc, Freezer, Scheduler):
 
     @scheduler_fork
     def task_pushsym(self):
-        self.collector.call('push_sym', self.options.objects)
+        objects = self.get_push_objects("sym")
+        self.collector.call('push_sym', objects)
 
     def pushbrocade(self):
         if self.skip_action("pushbrocade"):
