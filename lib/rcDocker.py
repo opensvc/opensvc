@@ -149,6 +149,13 @@ class DockerLib(object):
         import signal
         os.kill(pid, signal.SIGTERM)
 
+    def dockerd_cmd(self):
+        cmd = self.docker_cmd + ['-r=false', '-d',
+               '-g', self.docker_data_dir,
+               '-p', self.docker_pid_file]
+        cmd += self.docker_daemon_args
+        return cmd
+
     def docker_start(self, verbose=True):
         # Sanity checks before deciding to start the daemon
         if self.docker_running():
@@ -163,11 +170,12 @@ class DockerLib(object):
             self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, state))
             return
 
+        if os.path.exists(self.docker_pid_file):
+            self.log.warning("removing leftover pid file %s" % self.docker_pid_file)
+            os.unlink(self.docker_pid_file)
+
         # Now we can start the daemon, creating its data dir if necessary
-        cmd = self.docker_cmd + ['-r=false', '-d',
-               '-g', self.docker_data_dir,
-               '-p', self.docker_pid_file]
-        cmd += self.docker_daemon_args
+        cmd = self.dockerd_cmd()
 
         if verbose:
             self.log.info("starting docker daemon")
@@ -181,12 +189,30 @@ class DockerLib(object):
 
         import time
         for i in range(self.max_wait_for_dockerd):
-            if self.docker_running():
+            if self.docker_working():
                 self.container_id = self.get_container_id_by_name()
                 return
             time.sleep(1)
 
     def docker_running(self):
+        if not os.path.exists(self.docker_pid_file):
+            self.log.debug("docker_running: no pid file %s" % self.docker_pid_file)
+            return False
+        with open(self.docker_pid_file, "r") as f:
+            buff = f.read()
+        self.log.debug("docker_running: pid found in pid file %s" % buff)
+        if not os.path.exists("/proc/%s"%buff):
+            self.log.debug("docker_running: no proc info in %s" % "/proc/%s"%buff)
+            return False
+        exe = os.path.join(os.sep, "proc", buff, "exe")
+        exe = os.path.realpath(exe)
+        if "docker" not in exe:
+            self.log.debug("docker_running: pid found but owned by a process that is not a docker (%s)" % exe)
+            os.unlink(self.docker_pid_file)
+            return False
+        return True
+
+    def docker_working(self):
         cmd = self.docker_cmd + ['info']
         out, err, ret = justcall(cmd)
         if ret != 0:
