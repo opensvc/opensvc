@@ -277,19 +277,17 @@ def install_cron_unix():
                 if c['full'] is None:
                     continue
                 if line.find(c['marker']) != -1:
-                    if line.find(c['cmd']) != -1:
-                        sched = ' '.join(line.split()[:5])
-                    if c['reset_sched'] and sched != c['sched']:
-                        new[i] = ' '.join([c['sched'], c['user'], c['cmd']])+'\n'
-                        c['ok'] = True
+                    if line.strip().startswith("#"):
+                        continue
+                    if c['ok']:
+                        new[i] = ""
+                        continue
+                    if c['reset_sched']:
+                        sched = c['sched']
                     else:
-                        # preserve scheduling
-                        if c['reset_sched']:
-                            sched = c['sched']
-                        else:
-                            sched = ' '.join(line.split()[:5])
-                        new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
-                        c['ok'] = True
+                        sched = ' '.join(line.split()[:5])
+                    new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
+                    c['ok'] = True
         for c in ce:
             if c['full'] is not None and not c['ok']:
                 new.append(c['full']+'\n')
