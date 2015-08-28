@@ -85,6 +85,9 @@ for key in variables:
 
 def python_path():
     logit("begin")
+    wrapper = os.path.join(pathbin, "python.wrapper")
+    if os.path.exists(wrapper):
+        return wrapper
     for n in python_names:
         p = _python_path(n)
         if p is not None:
