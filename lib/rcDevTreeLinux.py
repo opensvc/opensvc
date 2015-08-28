@@ -6,6 +6,7 @@ import math
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
+import rcDevTreeVeritas
 import rcExceptions as ex
 di = __import__("rcDiskInfo"+rcEnv.sysname)
 _di = di.diskInfo()
@@ -33,7 +34,7 @@ class Dev(rcDevTree.Dev):
         if self.devname.startswith("dm-"):
             return self.remove_dm(r)
 
-class DevTree(rcDevTree.DevTree):
+class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     dev_h = {}
     dev_class = Dev
 
@@ -41,7 +42,7 @@ class DevTree(rcDevTree.DevTree):
         size = 0
         try:
             with open(devpath+'/size', 'r') as f:
-                size = int(f.read().strip()) * 512 / 1024 / 1024
+                size = int(f.read().strip()) // 2048
         except:
             pass
         return size
@@ -389,7 +390,7 @@ class DevTree(rcDevTree.DevTree):
         size = self.get_size(devpath)
 
         # exclude 0-sized md, Symmetrix gatekeeper and vcmdb
-        if devname in self.mp_h and size in [0, 2, 30, 45]:
+        if devname in self.mp_h and size in (0, 2, 30, 45):
             return
 
         devtype = self.dev_type(devname)
@@ -403,8 +404,9 @@ class DevTree(rcDevTree.DevTree):
         if 'cciss' in devname:
             d.set_devpath('/dev/'+devname.replace('!', '/'))
         elif devname in self.mp_h:
-            d.set_devpath('/dev/mpath/'+self._dm_h[devname])
-            d.set_devpath('/dev/'+devname)
+            if devname in self._dm_h:
+                d.set_devpath('/dev/mpath/'+self._dm_h[devname])
+                d.set_devpath('/dev/'+devname)
         else:
             d.set_devpath('/dev/'+devname)
 
@@ -417,9 +419,8 @@ class DevTree(rcDevTree.DevTree):
             pass
 
         # add holders
-        holderpaths = glob.glob("%s/holders/*"%devpath)
-        holdernames = map(lambda x: os.path.basename(x), holderpaths)
-        for holdername, holderpath in zip(holdernames, holderpaths):
+        for holderpath in glob.glob("%s/holders/*"%devpath):
+            holdername = os.path.basename(holderpath)
             if not os.path.exists(holderpath):
                 # broken symlink
                 continue
@@ -429,15 +430,15 @@ class DevTree(rcDevTree.DevTree):
 
         # add lv aliases
         if devname in self._dm_h:
-            d.set_alias(self._dm_h[devname])
-            d.set_devpath('/dev/mapper/'+self._dm_h[devname])
-            s = self._dm_h[devname].replace('--', ':').replace('-', '/').replace(':','-')
+            alias = self._dm_h[devname]
+            d.set_alias(alias)
+            d.set_devpath('/dev/mapper/'+alias)
+            s = alias.replace('--', ':').replace('-', '/').replace(':','-')
             d.set_devpath('/dev/'+s)
 
         # add slaves
-        slavepaths = glob.glob("%s/slaves/*"%devpath)
-        slavenames = map(lambda x: os.path.basename(x), slavepaths)
-        for slavename, slavepath in zip(slavenames, slavepaths):
+        for slavepath in glob.glob("%s/slaves/*"%devpath):
+            slavename = os.path.basename(slavepath)
             if not os.path.exists(slavepath):
                 # broken symlink
                 continue
@@ -446,8 +447,13 @@ class DevTree(rcDevTree.DevTree):
             d.add_parent(slavename, size, devtype)
 
         if devname in mp_h:
-            d.set_alias(wwid_h[devname])
-            d.set_devpath('/dev/mpath/3'+wwid_h[devname])
+            wwid = wwid_h[devname]
+            d.set_alias(wwid)
+            try:
+                p = glob.glob('/dev/mpath/?'+wwid)[0]
+                d.set_devpath(p)
+            except:
+                pass
 
         return d
 
@@ -518,18 +524,18 @@ class DevTree(rcDevTree.DevTree):
                 p.add_parent(devname)
 
     def load_sysfs(self):
-        devpaths = glob.glob("/sys/block/*")
-        devnames = map(lambda x: os.path.basename(x), devpaths)
-        for devname, devpath in zip(devnames, devpaths):
+        for devpath in glob.glob("/sys/block/*"):
+            devname = os.path.basename(devpath)
+            if devname.startswith("Vx"):
+                continue
             d = self.load_dev(devname, devpath)
 
             if d is None:
                 continue
 
             # add parts
-            partpaths = glob.glob("%s/%s*"%(devpath, devname))
-            partnames = map(lambda x: os.path.basename(x), partpaths)
-            for partname, partpath in zip(partnames, partpaths):
+            for partpath in glob.glob("%s/%s*"%(devpath, devname)):
+                partname = os.path.basename(partpath)
                 p = self.load_dev(partname, partpath)
                 if p is None:
                     continue
@@ -558,6 +564,8 @@ class DevTree(rcDevTree.DevTree):
             self.load_sysfs()
             self.tune_lv_relations()
 
+        self.load_vx_dmp()
+        self.load_vx_vm()
         self.add_drbd_relations()
         self.add_loop_relations()
 
