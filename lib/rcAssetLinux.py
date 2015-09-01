@@ -26,7 +26,7 @@ def is_container():
         return False
     with open(p, 'r') as f:
         lines = f.readlines()
-        if len(lines) != 1:
+        if len(lines) == 0:
             return False
         if ':' not in lines[0]:
             return False
