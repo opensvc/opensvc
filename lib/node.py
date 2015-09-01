@@ -127,6 +127,7 @@ class Node(Svc, Freezer, Scheduler):
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
+            'pushemcvnx':        'push EMC CX/VNX configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
             'pushnecism':     'push NEC ISM configuration to collector',
             'pushhds':        'push HDS configuration to collector',
@@ -215,6 +216,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushasset": SchedOpts("asset"),
 	 "pushnsr": SchedOpts("nsr", schedule_option="no_schedule"),
 	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
+	 "pushemcvnx": SchedOpts("emcvnx", schedule_option="no_schedule"),
 	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
 	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
 	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
@@ -555,6 +557,15 @@ class Node(Svc, Freezer, Scheduler):
     @scheduler_fork
     def task_pushhp3par(self):
         self.collector.call('push_hp3par', self.options.objects)
+
+    def pushemcvnx(self):
+        if self.skip_action("pushemcvnx"):
+            return
+        self.task_pushemcvnx()
+
+    @scheduler_fork
+    def task_pushemcvnx(self):
+        self.collector.call('push_emcvnx', self.options.objects)
 
     def pushibmds(self):
         if self.skip_action("pushibmds"):

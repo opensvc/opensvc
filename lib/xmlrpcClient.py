@@ -1088,6 +1088,26 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_hp3par(*args)
 
+    def push_emcvnx(self, objects=[], sync=True):
+        if 'update_emcvnx' not in self.proxy_methods:
+            print("'update_emcvnx' method is not exported by the collector")
+            return
+        m = __import__('rcEmcVnx')
+        try:
+            emcvnxs = m.EmcVnxs(objects)
+        except:
+            return
+        for emcvnx in emcvnxs:
+            vals = []
+            print(emcvnx.name)
+            for key in emcvnx.keys:
+                print(" extract", key)
+                vals.append(getattr(emcvnx, 'get_'+key)())
+            args = [emcvnx.name, emcvnx.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_emcvnx(*args)
+
     def push_ibmsvc(self, objects=[], sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
             print("'update_ibmsvc' method is not exported by the collector")
