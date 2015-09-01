@@ -114,7 +114,7 @@ class EmcVnx(object):
         self.scope = scope
         self.username = username
         self.password = password
-        self.keys = ['portlistsp', 'getall', 'metalunlist', 'getalllun', 'getagent', 'getarrayuid', 'storagepool', 'thinlunlistall', 'getall']
+        self.keys = ['portlistsp', 'getall', 'metalunlist', 'getalllun', 'getagent', 'getarrayuid', 'storagepool', 'thinlunlistall', 'getall', 'getallrg']
 
     def rcmd(self, cmd, log=None):
         if self.method in 'secfile':
@@ -129,6 +129,11 @@ class EmcVnx(object):
 
     def get_getall(self):
         cmd = ['getall']
+        s = self.rcmd(cmd)[0]
+        return s
+
+    def get_getallrg(self):
+        cmd = ['getall', '-rg']
         s = self.rcmd(cmd)[0]
         return s
 
