@@ -196,11 +196,17 @@ class Asset(rcAsset.Asset):
             return
         with open('/etc/lsb-release') as f:
             for line in f.readlines():
+                if 'DISTRIB_RELEASE' in line:
+                    r = line.split('=')[-1].replace('\n','').strip('"')
+                    r = r.replace(self._get_os_vendor(), '').strip()
+                    if r == "":
+                        continue
+                    return r
                 if 'DISTRIB_DESCRIPTION' in line:
                     r = line.split('=')[-1].replace('\n','').strip('"')
                     r = r.replace(self._get_os_vendor(), '').strip()
                     if r == "":
-                        return
+                        continue
                     return r
         return
 
