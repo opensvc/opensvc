@@ -367,11 +367,28 @@ class Btrfs(object):
                 self.devs[l[-1]] = (label, uuid)
 
     def get_transid(self, path):
-        cmd = ['btrfs', 'subvolume', 'find-new', path, '-1']
+        """
+        /opt/opensvc/var/btrfs/win2/win2@sent
+                Name:                   win2@sent
+                uuid:                   167af15f-7d5a-2745-966c-dde4aaa056b7
+                Parent uuid:            30121b33-a10f-a642-8caf-0184f5d8e5b0
+                Creation time:          2015-09-02 04:01:20
+                Object ID:              549
+                Generation (Gen):       591564
+                Gen at creation:        591564
+                Parent:                 5
+                Top Level:              5
+                Flags:                  readonly
+                Snapshot(s):
+        """
+        cmd = ['btrfs', 'subvolume', 'show', path]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ExecError("can't fetch %s transid:\n%s"%(path, err))
-        return out.split()[-1]
+        for line in out.split("\n"):
+            if "Generation" in line:
+                return line.split()[-1]
+        raise ExecError("can't find %s transid\n"%path)
 
     def __str__(self):
         s = "label: %s\n" % self.label
@@ -381,7 +398,7 @@ class Btrfs(object):
         return s
 
 if __name__ == "__main__":
-    o = Btrfs(label=sys.argv[1], node="deb2")
-    print(o)
+    o = Btrfs(label=sys.argv[1])
+    print(o.get_transid("/opt/opensvc/var/btrfs/deb1/deb1@sent"))
     #o.setup_snap()
 
