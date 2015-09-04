@@ -163,6 +163,8 @@ def schedcmd(_cmd):
 def save_file(infile):
     logit("begin")
     logit("infile <%s>"%infile)
+    if not os.path.exists(infile):
+        return True
     try:
         import datetime
         timestamp = str(datetime.datetime.now())
