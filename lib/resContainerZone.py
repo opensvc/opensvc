@@ -73,6 +73,7 @@ class Zone(resContainer.Container):
         self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
         self.zone_cf = "/etc/zones/"+self.name+".xml"
+        self.delayed_noaction = True
 
     def on_add(self):
         self.get_zonepath()
@@ -373,10 +374,12 @@ class Zone(resContainer.Container):
                 zfs_setprop(mount.dev, 'canmount', 'noauto')
 
     def start(self):
-        self.attach()
-        self.ready()
+        if not 'noaction' in self.tags:
+            self.attach()
+            self.ready()
         self.svc.sub_set_action("ip", "start", tags=set([self.name]))
-        self.boot()
+        if not 'noaction' in self.tags:
+            self.boot()
         self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
         self.svc.sub_set_action("fs", "start", tags=set([self.name]))
@@ -386,11 +389,13 @@ class Zone(resContainer.Container):
         self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
         self.svc.sub_set_action("ip", "stop", tags=set([self.name]))
-        self.halt()
-        self.detach()
+        if not 'noaction' in self.tags:
+            self.halt()
+            self.detach()
 
     def provision(self):
-        self._provision()
+        if not 'noaction' in self.tags:
+            self._provision()
         self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
         self.svc.sub_set_action("fs", "provision", tags=set([self.name]))

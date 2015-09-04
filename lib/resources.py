@@ -198,7 +198,7 @@ class Resource(object):
             self.log.debug('skip encap resource action: action=%s res=%s'%(action, self.rid))
             return
 
-        if 'noaction' in self.tags:
+        if 'noaction' in self.tags and not hasattr(self, "delayed_noaction"):
             self.log.debug('skip resource action (noaction tag): action=%s res=%s'%(action, self.rid))
             return
 
