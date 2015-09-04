@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import os
 import errno
 import shutil
@@ -68,9 +67,9 @@ def logit(msg,stdout=False,stderr=False):
     f.write(content+'\n')
     f.close()
     if stdout:
-        print(msg, file=sys.stdout)
+        print msg
     if stderr:
-        print("error ==> " + msg, file=sys.stderr)
+        print >>sys.stderr, "error ==> " + msg
 
 logit("\nStarting OpenSVC postinstall\n",stdout=True)
 
