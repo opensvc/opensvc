@@ -103,6 +103,11 @@ class Ip(Res.Resource):
         except Exception as e:
             self.status_log(str(e))
             return rcStatus.WARN
+        ifconfig = rcIfconfig.ifconfig()
+        intf = ifconfig.interface(self.ipDev)
+        if intf is None:
+            self.status_log("interface %s not found" % self.ipDev)
+            return rcStatus.WARN
         try:
             if self.is_up():
                 return self.status_stdby(rcStatus.UP)
