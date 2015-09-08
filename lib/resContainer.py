@@ -253,9 +253,15 @@ class Container(Res.Resource):
             self.status_log("container auto boot is on")
             return rcStatus.WARN
         if self.is_up():
-            return rcStatus.UP
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.UP
         if self.is_down():
-            return rcStatus.DOWN
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_DOWN
+            else:
+                return rcStatus.DOWN
         else:
             self.status_log("container status is neither up nor down")
             return rcStatus.WARN

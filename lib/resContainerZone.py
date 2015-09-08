@@ -260,9 +260,15 @@ class Zone(resContainer.Container):
     def _status(self, verbose=False):
         self.zone_refresh()
         if self.state == 'running' :
-            return rcStatus.UP
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.UP
         else:
-            return rcStatus.DOWN
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_DOWN
+            else:
+                return rcStatus.DOWN
 
     def zone_refresh(self):
         """ refresh Zone object attributes:
