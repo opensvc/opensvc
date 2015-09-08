@@ -174,7 +174,7 @@ def set_mem_cgroup(o):
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
-def get_cgroup_path(o, t):
+def get_cgroup_path(o, t, create=True):
     cgroup_mntpt = get_cgroup_mntpt(t)
     if hasattr(o, "svcname"):
         svcname = o.svcname
@@ -192,7 +192,7 @@ def get_cgroup_path(o, t):
         log = o.log
     elif hasattr(o, "svc"):
         log = o.svc.log
-    if not os.path.exists(cgp):
+    if not os.path.exists(cgp) and create:
         log.info("create cgroup %s" % cgp)
         os.makedirs(cgp)
     return cgp
@@ -251,7 +251,7 @@ def _freezer(o, a, cgp):
 def get_freeze_state(o):
     if not cgroup_capable(o):
         return False
-    cgp = get_cgroup_path(o, "freezer")
+    cgp = get_cgroup_path(o, "freezer", create=False)
     path = os.path.join(cgp, "freezer.state")
     if not os.path.exists(path):
         return
