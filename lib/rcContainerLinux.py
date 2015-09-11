@@ -46,8 +46,16 @@ def set_task(o, t):
         buff = f.read()
     if pid in buff.split():
         return
-    with open(path, 'w') as f:
-        f.write(pid)
+    try:
+        with open(path, 'w') as f:
+            f.write(pid)
+    except OSError as e:
+        if e.errno == 28:
+            # No space left on device
+            # means the cgroup has not been initialized with caps yet
+            pass
+        else:
+            raise
 
 def set_cgroup(o, t, name, key, force=False):
     if not hasattr(o, "containerize_settings"):
