@@ -189,7 +189,7 @@ def set_mem_cgroup(o):
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
 def get_cgroup_path(o, t, create=True):
-    o.log.debug("get_cgroup_path : start %s, %s"%(t, create))
+    o.log.debug("get_cgroup_path : t=%s, create=%s"%(t, create))
     cgroup_mntpt = get_cgroup_mntpt(t)
     if hasattr(o, "svcname"):
         svcname = o.svcname
