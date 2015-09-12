@@ -6,18 +6,22 @@ from rcUtilities import justcall, convert_size
 default_cgroup_mntpt = '/cgroup'
 
 def get_cgroup_mntpt(t):
-    (out,err,ret) = justcall(['mount'])
-    if ret != 0:
+    p = '/proc/mounts'
+    if not os.path.exists(p):
         return None
-    for line in out.split('\n'):
+    with open(p, 'r') as f:
+        buff = f.read()
+    for line in buff.split('\n'):
+        if 'cgroup' not in line:
+            continue
         l = line.split()
         if len(l) < 6:
             continue
-        if l[4] == 'cgroup':
-            mntopts = re.split('\W+',l[5])
+        if l[2] == 'cgroup':
+            mntopts = re.split('\W+',l[3])
             for opt in mntopts:
                 if t == opt:
-                    return l[2]
+                    return l[1]
     return None
 
 def cgroup_capable(res):
@@ -261,7 +265,7 @@ def _freezer(o, a, cgp):
             buff = f.write(a)
     except Exception as e:
         raise ex.excError(str(e))
-    log.info("%s on %s submited succesfully" % (a, path))
+    log.info("%s on %s submitted succesfully" % (a, path))
 
 def get_freeze_state(o):
     if not cgroup_capable(o):
@@ -302,7 +306,10 @@ def _containerize(o):
     if o is None:
         return
     try:
-        set_task(o, 'systemd')
+        try:
+            set_task(o, 'systemd')
+        except:
+            pass
         set_task(o, 'cpu')
         set_task(o, 'cpuset')
         set_task(o, 'memory')
