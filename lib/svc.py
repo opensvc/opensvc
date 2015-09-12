@@ -59,6 +59,7 @@ class Options(object):
         self.refresh = False
         self.parm_rid = None
         self.parm_tags = None
+        self.parm_subsets = None
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Scheduler):
@@ -981,14 +982,18 @@ class Svc(Resource, Scheduler):
         self.node.os.crash()
 
     def pg_freeze(self):
-        if self.options.parm_rid is not None or self.options.parm_tags is not None:
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
             self.sub_set_action('app', '_pg_freeze')
             self.sub_set_action('container', '_pg_freeze')
         else:
             self._pg_freeze()
 
     def pg_thaw(self):
-        if self.options.parm_rid is not None or self.options.parm_tags is not None:
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
             self.sub_set_action('app', '_pg_thaw')
             self.sub_set_action('container', '_pg_thaw')
         else:
@@ -1054,6 +1059,9 @@ class Svc(Resource, Scheduler):
         if self.options.parm_tags:
             options.append('--tags')
             options.append(self.options.parm_tags)
+        if self.options.parm_subsets:
+            options.append('--subsets')
+            options.append(self.options.parm_subsets)
 
         cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
@@ -2193,13 +2201,13 @@ class Svc(Resource, Scheduler):
                 return True
         return False
 
-    def set_skip_resources(self, keeprid=[], keeptags=set([]), xtags=set([])):
+    def set_skip_resources(self, keeprid=[], xtags=set([])):
         if len(keeprid) > 0:
             ridfilter = True
         else:
             ridfilter = False
 
-        if len(keeptags) > 0 or len(xtags) > 0:
+        if len(xtags) > 0:
             tagsfilter = True
         else:
             tagsfilter = False
@@ -2211,8 +2219,6 @@ class Svc(Resource, Scheduler):
             if self.tag_match(r.tags, xtags):
                 r.skip = True
             if ridfilter and r.rid in keeprid:
-                continue
-            if tagsfilter and self.tag_match(r.tags, keeptags):
                 continue
             r.skip = True
 
@@ -2246,8 +2252,31 @@ class Svc(Resource, Scheduler):
             l += self.expand_rid(e)
         return l
 
-    def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
+    def expand_subsets(self, subsets):
+        l = set([])
+        if subsets is None:
+            return l
+        for r in self.resources_by_id.values():
+            if r.subset in subsets:
+                l.add(r.rid)
+        self.log.debug("rids added from --subsets %s: %s" % (",".join(subsets), ",".join(l)))
+        return l
+
+    def expand_tags(self, tags):
+        l = set([])
+        if tags is None:
+            return l
+        for r in self.resources_by_id.values():
+            if len(r.tags & tags) > 0:
+                l.add(r.rid)
+        self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
+        return l
+
+    def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
         rid = self.expand_rids(rid)
+        rid = set(rid) | self.expand_subsets(subsets)
+        rid = set(rid) | self.expand_tags(tags)
+        rid = list(rid)
         self.action_rid = rid
         if self.node is None:
             self.node = node.Node()
@@ -2325,7 +2354,7 @@ class Svc(Resource, Scheduler):
 
         self.setup_environ()
         self.setup_signal_handlers()
-        self.set_skip_resources(keeprid=rid, keeptags=tags, xtags=xtags)
+        self.set_skip_resources(keeprid=rid, xtags=xtags)
         actions_list_no_log = [
           'get',
           'set',

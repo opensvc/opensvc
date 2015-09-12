@@ -1335,7 +1335,7 @@ class Node(Svc, Freezer, Scheduler):
         except:
             pass
 
-    def do_svcs_action(self, action, rid, tags):
+    def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
         err = 0
         if self.options.parallel:
             from multiprocessing import Process
@@ -1349,6 +1349,7 @@ class Node(Svc, Freezer, Scheduler):
                   'action': action,
                   'rid': rid,
                   'tags': tags,
+                  'subsets': subsets,
                   'waitlock': self.options.waitlock
                 }
                 p[s.svcname] = Process(target=self.service_action_worker,
@@ -1358,7 +1359,7 @@ class Node(Svc, Freezer, Scheduler):
                 p[s.svcname].start()
             else:
                 try:
-                    err += s.action(action, rid=rid, tags=tags, waitlock=self.options.waitlock)
+                    err += s.action(action, rid=rid, tags=tags, subsets=subsets, waitlock=self.options.waitlock)
                 except s.exMonitorAction:
                     s.action('toc')
                 except ex.excSignal:

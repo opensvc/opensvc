@@ -144,6 +144,8 @@ parser.add_option("-i", "--interactive", default=False, action="store_true", des
                   help="prompt user for a choice instead of going for defaults or failing")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
+parser.add_option("--subsets", default=None, action="store", dest="parm_subsets",
+                  help="comma-separated list of resource subsets to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--resource", default=[], action="append",
@@ -342,6 +344,11 @@ if options.parm_tags is not None:
 else:
    tags = set([])
 
+if options.parm_subsets is not None:
+   subsets = set(options.parm_subsets.split(','))
+else:
+   subsets = set([])
+
 if action in ['create', 'update']:
     data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
     if options.provision:
@@ -378,7 +385,7 @@ for s in node.svcs:
     if docker_argv is not None:
         s.docker_argv = docker_argv
 
-err = node.do_svcs_action(action, rid, tags)
+err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
 
 try:
     import logging
