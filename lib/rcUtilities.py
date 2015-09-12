@@ -399,8 +399,6 @@ def convert_size(s, _to='', _round=1):
     size = s
     unit = ""
     for i, c in enumerate(s):
-        if i == len(s) - 1:
-            break
         if not c.isdigit() and c != '.':
             size = s[:i]
             unit = s[i:].strip()
@@ -448,4 +446,5 @@ if __name__ == "__main__":
     #(r,output,err)=call(("/usr/bin/id","-a"))
     #print("status: ", r, "output:", output)
     print(convert_size("10000 KiB", _to='MiB', _round=3))
+    print(convert_size("10M", _to='', _round=4096))
 
