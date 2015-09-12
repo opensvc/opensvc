@@ -39,6 +39,7 @@ def cgroup_capable(res):
     return False
 
 def set_task(o, t):
+    o.log.debug("set_task : start %s" %(t))
     cgp = get_cgroup_path(o, t)
     path = os.path.join(cgp, "tasks")
     pid = str(os.getpid())
@@ -47,10 +48,11 @@ def set_task(o, t):
     if pid in buff.split():
         return
     try:
+        o.log.debug("set_task : open path %s for writing" %(path))
         with open(path, 'w') as f:
             f.write(pid)
-    except OSError as e:
-        if e.errno == 28:
+    except Exception as e:
+        if hasattr(e, "errno") and e.errno == 28:
             # No space left on device
             # means the cgroup has not been initialized with caps yet
             pass
@@ -58,6 +60,7 @@ def set_task(o, t):
             raise
 
 def set_cgroup(o, t, name, key, force=False):
+    o.log.debug("set_cgroup : start %s, %s, %s, %s" %(t, name, key, force))
     if not hasattr(o, "containerize_settings"):
         return
     if key not in o.containerize_settings:
@@ -83,6 +86,7 @@ def set_cgroup(o, t, name, key, force=False):
         log.warning("failed to set container setting %s to %s" % (value, path))
 
 def get_cgroup(o, t, name):
+    o.log.debug("get_cgroup : start %s, %s" %(t, name))
     cgp = get_cgroup_path(o, t)
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
@@ -94,6 +98,7 @@ def get_cgroup(o, t, name):
 def set_cpu_quota(o):
     if not hasattr(o, "containerize_settings"):
         return
+    o.log.debug("set_cpu_quota : start <%s>"%(o.containerize_settings))
 
     if 'cpu_quota' not in o.containerize_settings:
         return
@@ -134,6 +139,7 @@ def set_cpu_quota(o):
 def set_mem_cgroup(o):
     if not hasattr(o, "containerize_settings"):
         return
+    o.log.debug("set_mem_cgroup : start <%s>"%(o.containerize_settings))
 
     if 'mem_limit' in o.containerize_settings:
         mem_limit = convert_size(o.containerize_settings['mem_limit'], _to="", _round=4096)
@@ -183,6 +189,7 @@ def set_mem_cgroup(o):
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
 def get_cgroup_path(o, t, create=True):
+    o.log.debug("get_cgroup_path : start %s, %s"%(t, create))
     cgroup_mntpt = get_cgroup_mntpt(t)
     if hasattr(o, "svcname"):
         svcname = o.svcname
