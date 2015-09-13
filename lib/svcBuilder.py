@@ -1263,7 +1263,7 @@ def add_containers_vbox(svc, conf, s):
 
     r = m.Vbox(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1293,7 +1293,7 @@ def add_containers_xen(svc, conf, s):
 
     r = m.Xen(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1505,7 +1505,7 @@ def add_containers_vz(svc, conf, s):
 
     r = m.Vz(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1536,7 +1536,7 @@ def add_containers_kvm(svc, conf, s):
 
     r = m.Kvm(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1601,7 +1601,7 @@ def add_containers_lxc(svc, conf, s):
 
     r = m.Lxc(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1637,7 +1637,7 @@ def add_containers_docker(svc, conf, s):
 
     r = m.Docker(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1674,7 +1674,7 @@ def add_containers_ovm(svc, conf, s):
 
     r = m.Ovm(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -2574,7 +2574,7 @@ def add_app(svc, conf, s):
  
     r = resApp.App(**kwargs)
     add_triggers(svc, r, conf, s)
-    r.containerize_settings = get_containerize_settings(svc, s)
+    r.pg_settings = get_pg_settings(svc, s)
     svc += r
 
 def add_apps_sysv(svc, conf):
@@ -2669,7 +2669,7 @@ def add_apps_sysv(svc, conf):
         r = resApp.App(**kwargs)
         svc += r
 
-def get_containerize_settings(svc, s):
+def get_pg_settings(svc, s):
     d = {}
     if s != "DEFAULT":
         conf = ConfigParser.RawConfigParser()
@@ -2680,32 +2680,32 @@ def get_containerize_settings(svc, s):
     else:
         conf = svc.config
     try:
-        d["cpus"] = conf_get_string_scope(svc, conf, s, "container_cpus")
+        d["cpus"] = conf_get_string_scope(svc, conf, s, "pg_cpus")
     except ex.OptNotFound:
         pass
 
     try:
-        d["cpu_shares"] = conf_get_string_scope(svc, conf, s, "container_cpu_shares")
+        d["cpu_shares"] = conf_get_string_scope(svc, conf, s, "pg_cpu_shares")
     except ex.OptNotFound:
         pass
 
     try:
-        d["cpu_quota"] = conf_get_string_scope(svc, conf, s, "container_cpu_quota")
+        d["cpu_quota"] = conf_get_string_scope(svc, conf, s, "pg_cpu_quota")
     except ex.OptNotFound:
         pass
 
     try:
-        d["mems"] = conf_get_string_scope(svc, conf, s, "container_mems")
+        d["mems"] = conf_get_string_scope(svc, conf, s, "pg_mems")
     except ex.OptNotFound:
         pass
 
     try:
-        d["mem_limit"] = conf_get_string_scope(svc, conf, s, "container_mem_limit")
+        d["mem_limit"] = conf_get_string_scope(svc, conf, s, "pg_mem_limit")
     except ex.OptNotFound:
         pass
 
     try:
-        d["vmem_limit"] = conf_get_string_scope(svc, conf, s, "container_vmem_limit")
+        d["vmem_limit"] = conf_get_string_scope(svc, conf, s, "pg_vmem_limit")
     except ex.OptNotFound:
         pass
 
@@ -2857,10 +2857,10 @@ def build(name):
     # containerization options
     #
     try:
-        svc.containerize = conf_get_boolean_scope(svc, conf, "DEFAULT", 'containerize')
+        svc.create_pg = conf_get_boolean_scope(svc, conf, "DEFAULT", 'create_pg')
     except ex.OptNotFound:
-        svc.containerize = False
-    svc.containerize_settings = get_containerize_settings(svc, "DEFAULT")
+        svc.create_pg = False
+    svc.pg_settings = get_pg_settings(svc, "DEFAULT")
 
     try:
         svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()

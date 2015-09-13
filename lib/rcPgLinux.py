@@ -31,7 +31,7 @@ def cgroup_capable(res):
     if not os.path.exists(kconf):
         kconf = os.path.join(os.sep, 'boot', 'config-'+os.uname()[2])
     if not os.path.exists(kconf):
-        res.log.info("can not detect if system supports containerization")
+        res.log.info("can not detect if system supports process groups")
         return False
     with open(kconf, 'r') as f:
         for line in f.readlines():
@@ -40,7 +40,7 @@ def cgroup_capable(res):
                 continue
             if l[0] == 'CONFIG_CGROUPS' and l[1] == 'y\n':
                 return True
-    res.log.info("system does not support containerization")
+    res.log.info("system does not support process groups")
     return False
 
 def set_task(o, t):
@@ -66,11 +66,11 @@ def set_task(o, t):
 
 def set_cgroup(o, t, name, key, force=False):
     o.log.debug("set_cgroup : start %s, %s, %s, %s" %(t, name, key, force))
-    if not hasattr(o, "containerize_settings"):
+    if not hasattr(o, "pg_settings"):
         return
-    if key not in o.containerize_settings:
+    if key not in o.pg_settings:
         return
-    value = o.containerize_settings[key]
+    value = o.pg_settings[key]
     cgp = get_cgroup_path(o, t)
     if value is None:
         return
@@ -88,7 +88,7 @@ def set_cgroup(o, t, name, key, force=False):
             f.write(str(value))
         log.info('/bin/echo %s > %s'%(value, path))
     except Exception as e:
-        log.warning("failed to set container setting %s to %s" % (value, path))
+        log.warning("failed to set process group setting %s to %s" % (value, path))
 
 def get_cgroup(o, t, name):
     o.log.debug("get_cgroup : start %s, %s" %(t, name))
@@ -101,15 +101,15 @@ def get_cgroup(o, t, name):
     return buff
 
 def set_cpu_quota(o):
-    if not hasattr(o, "containerize_settings"):
+    if not hasattr(o, "pg_settings"):
         return
-    o.log.debug("set_cpu_quota : start <%s>"%(o.containerize_settings))
+    o.log.debug("set_cpu_quota : start <%s>"%(o.pg_settings))
 
-    if 'cpu_quota' not in o.containerize_settings:
+    if 'cpu_quota' not in o.pg_settings:
         return
 
     period = int(get_cgroup(o, 'cpu', 'cpu.cfs_period_us'))
-    v = o.containerize_settings["cpu_quota"]
+    v = o.pg_settings["cpu_quota"]
 
     if "@" in v:
         try:
@@ -138,23 +138,23 @@ def set_cpu_quota(o):
     if tgt_val == cur_val:
         return
 
-    o.containerize_settings["cpu_cfs_quota_us"] = tgt_val
+    o.pg_settings["cpu_cfs_quota_us"] = tgt_val
     set_cgroup(o, 'cpu', 'cpu.cfs_quota_us', 'cpu_cfs_quota_us')
 
 def set_mem_cgroup(o):
-    if not hasattr(o, "containerize_settings"):
+    if not hasattr(o, "pg_settings"):
         return
-    o.log.debug("set_mem_cgroup : start <%s>"%(o.containerize_settings))
+    o.log.debug("set_mem_cgroup : start <%s>"%(o.pg_settings))
 
-    if 'mem_limit' in o.containerize_settings:
-        mem_limit = convert_size(o.containerize_settings['mem_limit'], _to="", _round=4096)
-        o.containerize_settings['mem_limit'] = mem_limit
+    if 'mem_limit' in o.pg_settings:
+        mem_limit = convert_size(o.pg_settings['mem_limit'], _to="", _round=4096)
+        o.pg_settings['mem_limit'] = mem_limit
     else:
         mem_limit = None
 
-    if 'vmem_limit' in o.containerize_settings:
-        vmem_limit = convert_size(o.containerize_settings['vmem_limit'], _to="", _round=4096)
-        o.containerize_settings['vmem_limit'] = vmem_limit
+    if 'vmem_limit' in o.pg_settings:
+        vmem_limit = convert_size(o.pg_settings['vmem_limit'], _to="", _round=4096)
+        o.pg_settings['vmem_limit'] = vmem_limit
     else:
         vmem_limit = None
 
@@ -173,7 +173,7 @@ def set_mem_cgroup(o):
         cur_vmem_limit = None
     if mem_limit is not None and vmem_limit is not None:
         if mem_limit > vmem_limit:
-            log.error("container_vmem_limit must be greater than container_mem_limit")
+            log.error("pg_vmem_limit must be greater than pg_mem_limit")
             raise ex.excError
         if mem_limit > cur_vmem_limit:
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
@@ -183,13 +183,13 @@ def set_mem_cgroup(o):
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
     elif mem_limit is not None:
         if cur_vmem_limit and mem_limit > cur_vmem_limit:
-            log.error("container_mem_limit must not be greater than current container_vmem_limit (%d)"%cur_vmem_limit)
+            log.error("pg_mem_limit must not be greater than current pg_vmem_limit (%d)"%cur_vmem_limit)
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
     elif vmem_limit is not None:
         cur_mem_limit = int(get_cgroup(o, 'memory', 'memory.limit_in_bytes'))
         if vmem_limit < cur_mem_limit:
-            log.error("container_vmem_limit must not be lesser than current container_mem_limit (%d)"%cur_mem_limit)
+            log.error("pg_vmem_limit must not be lesser than current pg_mem_limit (%d)"%cur_mem_limit)
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
@@ -322,19 +322,19 @@ def frozen(res):
                 name = o.svcname
             except:
                 name = o.rid
-            res.status_log("container %s is %s" % (name, state))
+            res.status_log("process group %s is %s" % (name, state))
             return True
     return False
 
-def containerize(res):
+def create_pg(res):
     if not cgroup_capable(res):
         return
 
-    _containerize(res.svc)
-    _containerize(res.rset)
-    _containerize(res)
+    _create_pg(res.svc)
+    _create_pg(res.rset)
+    _create_pg(res)
 
-def _containerize(o):
+def _create_pg(o):
     if o is None:
         return
     try:
@@ -357,4 +357,4 @@ def _containerize(o):
             name = o.svcname
         except:
             name = o.rid
-        raise ex.excError("containerization in '%s' cgroup failed: %s"%(name, str(e)))
+        raise ex.excError("process group creation in '%s' cgroup failed: %s"%(name, str(e)))

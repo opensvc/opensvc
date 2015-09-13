@@ -187,7 +187,7 @@ class App(Res.Resource):
         self.script = None
 
     def is_up(self):
-        if self.container_frozen():
+        if self.pg_frozen():
             raise StatusWARN()
         if self.script is None:
             raise StatusNA()
@@ -220,7 +220,7 @@ class App(Res.Resource):
         return l
 
     def start(self):
-        self.containerize()
+        self.create_pg()
         self.validate_on_action()
 
         if self.start_seq is None:

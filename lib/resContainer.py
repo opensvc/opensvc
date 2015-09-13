@@ -197,7 +197,7 @@ class Container(Res.Resource):
             return
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()
-        self.containerize()
+        self.create_pg()
         self.container_start()
         self.can_rollback = True
         self.wait_for_startup()
@@ -239,7 +239,7 @@ class Container(Res.Resource):
         return not self.is_up()
 
     def _status(self, verbose=False):
-        if self.container_frozen():
+        if self.pg_frozen():
             return rcStatus.WARN
         try:
             self.getaddr()

@@ -25,7 +25,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_containerize_settings
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
 import xmlrpcClient
 import sys
@@ -78,7 +78,7 @@ class Svc(Resource, Scheduler):
         self.ha = False
         self.sync_dblogger = False
         self.svcname = svcname
-        self.containerize = True
+        self.create_pg = True
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
@@ -266,7 +266,7 @@ class Svc(Resource, Scheduler):
                 R = ResourceSet(type=rtype, resources=[r], parallel=parallel)
             R.rid = rtype
             R.svc = self
-            R.containerize_settings = get_containerize_settings(self, "subset#"+rtype)
+            R.pg_settings = get_pg_settings(self, "subset#"+rtype)
             self.__iadd__(R)
 
         else:
@@ -1038,7 +1038,7 @@ class Svc(Resource, Scheduler):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
-        if container.container_frozen():
+        if container.pg_frozen():
             raise ex.excError("can't join a frozen container. abort encap command.")
         vmhostname = container.vm_hostname()
         try:

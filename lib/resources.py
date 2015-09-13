@@ -495,48 +495,48 @@ class Resource(object):
 
     def _pg_freezer(self, a):
         if hasattr(self, "svc"):
-            containerize = self.svc.containerize
+            create_pg = self.svc.create_pg
         else:
-            containerize = self.containerize
-        if not containerize:
+            create_pg = self.create_pg
+        if not create_pg:
             return
         try:
-            container = __import__('rcContainer'+rcEnv.sysname)
+            pg = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
-            self.log.info("containerization is not supported on this platform")
+            self.log.info("process group are not supported on this platform")
             return
         except Exception as e:
             print(e)
             raise
         if a == "freeze":
-            container.freeze(self)
+            pg.freeze(self)
         elif a == "thaw":
-            container.thaw(self)
+            pg.thaw(self)
         elif a == "kill":
-            container.kill(self)
+            pg.kill(self)
 
-    def container_frozen(self):
-        if not self.svc.containerize:
+    def pg_frozen(self):
+        if not self.svc.create_pg:
             return False
         try:
-            container = __import__('rcContainer'+rcEnv.sysname)
+            pg = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
-            self.status_log("containerization is not supported on this platform")
+            self.status_log("process group are not supported on this platform")
             return False
-        return container.frozen(self)
+        return pg.frozen(self)
 
-    def containerize(self):
-        if not self.svc.containerize:
+    def create_pg(self):
+        if not self.svc.create_pg:
             return
         try:
-            container = __import__('rcContainer'+rcEnv.sysname)
+            pg = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
-            self.log.info("containerization is not supported on this platform")
+            self.log.info("process group are not supported on this platform")
             return
         except Exception as e:
             print(e)
             raise
-        container.containerize(self)
+        pg.create_pg(self)
 
 
 class ResourceSet(Resource):

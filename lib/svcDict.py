@@ -835,7 +835,7 @@ class KeywordMonitorAction(Keyword):
                   order=30,
                   default=None,
                   candidates=("reboot", "crash", "freezestop"),
-                  text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp.",
+                  text="The action to take when a monitored resource is not up nor standby up, and if the resource restart procedure has failed.",
                   example="reboot"
                 )
 
@@ -844,81 +844,81 @@ class KeywordContainerize(Keyword):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="containerize",
+                  keyword="create_pg",
                   order=30,
                   default=True,
                   candidates=(True, False),
                   text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
                 )
 
-class KeywordContainerCpus(KeywordInteger):
+class KeywordPgCpus(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_cpus",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
                   example="0-2"
                 )
 
-class KeywordContainerMems(KeywordInteger):
+class KeywordPgMems(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_mems",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
                   example="0-2"
                 )
 
-class KeywordContainerCpuShare(KeywordInteger):
+class KeywordPgCpuShare(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_cpu_shares",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
                   example="512"
                 )
 
-class KeywordContainerCpuQuota(KeywordInteger):
+class KeywordPgCpuQuota(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_cpu_quota",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
                   example="50%@all"
                 )
 
-class KeywordContainerMemLimit(KeywordInteger):
+class KeywordPgMemLimit(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_mem_limit",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
                   example="512000000"
                 )
 
-class KeywordContainerVmemLimit(KeywordInteger):
+class KeywordPgVmemLimit(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
                   keyword="container_vmem_limit",
                   order=31,
-                  depends=[('containerize', [True])],
+                  depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit.",
                   example="1024000000"
                 )
@@ -2611,13 +2611,13 @@ class KeyDict(KeywordStore):
         self += KeywordPresnapTrigger()
         self += KeywordPostsnapTrigger()
         self += KeywordMonitorAction()
-        self += KeywordContainerize()
-        self += KeywordContainerCpus()
-        self += KeywordContainerMems()
-        self += KeywordContainerCpuShare()
-        self += KeywordContainerCpuQuota()
-        self += KeywordContainerMemLimit()
-        self += KeywordContainerVmemLimit()
+        self += KeywordCreatePg()
+        self += KeywordPgCpus()
+        self += KeywordPgMems()
+        self += KeywordPgCpuShare()
+        self += KeywordPgCpuQuota()
+        self += KeywordPgMemLimit()
+        self += KeywordPgVmemLimit()
         self += KeywordSyncType()
         self += KeywordSyncDockerTarget()
         self += KeywordSyncBtrfsSrc()
