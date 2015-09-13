@@ -1,5 +1,6 @@
 import os
 import re
+import glob
 import rcExceptions as ex
 from rcUtilities import justcall, convert_size
 
@@ -203,7 +204,7 @@ def get_cgroup_path(o, t, create=True):
         raise ex.excError("cgroup fs with option %s is not mounted" % t)
 
     if o.type == "container.lxc":
-        cpg = os.path.join(cgroup_mntpt, "lxc", o.name)
+        cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
     else:
         elements = [cgroup_mntpt, svcname]
         if hasattr(o, "rset") and o.rset is not None:
@@ -229,7 +230,6 @@ def thaw(o):
     return freezer(o, "THAWED")
 
 def kill(o):
-    import glob
     cgp = get_cgroup_path(o, "freezer")
     pids = set([])
     for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks"):
@@ -293,6 +293,11 @@ def _freezer(o, a, cgp):
     except Exception as e:
         raise ex.excError(str(e))
     log.info("%s on %s submitted succesfully" % (a, path))
+
+    # el6 kernel does not freeze child cgroups, as later kernels do
+    for _cgp in glob.glob(cgp+"/*/*/freezer.state"):
+        _cgp = os.path.dirname(_cgp)
+        _freezer(o, a, _cgp)
 
 def get_freeze_state(o):
     if not cgroup_capable(o):
