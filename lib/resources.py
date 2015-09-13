@@ -490,6 +490,9 @@ class Resource(object):
     def _pg_thaw(self):
         return self._pg_freezer("thaw")
 
+    def _pg_kill(self):
+        return self._pg_freezer("kill")
+
     def _pg_freezer(self, a):
         if hasattr(self, "svc"):
             containerize = self.svc.containerize
@@ -509,6 +512,8 @@ class Resource(object):
             container.freeze(self)
         elif a == "thaw":
             container.thaw(self)
+        elif a == "kill":
+            container.kill(self)
 
     def container_frozen(self):
         if not self.svc.containerize:

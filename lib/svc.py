@@ -456,6 +456,7 @@ class Svc(Resource, Scheduler):
           'scheduler',
           'pg_freeze',
           'pg_thaw',
+          'pg_kill',
           'print_schedule',
           "print_status",
           'print_resource_status',
@@ -998,6 +999,15 @@ class Svc(Resource, Scheduler):
             self.sub_set_action('container', '_pg_thaw')
         else:
             self._pg_thaw()
+
+    def pg_kill(self):
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            self.sub_set_action('app', '_pg_kill')
+            self.sub_set_action('container', '_pg_kill')
+        else:
+            self._pg_kill()
 
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')

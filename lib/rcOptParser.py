@@ -92,6 +92,7 @@ action_desc = {
       'scheduler': "run the service task scheduler",
       'pg_freeze': "freeze the tasks of a process group",
       'pg_thaw': "thaw the tasks of a process group",
+      'pg_kill': "kill the tasks of a process group",
      },
     'Service configuration': {
       'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',

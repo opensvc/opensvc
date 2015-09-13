@@ -201,16 +201,22 @@ def get_cgroup_path(o, t, create=True):
         svcname = o.svc.svcname
     if cgroup_mntpt is None:
         raise ex.excError("cgroup fs with option %s is not mounted" % t)
-    elements = [cgroup_mntpt, svcname]
-    if hasattr(o, "rset") and o.rset is not None:
-        elements.append(o.rset.rid)
-    if hasattr(o, "rid") and o.rid is not None:
-        elements.append(o.rid.replace("#", "."))
-    cgp = os.path.join(*elements)
+
+    if o.type == "container.lxc":
+        cpg = os.path.join(cgroup_mntpt, "lxc", o.name)
+    else:
+        elements = [cgroup_mntpt, svcname]
+        if hasattr(o, "rset") and o.rset is not None:
+            elements.append(o.rset.rid)
+        if hasattr(o, "rid") and o.rid is not None:
+            elements.append(o.rid.replace("#", "."))
+        cgp = os.path.join(*elements)
+
     if hasattr(o, "log"):
         log = o.log
     elif hasattr(o, "svc"):
         log = o.svc.log
+
     if not os.path.exists(cgp) and create:
         log.info("create cgroup %s" % cgp)
         os.makedirs(cgp)
@@ -222,23 +228,44 @@ def freeze(o):
 def thaw(o):
     return freezer(o, "THAWED")
 
-def freezer_lxc(o, a):
-    # lxc-init children tasks are in the freezer cgroup lxc/<container>/
-    cgroup_mntpt = get_cgroup_mntpt("freezer")
-    cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
-    if os.path.exists(cgp):
-        _freezer(o, a, cgp)
+def kill(o):
+    import glob
+    cgp = get_cgroup_path(o, "freezer")
+    pids = set([])
+    for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks"):
+        with open(p, "r") as f:
+            buff = f.read()
+        pids |= set(buff.split("\n"))
+    pids.remove("")
+
+    if hasattr(o, "log"):
+        _o = o
+    else:
+        _o = o.svc
+
+    if len(pids) == 0:
+        _o.log.info("no task to kill")
+        return
+    cmd = ["kill"] + list(pids)
+    _o.vcall(cmd)
+
+    if hasattr(o, "svcname"):
+        # lxc containers are not parented to the service cgroup
+        # so we have to kill them individually
+        for r in o.get_resources("container.lxc"):
+            kill(r)
+
 
 def freezer(o, a):
     if not cgroup_capable(o):
         return
     cgp = get_cgroup_path(o, "freezer")
     _freezer(o, a, cgp)
-    if o.type == "container.lxc":
-        freezer_lxc(o, a)
     if hasattr(o, "svcname"):
+        # lxc containers are not parented to the service cgroup
+        # so we have to freeze them individually
         for r in o.get_resources("container.lxc"):
-            freezer_lxc(r, a)
+            freezer(r, a)
 
 def _freezer(o, a, cgp):
     path = os.path.join(cgp, "freezer.state")
