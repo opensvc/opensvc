@@ -990,6 +990,8 @@ class Svc(Resource, Scheduler):
             self.sub_set_action('container', '_pg_freeze')
         else:
             self._pg_freeze()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
 
     def pg_thaw(self):
         if self.options.parm_rid is not None or \
@@ -999,6 +1001,8 @@ class Svc(Resource, Scheduler):
             self.sub_set_action('container', '_pg_thaw')
         else:
             self._pg_thaw()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
 
     def pg_kill(self):
         if self.options.parm_rid is not None or \
@@ -1008,6 +1012,8 @@ class Svc(Resource, Scheduler):
             self.sub_set_action('container', '_pg_kill')
         else:
             self._pg_kill()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
 
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')
