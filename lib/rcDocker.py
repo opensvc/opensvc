@@ -234,6 +234,8 @@ class DockerLib(object):
             self.docker_daemon_args = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_daemon_args').split()
         except ex.OptNotFound:
             self.docker_daemon_args = []
+        if "--exec-opt" not in self.docker_daemon_args:
+            self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
         self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
 
     def docker_exe(self):
