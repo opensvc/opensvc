@@ -2705,7 +2705,17 @@ def get_pg_settings(svc, s):
         pass
 
     try:
+        d["mem_swappiness"] = conf_get_string_scope(svc, conf, s, "pg_mem_swappiness")
+    except ex.OptNotFound:
+        pass
+
+    try:
         d["vmem_limit"] = conf_get_string_scope(svc, conf, s, "pg_vmem_limit")
+    except ex.OptNotFound:
+        pass
+
+    try:
+        d["blkio_weight"] = conf_get_string_scope(svc, conf, s, "pg_blkio_weight")
     except ex.OptNotFound:
         pass
 

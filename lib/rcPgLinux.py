@@ -350,6 +350,8 @@ def _create_pg(o):
         set_cgroup(o, 'cpuset', 'cpuset.cpus', 'cpus')
         set_cgroup(o, 'cpu', 'cpu.shares', 'cpu_shares')
         set_cgroup(o, 'cpuset', 'cpuset.mems', 'mems')
+        set_cgroup(o, 'blkio', 'blkio.weight', 'blkio_weight')
+        set_cgroup(o, 'memory', 'memory.swappiness', 'mem_swappiness')
         set_mem_cgroup(o)
         set_cpu_quota(o)
     except Exception as e:

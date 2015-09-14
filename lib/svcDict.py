@@ -856,7 +856,7 @@ class KeywordPgCpus(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_cpus",
+                  keyword="pg_cpus",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
@@ -868,7 +868,7 @@ class KeywordPgMems(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_mems",
+                  keyword="pg_mems",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
@@ -880,7 +880,7 @@ class KeywordPgCpuShare(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_cpu_shares",
+                  keyword="pg_cpu_shares",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
@@ -892,7 +892,7 @@ class KeywordPgCpuQuota(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_cpu_quota",
+                  keyword="pg_cpu_quota",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
@@ -904,7 +904,7 @@ class KeywordPgMemLimit(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_mem_limit",
+                  keyword="pg_mem_limit",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
@@ -916,11 +916,35 @@ class KeywordPgVmemLimit(KeywordInteger):
         KeywordInteger.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="container_vmem_limit",
+                  keyword="pg_vmem_limit",
                   order=31,
                   depends=[('create_pg', [True])],
-                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than container_mem_limit.",
+                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
                   example="1024000000"
+                )
+
+class KeywordPgMemSwappiness(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="pg_mem_swappiness",
+                  order=31,
+                  depends=[('create_pg', [True])],
+                  text="Set a swappiness value for the process group.",
+                  example="40"
+                )
+
+class KeywordPgBlkioWeight(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="pg_blkio_weight",
+                  order=31,
+                  depends=[('create_pg', [True])],
+                  text="Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
+                  example="50"
                 )
 
 class KeywordAppScript(Keyword):
@@ -2617,7 +2641,9 @@ class KeyDict(KeywordStore):
         self += KeywordPgCpuShare()
         self += KeywordPgCpuQuota()
         self += KeywordPgMemLimit()
+        self += KeywordPgMemSwappiness()
         self += KeywordPgVmemLimit()
+        self += KeywordPgBlkioWeight()
         self += KeywordSyncType()
         self += KeywordSyncDockerTarget()
         self += KeywordSyncBtrfsSrc()
