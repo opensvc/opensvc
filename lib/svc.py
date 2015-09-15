@@ -670,8 +670,15 @@ class Svc(Resource, Scheduler):
                                )
                 )
 
-        avail_resources = self.get_resources(["ip", "disk", "fs", "container", "share", "app"], discard_disabled=False)
-        accessory_resources = self.get_resources(["hb", "stonith", "sync"], discard_disabled=False)
+        avail_resources = sorted(self.get_resources("ip", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("disk", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("fs", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("container", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("share", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("app", discard_disabled=False))
+        accessory_resources = sorted(self.get_resources("hb", discard_disabled=False))
+        accessory_resources += sorted(self.get_resources("stonith", discard_disabled=False))
+        accessory_resources += sorted(self.get_resources("sync", discard_disabled=False))
         n_accessory_resources = len(accessory_resources)
 
         print(self.svcname)
@@ -720,7 +727,7 @@ class Svc(Resource, Scheduler):
                 else:
                     fmt = head_c+"  |- %-14s %4s %-10s %s"
                     pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
-                    if e[0] in cr:
+                    if e[0] in cr and len(cr[e[0]]) > 0:
                         subpfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                     else:
                         subpfx = None
