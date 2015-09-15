@@ -154,6 +154,10 @@ def svcmon_normal(svcs, upddb=False):
     print(fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "------", "------", "------", "------", "-------", "------"))
     ps = []
     queues = {}
+    try:
+        lock = Lock()
+    except:
+        lock = None
 
     for svc in svcs:
         if svc.encap and upddb:
@@ -163,7 +167,6 @@ def svcmon_normal(svcs, upddb=False):
             continue
         try:
             queues[svc.svcname] = Queue(maxsize=32000)
-            lock = Lock()
         except:
             # some platform don't support Queue's synchronize (bug 3770)
             queues[svc.svcname] = None
