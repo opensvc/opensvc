@@ -839,7 +839,7 @@ class KeywordMonitorAction(Keyword):
                   example="reboot"
                 )
 
-class KeywordContainerize(Keyword):
+class KeywordCreatePg(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
