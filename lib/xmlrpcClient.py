@@ -659,6 +659,7 @@ class Collector(object):
             self.proxy.svcmon_update(*args)
     
     def push_disks(self, node, sync=True):
+        import re
         di = __import__('rcDiskInfo'+rcEnv.sysname)
         disks = di.diskInfo()
         try:
@@ -753,7 +754,7 @@ class Collector(object):
         region = 0
 
         try:
-            devpaths = node.devlist()
+            devpaths = node.devlist(tree)
         except Exception as e:
             print(e)
             devpaths = []
@@ -768,23 +769,29 @@ class Collector(object):
             if disk_id.startswith(rcEnv.nodename+".loop"):
                 continue
 
+            if re.match(r"/dev/rdsk/.*s[01345678]", d):
+                # don't report partitions
+                continue
+
             # Linux Node:devlist() reports paths, so we can have duplicate
             # disks here.
             if disk_id in done:
                 continue
             done.append(disk_id)
 
-            if disks.disk_id(d) in dh:
-                left = disks.disk_size(d) - dh[disk_id]
+            disk_size = disks.disk_size(d)
+
+            if disk_id in dh:
+                left = disk_size - dh[disk_id]
             else:
-                left = disks.disk_size(d)
+                left = disk_size
             if left == 0:
                 continue
-            print(rcEnv.nodename, "disk", disks.disk_id(d), "%d/%dM"%(left, disks.disk_size(d)), "region", region)
+            print(rcEnv.nodename, "disk", disk_id, "%d/%dM"%(left, disk_size), "region", region)
             vals.append([
-                 repr(disks.disk_id(d)),
+                 repr(disk_id),
                  "",
-                 repr(disks.disk_size(d)),
+                 repr(disk_size),
                  repr(left),
                  repr(disks.disk_vendor(d)),
                  repr(disks.disk_model(d)),

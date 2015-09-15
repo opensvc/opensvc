@@ -921,13 +921,14 @@ class Node(Svc, Freezer, Scheduler):
         self.close()
         sys.exit(r)
 
-    def devlist(self):
-        try:
-            m = __import__("rcDevTree"+rcEnv.sysname)
-        except ImportError:
-            return
-        tree = m.DevTree()
-        tree.load()
+    def devlist(self, tree=None):
+        if tree is None:
+            try:
+                m = __import__("rcDevTree"+rcEnv.sysname)
+            except ImportError:
+                return
+            tree = m.DevTree()
+            tree.load()
         l = []
         for dev in tree.get_top_devs():
             if len(dev.devpath) > 0:

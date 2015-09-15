@@ -5,8 +5,9 @@ import re
 from subprocess import *
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
+import rcDevTreeVeritas
 
-class DevTree(rcDevTree.DevTree):
+class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     di = None
     zpool_members = {}
     zpool_used = {}
@@ -42,8 +43,29 @@ class DevTree(rcDevTree.DevTree):
             partsize = self.di.get_part_size(partpath)
             p = self.add_dev(partname, partsize, "linear")
             p.set_devpath(partpath)
+            p.set_devpath(partpath.replace("/dev/rdsk/", "/dev/dsk/"))
             d.add_child(partname)
             p.add_parent(d.devname)
+
+    def load_disks(self):
+        self.load_vxdisk_cache()
+        if len(self.vxdisk_cache) > 0:
+            self.load_vxdisk()
+        else:
+            self.load_format()
+
+    def load_vxdisk(self):
+        for devpath, data in self.vxdisk_cache.items():
+            if "size" not in data or "devpath" not in data:
+                continue
+            devname = os.path.basename(devpath)
+            bdevpath = devpath.replace("/rdsk/", "/dsk/").replace("/rdmp/", "/dmp/")
+            size = data["size"]
+            d = self.add_dev(devname, size, "linear")
+            d.set_devpath(data["devpath"])
+            d.set_devpath(devpath)
+            d.set_devpath(bdevpath)
+            self.load_partitions(d)
 
     def load_format(self):
         """
@@ -61,9 +83,11 @@ class DevTree(rcDevTree.DevTree):
             l = line.split()
             devname = l[1]
             devpath = '/dev/rdsk/'+devname+'s2'
+            bdevpath = devpath.replace("/rdsk/", "/dsk/")
             size = self.di.get_size(devpath)
             d = self.add_dev(devname, size, "linear")
             d.set_devpath(devpath)
+            d.set_devpath(bdevpath)
             self.load_partitions(d)
 
     def load_sds(self):
@@ -136,7 +160,7 @@ class DevTree(rcDevTree.DevTree):
             devname = l[0]
 
             # -d mode import ?
-            if devname.startswith(rcEnv.pathvar):
+            if hasattr(rcEnv, "pathvar") and devname.startswith(rcEnv.pathvar):
                 devname = devname.split('/')[-1]
             d = self.get_dev(devname)
             if d is None:
@@ -238,10 +262,12 @@ class DevTree(rcDevTree.DevTree):
             self.di = di
         if self.di is None:
             from rcDiskInfoSunOS import diskInfo
-            self.di = diskInfo()
-        self.load_format()
+            self.di = diskInfo(deferred=True)
+        self.load_disks()
         self.load_zpool()
         self.load_sds()
+        self.load_vx_dmp()
+        self.load_vx_vm()
 
     def blacklist(self, devname):
         bl = [r'^loop[0-9]*.*', r'^ram[0-9]*.*', r'^scd[0-9]*', r'^sr[0-9]*']

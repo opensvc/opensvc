@@ -8,8 +8,6 @@ from rcUtilities import which
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
 import rcExceptions as ex
-di = __import__("rcDiskInfo"+rcEnv.sysname)
-_di = di.diskInfo()
 
 class Dev(rcDevTree.Dev):
     def remove_loop(self, r):
@@ -35,6 +33,7 @@ class Dev(rcDevTree.Dev):
             return self.remove_dm(r)
 
 class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
+    di = None
     dev_h = {}
     dev_class = Dev
 
@@ -148,7 +147,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 # - reset path counter
                 if dev is not None:
                     if len(paths) > 0:
-                        did = _di.disk_id(paths[0])
+                        did = self.di.disk_id(paths[0])
                     mp_h[name] = did
                     self.powerpath[name] = paths
                     dev = None
@@ -557,6 +556,12 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                     r.set_used(length)
 
     def load(self, di=None):
+        if di is not None:
+            self.di = di
+        if self.di is None:
+            from rcDiskInfoLinux import diskInfo
+            self.di = diskInfo()
+
         if len(glob.glob("/sys/block/*/slaves")) == 0:
             self.load_fdisk()
             self.load_dm()

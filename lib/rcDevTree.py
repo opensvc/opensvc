@@ -102,7 +102,8 @@ class Dev(object):
         self.devtype = devtype
 
     def set_devpath(self, devpath):
-        self.devpath.append(devpath)
+        if devpath not in self.devpath:
+            self.devpath.append(devpath)
 
     def print_dev(self, level=0, relation=None):
         if relation is None:
@@ -168,7 +169,7 @@ class Dev(object):
         return False
 
     def get_top_devs(self):
-        if len(self.parents) == 0:
+        if len(self.parents) == 0 or self.devtype == "multipath":
             return set([self])
         d = set([])
         for parent in self.parents:

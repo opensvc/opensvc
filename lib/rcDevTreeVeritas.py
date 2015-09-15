@@ -1,14 +1,13 @@
 import glob
 import os
 from subprocess import *
-from rcUtilities import which
+from rcUtilities import which, justcall
 import rcDevTree
 from rcGlobalEnv import rcEnv
-di = __import__("rcDiskInfo"+rcEnv.sysname)
-_di = di.diskInfo()
 
 class DevTreeVeritas(rcDevTree.DevTree):
     vxprint_cache = {}
+    vxdisk_cache = {}
 
     def vx_get_size(self, name):
         _dg, _vt = name.split("/")
@@ -111,34 +110,85 @@ class DevTreeVeritas(rcDevTree.DevTree):
             if len(l) < 4:
                 continue
             name = l[3]
-            dev = "/dev/"+l[0]
+            dev = self.devprefix+l[0]
             if name in self.dmp:
                 self.dmp[name].append(dev)
             else:
                 self.dmp[name] = [dev]
-                mp_h[name] = _di.disk_id(dev)
+            if name not in mp_h or mp_h[name] == "unknown" or mp_h[name] == name:
+                wwid = self.di.disk_id("/dev/vx/rdmp/"+name)
+                if wwid == "unknown":
+                    wwid = name
+                mp_h[name] = wwid
         return mp_h
 
+    def vx_inq(self, dev):
+        self.load_vxdisk_cache()
+        if dev in self.vxdisk_cache:
+            return self.vxdisk_cache[dev].get("wwid", "unknown")
+        return "unknown"
+
+    def load_vxdisk_cache(self):
+        if len(self.vxdisk_cache) != 0:
+            return
+        cmd = ["/usr/sbin/vxdisk", "-p", "list"]
+        (out, err, ret) = justcall(cmd)
+        if ret != 0:
+            return "unknown"
+        for line in out.split("\n"):
+            l = line.split(":")
+            if len(l) != 2:
+                continue
+            key = l[0].strip()
+            if key == "DISK":
+                disk = l[1].strip()
+                _key = "/dev/vx/rdmp/"+disk
+                self.vxdisk_cache[_key] = {"wwid": disk}
+            elif key == "SCSI3_VPD_ID":
+                self.vxdisk_cache[_key]["wwid"] = l[1].strip()
+            elif key == "LUN_SIZE":
+                self.vxdisk_cache[_key]["size"] = int(l[1].strip())/2048
+            elif key == "DMP_SINGLE_PATH":
+                self.vxdisk_cache[_key]["devpath"] = l[1].strip()
+
     def load_vx_dmp(self):
+        self.load_vxdisk_cache()
+        if os.path.exists("/dev/rdsk"):
+            self.devprefix = "/dev/rdsk/"
+        else:
+            self.devprefix = "/dev/"
         wwid_h = self.get_mp_dmp()
         for devname in wwid_h:
-            size = _di.disk_size("/dev/vx/dmp/"+devname)
+            rdevpath = "/dev/vx/rdmp/"+devname
+            if rdevpath not in self.vxdisk_cache:
+                continue
+            size = self.vxdisk_cache[rdevpath].get("size", 0)
             d = self.add_dev(devname, size, "multipath")
             if d is None:
                 continue
             d.set_devpath("/dev/vx/dmp/"+devname)
-            d.set_devpath("/dev/vx/rdmp/"+devname)
+            d.set_devpath(rdevpath)
             d.set_alias(wwid_h[devname])
 
             for path in self.dmp[devname]:
-                p = self.add_dev(path.replace('/dev/',''), size, "linear")
+                pathdev = path.replace(self.devprefix, "")
+                p = self.add_dev(pathdev, size, "linear")
                 p.set_devpath(path)
                 p.add_child(devname)
-                d.add_parent(path.replace('/dev/',''))
+                d.add_parent(pathdev)
+                if False and self.devprefix == "/dev/rdsk/" and path.endswith("s2"):
+                    _pathdev = pathdev[:-2]
+                    p = self.add_dev(_pathdev, size, "linear")
+                    p.add_child(devname)
+                    d.add_parent(_pathdev)
 
     def load_vx_vm(self):
         for devpath in glob.glob("/dev/vx/dsk/*/*"):
             devname = devpath.replace("/dev/vx/dsk/", "")
+            disks = self.vx_get_lv_disks(devname)
+            if len(disks) == 0:
+                # discard snaps for now
+                continue
             size = self.vx_get_size(devname)
             d = self.add_dev(devname, size, "linear")
             if d is None:
@@ -146,7 +196,7 @@ class DevTreeVeritas(rcDevTree.DevTree):
             d.set_devpath("/dev/vx/dsk/"+devname)
             d.set_devpath("/dev/vx/rdsk/"+devname)
 
-            for disk in self.vx_get_lv_disks(devname):
+            for disk in disks:
                 cdevname = disk["devname"]
                 csize = disk["size"]
                 p = self.add_dev(cdevname, csize, "linear")
