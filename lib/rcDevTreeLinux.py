@@ -257,8 +257,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         for mapname in table:
             d = self.add_dev(mapname, table[mapname]["size"])
             d.set_devtype(table[mapname]["type"])
-
             d.set_devpath('/dev/mapper/'+mapname)
+
             s = mapname.replace('--', ':').replace('-', '/').replace(':','-')
             if "/" in s:
                 d.set_devpath('/dev/'+s)
@@ -272,6 +272,14 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 parentdev = self.get_dev(self.dev_h[dev])
                 parentdev.add_child(mapname)
 
+    def set_udev_symlink(self, d, name):
+        cmd = ["/sbin/udevadm", "info", "-q", "symlink", "--name", name]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        for s in out.split():
+            d.set_devpath("/dev/"+s)
 
     def get_lv_linear(self):
         if hasattr(self, 'lv_linear'):
@@ -398,6 +406,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if d is None:
             return
 
+        self.set_udev_symlink(d, devname)
         self.get_dm()
 
         if 'cciss' in devname:
