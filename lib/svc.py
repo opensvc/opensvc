@@ -2176,7 +2176,7 @@ class Svc(Resource, Scheduler):
             return
 
         for r in self.get_resources('container'):
-            if r.status() != rcStatus.UP:
+            if r.status() in (rcStatus.STDBY_UP, rcStatus.UP):
                 continue
             self._push_encap_env(r)
 
