@@ -2700,6 +2700,11 @@ def get_pg_settings(svc, s):
         pass
 
     try:
+        d["mem_oom_control"] = conf_get_string_scope(svc, conf, s, "pg_oom_control")
+    except ex.OptNotFound:
+        pass
+
+    try:
         d["mem_limit"] = conf_get_string_scope(svc, conf, s, "pg_mem_limit")
     except ex.OptNotFound:
         pass

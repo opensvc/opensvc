@@ -899,6 +899,18 @@ class KeywordPgCpuQuota(KeywordInteger):
                   example="50%@all"
                 )
 
+class KeywordPgMemOomControl(KeywordInteger):
+    def __init__(self):
+        KeywordInteger.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="pg_mem_oom_control",
+                  order=31,
+                  depends=[('create_pg', [True])],
+                  text="A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
+                  example="1"
+                )
+
 class KeywordPgMemLimit(KeywordInteger):
     def __init__(self):
         KeywordInteger.__init__(
@@ -2640,6 +2652,7 @@ class KeyDict(KeywordStore):
         self += KeywordPgMems()
         self += KeywordPgCpuShare()
         self += KeywordPgCpuQuota()
+        self += KeywordPgMemOomControl()
         self += KeywordPgMemLimit()
         self += KeywordPgMemSwappiness()
         self += KeywordPgVmemLimit()
