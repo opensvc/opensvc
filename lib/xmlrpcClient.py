@@ -1135,6 +1135,26 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_emcvnx(*args)
 
+    def push_netapp(self, objects=[], sync=True):
+        if 'update_netapp' not in self.proxy_methods:
+            print("'update_netapp' method is not exported by the collector")
+            return
+        m = __import__('rcNetapp')
+        try:
+            netapps = m.Netapps(objects)
+        except:
+            return
+        for netapp in netapps:
+            vals = []
+            print(netapp.name)
+            for key in netapp.keys:
+                print(" extract", key)
+                vals.append(getattr(netapp, 'get_'+key)())
+            args = [netapp.name, netapp.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_netapp(*args)
+
     def push_ibmsvc(self, objects=[], sync=True):
         if 'update_ibmsvc' not in self.proxy_methods:
             print("'update_ibmsvc' method is not exported by the collector")

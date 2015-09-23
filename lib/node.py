@@ -129,6 +129,7 @@ class Node(Svc, Freezer, Scheduler):
             'pushsym':        'push symmetrix configuration to collector',
             'pushemcvnx':     'push EMC CX/VNX configuration to collector',
             'pushcentera':    'push EMC Centera configuration to collector',
+            'pushnetapp':     'push Netapp configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
             'pushnecism':     'push NEC ISM configuration to collector',
             'pushhds':        'push HDS configuration to collector',
@@ -219,6 +220,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
 	 "pushemcvnx": SchedOpts("emcvnx", schedule_option="no_schedule"),
 	 "pushcentera": SchedOpts("centera", schedule_option="no_schedule"),
+	 "pushnetapp": SchedOpts("netapp", schedule_option="no_schedule"),
 	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
 	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
 	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
@@ -559,6 +561,15 @@ class Node(Svc, Freezer, Scheduler):
     @scheduler_fork
     def task_pushhp3par(self):
         self.collector.call('push_hp3par', self.options.objects)
+
+    def pushnetapp(self):
+        if self.skip_action("pushnetapp"):
+            return
+        self.task_pushnetapp()
+
+    @scheduler_fork
+    def task_pushnetapp(self):
+        self.collector.call('push_netapp', self.options.objects)
 
     def pushcentera(self):
         if self.skip_action("pushcentera"):
