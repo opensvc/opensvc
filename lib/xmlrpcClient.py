@@ -1095,6 +1095,26 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.update_hp3par(*args)
 
+    def push_centera(self, objects=[], sync=True):
+        if 'update_centera' not in self.proxy_methods:
+            print("'update_centera' method is not exported by the collector")
+            return
+        m = __import__('rcCentera')
+        try:
+            centeras = m.Centeras(objects)
+        except:
+            return
+        for centera in centeras:
+            vals = []
+            print(centera.name)
+            for key in centera.keys:
+                print(" extract", key)
+                vals.append(getattr(centera, 'get_'+key)())
+            args = [centera.name, [k+".xml" for k in centera.keys], vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            self.proxy.update_centera(*args)
+
     def push_emcvnx(self, objects=[], sync=True):
         if 'update_emcvnx' not in self.proxy_methods:
             print("'update_emcvnx' method is not exported by the collector")
