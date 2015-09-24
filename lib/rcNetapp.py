@@ -71,9 +71,10 @@ class Netapp(object):
           'aggr_show_space',
           'lun_show_v',
           'lun_show_m',
-          'sysconfig_A',
+          'sysconfig_a',
           'df',
           'df_S',
+          'fcp_show_adapter',
         ]
 
     def rcmd(self, cmd):
@@ -83,7 +84,7 @@ class Netapp(object):
         return out, err
 
     def get_aggr_show_space(self):
-        out, err = self.rcmd("aggr show_space")
+        out, err = self.rcmd("aggr show_space -m")
         return out
 
     def get_lun_show_v(self):
@@ -94,8 +95,8 @@ class Netapp(object):
         out, err = self.rcmd("lun show -m")
         return out
 
-    def get_sysconfig_A(self):
-        out, err = self.rcmd("sysconfig -A")
+    def get_sysconfig_a(self):
+        out, err = self.rcmd("sysconfig -a")
         return out
 
     def get_df(self):
@@ -104,6 +105,10 @@ class Netapp(object):
 
     def get_df_S(self):
         out, err = self.rcmd("df -S")
+        return out
+
+    def get_fcp_show_adapter(self):
+        out, err = self.rcmd("fcp show adapter")
         return out
 
 if __name__ == "__main__":
