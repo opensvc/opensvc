@@ -273,6 +273,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 parentdev.add_child(mapname)
 
     def set_udev_symlink(self, d, name):
+        if not which("udevadm"):
+            return
         cmd = ["/sbin/udevadm", "info", "-q", "symlink", "--name", name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
