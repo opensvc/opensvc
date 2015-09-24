@@ -78,7 +78,7 @@ class Netapp(object):
         ]
 
     def rcmd(self, cmd):
-        cmd = ["ssh", "-i", self.key, self.username+"@"+self.server, cmd]
+        cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-i", self.key, self.username+"@"+self.server, cmd]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return out, err
