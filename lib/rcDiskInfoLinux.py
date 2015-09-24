@@ -26,6 +26,7 @@ from rcUtilities import justcall, which
 import rcDiskInfo
 import math
 from rcGlobalEnv import rcEnv
+import rcDevTreeVeritas
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
@@ -43,6 +44,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             id = dev.replace('/dev/mapper/3', '')
         elif dev.startswith('/dev/mapper/2'):
             id = dev.replace('/dev/mapper/2', '')
+        elif "dmp/" in dev:
+            id = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
         else:
             id = self.scsi_id(dev)
         if len(id) == 0:

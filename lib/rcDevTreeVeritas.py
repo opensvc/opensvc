@@ -116,9 +116,11 @@ class DevTreeVeritas(rcDevTree.DevTree):
             else:
                 self.dmp[name] = [dev]
             if name not in mp_h or mp_h[name] == "unknown" or mp_h[name] == name:
-                wwid = self.di.disk_id("/dev/vx/rdmp/"+name)
-                if wwid == "unknown":
+                d = self.vxdisk_cache.get("/dev/vx/rdmp/"+name)
+                if d is None:
                     wwid = name
+                else:
+                    wwid = d.get("wwid")
                 mp_h[name] = wwid
         return mp_h
 
@@ -136,7 +138,7 @@ class DevTreeVeritas(rcDevTree.DevTree):
         if ret != 0:
             return "unknown"
         for line in out.split("\n"):
-            l = line.split(":")
+            l = line.split(": ")
             if len(l) != 2:
                 continue
             key = l[0].strip()
@@ -145,7 +147,8 @@ class DevTreeVeritas(rcDevTree.DevTree):
                 _key = "/dev/vx/rdmp/"+disk
                 self.vxdisk_cache[_key] = {"wwid": disk}
             elif key == "SCSI3_VPD_ID":
-                self.vxdisk_cache[_key]["wwid"] = l[1].strip()
+                # NAA:6000... or 6000...
+                self.vxdisk_cache[_key]["wwid"] = l[1].split(":")[-1].strip()
             elif key == "LUN_SIZE":
                 self.vxdisk_cache[_key]["size"] = int(l[1].strip())/2048
             elif key == "DMP_SINGLE_PATH":
