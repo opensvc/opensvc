@@ -105,7 +105,7 @@ class Ip(Res.Resource):
             return rcStatus.WARN
         ifconfig = rcIfconfig.ifconfig()
         intf = ifconfig.interface(self.ipDev)
-        if intf is None:
+        if intf is None and not "dedicated" in self.tags:
             self.status_log("interface %s not found" % self.ipDev)
             return rcStatus.WARN
         try:

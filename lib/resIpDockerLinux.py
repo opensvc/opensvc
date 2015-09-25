@@ -56,6 +56,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.container_rid = container_rid
         self.label = ipName + '@' + ipDev
         self.tags.add(container_rid)
+        self.guest_dev = "eth1"
 
     def on_add(self):
         self.container_name = self.svc.svcname+'.'+self.container_rid
@@ -100,6 +101,43 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         return
 
     def startip_cmd(self):
+        if "dedicated" in self.tags:
+            return self.startip_cmd_dedicated()
+        else:
+            return self.startip_cmd_shared()
+
+    def startip_cmd_dedicated(self):
+        nspid = self.get_nspid()
+        self.create_netns_link(nspid=nspid)
+
+        # assign interface to the nspid
+        cmd = ["ip", "link", "set", self.ipDev, "netns", nspid, "name", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # plumb the ip
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, self.mask), "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # activate
+        cmd = ["ip", "netns", "exec", nspid, "ip", "link", "set", self.guest_dev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # activate
+        cmd = ["ip", "netns", "exec", nspid, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        self.delete_netns_link(nspid=nspid)
+        return 0, "", ""
+
+    def startip_cmd_shared(self):
         cmd = ["/opt/opensvc/bin/pipework", self.ipDev, self.container_name, "%s/%s@%s" % (self.addr, self.mask, self.gateway)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -111,12 +149,28 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                 return ret, out, err
         raise ex.excError("timed out waiting for ip activation")
 
-    def stopip_cmd(self):
+    def get_nspid(self):
         cmd = self.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            return ret, out, err
+            raise ex.excError("failed to get nspid for docker inspect: %s" % err)
         nspid = out.strip()
+        return nspid
+
+    def delete_netns_link(self, nspid=None):
+        if nspid is None:
+            nspid = self.get_nspid()
+        run_d = "/var/run/netns"
+        if not os.path.exists(run_d):
+            return
+        run_netns = os.path.join(run_d, nspid)
+        if os.path.exists(run_netns):
+            self.log.info("remove %s" % run_netns)
+            os.unlink(run_netns)
+
+    def create_netns_link(self, nspid=None):
+        if nspid is None:
+            nspid = self.get_nspid()
         run_d = "/var/run/netns"
         if not os.path.exists(run_d):
             os.makedirs(run_d)
@@ -125,14 +179,16 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         if os.path.exists(proc_netns) and not os.path.exists(run_netns):
             self.log.info("create symlink %s -> %s" % (proc_netns, run_netns))
             os.symlink(proc_netns, run_netns)
+
+    def stopip_cmd(self):
+        nspid = self.get_nspid()
+        self.create_netns_link(nspid=nspid)
         intf = self.get_docker_interface()
         if intf is None:
             raise ex.excError("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
         cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+self.mask, "dev", intf]
         ret, out, err = self.vcall(cmd)
-        self.log.info("remove %s" % run_netns)
-        if os.path.exists(run_netns):
-            os.unlink(run_netns)
+        self.delete_netns_link(nspid=nspid)
         return ret, out, err
 
 
