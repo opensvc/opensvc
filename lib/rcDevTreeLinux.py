@@ -56,7 +56,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         p = Popen(cmd)
         p.communicate()
         devpaths = glob.glob("/dev/mapper/*")
-        devpaths.remove('/dev/mapper/control')
+        if '/dev/mapper/control' in devpaths:
+            devpaths.remove('/dev/mapper/control')
         for devpath in devpaths:
             s = os.stat(devpath)
             minor = os.minor(s.st_rdev)
