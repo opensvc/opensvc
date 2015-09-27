@@ -24,6 +24,7 @@ import rcExceptions as ex
 import rcDocker
 import rcIfconfigLinux as rcIfconfig
 from rcUtilitiesLinux import check_ping, justcall
+from rcUtilities import which
 
 class Ip(Res.Ip, rcDocker.DockerLib):
     def __init__(self,
@@ -102,9 +103,18 @@ class Ip(Res.Ip, rcDocker.DockerLib):
 
     def startip_cmd(self):
         if "dedicated" in self.tags:
+            self.log.info("dedicated mode")
             return self.startip_cmd_dedicated()
         else:
             return self.startip_cmd_shared()
+
+    def startip_cmd_shared(self):
+        if os.path.exists("/sys/class/net/%s/bridge" % self.ipDev):
+            self.log.info("bridge mode")
+            return self.startip_cmd_shared_bridge()
+        else:
+            self.log.info("macvlan mode")
+            return self.startip_cmd_shared_macvlan()
 
     def startip_cmd_dedicated(self):
         nspid = self.get_nspid()
@@ -137,16 +147,129 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.delete_netns_link(nspid=nspid)
         return 0, "", ""
 
-    def startip_cmd_shared(self):
-        cmd = ["/opt/opensvc/bin/pipework", self.ipDev, self.container_name, "%s/%s@%s" % (self.addr, self.mask, self.gateway)]
+    def startip_cmd_shared_bridge(self):
+        nspid = self.get_nspid()
+        self.create_netns_link(nspid=nspid)
+        tmp_guest_dev = "v%spg%s" % (self.guest_dev, nspid)
+        tmp_local_dev = "v%spl%s" % (self.guest_dev, nspid)
+        mtu = self.ip_get_mtu()
+
+        # create peer devs
+        cmd = ["ip", "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
+
+        # activate the parent dev
+        cmd = ["ip", "link", "set", tmp_local_dev, "master", self.ipDev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+        cmd = ["ip", "link", "set", tmp_local_dev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # assign the macvlan interface to the container namespace
+        cmd = ["ip", "link", "set", tmp_guest_dev, "netns", nspid]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # rename the tmp guest dev
+        cmd = ["ip", "netns", "exec", nspid, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # plumb ip
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", self.addr+"/"+self.mask, "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # setup default route
+        self.ip_setup_route(nspid)
+
+        self.ip_wait()
+        self.delete_netns_link(nspid=nspid)
+        return 0, "", ""
+
+    def startip_cmd_shared_macvlan(self):
+        nspid = self.get_nspid()
+        self.create_netns_link(nspid=nspid)
+        tmp_guest_dev = "ph%s%s" % (nspid, self.guest_dev)
+        mtu = self.ip_get_mtu()
+
+        # create a macvlan interface
+        cmd = ["ip", "link", "add", "link", self.ipDev, "dev", tmp_guest_dev, "mtu", mtu, "type", "macvlan", "mode", "bridge"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # activate the parent dev
+        cmd = ["ip", "link", "set", self.ipDev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # assign the macvlan interface to the container namespace
+        cmd = ["ip", "link", "set", tmp_guest_dev, "netns", nspid]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # rename the tmp guest dev
+        cmd = ["ip", "netns", "exec", nspid, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # plumb the ip
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, self.mask), "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # setup default route
+        self.ip_setup_route(nspid)
+
+        self.ip_wait()
+        self.delete_netns_link(nspid=nspid)
+        return 0, "", ""
+
+    def ip_get_mtu(self):
+        # get mtu
+        cmd = ["ip", "link", "show", self.ipDev]
+        ret, out, err = self.call(cmd)
+        if ret != 0:
+            raise ex.excError("failed to get %s mtu: %s" % (self.ipDev, err))
+        mtu = out.split()[4]
+        return mtu
+
+    def ip_setup_route(self, nspid):
+        cmd = ["ip", "netns", "exec", nspid, "ip", "route", "del", "default"]
+        ret, out, err = self.call(cmd, errlog=False)
+        cmd = ["ip", "netns", "exec", nspid, "ip", "link", "set", self.guest_dev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+        cmd = ["ip", "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # announce
+        if which("arping") is not None:
+            cmd = ["ip", "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            ret, out, err = self.call(cmd)
+
+    def ip_wait(self):
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
         for i in range(5, 0, -1):
             if check_ping(self.addr, timeout=1, count=1):
-                return ret, out, err
+                return
         raise ex.excError("timed out waiting for ip activation")
 
     def get_nspid(self):
