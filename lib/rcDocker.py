@@ -50,6 +50,18 @@ class DockerLib(object):
             if self.container_name in names:
                 return line.split()[0]
 
+    def docker_min_version(self, version):
+        cmd = ["docker", "--version"]
+        out, err, ret = justcall(cmd)
+        v = out.split()
+        if len(v) < 3:
+            return False
+        version_s = v[2]
+        from distutils.version import LooseVersion as V
+        if V(version_s) >= V(version):
+            return True
+        return False
+
     def docker(self, action):
         cmd = self.docker_cmd + []
         if action == 'start':
@@ -234,7 +246,7 @@ class DockerLib(object):
             self.docker_daemon_args = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_daemon_args').split()
         except ex.OptNotFound:
             self.docker_daemon_args = []
-        if "--exec-opt" not in self.docker_daemon_args:
+        if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
             self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
         self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
 
