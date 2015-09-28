@@ -360,10 +360,60 @@ def add_resources(restype, svc, conf):
             continue
         globals()['add_'+restype](svc, conf, s)
  
+def add_ip_amazon(svc, conf, s):
+    kwargs = {}
+
+    try:
+        rtype = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        rtype = None
+
+    if rtype != "amazon":
+        return
+
+    try:
+        kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
+    except ex.OptNotFound:
+        svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
+        return
+
+    try:
+        kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+    except ex.OptNotFound:
+        svc.log.error("ipdev must be defined in config file section %s" % s)
+        return
+
+    try:
+        kwargs['eip'] = conf_get_string_scope(svc, conf, s, 'eip')
+    except ex.OptNotFound:
+        pass
+
+    ip = __import__('resIpAmazon')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+    r = ip.Ip(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_ip(svc, conf, s):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
     """
+    try:
+        rtype = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        rtype = None
+
+    if rtype == "amazon":
+        return add_ip_amazon(svc, conf, s)
+
     kwargs = {}
 
     try:
@@ -397,11 +447,6 @@ def add_ip(svc, conf, s):
         kwargs['container_rid'] = conf_get_string_scope(svc, conf, s, 'container_rid')
     except ex.OptNotFound:
         pass
-
-    try:
-        rtype = conf_get_string_scope(svc, conf, s, 'type')
-    except ex.OptNotFound:
-        rtype = None
 
     if rtype == "crossbow":
         if 'zone' in kwargs:
@@ -2867,6 +2912,19 @@ def build(name):
         svc.encap = True
     else:
         svc.encap = False
+
+    #
+    # amazon options
+    #
+    try:
+        svc.aws = conf_get_string_scope(svc, conf, "DEFAULT", 'aws')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        svc.aws_profile = conf_get_string_scope(svc, conf, "DEFAULT", 'aws_profile')
+    except ex.OptNotFound:
+        pass
 
     #
     # containerization options

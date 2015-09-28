@@ -1327,13 +1327,27 @@ class KeywordIpZone(Keyword):
                   example="zone1"
                 )
 
+class KeywordIpEip(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="amazon",
+                  keyword="eip",
+                  order=12,
+                  at=True,
+                  required=False,
+                  text="The public elastic ip to associate to <ipname>.",
+                  example="52.27.90.63"
+                )
+
 class KeywordIpType(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="ip",
                   keyword="type",
-                  candidates=[None, 'crossbow'],
+                  candidates=[None, 'crossbow', 'amazon'],
                   text="The opensvc ip driver name.",
                   required=False,
                   order=10,
@@ -2686,6 +2700,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpZone()
+        self += KeywordIpEip()
         self += KeywordVgType()
         self += KeywordVgRawDevs()
         self += KeywordVgVgname()
