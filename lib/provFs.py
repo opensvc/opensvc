@@ -89,7 +89,7 @@ class ProvisioningFs(Provisioning):
             raise ex.excError
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
-        self.r.vcall(["dmsetup", "mknodes"])
+        justcall(["dmsetup", "mknodes"])
         mapname = "%s-%s"%(self.section['vg'].replace('-','--'),
                            dev.replace('-','--'))
         self.dev = '/dev/mapper/'+mapname

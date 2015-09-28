@@ -53,7 +53,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if not os.path.exists("/dev/mapper"):
             return self.dm_h
         cmd = ['dmsetup', 'mknodes']
-        p = Popen(cmd)
+        p = Popen(cmd, stdout=None, stderr=None)
         p.communicate()
         devpaths = glob.glob("/dev/mapper/*")
         if '/dev/mapper/control' in devpaths:
