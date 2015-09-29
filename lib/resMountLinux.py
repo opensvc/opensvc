@@ -23,8 +23,8 @@ import os
 
 import rcMountsLinux as rcMounts
 import resMount as Res
-from rcUtilities import qcall, protected_mount, getmount
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists
+from rcUtilities import qcall, protected_mount, getmount, which, justcall
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks
 from rcGlobalEnv import rcEnv
 from rcLoopLinux import file_to_loop
 import rcExceptions as ex
@@ -125,6 +125,16 @@ class Mount(Res.Mount):
         if ret:
             return True
 
+        # might be a mount by label or uuid
+        for dev in self.devlist():
+            ret = self.Mounts.has_mount(dev, self.mountPoint)
+            if ret:
+                return True
+            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+            if ret:
+                return True
+
+
         # might be mount using a /dev/mapper/ name too
         l = self.device.split('/')
         if len(l) == 4 and l[2] != "mapper":
@@ -136,7 +146,7 @@ class Mount(Res.Mount):
             if ret:
                 return True
 
-        if self.fsType not in self.netfs:
+        if os.path.exists(self.device):
             try:
                 st = os.stat(self.device)
                 mode = st[ST_MODE]
@@ -170,12 +180,18 @@ class Mount(Res.Mount):
         return False
 
     def realdev(self):
+        if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
+            if which("findfs"):
+                out, err, ret = justcall(["findfs", self.device])
+                dev = out.strip()
+                return dev
         try:
             mode = os.stat(self.device)[ST_MODE]
         except:
             self.log.debug("can not stat %s" % self.device)
-            return None
-        if S_ISBLK(mode):
+            return
+
+        if os.path.exists(self.device) and S_ISBLK(mode):
             dev = self.device
         else:
             mnt = getmount(self.device)
@@ -267,6 +283,9 @@ class Mount(Res.Mount):
         return False
 
     def disklist(self):
+        return devs_to_disks(self, self.devlist())
+
+    def devlist(self):
         dev = self.realdev()
         if dev is None:
             return set([])
@@ -317,10 +336,7 @@ class Mount(Res.Mount):
             if the file has already been binded to a loop re-use
             the loopdev to avoid allocating another one
         """
-        if self.fsType in self.netfs or self.device == "none":
-            # TODO showmount -e
-            pass
-        else:
+        if os.path.exists(self.device):
             try:
                 mode = os.stat(self.device)[ST_MODE]
                 if S_ISREG(mode):
