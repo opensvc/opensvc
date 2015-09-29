@@ -184,6 +184,8 @@ class Mount(Res.Mount):
             if which("findfs"):
                 out, err, ret = justcall(["findfs", self.device])
                 dev = out.strip()
+                if dev == "":
+                    return
                 return dev
         try:
             mode = os.stat(self.device)[ST_MODE]
