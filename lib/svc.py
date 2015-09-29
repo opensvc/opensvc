@@ -1816,10 +1816,10 @@ class Svc(Resource, Scheduler):
         self.refresh_ip_status()
 
     def provision(self):
+        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.sub_set_action("disk", "provision", xtags=set(['zone']))
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
-        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.push()
 
     def startapp(self):
