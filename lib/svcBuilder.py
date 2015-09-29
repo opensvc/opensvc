@@ -690,6 +690,29 @@ def add_loop(svc, conf, s):
     svc += r
 
 
+def add_disk_amazon(svc, conf, s):
+    kwargs = {}
+    try:
+        kwargs['volumes'] = conf_get_string_scope(svc, conf, s, 'volumes').split()
+    except ex.OptNotFound:
+        svc.log.error("volumes must be set in section %s"%s)
+        return
+
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    vg = __import__('resVgAmazon')
+
+    r = vg.Vg(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_rados(svc, conf, s):
     kwargs = {}
     try:
@@ -865,6 +888,9 @@ def add_vg_compat(svc, conf, s):
     if vgtype == 'Md':
         add_md(svc, conf, s)
         return
+    if vgtype == 'Amazon':
+        add_disk_amazon(svc, conf, s)
+        return
     if vgtype == 'Rados':
         add_rados(svc, conf, s)
         return
@@ -975,6 +1001,9 @@ def add_disk(svc, conf, s):
         return
     if vgtype == 'Md':
         add_md(svc, conf, s)
+        return
+    if vgtype == 'Amazon':
+        add_disk_amazon(svc, conf, s)
         return
     if vgtype == 'Rados':
         add_rados(svc, conf, s)
