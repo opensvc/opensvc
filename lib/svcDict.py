@@ -1412,8 +1412,22 @@ class KeywordVgType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm'],
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'amazon'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordVgAmazonVolumes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="amazon",
+                  keyword="volumes",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="a whitespace separated list of amazon volumes.",
+                  example="vol-123456 vol-654321"
                 )
 
 class KeywordVgRawDevs(Keyword):
@@ -2702,6 +2716,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpZone()
         self += KeywordIpEip()
         self += KeywordVgType()
+        self += KeywordVgAmazonVolumes()
         self += KeywordVgRawDevs()
         self += KeywordVgVgname()
         self += KeywordVgDsf()
