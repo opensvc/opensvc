@@ -194,13 +194,17 @@ class Vg(resDg.Dg, Amazon):
             self.do_stop_one(volume)
         self.get_mapped_bdevs(refresh=True)
 
-    def disklist(self):
-        l = set([])
-        return l
-
     def devlist(self):
-        l = set([])
-        return l
+        devs = self.get_mapped_devs()
+        if len(devs) == 0:
+            return devs
+        if not os.path.exists(devs[0]):
+            return set([ r.replace("/dev/sd", "/dev/xvd") for r in devs ])
+        return devs
+
+    def disklist(self):
+        disks = set([ r.rstrip("1234567890") for r in self.devlist() ])
+        return disks
 
     def provision(self):
         m = __import__("provVgAmazon")
