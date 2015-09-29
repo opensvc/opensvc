@@ -352,7 +352,10 @@ else:
 if action in ['create', 'update']:
     data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
     if options.provision:
-        rid = data.get("rid", [])
+        # if the user want to provision a resource defined through env editing, he
+        # will set --rid <rid> or --tag or --subset to point the update command to it
+        rid += data.get("rid", [])
+
         # force a refresh of node.svcs
         # don't push to the collector yet
         del(node.svcs)
@@ -362,8 +365,9 @@ if action in ['create', 'update']:
         except ex.excError as e:
             print("build error:", e, file=sys.stderr)
             build_err = True
-        if len(node.svcs) == 1:
-            node.svcs[0].action("provision", rid=rid)
+
+        if len(node.svcs) == 1 and len(rid) > 0:
+            node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
     _exit(data["ret"])
 
 node.options.parallel = options.parallel
