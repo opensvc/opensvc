@@ -9,8 +9,10 @@ class ProvisioningVg(Provisioning):
     def provisioner(self):
         for volume in self.r.volumes:
             self._provisioner(volume)
-        self.r.svc.config.set(self.r.rid, "volumes", ' '.join(self.volumes_done))
+        volumes = ' '.join(self.volumes_done)
+        self.r.svc.config.set(self.r.rid, "volumes", volumes)
         self.r.svc.write_config()
+        self.r.volumes = self.volumes_done
         self.r.log.info("provisioned")
         self.r.start()
         return True
@@ -39,6 +41,7 @@ class ProvisioningVg(Provisioning):
             availability_zone = node["Placement"]["AvailabilityZone"]
             cmd += ["--availability-zone", availability_zone]
         data = self.r.aws(cmd)
+        self.r.wait_avail(data["VolumeId"])
         self.volumes_done.append(data["VolumeId"])
 
 
