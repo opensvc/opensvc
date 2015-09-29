@@ -8,9 +8,20 @@ class ProvisioningIp(Provisioning):
     def provisioner(self):
         self.provisioner_private()
         self.provisioner_public()
+        self.provisioner_docker_ip()
         self.r.log.info("provisioned")
         self.r.start()
         return True
+
+    def provisioner_docker_ip(self):
+        if not self.r.svc.config.has_option(self.r.rid, "docker_daemon_ip"):
+            return
+        if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
+            return
+        args = self.r.svc.config.get("DEFAULT", "docker_daemon_args")
+        args += " --ip "+self.r.ipName
+        self.r.svc.config.set("DEFAULT", "docker_daemon_args", args)
+        self.r.svc.write_config()
 
     def provisioner_private(self):
         if self.r.ipName != "<allocate>":
@@ -32,6 +43,7 @@ class ProvisioningIp(Provisioning):
 
         self.r.svc.config.set(self.r.rid, "ipname", new_ip)
         self.r.svc.write_config()
+        self.r.ipName = new_ip
 
     def provisioner_public(self):
         if self.r.eip != "<allocate>":
@@ -45,4 +57,5 @@ class ProvisioningIp(Provisioning):
 
         self.r.svc.config.set(self.r.rid, "eip", data["PublicIp"])
         self.r.svc.write_config()
+        self.r.eip = data["PublicIp"]
 
