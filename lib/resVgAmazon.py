@@ -52,16 +52,16 @@ class Vg(resDg.Dg, Amazon):
 
         self.volumes = volumes
         self.label = self.fmt_label()
-        self.bdevs = None
+        self.existing_volume_ids = None
         self.mapped_bdevs = None
         self.dev_prefix = None
 
-    def get_bdevs(self, refresh=False):
-        if self.bdevs is not None and not refresh:
-             return self.bdevs
+    def get_existing_volume_ids(self, refresh=False):
+        if self.existing_volume_ids is not None and not refresh:
+             return self.existing_volume_ids
         data = self.aws(["ec2", "describe-volumes", "--volume-ids"] + self.volumes, verbose=False)
-        self.bdevs = [ b["VolumeId"] for b in data["Volumes"] ]
-        return self.bdevs
+        self.existing_volume_ids = [ b["VolumeId"] for b in data["Volumes"] ]
+        return self.existing_volume_ids
 
     def get_state(self, vol):
         data = self.aws(["ec2", "describe-volumes", "--volume-ids", vol], verbose=False)
@@ -100,13 +100,15 @@ class Vg(resDg.Dg, Amazon):
                 continue
             return b["DeviceName"]
 
-    def get_mapped_devs(self):
+    def get_mapped_devs(self, volumes=None):
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
             raise ex.excError("can't find instance data")
 
         devs = []
         for b in instance_data["BlockDeviceMappings"]:
+            if volumes is not None and b["Ebs"]["VolumeId"] not in volumes:
+                continue
             try:
                 devs.append(b["DeviceName"])
             except:
@@ -171,8 +173,8 @@ class Vg(resDg.Dg, Amazon):
         return l
 
     def validate_volumes(self):
-        existing_bdevs = set(self.get_bdevs())
-        non_exist = set(self.volumes) - existing_bdevs
+        existing_volumes = self.get_existing_volume_ids()
+        non_exist = set(self.volumes) - set(existing_volumes)
         if len(non_exist) > 0:
             raise Exception("non allocated volumes: %s" % ', '.join(non_exist))
 
@@ -271,12 +273,10 @@ class Vg(resDg.Dg, Amazon):
         self.get_mapped_bdevs(refresh=True)
 
     def devlist(self):
-        devs = self.get_mapped_devs()
+        devs = self.get_mapped_devs(volumes=self.volumes)
         if len(devs) == 0:
-            return devs
-        if not os.path.exists(devs[0]):
-            return set([ r.replace("/dev/sd", "/dev/xvd") for r in devs ])
-        return devs
+            return set(devs)
+        return set([ self.mangle_devpath(r) for r in devs ])
 
     def disklist(self):
         disks = set([ r.rstrip("1234567890") for r in self.devlist() ])
