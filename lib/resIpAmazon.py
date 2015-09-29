@@ -49,7 +49,9 @@ class Ip(resIp.Ip, Amazon):
                           monitor=monitor,
                           restart=restart,
                           subset=subset)
-        self.label = "ec2 ip %s"%str(ipName)
+        self.label = "ec2 ip %s@%s" % (ipName, ipDev)
+        if eip:
+            self.label += ", eip %s" % eip
 
         self.eip = eip
         
