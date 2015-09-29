@@ -1,5 +1,6 @@
 from provisioning import Provisioning
 import rcExceptions as ex
+from svcBuilder import conf_get_string_scope
 
 class ProvisioningIp(Provisioning):
     def __init__(self, r):
@@ -9,9 +10,32 @@ class ProvisioningIp(Provisioning):
         self.provisioner_private()
         self.provisioner_public()
         self.provisioner_docker_ip()
+        self.cascade_allocation()
         self.r.log.info("provisioned")
         self.r.start()
         return True
+
+    def cascade_allocation(self):
+        if not self.r.svc.config.has_option(self.r.rid, "cascade_allocation"):
+            return
+        cascade = self.r.svc.config.get(self.r.rid, "cascade_allocation").split()
+        need_write = False
+        for e in cascade:
+            try:
+                rid, param = e.split(".")
+            except:
+                self.r.log.warning("misformatted cascade entry: %s (expected <rid>.<param>[@<scope>])" % e)
+                continue
+            if not self.r.svc.config.has_section(rid):
+                self.r.log.warning("misformatted cascade entry: %s (rid does not exist)" % e)
+                continue
+            need_write = True
+            self.r.log.info("cascade %s to %s" % (self.r.ipName, e))
+            self.r.svc.config.set(rid, param, self.r.ipName)
+            self.r.svc.resources_by_id[rid].ipName = conf_get_string_scope(self.r.svc, self.r.svc.config, rid, param)
+            self.r.svc.resources_by_id[rid].addr = self.r.svc.resources_by_id[rid].ipName
+        if need_write:
+            self.r.svc.write_config()
 
     def provisioner_docker_ip(self):
         if not self.r.svc.config.has_option(self.r.rid, "docker_daemon_ip"):
@@ -22,6 +46,9 @@ class ProvisioningIp(Provisioning):
         args += " --ip "+self.r.ipName
         self.r.svc.config.set("DEFAULT", "docker_daemon_args", args)
         self.r.svc.write_config()
+        for r in self.r.svc.get_resources("container.docker"):
+            # reload docker dameon args
+            r.on_add()
 
     def provisioner_private(self):
         if self.r.ipName != "<allocate>":
