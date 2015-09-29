@@ -5,22 +5,13 @@ import os
 import rcExceptions as ex
 
 class ProvisioningFs(Provisioning):
-    # required from children:
+    # required from child classes:
     #   mkfs = ['mkfs.ext4', '-F']
     #   info = ['tune2fs', '-l']
+
     def __init__(self, r):
         Provisioning.__init__(self, r)
         self.section = dict(r.svc.config.items(r.rid))
-        for i in ('dev', 'mnt'):
-            if i not in self.section:
-                raise ex.excError("%s keyword is not set in section %s"%(i, r.rid))
-            setattr(self, i, self.section[i])
-        if 'size' not in self.section:
-            if self.r.fsType != "zfs":
-                raise ex.excError("'size' keyword is not set in section %s"%(r.rid))
-        else:
-            self.size = self.section['size']
-            self.size_to_mb()
 
     def size_to_mb(self):
         if isinstance(self.size, int):
@@ -135,6 +126,17 @@ class ProvisioningFs(Provisioning):
             self.provision_dev_hpux()
            
     def provisioner(self):
+        for i in ('dev', 'mnt'):
+            if i not in self.section:
+                raise ex.excError("%s keyword is not set in section %s"%(i, r.rid))
+            setattr(self, i, self.section[i])
+        if 'size' in self.section:
+            self.size = self.section['size']
+            self.size_to_mb()
+        else:
+            if self.r.fsType not in ("zfs", "btrfs") and not os.path.exists(self.dev):
+                raise ex.excError("'size' keyword is not set in section %s"%(r.rid))
+
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
