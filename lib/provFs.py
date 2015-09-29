@@ -125,7 +125,7 @@ class ProvisioningFs(Provisioning):
         elif rcEnv.sysname == 'HP-UX':
             self.provision_dev_hpux()
            
-    def provisioner(self):
+    def provisioner_fs(self):
         for i in ('dev', 'mnt'):
             if i not in self.section:
                 raise ex.excError("%s keyword is not set in section %s"%(i, r.rid))
@@ -160,6 +160,8 @@ class ProvisioningFs(Provisioning):
                 self.r.log.error('Failed to format %s'%self.mkfs_dev)
                 raise ex.excError
 
+    def provisioner(self):
+        self.provisioner_fs()
         self.r.log.info("provisioned")
         self.r.start()
         return True
