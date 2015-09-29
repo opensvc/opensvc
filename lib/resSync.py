@@ -95,7 +95,7 @@ class Sync(Res.Resource, Scheduler):
             return True
         ruser = self.svc.node.get_ruser(node)
         cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'df', self.dstfs]
-        (ret, out, err) = self.call(cmd, cache=True)
+        (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret != 0:
             raise ex.excError
 
