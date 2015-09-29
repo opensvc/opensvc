@@ -327,7 +327,6 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
 
 if action == 'install':
     r = install_service(svcnames, options.param_envfile)
-    _exit(r)
 
 if hasattr(options, "parm_rid") and options.parm_rid is not None:
    rid = options.parm_rid.split(',')
@@ -349,8 +348,11 @@ if options.parm_subsets is not None:
 else:
    subsets = set([])
 
-if action in ['create', 'update']:
-    data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+if action in ['create', 'update', 'install']:
+    if action in ['create', 'update']:
+        data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+    else:
+        data = {"rid": [], "ret": 0}
     if options.provision:
         # if the user want to provision a resource defined through env editing, he
         # will set --rid <rid> or --tag or --subset to point the update command to it
@@ -366,7 +368,7 @@ if action in ['create', 'update']:
             print("build error:", e, file=sys.stderr)
             build_err = True
 
-        if len(node.svcs) == 1 and len(rid) > 0:
+        if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
             node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
     _exit(data["ret"])
 
