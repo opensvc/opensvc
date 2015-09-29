@@ -52,8 +52,6 @@ class Ip(resIp.Ip, Amazon):
         self.label = "ec2 ip %s"%str(ipName)
 
         self.eip = eip
-        self.instance_id = None
-        self.instance_data = None
         
     def get_eip(self):
         ip = getaddr(self.eip, True)
@@ -64,27 +62,7 @@ class Ip(resIp.Ip, Amazon):
             addr = None
         return addr
 
-    def get_instance_id(self):
-        if self.instance_id is not None:
-            return self.instance_id
-        import httplib
-        c = httplib.HTTPConnection("instance-data")
-        c.request("GET", "/latest/meta-data/instance-id")
-        self.instance_id = c.getresponse().read()
-        return self.instance_id
-
-    def get_instance_data(self, refresh=False):
-        if self.instance_data is not None and not refresh:
-            return self.instance_data
-        data = self.aws(["ec2", "describe-instances", "--instance-ids", self.get_instance_id()], verbose=False)
-        try:
-            self.instance_data = data["Reservations"][0]["Instances"][0]
-        except Exception as e:
-            self.instance_data = None
-        return self.instance_data 
-
     def get_instance_private_addresses(self):
-        self.getaddr()
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
             raise ex.excError("can't find instance data")
@@ -110,6 +88,7 @@ class Ip(resIp.Ip, Amazon):
     def is_up(self):
         """Returns True if ip is associated with this node
         """
+        self.getaddr()
         ips = self.get_instance_private_addresses()
         if self.addr not in ips:
             return False
@@ -187,4 +166,9 @@ class Ip(resIp.Ip, Amazon):
 
     def shutdown(self):
         pass
+
+    def provision(self):
+        m = __import__("provIpAmazon")
+        prov = getattr(m, "ProvisioningIp")(self)
+        prov.provisioner()
 
