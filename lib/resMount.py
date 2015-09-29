@@ -74,21 +74,30 @@ class Mount(Res.Resource):
                 raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
 
     def start(self):
+        self.validate_dev()
+        self.create_mntpt()
+
+    def validate_dev(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
             return
         if self.device == "none":
-            # for pseudo fs
+            # pseudo fs have no dev
+            return
+        if self.device.startswith("UUID=") or self.device.startswith("LABEL="):
             return
         if not os.path.exists(self.device):
-            self.log.error("device does not exist %s" % self.device)
-            raise ex.excError
-        if not os.path.exists(self.mountPoint):
-            try:
-                os.makedirs(self.mountPoint)
-            except:
-                self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
-                raise
+            raise ex.excError("device does not exist %s" % self.device)
+
+    def create_mntpt(self):
+        if self.fsType in ["zfs", "advfs"]:
+            return
+        if os.path.exists(self.mountPoint):
+            return
+        try:
+            os.makedirs(self.mountPoint)
             self.log.info("create missing mountpoint %s" % self.mountPoint)
+        except:
+            self.log.warning("failed to create missing mountpoint %s" % self.mountPoint)
 
     def fsck(self):
         if self.fsType in ("", "none"):
