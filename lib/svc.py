@@ -911,7 +911,10 @@ class Svc(Resource, Scheduler):
             if g not in groups:
                 continue
             for rs in self.get_res_sets(t, strict=True):
-                rset_status[rs.type] = rs.status()
+                if rs.type not in rset_status:
+                    rset_status[rs.type] = rs.status()
+                else:
+                    rset_status[rs.type] = rcStatus._merge(rset_status[rs.type], rs.status())
         return rset_status
 
     def resource_monitor(self):
