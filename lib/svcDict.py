@@ -1311,7 +1311,7 @@ class KeywordIpIpname(Keyword):
                   order=12,
                   at=True,
                   required=True,
-                  text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter."
+                  text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
                 )
 
 class KeywordIpZone(Keyword):
@@ -1327,7 +1327,7 @@ class KeywordIpZone(Keyword):
                   example="zone1"
                 )
 
-class KeywordIpEip(Keyword):
+class KeywordIpAmazonEip(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1337,8 +1337,39 @@ class KeywordIpEip(Keyword):
                   order=12,
                   at=True,
                   required=False,
-                  text="The public elastic ip to associate to <ipname>.",
+                  text="The public elastic ip to associate to <ipname>. The special <allocate> value tells the provisioner to assign a new public address.",
                   example="52.27.90.63"
+                )
+
+class KeywordIpAmazonCascadeAllocation(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="amazon",
+                  keyword="cascade_allocation",
+                  provisioning=True,
+                  order=13,
+                  at=False,
+                  required=False,
+                  text="Set new allocated ip as value to other ip resources ipname parameter. The syntax is a whitespace separated list of <rid>.ipname[@<scope>].",
+                  example="ip#1.ipname ip#1.ipname@nodes"
+                )
+
+class KeywordIpAmazonDockerDaemonIp(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="amazon",
+                  keyword="docker_daemon_ip",
+                  provisioning=True,
+                  order=13,
+                  at=False,
+                  candidates=[True, False],
+                  required=False,
+                  text="Set new allocated ip as value as a '--ip <addr>' argument in the DEFAULT.docker_daemon_args parameter.",
+                  example="True"
                 )
 
 class KeywordIpType(Keyword):
@@ -1426,7 +1457,7 @@ class KeywordVgAmazonVolumes(Keyword):
                   order=10,
                   at=True,
                   required=True,
-                  text="a whitespace separated list of amazon volumes.",
+                  text="A whitespace separated list of amazon volumes. Any member of the list can be set to a special <key=value,key=value> value. In this case the provisioner will allocate a new volume with the specified characteristics and replace this member with the allocated volume id. The supported keys are the same as those supported by the awscli ec2 create-volume command: size, iops, availability-zone, snapshot, type and encrypted.",
                   example="vol-123456 vol-654321"
                 )
 
@@ -2714,7 +2745,9 @@ class KeyDict(KeywordStore):
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpZone()
-        self += KeywordIpEip()
+        self += KeywordIpAmazonEip()
+        self += KeywordIpAmazonCascadeAllocation()
+        self += KeywordIpAmazonDockerDaemonIp()
         self += KeywordVgType()
         self += KeywordVgAmazonVolumes()
         self += KeywordVgRawDevs()
