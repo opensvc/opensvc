@@ -300,9 +300,14 @@ def add_scsireserv(svc, resource, conf, section):
     svc += r
 
 def add_triggers(svc, resource, conf, section):
-    triggers = ['pre_stop', 'pre_start', 'pre_syncnodes', 'pre_syncdrp',
-                'post_stop', 'post_start', 'post_syncnodes', 'post_syncdrp',
-                'post_syncresync', 'pre_syncresync']
+    triggers = [
+      'pre_stop', 'pre_start',
+      'post_stop', 'post_start',
+      'pre_syncnodes', 'pre_syncdrp',
+      'post_syncnodes', 'post_syncdrp',
+      'post_syncresync', 'pre_syncresync',
+      'post_syncupdate', 'pre_syncupdate',
+    ]
     for trigger in triggers:
         try:
             s = conf_get_string_scope(svc, conf, resource.rid, trigger)

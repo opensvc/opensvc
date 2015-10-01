@@ -2660,6 +2660,20 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A script to execute after the resource syncresync action"
                 )
+        def kw_pre_syncupdate(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_syncupdate",
+                  at=True,
+                  text="A script to execute before the resource syncupdate action"
+                )
+        def kw_post_syncupdate(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_syncupdate",
+                  at=True,
+                  text="A script to execute after the resource syncupdate action"
+                )
 
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
             self += kw_restart(r)
@@ -2679,6 +2693,8 @@ class KeyDict(KeywordStore):
             self += kw_post_syncdrp(r)
             self += kw_pre_syncresync(r)
             self += kw_post_syncresync(r)
+            self += kw_pre_syncupdate(r)
+            self += kw_post_syncupdate(r)
 
         self += KeywordMode()
         self += KeywordPkgName()
