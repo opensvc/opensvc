@@ -2258,26 +2258,28 @@ class Svc(Resource, Scheduler):
             r.setup_environ()
 
     def expand_rid(self, rid):
-        l = []
+        l = set([])
         for e in self.resources_by_id.keys():
             if e is None:
                 continue
             if '#' not in e:
                 if e == rid:
-                    l.append(e)
+                    l.add(e)
                 else:
                     continue
             elif e[:e.index('#')] == rid:
-                l.append(e)
+                l.add(e)
         return l
 
     def expand_rids(self, rid):
-        l = []
+        l = set([])
         for e in set(rid):
             if '#' in e:
-                l.append(e)
+                if e not in self.resources_by_id:
+                    continue
+                l.add(e)
                 continue
-            l += self.expand_rid(e)
+            l |= self.expand_rid(e)
         return l
 
     def expand_subsets(self, subsets):
@@ -2301,11 +2303,14 @@ class Svc(Resource, Scheduler):
         return l
 
     def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
-        rid = self.expand_rids(rid)
-        rid = set(rid) | self.expand_subsets(subsets)
-        rid = set(rid) | self.expand_tags(tags)
-        rid = list(rid)
-        self.action_rid = rid
+        rids = self.expand_rids(rid)
+        rids |= self.expand_subsets(subsets)
+        rids |= self.expand_tags(tags)
+        rids = list(rids)
+        if len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
+            self.log.error("no resource match the given --rid, --subset and --tags specifiers")
+            return 1
+        self.action_rid = rids
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
@@ -2382,7 +2387,7 @@ class Svc(Resource, Scheduler):
 
         self.setup_environ()
         self.setup_signal_handlers()
-        self.set_skip_resources(keeprid=rid, xtags=xtags)
+        self.set_skip_resources(keeprid=rids, xtags=xtags)
         actions_list_no_log = [
           'get',
           'set',
