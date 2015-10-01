@@ -1040,7 +1040,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "btrfssnap", "rados"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -1058,6 +1058,35 @@ class KeywordSyncDockerTarget(Keyword):
                   default=None,
                   candidates=["nodes", "drpnodes", "nodes drpnodes"],
                   text="Destination nodes of the sync."
+                )
+
+class KeywordSyncBtrfsSnapSubvol(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="subvol",
+                  rtype="btrfssnap",
+                  order=10,
+                  at=True,
+                  required=True,
+                  example="svc1fs:data svc1fs:log",
+                  text="A whitespace separated list of <label>:<subvol> to snapshot."
+                )
+
+class KeywordSyncBtrfsSnapKeep(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="keep",
+                  rtype="btrfssnap",
+                  order=10,
+                  at=True,
+                  required=True,
+                  default=3,
+                  example="3",
+                  text="The maximum number of snapshots to retain."
                 )
 
 class KeywordSyncBtrfsSrc(Keyword):
@@ -2738,6 +2767,8 @@ class KeyDict(KeywordStore):
         self += KeywordSyncBtrfsDst()
         self += KeywordSyncBtrfsTarget()
         self += KeywordSyncBtrfsRecursive()
+        self += KeywordSyncBtrfsSnapSubvol()
+        self += KeywordSyncBtrfsSnapKeep()
         self += KeywordSyncZfsSrc()
         self += KeywordSyncZfsDst()
         self += KeywordSyncZfsTarget()
