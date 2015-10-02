@@ -1073,6 +1073,9 @@ class Svc(Resource, Scheduler):
             self.log.info("skip start in container %s: the encap service is configured to start on container boot."%container.name)
             return '', '', 0
 
+        # now we known we'll execute a command in the slave, so purge the encap cache
+        self.purge_cache_encap_json_status(container.rid)
+
         options = []
         if self.options.dry_run:
             options.append('--dry-run')
@@ -1109,9 +1112,46 @@ class Svc(Resource, Scheduler):
             raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         return out, err, ret
 
+    def get_encap_json_status_path(self, rid):
+        return os.path.join(rcEnv.pathvar, self.svcname, "encap.status."+rid)
+
+    def purge_cache_encap_json_status(self, rid):
+        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+            del(self.encap_json_status_cache[rid])
+        path = self.get_encap_json_status_path(rid)
+        if os.path.exists(path):
+            os.unlink(path)
+
+    def put_cache_encap_json_status(self, rid, data):
+        if not hasattr(self, 'encap_json_status_cache'):
+            self.encap_json_status_cache = {}
+        self.encap_json_status_cache[rid] = data
+        path = self.get_encap_json_status_path(rid)
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        try:
+            with open(path, 'w') as f:
+                 gs = f.write(json.dumps(data))
+        except:
+            os.unlink(path)
+
+    def get_cache_encap_json_status(self, rid):
+        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+            return self.encap_json_status_cache[rid]
+        path = self.get_encap_json_status_path(rid)
+        try:
+            with open(path, 'r') as f:
+                 gs = json.loads(f.read())
+        except:
+            gs = None
+        return gs
+
     def encap_json_status(self, container, refresh=False):
-        if not refresh and hasattr(self, 'encap_json_status_cache') and container.rid in self.encap_json_status_cache:
-            return self.encap_json_status_cache[container.rid]
+        if not refresh and not self.options.refresh:
+            gs = self.get_cache_encap_json_status(container.rid)
+            if gs:
+                return gs
         if container.guestos == 'windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
@@ -1173,10 +1213,7 @@ class Svc(Resource, Scheduler):
         except:
             pass
 
-        # feed cache
-        if not hasattr(self, 'encap_json_status_cache'):
-            self.encap_json_status_cache = {}
-        self.encap_json_status_cache[container.rid] = gs
+        self.put_cache_encap_json_status(container.rid, gs)
 
         return gs
 
@@ -2307,9 +2344,12 @@ class Svc(Resource, Scheduler):
         rids |= self.expand_subsets(subsets)
         rids |= self.expand_tags(tags)
         rids = list(rids)
-        if len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
+
+        if not self.options.slaves and self.options.slave is None and \
+           len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
             self.log.error("no resource match the given --rid, --subset and --tags specifiers")
             return 1
+
         self.action_rid = rids
         if self.node is None:
             self.node = node.Node()
