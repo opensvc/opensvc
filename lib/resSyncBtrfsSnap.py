@@ -113,7 +113,7 @@ class syncBtrfsSnap(resSync.Sync):
             except Exception as e:
                 pass
         if len(snaps) == 0:
-            self.status_log("%s:%s has no snap" % (label, subvol, len(snaps)-self.keep))
+            self.status_log("%s:%s has no snap" % (label, subvol))
             return
         if len(snaps) > self.keep:
             self.status_log("%s:%s has %d too many snaps" % (label, subvol, len(snaps)-self.keep))
