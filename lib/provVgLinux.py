@@ -1,4 +1,5 @@
 from provisioning import Provisioning
+from svcBuilder import conf_get_string_scope
 import os
 import json
 import rcExceptions as ex
@@ -9,20 +10,24 @@ import glob
 class ProvisioningVg(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
-        self.pvs = r.svc.config.get(self.r.rid, 'pvs')
-        self.pvs = self.pvs.split()
-        l = []
-        for pv in self.pvs:
-            l += glob.glob(pv)
-        self.pvs = l
 
     def provisioner(self):
         if self.r.has_it():
             self.r.log.info("already provisioned")
             return
 
+        self.pvs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "pvs")
+        self.pvs = self.pvs.split()
+        l = []
+        for pv in self.pvs:
+            _l = glob.glob(pv)
+            self.r.log.info("expand %s to %s" % (pv, ', '.join(_l)))
+            l += _l
+        self.pvs = l
+
         err = False
         for i, pv in enumerate(self.pvs):
+            pv = os.path.realpath(pv)
             if not os.path.exists(pv):
                 self.r.log.error("pv %s does not exist"%pv)
                 err |= True
@@ -48,6 +53,9 @@ class ProvisioningVg(Provisioning):
             ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
+
+        if len(self.pvs) == 0:
+            raise ex.excError("no pvs specified")
 
         cmd = ['vgcreate', self.r.name] + self.pvs
         ret, out, err = self.r.vcall(cmd)
