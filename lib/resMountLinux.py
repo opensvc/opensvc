@@ -284,10 +284,7 @@ class Mount(Res.Mount):
             return True
         return False
 
-    def disklist(self):
-        return devs_to_disks(self, self.devlist())
-
-    def devlist(self):
+    def _disklist(self):
         dev = self.realdev()
         if dev is None:
             return set([])
@@ -322,6 +319,15 @@ class Mount(Res.Mount):
         syspath = '/sys/block/' + dm + '/slaves'
         devs = get_blockdev_sd_slaves(syspath)
         return devs
+
+    def disklist(self):
+        return devs_to_disks(self, self._disklist())
+
+    def devlist(self):
+        dev = self.realdev()
+        if dev is None:
+            return set([])
+        return set([dev])
 
     def can_check_writable(self):
         if len(self.mplist()) > 0:
