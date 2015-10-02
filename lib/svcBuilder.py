@@ -916,8 +916,13 @@ def add_veritas(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
-        svc.log.error("vgname must be set in section %s"%s)
-        return
+        pass
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        if "name" not in kwargs:
+            svc.log.error("name must be set in section %s"%s)
+            return
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)
@@ -950,8 +955,13 @@ def add_vg(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
-        svc.log.error("vgname must be set in section %s"%s)
-        return
+        pass
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        if "name" not in kwargs:
+            svc.log.error("name must be set in section %s"%s)
+            return
     try:
         kwargs['dsf'] = conf_get_boolean_scope(svc, conf, s, 'dsf')
     except ex.OptNotFound:
