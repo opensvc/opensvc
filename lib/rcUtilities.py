@@ -408,7 +408,7 @@ def convert_size(s, _to='', _round=1):
     else:
         factor = 1024
     if len(unit) > 0:
-        unit = unit[0]
+        unit = unit[0].upper()
     size = float(size)
 
     try:
@@ -424,7 +424,7 @@ def convert_size(s, _to='', _round=1):
     else:
         factor = 1024
     if len(_to) > 0:
-        unit = _to[0]
+        unit = _to[0].upper()
     else:
         unit = ''
     try:
