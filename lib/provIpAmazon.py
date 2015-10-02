@@ -11,6 +11,7 @@ class ProvisioningIp(Provisioning):
         self.provisioner_public()
         self.provisioner_docker_ip()
         self.cascade_allocation()
+        self.remove_keywords(["cascade_allocation", "docker_daemon_ip"])
         self.r.log.info("provisioned")
         self.r.start()
         return True

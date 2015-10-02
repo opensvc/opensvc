@@ -89,7 +89,9 @@ class ProvisioningFsBtrfs(ProvisioningFs):
 
     def provisioner(self):
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
-            raise ex.excError("dev with LABEL= or UUID= are not supported for provisioning")
+            self.r.log.info("skip provision: dev with LABEL= or UUID= are not supported")
+            self.r.start()
+            return
         ProvisioningFs.provisioner_fs(self)
         self.create_subvol()
         self.r.log.info("provisioned")

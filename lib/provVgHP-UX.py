@@ -57,5 +57,6 @@ class ProvisioningVg(Provisioning):
         if ret != 0:
             raise ex.excError
 
+        self.remove_keywords(["pvs", "options"])
         self.r.log.info("provisioned")
         return True

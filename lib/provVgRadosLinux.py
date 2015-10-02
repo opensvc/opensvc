@@ -8,6 +8,7 @@ class ProvisioningVg(Provisioning):
     def provisioner(self):
         for image in self.r.images:
             self.provisioner_one(image)
+        self.remove_keywords(["size", "image_format"])
         self.r.log.info("provisioned")
         self.r.start()
         return True

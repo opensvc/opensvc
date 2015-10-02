@@ -22,5 +22,6 @@ class ProvisioningLoop(Provisioning):
             self.r.log.error("Failed to create %s"%self.path)
             raise ex.excError
 
+        self.remove_keywords(["size"])
         self.r.log.info("provisioned")
         self.r.start()
