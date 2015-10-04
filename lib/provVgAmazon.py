@@ -27,7 +27,10 @@ class ProvisioningVg(Provisioning):
         v = s.split(",")
         kwargs = {}
         for e in v:
-            key, val = e.split("=")
+            try:
+                key, val = e.split("=")
+            except:
+                raise ex.excError("format error: %s. expected key=value." % e)
             kwargs[key] = val
         cmd = ["ec2", "create-volume"]
         if "size" in kwargs:
