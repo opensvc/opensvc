@@ -1541,6 +1541,75 @@ class KeywordVgMdUuid(Keyword):
                   text="The md uuid to use with mdadm assemble commands"
                 )
 
+class KeywordVgMdDevs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  required=True,
+                  at=True,
+                  keyword="devs",
+                  rtype="md",
+                  provisioning=True,
+                  example="/dev/rbd0 /dev/rbd1",
+                  text="The md member devices to use with mdadm create command"
+                )
+
+class KeywordVgMdLevel(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  required=True,
+                  at=True,
+                  keyword="level",
+                  rtype="md",
+                  provisioning=True,
+                  example="raid1",
+                  text="The md raid level to use with mdadm create command (see mdadm man for values)"
+                )
+
+class KeywordVgMdLayout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  required=False,
+                  at=True,
+                  keyword="layout",
+                  rtype="md",
+                  provisioning=True,
+                  text="The md raid layout to use with mdadm create command (see mdadm man for values)"
+                )
+
+class KeywordVgMdChunk(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  required=False,
+                  at=True,
+                  keyword="chunk",
+                  rtype="md",
+                  provisioning=True,
+                  example="128k",
+                  text="The md chunk size to use with mdadm create command. Values are converted to kb and rounded to 4."
+                )
+
+class KeywordVgMdSpares(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  required=False,
+                  at=True,
+                  keyword="spares",
+                  rtype="md",
+                  provisioning=True,
+                  example="0",
+                  text="The md number of spare devices to use with mdadm create command"
+                )
+
 class KeywordVgMdShared(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2802,6 +2871,11 @@ class KeyDict(KeywordStore):
         self += KeywordVgDsf()
         self += KeywordVgImages()
         self += KeywordVgMdUuid()
+        self += KeywordVgMdDevs()
+        self += KeywordVgMdLevel()
+        self += KeywordVgMdChunk()
+        self += KeywordVgMdLayout()
+        self += KeywordVgMdSpares()
         self += KeywordVgMdShared()
         self += KeywordVgClientId()
         self += KeywordVgKeyring()
