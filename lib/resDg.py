@@ -23,6 +23,7 @@
 """Module providing Generic device group resources
 """
 
+import os
 import resources as Res
 import rcStatus
 import rcExceptions as exc
@@ -79,6 +80,26 @@ class Dg(Res.Resource):
         else:
             if self.is_up(): return rcStatus.UP
             else: return rcStatus.DOWN
+
+    def create_static_name(self, dev, suffix="0"):
+        d = self.create_dev_dir()
+        lname = self.rid.replace("#", ".") + "." + suffix
+        l = os.path.join(d, lname)
+        if os.path.exists(l) and os.path.realpath(l) == dev:
+            return
+        self.log.info("create static device name %s -> %s" % (l, dev))
+        try:
+            os.unlink(l)
+        except:
+            pass
+        os.symlink(dev, l)
+
+    def create_dev_dir(self):
+        d = os.path.join(rcEnv.pathvar, self.svc.svcname, "dev")
+        if os.path.exists(d):
+            return d
+        os.makedirs(d)
+        return d
 
 if __name__ == "__main__":
     for c in (Dg,) :

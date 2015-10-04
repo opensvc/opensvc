@@ -211,27 +211,6 @@ class Vg(resDg.Dg, Amazon):
     def mangle_devpath(self, dev):
         return dev.replace("/dev/sd", self.get_dev_prefix())
 
-    def create_static_name(self, dev, vol):
-        d = self.create_dev_dir()
-        lname = self.rid.replace("#", ".") + "." + str(self.volumes.index(vol))
-        l = os.path.join(d, lname)
-        s = self.mangle_devpath(dev)
-        if os.path.exists(l) and os.path.realpath(l) == s:
-            return
-        self.log.info("create static device name %s -> %s" % (l, s))
-        try:
-            os.unlink(l)
-        except:
-            pass
-        os.symlink(s, l)
-
-    def create_dev_dir(self):
-        d = os.path.join(rcEnv.pathvar, self.svc.svcname, "dev")
-        if os.path.exists(d):
-            return d
-        os.makedirs(d)
-        return d
-
     def do_start_one(self, volume):
         mapped = self.get_mapped_bdevs()
         if volume in mapped:
@@ -246,7 +225,11 @@ class Vg(resDg.Dg, Amazon):
               "--device", dev
             ])
         self.wait_dev(dev)
-        self.create_static_name(dev, volume)
+        self._create_static_name(self.mangle_devpath(dev), volume)
+
+    def _create_static_name(self, dev, volume):
+        suffix = str(self.volumes.index(volume))
+        self.create_static_name(dev, suffix)
 
     def do_start(self):
         self.validate_volumes()
