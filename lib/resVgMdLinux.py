@@ -18,6 +18,7 @@
 #
 import re
 import os
+import glob
 import time
 import rcExceptions as ex
 import resDg
@@ -117,16 +118,16 @@ class Md(resDg.Dg):
             return []
         return [self.md_config_file_name()]
 
-    def devpath(self):
-        return "/dev/disk/by-id/md-uuid-"+self.uuid
-
     def md_devname(self):
         #devname = self.svc.svcname+"."+self.rid.replace("#", "")
         return self.uuid
 
     def md_devpath(self):
         devname = self.md_devname()
-        return "/dev/md/"+devname
+        l = glob.glob("/dev/disk/by-id/md-uuid-"+self.uuid) + glob.glob("/dev/md/"+devname)
+        if len(l) == 0:
+            raise ex.excError("unable to find a devpath for md")
+        return l[0]
 
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.md_devpath(), "-u", self.uuid]
@@ -139,13 +140,16 @@ class Md(resDg.Dg):
             self.wait_for_fn(self.has_it, self.startup_timeout, 1, errmsg="waited too long for devpath creation")
 
     def manage_stop(self):
-        cmd = [self.mdadm, "--manage", self.devpath(), "--stop"]
+        cmd = [self.mdadm, "--manage", self.md_devpath(), "--stop"]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError 
 
     def detail(self):
-        devpath = self.devpath()
+        try:
+            devpath = self.md_devpath()
+        except ex.excError as e:
+            return "State : " + str(e)
         if not os.path.exists(devpath):
             return "State : devpath does not exist"
         cmd = [self.mdadm, "--detail", devpath]
@@ -199,6 +203,7 @@ class Md(resDg.Dg):
             return 0
         self.can_rollback = True
         self.assemble()
+        self._create_static_dev()
 
     def do_stop(self):
         if not self.has_it():
@@ -206,11 +211,14 @@ class Md(resDg.Dg):
             return
         self.manage_stop()
 
+    def _create_static_dev(self):
+        self.create_static_dev(self.md_devpath())
+
     def devlist(self):
         if self.devs != set():
             return self.devs
 
-        devpath = self.devpath()
+        devpath = self.md_devpath()
         if os.path.exists(devpath):
             self.devs = self.devlist_active()
         else:
