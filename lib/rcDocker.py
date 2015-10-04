@@ -72,7 +72,7 @@ class DockerLib(object):
                 cmd += self.add_run_args()
                 cmd += [self.run_image]
                 if self.run_command is not None and self.run_command != "":
-                    cmd += [self.run_command]
+                    cmd += self.run_command.split()
             else:
                 cmd += ['start', self.container_id]
         elif action == 'stop':
