@@ -43,7 +43,10 @@ class ProvisioningIp(Provisioning):
             return
         if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
             return
-        args = self.r.svc.config.get("DEFAULT", "docker_daemon_args")
+        try:
+            args = self.r.svc.config.get("DEFAULT", "docker_daemon_args")
+        except:
+            args = ""
         args += " --ip "+self.r.ipName
         self.r.svc.config.set("DEFAULT", "docker_daemon_args", args)
         self.r.svc.write_config()
