@@ -57,7 +57,24 @@ class Loop(Res.Loop):
             if ret != 0:
                 raise ex.excError
 
+    def parent_dir_handled_by_service(self):
+        d = os.path.dirname(self.loopFile)
+        mntpts = {}
+        for r in self.svc.get_resources(["fs"]):
+            mntpts[r.mountPoint] = r
+        while True:
+            if d in mntpts.keys():
+                return mntpts[d]
+            d = os.path.dirname(d)
+            if d == os.sep:
+                return
+
     def _status(self, verbose=False):
+        r = self.parent_dir_handled_by_service()
+        if not os.path.exists(self.loopFile):
+            if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
+                self.status_log("%s does not exist" % self.loopFile)
+                return rcStatus.WARN
         if self.is_up(): return rcStatus.UP
         else: return rcStatus.DOWN
 
