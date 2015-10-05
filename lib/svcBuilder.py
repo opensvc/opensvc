@@ -3383,7 +3383,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
         os.makedirs(svcinitdir)
     fix_app_link(svcname)
     fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
-    return {"ret": 0}
+    return {"ret": 0, "rid": sections.keys()}
 
 def update(svcname, resources=[], interactive=False, provision=False):
     fix_default_section(svcname)
