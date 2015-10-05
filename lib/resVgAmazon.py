@@ -224,6 +224,7 @@ class Vg(resDg.Dg, Amazon):
               "--volume-id", volume,
               "--device", dev
             ])
+            self.can_rollback = True
         self.wait_dev(dev)
         self._create_static_name(self.mangle_devpath(dev), volume)
 
@@ -235,7 +236,6 @@ class Vg(resDg.Dg, Amazon):
         self.validate_volumes()
         for volume in self.volumes:
             self.do_start_one(volume)
-            self.can_rollback = True
         self.get_mapped_bdevs(refresh=True)
 
     def do_stop_one(self, volume):
