@@ -58,6 +58,10 @@ def install_service(svcnames, src_env):
         print("only one service must be specified", file=sys.stderr)
         return 1
 
+    if src_env is None:
+        print("missing --envfile", file=sys.stderr)
+        return 1
+
     if not os.path.exists(src_env):
         print("%s does not exists"%src_env, file=sys.stderr)
         return 1
