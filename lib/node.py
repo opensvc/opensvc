@@ -776,7 +776,11 @@ class Node(Svc, Freezer, Scheduler):
     def sysreport(self):
         if self.skip_action("sysreport"):
             return
-        self.task_sysreport()
+        try:
+            self.task_sysreport()
+        except Exception as e:
+            print(e)
+            return 1
 
     @scheduler_fork
     def task_sysreport(self):
