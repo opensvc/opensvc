@@ -43,10 +43,10 @@ class Loop(Res.Resource):
                               tags=tags,
                               monitor=monitor,
                               restart=restart,
+                              always_on=always_on,
                               subset=subset)
         self.loopFile = loopFile
         self.label = "loop "+loopFile
-        self.always_on = always_on
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\
