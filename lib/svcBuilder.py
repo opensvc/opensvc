@@ -3348,6 +3348,8 @@ def create(svcname, resources=[], interactive=False, provision=False):
             else:
                 sections[section] = d
         else:
+            if "rtype" in d:
+                del(d["rtype"])
             defaults.update(d)
 
     from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
@@ -3463,6 +3465,8 @@ def update(svcname, resources=[], interactive=False, provision=False):
             sections[section] = d
             is_resource = True
         else:
+            if "rtype" in d:
+                del(d["rtype"])
             defaults.update(d)
 
         if is_resource:
