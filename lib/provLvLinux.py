@@ -44,10 +44,18 @@ class ProvisioningLv(Provisioning):
             raise ex.excError
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', '-Wy', self.vg]
-        ret, out, err = self.r.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
+        cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.vg]
+        _cmd = "yes | " + " ".join(cmd)
+        self.r.log.info(_cmd)
+        p1 = Popen(["yes"], stdout=PIPE)
+        p2 = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=p1.stdout)
+        out, err = p2.communicate()
+        if p2.returncode != 0:
+            raise ex.excError(err)
+        if len(out) > 0:
+            self.r.log.info(out)
+        if len(err) > 0:
+            self.r.log.error(err)
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
         justcall(["dmsetup", "mknodes"])
