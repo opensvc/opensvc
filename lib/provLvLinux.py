@@ -6,6 +6,14 @@ from subprocess import *
 import os
 import rcExceptions as ex
 import time
+import signal
+
+def restore_signals():
+    # from http://hg.python.org/cpython/rev/768722b2ae0a/
+    signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
+    for sig in signals:
+        if hasattr(signal, sig):
+           signal.signal(getattr(signal, sig), signal.SIG_DFL)
 
 class ProvisioningLv(Provisioning):
     def __init__(self, r):
@@ -48,8 +56,8 @@ class ProvisioningLv(Provisioning):
         cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.vg]
         _cmd = "yes | " + " ".join(cmd)
         self.r.log.info(_cmd)
-        p1 = Popen(["yes"], stdout=PIPE)
-        p2 = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=p1.stdout)
+        p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
+        p2 = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=p1.stdout, close_fds=True)
         out, err = p2.communicate()
         if p2.returncode != 0:
             raise ex.excError(err)
