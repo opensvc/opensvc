@@ -106,7 +106,8 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
                     raise ex.excError("mapping %s should be formatted as <src>:<dst>:<ro|rw>" % (volarg))
                 if not os.path.exists(v[0]):
                     raise ex.excError("source dir of mapping %s does not exist" % (volarg))
-        l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid, self.rid.replace("#", "."))]
+        if self.docker_min_version("1.7"):
+            l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid, self.rid.replace("#", "."))]
         return l
 
     def container_start(self):
