@@ -44,7 +44,7 @@ class ProvisioningLv(Provisioning):
             raise ex.excError
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.vg]
+        cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', '-Wy', self.vg]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
