@@ -1356,6 +1356,20 @@ class KeywordIpZone(Keyword):
                   example="zone1"
                 )
 
+class KeywordIpDockerContainerRid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="docker",
+                  keyword="container_rid",
+                  order=12,
+                  at=True,
+                  required=True,
+                  text="The docker container resource id to plumb the ip into.",
+                  example="container#0"
+                )
+
 class KeywordIpAmazonEip(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1407,7 +1421,7 @@ class KeywordIpType(Keyword):
                   self,
                   section="ip",
                   keyword="type",
-                  candidates=[None, 'crossbow', 'amazon'],
+                  candidates=[None, 'crossbow', 'amazon', 'docker'],
                   text="The opensvc ip driver name.",
                   required=False,
                   order=10,
@@ -2861,6 +2875,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpZone()
+        self += KeywordIpDockerContainerRid()
         self += KeywordIpAmazonEip()
         self += KeywordIpAmazonCascadeAllocation()
         self += KeywordIpAmazonDockerDaemonIp()

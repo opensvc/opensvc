@@ -56,6 +56,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.gateway = gateway
         self.container_rid = container_rid
         self.label = ipName + '@' + ipDev
+        self.tags.add("docker")
         self.tags.add(container_rid)
         self.guest_dev = "eth1"
 

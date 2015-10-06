@@ -457,11 +457,11 @@ def add_ip(svc, conf, s):
         if 'zone' in kwargs:
             svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s"%s)
             return
-        ip = __import__('resIp'+'Crossbow')
+        ip = __import__('resIpCrossbow')
     elif 'zone' in kwargs:
-        ip = __import__('resIp'+'Zone')
-    elif "container_rid" in kwargs:
-        ip = __import__('resIp'+'Docker'+rcEnv.sysname)
+        ip = __import__('resIpZone')
+    elif rtype == "docker" or "container_rid" in kwargs:
+        ip = __import__('resIpDocker'+rcEnv.sysname)
     else:
         ip = __import__('resIp'+rcEnv.sysname)
 
