@@ -2,6 +2,7 @@ from provisioning import Provisioning
 from rcUtilities import justcall, which, convert_size
 from rcGlobalEnv import rcEnv
 from svcBuilder import conf_get_string_scope
+from subprocess import *
 import os
 import rcExceptions as ex
 import time
