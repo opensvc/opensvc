@@ -47,8 +47,13 @@ class DockerLib(object):
             return
         for line in lines[1:]:
             names = line[start:].strip().split(',')
-            if self.container_name in names:
-                return line.split()[0]
+            for name in names:
+                # swarm names are preffixed by <nodename>/
+                v = name.split("/")
+                if self.container_name == v[-1]:
+                    if len(v) == 2:
+                        self.swarm_node = v[0]
+                    return line.split()[0]
 
     def docker_min_version(self, version):
         cmd = ["docker", "--version"]
@@ -236,8 +241,14 @@ class DockerLib(object):
         if not os.path.exists(self.docker_var_d):
             os.makedirs(self.docker_var_d)
         self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
-        self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
-        self.docker_socket_uri = 'unix://' + self.docker_socket
+        if self.run_swarm is not None:
+            if "://" not in self.run_swarm:
+                proto = "tcp://"
+            else:
+                proto = ""
+            self.docker_socket = proto + self.run_swarm
+        else:
+            self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
         try:
             self.docker_data_dir = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_data_dir')
         except ex.OptNotFound:
@@ -248,7 +259,7 @@ class DockerLib(object):
             self.docker_daemon_args = []
         if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
             self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
-        self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket_uri]
+        self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket]
 
     def docker_exe(self):
         if which("docker.io"):

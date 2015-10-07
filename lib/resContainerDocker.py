@@ -110,11 +110,23 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid, self.rid.replace("#", "."))]
         return l
 
+    def swarm_primary(self):
+        if not hasattr(self.svc, "flex_primary"):
+            return False
+        if self.run_swarm is None:
+            return False
+        if rcEnv.nodename != self.svc.flex_primary:
+            return False
+        return True
+
     def container_start(self):
         self.docker_start()
         self.docker('start')
 
     def start(self):
+        if self.svc.running_action == "boot" and not self.swarm_primary():
+            self.log.info("skip boot: this container will be booted by the flex primary node, or through a start action from any flex node")
+            return
         resContainer.Container.start(self)
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
@@ -122,6 +134,10 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.docker('stop')
 
     def stop(self):
+        self.status()
+        if hasattr(self, "swarm_node") and self.swarm_node != rcEnv.nodename:
+            self.log.info("skip stop: this container is handled by the %s node" % self.swarm_node)
+            return
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
         self.docker_stop()
@@ -180,6 +196,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
                  run_image,
                  run_command=None,
                  run_args=None,
+                 run_swarm=None,
                  guestos="Linux",
                  optional=False,
                  disabled=False,
@@ -204,6 +221,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.run_image = run_image
         self.run_command = run_command
         self.run_args = run_args
+        self.run_swarm = run_swarm
         self.max_wait_for_dockerd = 5
 
     def on_add(self):
@@ -217,6 +235,8 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         except Exception as e:
             self.container_id = None
         self.label += self.image_userfriendly_name()
+        if hasattr(self, "swarm_node"):
+            self.label += " on " + self.swarm_node
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

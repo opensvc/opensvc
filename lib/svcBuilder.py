@@ -1717,6 +1717,11 @@ def add_containers_docker(svc, conf, s):
     except ex.OptNotFound:
         pass
 
+    try:
+        kwargs['run_swarm'] = conf_get_string_scope(svc, conf, s, 'run_swarm')
+    except ex.OptNotFound:
+        pass
+
     m = __import__('resContainerDocker')
 
     kwargs['rid'] = s

@@ -337,6 +337,19 @@ class KeywordDockerRunArgs(Keyword):
                   example="-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
                 )
 
+class KeywordDockerRunSwarm(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="run_swarm",
+                  order=2,
+                  required=False,
+                  rtype="docker",
+                  text="The ip:port at which the swarm manager listens. If swarm is not used, this parameter should not be used, in which case, the service-private dockerd is used through its unix socket.",
+                  example="1.2.3.4:2374"
+                )
+
 class KeywordVirtinst(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2980,6 +2993,7 @@ class KeyDict(KeywordStore):
         self += KeywordDockerRunCommand()
         self += KeywordDockerRunImage()
         self += KeywordDockerRunArgs()
+        self += KeywordDockerRunSwarm()
         self += KeywordSnap()
         self += KeywordSnapof()
         self += KeywordContainerOrigin()
