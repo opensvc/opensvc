@@ -77,6 +77,7 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
          'nodes': svc.nodes,
          'drpnodes': svc.drpnodes,
          'encapnodes': svc.encapnodes,
+         'flex_primary': svc.flex_primary,
         }
     else:
         d = svc
@@ -97,6 +98,9 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     elif conf.has_option(s, o+"@encapnodes") and \
          nodename in d['encapnodes']:
         return f(s, o+"@encapnodes")
+    elif conf.has_option(s, o+"@flex_primary") and \
+         nodename == d['flex_primary']:
+        return f(s, o+"@flex_primary")
     elif conf.has_option(s, o):
         try:
             return f(s, o)
@@ -2888,14 +2892,15 @@ def build(name):
         if "mode" in defaults:
             svcmode = conf_get_string_scope({}, conf, 'DEFAULT', "mode")
 
+        d_nodes = {}
+
         if "encapnodes" in defaults:
-            encapnodes = set(conf_get_string_scope({}, conf, 'DEFAULT', "encapnodes").split())
+            encapnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split())
             encapnodes -= set([''])
             encapnodes = set(map(lambda x: x.lower(), encapnodes))
         else:
             encapnodes = set([])
-
-        d_nodes = {'encapnodes': encapnodes}
+        d_nodes['encapnodes'] = encapnodes
 
         if "nodes" in defaults:
             nodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split())
@@ -2903,6 +2908,7 @@ def build(name):
             nodes = set(map(lambda x: x.lower(), nodes))
         else:
             nodes = set([])
+        d_nodes['nodes'] = nodes
 
         if "drpnodes" in defaults:
             drpnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split())
@@ -2917,9 +2923,13 @@ def build(name):
             drpnodes -= set([''])
         else:
             drpnode = ''
-
-        d_nodes['nodes'] = nodes
         d_nodes['drpnodes'] = drpnodes
+
+        if "flex_primary" in defaults:
+            flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "flex_primary").lower()
+        else:
+            flex_primary = ''
+        d_nodes['flex_primary'] = flex_primary
 
         kwargs['disabled'] = get_disabled(conf, "", "")
 
@@ -2957,11 +2967,10 @@ def build(name):
         svc.drpnodes = drpnodes
     if not hasattr(svc, "drpnode"):
         svc.drpnode = drpnode
-
-    try:
-        svc.encapnodes = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'encapnodes').split())
-    except ex.OptNotFound:
-        pass
+    if not hasattr(svc, "encapnodes"):
+        svc.encapnodes = encapnodes
+    if not hasattr(svc, "flex_primary"):
+        svc.flex_primary = flex_primary
 
     try:
         svc.presnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'presnap_trigger').split()
@@ -3036,11 +3045,6 @@ def build(name):
         svc.log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
         del(svc)
         return None
-
-    try:
-        svc.flex_primary = conf_get_string_scope(svc, conf, 'DEFAULT', 'flex_primary')
-    except ex.OptNotFound:
-        svc.flex_primary = ''
 
     try:
         svc.flex_min_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_min_nodes')

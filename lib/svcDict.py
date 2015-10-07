@@ -104,7 +104,7 @@ class Keyword(object):
         if self.text:
             s += wrapper.fill("  help:        "+self.text)
         if self.at:
-            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ' or '@encapnodes '\n"
+            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ', '@flex_primary' or '@encapnodes '\n"
             s += "to specify a scope-specific value.\n"
             s += "You will be prompted for new values until you submit an empty value.\n"
         s += "\n"
