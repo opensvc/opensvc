@@ -241,7 +241,7 @@ class DockerLib(object):
         if not os.path.exists(self.docker_var_d):
             os.makedirs(self.docker_var_d)
         self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
-        if self.run_swarm is not None:
+        if hasattr(self, "run_swarm") and self.run_swarm is not None:
             if "://" not in self.run_swarm:
                 proto = "tcp://"
             else:
