@@ -175,7 +175,9 @@ def format_desc(svc=False, action=None):
     for s in sorted(action_desc):
         valid_actions = []
         for a in sorted(action_desc[s]):
-            if action is not None and not a.startswith(action):
+            if type(action) == str and not a.startswith(action):
+                continue
+            if type(action) == list and a not in action:
                 continue
             valid_actions.append(a)
         if len(valid_actions) == 0:

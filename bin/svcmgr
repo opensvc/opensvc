@@ -117,7 +117,7 @@ def _install_service(svcname, src_env):
 
 
 __ver = prog + " version " + version
-__usage = "%prog [options] command\n\n"
+__usage = "%prog <command> [options]\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
@@ -260,11 +260,13 @@ if len(sys.argv) > 1 and 'docker' in sys.argv:
     sys.argv = sys.argv[:pos+1]
 
 (options, args) = parser.parse_args()
+
 if action is not None:
     args = ['stonith']
 
 if len(args) is 0:
     node.close()
+    parser.set_usage(__usage + rcOptParser.format_desc(action=["start", "stop", "print_status"])+"\n\nOptions:\n  -h, --help       Display more actions and options\n")
     parser.error("Missing action")
 
 if action is None:
