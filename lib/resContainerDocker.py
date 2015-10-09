@@ -244,4 +244,5 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
     def provision(self):
         # docker resources are naturally provisioned
         self.start()
+        self.status(refresh=True)
 
