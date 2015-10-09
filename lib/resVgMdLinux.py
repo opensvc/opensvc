@@ -129,8 +129,11 @@ class Md(resDg.Dg):
             raise ex.excError("unable to find a devpath for md")
         return l[0]
 
+    def devpath(self):
+        return "/dev/md/"+self.uuid
+
     def assemble(self):
-        cmd = [self.mdadm, "--assemble", self.md_devpath(), "-u", self.uuid]
+        cmd = [self.mdadm, "--assemble", self.devpath(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret == 2:
             self.log.info("no changes were made to the array")
@@ -181,6 +184,8 @@ class Md(resDg.Dg):
         return False
 
     def is_up(self):
+        if not self.has_it():
+            return False
         state = self.detail_status()
         if state in ("clean", "active"):
             return True
@@ -203,7 +208,7 @@ class Md(resDg.Dg):
             return 0
         self.can_rollback = True
         self.assemble()
-        self._create_static_dev()
+        self._create_static_name()
 
     def do_stop(self):
         if not self.has_it():
@@ -211,8 +216,8 @@ class Md(resDg.Dg):
             return
         self.manage_stop()
 
-    def _create_static_dev(self):
-        self.create_static_dev(self.md_devpath())
+    def _create_static_name(self):
+        self.create_static_name(self.md_devpath())
 
     def devlist(self):
         if self.devs != set():
