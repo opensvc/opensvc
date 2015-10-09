@@ -76,7 +76,7 @@ class ProvisioningFsBtrfs(ProvisioningFs):
         path = os.path.join(mnt, subvol)
 
         if os.path.exists(path):
-            self.cleanup()
+            self.cleanup(mnt)
             return
 
         cmd = ["btrfs", "subvol", "create", path]
