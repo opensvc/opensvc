@@ -112,8 +112,8 @@ class syncHp3par(resSync.Sync):
             return False
         return True
 
-    def syncresync(self):
-        self.syncupdate()
+    def sync_resync(self):
+        self.sync_update()
 
     def syncswap(self):
         data = self.showrcopy()
@@ -124,19 +124,19 @@ class syncHp3par(resSync.Sync):
         self.setrcopygroup_reverse()
         self.startrcopygroup()
 
-    def syncupdate(self):
+    def sync_update(self):
         self.syncrcopygroup()
 
-    def syncrevert(self):
+    def sync_revert(self):
         self.setrcopygroup_revert()
 
-    def syncresume(self):
+    def sync_resume(self):
         self.startrcopygroup()
 
-    def syncquiesce(self):
+    def sync_quiesce(self):
         self.stoprcopygroup()
 
-    def syncbreak(self):
+    def sync_break(self):
         self.stoprcopygroup()
 
     def start(self):

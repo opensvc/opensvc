@@ -82,10 +82,10 @@ class SyncZfs(resSync.Sync):
             if 'delay_snap' in r.tags:
                 continue
             r.get_info()
-            if action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
-                if action == 'syncnodes' and self.target != ['nodes']:
+            if action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
+                if action == 'sync_nodes' and self.target != ['nodes']:
                     return
-                if action == 'syncdrp' and self.target != ['drpnodes']:
+                if action == 'sync_drp' and self.target != ['drpnodes']:
                     return
                 nb = 0
                 tgts = r.targets.copy()
@@ -150,13 +150,13 @@ class SyncZfs(resSync.Sync):
         self.get_src_info()
         self.get_dst_info()
 
-    def syncnodes(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+    def sync_nodes(self):
+        """alias to sync_update"""
+        self.sync_update()
 
-    def syncfullsync(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+    def sync_full(self):
+        """alias to sync_update"""
+        self.sync_update()
 
     def zfs_send_incremental(self, node):
         if self.recursive :  
@@ -236,7 +236,7 @@ class SyncZfs(resSync.Sync):
         self.remove_snap(dst, node)
         self.rename_snap(src, dst, node)
 
-    def syncupdate(self):
+    def sync_update(self):
         """
         test if service status is UP else return
         create the snap_tosend if not already created (during pre_action)

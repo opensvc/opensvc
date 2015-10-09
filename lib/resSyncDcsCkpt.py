@@ -145,7 +145,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
     def task_name(self, id):
         return '-'.join((self.svc.svcname, self.rid, id))
 
-    def syncbreak(self):
+    def sync_break(self):
         self.pause_checkpoint()
 
     def start(self):
@@ -153,10 +153,10 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
             return
         self.pause_checkpoint()
 
-    def syncresume(self):
+    def sync_resume(self):
         self.resume_checkpoint()
 
-    def syncupdate(self):
+    def sync_update(self):
         self.checkpoint()
 
     def refresh_svcstatus(self):

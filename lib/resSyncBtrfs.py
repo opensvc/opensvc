@@ -170,17 +170,17 @@ class SyncBtrfs(resSync.Sync):
 
     def get_targets(self, action=None):
         self.targets = set()
-        if 'nodes' in self.target and action in (None, 'syncnodes'):
+        if 'nodes' in self.target and action in (None, 'sync_nodes'):
             self.targets |= self.svc.nodes
-        if 'drpnodes' in self.target and action in (None, 'syncdrp'):
+        if 'drpnodes' in self.target and action in (None, 'sync_drp'):
             self.targets |= self.svc.drpnodes
         self.targets -= set([rcEnv.nodename])
 
-    def syncnodes(self):
-        self._syncupdate('syncnodes')
+    def sync_nodes(self):
+        self._sync_update('sync_nodes')
 
-    def syncdrp(self):
-        self._syncupdate('syncdrp')
+    def sync_drp(self):
+        self._sync_update('sync_drp')
 
     def sanity_checks(self):
         if not self.svc.force:
@@ -198,7 +198,7 @@ class SyncBtrfs(resSync.Sync):
                 self.log.info("won't sync this resource from a flex non-primary node")
             raise ex.excError
 
-    def syncfullsync(self):
+    def sync_full(self):
         self.init_src_btrfs()
         try:
             self.sanity_checks()
@@ -341,7 +341,7 @@ class SyncBtrfs(resSync.Sync):
         self.remove_snap(node)
         self.rename_snap(node)
 
-    def _syncupdate(self, action):
+    def _sync_update(self, action):
         self.init_src_btrfs()
         try:
             self.sanity_checks()

@@ -43,7 +43,7 @@ class syncNexenta(resSync.Sync):
         # only available from CLI ?
         pass
 
-    def syncupdate(self):
+    def sync_update(self):
         try:
             self.get_endpoints()
         except ex.excError as e:
@@ -92,7 +92,7 @@ class syncNexenta(resSync.Sync):
         if not done:
             self.log.info("%s head already unbound"%self.remote.head)
 
-    def syncresync(self):
+    def sync_resync(self):
         try:
             self.get_endpoints()
             self.bind()
@@ -102,7 +102,7 @@ class syncNexenta(resSync.Sync):
             self.log.error(str(e))
             raise ex.excError
 
-    def syncbreak(self):
+    def sync_break(self):
         try:
             self.get_endpoints()
             self.unbind()

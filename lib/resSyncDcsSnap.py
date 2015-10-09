@@ -155,7 +155,7 @@ Internal                 : False
         self.status_log('\n'.join(log))
         return rcStatus.UP
 
-    def syncresync(self):
+    def sync_resync(self):
         self.update_snap()
 
     def refresh_svcstatus(self):

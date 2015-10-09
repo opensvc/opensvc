@@ -145,7 +145,7 @@ class syncNecIsmSnap(resSync.Sync):
             return 1
         return 0
 
-    def syncresync(self):
+    def sync_resync(self):
         self.unlink()
         self.create()
         self.link()

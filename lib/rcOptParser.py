@@ -36,8 +36,6 @@ action_desc = {
       'stopip': 'unconfigure service ip addresses',
       'stopfs': 'shutdown container, umount service filesystems, deactivate logical volumes',
       'stopapp': 'execute service application stop script',
-      'syncnodes': 'send to peer nodes the service config files and additional files described in the config file. --force bypass the schedule check.',
-      'syncdrp': 'send to drp nodes the service config files and additional files described in the config file. --force bypass the schedule check.',
       'startcontainer': 'start the container resource',
       'stopcontainer': 'stop the container resource',
       'disable': 'disable resources passed through --rid in services passed through --service. Specifying no resource disables the whole service.',
@@ -63,18 +61,21 @@ action_desc = {
       'prstop': 'release scsi disks held by this service',
       'prstatus': 'report status of reservations on scsi disks held by this service',
       'restart': 'combo action, chaining stop-start',
-      'resync': 'combo action, chaining stop-syncresync-start',
-      'syncquiesce': 'trigger a storage hardware-assisted disk synchronization',
-      'syncbreak': 'split a storage hardware-assisted disk synchronization',
-      'syncsplit': 'split a EMC SRDF storage hardware-assisted disk synchronization',
-      'syncestablish': 'establish a EMC SRDF storage hardware-assisted disk synchronization',
-      'syncresync': 'like syncupdate, but not triggered by the scheduler (thus adapted for clone/snap operations)',
-      'syncfullsync': 'trigger a full copy of the volume to its target',
-      'syncupdate': 'trigger a one-time resync of the volume to its target',
-      'syncresume': 're-establish a broken storage hardware-assisted synchronization',
-      'syncrevert': 'revert to the pre-failover data (looses current data)',
-      'syncverify': 'trigger a one-time checksum-based verify of the volume and its target',
-      'syncall': 'combo action, chaining syncnodes-syncdrp-syncupdate.  --force bypass the schedule check.',
+      'resync': 'combo action, chaining stop-sync_resync-start',
+      'sync_nodes': 'send to peer nodes the service config files and additional files described in the config file.',
+      'sync_drp': 'send to drp nodes the service config files and additional files described in the config file.',
+      'sync_quiesce': 'trigger a storage hardware-assisted disk synchronization',
+      'sync_break': 'split a storage hardware-assisted disk synchronization',
+      'sync_split': 'split a EMC SRDF storage hardware-assisted disk synchronization',
+      'sync_establish': 'establish a EMC SRDF storage hardware-assisted disk synchronization',
+      'sync_resync': 'like sync_update, but not triggered by the scheduler (thus adapted for clone/snap operations)',
+      'sync_full': 'trigger a full copy of the volume to its target',
+      'sync_restore': 'trigger a restore of the sync resources data to their target path (DANGEROUS: make sure you understand before running this action).',
+      'sync_update': 'trigger a one-time resync of the volume to its target',
+      'sync_resume': 're-establish a broken storage hardware-assisted synchronization',
+      'sync_revert': 'revert to the pre-failover data (looses current data)',
+      'sync_verify': 'trigger a one-time checksum-based verify of the volume and its target',
+      'sync_all': 'combo action, chaining sync_nodes-sync_drp-sync_update.',
       'push': 'push service configuration to database',
       'push_appinfo': 'push service application launchers appinfo key/value pairs to database',
       'print_disklist': 'print service disk list',
@@ -151,6 +152,22 @@ action_desc = {
     },
 }
 
+deprecated_actions = [
+  "syncnodes",
+  "syncdrp",
+  "syncupdate",
+  "syncresync",
+  "syncall",
+  "syncfullsync",
+  "syncquiesce",
+  "syncsplit",
+  "syncestablish",
+  "syncrevert",
+  "syncbreak",
+  "syncresume",
+  "syncverify",
+]
+
 def format_desc(svc=False, action=None):
     from textwrap import TextWrapper
     wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
@@ -189,4 +206,5 @@ def supported_actions():
     a = []
     for s in action_desc:
         a += action_desc[s].keys()
+    a += deprecated_actions
     return a

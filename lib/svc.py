@@ -199,10 +199,10 @@ class Svc(Resource, Scheduler):
         self.sync_dblogger = True
         for action in self.scheduler_actions:
             try:
-                if action == "syncall":
-                    # save the action logging to the collector if syncall
+                if action == "sync_all":
+                    # save the action logging to the collector if sync_all
                     # is not needed
-                    self.sched_syncall()
+                    self.sched_sync_all()
                 else:
                     self.action(action)
             except:
@@ -214,7 +214,7 @@ class Svc(Resource, Scheduler):
         for r in self.get_resources("sync"):
             syncs += [SchedOpts(r.rid, fname=self.svcname+"_last_syncall_"+r.rid, schedule_option="sync_schedule")]
         if len(syncs) > 0:
-            self.scheduler_actions["syncall"] = syncs
+            self.scheduler_actions["sync_all"] = syncs
 
         apps = []
         for r in self.get_resources("app"):
@@ -435,7 +435,7 @@ class Svc(Resource, Scheduler):
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, sets, action):
-        if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
+        if action not in ["sync_nodes", "sync_drp", "sync_resync", "sync_update"]:
             return False
         for rs in sets:
             for r in rs.resources:
@@ -1953,7 +1953,7 @@ class Svc(Resource, Scheduler):
 
     def postsync(self):
         """ action triggered by a remote master node after
-            syncnodes and syncdrp. Typically make use of files
+            sync_nodes and sync_drp. Typically make use of files
             received in var/
         """
         self.all_set_action("postsync")
@@ -1964,7 +1964,7 @@ class Svc(Resource, Scheduler):
             local data.
         """
         """ action triggered by a remote master node after
-            syncnodes and syncdrp. Typically make use of files
+            sync_nodes and sync_drp. Typically make use of files
             received in var/.
             use a long waitlock timeout to give a chance to
             remote syncs to finish
@@ -2007,28 +2007,28 @@ class Svc(Resource, Scheduler):
         self.all_set_action("presync")
         self.presync_done = True
 
-    def syncnodes(self):
+    def sync_nodes(self):
         if not self.can_sync('nodes'):
             return
         self.presync()
-        self.sub_set_action("sync.rsync", "syncnodes")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncnodes")
-        self.sub_set_action("sync.docker", "syncnodes")
-        self.sub_set_action("sync.dds", "syncnodes")
-        self.sub_set_action("sync.symsrdfs", "syncnodes")
+        self.sub_set_action("sync.rsync", "sync_nodes")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_nodes")
+        self.sub_set_action("sync.docker", "sync_nodes")
+        self.sub_set_action("sync.dds", "sync_nodes")
+        self.sub_set_action("sync.symsrdfs", "sync_nodes")
         self.remote_postsync()
 
-    def syncdrp(self):
+    def sync_drp(self):
         if not self.can_sync('drpnodes'):
             return
         self.presync()
-        self.sub_set_action("sync.rsync", "syncdrp")
-        self.sub_set_action("sync.zfs", "syncdrp")
-        self.sub_set_action("sync.btrfs", "syncdrp")
-        self.sub_set_action("sync.docker", "syncdrp")
-        self.sub_set_action("sync.dds", "syncdrp")
-        self.sub_set_action("sync.symsrdfs", "syncdrp")
+        self.sub_set_action("sync.rsync", "sync_drp")
+        self.sub_set_action("sync.zfs", "sync_drp")
+        self.sub_set_action("sync.btrfs", "sync_drp")
+        self.sub_set_action("sync.docker", "sync_drp")
+        self.sub_set_action("sync.dds", "sync_drp")
+        self.sub_set_action("sync.symsrdfs", "sync_drp")
         self.remote_postsync()
 
     def syncswap(self):
@@ -2037,70 +2037,70 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.hp3par", "syncswap")
         self.sub_set_action("sync.nexenta", "syncswap")
 
-    def syncrevert(self):
-        self.sub_set_action("sync.hp3par", "syncrevert")
+    def sync_revert(self):
+        self.sub_set_action("sync.hp3par", "sync_revert")
 
-    def syncresume(self):
-        self.sub_set_action("sync.netapp", "syncresume")
-        self.sub_set_action("sync.symsrdfs", "syncresume")
-        self.sub_set_action("sync.hp3par", "syncresume")
-        self.sub_set_action("sync.dcsckpt", "syncresume")
-        self.sub_set_action("sync.nexenta", "syncresume")
+    def sync_resume(self):
+        self.sub_set_action("sync.netapp", "sync_resume")
+        self.sub_set_action("sync.symsrdfs", "sync_resume")
+        self.sub_set_action("sync.hp3par", "sync_resume")
+        self.sub_set_action("sync.dcsckpt", "sync_resume")
+        self.sub_set_action("sync.nexenta", "sync_resume")
 
-    def syncquiesce(self):
-        self.sub_set_action("sync.netapp", "syncquiesce")
-        self.sub_set_action("sync.nexenta", "syncquiesce")
+    def sync_quiesce(self):
+        self.sub_set_action("sync.netapp", "sync_quiesce")
+        self.sub_set_action("sync.nexenta", "sync_quiesce")
 
     def resync(self):
         self.stop()
-        self.syncresync()
+        self.sync_resync()
         self.start()
 
-    def syncresync(self):
-        self.sub_set_action("sync.netapp", "syncresync")
-        self.sub_set_action("sync.nexenta", "syncresync")
-        self.sub_set_action("sync.symclone", "syncresync")
-        self.sub_set_action("sync.rados", "syncresync")
-        self.sub_set_action("sync.ibmdssnap", "syncresync")
-        self.sub_set_action("sync.evasnap", "syncresync")
-        self.sub_set_action("sync.necismsnap", "syncresync")
-        self.sub_set_action("sync.dcssnap", "syncresync")
-        self.sub_set_action("sync.dds", "syncresync")
+    def sync_resync(self):
+        self.sub_set_action("sync.netapp", "sync_resync")
+        self.sub_set_action("sync.nexenta", "sync_resync")
+        self.sub_set_action("sync.symclone", "sync_resync")
+        self.sub_set_action("sync.rados", "sync_resync")
+        self.sub_set_action("sync.ibmdssnap", "sync_resync")
+        self.sub_set_action("sync.evasnap", "sync_resync")
+        self.sub_set_action("sync.necismsnap", "sync_resync")
+        self.sub_set_action("sync.dcssnap", "sync_resync")
+        self.sub_set_action("sync.dds", "sync_resync")
 
-    def syncbreak(self):
-        self.sub_set_action("sync.netapp", "syncbreak")
-        self.sub_set_action("sync.nexenta", "syncbreak")
-        self.sub_set_action("sync.symclone", "syncbreak")
-        self.sub_set_action("sync.hp3par", "syncbreak")
-        self.sub_set_action("sync.ibmdssnap", "syncbreak")
-        self.sub_set_action("sync.dcsckpt", "syncbreak")
+    def sync_break(self):
+        self.sub_set_action("sync.netapp", "sync_break")
+        self.sub_set_action("sync.nexenta", "sync_break")
+        self.sub_set_action("sync.symclone", "sync_break")
+        self.sub_set_action("sync.hp3par", "sync_break")
+        self.sub_set_action("sync.ibmdssnap", "sync_break")
+        self.sub_set_action("sync.dcsckpt", "sync_break")
 
-    def syncupdate(self):
+    def sync_update(self):
         if not self.can_sync():
             return
-        self.sub_set_action("sync.netapp", "syncupdate")
-        self.sub_set_action("sync.hp3par", "syncupdate")
-        self.sub_set_action("sync.nexenta", "syncupdate")
-        self.sub_set_action("sync.dcsckpt", "syncupdate")
-        self.sub_set_action("sync.dds", "syncupdate")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfssnap", "syncupdate")
-        self.sub_set_action("sync.s3", "syncupdate")
+        self.sub_set_action("sync.netapp", "sync_update")
+        self.sub_set_action("sync.hp3par", "sync_update")
+        self.sub_set_action("sync.nexenta", "sync_update")
+        self.sub_set_action("sync.dcsckpt", "sync_update")
+        self.sub_set_action("sync.dds", "sync_update")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfssnap", "sync_update")
+        self.sub_set_action("sync.s3", "sync_update")
 
-    def syncfullsync(self):
-        self.sub_set_action("sync.dds", "syncfullsync")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncfullsync")
-        self.sub_set_action("sync.s3", "syncfullsync")
+    def sync_full(self):
+        self.sub_set_action("sync.dds", "sync_full")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_full")
+        self.sub_set_action("sync.s3", "sync_full")
 
-    def syncsplit(self):
-        self.sub_set_action("sync.symsrdfs", "syncsplit")
+    def sync_split(self):
+        self.sub_set_action("sync.symsrdfs", "sync_split")
 
-    def syncestablish(self):
-        self.sub_set_action("sync.symsrdfs", "syncestablish")
+    def sync_establish(self):
+        self.sub_set_action("sync.symsrdfs", "sync_establish")
 
-    def syncverify(self):
-        self.sub_set_action("sync.dds", "syncverify")
+    def sync_verify(self):
+        self.sub_set_action("sync.dds", "sync_verify")
 
     def print_config(self):
         try:
@@ -2136,35 +2136,35 @@ class Svc(Resource, Scheduler):
         self.log.debug("nothing to sync for the service for now")
         return False
 
-    def sched_syncall(self):
-        data = self.skip_action("syncall", deferred_write_timestamp=True)
+    def sched_sync_all(self):
+        data = self.skip_action("sync_all", deferred_write_timestamp=True)
         if len(data["keep"]) == 0:
             return
-        self._sched_syncall(data["keep"])
+        self._sched_sync_all(data["keep"])
 
     @scheduler_fork
-    def _sched_syncall(self, sched_options):
-        self.action("syncall")
+    def _sched_sync_all(self, sched_options):
+        self.action("sync_all")
         self.sched_write_timestamp(sched_options)
 
-    def syncall(self):
+    def sync_all(self):
         if not self.can_sync():
             return
         if self.cron:
             self.sched_delay()
         self.presync()
-        self.sub_set_action("sync.rsync", "syncnodes")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncnodes")
-        self.sub_set_action("sync.docker", "syncnodes")
-        self.sub_set_action("sync.dds", "syncnodes")
-        self.sub_set_action("sync.symsrdfs", "syncnodes")
-        self.sub_set_action("sync.rsync", "syncdrp")
-        self.sub_set_action("sync.zfs", "syncdrp")
-        self.sub_set_action("sync.btrfs", "syncdrp")
-        self.sub_set_action("sync.docker", "syncdrp")
-        self.sub_set_action("sync.dds", "syncdrp")
-        self.syncupdate()
+        self.sub_set_action("sync.rsync", "sync_nodes")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_nodes")
+        self.sub_set_action("sync.docker", "sync_nodes")
+        self.sub_set_action("sync.dds", "sync_nodes")
+        self.sub_set_action("sync.symsrdfs", "sync_nodes")
+        self.sub_set_action("sync.rsync", "sync_drp")
+        self.sub_set_action("sync.zfs", "sync_drp")
+        self.sub_set_action("sync.btrfs", "sync_drp")
+        self.sub_set_action("sync.docker", "sync_drp")
+        self.sub_set_action("sync.dds", "sync_drp")
+        self.sync_update()
         self.remote_postsync()
 
     def push_service_status(self):
@@ -2342,6 +2342,26 @@ class Svc(Resource, Scheduler):
         self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
         return l
 
+    def action_translate(self, action):
+        translation = {
+          "syncnodes": "sync_nodes",
+          "syncdrp": "sync_drp",
+          "syncupdate": "sync_update",
+          "syncresync": "sync_resync",
+          "syncall": "sync_all",
+          "syncfullsync": "sync_full",
+          "syncquiesce": "sync_quiesce",
+          "syncsplit": "sync_split",
+          "syncestablish": "sync_establish",
+          "syncrevert": "sync_revert",
+          "syncbreak": "sync_break",
+          "syncresume": "sync_resume",
+          "syncverify": "sync_verify",
+        }
+        if action in translation:
+            return translation[action]
+        return action
+
     def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
         rids = self.expand_rids(rid)
         rids |= self.expand_subsets(subsets)
@@ -2360,6 +2380,8 @@ class Svc(Resource, Scheduler):
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
+
+        action = self.action_translate(action)
 
         actions_list_allow_on_frozen = [
           'get',
@@ -2399,9 +2421,9 @@ class Svc(Resource, Scheduler):
           'resource_monitor',
           'presync',
           'postsync',
-          'syncdrp',
-          'syncnodes',
-          'syncall'
+          'sync_drp',
+          'sync_nodes',
+          'sync_all'
         ]
         if action not in actions_list_allow_on_frozen and \
            not self.hb_handled_action(action) and \

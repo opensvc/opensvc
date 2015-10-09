@@ -349,25 +349,25 @@ class syncSymSrdfS(resSync.Sync):
         return rcStatus.WARN
 
     # SRDF split 
-    def syncsplit(self):
+    def sync_split(self):
         self.split()
 
     # SRDF suspend 
-    def syncquiesce(self):
+    def sync_quiesce(self):
         self.suspend()
 
     # SRDF swap
     def syncswap(self):
         self.swap()
 
-    def syncbreak(self):
+    def sync_break(self):
         self.split()
 
     # SRDF establish
-    def syncresync(self):
+    def sync_resync(self):
         self.establish()
 
-    def syncestablish(self):
+    def sync_establish(self):
         self.establish()
 
     def start(self):
@@ -406,7 +406,7 @@ class syncSymSrdfS(resSync.Sync):
                     self.log.warning("symrdf dg %s is RDF1 and partitioned."%self.symdg)
                     return
                 elif self.is_failedover_state():
-                    raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either syncsplit+syncestablish (ie loosing R2 data), or syncfailback (ie loosing R1 data)"%self.symdg)
+                    raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie loosing R2 data), or syncfailback (ie loosing R1 data)"%self.symdg)
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF1 and suspended."%self.symdg)
                     return

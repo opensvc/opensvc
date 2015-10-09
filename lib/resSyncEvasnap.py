@@ -222,7 +222,7 @@ class syncEvasnap(resSync.Sync):
             return rcStatus.WARN
         return rcStatus.UP
 
-    def syncresync(self):
+    def sync_resync(self):
         self.recreate()
 
     def refresh_svcstatus(self):

@@ -124,11 +124,11 @@ class syncS3(resSync.Sync):
         if not which("tar"):
             raise ex.excError("could not find tar binary")
 
-    def syncfullsync(self):
+    def sync_full(self):
         self.check_bin()
         self.tar_full()
 
-    def syncupdate(self):
+    def sync_update(self):
         self.check_bin()
         self.tar()
 

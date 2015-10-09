@@ -307,16 +307,24 @@ def add_triggers(svc, resource, conf, section):
     triggers = [
       'pre_stop', 'pre_start',
       'post_stop', 'post_start',
+      'pre_sync_nodes', 'pre_sync_drp',
+      'post_sync_nodes', 'post_sync_drp',
+      'post_sync_resync', 'pre_sync_resync',
+      'post_sync_update', 'pre_sync_update',
+    ]
+    compat_triggers = [
       'pre_syncnodes', 'pre_syncdrp',
       'post_syncnodes', 'post_syncdrp',
       'post_syncresync', 'pre_syncresync',
       'post_syncupdate', 'pre_syncupdate',
     ]
-    for trigger in triggers:
+    for trigger in triggers + compat_triggers:
         try:
             s = conf_get_string_scope(svc, conf, resource.rid, trigger)
         except ex.OptNotFound:
             continue
+        if trigger in compat_triggers:
+            trigger = trigger.replace("sync", "sync_")
         setattr(resource, trigger, s.split())
 
 def always_on_nodes_set(svc, conf, section):

@@ -1127,7 +1127,7 @@ class KeywordSyncS3FullSchedule(Keyword):
                   required=True,
                   example="* sun",
                   default="* sun",
-                  text="The schedule of full backups. syncupdate actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
+                  text="The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
                 )
 
 class KeywordSyncBtrfsSnapSubvol(Keyword):
@@ -2352,7 +2352,7 @@ class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
                   rtype="symclone",
                   required=True,
                   default=300,
-                  text="Seconds to wait for a precopy (syncresync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
+                  text="Seconds to wait for a precopy (sync_resync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
                 )
 
 class KeywordSyncSymcloneSymdevs(Keyword):
@@ -2400,7 +2400,7 @@ class KeywordSyncDdsTarget(Keyword):
                   rtype="dds",
                   required=True,
                   candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
-                  text="Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-syncupdate-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
+                  text="Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-sync_update-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
                 )
 
 class KeywordSyncDdsSnapSize(Keyword):
@@ -2800,61 +2800,61 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A script to execute after the resource stop action"
                 )
-        def kw_pre_syncnodes(resource):
+        def kw_pre_sync_nodes(resource):
             return Keyword(
                   section=resource,
-                  keyword="pre_syncnodes",
+                  keyword="pre_sync_nodes",
                   at=True,
-                  text="A script to execute before the resource syncnodes action"
+                  text="A script to execute before the resource sync_nodes action"
                 )
-        def kw_post_syncnodes(resource):
+        def kw_post_sync_nodes(resource):
             return Keyword(
                   section=resource,
-                  keyword="post_syncnodes",
+                  keyword="post_sync_nodes",
                   at=True,
-                  text="A script to execute after the resource syncnodes action"
+                  text="A script to execute after the resource sync_nodes action"
                 )
-        def kw_pre_syncdrp(resource):
+        def kw_pre_sync_drp(resource):
             return Keyword(
                   section=resource,
-                  keyword="pre_syncdrp",
+                  keyword="pre_sync_drp",
                   at=True,
-                  text="A script to execute before the resource syncdrp action"
+                  text="A script to execute before the resource sync_drp action"
                 )
-        def kw_post_syncdrp(resource):
+        def kw_post_sync_drp(resource):
             return Keyword(
                   section=resource,
-                  keyword="post_syncdrp",
+                  keyword="post_sync_drp",
                   at=True,
-                  text="A script to execute after the resource syncdrp action"
+                  text="A script to execute after the resource sync_drp action"
                 )
-        def kw_pre_syncresync(resource):
+        def kw_pre_sync_resync(resource):
             return Keyword(
                   section=resource,
-                  keyword="pre_syncresync",
+                  keyword="pre_sync_resync",
                   at=True,
-                  text="A script to execute before the resource syncresync action"
+                  text="A script to execute before the resource sync_resync action"
                 )
-        def kw_post_syncresync(resource):
+        def kw_post_sync_resync(resource):
             return Keyword(
                   section=resource,
-                  keyword="post_syncresync",
+                  keyword="post_sync_resync",
                   at=True,
-                  text="A script to execute after the resource syncresync action"
+                  text="A script to execute after the resource sync_resync action"
                 )
-        def kw_pre_syncupdate(resource):
+        def kw_pre_sync_update(resource):
             return Keyword(
                   section=resource,
-                  keyword="pre_syncupdate",
+                  keyword="pre_sync_update",
                   at=True,
-                  text="A script to execute before the resource syncupdate action"
+                  text="A script to execute before the resource sync_update action"
                 )
-        def kw_post_syncupdate(resource):
+        def kw_post_sync_update(resource):
             return Keyword(
                   section=resource,
-                  keyword="post_syncupdate",
+                  keyword="post_sync_update",
                   at=True,
-                  text="A script to execute after the resource syncupdate action"
+                  text="A script to execute after the resource sync_update action"
                 )
 
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
@@ -2869,14 +2869,14 @@ class KeyDict(KeywordStore):
             self += kw_post_start(r)
             self += kw_pre_stop(r)
             self += kw_post_stop(r)
-            self += kw_pre_syncnodes(r)
-            self += kw_post_syncnodes(r)
-            self += kw_pre_syncdrp(r)
-            self += kw_post_syncdrp(r)
-            self += kw_pre_syncresync(r)
-            self += kw_post_syncresync(r)
-            self += kw_pre_syncupdate(r)
-            self += kw_post_syncupdate(r)
+            self += kw_pre_sync_nodes(r)
+            self += kw_post_sync_nodes(r)
+            self += kw_pre_sync_drp(r)
+            self += kw_post_sync_drp(r)
+            self += kw_pre_sync_resync(r)
+            self += kw_post_sync_resync(r)
+            self += kw_pre_sync_update(r)
+            self += kw_post_sync_update(r)
 
         self += KeywordMode()
         self += KeywordPkgName()

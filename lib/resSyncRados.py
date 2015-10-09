@@ -175,10 +175,10 @@ class syncRadosSnap(resSync.Sync):
 
         return r
 
-    def syncupdate(self):
+    def sync_update(self):
         self.recreate()
 
-    def syncresync(self):
+    def sync_resync(self):
         self.recreate()
 
     def __init__(self,

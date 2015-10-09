@@ -134,7 +134,7 @@ class syncBtrfsSnap(resSync.Sync):
             return rcStatus.UP
         return rcStatus.WARN
 
-    def _syncupdate(self, s):
+    def _sync_update(self, s):
         try:
             label, subvol = s.split(":")
         except:
@@ -143,9 +143,9 @@ class syncBtrfsSnap(resSync.Sync):
         self.create_snap(label, subvol)
         self.remove_snap(label, subvol)
 
-    def syncupdate(self):
+    def sync_update(self):
         for subvol in self.subvol:
-            self._syncupdate(subvol)
+            self._sync_update(subvol)
 
     def __str__(self):
         return "%s subvol=%s keep=%s" % (resSync.Sync.__str__(self), str(self.subvol), str(self.keep))

@@ -44,12 +44,12 @@ class syncDds(resSync.Sync):
             if not r.svc_syncable():
                 return
             r.get_info()
-            if action == 'syncfullsync':
+            if action == 'sync_full':
                 r.create_snap1()
-            elif action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
-                if action == 'syncnodes' and self.target != ['nodes']:
+            elif action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
+                if action == 'sync_nodes' and self.target != ['nodes']:
                     return
-                if action == 'syncdrp' and self.target != ['drpnodes']:
+                if action == 'sync_drp' and self.target != ['drpnodes']:
                     return
                 r.get_info()
                 r.get_snap1_uuid()
@@ -155,7 +155,7 @@ class syncDds(resSync.Sync):
 
         return True
 
-    def syncfullsync(self):
+    def sync_full(self):
         if not self.svc_syncable():
             return
         for n in self.targets:
@@ -284,17 +284,17 @@ class syncDds(resSync.Sync):
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
 
-    def syncnodes(self):
+    def sync_nodes(self):
         if self.target != ['nodes']:
             return
-        self.syncupdate()
+        self.sync_update()
 
-    def syncdrp(self):
+    def sync_drp(self):
         if self.target != ['drpnodes']:
             return
-        self.syncupdate()
+        self.sync_update()
 
-    def syncupdate(self):
+    def sync_update(self):
         if not self.svc_syncable():
             return
         for n in self.targets:
@@ -317,7 +317,7 @@ class syncDds(resSync.Sync):
         else:
             self.checksums[node] = o[0]
 
-    def syncverify(self):
+    def sync_verify(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't verify this resource for a service not up")

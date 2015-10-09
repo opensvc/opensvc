@@ -178,14 +178,14 @@ class syncIbmdsSnap(resSync.Sync):
         self.status_log("Last sync on %s"%self.last)
         return rcStatus.UP
 
-    def syncbreak(self):
+    def sync_break(self):
         pass
 
-    def syncresync(self):
+    def sync_resync(self):
         self.resyncflash()
 
     def start(self):
-        self.syncbreak()
+        self.sync_break()
 
     def __init__(self,
                  rid=None,

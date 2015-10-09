@@ -93,9 +93,9 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
 
     def get_targets(self, action=None):
         self.targets = set()
-        if 'nodes' in self.target and action in (None, 'syncnodes'):
+        if 'nodes' in self.target and action in (None, 'sync_nodes'):
             self.targets |= self.svc.nodes
-        if 'drpnodes' in self.target and action in (None, 'syncdrp'):
+        if 'drpnodes' in self.target and action in (None, 'sync_drp'):
             self.targets |= self.svc.drpnodes
         self.targets -= set([rcEnv.nodename])
         for node in self.targets.copy():
@@ -118,11 +118,11 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
     def can_sync(self, target=None):
         return True
 
-    def syncnodes(self):
-        self._syncupdate('syncnodes')
+    def sync_nodes(self):
+        self._sync_update('sync_nodes')
 
-    def syncdrp(self):
-        self._syncupdate('syncdrp')
+    def sync_drp(self):
+        self._sync_update('sync_drp')
 
     def sanity_checks(self):
         if not self.svc.force:
@@ -136,7 +136,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
            self.svc.flex_primary != rcEnv.nodename:
             raise ex.excError("won't sync this resource from a flex non-primary node")
 
-    def _syncupdate(self, action):
+    def _sync_update(self, action):
         try:
             self.sanity_checks()
         except ex.excError:

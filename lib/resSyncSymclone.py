@@ -222,14 +222,14 @@ class syncSymclone(resSync.Sync):
         else:
             return rcStatus.UP
 
-    def syncbreak(self):
+    def sync_break(self):
         self.activate()
 
-    def syncresync(self):
+    def sync_resync(self):
         self.recreate()
 
     def start(self):
-        self.syncbreak()
+        self.sync_break()
 
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))

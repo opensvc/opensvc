@@ -104,7 +104,7 @@ class syncNetapp(resSync.Sync):
             return True
         return False
 
-    def syncresync(self):
+    def sync_resync(self):
         (ret, buff, err) = self.cmd_slave(['snapmirror', 'resync', '-f', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
@@ -150,7 +150,7 @@ class syncNetapp(resSync.Sync):
         if ret != 0:
             raise ex.excError(err)
 
-    def syncupdate(self):
+    def sync_update(self):
         s = self.snapmirror_status(self.slave())
         if not self.can_sync(s=s):
             return
@@ -167,7 +167,7 @@ class syncNetapp(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
-    def syncresume(self):
+    def sync_resume(self):
         s = self.snapmirror_status(self.slave())
         if s['state'] != "Quiesced":
             self.log.info("resume not applicable: not quiesced")
@@ -176,7 +176,7 @@ class syncNetapp(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
-    def syncquiesce(self):
+    def sync_quiesce(self):
         s = self.snapmirror_status(self.slave())
         if s['state'] == "Quiesced":
             self.log.info("already quiesced")
@@ -192,7 +192,7 @@ class syncNetapp(resSync.Sync):
             raise ex.excError
         self.wait_quiesce()
 
-    def syncbreak(self):
+    def sync_break(self):
         (ret, buff, err) = self.cmd_slave(['snapmirror', 'break', self.slave()+':'+self.path_short], info=True)
         if ret != 0:
             raise ex.excError
@@ -253,7 +253,7 @@ class syncNetapp(resSync.Sync):
         s = self.snapmirror_status(self.slave())
         if s['state'] != "Broken-off":
             try:
-                self.syncquiesce()
+                self.sync_quiesce()
             except:
                 if self.svc.force:
                     self.log.warning("force mode is on. bypass failed quiesce.")
@@ -261,7 +261,7 @@ class syncNetapp(resSync.Sync):
                 else:
                     self.log.error("set force mode to bypass")
                     raise ex.excError
-            self.syncbreak()
+            self.sync_break()
         if rcEnv.host_mode == "PRD":
             self.syncswap()
 

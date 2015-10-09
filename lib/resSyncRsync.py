@@ -312,7 +312,7 @@ class Rsync(resSync.Sync):
             if self.skip or r.is_disabled():
                 continue
             rtargets[i] = set([])
-            if action == "syncnodes":
+            if action == "sync_nodes":
                 rtargets[i] |= r.nodes_to_sync('nodes')
             else:
                 rtargets[i] |= r.nodes_to_sync('drpnodes')
@@ -353,7 +353,7 @@ class Rsync(resSync.Sync):
         if hasattr(rset, 'snaps'):
             rset.snaps.snap_cleanup(rset)
 
-    def syncnodes(self):
+    def sync_nodes(self):
         try:
             self.sync("nodes")
         except ex.syncNoFilesToSync:
@@ -365,7 +365,7 @@ class Rsync(resSync.Sync):
                 self.log.info("no node to sync")
             pass
 
-    def syncdrp(self):
+    def sync_drp(self):
         try:
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
