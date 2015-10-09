@@ -295,7 +295,7 @@ def add_scsireserv(svc, resource, conf, section):
     kwargs = {}
     kwargs['rid'] = resource.rid
     kwargs['tags'] = resource.tags
-    kwargs['disks'] = resource.disklist()
+    kwargs['peer_resource'] = resource
     kwargs['no_preempt_abort'] = pa
     kwargs['disabled'] = resource.is_disabled()
     kwargs['optional'] = resource.is_optional()

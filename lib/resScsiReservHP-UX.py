@@ -57,7 +57,7 @@ def mpath_to_path(disks):
 class ScsiReserv(resScsiReserv.ScsiReserv):
     def __init__(self,
                  rid=None,
-                 disks=set([]),
+                 peer_resource=None,
                  no_preempt_abort=False,
                  disabled=False,
                  tags=set([]),
@@ -65,15 +65,19 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                  subset=None):
         resScsiReserv.ScsiReserv.__init__(self,
                                           rid=rid,
-                                          disks=disks,
+                                          peer_resource=peer_resource,
                                           no_preempt_abort=no_preempt_abort,
                                           disabled=disabled,
                                           tags=tags,
                                           optional=optional,
                                           subset=subset)
         self.prtype = 'wero'
-        self.disks = mpath_to_path(disks)
         self.leg_mpath_disable()
+
+    def get_disks(self):
+        if len(self.disks) > 0:
+            return
+        self.disks = mpath_to_path(self.peer_resource.disklist())
 
     def scsireserv_supported(self):
         if which('scu') is None:

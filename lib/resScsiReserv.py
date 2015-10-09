@@ -37,24 +37,18 @@ class ScsiReserv(Res.Resource):
     """
     def __init__(self,
                  rid=None,
-                 disks=set([]),
+                 peer_resource=None,
                  no_preempt_abort=False,
                  disabled=False,
                  tags=set([]),
                  optional=False,
                  subset=None):
         self.no_preempt_abort = no_preempt_abort
-        self.disks = disks
-        if len(disks) == 0:
-            self.label = 'preserv 0 scsi disk'
-        elif len(', '.join(disks)) > 248:
-            self.label = 'preserv '+', '.join(disks)[0:248]
-            self.label += " ..."
-        else:
-            self.label = ', '.join(disks)
+        self.disks = set([])
         self.preempt_timeout = 10
         self.prtype = '5'
         self.hostid = None
+        self.peer_resource = peer_resource
         Res.Resource.__init__(self,
                               rid=rid+"pr",
                               type="disk.scsireserv",
@@ -62,6 +56,16 @@ class ScsiReserv(Res.Resource):
                               tags=tags,
                               optional=optional,
                               subset=subset)
+
+    def set_label(self):
+        self.get_disks()
+        if len(self.disks) == 0:
+            self.label = 'preserv 0 scsi disk'
+        elif len(', '.join(self.disks)) > 248:
+            self.label = 'preserv '+', '.join(self.disks)[0:248]
+            self.label += " ..."
+        else:
+            self.label = ', '.join(self.disks)
 
     def get_hostid(self):
         if self.hostid:
@@ -106,7 +110,13 @@ class ScsiReserv(Res.Resource):
             raise ex.excError
         return self._disk_preempt_reservation(disk, oldkey)
 
+    def get_disks(self):
+        if len(self.disks) > 0:
+            return
+        self.disks = self.peer_resource.disklist()
+
     def ack_all_unit_attention(self):
+        self.get_disks()
         for d in self.disks:
             try:
                 if self.ack_unit_attention(d) != 0:
@@ -117,6 +127,7 @@ class ScsiReserv(Res.Resource):
 
     def register(self):
         self.log.debug("starting register. prkey %s"%self.hostid)
+        self.get_disks()
         r = 0
         for d in self.disks:
             try:
@@ -128,6 +139,7 @@ class ScsiReserv(Res.Resource):
 
     def unregister(self):
         self.log.debug("starting unregister. prkey %s"%self.hostid)
+        self.get_disks()
         r = 0
         for d in self.disks:
             try:
@@ -151,6 +163,7 @@ class ScsiReserv(Res.Resource):
 
     def reserve(self):
         self.log.debug("starting reserve. prkey %s"%self.hostid)
+        self.get_disks()
         r = 0
         for d in self.disks:
             try:
@@ -169,6 +182,7 @@ class ScsiReserv(Res.Resource):
 
     def release(self):
         self.log.debug("starting release. prkey %s"%self.hostid)
+        self.get_disks()
         r = 0
         for d in self.disks:
             try:
@@ -182,6 +196,7 @@ class ScsiReserv(Res.Resource):
 
     def clear(self):
         self.log.debug("starting clear. prkey %s"%self.hostid)
+        self.get_disks()
         r = 0
         for d in self.disks:
             try:
@@ -242,6 +257,7 @@ class ScsiReserv(Res.Resource):
         return self.checkreserv()
 
     def _status(self, verbose=False):
+        self.set_label()
         try:
             self.get_hostid()
         except Exception as e:
@@ -254,6 +270,9 @@ class ScsiReserv(Res.Resource):
     def start(self):
         self.get_hostid()
         if not self.scsireserv_supported():
+            return
+        if self._status() == rcStatus.UP:
+            self.log.info("already started")
             return
         self.can_rollback = True
         if self.scsireserv() != 0:

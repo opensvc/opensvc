@@ -31,16 +31,28 @@ from subprocess import *
 import resScsiReserv
 
 class ScsiReserv(resScsiReserv.ScsiReserv):
-    def __init__(self, rid=None, disks=set([]), no_preempt_abort=False,
-                 disabled=False, tags=set([]), optional=False):
-        resScsiReserv.ScsiReserv.__init__(self, rid=rid, disks=disks,
+    def __init__(self,
+                 rid=None,
+                 peer_resource=None,
+                 no_preempt_abort=False,
+                 disabled=False,
+                 tags=set([]),
+                 optional=False):
+        resScsiReserv.ScsiReserv.__init__(self,
+                                          rid=rid,
+                                          peer_resource=peer_resource,
                                           no_preempt_abort=no_preempt_abort,
-                                          disabled=disabled, tags=tags,
+                                          disabled=disabled,
+                                          tags=tags,
                                           optional=optional)
         self.prtype = 'wero'
-        self.disks = map(lambda x: str(x.replace('/disk/', '/rdisk/')), disks)
         self.disk_id = {}
         self.itn = {}
+
+    def get_disks(self):
+        if len(self.disks) > 0:
+            return
+        self.disks = map(lambda x: str(x.replace('/disk/', '/rdisk/')), self.peer_resource.disklist())
 
     def scsireserv_supported(self):
         if which('scu') is None:
