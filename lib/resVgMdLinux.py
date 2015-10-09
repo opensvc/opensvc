@@ -218,7 +218,10 @@ class Md(resDg.Dg):
         if self.devs != set():
             return self.devs
 
-        devpath = self.md_devpath()
+        try:
+            devpath = self.md_devpath()
+        except ex.excError as e:
+            return self.devlist_inactive()
         if os.path.exists(devpath):
             self.devs = self.devlist_active()
         else:
