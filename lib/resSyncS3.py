@@ -33,6 +33,7 @@ class syncS3(resSync.Sync):
                  src=[],
                  options=[],
                  bucket=None,
+                 snar=None,
                  full_schedule="* sun",
                  sync_max_delay=None,
                  schedule=None,
@@ -55,12 +56,14 @@ class syncS3(resSync.Sync):
         self.bucket = bucket
         self.options = options
         self.full_schedule = full_schedule
+        self.snar = snar
 
     def on_add(self):
         self.prefix = "/" + self.svc.svcname + "/" + self.rid.replace("#",".")
         dst = "s3://"+self.bucket + self.prefix
         self.label += " to " + dst
-        self.snar = os.path.join(rcEnv.pathvar, self.svc.svcname, self.rid.replace("#", "."))+".snar"
+        if self.snar is None:
+            self.snar = os.path.join(rcEnv.pathvar, self.svc.svcname, self.rid.replace("#", "."))+".snar"
 
     def sync_basename(self, n):
         return os.path.basename(self.sync_fullname(n))

@@ -2184,6 +2184,11 @@ def add_syncs_s3(svc, conf, s):
         pass
 
     try:
+        kwargs['snar'] = conf_get_string_scope(svc, conf, s, 'snar')
+    except ex.OptNotFound:
+        pass
+
+    try:
         kwargs['bucket'] = conf_get_string_scope(svc, conf, s, 'bucket')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bucket set" % s)

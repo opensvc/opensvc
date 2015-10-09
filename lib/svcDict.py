@@ -1073,6 +1073,20 @@ class KeywordSyncDockerTarget(Keyword):
                   text="Destination nodes of the sync."
                 )
 
+class KeywordSyncS3Snar(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="snar",
+                  rtype="s3",
+                  order=10,
+                  at=True,
+                  required=False,
+                  example="/srv/mysvc/var/sync.1.snar",
+                  text="The GNU tar snar file full path. The snar file stored the GNU tar metadata needed to do an incremental tarball. If the service fails over shared disks the snar file should be stored there, so the failover node can continue the incremental cycle."
+                )
+
 class KeywordSyncS3Src(Keyword):
     def __init__(self):
         Keyword.__init__(
