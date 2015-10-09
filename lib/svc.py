@@ -2093,6 +2093,9 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.btrfs", "sync_full")
         self.sub_set_action("sync.s3", "sync_full")
 
+    def sync_restore(self):
+        self.sub_set_action("sync.s3", "sync_restore")
+
     def sync_split(self):
         self.sub_set_action("sync.symsrdfs", "sync_split")
 
@@ -2350,6 +2353,7 @@ class Svc(Resource, Scheduler):
           "syncresync": "sync_resync",
           "syncall": "sync_all",
           "syncfullsync": "sync_full",
+          "syncrestore": "sync_restore",
           "syncquiesce": "sync_quiesce",
           "syncsplit": "sync_split",
           "syncestablish": "sync_establish",

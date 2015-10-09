@@ -288,6 +288,27 @@ class syncS3(resSync.Sync):
             if len(err) > 0:
                 self.log.error(err)
 
+    def do_tar_x(self, n=None):
+        self.set_creds()
+        paths = []
+        cmd1 = ["gof3r", "get", "-b", self.bucket, "-k", self.sync_fullname(n)]
+        p1 = Popen(cmd1, stdout=PIPE, stderr=PIPE)
+        cmd2 = ["tar", "xzf", "-", "-g", self.snar, "-C", "/"]
+        p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        self.log.info(" ".join(cmd1) + " | " + " ".join(cmd2))
+        out, err = p2.communicate()
+        self.unset_creds()
+        if len(out) > 0:
+            self.log.info(out)
+        if p2.returncode != 0:
+            if len(err) > 0:
+                self.log.error(err)
+
+    def sync_restore(self):
+        n = self.get_n_incr()
+        for i in range(n):
+            self.do_tar_x(i)
+
     def __str__(self):
         return "%s src=%s bucket=%s" % (resSync.Sync.__str__(self), str(self.src), str(self.bucket))
 
