@@ -140,6 +140,7 @@ class Svc(Resource, Scheduler):
                              "sync.evasnap",
                              "sync.necismsnap",
                              "sync.btrfssnap",
+                             "sync.s3",
                              "sync.dcssnap",
                              "sync.dcsckpt",
                              "sync.dds",
@@ -2084,11 +2085,13 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dds", "syncupdate")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfssnap", "syncupdate")
+        self.sub_set_action("sync.s3", "syncupdate")
 
     def syncfullsync(self):
         self.sub_set_action("sync.dds", "syncfullsync")
         self.sub_set_action("sync.zfs", "syncnodes")
         self.sub_set_action("sync.btrfs", "syncfullsync")
+        self.sub_set_action("sync.s3", "syncfullsync")
 
     def syncsplit(self):
         self.sub_set_action("sync.symsrdfs", "syncsplit")

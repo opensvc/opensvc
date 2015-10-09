@@ -1053,7 +1053,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "btrfssnap", "rados"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -1071,6 +1071,63 @@ class KeywordSyncDockerTarget(Keyword):
                   default=None,
                   candidates=["nodes", "drpnodes", "nodes drpnodes"],
                   text="Destination nodes of the sync."
+                )
+
+class KeywordSyncS3Src(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="src",
+                  rtype="s3",
+                  order=10,
+                  at=True,
+                  required=True,
+                  example="/srv/mysvc/tools /srv/mysvc/apps*",
+                  text="Source globs as passed as paths to archive to a tar command."
+                )
+
+class KeywordSyncS3Options(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="options",
+                  rtype="s3",
+                  order=10,
+                  at=True,
+                  required=False,
+                  example="--exclude *.pyc",
+                  text="Options passed to GNU tar for archiving."
+                )
+
+class KeywordSyncS3Bucket(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="bucket",
+                  rtype="s3",
+                  order=10,
+                  at=True,
+                  required=True,
+                  example="opensvc-myapp",
+                  text="The name of the S3 bucket to upload the backup to."
+                )
+
+class KeywordSyncS3FullSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="full_schedule",
+                  rtype="s3",
+                  order=10,
+                  at=True,
+                  required=True,
+                  example="* sun",
+                  default="* sun",
+                  text="The schedule of full backups. syncupdate actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
                 )
 
 class KeywordSyncBtrfsSnapSubvol(Keyword):
@@ -2865,6 +2922,10 @@ class KeyDict(KeywordStore):
         self += KeywordSyncBtrfsRecursive()
         self += KeywordSyncBtrfsSnapSubvol()
         self += KeywordSyncBtrfsSnapKeep()
+        self += KeywordSyncS3Src()
+        self += KeywordSyncS3Options()
+        self += KeywordSyncS3Bucket()
+        self += KeywordSyncS3FullSchedule()
         self += KeywordSyncZfsSrc()
         self += KeywordSyncZfsDst()
         self += KeywordSyncZfsTarget()

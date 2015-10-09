@@ -1932,6 +1932,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('necismsnap', svc, conf)
     add_syncs_resources('btrfssnap', svc, conf)
+    add_syncs_resources('s3', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
     add_syncs_resources('dcsckpt', svc, conf)
     add_syncs_resources('dds', svc, conf)
@@ -2158,6 +2159,42 @@ def add_syncs_dcssnap(svc, conf, s):
     except:
         sc = __import__('resSyncDcsSnap')
     r = sc.syncDcsSnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_s3(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['full_schedule'] = conf_get_string_scope(svc, conf, s, 'full_schedule')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['options'] = conf_get_string_scope(svc, conf, s, 'options').split()
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['bucket'] = conf_get_string_scope(svc, conf, s, 'bucket')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have bucket set" % s)
+        return
+
+    try:
+        kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have src set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    sc = __import__('resSyncS3')
+    r = sc.syncS3(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
