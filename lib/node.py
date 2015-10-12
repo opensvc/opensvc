@@ -343,6 +343,10 @@ class Node(Svc, Freezer, Scheduler):
         except:
             print("failed to write new %s"%self.nodeconf, file=sys.stderr)
             raise Exception()
+        try:
+            os.chmod(self.nodeconf, 0600)
+        except:
+            pass
         self.load_config()
 
     def purge_status_last(self):
