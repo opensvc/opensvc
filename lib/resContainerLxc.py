@@ -349,6 +349,31 @@ class Lxc(resContainer.Container):
             self.log.error("lxc install prefix not found")
             raise ex.excInitError
 
+    def operational(self):
+        if not resContainer.Container.operational(self):
+            return False
+
+        cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
+        out, err, ret = justcall(cmd)
+        if ret == 1:
+            # not a systemd container. no more checking.
+            return True
+
+        # systemd on-demand loading will let us start the encap service before
+        # the network is fully initialized, causing start issues with nfs mounts
+        # and listening apps.
+        # => wait for systemd default target to become active
+        cmd = self.runmethod + ['systemctl', 'is-active', 'default.target']
+        out, err, ret = justcall(cmd)
+        if ret == 1:
+            # if systemctl is-active fails, no point in waiting more
+            return True
+        if out.strip() == "active":
+            return True
+
+        # ok, wait some more
+        return False
+
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
