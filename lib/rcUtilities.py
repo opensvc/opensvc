@@ -167,9 +167,9 @@ def call(argv=['/bin/false'],
             if ret != 0:
                 log.error('stderr:\n' + buff[1])
             elif warn_to_info:
-                log.info('command succesful but stderr:\n' + buff[1])
+                log.info('command successful but stderr:\n' + buff[1])
             else:
-                log.warning('command succesful but stderr:\n' + buff[1])
+                log.warning('command successful but stderr:\n' + buff[1])
         elif errdebug:
             log.debug('stderr:\n' + buff[1])
     if not empty_string(buff[0]):
