@@ -2292,10 +2292,12 @@ class Svc(Resource, Scheduler):
                 continue
             r.skip = True
 
-    def setup_environ(self):
+    def setup_environ(self, action=None):
         """ Those are available to startup scripts and triggers
         """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
+        if action:
+            os.environ['OPENSVC_ACTION'] = action
         for r in self.get_resources():
             r.setup_environ()
 
@@ -2453,7 +2455,7 @@ class Svc(Resource, Scheduler):
                 self.log.debug("purge all resource status file caches")
                 self.purge_status_last()
 
-        self.setup_environ()
+        self.setup_environ(action=action)
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=rids, xtags=xtags)
         actions_list_no_log = [
