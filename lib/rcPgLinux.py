@@ -292,7 +292,7 @@ def _freezer(o, a, cgp):
             buff = f.write(a)
     except Exception as e:
         raise ex.excError(str(e))
-    log.info("%s on %s submitted succesfully" % (a, path))
+    log.info("%s on %s submitted successfully" % (a, path))
 
     # el6 kernel does not freeze child cgroups, as later kernels do
     for _cgp in glob.glob(cgp+"/*/*/freezer.state"):
