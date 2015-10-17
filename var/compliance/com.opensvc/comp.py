@@ -19,6 +19,7 @@ import sys
 import os
 import re
 import json
+import urllib2, base64
 
 RET_OK = 0
 RET_ERR = 1
@@ -27,22 +28,13 @@ RET_NA = 2
 RET = RET_OK
 
 class NotApplicable(Exception):
-     def __init__(self, s=""):
-         self.s = s
-     def __str__(self):
-         return self.s
+     pass
 
 class Unfixable(Exception):
-     def __init__(self, s=""):
-         self.s = s
-     def __str__(self):
-         return self.s
+     pass
 
 class ComplianceError(Exception):
-     def __init__(self, s=""):
-         self.s = s
-     def __str__(self):
-         return self.s
+     pass
 
 class CompObject(object):
     def __init__(self,
@@ -147,12 +139,118 @@ class CompObject(object):
             v = v.replace(m, _v)
         return v
 
+    def collector_api(self):
+        if hasattr(self, "collector_api_cache"):
+            return self.collector_api_cache
+        import platform
+        sysname, nodename, x, x, machine, x = platform.uname()
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+        config = ConfigParser.RawConfigParser({})
+        config.read("/opt/opensvc/etc/node.conf")
+        data = {}
+        data["username"] = nodename
+        data["password"] = config.get("node", "uuid")
+        data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        self.collector_api_cache = data
+        return self.collector_api_cache
+
+    def collector_url(self):
+        api = self.collector_api()
+        s = "%s:%s@" % (api["username"], api["password"])
+        url = api["url"].replace("https://", "https://"+s)
+        url = url.replace("http://", "http://"+s)
+        return url
+
+    def collector_request(self, path):
+        api = self.collector_api()
+        url = api["url"]
+        request = urllib2.Request(url+path)
+        base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
+        request.add_header("Authorization", "Basic %s" % base64string)
+        return request
+
+    def collector_rest_get(self, path):
+        api = self.collector_api()
+        request = self.collector_request(path)
+        if api["url"].startswith("https"):
+            import ssl
+            context = ssl._create_unverified_context()
+        else:
+            raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
+        try:
+            f = urllib2.urlopen(request, context=context)
+        except urllib2.HTTPError as e:
+            try:
+                err = json.loads(e.read())["error"]
+                e = ComplianceError(err)
+            except:
+                pass
+            raise e
+        import json
+        data = json.loads(f.read())
+        f.close()
+        return data
+
+    def collector_rest_get_to_file(self, path, fpath):
+        api = self.collector_api()
+        request = self.collector_request(path)
+        if api["url"].startswith("https"):
+            import ssl
+            context = ssl._create_unverified_context()
+        else:
+            raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
+        try:
+            f = urllib2.urlopen(request, context=context)
+        except urllib2.HTTPError as e:
+            try:
+                err = json.loads(e.read())["error"]
+                e = ComplianceError(err)
+            except:
+                pass
+            raise e
+        with open(fpath, 'wb') as df:
+            for chunk in iter(lambda: f.read(4096), b""):
+                df.write(chunk)
+        f.close()
+
+    def collector_safe_uri_to_uuid(self, uuid):
+        if uuid.startswith("safe://"):
+            uuid = uuid.replace("safe://", "")
+        if not uuid.startswith("safe"):
+            raise ComplianceError("malformed safe file uri: %s" % uuid)
+        return uuid
+
+    def collector_safe_file_download(self, uuid, fpath):
+        uuid = self.collector_safe_uri_to_uuid(uuid)
+        self.collector_rest_get_to_file("/safe/" + uuid + "/download", fpath)
+
+    def collector_safe_file_get_meta(self, uuid):
+        uuid = self.collector_safe_uri_to_uuid(uuid)
+        data = self.collector_rest_get("/safe/" + uuid)
+        if len(data["data"]) == 0:
+            raise ComplianceError(uuid + ": metadata not found")
+        return data["data"][0]
+
+    def md5(self, fpath):
+        import hashlib
+        hash = hashlib.md5()
+        with open(fpath, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash.update(chunk)
+        return hash.hexdigest()
+
 
 def main(co):
     syntax =  "syntax:\n"
     syntax += """ %s <ENV VARS PREFIX> check|fix|fixable\n"""%sys.argv[0]
     syntax += """ %s test|info"""%sys.argv[0]
-    o = co()
+    try:
+        o = co()
+    except NotApplicable:
+        return
     if o.extra_syntax_parms:
         syntax += " "+o.extra_syntax_parms
 
@@ -180,6 +278,9 @@ def main(co):
             print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
             print >>sys.stderr, syntax
             RET = RET_ERR
+    except ComplianceError as e:
+        print >>sys.stderr, e
+        sys.exit(RET_ERR)
     except NotApplicable:
         sys.exit(RET_NA)
     except:
