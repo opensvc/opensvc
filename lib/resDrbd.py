@@ -194,6 +194,8 @@ class Drbd(Res.Resource):
         self.drbdadm_down()
 
     def _status(self, verbose=False):
+        roles = self.get_roles()
+        self.status_log(str(roles[0]))
         (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)
