@@ -2208,15 +2208,17 @@ class Svc(Resource, Scheduler):
             self.sched_delay()
         self.push_encap_env()
         self.node.collector.call('push_all', [self])
-        print("send %s to collector ... OK"%self.pathenv)
+        self.log.handlers[1].setLevel(logging.CRITICAL)
+        self.log.info("send %s to collector" % self.pathenv)
         try:
             import time
             with open(self.push_flag, 'w') as f:
                 f.write(str(time.time()))
-            ret = "OK"
+            self.log.info("update %s timestamp" % self.push_flag)
+            self.log.handlers[1].setLevel(logging.INFO)
         except:
-            ret = "ERR"
-        print("update %s timestamp"%self.push_flag, "...", ret)
+            self.log.error("failed to update %s timestamp" % self.push_flag)
+            self.log.handlers[1].setLevel(logging.INFO)
 
     def push_encap_env(self):
         if self.encap or not self.has_encap_resources:
@@ -2255,15 +2257,21 @@ class Svc(Resource, Scheduler):
         else:
             cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+rcEnv.pathetc+'/']
             out, err, ret = justcall(cmd)
-        print("send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+        self.log.handlers[1].setLevel(logging.CRITICAL)
         if ret != 0:
+            self.log.error("failed to send %s to %s" % (self.pathenv, r.name))
+            self.log.handlers[0].setLevel(logging.INFO)
             raise ex.excError()
+        self.log.info("send %s to %s" % (self.pathenv, r.name))
 
         cmd = ['install', '--envfile', self.pathenv]
         out, err, ret = self._encap_cmd(cmd, container=r)
-        print("install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err)
         if ret != 0:
+            self.log.error("failed to install %s slave service" % r.name)
+            self.log.handlers[1].setLevel(logging.INFO)
             raise ex.excError()
+        self.log.info("install %s slave service" % r.name)
+        self.log.handlers[1].setLevel(logging.INFO)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
