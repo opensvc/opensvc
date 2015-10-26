@@ -1059,8 +1059,11 @@ class Svc(Resource, Scheduler):
         if cmd == ["start"] and container.booted and vmhostname in autostart_node:
             self.log.info("skip encap service start in container %s: already started on boot"%vmhostname)
             return '', '', 0
-        if not self.has_encap_resources or container.status() == rcStatus.DOWN:
-            # no need to run encap cmd (no encap resource)
+        if not self.has_encap_resources:
+            self.log.debug("skip encap %s: no encap resource" % ' '.join(cmd))
+            return '', '', 0
+        if not container.is_up():
+            self.log.info("skip encap %s: the container is not running here" % ' '.join(cmd))
             return '', '', 0
 
         if self.options.slave is not None and not \
