@@ -197,6 +197,8 @@ class Collector(object):
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
+        if rcEnv.dbopensvc == "None":
+            return {"ret": 1, "msg": "no collector defined. set 'dbopensvc' in node.conf"}
         if len(self.proxy_methods) == 0:
             return
         if len(args) > 1:
@@ -288,6 +290,9 @@ class Collector(object):
                 return
 
         self.setNodeEnv()
+
+        if rcEnv.dbopensvc == "None":
+            return
     
         try:
             a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
