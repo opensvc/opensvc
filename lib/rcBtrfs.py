@@ -157,7 +157,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvolume', 'snapshot'] + opts + [origin, snap]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ExecError()
+            raise ExecError(err)
 
     def has_snapvol(self):
         return self.has_subvol(self.snapvol)

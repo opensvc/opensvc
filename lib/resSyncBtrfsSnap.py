@@ -100,7 +100,11 @@ class syncBtrfsSnap(resSync.Sync):
                 raise ex.excError
 
     def _status_one(self, label, subvol):
-        btrfs = self.get_btrfs(label)
+        try:
+            btrfs = self.get_btrfs(label)
+        except Exception as e:
+            self.status_log("%:% %" % (label,subvol, str(e)))
+            return
         btrfs.get_subvols()
         snaps = []
         for sv in btrfs.subvols.values():
