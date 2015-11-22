@@ -602,6 +602,7 @@ class Svc(Resource, Scheduler):
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log':log,
+                                       'tags': sorted(list(r.tags)),
                                        'monitor':monitor,
                                        'disable': disable,
                                        'optional': optional,
