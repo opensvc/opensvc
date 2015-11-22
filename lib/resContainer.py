@@ -243,7 +243,7 @@ class Container(Res.Resource):
             return rcStatus.WARN
         try:
             self.getaddr()
-        except:
+        except Exception as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if not self.check_capabilities():
