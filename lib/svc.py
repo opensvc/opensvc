@@ -785,6 +785,9 @@ class Svc(Resource, Scheduler):
                 "rid",
                 "res_desc",
                 "res_status",
+                "res_monitor",
+                "res_optional",
+                "res_disable",
                 "updated",
                 "res_log"]
         r_vals = []
@@ -802,6 +805,9 @@ class Svc(Resource, Scheduler):
                                repr(r.rid),
                                repr(r.label),
                                repr(str(rstatus)),
+                               "1" if r.monitor else "0",
+                               "1" if r.optional else "0",
+                               "1" if r.disabled else "0",
                                repr(str(now)),
                                r.status_log_str])
 
