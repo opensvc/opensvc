@@ -972,11 +972,11 @@ class Collector(object):
             gen.update({'targets': [vars, vals]})
 
         if 'lan' in d:
-            vars = ['mac', 'intf', 'type', 'addr', 'mask']
+            vars = ['mac', 'intf', 'type', 'addr', 'mask', 'flag_deprecated']
             vals = []
             for mac, l in d['lan'].items():
                 for _d in l:
-                    vals.append([mac, _d['intf'], _d['type'], _d['addr'], _d['mask']])
+                    vals.append([mac, _d['intf'], _d['type'], _d['addr'], _d['mask'], _d['flag_deprecated']])
             del(d['lan'])
             gen.update({'lan': [vars, vals]})
 

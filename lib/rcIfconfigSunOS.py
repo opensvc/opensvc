@@ -144,6 +144,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_loopback = False
 
                 if 'UP' in ifstatus : i.flag_up = True
+                elif 'DEPRECATED' in ifstatus : i.flag_deprecated = True
                 elif 'BROADCAST' in ifstatus : i.flag_broadcast = True
                 elif 'RUNNING' in ifstatus   : i.flag_running = True
                 elif 'MULTICAST' in ifstatus : i.flag_multicast = True

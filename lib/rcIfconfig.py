@@ -33,6 +33,7 @@ class interface:
         a += [' ip6mask = ' + str(self.ip6mask)]
         a += [' hwaddr = ' + self.hwaddr]
         a += [' flag_up = ' + str(self.flag_up)]
+        a += [' flag_deprecated = ' + str(self.flag_deprecated)]
         a += [' flag_broadcast = ' + str(self.flag_broadcast)]
         a += [' flag_running = ' + str(self.flag_running)]
         a += [' flag_multicast = ' + str(self.flag_multicast)]
@@ -54,6 +55,7 @@ class interface:
         self.ip6mask = []
         self.hwaddr = ''
         self.flag_up = False
+        self.flag_deprecated = False
         self.flag_broadcast = False
         self.flag_running = False
         self.flag_multicast = False

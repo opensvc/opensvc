@@ -610,6 +610,7 @@ class Asset(object):
                      'intf': intf.name,
                      'addr': intf.ipaddr,
                      'mask': intf.mask,
+                     'flag_deprecated': intf.flag_deprecated,
                     }
                 lan[intf.hwaddr] += [d]
             elif type(intf.ipaddr) == list:
@@ -619,6 +620,7 @@ class Asset(object):
                              'intf': intf.name,
                              'addr': ip,
                              'mask': intf.mask[i],
+                             'flag_deprecated': intf.flag_deprecated,
                             }
                     lan[intf.hwaddr] += [d]
             for i, ip6 in enumerate(intf.ip6addr):
@@ -626,6 +628,7 @@ class Asset(object):
                      'intf': intf.name,
                      'addr': intf.ip6addr[i],
                      'mask': intf.ip6mask[i],
+                     'flag_deprecated': intf.flag_deprecated,
                     }
                 lan[intf.hwaddr] += [d]
             if intf.name in ifconfig.mcast_data:
@@ -638,6 +641,7 @@ class Asset(object):
                          'intf': intf.name,
                          'addr': addr,
                          'mask': "",
+                         'flag_deprecated': intf.flag_deprecated,
                         }
                     lan[intf.hwaddr] += [d]
 
@@ -653,7 +657,10 @@ class Asset(object):
                     addr_mask = "%s/%s" % (d['addr'], d['mask'])
                 else:
                     addr_mask = d['addr']
-                print("  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask))
+                s = "  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask)
+                if d['flag_deprecated']:
+                    s += " (deprecated)"
+                print(s)
 
     def get_last_boot(self):
         os.environ["LANG"] = "C"
