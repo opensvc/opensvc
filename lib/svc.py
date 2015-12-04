@@ -1483,15 +1483,6 @@ class Svc(Resource, Scheduler):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
-    def hb_handled_action(self, action):
-        """
-        Used to determine if we can allow this action on a frozen service.
-        """
-        for r in self.get_resources("hb"):
-            if hasattr(r, action):
-                return True
-        return False
-
     def cluster_mode_safety_net(self, action):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
@@ -2449,11 +2440,10 @@ class Svc(Resource, Scheduler):
           'sync_all'
         ]
         if action not in actions_list_allow_on_frozen and \
-           not self.hb_handled_action(action) and \
            'compliance' not in action and \
            'collector' not in action:
-            if self.frozen():
-                self.log.info("Abort action for frozen service")
+            if self.frozen() and not self.force:
+                self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
             try:
                 if action not in actions_list_allow_on_cluster:
