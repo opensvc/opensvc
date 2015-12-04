@@ -381,6 +381,9 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 edisk = host.find('disk')
                 edev = host.find('device')
                 if edisk is None or edev is None:
+                    edisk = host.find('volume/disk')
+                    edev = host.find('volume/device')
+                if edisk is None or edev is None:
                     continue
                 devname = 'drbd'+edev.attrib['minor']
                 parentpath = edisk.text

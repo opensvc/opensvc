@@ -81,6 +81,30 @@ class Drbd(Res.Resource):
                 raise exc.excError
         return [self.drbdadm] + cmd.split() + [self.res]
 
+    def devlist(self):
+        devps = set()
+
+        (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
+        if ret != 0:
+            raise ex.excError
+
+        from xml.etree.ElementTree import XML, fromstring
+        tree = fromstring(out)
+        
+        for res in tree.getiterator('resource'):
+            if res.attrib['name'] != self.res:
+                continue
+            for host in res.getiterator('host'):
+                if host.attrib['name'] != rcEnv.nodename:
+                    continue
+                d = host.find('device')
+                if d is None:
+                    d = host.find('volume/device')
+                if d is None:
+                    continue
+                devps |= set([d.text])
+        return devps
+
     def disklist(self):
         if self.disks != set():
             return self.disks
@@ -102,6 +126,8 @@ class Drbd(Res.Resource):
                 if host.attrib['name'] != rcEnv.nodename:
                     continue
                 d = host.find('disk')
+                if d is None:
+                    d = host.find('volume/disk')
                 if d is None:
                     continue
                 devps |= set([d.text])
