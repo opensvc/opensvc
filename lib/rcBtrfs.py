@@ -16,6 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 from rcUtilities import justcall, vcall
+from rcUtilitiesLinux import label_to_dev
 import sys
 import os
 import logging
@@ -56,6 +57,10 @@ class Btrfs(object):
 
         if self.label is None:
             raise InitError("failed to determine btrfs label")
+
+        self.dev = label_to_dev("LABEL="+self.label)
+        if self.dev is None:
+            self.dev = "LABEL="+self.label
 
         self.setup_rootvol()
         self.path = self.rootdir
@@ -178,7 +183,7 @@ class Btrfs(object):
         return False
 
     def mount_snapvol(self):
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, 'LABEL='+self.label, self.snapdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, self.dev, self.snapdir]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s subvol:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
@@ -186,7 +191,7 @@ class Btrfs(object):
     def mount_rootvol(self):
         if self.is_mounted_subvol(self.rootdir):
             return
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', 'LABEL="%s"'%self.label, self.rootdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, self.rootdir]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s btrfs:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
@@ -201,7 +206,7 @@ class Btrfs(object):
         if ret != 0:
             raise ExecError("error creating dir %s:\n"%tmpdir+err)
 
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', 'LABEL="%s"'%self.label, tmpdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, tmpdir]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             self.rmdir(tmpdir)

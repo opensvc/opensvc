@@ -24,7 +24,7 @@ import os
 import rcMountsLinux as rcMounts
 import resMount as Res
 from rcUtilities import qcall, protected_mount, getmount, which, justcall
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
 from rcGlobalEnv import rcEnv
 from rcLoopLinux import file_to_loop
 import rcExceptions as ex
@@ -181,12 +181,10 @@ class Mount(Res.Mount):
 
     def realdev(self):
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
-            if which("findfs"):
-                out, err, ret = justcall(["findfs", self.device])
-                dev = out.strip()
-                if dev == "":
-                    return
-                return dev
+            _dev = label_to_dev(self.device)
+            if _dev:
+                return _dev
+            return self.device
         try:
             mode = os.stat(self.device)[ST_MODE]
         except:

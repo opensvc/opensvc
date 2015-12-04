@@ -1,7 +1,52 @@
 import os
 import re
 import glob
-from rcUtilities import call, qcall, justcall
+from rcUtilities import call, qcall, justcall, which
+
+label_to_dev_cache = {}
+
+def label_to_dev(label):
+    """
+       blkid can return a device slave of a drbd, as drbd is
+       transparent wrt to signature detection. Detect this case
+       and return the holding device. Otherwise return None.
+    """
+    if label in label_to_dev_cache:
+        return label_to_dev_cache[label]
+
+    if not which("blkid"):
+        return
+    out, err, ret = justcall(["blkid", "-t", label])
+    if ret != 0:
+        return
+    devps = []
+    for line in out.split("\n"):
+        if len(line) == 0:
+            continue
+        devp = line.split(":")[0]
+        devps.append(devp)
+    if len(devps) == 0:
+        return
+    elif len(devps) == 1:
+        dev = out
+        return dev
+
+    from rcDevTreeLinux import DevTree
+    tree = DevTree()
+    tree.load()
+    devs = set([ tree.get_dev_by_devpath(devp) for devp in devps ]) - set([None])
+    for dev in devs:
+        parent_devps = set()
+        for p in dev.parents:
+            d = tree.get_dev(p.parent)
+            if d is None:
+                continue
+            parent_devps |= set(d.devpath)
+        inter = set(devps) & parent_devps
+        if len(inter) > 0:
+            devp = "/dev/"+dev.devname
+            label_to_dev_cache[label] = devp
+            return devp
 
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
