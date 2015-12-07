@@ -144,12 +144,12 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_loopback = False
 
                 if 'UP' in ifstatus : i.flag_up = True
-                elif 'DEPRECATED' in ifstatus : i.flag_deprecated = True
-                elif 'BROADCAST' in ifstatus : i.flag_broadcast = True
-                elif 'RUNNING' in ifstatus   : i.flag_running = True
-                elif 'MULTICAST' in ifstatus : i.flag_multicast = True
-                elif 'IPv4' in ifstatus      : i.flag_ipv4 = True
-                elif 'IPv6' in ifstatus      : i.flag_ipv6 = True
+                if 'DEPRECATED' in ifstatus : i.flag_deprecated = True
+                if 'BROADCAST' in ifstatus : i.flag_broadcast = True
+                if 'RUNNING' in ifstatus   : i.flag_running = True
+                if 'MULTICAST' in ifstatus : i.flag_multicast = True
+                if 'IPv4' in ifstatus      : i.flag_ipv4 = True
+                if 'IPv6' in ifstatus      : i.flag_ipv6 = True
             else:
                 n=0
                 w=l.split()
