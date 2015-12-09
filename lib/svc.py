@@ -347,23 +347,24 @@ class Svc(Resource, Scheduler):
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 
-        self.log.debug("acquire service lock %s (timeout %d, delay %d)" % (lockfile, timeout, delay))
+        details = "(timeout %d, delay %d, action %s)" % (timeout, delay, action)
+        self.log.debug("acquire service lock %s %s" % (lockfile, details))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
-            raise ex.excError("timed out waiting for lock")
+            raise ex.excError("timed out waiting for lock %s" % details)
         except lock.lockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param")
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.lockCreateError:
-            raise ex.excError("can not create lock file %s"%lockfile)
+            raise ex.excError("can not create lock file %s %s" % (lockfile, details))
         except lock.lockAcquire as e:
-            raise ex.excError("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError("another action is currently running (pid=%s) %s" % (e.pid, details))
         except ex.excSignal:
-            raise ex.excError("interrupted by signal")
+            raise ex.excError("interrupted by signal %s" % details)
         except:
             import traceback
             traceback.print_exc()
-            raise ex.excError("unexpected locking error")
+            raise ex.excError("unexpected locking error %s" % details)
         if lockfd is not None:
             self.lockfd = lockfd
 
