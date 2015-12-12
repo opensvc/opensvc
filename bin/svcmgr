@@ -27,7 +27,7 @@ import optparse
 #
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
-sys.path.append(os.path.join(pathsvc, 'lib'))
+sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
 prog = os.path.basename(__file__)
 action = None
 

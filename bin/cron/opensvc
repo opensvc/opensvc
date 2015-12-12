@@ -28,7 +28,7 @@ relative paths to locate libs
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
-sys.path.append(pathlib)
+sys.path = [pathlib] + sys.path
 
 import node
 

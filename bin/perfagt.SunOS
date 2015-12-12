@@ -12,7 +12,7 @@ import datetime
 import subprocess
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(pathsvc, 'lib'))
+sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
 
 import node
 from rcUtilities import justcall, which

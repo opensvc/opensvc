@@ -883,7 +883,7 @@ def install_pythonlink_windows():
     logit("begin")
     logit("before appending pathlib to syspath")
     logit(os.environ["PATH"])
-    sys.path.append(pathlib)
+    sys.path = [pathlib] + sys.path
     logit("after appending pathlib to syspath")
     logit(os.environ["PATH"])
     from rcUtilitiesWindows import get_registry_value
