@@ -309,7 +309,7 @@ class Rsync(resSync.Sync):
         rtargets = {0: set([])}
         need_snap = False
         for i, r in enumerate(resources):
-            if self.skip or r.is_disabled():
+            if r.skip or r.is_disabled():
                 continue
             rtargets[i] = set([])
             if action == "sync_nodes":
