@@ -2148,7 +2148,7 @@ class Svc(Resource, Scheduler):
 
     @scheduler_fork
     def _sched_sync_all(self, sched_options):
-        self.action("sync_all")
+        self.action("sync_all", rid=[o.section for o in sched_options])
         self.sched_write_timestamp(sched_options)
 
     def sync_all(self):
