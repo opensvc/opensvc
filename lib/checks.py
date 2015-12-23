@@ -81,8 +81,9 @@ class checks(check):
             try:
                 m = __import__(cname)
                 self += m.check(svcs=self.svcs)
-            except:
+            except Exception as e:
                 print('Could not import check:', cname, file=sys.stderr)
+                print(e, file=sys.stderr)
 
     def register(self, chk_name):
         if not os.path.exists(os.path.join(rcEnv.pathlib, chk_name+rcEnv.sysname+'.py')):
