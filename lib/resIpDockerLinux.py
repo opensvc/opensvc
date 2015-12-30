@@ -77,7 +77,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         if ret != 0:
             # if dockerd is not running, return no ip info.
             # will be interpreted as a down ip resource by is_up().
-            if "no such file or directory":
+            if "no such file or directory" in err:
+                self.status_log("/sbin/ip not found in container")
                 return
             if " running on " in err:
                 return
