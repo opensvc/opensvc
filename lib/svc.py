@@ -1162,10 +1162,6 @@ class Svc(Resource, Scheduler):
         return gs
 
     def encap_json_status(self, container, refresh=False):
-        if not refresh and not self.options.refresh:
-            gs = self.get_cache_encap_json_status(container.rid)
-            if gs:
-                return gs
         if container.guestos == 'windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
@@ -1202,6 +1198,11 @@ class Svc(Resource, Scheduler):
                         gs['resources'][r.rid] = {'status': 'n/a'}
 
             return gs
+
+        if not refresh and not self.options.refresh:
+            gs = self.get_cache_encap_json_status(container.rid)
+            if gs:
+                return gs
 
         gs = {
           'avail': 'n/a',
