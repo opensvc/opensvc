@@ -882,9 +882,9 @@ class Svc(Resource, Scheduler):
                                    repr(container.name),
                                    repr(str(rid)),
                                    repr(str(encap_res_status['resources'][rid]['label'])),
-                                   repr(str(encap_res_status['resources'][rid].get('monitor', '0'))),
-                                   repr(str(encap_res_status['resources'][rid].get('optional', '0'))),
-                                   repr(str(encap_res_status['resources'][rid].get('disabled', '0'))),
+                                   "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
+                                   "1" if encap_res_status['resources'][rid].get('optional', False) else "0",
+                                   "1" if encap_res_status['resources'][rid].get('disabled', False) else "0",
                                    repr(str(rstatus)),
                                    repr(str(now)),
                                    repr(str(encap_res_status['resources'][rid]['log']))])
