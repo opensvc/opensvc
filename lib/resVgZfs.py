@@ -163,8 +163,11 @@ class Pool(resDg.Dg):
                 disk = line.split()[0]
                 if disk.startswith(rcEnv.pathvar):
                     disk = disk.split('/')[-1]
-                if re.match("^.*", disk) is not None :
-                    disks.add("/dev/rdsk/" + disk )
+                if re.match("^.*", disk) is None:
+                    continue
+                if not disk.startswith("/dev/rdsk/"):
+                    disk = "/dev/rdsk/" + disk
+                disks.add(disk)
 
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         for d in disks:
