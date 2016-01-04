@@ -220,7 +220,11 @@ class Drbd(Res.Resource):
         self.drbdadm_down()
 
     def _status(self, verbose=False):
-        roles = self.get_roles()
+        try:
+            roles = self.get_roles()
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
         self.status_log(str(roles[0]))
         (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
