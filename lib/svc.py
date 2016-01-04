@@ -2456,6 +2456,9 @@ class Svc(Resource, Scheduler):
             except ex.excAbortAction as e:
                 self.log.info(str(e))
                 return 0
+            except ex.excEndAction as e:
+                self.log.info(str(e))
+                return 0
             except ex.excError as e:
                 self.log.error(str(e))
                 return 1
