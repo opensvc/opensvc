@@ -2649,18 +2649,18 @@ class Svc(Resource, Scheduler):
     @_master_action
     def migrate(self):
         if not hasattr(self, "destination_node"):
-            self.log.error("a destination node must be provided for the switch action")
-            raise ex.excError
+            raise ex.excError("a destination node must be provided for the switch action")
+        if self.destination_node == rcEnv.nodename:
+            raise ex.excError("the destination node is source node")
         if self.destination_node not in self.nodes:
-            self.log.error("destination node %s is not in service node list"%self.destination_node)
-            raise ex.excError
+            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
         self.master_prstop()
         try:
             self.remote_action(node=self.destination_node, action='startfs --master')
             self._migrate()
         except:
             if self.has_res_set(['disk.scsireserv']):
-                self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
+                self.log.error("scsi reservations were dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.master_stopfs()
         self.remote_action(node=self.destination_node, action='prstart --master')
@@ -2668,11 +2668,11 @@ class Svc(Resource, Scheduler):
     def switch(self):
         self.sub_set_action("hb", "switch")
         if not hasattr(self, "destination_node"):
-            self.log.error("a destination node must be provided for the switch action")
-            raise ex.excError
+            raise ex.excError("a destination node must be provided for the switch action")
+        if self.destination_node == rcEnv.nodename:
+            raise ex.excError("the destination node is source node")
         if self.destination_node not in self.nodes:
-            self.log.error("destination node %s is not in service node list"%self.destination_node)
-            raise ex.excError
+            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
         self.stop()
         self.remote_action(node=self.destination_node, action='start')
 
