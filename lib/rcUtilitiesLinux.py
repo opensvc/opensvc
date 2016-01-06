@@ -28,8 +28,7 @@ def label_to_dev(label):
     if len(devps) == 0:
         return
     elif len(devps) == 1:
-        dev = out
-        return dev
+        return devps[0]
 
     from rcDevTreeLinux import DevTree
     tree = DevTree()
