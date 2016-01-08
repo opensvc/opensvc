@@ -446,6 +446,11 @@ def add_ip(svc, conf, s):
         return
 
     try:
+        kwargs['ipDevExt'] = conf_get_string_scope(svc, conf, s, 'ipdevext')
+    except ex.OptNotFound:
+        pass
+
+    try:
         kwargs['mask'] = conf_get_string_scope(svc, conf, s, 'netmask')
     except ex.OptNotFound:
         pass

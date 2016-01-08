@@ -74,10 +74,11 @@ class Ip(Res.Ip):
         ret += r
         out += o
         err += e
-        cmd = ['ipadm', 'show-addr', self.stacked_dev+'/'+self.ipDevExt ]
+        cmd = ['ipadm', 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = p.communicate()[0].split("\n")
-        if len(_out) >= 2:
+        _out = p.communicate()[0].strip().split("\n")
+        if len(_out) > 0:
+            self.log.info("skip delete-ip because addrs still use the ip")
             return ret, out, err
         cmd=['ipadm', 'delete-ip', self.stacked_dev]
         r, o, e =  self.vcall(cmd)
@@ -99,12 +100,9 @@ class Ip(Res.Ip):
             l = self.mask.split(".")
         else:
             l = self._hexmask_to_str(self.mask).split(".")
-        for v in l:
-            b = int(v)
-            while b != 0:
-                if b % 2 == 1:
-                    cnt = cnt + 1
-                    b = b / 2
+        l = map(lambda x: int(x), l)
+        for a in l:
+            cnt += str(bin(a)).count("1")
         return '/'+str(cnt)
         
     def wait_net_smf(self, max_wait=30):
@@ -129,14 +127,15 @@ class Ip(Res.Ip):
         out, err = p.communicate()
         if p.returncode != 0:
             return "undef"
+        return out.strip()
 
     def startip_cmd(self):
         self.wait_net_smf()
         ret, out, err = (0, '', '')
-        cmd = ['ipadm', 'show-if', self.stacked_dev]
+        cmd = ['ipadm', 'show-if', '-p', '-o', 'state', self.stacked_dev]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = p.communicate()[0].split("\n")
-        if len(_out) < 2:
+        _out = p.communicate()[0].strip().split("\n")
+        if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
         cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
