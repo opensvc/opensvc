@@ -283,22 +283,50 @@ def add_scsireserv(svc, resource, conf, section):
     except ImportError:
         sr = __import__('resScsiReserv')
 
-    try:
-        pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
-    except ex.OptNotFound:
-        defaults = conf.defaults()
-        if 'no_preempt_abort' in defaults:
-            pa = bool(defaults['no_preempt_abort'])
-        else:
-            pa = False
-
     kwargs = {}
+    pr_rid = resource.rid+"pr"
+
+    try:
+        pa = conf_get_boolean_scope(svc, conf, pr_rid, 'no_preempt_abort')
+    except ex.OptNotFound:
+        try:
+            pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
+        except ex.OptNotFound:
+            defaults = conf.defaults()
+            if 'no_preempt_abort' in defaults:
+                pa = bool(defaults['no_preempt_abort'])
+            else:
+                pa = False
+
+    try:
+        kwargs['optional'] = get_optional(conf, pr_rid, svc)
+    except ex.OptNotFound:
+        kwargs['optional'] = resource.is_optional()
+
+    try:
+        kwargs['disabled'] = get_disabled(conf, pr_rid, svc)
+    except ex.OptNotFound:
+        kwargs['disabled'] = resource.is_disabled()
+
+    try:
+        kwargs['restart'] = get_restart(conf, pr_rid, svc)
+    except ex.OptNotFound:
+        kwargs['restart'] = resource.restart
+
+    try:
+        kwargs['monitor'] = get_monitor(conf, pr_rid, svc)
+    except ex.OptNotFound:
+        kwargs['monitor'] = resource.monitor
+
+    try:
+        kwargs['tags'] = get_tags(conf, pr_rid, svc)
+    except:
+        kwargs['tags'] = set([])
+
     kwargs['rid'] = resource.rid
-    kwargs['tags'] = resource.tags
+    kwargs['tags'] |= resource.tags
     kwargs['peer_resource'] = resource
     kwargs['no_preempt_abort'] = pa
-    kwargs['disabled'] = resource.is_disabled()
-    kwargs['optional'] = resource.is_optional()
 
     r = sr.ScsiReserv(**kwargs)
     svc += r

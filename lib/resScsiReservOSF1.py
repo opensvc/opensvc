@@ -37,6 +37,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                  no_preempt_abort=False,
                  disabled=False,
                  tags=set([]),
+                 restart=0,
+                 monitor=False,
                  optional=False):
         resScsiReserv.ScsiReserv.__init__(self,
                                           rid=rid,
@@ -44,6 +46,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                                           no_preempt_abort=no_preempt_abort,
                                           disabled=disabled,
                                           tags=tags,
+                                          restart=restart,
+                                          monitor=monitor,
                                           optional=optional)
         self.prtype = 'wero'
         self.disk_id = {}

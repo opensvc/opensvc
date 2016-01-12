@@ -42,6 +42,8 @@ class ScsiReserv(Res.Resource):
                  disabled=False,
                  tags=set([]),
                  optional=False,
+                 restart=0,
+                 monitor=False,
                  subset=None):
         self.no_preempt_abort = no_preempt_abort
         self.disks = set([])
@@ -55,6 +57,8 @@ class ScsiReserv(Res.Resource):
                               disabled=disabled,
                               tags=tags,
                               optional=optional,
+                              restart=restart,
+                              monitor=monitor,
                               subset=subset)
 
     def set_label(self):

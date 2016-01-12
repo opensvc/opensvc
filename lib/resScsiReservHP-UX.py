@@ -62,6 +62,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                  disabled=False,
                  tags=set([]),
                  optional=False,
+                 restart=0,
+                 monitor=False,
                  subset=None):
         resScsiReserv.ScsiReserv.__init__(self,
                                           rid=rid,
@@ -70,6 +72,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                                           disabled=disabled,
                                           tags=tags,
                                           optional=optional,
+                                          restart=restart,
+                                          monitor=monitor,
                                           subset=subset)
         self.prtype = 'wero'
         self.leg_mpath_disable()
