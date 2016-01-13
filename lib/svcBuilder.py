@@ -394,6 +394,10 @@ def get_sync_args(conf, s, svc):
 
 def add_resources(restype, svc, conf):
     for s in conf.sections():
+        if restype in ("disk", "vg") and re.match(restype+'#[0-9]+pr', s, re.I) is not None:
+            # persistent reserv resource are declared by their peer resource:
+            # don't add them from here
+            continue
         if s != 'app' and s != restype and re.match(restype+'#[0-9]', s, re.I) is None:
             continue
         if svc.encap and 'encap' not in get_tags(conf, s, svc):
