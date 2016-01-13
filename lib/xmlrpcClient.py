@@ -361,8 +361,8 @@ class Collector(object):
 
         try:
             self.queue = Queue()
-        except:
-            self.log.error("Queue not supported. disable async mode")
+        except Exception as e:
+            self.log.error("Queue not supported. disable async mode. %s" % str(e))
             self.queue = None
             return
         self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue,))
