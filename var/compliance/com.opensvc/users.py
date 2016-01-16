@@ -225,6 +225,8 @@ class CompUser(object):
     def check_item(self, user, item, target, current, verbose=False):
         if type(current) == int and current < 0:
             current += 4294967296
+        if type(current) == str and type(target) == unicode:
+            current = unicode(current, errors="ignore")
         if target == current:
             if verbose:
                 print 'user', user, item+':', current
