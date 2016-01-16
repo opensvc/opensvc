@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import datetime
+import json
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
@@ -412,7 +413,11 @@ class Compliance(object):
 
     def format_rule_val(self, val):
         if isinstance(val, unicode):
-            val = repr(val).strip("'")
+            try:
+                tmp = json.loads(val)
+                val = json.dumps(tmp)
+            except:
+                val = repr(val)[2:-1]
         else:
             val = str(val)
         return val
