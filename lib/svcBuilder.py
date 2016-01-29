@@ -829,7 +829,7 @@ def add_raw(svc, conf, s):
     except ex.OptNotFound:
         pass
     try:
-        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'group')
     except ex.OptNotFound:
         pass
     try:
