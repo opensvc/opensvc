@@ -100,7 +100,10 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return
         for intf in ifconfig.intf:
             if self.addr in intf.ipaddr+intf.ip6addr:
-                return intf.name
+                name = intf.name
+                if "@" in name:
+                    name = name[:name.index("@")]
+                return name
         return
 
     def startip_cmd(self):
