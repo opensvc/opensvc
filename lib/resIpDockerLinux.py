@@ -71,6 +71,11 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             self.container_id = None
             self.label += '@' + self.container_rid
 
+    def arp_announce(self):
+        """ disable the generic arping. We do that in the guest namespace.
+        """
+        pass
+
     def get_docker_ifconfig(self):
         cmd = self.docker_cmd + ["exec", self.container_name, "/sbin/ip", "addr"]
         out, err, ret = justcall(cmd)
@@ -148,6 +153,9 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
+
+        # setup default route
+        self.ip_setup_route(nspid)
 
         self.delete_netns_link(nspid=nspid)
         return 0, "", ""
