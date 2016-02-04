@@ -148,14 +148,16 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         if ret != 0:
             return ret, out, err
 
-        # activate
+        # add default route
         cmd = ["ip", "netns", "exec", nspid, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
-        # setup default route
-        self.ip_setup_route(nspid)
+        # announce
+        if which("arping") is not None:
+            cmd = ["ip", "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            ret, out, err = self.vcall(cmd)
 
         self.delete_netns_link(nspid=nspid)
         return 0, "", ""
@@ -263,10 +265,12 @@ class Ip(Res.Ip, rcDocker.DockerLib):
     def ip_setup_route(self, nspid):
         cmd = ["ip", "netns", "exec", nspid, "ip", "route", "del", "default"]
         ret, out, err = self.call(cmd, errlog=False)
+
         cmd = ["ip", "netns", "exec", nspid, "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
+
         cmd = ["ip", "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -275,7 +279,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         # announce
         if which("arping") is not None:
             cmd = ["ip", "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
-            ret, out, err = self.call(cmd)
+            ret, out, err = self.vcall(cmd)
 
     def ip_wait(self):
         # ip activation may still be incomplete
