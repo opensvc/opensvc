@@ -124,7 +124,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.docker('start')
 
     def start(self):
-        if self.svc.running_action == "boot" and not self.swarm_primary():
+        if self.svc.running_action == "boot" and self.run_swarm and not self.swarm_primary():
             self.log.info("skip boot: this container will be booted by the flex primary node, or through a start action from any flex node")
             return
         resContainer.Container.start(self)
