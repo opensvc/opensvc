@@ -105,13 +105,13 @@ class RsetApps(Res.ResourceSet):
         try:
             Res.ResourceSet.action(self, action=action, tags=tags, xtags=xtags)
         except Exception as e:
-            if action == "stop":
+            if action in ("stop", "shutdown", "rollback"):
                 self.log.info("there were errors during app stop. please check the quality of the scripts. continuing anyway.")
                 return
             raise
 
     def sort_resources(self, resources, action):
-        if action == "rollback":
+        if action in ("shutdown", "rollback"):
             action = "stop"
         attr = action + '_seq'
         l = [r for r in resources if hasattr(r, attr)]
