@@ -77,17 +77,19 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         pass
 
     def get_docker_ifconfig(self):
-        cmd = self.docker_cmd + ["exec", self.container_name, "/sbin/ip", "addr"]
+        try:
+            nspid = self.get_nspid()
+        except ex.excError as e:
+            return
+        self.create_netns_link(nspid=nspid, verbose=False)
+
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            # if dockerd is not running, return no ip info.
-            # will be interpreted as a down ip resource by is_up().
-            if "no such file or directory" in err:
-                self.status_log("/sbin/ip not found in container")
-                return
-            if " running on " in err:
-                return
-            raise ex.excError(err)
+            return
+
+        self.delete_netns_link(nspid=nspid, verbose=False)
+
         ifconfig = rcIfconfig.ifconfig(ip_out=out)
         return ifconfig
 
@@ -293,11 +295,13 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         cmd = self.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to get nspid for docker inspect: %s" % err)
+            raise ex.excError("failed to get nspid: %s" % err)
         nspid = out.strip()
+        if nspid == "0":
+            raise ex.excError("nspid is 0")
         return nspid
 
-    def delete_netns_link(self, nspid=None):
+    def delete_netns_link(self, nspid=None, verbose=True):
         if nspid is None:
             nspid = self.get_nspid()
         run_d = "/var/run/netns"
@@ -305,10 +309,11 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return
         run_netns = os.path.join(run_d, nspid)
         if os.path.exists(run_netns):
-            self.log.info("remove %s" % run_netns)
+            if verbose:
+                self.log.info("remove %s" % run_netns)
             os.unlink(run_netns)
 
-    def create_netns_link(self, nspid=None):
+    def create_netns_link(self, nspid=None, verbose=True):
         if nspid is None:
             nspid = self.get_nspid()
         run_d = "/var/run/netns"
@@ -317,13 +322,14 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         run_netns = os.path.join(run_d, nspid)
         proc_netns = "/proc/%s/ns/net" % nspid
         if os.path.exists(proc_netns) and not os.path.exists(run_netns):
-            self.log.info("create symlink %s -> %s" % (proc_netns, run_netns))
+            if verbose:
+                self.log.info("create symlink %s -> %s" % (run_netns, proc_netns))
             os.symlink(proc_netns, run_netns)
 
     def stopip_cmd(self):
+        intf = self.get_docker_interface()
         nspid = self.get_nspid()
         self.create_netns_link(nspid=nspid)
-        intf = self.get_docker_interface()
         if intf is None:
             raise ex.excError("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
         cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+self.mask, "dev", intf]
