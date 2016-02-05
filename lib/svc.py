@@ -1405,6 +1405,7 @@ class Svc(Resource, Scheduler):
         except ex.excError:
             pass
         self.shutdowncontainer()
+        self.master_shutdownshare()
         self.master_shutdownfs()
         self.master_shutdownip()
 
