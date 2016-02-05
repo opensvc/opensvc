@@ -1837,21 +1837,7 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def shutdowncontainer(self):
-        self.sub_set_action("container.vbox", "shutdown")
-        self.sub_set_action("container.ldom", "shutdown")
-        self.sub_set_action("container.hpvm", "shutdown")
-        self.sub_set_action("container.xen", "shutdown")
-        self.sub_set_action("container.esx", "shutdown")
-        self.sub_set_action("container.ovm", "shutdown")
-        self.sub_set_action("container.kvm", "shutdown")
-        self.sub_set_action("container.amazon", "shutdown")
-        self.sub_set_action("container.openstack", "shutdown")
-        self.sub_set_action("container.vcloud", "shutdown")
-        self.sub_set_action("container.jail", "shutdown")
-        self.sub_set_action("container.lxc", "shutdown")
-        self.sub_set_action("container.docker", "shutdown")
-        self.sub_set_action("container.vz", "shutdown")
-        self.sub_set_action("container.srp", "shutdown")
+        self.sub_set_action("container", "shutdown")
         self.refresh_ip_status()
 
     @_master_action
