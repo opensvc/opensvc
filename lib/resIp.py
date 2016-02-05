@@ -159,6 +159,9 @@ class Ip(Res.Resource):
         return False
 
     def allow_start(self):
+        if self.is_up() is True:
+            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
+            raise ex.IpAlreadyUp(self.addr)
         ifconfig = rcIfconfig.ifconfig()
         intf = ifconfig.interface(self.ipDev)
         if intf is None:
@@ -174,9 +177,6 @@ class Ip(Res.Resource):
             else:
                 self.log.error("interface %s is not up. Cannot stack over it." % self.ipDev)
                 raise ex.IpDevDown(self.ipDev)
-        if self.is_up() is True:
-            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
-            raise ex.IpAlreadyUp(self.addr)
         if not hasattr(self, 'abort_start_done') and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
