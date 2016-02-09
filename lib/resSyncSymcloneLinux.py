@@ -67,11 +67,28 @@ class syncSymclone(symclone.syncSymclone):
             self.wait_for_dev_ready(dev)
             self.refresh_multipath(dev)
 
-    def __init__(self, rid=None, symdg=None, symdevs=[], precopy_timeout=300,
-                 sync_max_delay=1440, sync_min_delay=30,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        symclone.syncSymclone.__init__(self, rid, symdg, symdevs,
-                                       precopy_timeout, sync_max_delay,
-                                       sync_min_delay, optional=optional, disabled=disabled, tags=tags,
-                                       internal)
+    def __init__(self,
+                 rid=None,
+                 symdg=None,
+                 symdevs=[],
+                 precopy_timeout=300,
+                 sync_max_delay=1440,
+                 sync_min_delay=30,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        symclone.syncSymclone.__init__(self,
+                                       rid,
+                                       symdg,
+                                       symdevs,
+                                       precopy_timeout,
+                                       sync_max_delay,
+                                       sync_min_delay,
+                                       optional=optional,
+                                       disabled=disabled,
+                                       tags=tags,
+                                       internal=internal,
+                                       subset=subset)
 

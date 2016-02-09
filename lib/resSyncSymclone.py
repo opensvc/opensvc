@@ -19,7 +19,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, justcall
 import rcExceptions as ex
 import rcStatus
 import time
@@ -40,8 +40,10 @@ class syncSymclone(resSync.Sync):
 
     def get_symld(self):
         cmd = ['/usr/symcli/bin/symld', '-g', self.symdg, 'list', '-v']
-        (ret, out, err) = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
+            if len(err) > 0:
+                self.status_log(err.strip())
             raise ex.excError
         ld = {}
         for line in out.split('\n'):
@@ -85,12 +87,12 @@ class syncSymclone(resSync.Sync):
             if pair in self.active_pairs:
                 continue
             cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+pair
-            (ret, out, err) = self.call(cmd)
+            out, err, ret = justcall(cmd)
             if ret == 0:
                 self.active_pairs.append(pair)
                 continue
             cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copyinprog']+pair
-            (ret, out, err) = self.call(cmd)
+            out, err, ret = justcall(cmd)
             if ret == 0:
                 self.active_pairs.append(pair)
                 continue
@@ -206,8 +208,11 @@ class syncSymclone(resSync.Sync):
                 self.last = last
 
     def _status(self, verbose=False):
-        self.get_syminfo()
-        self.get_last()
+        try:
+            self.get_syminfo()
+            self.get_last()
+        except:
+            return rcStatus.WARN
 
         if self.last is None:
             return rcStatus.DOWN
@@ -217,14 +222,14 @@ class syncSymclone(resSync.Sync):
         else:
             return rcStatus.UP
 
-    def syncbreak(self):
+    def sync_break(self):
         self.activate()
 
-    def syncresync(self):
+    def sync_resync(self):
         self.recreate()
 
     def start(self):
-        self.syncbreak()
+        self.sync_break()
 
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
@@ -233,16 +238,27 @@ class syncSymclone(resSync.Sync):
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
 
-    def __init__(self, rid=None, symdg=None, symdevs=[], precopy_timeout=300,
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
-                 sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.symclone",
+    def __init__(self,
+                 rid=None,
+                 symdg=None,
+                 symdevs=[],
+                 precopy_timeout=300,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.symclone",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "clone symdg %s"%(symdg)
         self.symdg = symdg

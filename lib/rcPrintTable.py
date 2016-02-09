@@ -41,10 +41,28 @@ def parse_data(data):
         rows.append(row)
     return [labels]+rows
 
+def convert(s):
+    try:
+        return unicode(s)
+    except:
+        pass
+    try:
+        return unicode(s, errors="ignore")
+    except:
+        pass
+    try:
+        return str(s)
+    except:
+        pass
+    return s
+
 def print_table(data, width=20, table=False):
     if table:
         from tabulate import tabulate
-        print tabulate(data, headers="firstrow", tablefmt="simple")
+        try:
+            print(tabulate(data, headers="firstrow", tablefmt="simple"))
+        except UnicodeEncodeError:
+            print(tabulate(data, headers="firstrow", tablefmt="simple").encode("utf-8"))
         return
     if not isinstance(data, list):
         data = parse_data(data)
@@ -59,9 +77,12 @@ def print_table(data, width=20, table=False):
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
-            val = '\n'.join(wrap(unicode(d[i]),
+            val = '\n'.join(wrap(convert(d[i]),
                        initial_indent = "",
                        subsequent_indent = subsequent_indent,
                        width=78
                   ))
-            print(" %s = %s" % (label.ljust(max_label_len), val))
+            try:
+                print(" %s = %s" % (label.ljust(max_label_len), val))
+            except UnicodeEncodeError:
+                print(" %s = %s" % (label.ljust(max_label_len), val.encode("utf-8")))

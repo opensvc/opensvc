@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_USER_... vars
 which define {"gssftp": {"disable": "no", "server_args": "-l -a -u 022", ...}, ...}

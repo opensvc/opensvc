@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 [{"service": "foo", "level": "2345", "state": "on"},
  {"service": "foo", "level": "016", "state": "off"},
@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import pwd
+import re
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -24,7 +25,12 @@ class CompRc(object):
         self.services = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:
-                self.services += json.loads(os.environ[k])
+                l = json.loads(os.environ[k])
+                for i, d in enumerate(l):
+                    for key, val in d.items():
+                        d[key] = self.subst(val)
+                    l[i] = d
+                self.services += l
             except ValueError:
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to service list'
 
@@ -39,17 +45,38 @@ class CompRc(object):
 
         vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
         release = os.environ.get('OSVC_COMP_NODES_OS_RELEASE', 'unknown')
-        if vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
+        if vendor in ['CentOS', 'Redhat', 'Red Hat', 'SuSE'] or \
            (vendor == 'Oracle' and self.sysname == 'Linux'):
 
             import chkconfig
             self.o = chkconfig.Chkconfig()
-        elif vendor in ['HP']:
+        elif vendor in ['Ubuntu', 'Debian', 'HP']:
             import sysvinit
             self.o = sysvinit.SysVInit()
         else:
             print >>sys.stderr, vendor, "not supported"
             raise NotApplicable()
+
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
 
     def validate_svcs(self):
         l = []

@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_GROUP_... vars
 which define {'groupname':{'propname':'propval',... }, ...}
@@ -49,25 +49,30 @@ class CompGroupMembership(object):
         if len(self.groups) == 0:
             raise NotApplicable
 
+        if os.path.exists('/usr/xpg4/bin/id'):
+            self.id_bin = '/usr/xpg4/bin/id'
+        else:
+            self.id_bin = 'id'
+
+    def get_primary_group(self, user):
+        cmd = [self.id_bin, "-gn", user]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        return out.strip()
+
     def member_of(self, user, refresh=False):
         if not refresh and user in self.member_of_h:
             # cache hit
             return self.member_of_h[user]
 
-        if os.path.exists('/usr/xpg4/bin/id'):
-            id_bin = '/usr/xpg4/bin/id'
-        else:
-            id_bin = 'id'
-
-        cmd = [id_bin, "-gn", user]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        eg = self.get_primary_group(user)
+        if eg is None:
             self.member_of_h[user] = []
-            return self.member_of_h[user]
-        eg = out.strip()
+            return []
 
-        cmd = [id_bin, "-Gn", user]
+        cmd = [self.id_bin, "-Gn", user]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -93,6 +98,9 @@ class CompGroupMembership(object):
         if 0 != self._check_member_accnt(user):
             print >>sys.stderr, 'group', group+':', 'cannot add inexistant user "%s"'%user
             return RET_ERR
+        if self.get_primary_group(user) == group:
+            print "%s is already the primary group of user %s: skip declaration as a secondary group (you may want to change your rule)" % (group, user)
+            return RET_OK
         ag = self.member_of(user)
         g = ag | set([group])
         g = ','.join(g)
@@ -146,6 +154,18 @@ class CompGroupMembership(object):
                     print >>sys.stderr, 'group', group, 'inexistant user "%s" which is %s'%(user, which)
         return r
 
+    def filter_target(self, group, target):
+        new_target = []
+        for user in target:
+            pg = self.get_primary_group(user)
+            if pg == group:
+                continue
+            new_target.append(user)
+        discarded = set(target)-set(new_target)
+        if len(discarded) > 0:
+            print "discarded %s from members of group %s, as they already use this group as primary (you may want to change your rule)" % (', '.join(discarded), group)
+        return new_target
+                
     def check_item(self, group, item, target, current, verbose=False):
         r = RET_OK
         if item == 'members':
@@ -153,13 +173,14 @@ class CompGroupMembership(object):
             r |= self._check_members_accnts(group, target, 'REQUIRED', verbose)
         if not isinstance(current, list):
             current = [current]
+        target = self.filter_target(group, target)
         if set(target) <= set(current):
             if verbose:
-                print 'group', group, item+':', current
+                print 'group', group, item+':', ', '.join(current)
             return r
         else:
             if verbose:
-                print >>sys.stderr, 'group', group, item+':', current, 'target:', target
+                print >>sys.stderr, 'group', group, item+':', ', '.join(current), '| target:', ', '.join(target)
             return r|RET_ERR
 
     def check_group(self, group, props):

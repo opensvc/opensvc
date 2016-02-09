@@ -143,38 +143,61 @@ class StatsProvider(rcStats.StatsProvider):
 
     def mem_u(self, d, day, start, end):
         f = self.sarfile(day)
-        cols = ['date',
-                'kbmemfree',
-                'kbmemused',
-                'pct_memused',
-                'kbbuffers',
-                'kbcached',
-                'kbcommit',
-                'pct_commit',
-                'kbmemsys',
-                'nodename']
-
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
         (buff, err, ret) = justcall(cmd)
+
+        if "kbactive" in buff:
+            fmt = 3
+            cols = ['date',
+                    'kbmemfree',
+                    'kbmemused',
+                    'pct_memused',
+                    'kbbuffers',
+                    'kbcached',
+                    'kbcommit',
+                    'pct_commit',
+                    'kbactive',
+                    'kbinact',
+                    'kbdirty',
+                    'nodename']
+        elif "pct_commit" in buff:
+            fmt = 2
+            cols = ['date',
+                    'kbmemfree',
+                    'kbmemused',
+                    'pct_memused',
+                    'kbbuffers',
+                    'kbcached',
+                    'kbcommit',
+                    'pct_commit',
+                    'nodename']
+        else:
+            fmt = 1
+            cols = ['date',
+                    'kbmemfree',
+                    'kbmemused',
+                    'pct_memused',
+                    'kbbuffers',
+                    'kbcached',
+                    'nodename']
+
+        n = len(cols) - 1
         lines = []
         for line in buff.split('\n'):
            l = line.split()
-           if len(l) == 10:
-               """ redhat 5
-               """
-               l = l[0:6] + ['0', '0']
-           if len(l) != 8:
-               continue
+           if fmt > 1:
+               if len(l) != n:
+                   continue
+           else:
+               if len(l) < n:
+                   continue
+               l = l[:n]
            if l[1] == 'kbmemfree':
                continue
            if l[0] == 'Average:':
                continue
-
-           """ Linux has no kbmemsys
-           """
-           l.append('0')
 
            l.append(self.nodename)
            l[0] = '%s %s'%(d, l[0])
@@ -188,7 +211,7 @@ class StatsProvider(rcStats.StatsProvider):
         _start = _start.hour * 3600 + _start.minute * 60 + _start.second
         _end = datetime.datetime.strptime(end, "%H:%M:%S")
         _end = _end.hour * 3600 + _end.minute * 60 + _end.second
-        f = os.path.join(pathvar, 'stats_fs_u.%s' % day)
+        f = os.path.join(pathvar, 'stats_fs_u.%s' % day.lstrip("0"))
         cols = ['date',
                 'nodename',
                 'mntpt',
@@ -363,13 +386,20 @@ class StatsProvider(rcStats.StatsProvider):
 
         if f is None:
             return [], []
+
         cmd = ['sar', '-t', '-n', 'DEV', '-f', f, '-s', start, '-e', end]
         (buff, err, ret) = justcall(cmd)
+
+        if "%ifutil" in buff:
+            n = 10
+        else:
+            n = 9
+
         lines = []
         div = 1
         for line in buff.split('\n'):
            l = line.split()
-           if len(l) != 9:
+           if len(l) != n:
                continue
            if l[1] in ['IFACE', 'lo'] :
                if 'rxbyt/s' in l:
@@ -426,5 +456,5 @@ class StatsProvider(rcStats.StatsProvider):
         return cols, lines
 
 if __name__ == "__main__":
-    sp = StatsProvider(interval=20)
-    print(sp.get('fs_u'))
+    sp = StatsProvider(interval=200)
+    print(sp.get('mem_u'))

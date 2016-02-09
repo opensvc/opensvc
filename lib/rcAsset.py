@@ -17,6 +17,9 @@
 #
 from rcGlobalEnv import rcEnv
 import os
+from subprocess import *
+import datetime
+from rcUtilities import try_decode
 
 class Asset(object):
     s_config = "node configuration file"
@@ -327,11 +330,29 @@ class Asset(object):
         print("host mode (%s)"%source)
         print("  %s"%s)
 
+    def get_sec_zone(self):
+        s = None
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'sec_zone')
+            source = self.s_config
+        except:
+            pass
+        self.print_sec_zone(s, source)
+        return s
+
+    def print_sec_zone(self, s, source):
+        if s is None:
+            return
+        print("security zone (%s)"%source)
+        print("  %s"%s)
+
     def get_environnement(self):
         s = None
         source = self.s_default
         try:
             s = self.node.config.get('node', 'environment')
+            s = try_decode(s)
             source = self.s_config
         except:
             pass
@@ -490,6 +511,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'team_integ')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "team integration")
@@ -500,6 +522,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'team_support')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "team support")
@@ -510,6 +533,7 @@ class Asset(object):
         source = self.s_default
         try:
             s = self.node.config.get('node', 'project')
+            source = self.s_config
         except:
             pass
         self.print_generic_cf(s, source, "project")
@@ -570,12 +594,11 @@ class Asset(object):
         return d
 
     def get_lan(self):
+        kwargs = {'mcast': True}
         if rcEnv.sysname == 'HP-UX':
-            args = [True]
-        else:
-            args = []
+            kwargs['hwaddr'] = True
         rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
-        ifconfig = rcIfconfig.ifconfig(*args)
+        ifconfig = rcIfconfig.ifconfig(**kwargs)
         lan = {}
         for intf in ifconfig.intf:
             if len(intf.hwaddr) == 0:
@@ -587,6 +610,7 @@ class Asset(object):
                      'intf': intf.name,
                      'addr': intf.ipaddr,
                      'mask': intf.mask,
+                     'flag_deprecated': intf.flag_deprecated,
                     }
                 lan[intf.hwaddr] += [d]
             elif type(intf.ipaddr) == list:
@@ -596,6 +620,7 @@ class Asset(object):
                              'intf': intf.name,
                              'addr': ip,
                              'mask': intf.mask[i],
+                             'flag_deprecated': intf.flag_deprecated,
                             }
                     lan[intf.hwaddr] += [d]
             for i, ip6 in enumerate(intf.ip6addr):
@@ -603,8 +628,23 @@ class Asset(object):
                      'intf': intf.name,
                      'addr': intf.ip6addr[i],
                      'mask': intf.ip6mask[i],
+                     'flag_deprecated': intf.flag_deprecated,
                     }
                 lan[intf.hwaddr] += [d]
+            if intf.name in ifconfig.mcast_data:
+                for addr in ifconfig.mcast_data[intf.name]:
+                    if ':' in addr:
+                        addr_type = 'ipv6'
+                    else:
+                        addr_type = 'ipv4'
+                    d = {'type': addr_type,
+                         'intf': intf.name,
+                         'addr': addr,
+                         'mask': "",
+                         'flag_deprecated': intf.flag_deprecated,
+                        }
+                    lan[intf.hwaddr] += [d]
+
                 
         self.print_lan(lan)
         return lan
@@ -613,7 +653,45 @@ class Asset(object):
         print("lan (probe)")
         for h, l in lan.items():
             for d in l:
-                print("  %s %-8s %-5s %s/%s"%(h, d['intf'], d['type'], d['addr'], d['mask']))
+                if d['mask'] != "":
+                    addr_mask = "%s/%s" % (d['addr'], d['mask'])
+                else:
+                    addr_mask = d['addr']
+                s = "  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask)
+                if d['flag_deprecated']:
+                    s += " (deprecated)"
+                print(s)
+
+    def get_last_boot(self):
+        os.environ["LANG"] = "C"
+        cmd = ["/usr/bin/uptime"]
+        p = Popen(cmd, stdout=PIPE)
+        out, err = p.communicate()
+        l = out.split()
+
+        i = 0
+        for s in ("days,", "day(s),"):
+            try:
+                i = l.index(s)
+                break
+            except:
+                pass
+
+        if i == 0:
+            last = datetime.datetime.now()
+        else:
+            try:
+                last = datetime.datetime.now() - datetime.timedelta(days=int(l[i-1]))
+            except:
+                return
+
+        last = last.strftime("%Y-%m-%d")
+        self.print_last_boot(last)
+        return last
+
+    def print_last_boot(self, last):
+        print("last boot (probe)")
+        print("  %s" % last)
 
     def get_asset_dict(self):
         d = {}
@@ -638,6 +716,12 @@ class Asset(object):
         d['host_mode'] = self.get_host_mode()
         d['enclosure'] = self.get_enclosure()
         d['listener_port'] = self.get_listener_port()
+        last_boot = self.get_last_boot()
+        if last_boot is not None:
+            d['last_boot'] = last_boot
+        sec_zone = self.get_sec_zone()
+        if sec_zone is not None:
+            d['sec_zone'] = sec_zone
         environnement = self.get_environnement()
         if environnement is not None:
             d['environnement'] = environnement

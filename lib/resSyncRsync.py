@@ -40,68 +40,6 @@ def lookup_snap_mod():
     else:
         raise ex.excError
 
-def remote_fs_mounted(self, node):
-    """Verify the remote fs is mounted before we send data.
-    """
-    if self.dstfs is None:
-        """No check has been configured. Assume the admin knows better.
-        """
-        return True
-    ruser = self.svc.node.get_ruser(node)
-    cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'df', self.dstfs]
-    (ret, out, err) = self.call(cmd, cache=True)
-    if ret != 0:
-        raise ex.excError
-
-    """
-    # df /zones
-    /zones             (rpool/zones       ):131578197 blocks 131578197 files
-           ^     
-           separator !
-
-    # df /zones/frcp03vrc0108/root
-    /zones/frcp03vrc0108/root(rpool/zones/frcp03vrc0108/rpool/ROOT/solaris-0):131578197 blocks 131578197 files
-                             ^
-                             no separator !
-    """
-    if self.dstfs+'(' not in out and self.dstfs not in out.split():
-        self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
-        return False
-    return True
-
-cache_remote_node_type = {}
-
-def remote_node_type(self, node, target):
-    if target == 'drpnodes':
-        expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
-    elif target == 'nodes':
-        expected_type = [self.svc.svctype]
-    else:
-        self.log.error('unknown sync target: %s'%target)
-        raise ex.excError
-
-    ruser = self.svc.node.get_ruser(node)
-    rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
-    if ruser != "root":
-        rcmd = ['sudo'] + rcmd
-
-    if node not in cache_remote_node_type:
-        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
-        (ret, out, err) = self.call(cmd, cache=True)
-        if ret != 0:
-            return False
-        words = out.split()
-        if len(words) == 1:
-            cache_remote_node_type[node] = words[0]
-        else:
-            cache_remote_node_type[node] = out
-
-    if cache_remote_node_type[node] in expected_type:
-        return True
-    self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
-                   (node, cache_remote_node_type[node], str(expected_type)))
-    return False
-
 def get_timestamp_filename(self, node):
     sync_timestamp_d = os.path.join(rcEnv.pathvar, 'sync', node)
     sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.rid)
@@ -137,32 +75,6 @@ def add_sudo_rsync_path(options):
             new.append(w)
     return new
 
-def sync_timestamp(self, node):
-    sync_timestamp_f = get_timestamp_filename(self, node)
-    sync_timestamp_d = os.path.dirname(sync_timestamp_f)
-    sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
-    sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
-    sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
-    if not os.path.isdir(sync_timestamp_d):
-        os.makedirs(sync_timestamp_d, 0o755)
-    if not os.path.isdir(sync_timestamp_d_src):
-        os.makedirs(sync_timestamp_d_src, 0o755)
-    with open(sync_timestamp_f, 'w') as f:
-        f.write(str(self.svc.action_start_date)+'\n')
-    import shutil
-    shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
-    shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-    ruser = self.svc.node.get_ruser(node)
-    if ruser != "root":
-        options = add_sudo_rsync_path(self.options)
-    else:
-        options = self.options
-    if '-e' not in options:
-        options += ['-e', rcEnv.rsh]
-    cmd = ['rsync'] + options + bwlimit_option(self)
-    cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
-    self.call(cmd)
-
 def get_timestamp(self, node):
     ts = None
     sync_timestamp_f = get_timestamp_filename(self, node)
@@ -177,15 +89,6 @@ def get_timestamp(self, node):
         self.log.info("failed get last sync date for %s to %s"%(self.src, node))
         return ts
     return ts
-
-def bwlimit_option(self):
-    if self.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+str(self.bwlimit) ]
-    elif self.svc.bwlimit is not None:
-        bwlimit = [ '--bwlimit='+str(self.svc.bwlimit) ]
-    else:
-        bwlimit = []
-    return bwlimit
 
 class Rsync(resSync.Sync):
     """Defines a rsync job from local node to its remote nodes. Target nodes
@@ -215,6 +118,9 @@ class Rsync(resSync.Sync):
     def nodes_to_sync(self, target=None, state="syncable", status=False):
         """ Checks are ordered by cost
         """
+
+        if self.skip or self.is_disabled():
+            return set([])
 
         """ DRP nodes are not allowed to sync nodes nor drpnodes
         """
@@ -260,7 +166,8 @@ class Rsync(resSync.Sync):
            state
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
+        if not self.svc.force and \
+           s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
             if s['overall'].status == rcStatus.WARN:
                 if not self.svc.cron:
@@ -270,10 +177,10 @@ class Rsync(resSync.Sync):
             return set([])
 
         for node in targets.copy():
-            if not status and not remote_node_type(self, node, target):
+            if not status and not self.remote_node_type(node, target):
                 targets -= set([node])
                 continue
-            if not status and not remote_fs_mounted(self, node):
+            if not status and not self.remote_fs_mounted(node):
                 targets -= set([node])
                 continue
 
@@ -281,6 +188,53 @@ class Rsync(resSync.Sync):
             return set([])
 
         return targets
+
+    def bwlimit_option(self):
+        if self.bwlimit is not None:
+            bwlimit = [ '--bwlimit='+str(self.bwlimit) ]
+        elif self.svc.bwlimit is not None:
+            bwlimit = [ '--bwlimit='+str(self.svc.bwlimit) ]
+        else:
+            bwlimit = []
+        return bwlimit
+
+    def mangle_options(self, ruser):
+        if ruser != "root":
+            options = add_sudo_rsync_path(self.options)
+        else:
+            options = self.options
+        options += self.bwlimit_option()
+        if '-e' in options:
+            return options
+
+        if rcEnv.rsh.startswith("/usr/bin/ssh") and rcEnv.sysname == "SunOS":
+            # SunOS "ssh -n" doesn't work with rsync
+            rsh = rcEnv.rsh.replace("-n", "")
+        else:
+            rsh = rcEnv.rsh
+        options += ['-e', rsh]
+        return options
+
+    def sync_timestamp(self, node):
+        sync_timestamp_f = get_timestamp_filename(self, node)
+        sync_timestamp_d = os.path.dirname(sync_timestamp_f)
+        sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
+        sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
+        sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
+        if not os.path.isdir(sync_timestamp_d):
+            os.makedirs(sync_timestamp_d, 0o755)
+        if not os.path.isdir(sync_timestamp_d_src):
+            os.makedirs(sync_timestamp_d_src, 0o755)
+        with open(sync_timestamp_f, 'w') as f:
+            f.write(str(self.svc.action_start_date)+'\n')
+        import shutil
+        shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
+        shutil.copy2(sync_timestamp_f, sched_timestamp_f)
+        ruser = self.svc.node.get_ruser(node)
+        options = self.mangle_options(ruser)
+        cmd = ['rsync'] + options
+        cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
+        self.call(cmd)
 
     def sync(self, target):
         if target not in self.target.keys():
@@ -315,18 +269,11 @@ class Rsync(resSync.Sync):
                 self.log.info("no files to sync")
             raise ex.syncNoFilesToSync
 
-        bwlimit = bwlimit_option(self)
-
         for node in targets:
             ruser = self.svc.node.get_ruser(node)
             dst = ruser + '@' + node + ':' + self.dst
-            if ruser != "root":
-                options = add_sudo_rsync_path(self.options)
-            else:
-                options = self.options
-            if '-e' not in options:
-                options += ['-e', rcEnv.rsh]
-            cmd = ['rsync'] + options + bwlimit + src
+            options = self.mangle_options(ruser)
+            cmd = ['rsync'] + options + src
             cmd.append(dst)
             if self.rid.startswith("sync#i"):
                 (ret, out, err) = self.call(cmd)
@@ -335,7 +282,7 @@ class Rsync(resSync.Sync):
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue
-            sync_timestamp(self, node)
+            self.sync_timestamp(node)
             self.svc.need_postsync |= set([node])
         return
 
@@ -343,6 +290,11 @@ class Rsync(resSync.Sync):
         """Actions to do before resourceSet iterates through the resources to
            trigger action() on each one
         """
+
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
 
         """Don't sync PRD services when running on !PRD node
         """
@@ -356,11 +308,11 @@ class Rsync(resSync.Sync):
         targets = set([])
         rtargets = {0: set([])}
         need_snap = False
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
+        for i, r in enumerate(resources):
+            if r.skip or r.is_disabled():
                 continue
             rtargets[i] = set([])
-            if action == "syncnodes":
+            if action == "sync_nodes":
                 rtargets[i] |= r.nodes_to_sync('nodes')
             else:
                 rtargets[i] |= r.nodes_to_sync('drpnodes')
@@ -393,10 +345,15 @@ class Rsync(resSync.Sync):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(rset.resources) == 0:
+            return
+
         if hasattr(rset, 'snaps'):
             rset.snaps.snap_cleanup(rset)
 
-    def syncnodes(self):
+    def sync_nodes(self):
         try:
             self.sync("nodes")
         except ex.syncNoFilesToSync:
@@ -408,7 +365,7 @@ class Rsync(resSync.Sync):
                 self.log.info("no node to sync")
             pass
 
-    def syncdrp(self):
+    def sync_drp(self):
         try:
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
@@ -463,16 +420,31 @@ class Rsync(resSync.Sync):
         self.status_log("%s need update"%', '.join(nodes))
         return rcStatus.DOWN
 
-    def __init__(self, rid=None, src=[], dst=None, options=[], target={}, dstfs=None, snap=False,
-                 bwlimit=None, sync_max_delay=None, sync_interval=None,
-                 sync_days=None, sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.rsync",
+    def __init__(self,
+                 rid=None,
+                 src=[],
+                 dst=None,
+                 options=[],
+                 target={},
+                 dstfs=None,
+                 snap=False,
+                 bwlimit=None,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.rsync",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         if internal:
             if rcEnv.drp_path in dst:

@@ -60,11 +60,20 @@ class Hb(Res.Resource):
     def __str__(self):
         return "%s" % (Res.Resource.__str__(self))
 
+    def freeze(self):
+        pass
+
+    def thaw(self):
+        pass
+
     def stop(self):
         pass
 
     def start(self):
         pass
+
+    def shutdown(self):
+        raise ex.excEndAction("shutdown action is not allowed on heartbeat-driven services")
 
     def __status(self, verbose=False):
         return rcStatus.UNDEF

@@ -33,10 +33,13 @@ class interface:
         a += [' ip6mask = ' + str(self.ip6mask)]
         a += [' hwaddr = ' + self.hwaddr]
         a += [' flag_up = ' + str(self.flag_up)]
+        a += [' flag_deprecated = ' + str(self.flag_deprecated)]
         a += [' flag_broadcast = ' + str(self.flag_broadcast)]
         a += [' flag_running = ' + str(self.flag_running)]
         a += [' flag_multicast = ' + str(self.flag_multicast)]
         a += [' flag_loopback = ' + str(self.flag_loopback)]
+        if hasattr(self, 'groupname'):
+            a += [' groupname = ' + str(self.groupname)]
         return '\n'.join(a)
 
     def __init__(self, name):
@@ -52,6 +55,7 @@ class interface:
         self.ip6mask = []
         self.hwaddr = ''
         self.flag_up = False
+        self.flag_deprecated = False
         self.flag_broadcast = False
         self.flag_running = False
         self.flag_multicast = False
@@ -76,6 +80,9 @@ class ifconfig(object):
 
     def has_param(self, param, value):
         for i in self.intf:
+            if not hasattr(i, param):
+                continue
+
             if isinstance(getattr(i, param), list):
                 if value in getattr(i, param):
                     return i
@@ -84,14 +91,29 @@ class ifconfig(object):
                     return i
         return None
 
+    def get_matching_interfaces(self, param, value):
+        l = []
+        for i in self.intf:
+            if not hasattr(i, param):
+                continue
+            if isinstance(getattr(i, param), list):
+                if value in getattr(i, param):
+                    l.append(i)
+            else:
+                if getattr(i, param) == value:
+                    l.append(i)
+        return l
+
     def __str__(self):
 	s = ""
         for intf in self.intf:
             s += str(intf)
+	s += "\nmcast: " + str(self.mcast_data) 
 	return s
 
-    def __init__(self):
+    def __init__(self, mcast=False):
         self.intf = []
+        self.mcast_data = {}
 
     def next_stacked_dev(self,dev):
         """Return the first available interfaceX:Y on  interfaceX
@@ -114,6 +136,12 @@ class ifconfig(object):
             stacked_intf = self.has_param("ipaddr", addr)
         if stacked_intf is not None:
             if dev not in stacked_intf.name:
+		base_intf = self.has_param("name", dev)
+                if base_intf and hasattr(base_intf, "groupname"):
+                    alt_intfs = [ i for i in self.get_matching_interfaces("groupname", base_intf.groupname) if i.name != base_intf.name and stacked_intf.name.startswith(i.name+":")]
+                    if len(alt_intfs) == 1:
+                        log.info("found %s plumbed on %s, in the same ipmp group than %s" % (addr, stacked_intf.name, dev))
+                        return stacked_intf.name
                 log.error("%s is plumbed but not on %s" % (addr, dev))
                 return
             stacked_dev = stacked_intf.name

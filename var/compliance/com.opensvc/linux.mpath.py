@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
 OSVC_COMP_MPATH='[{"key": "defaults.polling_interval", "op": ">=", "value": 20}, {"key": "device.HP.HSV210.prio", "op": "=", "value": "alua"}]' ./linux.mpath.py OSVC_COMP_MPATH check
@@ -101,8 +101,11 @@ class Conf(object):
         index = self.parse_key(key)
         key = re.sub(r'\{([^\}]+)\}\.', '', key)
         l = key.split('.')
-        a = l[-1]
-        if l[-2] == "device":
+        if key.endswith('}'):
+            a = None
+        else:
+            a = l[-1]
+        if l[1] == "device":
             o = self.find_device(l[0], index)
             if o is None:
                 o = Section("device")
@@ -110,9 +113,10 @@ class Conf(object):
                 o.attr['product'] = index[1]
                 _l = self.get_device_list(l[0])
                 _l.append(o)
-            o.attr[a] = value
+            if a is not None:
+                o.attr[a] = value
             self.changed = True
-        elif l[-2] == "multipath":
+        elif l[1] == "multipath":
             o = self.find_multipath(index)
             if o is None:
                 o = Section("multipath")
@@ -136,15 +140,21 @@ class Conf(object):
         index = self.parse_key(key)
         key = re.sub(r'\{([^\}]+)\}\.', '', key)
         l = key.split('.')
-        a = l[-1]
+        if key.endswith('}'):
+            a = None
+        else:
+            a = l[-1]
         if len(l) < 2:
             print >>sys.stderr, "malformed key", key
             return
-        if l[-2] == "device":
+        if l[1] == "device":
             o = self.find_device(l[0], index)
-            if o and a in o.attr:
-                return o.attr[a]
-        elif l[-2] == "multipath":
+            if o:
+                if a is None:
+                    return ""
+                elif a in o.attr:
+                    return o.attr[a]
+        elif l[1] == "multipath":
             o = self.find_multipath(index)
             if o and a in o.attr:
                 return o.attr[a]
@@ -346,9 +356,10 @@ class LinuxMpath(object):
                 return RET_ERR
 
         if op == '=':
-            if str(value) != str(target):
+            target = str(target).strip()
+            if str(value) != target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), target)
                 r |= RET_ERR
             elif verbose:
                 print "%s=%s on target"%(keyname, str(value))
@@ -448,8 +459,20 @@ class LinuxMpath(object):
     def restart_daemon(self):
         if not self.need_restart:
             return
+        candidates = [
+          "/etc/init.d/multipathd",
+          "/etc/init.d/multipath-tools",
+        ]
+        fpath = None
+        for i in candidates:
+            if os.path.exists(i):
+                fpath = i
+                break
+        if fpath is None:
+            print >>sys.stderr, "multipath tools startup script not found"
+            return RET_ERR
         print "restarting multipath daemon"
-        cmd = ["/etc/init.d/multipathd", "restart"]
+        cmd = [fpath, "restart"]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if len(err) > 0:

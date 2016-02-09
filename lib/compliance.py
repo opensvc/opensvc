@@ -4,11 +4,14 @@ import os
 import sys
 import re
 import datetime
+import json
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
 from rcPrintTable import print_table
+from rcStatus import color, _colorize
+from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
 
@@ -18,9 +21,11 @@ regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
 class Module(object):
     pattern = '^S*[0-9]+-*%(name)s$'
 
-    def __init__(self, name):
+    def __init__(self, name, autofix=False, moduleset=None):
         self.name = name
+        self.moduleset = moduleset
         self.executable = None
+        self.autofix = autofix
 
         dl = os.listdir(comp_dir)
         match = []
@@ -87,10 +92,23 @@ class Module(object):
             vals.append("")
         self.context.action_log_vals.append(vals)
 
-    def action(self, action):
-        print(banner(self.name))
+    def setup_env(self):
+        os.environ.clear()
+        os.environ.update(self.context.env_bkp)
+        for rule in self.ruleset.values():
+            if (rule["filter"] != "explicit attachment via moduleset" and \
+                "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \
+               self.moduleset in self.context.data["modset_rset_relations"]  and \
+               rule['name'] in self.context.data["modset_rset_relations"][self.moduleset]
+               ):
+                for var, val in rule['vars']:
+                    os.environ[self.context.format_rule_var(var)] = self.context.format_rule_val(val)
 
-        if action not in ['check', 'fix', 'fixable']:
+
+    def action(self, action):
+        self.print_bold(banner(self.name))
+
+        if action not in ['check', 'fix', 'fixable', 'env']:
             print('action %s not supported')
             return 1
 
@@ -113,13 +131,24 @@ class Module(object):
                 self.do_action('fixable')
         elif action == 'fixable':
             r = self.do_action('fixable')
+        elif action == 'env':
+            r = self.do_env()
         return r
+
+    def do_env(self):
+        a = []
+        self.setup_env()
+        for var in sorted(os.environ):
+            val = os.environ[var]
+            a.append('%s=%s'%(var, val))
+        print('\n'.join(a))
+        return 0
 
     def do_action(self, action):
         start = datetime.datetime.now()
         cmd = [self.executable, action]
         log = ''
-        print("ACTION:   %s"%action)
+        self.print_bold("ACTION:   %s"%action)
         print("START:    %s"%str(start))
         print("COMMAND:  %s"%' '.join(cmd))
         print("LOG:")
@@ -147,8 +176,9 @@ class Module(object):
             if not line:
                 _fe.seek(fep)
                 return None
+            _line = color.RED + 'ERR: ' + color.END + line
             line = 'ERR: '+line
-            sys.stdout.write(line)
+            sys.stdout.write(_line)
             sys.stdout.flush()
             return line
 
@@ -166,6 +196,7 @@ class Module(object):
             return log
 
         try:
+            self.setup_env()
             p = Popen(cmd, stdout=fo, stderr=fe, env=os.environ)
             _fo = open(fo.name, 'r')
             _fe = open(fe.name, 'r')
@@ -193,10 +224,24 @@ class Module(object):
         _fo.close()
         _fe.close()
         end = datetime.datetime.now()
-        print("RCODE:    %d"%p.returncode)
+        self.print_rcode(p.returncode)
         print("DURATION: %s"%str(end-start))
         self.log_action(log, p.returncode, action)
         return p.returncode
+
+    def print_bold(self, s):
+        print(_colorize(s, color.BOLD))
+
+    def print_rcode(self, r):
+        if r == 1:
+            print(_colorize("RCODE:    %d"%r, color.RED))
+        elif r == 0:
+            print(_colorize("RCODE:    %d"%r, color.GREEN))
+        else:
+            print("RCODE:    %d"%r)
+
+    def env(self):
+        return self.action('env')
 
     def check(self):
         return self.action('check')
@@ -217,6 +262,8 @@ class Compliance(object):
         self.module_o = {}
         self.module = []
         self.updatecomp = False
+        self.moduleset = None
+        self.data = None
         self.action_log_vals = []
         self.action_log_vars = [
           'run_nodename',
@@ -226,18 +273,43 @@ class Compliance(object):
           'run_action',
           'rset_md5',
           'run_svcname']
+        self.env_bkp = os.environ.copy()
 
-    def compliance_check(self):
-        flag = "last_comp_check"
-        if self.svcname is not None:
-            flag = '.'.join((flag, self.svcname))
-        if self.skip_action is not None and \
-           self.skip_action("compliance", 'comp_check_interval', flag,
-                            period_option='comp_check_period',
-                            days_option='comp_check_days'):
+    def set_rset_md5(self):
+        self.rset_md5 = ""
+        rs = self.ruleset.get("osvc_collector")
+        if rs is None:
             return
+        for var, val in rs["vars"]:
+            if var == "ruleset_md5":
+                self.rset_md5 = val
+                break
+
+    def setup_env(self):
+        for rule in self.ruleset.values():
+            for var, val in rule['vars']:
+                os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
+
+    def reset_env(self):
+        os.environ.clear()
+        os.environ.update(self.env_bkp)
+
+    def compliance_auto(self):
+        if self.skip_action is not None and \
+           self.skip_action("compliance_auto"):
+            return
+        self.task_compliance_auto()
+
+    @scheduler_fork
+    def task_compliance_auto(self):
         if self.updatecomp:
             self.node.updatecomp()
+        self.do_auto()
+
+    def compliance_env(self):
+        self.do_run('env')
+
+    def compliance_check(self):
         self.do_checks()
 
     def __iadd__(self, o):
@@ -250,35 +322,74 @@ class Compliance(object):
         o.rset_md5 = self.rset_md5
         return self
 
-    def set_rset_md5(self):
-        self.rset_md5 = ""
-        if 'OSVC_COMP_RULESET_MD5' in os.environ:
-            self.rset_md5 = os.environ['OSVC_COMP_RULESET_MD5']
+    def print_bold(self, s):
+        print(_colorize(s, color.BOLD))
+
+    def expand_modulesets(self, modulesets):
+        l = []
+
+        def recurse(ms):
+            l.append(ms)
+            if ms not in self.data["modset_relations"]:
+                return
+            for _ms in self.data["modset_relations"][ms]:
+                recurse(_ms)
+
+        for ms in modulesets:
+            recurse(ms)
+
+        return l
 
     def init(self):
         if self.options.moduleset != "" and self.options.module != "":
             raise ex.excError('--moduleset and --module are exclusive')
 
-        if self.options.moduleset == "" and self.options.module == "":
-            self.moduleset = self.get_moduleset()
-        else:
-            self.moduleset = self.options.moduleset.split(',')
-            self.module = self.options.module.split(',')
-        if len(self.moduleset) > 0 and hasattr(self.options, "attach") and self.options.attach:
-            self._compliance_attach_moduleset(self.moduleset)
+        if self.data is None:
+            self.data = self.get_comp_data()
+            if self.data is None:
+                raise ex.excError("could not fetch compliance data from the collector")
+            modulesets = []
+            if self.options.moduleset != "":
+                # purge unspecified modulesets
+                modulesets = self.options.moduleset.split(',')
+                modulesets = self.expand_modulesets(modulesets)
+                for ms in self.data["modulesets"].keys():
+                    if ms not in modulesets:
+                        del(self.data["modulesets"][ms])
+            elif self.options.module != "":
+                # purge unspecified modules
+                modules = self.options.module.split(',')
+                for ms, data in self.data["modulesets"].items():
+                    n = len(data)
+                    for i in sorted(range(n), reverse=True):
+                        module, autofix = data[i]
+                        if module not in modules:
+                            del(self.data["modulesets"][ms][i])
+                for module in modules:
+                    in_modsets = []
+                    for ms, data in self.data["modulesets"].items():
+                        for _module, autofix in data:
+                            if module == _module:
+                               in_modsets.append(ms)
+                    if len(in_modsets) == 0:
+                        print("module %s not found in any attached moduleset" % module)
+                    elif len(in_modsets) > 1:
+                        raise ex.excError("module %s found in multiple attached moduleset (%s). Use --moduleset instead of --module to clear the ambiguity" % (module, ', '.join(in_modsets)))
+                    
+            if len(modulesets) > 0 and \
+               hasattr(self.options, "attach") and self.options.attach:
+                self._compliance_attach_moduleset(modulesets)
+
         self.module = self.merge_moduleset_modules()
-        self.ruleset = self.get_ruleset()
-        self.setup_env()
+        self.ruleset = self.data['rulesets']
         self.set_rset_md5()
 
         if not os.path.exists(comp_dir):
             os.makedirs(comp_dir, 0o755)
-            raise ex.excError('modules [%s] are not present in %s'%(
-                               ','.join(self.module), comp_dir))
 
-        for module in self.module:
+        for module, autofix, moduleset in self.module:
             try:
-                self += Module(module)
+                self += Module(module, autofix, moduleset)
             except ex.excInitError as e:
                 print(e, file=sys.stderr)
 
@@ -302,26 +413,20 @@ class Compliance(object):
 
     def format_rule_val(self, val):
         if isinstance(val, unicode):
-            val = repr(val).strip("'")
+            try:
+                tmp = json.loads(val)
+                val = json.dumps(tmp)
+            except:
+                val = repr(val)[2:-1]
         else:
             val = str(val)
         return val
 
-    def setup_env(self):
-        self.env_bkp = os.environ.copy()
-        for rule in self.ruleset.values():
-            for var, val in rule['vars']:
-                os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
-
-    def unsetup_env(self):
-        os.environ.clear()
-        os.environ.update(self.env_bkp)
-
     def get_moduleset(self):
         if self.svcname is not None:
-            moduleset = self.collector.call('comp_get_svc_moduleset', self.svcname)
+            moduleset = self.collector.call('comp_get_svc_data_moduleset', self.svcname)
         else:
-            moduleset = self.collector.call('comp_get_moduleset')
+            moduleset = self.collector.call('comp_get_data_moduleset')
         if moduleset is None:
             raise ex.excError('could not fetch moduleset')
         return moduleset
@@ -362,15 +467,22 @@ class Compliance(object):
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
-    def merge_moduleset_modules(self):
-        modules = self.get_moduleset_modules(self.moduleset)
-        return set(self.module + modules) - set([''])
+    def get_comp_data(self, modulesets=[]):
+        if self.svcname is not None:
+            return self.collector.call('comp_get_svc_data', self.svcname, modulesets)
+        else:
+            return self.collector.call('comp_get_data', modulesets)
 
-    def get_moduleset_modules(self, m):
-        moduleset = self.collector.call('comp_get_moduleset_modules', m)
-        if moduleset is None:
-            raise ex.excError('could not expand moduleset modules')
-        return moduleset
+    def merge_moduleset_modules(self):
+        l = [] 
+        for ms, data in self.data['modulesets'].items():
+            for module, autofix in data:
+                if (module, autofix) not in l:
+                    l.append((module, autofix, ms))
+                elif autofix and (module, False, ms) in l:
+                    l.remove((module, False, ms))
+                    l.append((module, True, ms))
+        return l
 
     def digest_errors(self, err):
         passed = [m for m in err if err[m] == 0]
@@ -392,7 +504,7 @@ class Compliance(object):
                 return ''
             return '\n%s'%'\n'.join(map(lambda x: ' '+x, l))
 
-        print(banner("digest"))
+        self.print_bold(banner("digest"))
         print("%d n/a%s"%(n_na, modules(na)))
         print("%d passed%s"%(n_passed, modules(passed)))
         print("%d error%s%s"%(n_errors, _s(n_errors), modules(errors)))
@@ -402,30 +514,52 @@ class Compliance(object):
         return 0
 
     def compliance_show_moduleset(self):
-        self.moduleset = self.get_moduleset()
-        for ms in self.moduleset:
-            print(ms+':')
-            for m in self.get_moduleset_modules(ms):
-                print(' %s'%m)
+        def recurse(ms, depth=0):
+            prefix=" "*depth
+            print(prefix+ms+':')
+            if ms not in data["modulesets"]:
+                print(prefix+" (no modules)")
+                return
+            for module, autofix in data["modulesets"][ms]:
+                if autofix:
+                    s = " (autofix)"
+                else:
+                    s = ""
+                print(prefix+' %s%s' % (module, s))
+            if ms in data["modset_relations"]:
+                for _ms in data["modset_relations"][ms]:
+                    recurse(_ms, depth+1)
+
+        data = self.get_moduleset()
+        for ms in data["root_modulesets"]:
+            recurse(ms)
 
     def compliance_show_ruleset(self):
         self.ruleset = self.get_ruleset()
-        self.setup_env()
         print(self.str_ruleset())
-        self.unsetup_env()
 
     def do_run(self, action):
         err = {}
         self.init()
         start = datetime.datetime.now()
         for module in self.ordered_module:
-            err[module] = getattr(self.module_o[module], action)()
+            _action = action
+            if action == "auto":
+                if self.module_o[module].autofix:
+                    _action = "fix"
+                else:
+                    _action = "check"
+            err[module] = getattr(self.module_o[module], _action)()
+        if action == "env":
+            return 0
         r = self.digest_errors(err)
         end = datetime.datetime.now()
         print("total duration: %s"%str(end-start))
-        self.unsetup_env()
         self.collector.call('comp_log_actions', self.action_log_vars, self.action_log_vals)
         return r
+
+    def do_auto(self):
+        return self.do_run('auto')
 
     def do_checks(self):
         return self.do_run('check')
@@ -475,6 +609,10 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_svc_moduleset', self.svcname, moduleset)
             else:
                 d = self.collector.call('comp_attach_moduleset', moduleset)
+            if d is None:
+                print("Failed to attach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -494,6 +632,10 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_svc_moduleset', self.svcname, moduleset)
             else:
                 d = self.collector.call('comp_detach_moduleset', moduleset)
+            if d is None:
+                print("Failed to detach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -513,6 +655,10 @@ class Compliance(object):
                 d = self.collector.call('comp_attach_svc_ruleset', self.svcname, ruleset)
             else:
                 d = self.collector.call('comp_attach_ruleset', ruleset)
+            if d is None:
+                print("Failed to attach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])
@@ -532,6 +678,10 @@ class Compliance(object):
                 d = self.collector.call('comp_detach_svc_ruleset', self.svcname, ruleset)
             else:
                 d = self.collector.call('comp_detach_ruleset', ruleset)
+            if d is None:
+                print("Failed to detach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
+                err = True
+                continue
             if not d['status']:
                 err = True
             print(d['msg'])

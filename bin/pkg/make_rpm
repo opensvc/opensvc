@@ -22,6 +22,10 @@ Group: Administration/Tools
 BuildRoot: $CHROOT
 Provides: /opt/opensvc/bin/python
 AutoReqProv: no
+%define _source_filedigest_algorithm 1
+%define _binary_filedigest_algorithm 1
+%define _source_payload w9.gzdio
+%define _binary_payload w9.gzdio
 
 %description
 These are the tools to drive OpenSVC services

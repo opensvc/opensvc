@@ -23,13 +23,72 @@ import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
 
-    def __init__(self, ifconfig=None):
+    def __init__(self, ifconfig=None, mcast=False):
         self.intf = []
+        if mcast:
+            self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
         if ifconfig is not None:
             out = ifconfig
         else:
             out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
         self.parse(out)
+
+    def get_mcast(self):
+        cmd = ['netstat', '-gn']
+        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        return self.parse_mcast(out)
+
+    def parse_mcast(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for i, line in enumerate(lines):
+            if line.startswith('--'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+	    if len(line) == 0:
+	        break 
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+	if len(lines) <= i + 1:
+	    return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+            if line.startswith('--'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+1:]
+        for i, line in enumerate(lines):
+	    if len(line) == 0:
+	        break 
+            try:
+                intf, addr, refcnt = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        return data
+
 
     def set_hwaddr(self, i):
         if i is None or i.hwaddr != '' or ':' not in i.name:
@@ -75,6 +134,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ip6addr = []
                 i.ip6mask = []
                 i.hwaddr = ''
+                i.groupname = ''
                 i.flag_up = False
                 i.flag_broadcast = False
                 i.flag_running = False
@@ -84,11 +144,12 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_loopback = False
 
                 if 'UP' in ifstatus : i.flag_up = True
-                elif 'BROADCAST' in ifstatus : i.flag_broadcast = True
-                elif 'RUNNING' in ifstatus   : i.flag_running = True
-                elif 'MULTICAST' in ifstatus : i.flag_multicast = True
-                elif 'IPv4' in ifstatus      : i.flag_ipv4 = True
-                elif 'IPv6' in ifstatus      : i.flag_ipv6 = True
+                if 'DEPRECATED' in ifstatus : i.flag_deprecated = True
+                if 'BROADCAST' in ifstatus : i.flag_broadcast = True
+                if 'RUNNING' in ifstatus   : i.flag_running = True
+                if 'MULTICAST' in ifstatus : i.flag_multicast = True
+                if 'IPv4' in ifstatus      : i.flag_ipv4 = True
+                if 'IPv6' in ifstatus      : i.flag_ipv6 = True
             else:
                 n=0
                 w=l.split()
@@ -98,6 +159,7 @@ class ifconfig(rcIfconfig.ifconfig):
                     elif p == 'netmask' : i.mask=v
                     elif p == 'broadcast' : i.bcast=v
                     elif p == 'ether' : i.hwaddr=v
+                    elif p == 'groupname' : i.groupname=v
                     elif p == 'inet6' :
                         (a, m) = v.split('/')
                         i.ip6addr += [a]
@@ -107,6 +169,5 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    #help(ifconfig)
-    for i in ifconfig().intf:
-        print(i)
+    ifaces = ifconfig(mcast=True)
+    print(ifaces)

@@ -31,19 +31,32 @@ class SyncBtrfs(resSync.Sync):
     def sort_rset(self, rset):
         rset.resources.sort(lambda x, y: cmp(x.src_subvol, y.src_subvol))
 
-    def __init__(self, rid=None, target=None, src=None, dst=None,
-                 delta_store=None, sender=None, recursive=False,
-                 snap_size=0, sync_max_delay=None, sync_interval=None,
-                 sync_days=None, sync_period=None,
-                 optional=False, disabled=False, tags=set([])):
-        resSync.Sync.__init__(self, rid=rid, type="sync.btrfs",
+    def __init__(self,
+                 rid=None,
+                 target=None,
+                 src=None,
+                 dst=None,
+                 delta_store=None,
+                 sender=None,
+                 recursive=False,
+                 snap_size=0,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.btrfs",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
-        self.label = "btrfs of %s to %s"%(src, target)
+        self.label = "btrfs of %s to %s"%(src, ", ".join(target))
         self.target = target
         self.sender = sender
         self.recursive = recursive
@@ -69,8 +82,13 @@ class SyncBtrfs(resSync.Sync):
         self.dst_btrfs = {}
         self.src_btrfs = None
 
-    def on_add(self):
-        self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, log=self.log)
+    def init_src_btrfs(self):
+        if self.src_btrfs is not None:
+            return
+        try:
+            self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, log=self.log)
+        except rcBtrfs.ExecError as e:
+            raise ex.excError(str(e))
 
     def pre_action(self, rset, action):
         """Prepare snapshots
@@ -78,11 +96,16 @@ class SyncBtrfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         if not action.startswith('sync'):
             return
 
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if s['overall'].status != rcStatus.UP:
+        if not self.svc.force and s['overall'].status != rcStatus.UP:
             self.log.debug("won't sync this resource for a service not up")
             raise ex.excAbortAction
 
@@ -90,9 +113,8 @@ class SyncBtrfs(resSync.Sync):
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        self.init_src_btrfs()
+        for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
                 continue
             r.get_targets(action)
@@ -110,6 +132,7 @@ class SyncBtrfs(resSync.Sync):
                 self.target, self.src)
 
     def create_snap(self, snap_orig, snap):
+        self.init_src_btrfs()
         try:
             self.src_btrfs.snapshot(snap_orig, snap, readonly=True, recursive=self.recursive)
         except rcBtrfs.ExistError:
@@ -119,6 +142,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError
 
     def get_src_info(self):
+        self.init_src_btrfs()
         subvol = self.src_subvol.replace('/','_')
         base = self.src_btrfs.snapdir + '/' + subvol
         self.src_snap_sent = base + '@sent'
@@ -127,7 +151,10 @@ class SyncBtrfs(resSync.Sync):
 
     def get_dst_info(self, node):
         if node not in self.dst_btrfs:
-            self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, log=self.log, node=node)
+            try:
+                self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, log=self.log, node=node)
+            except rcBtrfs.ExecError as e:
+                raise ex.excError(str(e))
             #self.dst_btrfs[node].setup_snap()
         subvol = self.src_subvol.replace('/','_')
         base = self.dst_btrfs[node].snapdir + '/' + subvol
@@ -143,24 +170,25 @@ class SyncBtrfs(resSync.Sync):
 
     def get_targets(self, action=None):
         self.targets = set()
-        if 'nodes' in self.target and action in (None, 'syncnodes'):
+        if 'nodes' in self.target and action in (None, 'sync_nodes'):
             self.targets |= self.svc.nodes
-        if 'drpnodes' in self.target and action in (None, 'syncdrp'):
+        if 'drpnodes' in self.target and action in (None, 'sync_drp'):
             self.targets |= self.svc.drpnodes
         self.targets -= set([rcEnv.nodename])
 
-    def syncnodes(self):
-        self._syncupdate('syncnodes')
+    def sync_nodes(self):
+        self._sync_update('sync_nodes')
 
-    def syncdrp(self):
-        self._syncupdate('syncdrp')
+    def sync_drp(self):
+        self._sync_update('sync_drp')
 
     def sanity_checks(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if s['overall'].status != rcStatus.UP:
-            if not self.svc.cron:
-                self.log.info("won't sync this resource for a service not up")
-            raise ex.excError
+        if not self.svc.force:
+            s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+            if s['overall'].status != rcStatus.UP:
+                if not self.svc.cron:
+                    self.log.info("won't sync this resource for a service not up")
+                raise ex.excError
 
         """ Refuse to sync from a flex non-primary node
         """
@@ -170,7 +198,8 @@ class SyncBtrfs(resSync.Sync):
                 self.log.info("won't sync this resource from a flex non-primary node")
             raise ex.excError
 
-    def syncfullsync(self):
+    def sync_full(self):
+        self.init_src_btrfs()
         try:
             self.sanity_checks()
         except ex.excError:
@@ -240,6 +269,7 @@ class SyncBtrfs(resSync.Sync):
             self.log.info(buff[0])
 
     def remove_snap(self, node=None):
+        self.init_src_btrfs()
         if node is not None:
             o = self.dst_btrfs[node]
             subvol = self.dst_snap_sent
@@ -253,6 +283,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError()
 
     def rename_snap(self, node=None):
+        self.init_src_btrfs()
         if node is None:
             o = self.src_btrfs
             src = self.src_snap_tosend
@@ -310,7 +341,8 @@ class SyncBtrfs(resSync.Sync):
         self.remove_snap(node)
         self.rename_snap(node)
 
-    def _syncupdate(self, action):
+    def _sync_update(self, action):
+        self.init_src_btrfs()
         try:
             self.sanity_checks()
         except ex.excError:
@@ -405,6 +437,7 @@ class SyncBtrfs(resSync.Sync):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
+        self.init_src_btrfs()
         self.snap_uuid = self.src_btrfs.get_transid(snap)
 
     def set_statefile(self):

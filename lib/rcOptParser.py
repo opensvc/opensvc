@@ -21,28 +21,28 @@ from rcGlobalEnv import *
 
 action_desc = {
     'Service actions': {
-      'printsvc': 'display service live configuration',
+      'print_config': 'display service current configuration',
+      'edit_config': 'edit service configuration',
       'boot': 'start a service if executed on the primary node (or one of the primary nodes in case of a flex service), startstandby if not',
       'shutdown': 'stop a service, disabling the background database logging',
-      'start': 'start a service, chaining startip-diskstart-startapp',
-      'startstandby': 'start service resources marked always_on',
+      'start': 'start all service resources',
+      'startstandby': 'start service resources flagged always on',
       'startip': 'configure service ip addresses',
       'startshare': 'start network shares',
       'stopshare': 'stop network shares',
       'startfs': 'prepare devices, logical volumes, mount service filesystems, bootstrap containers',
       'startapp': 'execute service application startup script',
-      'stop': 'stop a service, chaining stopapp-stopdisk-stopip',
+      'stop': 'stop all service resources not flagged always on. With --force, stop all service resources, even those flagged always on.',
       'stopip': 'unconfigure service ip addresses',
       'stopfs': 'shutdown container, umount service filesystems, deactivate logical volumes',
       'stopapp': 'execute service application stop script',
-      'syncnodes': 'send to peer nodes the service config files and additional files described in the config file. --force bypass the schedule check.',
-      'syncdrp': 'send to drp nodes the service config files and additional files described in the config file. --force bypass the schedule check.',
       'startcontainer': 'start the container resource',
       'stopcontainer': 'stop the container resource',
       'disable': 'disable resources passed through --rid in services passed through --service. Specifying no resource disables the whole service.',
       'enable': 'enable resources passed through --rid in services passed through --service. Specifying no resource enables the whole service.',
       'status': 'return service overall status code',
       'print_status': 'display service resource status',
+      'print_resource_status': 'display a specific service resource status, pointed by --rid',
       'print_env_mtime': 'display service env file modification time',
       'freeze': 'set up a flag to block actions on this service',
       'thaw': 'remove the flag to unblock actions on this service',
@@ -61,17 +61,21 @@ action_desc = {
       'prstop': 'release scsi disks held by this service',
       'prstatus': 'report status of reservations on scsi disks held by this service',
       'restart': 'combo action, chaining stop-start',
-      'resync': 'combo action, chaining stop-syncresync-start',
-      'syncquiesce': 'trigger a storage hardware-assisted disk synchronization',
-      'syncbreak': 'split a storage hardware-assisted disk synchronization',
-      'syncsplit': 'split a EMC SRDF storage hardware-assisted disk synchronization',
-      'syncestablish': 'establish a EMC SRDF storage hardware-assisted disk synchronization',
-      'syncresync': 'like syncupdate, but not triggered by the scheduler (thus adapted for clone/snap operations)',
-      'syncfullsync': 'trigger a full copy of the volume to its target',
-      'syncupdate': 'trigger a one-time resync of the volume to its target',
-      'syncresume': 're-establish a broken storage hardware-assisted synchronization',
-      'syncverify': 'trigger a one-time checksum-based verify of the volume and its target',
-      'syncall': 'combo action, chaining syncnodes-syncdrp-syncupdate.  --force bypass the schedule check.',
+      'resync': 'combo action, chaining stop-sync_resync-start',
+      'sync_nodes': 'send to peer nodes the service config files and additional files described in the config file.',
+      'sync_drp': 'send to drp nodes the service config files and additional files described in the config file.',
+      'sync_quiesce': 'trigger a storage hardware-assisted disk synchronization',
+      'sync_break': 'split a storage hardware-assisted disk synchronization',
+      'sync_split': 'split a EMC SRDF storage hardware-assisted disk synchronization',
+      'sync_establish': 'establish a EMC SRDF storage hardware-assisted disk synchronization',
+      'sync_resync': 'like sync_update, but not triggered by the scheduler (thus adapted for clone/snap operations)',
+      'sync_full': 'trigger a full copy of the volume to its target',
+      'sync_restore': 'trigger a restore of the sync resources data to their target path (DANGEROUS: make sure you understand before running this action).',
+      'sync_update': 'trigger a one-time resync of the volume to its target',
+      'sync_resume': 're-establish a broken storage hardware-assisted synchronization',
+      'sync_revert': 'revert to the pre-failover data (looses current data)',
+      'sync_verify': 'trigger a one-time checksum-based verify of the volume and its target',
+      'sync_all': 'combo action, chaining sync_nodes-sync_drp-sync_update.',
       'push': 'push service configuration to database',
       'push_appinfo': 'push service application launchers appinfo key/value pairs to database',
       'print_disklist': 'print service disk list',
@@ -79,13 +83,20 @@ action_desc = {
       'switch': 'stop the service on the local node and start on the remote node. --to <node> specify the remote node to switch the service to.',
       'migrate': 'live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.',
       'json_status': 'provide the resource and aggregated status in json format, for use by tier tools',
+      'json_env': 'provide the service configuration in json format, for use by tier tools',
       'json_disklist': 'provide the service disk list in json format, for use by tier tools',
       'json_devlist': 'provide the service device list in json format, for use by tier tools',
       'resource_monitor': 'detect monitored resource failures and trigger monitor_action',
       'stonith': 'command provided to the heartbeat daemon to fence peer node in case of split brain',
+      'docker': 'wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon',
+      'print_schedule': "print the service tasks schedule",
+      'scheduler': "run the service task scheduler",
+      'pg_freeze': "freeze the tasks of a process group",
+      'pg_thaw': "thaw the tasks of a process group",
+      'pg_kill': "kill the tasks of a process group",
      },
     'Service configuration': {
-      'install': 'install a service using the configuration file pointed by --enfile. used by master services when pushing the envfile to their slave.',
+      'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',
       'create': 'create a new service configuration file. --interactive triggers the interactive mode',
       'update': 'update definitions in an existing service configuration file',
       'delete': 'delete resources passed through --rid in services passed through --service',
@@ -95,6 +106,7 @@ action_desc = {
      },
     'Compliance': {
       'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+      'compliance_env': 'show the compliance modules environment variables.',
       'compliance_fix': 'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
       'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
       'compliance_show_status': 'show compliance modules status',
@@ -132,8 +144,29 @@ action_desc = {
       'collector_json_disks': 'same as "collector disks", output in JSON',
       'collector_json_alerts': 'same as "collector alerts", output in JSON',
       'collector_json_events': 'same as "collector events", output in JSON',
+      'collector_tag': 'set a service tag (pointed by --tag)',
+      'collector_untag': 'unset a service tag (pointed by --tag)',
+      'collector_show_tags': 'list all service tags',
+      'collector_list_tags': 'list all available tags. use --like to filter the output.',
+      'collector_create_tag': 'create a new tag',
     },
 }
+
+deprecated_actions = [
+  "syncnodes",
+  "syncdrp",
+  "syncupdate",
+  "syncresync",
+  "syncall",
+  "syncfullsync",
+  "syncquiesce",
+  "syncsplit",
+  "syncestablish",
+  "syncrevert",
+  "syncbreak",
+  "syncresume",
+  "syncverify",
+]
 
 def format_desc(svc=False, action=None):
     from textwrap import TextWrapper
@@ -142,7 +175,9 @@ def format_desc(svc=False, action=None):
     for s in sorted(action_desc):
         valid_actions = []
         for a in sorted(action_desc[s]):
-            if action is not None and not a.startswith(action):
+            if type(action) == str and not a.startswith(action):
+                continue
+            if type(action) == list and a not in action:
                 continue
             valid_actions.append(a)
         if len(valid_actions) == 0:
@@ -173,4 +208,5 @@ def supported_actions():
     a = []
     for s in action_desc:
         a += action_desc[s].keys()
+    a += deprecated_actions
     return a

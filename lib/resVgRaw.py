@@ -23,19 +23,35 @@ import pwd
 import grp
 import stat
 import sys
+import glob
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, devs=set([]), user="root",
-                 group="root", perm="660", type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 devs=set([]),
+                 user="root",
+                 group="root",
+                 perm="660",
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = "raw"
-        resDg.Dg.__init__(self, rid=rid, name="raw",
-                          type='disk.vg',
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name="raw",
+                          type='disk.raw',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
         self.devs = set([])
         self.devs_not_found = set([])
@@ -49,8 +65,9 @@ class Vg(resDg.Dg):
             self.str_types = (str)
         
         for dev in devs:
-            if os.path.exists(dev):
-                self.devs.add(dev)
+            l = set(glob.glob(dev))
+            if len(l) > 0:
+                self.devs |= l
             else:
                 self.devs_not_found.add(dev)
 

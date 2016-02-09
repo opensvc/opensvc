@@ -1,4 +1,12 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
+
+data = {
+  "default_prefix": "OSVC_COMP_CRON_ENTRY_",
+  "example_value": "add:osvc:* * * * *:/opt/opensvc/bin/cron/opensvc:/etc/cron.d/opensvc",
+  "description": """* Add and Remove cron entries
+* Support arbitrary con file location
+""",
+}
 
 import os
 import sys
@@ -10,10 +18,11 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompCron(object):
-    def __init__(self, prefix='OSVC_COMP_CRON_ENTRY_'):
-        self.prefix = prefix.upper()
-        self.ce = []
+class CompCron(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname == 'SunOS' :
@@ -28,20 +37,20 @@ class CompCron(object):
                 '/var/cron/tabs',
             ]
 
-        for k in os.environ:
-            if k[:len(prefix)] == prefix:
-                e = os.environ[k].split(':')
+        self.ce = []
+        for _ce in self.get_rules_raw():
+                e = _ce.split(':')
                 if len(e) < 5:
-                    print >>sys.stderr, "malformed variable %s. format: action:user:sched:cmd:[file]"%k
+                    print >>sys.stderr, "malformed variable %s. format: action:user:sched:cmd:[file]"%_ce
                     continue
                 if e[0] not in ('add', 'del'):
-                    print >>sys.stderr, "unsupported action in variable %s. set 'add' or 'del'"%k
+                    print >>sys.stderr, "unsupported action in variable %s. set 'add' or 'del'"%_ce
                     continue
                 if len(e[2].split()) != 5:
-                    print >>sys.stderr, "malformed schedule in variable %s"%k
+                    print >>sys.stderr, "malformed schedule in variable %s"%_ce
                     continue
                 self.ce += [{
-                        'var': k,
+                        'var': _ce,
                         'action': e[0],
                         'user': e[1],
                         'sched': e[2],
@@ -213,30 +222,5 @@ class CompCron(object):
         self.activate_cron(cron_file)
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompCron(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompCron)
 

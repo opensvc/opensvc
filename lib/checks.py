@@ -51,6 +51,7 @@ class checks(check):
         self.register('checkRaidMegaRaid')
         self.register('checkRaidSas2')
         self.register('checkFmFmadm')
+        self.register('checkFmOpenManage')
         self.register('checkMce')
         self.register('checkZpool')
         self.register('checkBtrfsDevStats')
@@ -63,6 +64,7 @@ class checks(check):
             self.check_list.append(c)
         elif isinstance(c, checks):
             self.check_list += c.check_list
+        return self
 
     def register_local_checkers(self):
         import os
@@ -79,8 +81,9 @@ class checks(check):
             try:
                 m = __import__(cname)
                 self += m.check(svcs=self.svcs)
-            except:
+            except Exception as e:
                 print('Could not import check:', cname, file=sys.stderr)
+                print(e, file=sys.stderr)
 
     def register(self, chk_name):
         if not os.path.exists(os.path.join(rcEnv.pathlib, chk_name+rcEnv.sysname+'.py')):

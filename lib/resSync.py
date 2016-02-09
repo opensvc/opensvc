@@ -23,34 +23,37 @@ import resources as Res
 import datetime
 import time
 from rcGlobalEnv import rcEnv
+from rcScheduler import *
 
-class Sync(Res.Resource):
-    def __init__(self, rid=None, sync_max_delay=None,
-                 sync_interval=None, sync_period=None, sync_days=None,
-                 optional=False, disabled=False, tags=set([]),
-                 type=type):
+cache_remote_node_type = {}
+
+class Sync(Res.Resource, Scheduler):
+    def __init__(self,
+                 rid=None,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 type=type,
+                 subset=None):
         if sync_max_delay is None:
             self.sync_max_delay = 1500
         else:
             self.sync_max_delay = sync_max_delay
 
-        if sync_interval is None:
-            self.sync_interval = 121
+        if schedule is None:
+            self.schedule = "03:59-05:59@121"
         else:
-            self.sync_interval = sync_interval
+            self.schedule = schedule
 
-        if sync_period is None:
-            self.sync_period = ["03:59", "05:59"]
-        else:
-            self.sync_period = sync_period
-
-        if sync_days is None:
-            self.sync_days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        else:
-            self.sync_days = sync_days
-
-        Res.Resource.__init__(self, rid=rid, type=type,
-                              optional=optional, disabled=disabled, tags=tags)
+        Res.Resource.__init__(self,
+                              rid=rid,
+                              type=type,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
     def check_timestamp(self, ts, comp='more', delay=10):
         """ Return False if timestamp is fresher than now-interval
@@ -68,78 +71,10 @@ class Sync(Res.Resource):
             return True
         return True
 
-    def in_period(self, period=None):
-        if period is None:
-            period = self.sync_period
-        if len(period) == 0:
-            return True
-        if isinstance(period[0], list):
-            r = False
-            for p in period:
-                 r |= self.in_period(p)
-            return r
-        elif (not isinstance(period[0], unicode) and \
-              not isinstance(period[0], str)) or \
-             len(period) != 2 or \
-             (not isinstance(period[1], unicode) and \
-              not isinstance(period[1], str)):
-            self.log.error("malformed period: %s"%str(period))
-            return False
-        start_s, end_s = period
-        try:
-            start_t = time.strptime(start_s, "%H:%M")
-            end_t = time.strptime(end_s, "%H:%M")
-        except ValueError:
-            self.log.error("malformed period: %s"%str(period))
-            return False
-        start = start_t.tm_hour * 60 + start_t.tm_min
-        end = end_t.tm_hour * 60 + end_t.tm_min
-        try:
-            start_t = time.strptime(start_s, "%H:%M")
-            end_t = time.strptime(end_s, "%H:%M")
-            start = start_t.tm_hour * 60 + start_t.tm_min
-            end = end_t.tm_hour * 60 + end_t.tm_min
-        except:
-            self.log.error("malformed time string: %s"%str(period))
-            return False
-        now = datetime.datetime.now()
-        now_m = now.hour * 60 + now.minute
-        if start <= end:
-            if now_m >= start and now_m <= end:
-                return True
-        elif start > end:
-            """
-                  XXXXXXXXXXXXXXXXX
-                  23h     0h      1h
-            """
-            if (now_m >= start and now_m <= 1440) or \
-               (now_m >= 0 and now_m <= end):
-                return True
-        return False
-
-    def in_days(self):
-        now = datetime.datetime.now()
-        today = now.strftime('%A').lower()
-        if today in map(lambda x: x.lower(), self.sync_days):
-            return True
-        return False
-
     def skip_sync(self, ts):
-        if self.svc.force:
+        if not self.svc.cron:
             return False
-        if self.sync_interval == 0:
-            self.log.info('skip sync: disabled by sync_interval = 0')
-            return True
-        if not self.in_days():
-            self.log.info('skip sync: not in allowed days (%s)'%str(self.sync_days))
-            return True
-        if not self.in_period():
-            self.log.info('skip sync: not in allowed period (%s)'%str(self.sync_period))
-            return True
-        if ts is None:
-            self.log.info("don't skip sync: no timestamp")
-        elif not self.check_timestamp(ts, comp="less", delay=self.sync_interval):
-            self.log.info('skip sync: too soon (%d)'%self.sync_interval)
+        if self.skip_action_schedule(self.rid, "sync_schedule", last=ts):
             return True
         return False
 
@@ -149,3 +84,68 @@ class Sync(Res.Resource):
         if not self.check_timestamp(ts, comp="less", delay=self.sync_max_delay):
             return False
         return True
+
+    def remote_fs_mounted(self, node):
+        """
+        Verify the remote fs is mounted. Some sync resource might want to abort in
+        this case.
+        """
+        if self.dstfs is None:
+            # No dstfs check has been configured. Assume the admin knows better.
+            return True
+        ruser = self.svc.node.get_ruser(node)
+        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'df', self.dstfs]
+        (ret, out, err) = self.call(cmd, cache=True, errlog=False)
+        if ret != 0:
+            raise ex.excError
+
+        """
+        # df /zones
+        /zones             (rpool/zones       ):131578197 blocks 131578197 files
+               ^
+               separator !
+
+        # df /zones/frcp03vrc0108/root
+        /zones/frcp03vrc0108/root(rpool/zones/frcp03vrc0108/rpool/ROOT/solaris-0):131578197 blocks 131578197 files
+                                 ^
+                                 no separator !
+        """
+        if self.dstfs+'(' not in out and self.dstfs not in out.split():
+            self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
+            return False
+        return True
+
+    def remote_node_type(self, node, target):
+        if target == 'drpnodes':
+            expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
+        elif target == 'nodes':
+            if self.svc.svctype == "PRD":
+                expected_type = ["PRD"]
+            else:
+                expected_type = list(set(rcEnv.allowed_svctype) - set(["PRD"]))
+        else:
+            self.log.error('unknown sync target: %s'%target)
+            raise ex.excError
+
+        ruser = self.svc.node.get_ruser(node)
+        rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
+        if ruser != "root":
+            rcmd = ['sudo'] + rcmd
+
+        if node not in cache_remote_node_type:
+            cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
+            (ret, out, err) = self.call(cmd, cache=True)
+            if ret != 0:
+                return False
+            words = out.split()
+            if len(words) == 1:
+                cache_remote_node_type[node] = words[0]
+            else:
+                cache_remote_node_type[node] = out
+
+        if cache_remote_node_type[node] in expected_type:
+            return True
+        self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
+                       (node, cache_remote_node_type[node], ', '.join(expected_type)))
+        return False
+

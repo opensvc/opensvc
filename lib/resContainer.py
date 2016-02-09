@@ -20,9 +20,8 @@ import rcStatus
 import resources as Res
 import time
 import rcExceptions as ex
-from rcUtilities import justcall
+from rcUtilities import justcall, getaddr
 from rcGlobalEnv import rcEnv
-import socket
 from subprocess import *
 
 class Container(Res.Resource):
@@ -31,11 +30,27 @@ class Container(Res.Resource):
     startup_timeout = 600
     shutdown_timeout = 60
 
-    def __init__(self, rid, name, guestos=None, type=None, optional=False,
-                 disabled=False, monitor=False, restart=0, tags=set([]), always_on=set([])):
-        Res.Resource.__init__(self, rid=rid, type=type,
-                              optional=optional, disabled=disabled,
-                              monitor=monitor, restart=restart, tags=tags)
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
+        Res.Resource.__init__(self,
+                              rid=rid,
+                              type=type,
+                              optional=optional,
+                              disabled=disabled,
+                              monitor=monitor,
+                              restart=restart,
+                              subset=subset,
+                              tags=tags)
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
@@ -62,17 +77,18 @@ class Container(Res.Resource):
             self.vmhostname = out.strip()
         return self.vmhostname
 
-    def getaddr(self):
+    def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
             return
+        if len(self.name) == 0:
+            # explicitely disabled (ex: docker)
+            return
         try:
-            a = socket.getaddrinfo(self.name, None)
-            if len(a) == 0:
-                raise Exception
-            self.addr = a[0][4][0]
-        except:
-            if not disabled:
-                raise ex.excInitError
+            self.log.debug("resolving %s" % self.name)
+            self.addr = getaddr(self.name, cache_fallback=cache_fallback, log=self.log)
+        except Exception as e:
+            if not self.disabled:
+                raise ex.excError("could not resolve name %s: %s" % (self.name, str(e)))
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -96,14 +112,6 @@ class Container(Res.Resource):
         if ret == 0:
             return True
         return False
-
-    def wait_for_fn(self, fn, tmo, delay):
-        for tick in range(tmo//2):
-            if fn():
-                return
-            time.sleep(delay)
-        self.log.error("Waited too long for startup")
-        raise ex.excError
 
     def wait_for_startup(self):
         self.log.info("wait for container up status")
@@ -148,37 +156,57 @@ class Container(Res.Resource):
                 return node
         return
 
+    def abort_start_ping(self):
+        if len(self.name) == 0:
+            # docker container for exemple
+            return False
+        try:
+            self.getaddr()
+            if not hasattr(self, 'addr'):
+                Container.getaddr(self)
+            if not hasattr(self, 'addr'):
+                raise ex.excError()
+            u = __import__("rcUtilities"+rcEnv.sysname)
+            ping = u.check_ping
+            self.log.info("test %s ip %s availability"%(self.name, self.addr))
+            if ping(self.addr):
+                return True
+        except:
+            self.log.info("could not resolve %s to an ip address. skip ip availability test."%self.name)
+
+        return False
+
     def abort_start(self):
+        if self.is_up():
+            return False
+
+        if self.abort_start_ping():
+            return True
+
         nodename = self.where_up()
         if nodename is not None and nodename != rcEnv.nodename:
             return True
+
         return False
 
     def start(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.name)
-            raise ex.excError
+        self.getaddr()
         where = self.where_up()
         if where is not None:
-            self.log.info("container %s already started on %s" % (self.name, where))
+            self.log.info("container %s already started on %s" % (self.label, where))
             return
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()
+        self.create_pg()
         self.container_start()
         self.can_rollback = True
         self.wait_for_startup()
         self.booted = True
 
     def stop(self):
-        try:
-            self.getaddr()
-        except:
-            self.log.error("could not resolve %s to an ip address"%self.name)
-            raise ex.excError
+        self.getaddr(cache_fallback=True)
         if self.is_down():
-            self.log.info("container %s already stopped" % self.name)
+            self.log.info("container %s already stopped" % self.label)
             return
         self.container_stop()
         try:
@@ -211,10 +239,12 @@ class Container(Res.Resource):
         return not self.is_up()
 
     def _status(self, verbose=False):
+        if self.pg_frozen():
+            return rcStatus.WARN
         try:
             self.getaddr()
-        except:
-            self.status_log("could not resolve %s to an ip address"%self.name)
+        except Exception as e:
+            self.status_log(str(e))
             return rcStatus.WARN
         if not self.check_capabilities():
             self.status_log("node capabilities do not permit this action")
@@ -223,9 +253,15 @@ class Container(Res.Resource):
             self.status_log("container auto boot is on")
             return rcStatus.WARN
         if self.is_up():
-            return rcStatus.UP
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.UP
         if self.is_down():
-            return rcStatus.DOWN
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_DOWN
+            else:
+                return rcStatus.DOWN
         else:
             self.status_log("container status is neither up nor down")
             return rcStatus.WARN

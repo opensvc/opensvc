@@ -26,17 +26,33 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 class Vg(resDg.Dg):
-    def __init__(self, rid=None, name=None, node=None, cloud_id=None,
-                 user="root", group="root", perm="660",
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 node=None,
+                 cloud_id=None,
+                 user="root",
+                 group="root",
+                 perm="660",
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = "gandi volume %s"%str(name)
-        resDg.Dg.__init__(self, rid=rid, name="gandi",
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name="gandi",
                           type='disk.gandi',
                           always_on=always_on,
                           optional=optional,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
         self.name = name
         self.node = node
@@ -161,8 +177,8 @@ class Vg(resDg.Dg):
             n = rcEnv.nodename
         try:
             nodes = c.driver.list_nodes()
-        except:
-            raise ex.excError()
+        except Exception as e:
+            raise ex.excError(str(e))
         for node in nodes:
             if node.name == n:
                 return node
@@ -202,6 +218,7 @@ class Vg(resDg.Dg):
         self.log.info("attach gandi volume %s"%self.name)
         c = self.get_cloud()
         c.driver.ex_node_attach_disk(node, disk)
+        self.can_rollback = True
 
     def do_stop(self):
         try:

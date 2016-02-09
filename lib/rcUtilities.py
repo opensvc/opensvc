@@ -16,8 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+from __future__ import print_function
 import os, sys
+import datetime
 import logging
+import socket
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
@@ -35,28 +38,6 @@ def ximport(base):
         pass
 
     return __import__(base)
-
-def fork(fn, kwargs):
-    if os.fork() > 0:
-        """ return to parent execution
-        """
-        return pid
-
-    """ separate the son from the father
-    """
-    os.chdir('/')
-    os.setsid()
-    os.umask(0)
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-    except:
-        os._exit(1)
-
-    fn(**kwargs)
-    os._exit(0)
 
 def check_privs():
     if os.name == 'nt':
@@ -85,7 +66,7 @@ def which(program):
 
     fpath, fname = os.path.split(program)
     if fpath:
-        if is_exe(program):
+        if os.path.isfile(program) and is_exe(program):
             return program
     else:
         for path in os.environ["PATH"].split(os.pathsep):
@@ -137,7 +118,8 @@ def call(argv=['/bin/false'],
                            #        depending on err_to_warn and
                            #        err_to_info value
          err_to_warn=False,
-         err_to_info=False):
+         err_to_info=False,
+         warn_to_info=False):
     "return(ret, stdout,stderr)"
     if log is None:
         log = logging.getLogger('CALL')
@@ -184,8 +166,10 @@ def call(argv=['/bin/false'],
         elif errlog:
             if ret != 0:
                 log.error('stderr:\n' + buff[1])
+            elif warn_to_info:
+                log.info('command successful but stderr:\n' + buff[1])
             else:
-                log.warning('command succesful but stderr:\n' + buff[1])
+                log.warning('command successful but stderr:\n' + buff[1])
         elif errdebug:
             log.debug('stderr:\n' + buff[1])
     if not empty_string(buff[0]):
@@ -207,20 +191,22 @@ def qcall(argv=['/bin/false']) :
     """qcall Launch Popen it args disgarding output and stderr"""
     if not argv:
         return (0, '')
-    process = Popen(argv, stdout=None, stderr=None, close_fds=close_fds)
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode
 
 def vcall(argv=['/bin/false'],
           log=None,
           err_to_warn=False,
-          err_to_info=False ):
+          err_to_info=False,
+          warn_to_info=False):
     return call(argv,
                 log=log,
                 info=True,
                 outlog=True,
                 err_to_warn=err_to_warn,
-                err_to_info=err_to_info)
+                err_to_info=err_to_info,
+                warn_to_info=warn_to_info)
 
 def getmount(path):
     path = os.path.abspath(path)
@@ -243,20 +229,222 @@ def printplus(obj):
     # Dict
     if isinstance(obj, dict):
         for k, v in sorted(obj.items()):
-            print u'{0}: {1}'.format(k, v)
+            print(u'{0}: {1}'.format(k, v))
 
     # List or tuple            
     elif isinstance(obj, list) or isinstance(obj, tuple):
         for x in obj:
-            print x
+            print(x)
 
     # Other
     else:
-        print obj
+        print(obj)
 
+def cmdline2list(cmdline):
+    """
+    Translate a command line string into a list of arguments, using
+    using the same rules as the MS C runtime:
+
+    1) Arguments are delimited by white space, which is either a
+       space or a tab.
+    
+    2) A string surrounded by double quotation marks is
+       interpreted as a single argument, regardless of white space
+       contained within.  A quoted string can be embedded in an
+       argument.
+
+    3) A double quotation mark preceded by a backslash is
+       interpreted as a literal double quotation mark.
+
+    4) Backslashes are interpreted literally, unless they
+       immediately precede a double quotation mark.
+
+    5) If backslashes immediately precede a double quotation mark,
+       every pair of backslashes is interpreted as a literal
+       backslash.  If the number of backslashes is odd, the last
+       backslash escapes the next double quotation mark as
+       described in rule 3.
+    """
+
+    # See
+    # http://msdn.microsoft.com/library/en-us/vccelng/htm/progs_12.asp
+
+    # Step 1: Translate all literal quotes into QUOTE.  Justify number
+    # of backspaces before quotes.
+    tokens = []
+    bs_buf = ""
+    QUOTE = 1 # \", literal quote
+    for c in cmdline:
+        if c == '\\':
+            bs_buf += c
+        elif c == '"' and bs_buf:
+            # A quote preceded by some number of backslashes.
+            num_bs = len(bs_buf)
+            tokens.extend(["\\"] * (num_bs//2))
+            bs_buf = ""
+            if num_bs % 2:
+                # Odd.  Quote should be placed literally in array
+                tokens.append(QUOTE)
+            else:
+                # Even.  This quote serves as a string delimiter
+                tokens.append('"')
+
+        else:
+            # Normal character (or quote without any preceding
+            # backslashes)
+            if bs_buf:
+                # We have backspaces in buffer.  Output these.
+                tokens.extend(list(bs_buf))
+                bs_buf = ""
+
+            tokens.append(c)
+
+    # Step 2: split into arguments
+    result = [] # Array of strings
+    quoted = False
+    arg = [] # Current argument
+    tokens.append(" ")
+    for c in tokens:
+        if c == '"':
+            # Toggle quote status
+            quoted = not quoted
+        elif c == QUOTE:
+            arg.append('"')
+        elif c in (' ', '\t'):
+            if quoted:
+                arg.append(c)
+            else:
+                # End of argument.  Output, if anything.
+                if arg:
+                    result.append(''.join(arg))
+                    arg = []
+        else:
+            # Normal character
+            arg.append(c)
+
+    return result
+
+def try_decode(string, codecs=['utf8', 'latin1']):
+    for i in codecs:
+        try:
+            return string.decode(i)
+        except:
+            pass
+    return string
+
+def getaddr_cache_set(name, addr):
+    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    cache_f = os.path.join(cache_d, name)
+    with open(cache_f, 'w') as f:
+        f.write(addr)
+    return addr
+
+def getaddr_cache_get(name):
+    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    cache_f = os.path.join(cache_d, name)
+    if not os.path.exists(cache_f):
+        raise Exception("addrinfo cache empty for name %s" % name)
+    cache_mtime = datetime.datetime.fromtimestamp(os.stat(cache_f).st_mtime)
+    limit_mtime = datetime.datetime.now() - datetime.timedelta(minutes=16)
+    if cache_mtime < limit_mtime:
+        raise Exception("addrinfo cache expired for name %s (%s)" % (name, cache_mtime.strftime("%Y-%m-%d %H:%M:%S")))
+    with open(cache_f, 'r') as f:
+        addr = f.read()
+    if addr.count(".") != 3 and ":" not in addr:
+        raise Exception("addrinfo cache corrupted for name %s: %s" % (name, addr))
+    return addr
+
+def getaddr(name, cache_fallback, log=None):
+    if cache_fallback:
+        return getaddr_caching(name, log=log)
+    else:
+        return getaddr_non_caching(name)
+
+def getaddr_non_caching(name, log=None):
+    a = socket.getaddrinfo(name, None)
+    if len(a) == 0:
+        raise Exception("could not resolve name %s: empty dns request resultset" % name)
+    addr = a[0][4][0]
+    try:
+        getaddr_cache_set(name, addr)
+    except Exception as e:
+        if log:
+            log.warning("failed to cache name addr %s, %s: %s"  %(name, addr, str(e)))
+    return addr
+
+def getaddr_caching(name, log=None):
+    try:
+        addr = getaddr_non_caching(name)
+    except Exception as e:
+        if log:
+            log.warning("%s. fallback to cache." % str(e))
+        addr = getaddr_cache_get(name)
+    if log:
+        log.info("fetched %s address for name %s from cache" % (addr, name))
+    return addr
+
+def convert_size(s, _to='', _round=1):
+    l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E'] 
+    if type(s) in (int, float):
+        s = str(s)
+    s = s.strip().replace(",", ".")
+    if len(s) == 0:
+        return 0
+    if s == '0':
+        return 0
+    size = s
+    unit = ""
+    for i, c in enumerate(s):
+        if not c.isdigit() and c != '.':
+            size = s[:i]
+            unit = s[i:].strip()
+            break
+    if 'i' in unit:
+        factor = 1000
+    else:
+        factor = 1024
+    if len(unit) > 0:
+        unit = unit[0].upper()
+    size = float(size)
+
+    try:
+        start_idx = l.index(unit)
+    except:
+        raise Exception("unsupported unit in converted value: %s" % s)
+
+    for i in range(start_idx):
+        size *= factor
+
+    if 'i' in _to:
+        factor = 1000
+    else:
+        factor = 1024
+    if len(_to) > 0:
+        unit = _to[0].upper()
+    else:
+        unit = ''
+    try:
+        end_idx = l.index(unit)
+    except:
+        raise Exception("unsupported target unit: %s" % unit)
+
+    for i in range(end_idx):
+        size /= factor
+
+    size = int(size)
+    d = size % _round
+    if d > 0:
+        size = (size // _round) * _round
+    return size
 
 if __name__ == "__main__":
-    print("call(('id','-a'))")
-    (r,output,err)=call(("/usr/bin/id","-a"))
-    print("status: ", r, "output:", output)
+    #print("call(('id','-a'))")
+    #(r,output,err)=call(("/usr/bin/id","-a"))
+    #print("status: ", r, "output:", output)
+    print(convert_size("10000 KiB", _to='MiB', _round=3))
+    print(convert_size("10M", _to='', _round=4096))
 

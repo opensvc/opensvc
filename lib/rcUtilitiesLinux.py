@@ -1,21 +1,65 @@
 import os
 import re
 import glob
-from rcUtilities import call, qcall, justcall
+from rcUtilities import call, qcall, justcall, which
+
+label_to_dev_cache = {}
+
+def label_to_dev(label):
+    """
+       blkid can return a device slave of a drbd, as drbd is
+       transparent wrt to signature detection. Detect this case
+       and return the holding device. Otherwise return None.
+    """
+    if label in label_to_dev_cache:
+        return label_to_dev_cache[label]
+
+    if not which("blkid"):
+        return
+    out, err, ret = justcall(["blkid", "-t", label])
+    if ret != 0:
+        return
+    devps = []
+    for line in out.split("\n"):
+        if len(line) == 0:
+            continue
+        devp = line.split(":")[0]
+        devps.append(devp)
+    if len(devps) == 0:
+        return
+    elif len(devps) == 1:
+        return devps[0]
+
+    from rcDevTreeLinux import DevTree
+    tree = DevTree()
+    tree.load()
+    devs = set([ tree.get_dev_by_devpath(devp) for devp in devps ]) - set([None])
+    for dev in devs:
+        parent_devps = set()
+        for p in dev.parents:
+            d = tree.get_dev(p.parent)
+            if d is None:
+                continue
+            parent_devps |= set(d.devpath)
+        inter = set(devps) & parent_devps
+        if len(inter) > 0:
+            devp = "/dev/"+dev.devname
+            label_to_dev_cache[label] = devp
+            return devp
 
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
     try:
         f = open(path)
     except:
-        raise
+        return -1
     for line in f.readlines():
         words = line.split()
         if len(words) == 2 and words[1] == driver:
             f.close()
             return int(words[0])
     f.close()
-    raise
+    return -1
 
 def get_blockdev_sd_slaves(syspath):
     slaves = set()
@@ -76,15 +120,21 @@ def devs_to_disks(self, devs=set([])):
     """
     disks = set()
     dm_major = major('device-mapper')
+    try: md_major = major('md')
+    except: md_major = 0
     try: lo_major = major('loop')
     except: lo_major = 0
     for dev in devs:
         try:
             statinfo = os.stat(dev)
         except:
-            self.log.error("can not stat %s" % dev)
-            raise
-        if os.major(statinfo.st_rdev) == dm_major:
+            self.log.warning("can not stat %s" % dev)
+            continue
+        if md_major != 0 and os.major(statinfo.st_rdev) == md_major:
+            md = dev.replace("/dev/", "")
+            syspath = '/sys/block/' + md + '/slaves'
+            disks |= get_blockdev_sd_slaves(syspath)
+        elif os.major(statinfo.st_rdev) == dm_major:
             dm = 'dm-' + str(os.minor(statinfo.st_rdev))
             syspath = '/sys/block/' + dm + '/slaves'
             disks |= get_blockdev_sd_slaves(syspath)

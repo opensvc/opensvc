@@ -1,24 +1,94 @@
-#!/opt/opensvc/bin/python
-""" 
-Verify file content. The collector provides the format with
-wildcards. The module replace the wildcards with contextual
-values.
+#!/usr/bin/env /opt/opensvc/bin/python
 
-The variable format is json-serialized:
-
+data = {
+  "default_prefix": "OSVC_COMP_FILE_",
+  "example_value": """ 
 {
   "path": "/some/path/to/file",
   "fmt": "root@corp.com		%%HOSTNAME%%@corp.com",
   "uid": 500,
   "gid": 500,
 }
+  """,
+  "description": """* Verify and install file content.
+* Verify and set file or directory ownership and permission
+* Directory mode is triggered if the path ends with /
 
-Wildcards:
-%%ENV:VARNAME%%		Any environment variable value
-%%HOSTNAME%%		Hostname
-%%SHORT_HOSTNAME%%	Short hostname
+Special wildcards::
 
+  %%ENV:VARNAME%%	Any environment variable value
+  %%HOSTNAME%%		Hostname
+  %%SHORT_HOSTNAME%%	Short hostname
+
+""",
+  "form_definition": """
+Desc: |
+  A file rule, fed to the 'files' compliance object to create a directory or a file and set its ownership and permissions. For files, a reference content can be specified or pointed through an URL.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Class: file
+    Type: json
+    Format: dict
+
+Inputs:
+  -
+    Id: path
+    Label: Path
+    DisplayModeLabel: path
+    LabelCss: action16
+    Mandatory: Yes
+    Help: File path to install the reference content to. A path ending with '/' is treated as a directory and as such, its content need not be specified.
+    Type: string
+
+  -
+    Id: mode
+    Label: Permissions
+    DisplayModeLabel: perm
+    LabelCss: action16
+    Help: "In octal form. Example: 644"
+    Type: integer
+
+  -
+    Id: uid
+    Label: Owner
+    DisplayModeLabel: uid
+    LabelCss: guy16
+    Help: Either a user ID or a user name
+    Type: string or integer
+
+  -
+    Id: gid
+    Label: Owner group
+    DisplayModeLabel: gid
+    LabelCss: guy16
+    Help: Either a group ID or a group name
+    Type: string or integer
+
+  -
+    Id: ref
+    Label: Content URL pointer
+    DisplayModeLabel: ref
+    LabelCss: loc
+    Help: "Examples:
+        http://server/path/to/reference_file
+        https://server/path/to/reference_file
+        ftp://server/path/to/reference_file
+        ftp://login:pass@server/path/to/reference_file"
+    Type: string
+
+  -
+    Id: fmt
+    Label: Content
+    DisplayModeLabel: fmt
+    LabelCss: hd16
+    Css: pre
+    Help: A reference content for the file. The text can embed substitution variables specified with %%ENV:VAR%%.
+    Type: text
 """
+}
 
 import os
 import sys
@@ -26,6 +96,7 @@ import json
 import stat
 import re
 import urllib
+import ssl
 import tempfile
 import pwd
 import grp
@@ -38,9 +109,11 @@ from comp import *
 class InitError(Exception):
     pass
 
-class CompFiles(object):
-    def __init__(self, prefix='OSVC_COMP_FILES_'):
-        self.prefix = prefix.upper()
+class CompFiles(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self._usr = {}
         self._grp = {}
         self.sysname, self.nodename, x, x, self.machine = os.uname()
@@ -49,47 +122,24 @@ class CompFiles(object):
         if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
             os.environ["OSVC_COMP_SERVICES_SVC_NAME"] = ""
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
+        for rule in self.get_rules():
             try:
-                self.files += self.add_file(os.environ[k])
+                self.files += self.add_file(rule)
             except InitError:
                 continue
             except ValueError:
                 print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.files) == 0:
-            print "no applicable variable found in rulesets", self.prefix
             raise NotApplicable()
 
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
-
-    def parse_fmt(self, d):
+    def parse_fmt(self, d, add_linefeed=True):
         if isinstance(d['fmt'], int):
-            d['fmt'] = str(d['fmt'])+'\n'
+            d['fmt'] = str(d['fmt'])
         d['fmt'] = d['fmt'].replace('%%HOSTNAME%%', self.nodename)
         d['fmt'] = d['fmt'].replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
         d['fmt'] = self.subst(d['fmt'])
-        if not d['fmt'].endswith('\n'):
+        if add_linefeed and not d['fmt'].endswith('\n'):
             d['fmt'] += '\n'
         return [d]
 
@@ -97,7 +147,14 @@ class CompFiles(object):
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
         try:
-            fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+            if d['ref'].startswith("https"):
+                try:
+                    context = ssl._create_unverified_context()
+                    fname, headers = urllib.urlretrieve(d['ref'], tmpf, context=context)
+                except:
+                    fname, headers = urllib.urlretrieve(d['ref'], tmpf)
+            else:
+                fname, headers = urllib.urlretrieve(d['ref'], tmpf)
         except IOError:
             import traceback
             e = sys.exc_info()
@@ -106,35 +163,25 @@ class CompFiles(object):
         if 'invalid file' in headers.values():
             print >>sys.stderr, d['ref'], "not found on collector"
             raise InitError()
-        d['fmt'] = unicode(f.read())
+        d['fmt'] = f.read()
         if '<title>404 Not Found</title>' in d['fmt']:
             print >>sys.stderr, url, "not found on collector"
             raise InitError()
         f.close()
-        return self.parse_fmt(d)
+        return self.parse_fmt(d, add_linefeed=False)
 
     def get_env_item(self, d, item):
         if item not in d:
             return d
         if type(d[item]) != str and type(d[item]) != unicode:
             return d
-        if not d[item].startswith("%%"):
-            return d
-        s = d[item].strip('%').replace('ENV:', '')
-        if not s.startswith('OSVC_COMP_'):
-            s = 'OSVC_COMP_'+s
-        if s not in os.environ:
-            print >>sys.stderr, "%s is not set"%s
-            raise
-        d[item] = os.environ[s]
         try:
             d[item] = int(d[item])
         except:
             pass
         return d
 
-    def add_file(self, v):
-        d = json.loads(v)
+    def add_file(self, d):
         if 'path' not in d:
             print >>sys.stderr, 'path should be in the dict:', d
             RET = RET_ERR
@@ -150,15 +197,14 @@ class CompFiles(object):
         try:
             d = self.get_env_item(d, 'uid')
             d = self.get_env_item(d, 'gid')
-        except:
+        except Exception as e:
+            print "discard file %s: failed to get uid or gid" % d["path"]
             return []
-        for k in ('ref', 'path', 'uid', 'gid', 'fmt'):
-            if k in d:
-                d[k] = self.subst(d[k])
         if 'fmt' in d:
             return self.parse_fmt(d)
         if 'ref' in d:
-            return self.parse_ref(d)
+            if not d["ref"].startswith("safe://"):
+                return self.parse_ref(d)
         return [d]
 
     def fixable(self):
@@ -170,16 +216,71 @@ class CompFiles(object):
         if f['path'].endswith('/'):
             # don't check content if it's a directory
             return RET_OK
-        if "OSVC_COMP_OS_VENDOR" in os.environ and os.environ['OSVC_COMP_OS_VENDOR'] in ("Linux"):
-            cmd = ['diff', '-u', f['path'], '-']
+        if 'ref' in f and f['ref'].startswith("safe://"):
+            return self.check_file_fmt_safe(f, verbose=verbose)
         else:
-            cmd = ['diff', f['path'], '-']
+            return self.check_file_fmt_buffered(f, verbose=verbose)
+
+    def fix_file_fmt_safe(self, f):
+        print "download %s reference at %s" % (f["path"], f["ref"])
+        tmpfname = self.get_safe_file(f["ref"])
+        print "install %s" % f["path"]
+        import shutil
+        shutil.copy(tmpfname, f["path"])
+        os.unlink(tmpfname)
+        return RET_OK
+
+    def check_file_fmt_safe(self, f, verbose=False):
+        try:
+            data = self.collector_safe_file_get_meta(f["ref"])
+        except ComplianceError as e:
+            raise ComplianceError(str(e))
+        target_md5 = data.get("md5")
+        current_md5 = self.md5(f["path"])
+        if target_md5 == current_md5:
+            print "%s md5 verified" % f["path"]
+            return RET_OK
+        else:
+            print >>sys.stderr, "%s md5 differs from its reference" % f["path"]
+            if verbose and data["size"] < 1000000:
+                tmpfname = self.get_safe_file(f["ref"])
+                self.check_file_diff(f, tmpfname, verbose=verbose)
+                os.unlink(tmpfname)
+            return RET_ERR
+
+    def get_safe_file(self, uuid):
+        tmpf = tempfile.NamedTemporaryFile()
+        tmpfname = tmpf.name
+        tmpf.close()
+        try:
+            self.collector_safe_file_download(uuid, tmpfname)
+        except Exception as e:
+            raise ComplianceError("%s: %s" % (uuid, str(e)))
+        return tmpfname
+
+    def check_file_fmt_buffered(self, f, verbose=False):
+        tmpf = tempfile.NamedTemporaryFile()
+        tmpfname = tmpf.name
+        tmpf.close()
+        with open(tmpfname, 'w') as tmpf:
+            tmpf.write(f['fmt'])
+        ret = self.check_file_diff(f, tmpfname, verbose=verbose)
+        os.unlink(tmpfname)
+        return ret
+
+    def check_file_diff(self, f, refpath, verbose=False):
+        if "OSVC_COMP_NODES_OS_NAME" in os.environ and os.environ['OSVC_COMP_NODES_OS_NAME'] in ("Linux"):
+            cmd = ['diff', '-u', f['path'], refpath]
+        else:
+            cmd = ['diff', f['path'], refpath]
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate(input=f['fmt'])
+        out, err = p.communicate()
         if verbose and len(out) > 0:
-            print >>sys.stderr, " ".join(cmd)
-            print >>sys.stderr, out
-        return p.returncode
+            #print >>sys.stderr, " ".join(cmd)
+            print >>sys.stderr, out.strip('\n')
+        if p.returncode != 0:
+            return RET_ERR
+        return RET_OK
 
     def check_file_mode(self, f, verbose=False):
         if 'mode' not in f:
@@ -297,8 +398,12 @@ class CompFiles(object):
                 print >>sys.stderr, "failed to create", f['path']
                 return RET_ERR
             return RET_OK
-        if self.check_file_fmt(f) == RET_OK:
+        if self.check_file_fmt(f, verbose=False) == RET_OK:
             return RET_OK
+
+        if 'ref' in f and f['ref'].startswith("safe://"):
+            return self.fix_file_fmt_safe(f)
+
         d = os.path.dirname(f['path'])
         if not os.path.exists(d):
            os.makedirs(d)
@@ -328,34 +433,6 @@ class CompFiles(object):
             r |= self.fix_file_owner(f)
         return r
 
-
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompFiles(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except ComplianceError:
-        sys.exit(RET_ERR)
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompFiles)
 

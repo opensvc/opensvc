@@ -27,15 +27,18 @@ import optparse
 #
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
-sys.path.append(os.path.join(pathsvc, 'lib'))
+sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
 prog = os.path.basename(__file__)
 action = None
 
 import svcBuilder
 import rcStatus
 import rcOptParser
+import rcExceptions as ex
 from rcUtilities import ximport
 node_mod = ximport('node')
+
+build_err = False
 
 try:
     from version import version
@@ -44,6 +47,8 @@ except:
 
 def _exit(r):
     node.close()
+    if build_err:
+        sys.exit(1)
     sys.exit(r)
 
 node = node_mod.Node()
@@ -51,6 +56,10 @@ node = node_mod.Node()
 def install_service(svcnames, src_env):
     if len(svcnames) != 1:
         print("only one service must be specified", file=sys.stderr)
+        return 1
+
+    if src_env is None:
+        print("missing --envfile", file=sys.stderr)
         return 1
 
     if not os.path.exists(src_env):
@@ -108,17 +117,21 @@ def _install_service(svcname, src_env):
 
 
 __ver = prog + " version " + version
-__usage = "%prog [options] command\n\n"
+__usage = "%prog <command> [options]\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
+parser.add_option("--dry-run", default=False, action="store_true", dest="dry_run",
+                  help="Show the action execution plan")
 parser.add_option("--disable-rollback", default=False, action="store_true", dest="disable_rollback",
                   help="Exit without resource activation rollback on start action error")
 parser.add_option("-p", "--parallel", default=False, action="store_true", dest="parallel",
                   help="start actions on specified services in parallel")
 parser.add_option("--ignore-affinity", default=False, action="store_true", dest="ignore_affinity",
                   help="ignore service anti-affinity with other services check")
+parser.add_option("--remote", default=False, action="store_true", dest="remote",
+                  help="flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes")
 parser.add_option("-f", "--force", default=False, action="store_true", dest="force",
                   help="force action, ignore sanity check warnings")
 parser.add_option("--cron", default=False, action="store_true", dest="cron",
@@ -135,6 +148,8 @@ parser.add_option("-i", "--interactive", default=False, action="store_true", des
                   help="prompt user for a choice instead of going for defaults or failing")
 parser.add_option("--rid", default=None, action="store", dest="parm_rid",
                   help="comma-separated list of resource to limit action to")
+parser.add_option("--subsets", default=None, action="store", dest="parm_subsets",
+                  help="comma-separated list of resource subsets to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--resource", default=[], action="append",
@@ -181,52 +196,88 @@ parser.add_option("--author", default=None, action="store", dest="author",
 parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
 parser.add_option("--table", default=False, action="store_true", dest="table",
-                  help="used table representation of collector data instead of the default itemized list of objects and properties")
+                  help="use table representation of collector data instead of the default itemized list of objects and properties")
+parser.add_option("--refresh", default=False, action="store_true", dest="refresh",
+                  help="drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands")
+parser.add_option("--tag", default=None,
+                  action="store", dest="tag",
+                  help="a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'")
+parser.add_option("--like", default="%",
+                  action="store", dest="like",
+                  help="a sql like filtering expression. leading and trailing wildcards are automatically set.")
 
 
 cluster = False
 svcnames = []
 cmd = os.path.basename(__file__)
-if cmd == 'allservices':
-    node.build_services()
-elif cmd == 'allupservices':
-    node.build_services(status=rcStatus.UP)
-    node.build_services(status=rcStatus.WARN)
-elif cmd == 'alldownservices':
-    node.build_services(status=rcStatus.DOWN)
-elif cmd == 'allprimaryservices':
-    node.build_services(onlyprimary=True)
-elif cmd == 'allsecondaryservices':
-    node.build_services(onlysecondary=True)
-elif cmd == 'svcmgr':
-    parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
-              help="comma-separated list of service to operate on")
-    parser.add_option("--status", default=None, action="store", dest="parm_status",
-              help="operate only on service in the specified status (up/down/warn)")
-    parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
-              help="operate only on service flagged for autostart on this node")
-    parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
-              help="operate only on service not flagged for autostart on this node")
-    parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
-              help="the envfile to use when installing a service")
-else:
-    svcname = cmd.split('.')
-    if len(svcname) > 1 and svcname[-1] == 'cluster':
-            cluster = True
-            svcname = ".".join(svcname[:-1])
-    elif len(svcname) > 1 and svcname[-1] == 'stonith':
-            cluster = True
-            svcname = ".".join(svcname[:-1])
-            action = "stonith"
+
+try:
+    if cmd == 'allservices':
+        node.build_services()
+    elif cmd == 'allupservices':
+        node.build_services(status=rcStatus.UP)
+        node.build_services(status=rcStatus.WARN)
+    elif cmd == 'alldownservices':
+        node.build_services(status=rcStatus.DOWN)
+    elif cmd == 'allprimaryservices':
+        node.build_services(onlyprimary=True)
+    elif cmd == 'allsecondaryservices':
+        node.build_services(onlysecondary=True)
+    elif cmd == 'svcmgr':
+        parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
+                  help="comma-separated list of service to operate on")
+        parser.add_option("--status", default=None, action="store", dest="parm_status",
+                  help="operate only on service in the specified status (up/down/warn)")
+        parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
+                  help="operate only on service flagged for autostart on this node")
+        parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
+                  help="operate only on service not flagged for autostart on this node")
+        parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
+                  help="the envfile to use when installing a service")
     else:
-        svcname = cmd
-    node.build_services(svcnames=svcname)
+        svcname = cmd.split('.')
+        if len(svcname) > 1 and svcname[-1] == 'cluster':
+                cluster = True
+                svcname = ".".join(svcname[:-1])
+        elif len(svcname) > 1 and svcname[-1] == 'stonith':
+                cluster = True
+                svcname = ".".join(svcname[:-1])
+                action = "stonith"
+        else:
+            svcname = cmd
+        node.build_services(svcnames=svcname)
+except ex.excError as e:
+    print("build error:", e)
+    build_err = True
+
+docker_argv = None
+if len(sys.argv) > 1 and 'docker' in sys.argv:
+    pos = sys.argv.index('docker')
+    if len(sys.argv) > pos + 1:
+        docker_argv = sys.argv[pos+1:]
+    else:
+        docker_argv = []
+    sys.argv = sys.argv[:pos+1]
 
 (options, args) = parser.parse_args()
+
 if action is not None:
     args = ['stonith']
 
-if node.svcs is None:
+if len(args) is 0:
+    node.close()
+    parser.set_usage(__usage + rcOptParser.format_desc(action=["start", "stop", "print_status"])+"\n\nOptions:\n  -h, --help       Display more actions and options\n")
+    parser.error("Missing action")
+
+if action is None:
+    action = '_'.join(args)
+
+if not action in rcOptParser.supported_actions():
+    node.close()
+    parser.set_usage(__usage + rcOptParser.format_desc(action=action))
+    parser.error("unsupported action")
+
+if node.svcs is None and action != "create":
     parm_primary = False
     parm_secondary = False
     parm_status = None
@@ -254,22 +305,13 @@ if node.svcs is None:
     else:
         onlysecondary = False
 
-    node.build_services(svcnames=svcnames,
-                        status=status,
-                        onlyprimary=onlyprimary,
-                        onlysecondary=onlysecondary)
-
-if len(args) is 0:
-    node.close()
-    parser.error("Missing action")
-
-if action is None:
-    action = '_'.join(args)
-
-if not action in rcOptParser.supported_actions():
-    node.close()
-    parser.set_usage(__usage + rcOptParser.format_desc(action=action))
-    parser.error("unsupported action")
+    try:
+        node.build_services(svcnames=svcnames,
+                            status=status,
+                            onlyprimary=onlyprimary,
+                            onlysecondary=onlysecondary)
+    except ex.excError:
+        build_err = True
 
 if node.svcs is not None:
     svcnames = map(lambda x: x.svcname, node.svcs)
@@ -291,7 +333,6 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
 
 if action == 'install':
     r = install_service(svcnames, options.param_envfile)
-    sys.exit(r)
 
 if hasattr(options, "parm_rid") and options.parm_rid is not None:
    rid = options.parm_rid.split(',')
@@ -308,21 +349,34 @@ if options.parm_tags is not None:
 else:
    tags = set([])
 
-if action in ['create', 'update']:
-    r = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+if options.parm_subsets is not None:
+   subsets = set(options.parm_subsets.split(','))
+else:
+   subsets = set([])
+
+if action in ['create', 'update', 'install']:
+    if action in ['create', 'update']:
+        data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+    else:
+        data = {"rid": [], "ret": 0}
     if options.provision:
-        if action == 'create':
-            # force a refresh of node.svcs
-            # don't push to the collector yet
-            del(node.svcs)
-            node.svcs = None
+        # if the user want to provision a resource defined through env editing, he
+        # will set --rid <rid> or --tag or --subset to point the update command to it
+        rid += data.get("rid", [])
+
+        # force a refresh of node.svcs
+        # don't push to the collector yet
+        del(node.svcs)
+        node.svcs = None
+        try:
             node.build_services(svcnames=svcnames, autopush=False)
-            if len(node.svcs) == 1:
-                node.svcs[0].action("provision")
-    _exit(r)
-elif action in ['disable', 'enable', 'delete']:
-    r = getattr(svcBuilder, action)(svcnames, rid)
-    _exit(r)
+        except ex.excError as e:
+            print("build error:", e, file=sys.stderr)
+            build_err = True
+
+        if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
+            node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
+    _exit(data["ret"])
 
 node.options.parallel = options.parallel
 node.options.waitlock = options.parm_waitlock
@@ -330,6 +384,7 @@ node.options.waitlock = options.parm_waitlock
 for s in node.svcs:
     s.options = options
     s.force = options.force
+    s.remote = options.remote
     s.cron = options.cron
     s.options.slaves = options.slaves
     s.options.slave = slave
@@ -339,8 +394,10 @@ for s in node.svcs:
     else:
         s.cluster = options.cluster
     s.destination_node = options.parm_destination_node
+    if docker_argv is not None:
+        s.docker_argv = docker_argv
 
-err = node.do_svcs_action(action, rid, tags)
+err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
 
 try:
     import logging

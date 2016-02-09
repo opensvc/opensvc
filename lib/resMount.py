@@ -29,12 +29,29 @@ from rcUtilities import which
 class Mount(Res.Resource):
     """Define a mount resource 
     """
-    def __init__(self, rid=None, mountPoint=None, device=None, fsType=None,
-                 mntOpt=None, snap_size=None, always_on=set([]), optional=False,
-                 disabled=False, tags=set([]), monitor=False, restart=0):
-        Res.Resource.__init__(self, rid=rid, type="fs",
-                              optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 mountPoint=None,
+                 device=None,
+                 fsType=None,
+                 mntOpt=None,
+                 snap_size=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        Res.Resource.__init__(self,
+                              rid=rid,
+                              type="fs",
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              monitor=monitor,
+                              restart=restart,
+                              subset=subset)
         self.mountPoint = mountPoint
         self.device = device
         self.fsType = fsType
@@ -46,23 +63,48 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
+    def pre_action(self, rset=None, action=None):
+        if action not in ("stop", "shutdown"):
+            return
+        cwd = os.getcwd()
+        for r in rset.resources:
+            if r.skip or r.disabled:
+                continue
+            if cwd.startswith(r.mountPoint):
+                raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
+
     def start(self):
+        self.validate_dev()
+        self.create_mntpt()
+
+    def validate_dev(self):
         if self.fsType in ["zfs", "advfs"] + self.netfs:
             return
+        if self.device == "none":
+            # pseudo fs have no dev
+            return
+        if self.device.startswith("UUID=") or self.device.startswith("LABEL="):
+            return
         if not os.path.exists(self.device):
-            self.log.error("device does not exist %s" % self.device)
-            raise ex.excError
-        if not os.path.exists(self.mountPoint):
-            try:
-                os.makedirs(self.mountPoint)
-            except:
-                self.log.info("failed to create missing mountpoint %s" % self.mountPoint)
-                raise
+            raise ex.excError("device does not exist %s" % self.device)
+
+    def create_mntpt(self):
+        if self.fsType in ["zfs", "advfs"]:
+            return
+        if os.path.exists(self.mountPoint):
+            return
+        try:
+            os.makedirs(self.mountPoint)
             self.log.info("create missing mountpoint %s" % self.mountPoint)
+        except:
+            self.log.warning("failed to create missing mountpoint %s" % self.mountPoint)
 
     def fsck(self):
+        if self.fsType in ("", "none"):
+            # bind mounts are in this case
+            return
         if self.fsType not in self.fsck_h:
-            self.log.info("fsck not implemented for %s"%self.fsType)
+            self.log.debug("no fsck method for %s"%self.fsType)
             return
         bin = self.fsck_h[self.fsType]['bin']
         if which(bin) is None:

@@ -30,25 +30,36 @@ class Drbd(Res.Resource):
     """ Drbd device resource
 
         The tricky part is that drbd devices can be used as PV
-        and LV can be used as drbd base devices. Treat the ordering
-        with 'prevg' and 'postvg' tags.
+        and LV can be used as drbd base devices. Beware of the
+        the ordering deduced from rids and subsets.
 
         Start 'ups' and promotes the drbd devices to primary.
         Stop 'downs' the drbd devices.
     """
-    def __init__(self, rid=None, res=None, always_on=set([]),
-                 optional=False, disabled=False, tags=set([]),
-                 monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, "disk.drbd",
-                              optional=optional, disabled=disabled, tags=tags,
-                              monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 res=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 subset=None,
+                 tags=set([]),
+                 monitor=False,
+                 restart=0):
+        Res.Resource.__init__(self,
+                              rid,
+                              "disk.drbd",
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset,
+                              monitor=monitor,
+                              restart=restart)
         self.res = res
-        self.label = res
+        self.label = "drbd "+res
         self.drbdadm = None
         self.always_on = always_on
         self.disks = set()
-        if 'prevg' not in self.tags and 'postvg' not in self.tags:
-            tags |= set(['postvg'])
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
@@ -69,6 +80,30 @@ class Drbd(Res.Resource):
                 self.log("drbdadm command not found")
                 raise exc.excError
         return [self.drbdadm] + cmd.split() + [self.res]
+
+    def devlist(self):
+        devps = set()
+
+        (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
+        if ret != 0:
+            raise ex.excError
+
+        from xml.etree.ElementTree import XML, fromstring
+        tree = fromstring(out)
+        
+        for res in tree.getiterator('resource'):
+            if res.attrib['name'] != self.res:
+                continue
+            for host in res.getiterator('host'):
+                if host.attrib['name'] != rcEnv.nodename:
+                    continue
+                d = host.find('device')
+                if d is None:
+                    d = host.find('volume/device')
+                if d is None:
+                    continue
+                devps |= set([d.text])
+        return devps
 
     def disklist(self):
         if self.disks != set():
@@ -91,6 +126,8 @@ class Drbd(Res.Resource):
                 if host.attrib['name'] != rcEnv.nodename:
                     continue
                 d = host.find('disk')
+                if d is None:
+                    d = host.find('volume/disk')
                 if d is None:
                     continue
                 devps |= set([d.text])
@@ -183,6 +220,12 @@ class Drbd(Res.Resource):
         self.drbdadm_down()
 
     def _status(self, verbose=False):
+        try:
+            roles = self.get_roles()
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+        self.status_log(str(roles[0]))
         (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)

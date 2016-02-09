@@ -28,15 +28,34 @@ from rcUtilities import which
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
-    def __init__(self, rid=None, ipDev=None, ipName=None,
-                 mask=None, always_on=set([]), monitor=False, restart=0,
-                 disabled=False, tags=set([]), optional=False, gateway=None,
+    def __init__(self,
+                 rid=None,
+                 ipDev=None,
+                 ipName=None,
+                 mask=None,
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 gateway=None,
                  ipDevExt="v4"):
         self.ipDevExt = ipDevExt
-        Res.Ip.__init__(self, rid=rid, ipDev=ipDev, ipName=ipName,
-                        mask=mask, always_on=always_on,
-                        disabled=disabled, tags=tags, optional=optional,
-                        monitor=monitor, restart=restart, gateway=gateway)
+        Res.Ip.__init__(self,
+                        rid=rid,
+                        ipDev=ipDev,
+                        ipName=ipName,
+                        mask=mask,
+                        always_on=always_on,
+                        disabled=disabled,
+                        tags=tags,
+                        optional=optional,
+                        monitor=monitor,
+                        restart=restart,
+                        subset=subset,
+                        gateway=gateway)
         self.label = self.label + "/" + self.ipDevExt
         self.type = "ip"
         if not which('ipadm'):
@@ -55,10 +74,11 @@ class Ip(Res.Ip):
         ret += r
         out += o
         err += e
-        cmd = ['ipadm', 'show-addr', self.stacked_dev+'/'+self.ipDevExt ]
+        cmd = ['ipadm', 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = p.communicate()[0].split("\n")
-        if len(_out) >= 2:
+        _out = p.communicate()[0].strip().split("\n")
+        if len(_out) > 0:
+            self.log.info("skip delete-ip because addrs still use the ip")
             return ret, out, err
         cmd=['ipadm', 'delete-ip', self.stacked_dev]
         r, o, e =  self.vcall(cmd)
@@ -80,34 +100,50 @@ class Ip(Res.Ip):
             l = self.mask.split(".")
         else:
             l = self._hexmask_to_str(self.mask).split(".")
-        for v in l:
-            b = int(v)
-            while b != 0:
-                if b % 2 == 1:
-                    cnt = cnt + 1
-                    b = b / 2
+        l = map(lambda x: int(x), l)
+        for a in l:
+            cnt += str(bin(a)).count("1")
         return '/'+str(cnt)
         
+    def wait_net_smf(self, max_wait=30):
+        r = 0
+        prev_s = None
+        while True:
+            s = self.get_smf_status("network/routing-setup")
+            if s == "online":
+                break
+            if s != prev_s or prev_s is None:
+                self.log.info("waiting for network/routing-setup online state. current state: %s" % s)
+            prev_s = s
+            r += 1
+            if r > max_wait:
+                self.log.error("timeout waiting for network/routing-setup online state")
+                break
+            time.sleep(1)
+
+    def get_smf_status(self, fmri):
+        cmd = ["/usr/bin/svcs", "-H", "-o", "state", fmri]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return "undef"
+        return out.strip()
+
     def startip_cmd(self):
+        self.wait_net_smf()
         ret, out, err = (0, '', '')
-        cmd = ['ipadm', 'show-if', self.stacked_dev]
-        p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = p.communicate()[0].split("\n")
-        if len(_out) < 2:
+        cmd = ['ipadm', 'show-if', '-p', '-o', 'state', self.stacked_dev]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+        _out = p.communicate()[0].strip().split("\n")
+        if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        n = 5
-        while n != 0:
-            cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
-            r, o, e = self.vcall(cmd)
-            if r == 0:
-                break
-            self.log.error("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
-            time.sleep(5)
-            n -= 1
+        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
+        r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=['ipadm', 'show-if' ]
             self.vcall(cmd)
+            raise ex.excError("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
         ret += r
         out += o
         err += e

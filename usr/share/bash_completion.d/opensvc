@@ -32,15 +32,15 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="configure create disklist freeze frozen mount postsync presync print_status printsvc prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg syncall syncbreak syncdrp syncfullsync syncnodes syncquiesce syncresync syncupdate syncverify thaw umount collector compliance"
+        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg sync_all sync_break sync_drp sync_full syncnodes sync_quiesce sync_resync sync_update sync_break thaw umount collector compliance scheduler"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
             collector)
-		local opts="json ack alerts checks events status list show asset networks"
+		local opts="json ack alerts checks events status list show asset networks disks"
 		;;
 	    compliance)
-		local opts="check fixable fix show list attach detach"
+		local opts="check fixable fix show list attach detach env"
 		;;
 	    push)
 		local opts="appinfo"
@@ -55,7 +55,10 @@ _svcmgr()
 		local opts="monitor"
 		;;
 	    print|json)
-		local opts="disklist status"
+		local opts="disklist status resource schedule"
+		;;
+	    edit)
+		local opts="config"
 		;;
             *)
                 ;;
@@ -65,7 +68,7 @@ _svcmgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
             "collector json")
-		local opts="alerts checks events status list show asset networks"
+		local opts="alerts checks events status list show asset networks disks"
 		;;
             "collector ack")
 		local opts="action"
@@ -75,6 +78,9 @@ _svcmgr()
 		;;
             "collector show")
 		local opts="actions"
+		;;
+            "collector disks")
+		local opts="--table"
 		;;
             "collector asset")
 		local opts="--table"
@@ -106,11 +112,17 @@ _svcmgr()
             "compliance check")
 		local opts="--module --moduleset"
 		;;
+            "compliance env")
+		local opts="--module --moduleset"
+		;;
             "compliance attach")
 		local opts="moduleset ruleset"
 		;;
             "compliance detach")
 		local opts="moduleset ruleset"
+		;;
+            "print resource")
+		local opts="status"
 		;;
             *)
                 ;;
@@ -156,6 +168,9 @@ _svcmgr()
             "compliance list ruleset")
 		local opts="--ruleset"
 		;;
+            "print resource status")
+		local opts="--rid"
+		;;
         esac
     elif [ $COMP_CWORD -eq 5 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
@@ -200,7 +215,7 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhds pushdisks pushsym pushservices syncservices pushstats pushpkg pushpatch push get set unset register reboot shutdown provision prkey updateservices updatepkg updatecomp scanscsi dequeue"
+        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler edit"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -208,13 +223,22 @@ _nodemgr()
 		local opts="actions"
 		;;
             collector)
-		local opts="json ack alerts checks events status list show asset networks"
+		local opts="json ack alerts checks events status list show asset networks disks"
 		;;
 	    compliance)
-		local opts="check fixable fix show list attach detach"
+		local opts="check fixable fix show list attach detach env"
 		;;
 	    push)
 		local opts="appinfo"
+		;;
+	    schedule)
+		local opts="reboot"
+		;;
+	    unschedule)
+		local opts="reboot"
+		;;
+	    edit)
+		local opts="config authconfig"
 		;;
 	    set)
 		local opts="--param --value"
@@ -225,8 +249,11 @@ _nodemgr()
 	    pushstats)
 		local opts="--stats-dir --begin --end"
 		;;
+	    pushnsr|pusheva|pushdcs|pushvioserver|pushnecism|pushibmsvc|pushhp3par|pushibmds|pushhds|pushdisks|pushbrocade)
+		local opts="--object"
+		;;
 	    pushsym)
-		local opts="--symcli-db-file"
+		local opts="--symcli-db-file --object"
 		;;
             *)
                 ;;
@@ -236,7 +263,7 @@ _nodemgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
             "collector json")
-		local opts="alerts checks events status list show asset networks"
+		local opts="alerts checks events status list show asset networks disks"
 		;;
             "collector ack")
 		local opts="action"
@@ -265,6 +292,9 @@ _nodemgr()
             "collector networks")
 		local opts="--table"
 		;;
+            "collector disks")
+		local opts="--table"
+		;;
             "compliance list")
 		local opts="ruleset moduleset"
 		;;
@@ -280,11 +310,17 @@ _nodemgr()
             "compliance check")
 		local opts="--module --moduleset"
 		;;
+            "compliance env")
+		local opts="--module --moduleset"
+		;;
             "compliance attach")
 		local opts="moduleset ruleset"
 		;;
             "compliance detach")
 		local opts="moduleset ruleset"
+		;;
+            "schedule reboot")
+		local opts="status"
 		;;
             *)
                 ;;

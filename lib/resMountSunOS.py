@@ -18,9 +18,10 @@
 #
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
-"Module implement SunOS specific mounts"
+"""SunOS specific mounts"""
 
 import os
+import time
 
 import rcStatus
 import rcMountsSunOS as rcMounts
@@ -31,16 +32,36 @@ from rcUtilities import justcall
 
 class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
-    def __init__(self, rid, mountPoint, device, fsType, mntOpt,
-                 snap_size=None, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False,
-                 monitor=False, restart=0):
+    def __init__(self,
+                 rid,
+                 mountPoint,
+                 device,
+                 fsType,
+                 mntOpt,
+                 snap_size=None,
+                 always_on=set([]),
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.rdevice = device.replace('/dsk/','/rdsk/',1)
         self.Mounts = rcMounts.Mounts()
-        Res.Mount.__init__(self, rid, mountPoint, device, fsType, mntOpt,
-                           snap_size, always_on,
-                           disabled=disabled, tags=tags, optional=optional,
-                           monitor=monitor, restart=restart)
+        Res.Mount.__init__(self,
+                           rid,
+                           mountPoint,
+                           device,
+                           fsType,
+                           mntOpt,
+                           snap_size,
+                           always_on,
+                           disabled=disabled,
+                           tags=tags,
+                           optional=optional,
+                           monitor=monitor,
+                           restart=restart,
+                           subset=subset)
         self.fsck_h = {
             'ufs': {'bin': 'fsck',
                     'cmd':       ['fsck', '-F', 'ufs', '-y', self.rdevice],
@@ -61,6 +82,10 @@ class Mount(Res.Mount):
     def start(self):
         self.Mounts = None
         Res.Mount.start(self)
+
+        if self.fsType == 'zfs' :
+            if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
+                self.log.info("fs(%s %s) should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.device, self.mountPoint, self.device))
 
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
@@ -97,13 +122,23 @@ class Mount(Res.Mount):
 
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
-        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
-        (ret, out, err) = self.vcall(cmd)
-        if ret != 0:
-            self.Mounts = None
-            raise ex.excError
+
+        for i in range(3):
+            ret = self.try_mount(fstype, mntopt)
+            if ret == 0: break
+            time.sleep(1)
+
         self.Mounts = None
+
+        if ret != 0:
+            raise ex.excError
+
         self.can_rollback = True
+
+    def try_mount(self, fstype, mntopt):
+        cmd = ['mount'] + fstype + mntopt + [self.device, self.mountPoint]
+        ret, out, err = self.vcall(cmd)
+        return ret
 
     def try_umount(self):
         if self.fsType == 'zfs' :

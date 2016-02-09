@@ -16,6 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 from rcUtilities import justcall, vcall
+from rcUtilitiesLinux import label_to_dev
 import sys
 import os
 import logging
@@ -57,6 +58,10 @@ class Btrfs(object):
         if self.label is None:
             raise InitError("failed to determine btrfs label")
 
+        self.dev = label_to_dev("LABEL="+self.label)
+        if self.dev is None:
+            self.dev = "LABEL="+self.label
+
         self.setup_rootvol()
         self.path = self.rootdir
         self.snapdir = os.path.join(self.rootdir, self.snapvol)
@@ -68,13 +73,13 @@ class Btrfs(object):
         cmd = ['rmdir', path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            raise ExecError("error removing dir %s:\n"%path+err)
+            raise ExecError("error removing dir %s:\n%s"%(path,err))
 
     def dir_exists(self, path):
         cmd = ['test', '-d', path]
         out, err, ret = self.justcall(cmd)
         if ret > 1:
-            raise ExecError("error joining remote node %s\n"%(self.node,err))
+            raise ExecError("error joining remote node %s:\n%s"%(self.node, err))
         if ret == 1:
             return False
         return True
@@ -157,7 +162,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvolume', 'snapshot'] + opts + [origin, snap]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ExecError()
+            raise ExecError(err)
 
     def has_snapvol(self):
         return self.has_subvol(self.snapvol)
@@ -178,7 +183,7 @@ class Btrfs(object):
         return False
 
     def mount_snapvol(self):
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, 'LABEL='+self.label, self.snapdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, self.dev, self.snapdir]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s subvol:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
@@ -186,7 +191,7 @@ class Btrfs(object):
     def mount_rootvol(self):
         if self.is_mounted_subvol(self.rootdir):
             return
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', 'LABEL="%s"'%self.label, self.rootdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, self.rootdir]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s btrfs:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
@@ -201,7 +206,7 @@ class Btrfs(object):
         if ret != 0:
             raise ExecError("error creating dir %s:\n"%tmpdir+err)
 
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', 'LABEL="%s"'%self.label, tmpdir]
+        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, tmpdir]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             self.rmdir(tmpdir)
@@ -367,11 +372,28 @@ class Btrfs(object):
                 self.devs[l[-1]] = (label, uuid)
 
     def get_transid(self, path):
-        cmd = ['btrfs', 'subvolume', 'find-new', path, '-1']
+        """
+        /opt/opensvc/var/btrfs/win2/win2@sent
+                Name:                   win2@sent
+                uuid:                   167af15f-7d5a-2745-966c-dde4aaa056b7
+                Parent uuid:            30121b33-a10f-a642-8caf-0184f5d8e5b0
+                Creation time:          2015-09-02 04:01:20
+                Object ID:              549
+                Generation (Gen):       591564
+                Gen at creation:        591564
+                Parent:                 5
+                Top Level:              5
+                Flags:                  readonly
+                Snapshot(s):
+        """
+        cmd = ['btrfs', 'subvolume', 'show', path]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ExecError("can't fetch %s transid:\n%s"%(path, err))
-        return out.split()[-1]
+        for line in out.split("\n"):
+            if "Generation" in line:
+                return line.split()[-1]
+        raise ExecError("can't find %s transid\n"%path)
 
     def __str__(self):
         s = "label: %s\n" % self.label
@@ -381,7 +403,7 @@ class Btrfs(object):
         return s
 
 if __name__ == "__main__":
-    o = Btrfs(label=sys.argv[1], node="deb2")
-    print(o)
+    o = Btrfs(label=sys.argv[1])
+    print(o.get_transid("/opt/opensvc/var/btrfs/deb1/deb1@sent"))
     #o.setup_snap()
 

@@ -18,3 +18,4 @@ lib/rcLocalEnv.py
 *.wixobj
 *.wixpdb
 *.msi
+nohup.out

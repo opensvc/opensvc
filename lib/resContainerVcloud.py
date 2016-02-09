@@ -37,15 +37,34 @@ class CloudVm(resContainer.Container):
     shutdown_timeout = 120
     save_timeout = 240
 
-    def __init__(self, rid, name, vapp=None, guestos=None, cloud_id=None, size="tiny", key_name=None, shared_ip_group=None,
-                 optional=False, disabled=False, monitor=False, restart=0,
-                 tags=set([]), always_on=set([])):
-        resContainer.Container.__init__(self, rid=rid, name=name,
+    def __init__(self,
+                 rid,
+                 name,
+                 vapp=None,
+                 guestos=None,
+                 cloud_id=None,
+                 size="tiny",
+                 key_name=None,
+                 shared_ip_group=None,
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
                                         type="container.vcloud",
                                         guestos=guestos,
-                                        optional=optional, disabled=disabled,
-                                        monitor=monitor, restart=restart,
-                                        tags=tags, always_on=always_on)
+                                        optional=optional,
+                                        disabled=disabled,
+                                        monitor=monitor,
+                                        restart=restart,
+                                        subset=subset,
+                                        tags=tags,
+                                        always_on=always_on)
         self.cloud_id = cloud_id
         self.save_name = name + '.save'
         self.size_name = size

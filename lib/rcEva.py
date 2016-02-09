@@ -1,3 +1,4 @@
+from __future__ import print_function
 from rcUtilities import justcall, which
 from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
@@ -5,20 +6,25 @@ import os
 import ConfigParser
 
 pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
 pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
 pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
 
-def sssu(cmd, manager, username, password, array=None):
+def sssu(cmd, manager, username, password, array=None, sssubin=None):
+    if sssubin is None:
+        if which("sssu"):
+            sssubin = "sssu"
+        elif os.path.exists("/opt/opensvc/bin/sssu"):
+            sssubin = "/opt/opensvc/bin/sssu"
+        else:
+            raise ex.excError("sssu command not found. set 'bin' in auth.conf section.")
     os.chdir(pathtmp)
-    _cmd = ['sssu',
+    _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
     if array is not None:
         _cmd += ["select system %s"%array]
     _cmd += [cmd]
     out, err, ret = justcall(_cmd)
+    print(" ".join(_cmd))
     if "Error" in out:
         print(_cmd)
         print(out)
@@ -35,7 +41,7 @@ class Evas(object):
         else:
             self.filtering = False
         self.index = 0
-        cf = os.path.join(pathetc, "sssu.conf")
+        cf = os.path.join(pathetc, "auth.conf")
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
@@ -43,18 +49,28 @@ class Evas(object):
         m = {}
         for s in conf.sections():
             try:
+                t = conf.get(s, 'type')
+            except:
+                continue
+            if t != "eva":
+                continue
+            try:
                 manager = conf.get(s, 'manager')
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m[manager] = [username, password]
-            except:
-                print("error parsing section", s)
+            except Exception as e:
+                print("error parsing section", s, ":", e)
                 pass
+            try:
+                sssubin = conf.get(s, 'bin')
+            except:
+                sssubin = None
+            m[manager] = [username, password, sssubin]
         del(conf)
         done = []
         for manager, creds in m.items():
-            username, password = creds
-            out, err = sssu('ls system', manager, username, password)
+            username, password, sssbin = creds
+            out, err = sssu('ls system', manager, username, password, sssubin=sssubin)
             _in = False
             for line in out.split('\n'):
                 if 'Systems avail' in line:
@@ -65,7 +81,7 @@ class Evas(object):
                 name = line.strip()
                 if self.filtering and name not in self.objects:
                     continue
-                self.arrays.append(Eva(name, manager, username, password))
+                self.arrays.append(Eva(name, manager, username, password, sssubin=sssubin))
                 done.append(name)
 
     def __iter__(self):
@@ -78,19 +94,23 @@ class Evas(object):
         return self.arrays[self.index-1]
 
 class Eva(object):
-    def __init__(self, name, manager, username, password):
+    def __init__(self, name, manager, username, password, sssubin=None):
         self.name = name
         self.manager = manager
         self.username = username
         self.password = password
+        self.sssubin = sssubin
         #self.keys = ['disk_group']
         self.keys = ['controller', 'disk_group', 'vdisk']
 
     def sssu(self, cmd):
-        return sssu(cmd, self.manager, self.username, self.password, array=self.name)
+        return sssu(cmd, self.manager, self.username, self.password, array=self.name, sssubin=self.sssubin)
 
     def stripxml(self, buff):
-        buff = buff[buff.index("<object>"):]
+        try:
+            buff = buff[buff.index("<object>"):]
+        except:
+            buff = ""
         lines = buff.split('\n')
         for i, line in enumerate(lines):
             if line.startswith("\\"):

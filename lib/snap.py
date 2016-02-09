@@ -55,9 +55,9 @@ class Snap(Res.Resource):
 
     def try_snap(self, rset, action, rid=None):
         if action == "nodes":
-            action = "syncnodes"
+            action = "sync_nodes"
         if action == "drpnodes":
-            action = "syncdrp"
+            action = "sync_drp"
 
         mounts_h = {}
         for r in rset.resources:
@@ -83,8 +83,8 @@ class Snap(Res.Resource):
             if not r.snap:
                 continue
 
-            if (action == "syncnodes" and not 'nodes' in r.target) or \
-               (action == "syncdrp" and not 'drpnodes' in r.target):
+            if (action == "sync_nodes" and not 'nodes' in r.target) or \
+               (action == "sync_drp" and not 'drpnodes' in r.target):
                 self.log.debug("action %s but resource target is %s"%(action, r.target))
                 continue
 

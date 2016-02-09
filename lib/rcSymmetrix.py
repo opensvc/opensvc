@@ -12,10 +12,9 @@ class Syms(object):
         else:
             self.filtering = False
         self.index = 0
-        if which('symcfg') is None:
-            print('Can not find symcli programs in PATH')
-            raise ex.excError
-        out, err, ret = justcall(['symcfg', 'list', '-output', 'xml_element'])
+        if which('/usr/symcli/bin/symcfg') is None:
+            raise ex.excError('can not find symcli programs')
+        out, err, ret = justcall(['/usr/symcli/bin/symcfg', 'list', '-output', 'xml_element'])
         if ret != 0:
             print(err)
             raise ex.excError
@@ -25,9 +24,9 @@ class Syms(object):
             sid = symm.find('symid').text
             if self.filtering and sid not in self.objects:
                 continue
-            if model in ['VMAX-1']:
+            if model.startswith('VMAX'):
                 self.syms.append(Vmax(sid))
-            if 'DMX' in model or '3000-M' in model:
+            elif 'DMX' in model or '3000-M' in model:
                 self.syms.append(Dmx(sid))
             else:
                 print("unsupported sym model: %s"%model)
@@ -51,8 +50,11 @@ class Sym(object):
                      'sym_ficondev_info',
                      'sym_meta_info',
                      'sym_disk_info',
-                     'sym_diskgroup_info']
-
+                     'sym_diskgroup_info',
+                     'sym_pool_info',
+                     'sym_tdev_info',
+                     'sym_srp_info',
+                     'sym_slo_info']
         self.sid = sid
 
     def symcmd(self, cmd):
@@ -67,47 +69,67 @@ class Sym(object):
         return justcall(cmd)
 
     def get_sym_info(self):
-        cmd = ['symcfg', 'list']
+        cmd = ['/usr/symcli/bin/symcfg', 'list']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_dir_info(self):
-        cmd = ['symcfg', '-dir', 'all', '-v', 'list']
+        cmd = ['/usr/symcli/bin/symcfg', '-dir', 'all', '-v', 'list']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_dev_info(self):
-        cmd = ['symdev', 'list']
+        cmd = ['/usr/symcli/bin/symdev', 'list']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_dev_wwn_info(self):
-        cmd = ['symdev', 'list', '-wwn']
+        cmd = ['/usr/symcli/bin/symdev', 'list', '-wwn']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_devrdfa_info(self):
-        cmd = ['symdev', 'list', '-v', '-rdfa']
+        cmd = ['/usr/symcli/bin/symdev', 'list', '-v', '-rdfa']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_ficondev_info(self):
-        cmd = ['symdev', 'list', '-ficon']
+        cmd = ['/usr/symcli/bin/symdev', 'list', '-ficon']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_meta_info(self):
-        cmd = ['symdev', 'list', '-meta', '-v']
+        cmd = ['/usr/symcli/bin/symdev', 'list', '-meta', '-v']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_disk_info(self):
-        cmd = ['symdisk', 'list', '-v']
+        cmd = ['/usr/symcli/bin/symdisk', 'list', '-v']
         out, err, ret = self.symcmd(cmd)
         return out
 
     def get_sym_diskgroup_info(self):
-        cmd = ['symdisk', 'list', '-dskgrp_summary']
+        cmd = ['/usr/symcli/bin/symdisk', 'list', '-dskgrp_summary']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_pool_info(self):
+        cmd = ['/usr/symcli/bin/symcfg', '-pool', 'list', '-v']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_tdev_info(self):
+        cmd = ['/usr/symcli/bin/symcfg', 'list', '-tdev', '-detail']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_srp_info(self):
+        cmd = ['/usr/symcli/bin/symcfg', 'list', '-srp', '-detail', '-v']
+        out, err, ret = self.symcmd(cmd)
+        return out
+
+    def get_sym_slo_info(self):
+        cmd = ['/usr/symcli/bin/symcfg', 'list', '-slo', '-detail', '-v']
         out, err, ret = self.symcmd(cmd)
         return out
 
@@ -136,28 +158,28 @@ class Vmax(Sym):
 
     def symaccesscmd(self, cmd):
         if self.aclx is None:
-            cmd += ['-output', 'xml_element']
+            cmd += ['-sid', self.sid, '-output', 'xml_element']
         else:
             cmd += ['-file', self.aclx, '-output', 'xml_element']
         return justcall(cmd)
 
     def get_sym_pg_aclx(self):
-        cmd = ['symaccess', 'list', '-type', 'port']
+        cmd = ['/usr/symcli/bin/symaccess', 'list', '-type', 'port']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
     def get_sym_sg_aclx(self):
-        cmd = ['symaccess', 'list', '-type', 'storage']
+        cmd = ['/usr/symcli/bin/symaccess', 'list', '-type', 'storage']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
     def get_sym_ig_aclx(self):
-        cmd = ['symaccess', 'list', '-type', 'initiator']
+        cmd = ['/usr/symcli/bin/symaccess', 'list', '-type', 'initiator']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
     def get_sym_view_aclx(self):
-        cmd = ['symaccess', 'list', 'view', '-details']
+        cmd = ['/usr/symcli/bin/symaccess', 'list', 'view', '-detail']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
@@ -186,7 +208,7 @@ class Dmx(Sym):
         return justcall(cmd)
 
     def get_sym_maskdb(self):
-        cmd = ['symmaskdb', 'list', 'database']
+        cmd = ['/usr/symcli/bin/symmaskdb', 'list', 'database']
         out, err, ret = self.symaccesscmd(cmd)
         return out
 

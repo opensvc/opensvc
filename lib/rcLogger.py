@@ -21,14 +21,39 @@ import logging
 import logging.handlers
 from rcGlobalEnv import *
 
+min_name_len = 8
+
+def set_streamformatter(svcs):
+    maxlen = get_max_name_len(svcs)
+    streamformatter = logging.Formatter("%(levelname)-7s %(name)-"+str(maxlen)+"s %(message)s")
+    for svc in svcs:
+        handler = svc.log.handlers[1]
+        handler.setFormatter(streamformatter)
+
+def get_max_name_len(svcs):
+    maxlen = min_name_len
+    for svc in svcs:
+        if svc.is_disabled():
+            continue
+        for r in svc.resources_by_id.values():
+            if r is None:
+                continue
+            if r.is_disabled():
+                continue
+            l = len(r.log_label())
+            if l > maxlen:
+                maxlen = l
+    return maxlen
+
 def initLogger(name):
     log = logging.getLogger(name)
-    name_width = len(name) + 8
+    if name in rcEnv.logging_initialized:
+        return log
 
     """Common log formatter
     """
     fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    streamformatter = logging.Formatter("%(asctime)s %(levelname)-7s %(name)-"+str(name_width)+"s %(message)s", datefmt="%H:%M:%S")
+    streamformatter = logging.Formatter("%(levelname)-7s %(name)s %(message)s")
 
     """Common logfile with rotation
     """
@@ -57,4 +82,5 @@ def initLogger(name):
             rcEnv.loglevel = logging.INFO
             log.setLevel(logging.INFO)
 
+    rcEnv.logging_initialized.append(name)
     return log

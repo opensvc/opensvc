@@ -222,7 +222,7 @@ class syncEvasnap(resSync.Sync):
             return rcStatus.WARN
         return rcStatus.UP
 
-    def syncresync(self):
+    def sync_resync(self):
         self.recreate()
 
     def refresh_svcstatus(self):
@@ -241,8 +241,6 @@ class syncEvasnap(resSync.Sync):
 
     def prereq(self):
         import ConfigParser
-        if not which(self.sssubin):
-            raise ex.excError("missing %s"%self.sssubin)
         if not os.path.exists(self.conf):
             raise ex.excError("missing %s"%self.conf)
         self.config = ConfigParser.RawConfigParser()
@@ -258,6 +256,23 @@ class syncEvasnap(resSync.Sync):
         self.manager = self.config.get(self.eva_name, "manager")
         self.username = self.config.get(self.eva_name, "username")
         self.password = self.config.get(self.eva_name, "password")
+        try:
+            self.sssubin = self.config.get(self.eva_name, "bin")
+        except:
+            self.sssubin = None
+
+        if self.sssubin:
+            sssubin = which(self.sssubin)
+        else:
+            sssubin = None
+
+        if not sssubin:
+            raise ex.excError("missing %s"%self.sssubin)
+
+        if not self.sssubin:
+            # sssu in PATH and not specified in auth.conf
+            self.sssubin = sssubin
+
         for pair in self.pairs:
             if 'src' not in pair or 'dst' not in pair or 'mask' not in pair:
                 raise ex.excError("missing parameter in pair %s"%str(pair))
@@ -268,23 +283,32 @@ class syncEvasnap(resSync.Sync):
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
         
 
-    def __init__(self, rid=None, pairs=[], eva_name="", snap_name="",
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
-                 sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.evasnap",
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 eva_name="",
+                 snap_name="",
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 internal=False):
+        resSync.Sync.__init__(self,
+                              rid=rid, type="sync.evasnap",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "EVA snapshot %s"%(rid)
         self.eva_name = eva_name
         self.snap_name = snap_name
         self.pairs = pairs
-        self.sssubin = os.path.join(rcEnv.pathbin, 'sssu')
-        self.conf = os.path.join(rcEnv.pathetc, 'sssu.conf')
+        self.conf = os.path.join(rcEnv.pathetc, 'auth.conf')
         self._lun_info = {}
 
     def __str__(self):

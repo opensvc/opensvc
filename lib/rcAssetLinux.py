@@ -26,7 +26,7 @@ def is_container():
         return False
     with open(p, 'r') as f:
         lines = f.readlines()
-        if len(lines) != 1:
+        if len(lines) == 0:
             return False
         if ':' not in lines[0]:
             return False
@@ -191,6 +191,34 @@ class Asset(rcAsset.Asset):
                     return 'Red Hat'
         return 'Unknown'
 
+    def _get_os_release_lsb(self):
+        if not os.path.exists('/etc/lsb-release'):
+            return
+        with open('/etc/lsb-release') as f:
+            for line in f.readlines():
+                if 'DISTRIB_RELEASE' in line:
+                    r = line.split('=')[-1].replace('\n','').strip('"')
+                    r = r.replace(self._get_os_vendor(), '').strip()
+                    if r == "":
+                        continue
+                    return r
+                if 'DISTRIB_DESCRIPTION' in line:
+                    r = line.split('=')[-1].replace('\n','').strip('"')
+                    r = r.replace(self._get_os_vendor(), '').strip()
+                    if r == "":
+                        continue
+                    return r
+        return
+
+    def _get_os_release_debian_version(self):
+        if not os.path.exists('/etc/debian_version'):
+            return
+        with open('/etc/debian_version') as f:
+            r = f.read().strip()
+        if r == "":
+            return
+        return r
+
     def _get_os_release(self):
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
@@ -205,13 +233,12 @@ class Asset(rcAsset.Asset):
                     if 'PATCHLEVEL' in line:
                         v += [line.split('=')[-1].replace('\n','').strip('" ')]
             return '.'.join(v)
-        if os.path.exists('/etc/lsb-release'):
-            with open('/etc/lsb-release') as f:
-                for line in f.readlines():
-                    if 'DISTRIB_DESCRIPTION' in line:
-                        r = line.split('=')[-1].replace('\n','').strip('"')
-                        r = r.replace(self._get_os_vendor(), '').strip()
-                        return r
+        r = self._get_os_release_lsb()
+        if r:
+            return r
+        r = self._get_os_release_debian_version()
+        if r:
+            return r
         if os.path.exists('/etc/oracle-release') and \
            os.path.exists('/etc/redhat-release'):
             with open('/etc/oracle-release') as f1:

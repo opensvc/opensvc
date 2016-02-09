@@ -36,6 +36,7 @@ import rcLogger
 import rcUtilities
 import rcExceptions as ex
 from subprocess import *
+from rcScheduler import *
 
 try:
     import ConfigParser
@@ -56,9 +57,10 @@ class Options(object):
         self.ruleset_date = ""
         self.waitlock = 60
         self.parallel = False
+        self.objects = []
         os.environ['LANG'] = 'C'
 
-class Node(Svc, Freezer):
+class Node(Svc, Freezer, Scheduler):
     """ Defines a cluster node.  It contain list of Svc.
         Implements node-level actions and checks.
     """
@@ -68,53 +70,51 @@ class Node(Svc, Freezer):
 
     def __init__(self):
         self.auth_config = None
-        self.delay_done = False
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
         self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
-        self.dotnodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', '.node.conf')
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
+        self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
           'clusters': '',
           'host_mode': 'TST',
-          'push_interval': 121,
-          'push_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
-          'push_period': '["04:00", "06:00"]',
-          'sync_interval': 121,
-          'sync_days': '["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]',
-          'sync_period': '["04:00", "06:00"]',
-          'comp_check_interval': 241,
-          'comp_check_days': '["sunday"]',
-          'comp_check_period': '["02:00", "06:00"]',
-          'rotate_root_pw_interval': 0,
-          'rotate_root_pw_days': '[]',
-          'rotate_root_pw_period': '[]',
+          'push_schedule': '00:00-06:00@361 mon-sun',
+          'sync_schedule': '04:00-06:00@121 mon-sun',
+          'comp_schedule': '02:00-06:00@241 sun',
+          'no_schedule': '',
         }
-        self.load_config()
+        self.svcs = None
         try:
             self.clusters = list(set(self.config.get('node', 'clusters').split()))
         except:
             self.clusters = []
+        self.load_config()
         self.options = Options()
-        self.svcs = None
+        Scheduler.__init__(self)
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
+            'scheduler': 'run the node task scheduler',
+            'schedule_reboot_status': 'tell if the node is scheduled for reboot',
+            'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
+            'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
             'provision': 'provision the resources described in --resource arguments',
             'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
             'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
             'scanscsi': 'scan the scsi hosts in search of new disks',
             'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
             'rotate_root_pw': "set a new root password and store it in the collector",
+            'print_schedule': "print the node tasks schedule",
+            'wol': "forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
-            'syncservices':   'send var files, config files and configured replications to other nodes for each node service',
-            'updateservices': 'refresh var files associated with services',
           },
           'Node configuration edition': {
+            'edit_config': 'open the node.conf configuration file with the preferred editor',
+            'edit_authconfig': 'open the auth.conf configuration file with the preferred editor',
             'register': 'obtain a registration number from the collector, used to authenticate the node',
             'get': 'get the value of the node configuration parameter pointed by --param',
             'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
@@ -122,28 +122,34 @@ class Node(Svc, Freezer):
           },
           'Push data to the collector': {
             'pushasset':      'push asset information to collector',
-            'pushservices':   'push services configuration to collector',
             'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
             'pushdisks':      'push disks usage information to collector',
             'pushpkg':        'push package/version list to collector',
             'pushpatch':      'push patch/version list to collector',
             'pushsym':        'push symmetrix configuration to collector',
+            'pushemcvnx':     'push EMC CX/VNX configuration to collector',
+            'pushcentera':    'push EMC Centera configuration to collector',
+            'pushnetapp':     'push Netapp configuration to collector',
             'pusheva':        'push HP EVA configuration to collector',
             'pushnecism':     'push NEC ISM configuration to collector',
             'pushhds':        'push HDS configuration to collector',
             'pushdcs':        'push Datacore configuration to collector',
+            'pushfreenas':    'push FreeNAS configuration to collector',
             'pushibmsvc':     'push IBM SVC configuration to collector',
+            'pushhp3par':     'push HP 3par configuration to collector',
             'pushibmds':      'push IBM DS configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
-            'push_appinfo':   'push services application launchers appinfo key/value pairs to collector',
+            'sysreport':      'push system report to the collector for archiving and diff analysis',
             'checks':         'run node sanity checks, push results to collector',
           },
           'Misc': {
             'prkey':          'show persistent reservation key of this node',
           },
           'Compliance': {
+            'compliance_auto': 'run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.',
+            'compliance_env': 'show the compliance modules environment variables.',
             'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
             'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
@@ -187,6 +193,11 @@ class Node(Svc, Freezer):
             'collector_json_list_nodes': 'same as "collector list nodes", output in JSON',
             'collector_json_list_services': 'same as "collector list services", output in JSON',
             'collector_json_list_filtersets': 'same as "collector list filtersets", output in JSON',
+            'collector_tag': 'set a node tag (pointed by --tag)',
+            'collector_untag': 'unset a node tag (pointed by --tag)',
+            'collector_show_tags': 'list all node tags',
+            'collector_list_tags': 'list all available tags. use --like to filter the output.',
+            'collector_create_tag': 'create a new tag',
           },
         }
         self.collector = xmlrpcClient.Collector()
@@ -198,6 +209,35 @@ class Node(Svc, Freezer):
         self.os = rcos.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
+	self.scheduler_actions = {
+	 "checks": SchedOpts("checks"),
+	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
+	 "pushstats": SchedOpts("stats"),
+	 "pushpkg": SchedOpts("packages"),
+	 "pushpatch": SchedOpts("patches"),
+	 "pushasset": SchedOpts("asset"),
+	 "pushnsr": SchedOpts("nsr", schedule_option="no_schedule"),
+	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
+	 "pushemcvnx": SchedOpts("emcvnx", schedule_option="no_schedule"),
+	 "pushcentera": SchedOpts("centera", schedule_option="no_schedule"),
+	 "pushnetapp": SchedOpts("netapp", schedule_option="no_schedule"),
+	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
+	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
+	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
+	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
+	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
+	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
+	 "pushibmsvc": SchedOpts("ibmsvc", schedule_option="no_schedule"),
+	 "pushvioserver": SchedOpts("vioserver", schedule_option="no_schedule"),
+	 "pushsym": SchedOpts("sym", schedule_option="no_schedule"),
+	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
+	 "pushdisks": SchedOpts("disks"),
+	 "sysreport": SchedOpts("sysreport"),
+	 "compliance_auto": SchedOpts("compliance", fname="last_comp_check", schedule_option="comp_schedule"),
+	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="last_rotate_root_pw", schedule_option="no_schedule"),
+	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
+        }
+
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -255,43 +295,39 @@ class Node(Svc, Freezer):
                 if svc.collector_outdated():
                     svc.action('push')
 
+        if 'svcnames' in kwargs:
+            if type(kwargs['svcnames']) == list:
+                n = len(kwargs['svcnames'])
+            else:
+                n = 1
+            if len(self.svcs) != n:
+                raise ex.excError("building error")
+
+
     def close(self):
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
 
-    def _setup_sync_conf(self):
-        h = {}
-        self.build_services()
-        for svc in self.svcs:
-            for rs in [_rs for _rs in svc.resSets if _rs.type.startswith('sync')]:
-                for r in rs.resources:
-                    s = '#'.join((svc.svcname, r.rid))
-                    if not self.config.has_section(s):
-                        self.config.add_section(s)
-                    self.config.set(s, 'svcname', svc.svcname)
-                    self.config.set(s, 'rid', r.rid)
-                    self.config.set(s, 'interval', r.sync_interval)
-                    self.config.set(s, 'days', json.dumps(r.sync_days))
-                    self.config.set(s, 'period', json.dumps(r.sync_period))
-        self.write_dotconfig()
-        with open(self.setup_sync_flag, 'w') as f:
-            f.write(str(time.time()))
+    def edit_config(self):
+        cf = os.path.join(rcEnv.pathetc, "node.conf")
+        return self.edit_cf(cf)
 
-    def write_dotconfig(self):
-        for o in self.config_defaults:
-            if self.config.has_option('DEFAULT', o):
-                self.config.remove_option('DEFAULT', o)
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                self.config.remove_section(s)
-        try:
-            fp = open(self.dotnodeconf, 'w')
-            self.config.write(fp)
-            fp.close()
-        except:
-            print("failed to write new %s"%self.dotnodeconf, file=sys.stderr)
-            raise Exception()
-        self.load_config()
+    def edit_authconfig(self):
+        cf = os.path.join(rcEnv.pathetc, "auth.conf")
+        return self.edit_cf(cf)
+
+    def edit_cf(self, cf):
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        return os.system(' '.join((editor, cf)))
 
     def write_config(self):
         for o in self.config_defaults:
@@ -307,12 +343,19 @@ class Node(Svc, Freezer):
         except:
             print("failed to write new %s"%self.nodeconf, file=sys.stderr)
             raise Exception()
+        try:
+            os.chmod(self.nodeconf, 0600)
+        except:
+            pass
         self.load_config()
+
+    def purge_status_last(self):
+        for s in self.svcs:
+            s.purge_status_last()
 
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
         self.config.read(self.nodeconf)
-        self.config.read(self.dotnodeconf)
 
     def load_auth_config(self):
         if self.auth_config is not None:
@@ -340,18 +383,6 @@ class Node(Svc, Freezer):
             if mtime > last:
                 return True
         return False
-
-    def setup_sync_conf(self):
-        if self.setup_sync_outdated():
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_section('sync'):
-            self._setup_sync_conf()
-            return
-        elif not self.config.has_option('sync', 'interval') or \
-           not self.config.has_option('sync', 'days') or \
-           not self.config.has_option('sync', 'period'):
-            self._setup_sync_conf()
 
     def format_desc(self, action=None):
         from textwrap import TextWrapper
@@ -411,7 +442,7 @@ class Node(Svc, Freezer):
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
-            if self.options.cron and a == "compliance_check" and \
+            if self.options.cron and a == "compliance_auto" and \
                self.config.has_option('compliance', 'auto_update') and \
                self.config.getboolean('compliance', 'auto_update'):
                 o.updatecomp = True
@@ -424,337 +455,49 @@ class Node(Svc, Freezer):
         else:
             return getattr(self, a)()
 
-    def need_action_interval(self, timestamp_f, delay=10):
-        """ Return False if timestamp is fresher than now-interval
-            Return True otherwize.
-            Zero is a infinite interval
-        """
-        if delay == 0:
-            return False
-        if not os.path.exists(timestamp_f):
-            return True
+    def scheduler(self):
+        self.options.cron = True
+        for action in self.scheduler_actions:
+            try:
+                self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
+
+    def get_push_objects(self, s):
+        if len(self.options.objects) > 0:
+            return self.options.objects
         try:
-            with open(timestamp_f, 'r') as f:
-                d = f.read()
-                last = datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.%f\n")
-                limit = last + datetime.timedelta(minutes=delay)
-                if datetime.datetime.now() < limit:
-                    return False
-                else:
-                    return True
-                f.close()
-        except:
-            return True
-
-        # never reach here
-        return True
-
-    def timestamp(self, timestamp_f, interval):
-        timestamp_d = os.path.dirname(timestamp_f)
-        if not os.path.isdir(timestamp_d):
-            os.makedirs(timestamp_d, 0o755)
-        with open(timestamp_f, 'w') as f:
-            f.write(str(datetime.datetime.now())+'\n')
-            f.close()
-        return True
-
-    def skip_action_interval(self, timestamp_f, interval):
-        return not self.need_action_interval(timestamp_f, interval)
-
-    def skip_probabilistic(self, period, interval):
-        if len(period) == 0:
-            return False
-
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
-            return False
-
-        if start > end:
-            end += 1440
-        if now < start:
-            now += 1440
-
-        length = end - start
-
-        if length < 60:
-            # no need to play this game on short allowed periods
-            return False
-
-        if interval <= length:
-            # don't skip if interval <= period length, because the user
-            # expects the action to run multiple times in the period
-            return False
-
-        length -= 11
-        elapsed = now - start
-        elapsed_pct = min(100, int(100.0 * elapsed / length))
-
-        """
-            proba
-              ^
-        100%  |
-         75%  |XXX
-         50%  |XXXX
-         25%  |XXXXXX
-          0%  ----|----|-> elapsed
-             0%  50%  100%
-
-        This algo is meant to level collector's load which peaks
-        when all daily cron trigger at the same minute.
-        """
-        if elapsed_pct < 50:
-            # fixed skip proba for a perfect leveling on the first half-period
-            p = 100.0 - max(1, 1000.0 / length)
-        else:
-            # decreasing skip proba on the second half-period
-            p = 100.0 - min(elapsed_pct, 100)
-
-        import random
-        r = random.random()*100.0
-
-        """
-        print("start:", start)
-        print("end:", end)
-        print("now:", now)
-        print("length:", length)
-        print("elapsed:", elapsed)
-        print("elapsed_pct:", elapsed_pct)
-        print("p:", p)
-        print("r:", r)
-        """
-
-        if r >= p:
-            print("win probabilistic challenge: %d, over %d"%(r, p))
-            return False
-
-        return True
-
-    def get_period_minutes(self, period):
-        start_s, end_s = period
-        try:
-            start_t = time.strptime(start_s, "%H:%M")
-            end_t = time.strptime(end_s, "%H:%M")
-            start = start_t.tm_hour * 60 + start_t.tm_min
-            end = end_t.tm_hour * 60 + end_t.tm_min
-        except:
-            print("malformed time string: %s"%str(period), file=sys.stderr)
-            raise Exception("malformed time string: %s"%str(period))
-        now = datetime.datetime.now()
-        now_m = now.hour * 60 + now.minute
-        return start, end, now_m
-
-    def in_period(self, period):
-        if len(period) == 0:
-            return False
-        if isinstance(period[0], list):
-            r = False
-            for p in period:
-                 if self.in_period(p):
-                     return True
-            return False
-        elif not isinstance(period[0], unicode) or len(period) != 2 or \
-             not isinstance(period[1], unicode):
-            print("malformed period: %s"%str(period), file=sys.stderr)
-            return False
-
-        if len(period) == 0:
-            return True
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
-            return False
-
-        if start <= end:
-            if now >= start and now <= end:
-                return True
-        elif start > end:
-            """
-                  XXXXXXXXXXXXXXXXX
-                  23h     0h      1h
-            """
-            if (now >= start and now <= 1440) or \
-               (now >= 0 and now <= end):
-                return True
-        return False
-
-    def in_days(self, days):
-        now = datetime.datetime.now()
-        today = now.strftime('%A').lower()
-        if today in map(lambda x: x.lower(), days):
-            return True
-        return False
-
-    def skip_action_probabilistic(self, section, option, interval):
-        if option is None:
-            return False
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'period'):
-            period_s = self.config.get(section, 'period')
-        elif self.config.has_option('DEFAULT', option):
-            period_s = self.config.get('DEFAULT', option)
-        else:
-            return False
-
-        try:
-            period = json.loads(period_s)
-        except:
-            print("malformed parameter value: %s.period"%section, file=sys.stderr)
-            return True
-
-        if isinstance(period[0], list):
-            matching_period = None
-            for p in period:
-                if self.in_period(p):
-                    matching_period = p
-                    break
-            if matching_period is None:
-                return True
-            period = matching_period
-
-        return self.skip_probabilistic(period, interval)
-
-    def skip_action_period(self, section, option):
-        if option is None:
-            return False
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'period'):
-            period_s = self.config.get(section, 'period')
-        elif self.config.has_option('DEFAULT', option):
-            period_s = self.config.get('DEFAULT', option)
-        else:
-            return False
-
-        try:
-            period = json.loads(period_s)
-        except:
-            print("malformed parameter value: %s.period"%section, file=sys.stderr)
-            return True
-
-        if self.in_period(period):
-            return False
-
-        return True
-
-    def skip_action_days(self, section, option):
-        if option is None:
-            return False
-
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'days'):
-            days_s = self.config.get(section, 'days')
-        elif self.config.has_option('DEFAULT', option):
-            days_s = self.config.get('DEFAULT', option)
-        else:
-            return False
-
-        try:
-            days = json.loads(days_s)
-        except:
-            print("malformed parameter value: %s.days"%section, file=sys.stderr)
-            return True
-
-        if self.in_days(days):
-            return False
-
-        return True
-
-    def get_interval(self, section, option, cmdline_parm):
-        # get interval from config file
-        if self.config.has_section(section) and \
-           self.config.has_option(section, 'interval'):
-            interval = self.config.getint(section, 'interval')
-        else:
-            interval = self.config.getint('DEFAULT', option)
-
-        # override with command line
-        if cmdline_parm is not None:
-            v = getattr(self.options, cmdline_parm)
-            if v is not None:
-                interval = v
-
-        return interval
-
-    def skip_action(self, section, option, fname,
-                    cmdline_parm=None,
-                    period_option=None,
-                    days_option=None):
-
-        def err(msg):
-            print('%s: skip:'%section, msg, '(--force to bypass)')
-
-        if not self.options.cron:
-            return False
-
-        if self.options.force:
-            return False
-
-        # check if we are in allowed period
-        if self.skip_action_period(section, period_option):
-            err('out of allowed periods')
-            return True
-
-        # check if we are in allowed days of week
-        if self.skip_action_days(section, days_option):
-            err('out of allowed days')
-            return True
-
-        interval = self.get_interval(section, option, cmdline_parm)
-        timestamp_f = os.path.join(os.path.dirname(__file__), '..', 'var', fname)
-
-        # check if we are in allowed days of week
-        if self.skip_action_interval(timestamp_f, interval):
-            err('last run < interval')
-            return True
-
-        # probabilistic skip
-        if '#sync#' not in section and \
-           self.skip_action_probabilistic(section, period_option, interval):
-            err('checks passed but skip to level collector load')
-            return True
-
-        # don't update the timestamp in force mode
-        # to not perturb the schedule
-        if not self.options.force:
-            self.timestamp(timestamp_f, interval)
-
-        # ok. we have some action to perform.
-        # now wait for a random delay <5min to not overload the
-        # collector listeners at 10 minutes intervals.
-        # only delay for the first action of this Node() object
-        # lifespan
-        if not self.delay_done:
-            import random
-            import time
-            delay = int(random.random()*300)
-            print("delay action for %d secs to level database load"%delay)
-            time.sleep(delay)
-            self.delay_done = True
-
-        return False
+            objects = self.config.get(s, "objects").split(",")
+        except Exception as e:
+            objects = ["magix123456"]
+            print(e)
+        return objects
 
     def pushstats(self):
-        if self.skip_action('stats', 'push_interval', 'last_stats_push',
-                            period_option='push_period',
-                            days_option='push_days'):
-            return
+        # set stats range to push to "last pushstat => now"
 
-        if self.config.has_section('stats'):
-            period = self.config.get('stats', 'push_period')
-        else:
-            period = self.config.get('DEFAULT', 'push_period')
+        ts = self.get_timestamp_f(self.scheduler_actions["pushstats"].fname)
         try:
-            period = json.loads(period)
-        except:
-            return
+            with open(ts, "r") as f:
+                buff = f.read()
+            start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
+            now = datetime.datetime.now()
+            delta = now - start
+            interval = delta.days * 1440 + delta.seconds // 60 + 10
+            #print("push stats for the last %d minutes since last push" % interval)
+        except Exception as e:
+            interval = 1450
+            #print("can not determine last push date. push stats for the last %d minutes" % interval)
+        if interval < 21:
+            interval = 21
 
-        try:
-            start, end, now = self.get_period_minutes(period)
-        except:
+        if self.skip_action("pushstats"):
             return
+        self.task_pushstats(interval)
 
+    @scheduler_fork
+    def task_pushstats(self, interval):
         if self.config.has_option("stats", "disable"):
             disable = self.config.get("stats", "disable")
         else:
@@ -771,11 +514,7 @@ class Node(Svc, Freezer):
         else:
             disable = []
 
-        # set interval to grab from the begining of the last allowed period
-        # to now
-        interval = 1440 + now - start
-
-        return self.collector.call('push_stats', force=self.options.force,
+        return self.collector.call('push_stats',
                                 stats_dir=self.options.stats_dir,
                                 stats_start=self.options.begin,
                                 stats_end=self.options.end,
@@ -783,141 +522,254 @@ class Node(Svc, Freezer):
                                 disable=disable)
 
     def pushpkg(self):
-        if self.skip_action('packages', 'push_interval', 'last_pkg_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushpkg"):
             return
+        self.task_pushpkg()
 
+    @scheduler_fork
+    def task_pushpkg(self):
         self.collector.call('push_pkg')
 
     def pushpatch(self):
-        if self.skip_action('patches', 'push_interval', 'last_patch_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushpatch"):
             return
+        self.task_pushpatch()
 
+    @scheduler_fork
+    def task_pushpatch(self):
         self.collector.call('push_patch')
 
     def pushasset(self):
-        if self.skip_action('asset', 'push_interval', 'last_asset_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushasset"):
             return
+        self.task_pushasset()
 
+    @scheduler_fork
+    def task_pushasset(self):
         self.collector.call('push_asset', self)
 
     def pushnsr(self):
-        if self.skip_action('nsr', 'push_interval', 'last_nsr_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushnsr"):
             return
+        self.task_pushnsr()
 
+    @scheduler_fork
+    def task_pushnsr(self):
         self.collector.call('push_nsr')
 
-    def pushibmds(self):
-        if self.skip_action('ibmds', 'push_interval', 'last_ibmds_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+    def pushhp3par(self):
+        if self.skip_action("pushhp3par"):
             return
+        self.task_pushhp3par()
 
+    @scheduler_fork
+    def task_pushhp3par(self):
+        self.collector.call('push_hp3par', self.options.objects)
+
+    def pushnetapp(self):
+        if self.skip_action("pushnetapp"):
+            return
+        self.task_pushnetapp()
+
+    @scheduler_fork
+    def task_pushnetapp(self):
+        self.collector.call('push_netapp', self.options.objects)
+
+    def pushcentera(self):
+        if self.skip_action("pushcentera"):
+            return
+        self.task_pushcentera()
+
+    @scheduler_fork
+    def task_pushcentera(self):
+        self.collector.call('push_centera', self.options.objects)
+
+    def pushemcvnx(self):
+        if self.skip_action("pushemcvnx"):
+            return
+        self.task_pushemcvnx()
+
+    @scheduler_fork
+    def task_pushemcvnx(self):
+        self.collector.call('push_emcvnx', self.options.objects)
+
+    def pushibmds(self):
+        if self.skip_action("pushibmds"):
+            return
+        self.task_pushibmds()
+
+    @scheduler_fork
+    def task_pushibmds(self):
         self.collector.call('push_ibmds', self.options.objects)
 
-    def pushdcs(self):
-        if self.skip_action('dcs', 'push_interval', 'last_dcs_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+    def pushfreenas(self):
+        if self.skip_action("pushfreenas"):
             return
+        self.task_pushfreenas()
 
+    @scheduler_fork
+    def task_pushfreenas(self):
+        self.collector.call('push_freenas', self.options.objects)
+
+    def pushdcs(self):
+        if self.skip_action("pushdcs"):
+            return
+        self.task_pushdcs()
+
+    @scheduler_fork
+    def task_pushdcs(self):
         self.collector.call('push_dcs', self.options.objects)
 
     def pushhds(self):
-        if self.skip_action('hds', 'push_interval', 'last_hds_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushhds"):
             return
+        self.task_pushhds()
 
+    @scheduler_fork
+    def task_pushhds(self):
         self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
-        if self.skip_action('necism', 'push_interval', 'last_necism_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushnecism"):
             return
+        self.task_pushnecism()
 
+    @scheduler_fork
+    def task_pushnecism(self):
         self.collector.call('push_necism', self.options.objects)
 
     def pusheva(self):
-        if self.skip_action('eva', 'push_interval', 'last_eva_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pusheva"):
             return
+        self.task_pusheva()
 
+    @scheduler_fork
+    def task_pusheva(self):
         self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
-        if self.skip_action('ibmsvc', 'push_interval', 'last_ibmsvc_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushibmsvc"):
             return
+        self.task_pushibmsvc()
 
+    @scheduler_fork
+    def task_pushibmsvc(self):
         self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
-        if self.skip_action('vioserver', 'push_interval', 'last_vioserver_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushvioserver"):
             return
+        self.task_pushvioserver()
 
+    @scheduler_fork
+    def task_pushvioserver(self):
         self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
-        if self.skip_action('sym', 'push_interval', 'last_sym_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushsym"):
             return
+        self.task_pushsym()
 
-        self.collector.call('push_sym', self.options.objects)
+    @scheduler_fork
+    def task_pushsym(self):
+        objects = self.get_push_objects("sym")
+        self.collector.call('push_sym', objects)
 
     def pushbrocade(self):
-        if self.skip_action('brocade', 'push_interval', 'last_brocade_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("pushbrocade"):
             return
+        self.task_pushbrocade()
 
+    @scheduler_fork
+    def task_pushbrocade(self):
         self.collector.call('push_brocade', self.options.objects)
 
     def auto_rotate_root_pw(self):
-        if self.skip_action('rotate_root_pw', 'rotate_root_pw_interval', 'last_rotate_root_pw',
-                            period_option='rotate_root_pw_period',
-                            days_option='rotate_root_pw_days'):
+        if self.skip_action("auto_rotate_root_pw"):
             return
+        self.task_auto_rotate_root_pw()
+
+    @scheduler_fork
+    def task_auto_rotate_root_pw(self):
         self.rotate_root_pw()
 
-    def pushdisks(self):
-        if self.skip_action('disks', 'push_interval', 'last_disks_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+    def unschedule_reboot(self):
+        if not os.path.exists(self.reboot_flag):
+            print("reboot already not scheduled")
             return
+        os.unlink(self.reboot_flag)
+        print("reboot unscheduled")
 
+    def schedule_reboot(self):
+        if not os.path.exists(self.reboot_flag):
+            with open(self.reboot_flag, "w") as f: f.write("")
+        import stat
+        s = os.stat(self.reboot_flag)
+        if s.st_uid != 0:
+            os.chown(self.reboot_flag, 0, -1)
+            print("set %s root ownership"%self.reboot_flag)
+        if s.st_mode & stat.S_IWOTH:
+            mode = s.st_mode ^ stat.S_IWOTH
+            os.chmod(self.reboot_flag, mode)
+            print("set %s not world-writable"%self.reboot_flag)
+        print("reboot scheduled")
+
+    def schedule_reboot_status(self):
+        import stat
+        if not os.path.exists(self.reboot_flag):
+            print("reboot is not scheduled")
+            return
+        s = os.stat(self.reboot_flag)
+        if s.st_uid != 0 or s.st_mode & stat.S_IWOTH:
+            print("reboot is not scheduled")
+            return
+        sch = self.scheduler_actions["auto_reboot"]
+        schedule = self.sched_get_schedule_raw(sch.section, sch.schedule_option)
+        print("reboot is scheduled")
+        print("reboot schedule: %s" % schedule)
+        now = datetime.datetime.now()
+        _max = 14400
+        self.options.cron = True
+        for i in range(_max):
+            d = now + datetime.timedelta(minutes=i*10)
+            if not self.skip_action("auto_reboot", now=d, verbose=False):
+                print("next allowed reboot:", d.strftime("%a %Y-%m-%d %H:%M"))
+                break
+        if i == _max - 1:
+            print("next allowed reboot: none in the next %d days" % (_max/144))
+
+    def auto_reboot(self):
+        if self.skip_action("auto_reboot"):
+            return
+        self.task_auto_reboot()
+
+    @scheduler_fork
+    def task_auto_reboot(self):
+        if not os.path.exists(self.reboot_flag):
+            print("%s is not present. no reboot scheduled" % self.reboot_flag)
+            return
+        import stat
+        s = os.stat(self.reboot_flag)
+        if s.st_uid != 0:
+            print("%s does not belong to root. abort scheduled reboot" % self.reboot_flag)
+            return
+        if s.st_mode & stat.S_IWOTH:
+            print("%s is world writable. abort scheduled reboot" % self.reboot_flag)
+            return
+        print("remove %s and reboot" % self.reboot_flag)
+        os.unlink(self.reboot_flag)
+        self.reboot()
+
+    def pushdisks(self):
+        if self.skip_action("pushdisks"):
+            return
+        self.task_pushdisks()
+
+    @scheduler_fork
+    def task_pushdisks(self):
         if self.svcs is None:
             self.build_services()
-
         self.collector.call('push_disks', self)
-
-    def need_sync(self):
-        l = []
-        for s in self.config.sections():
-            if '#sync#' not in s:
-                continue
-            ts = '_'.join(('last_sync',
-                           self.config.get(s, 'svcname'),
-                           self.config.get(s, 'rid')))
-            if self.skip_action(s, 'sync_interval', ts,
-                                period_option='sync_period',
-                                days_option='sync_days'):
-                    continue
-            l.append(self.config.get(s, 'svcname'))
-        return l
 
     def shutdown(self):
         print("TODO")
@@ -925,78 +777,87 @@ class Node(Svc, Freezer):
     def reboot(self):
         print("TODO")
 
-    def syncservices(self):
-        self.setup_sync_conf()
-        svcnames = self.need_sync()
-        if len(svcnames) == 0:
+    def sysreport(self):
+        if self.skip_action("sysreport"):
             return
+        try:
+            self.task_sysreport()
+        except Exception as e:
+            print(e)
+            return 1
 
-        from multiprocessing import Process
-        p = {}
-
-        if self.svcs is None:
-            self.build_services(svcnames=svcnames)
-
-        for svc in self.svcs:
-            p[svc.svcname] = rcCommandWorker.CommandWorker(name=svc.svcname)
-            cmd = [os.path.join(rcEnv.pathetc, svc.svcname), 'syncall']
-            if self.options.force:
-                cmd.append('--force')
-            if self.options.cron:
-                cmd.append('--cron')
-            p[svc.svcname].enqueue(cmd)
-
-        for svcname in p:
-            p[svcname].stop_worker()
-
-    def updateservices(self):
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('presync')
-
-    def pushservices(self):
-        if self.skip_action('svcconf', 'push_interval', 'last_svcconf_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+    @scheduler_fork
+    def task_sysreport(self):
+        from rcGlobalEnv import rcEnv
+        try:
+            m = __import__('rcSysReport'+rcEnv.sysname)
+        except ImportError:
+            print("sysreport is not supported on this os")
             return
+        m.SysReport(node=self).sysreport(force=self.options.force)
 
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push')
-
-    def push_appinfo(self):
-        if self.skip_action('appinfo', 'push_interval', 'last_appinfo_push',
-                            period_option='push_period',
-                            days_option='push_days'):
-            return
-
-        if self.svcs is None:
-            self.build_services()
-        for svc in self.svcs:
-            svc.cron = self.options.cron
-            svc.action('push_appinfo')
+    def get_prkey(self):
+        if self.config.has_option("node", "prkey"):
+            hostid = self.config.get("node", "prkey")
+            if len(hostid) > 18 or not hostid.startswith("0x") or \
+               len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
+                raise ex.excError("prkey in node.conf must have 16 significant hex digits max (ex: 0x90520a45138e85)")
+            return hostid
+        self.log.info("can't find a prkey forced in node.conf. generate one.")
+        hostid = "0x"+self.hostid()
+        self.config.set('node', 'prkey', hostid)
+        self.write_config()
+        return hostid
 
     def prkey(self):
+        print(self.get_prkey())
+
+    def hostid(self):
         from rcGlobalEnv import rcEnv
         m = __import__('hostid'+rcEnv.sysname)
-        print(m.hostid())
+        return m.hostid()
 
     def checks(self):
-        if self.skip_action('checks', 'push_interval', 'last_checks_push',
-                            period_option='push_period',
-                            days_option='push_days'):
+        if self.skip_action("checks"):
             return
+        self.task_checks()
 
+    @scheduler_fork
+    def task_checks(self):
         import checks
         if self.svcs is None:
             self.build_services()
         c = checks.checks(self.svcs)
         c.node = self
         c.do_checks()
+
+    def wol(self):
+        import rcWakeOnLan
+        if self.options.mac is None:
+            print("missing parameter. set --mac argument. multiple mac addresses must be separated by comma", file=sys.stderr)
+            print("example 1 : --mac 00:11:22:33:44:55", file=sys.stderr)
+            print("example 2 : --mac 00:11:22:33:44:55,66:77:88:99:AA:BB", file=sys.stderr)
+            return 1
+        if self.options.broadcast is None:
+            print("missing parameter. set --broadcast argument. needed to identify accurate network to use", file=sys.stderr)
+            print("example 1 : --broadcast 10.25.107.255", file=sys.stderr)
+            print("example 2 : --broadcast 192.168.1.5,10.25.107.255", file=sys.stderr)
+            return 1
+        macs = self.options.mac.split(',')
+        broadcasts = self.options.broadcast.split(',')
+        for brdcast in broadcasts:
+            for mac in macs:
+                req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast)
+                if not req.check_broadcast():
+                    print("Error : skipping broadcast address <%s>, not in the expected format 123.123.123.123"%req.broadcast, file=sys.stderr)
+                    break
+                if not req.check_mac():
+                    print("Error : skipping mac address <%s>, not in the expected format 00:11:22:33:44:55"%req.mac, file=sys.stderr)
+                    continue
+                if req.send():
+                    print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
+                else:
+                    print("Error while trying to send Wake On Lan packet to mac address <%s>"%req.mac, file=sys.stderr)
 
     def unset(self):
         if self.options.param is None:
@@ -1090,13 +951,14 @@ class Node(Svc, Freezer):
         self.close()
         sys.exit(r)
 
-    def devlist(self):
-        try:
-            m = __import__("rcDevTree"+rcEnv.sysname)
-        except ImportError:
-            return
-        tree = m.DevTree()
-        tree.load()
+    def devlist(self, tree=None):
+        if tree is None:
+            try:
+                m = __import__("rcDevTree"+rcEnv.sysname)
+            except ImportError:
+                return
+            tree = m.DevTree()
+            tree.load()
         l = []
         for dev in tree.get_top_devs():
             if len(dev.devpath) > 0:
@@ -1119,18 +981,23 @@ class Node(Svc, Freezer):
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
+        kwargs = {}
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
-        except IOError:
-            import traceback
-            e = sys.exc_info()
+            import ssl
+            context = ssl._create_unverified_context()
+            kwargs['context'] = context
+        except:
+            pass
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
+        except IOError as e:
+            print("download failed", ":", e[1], file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
                 pass
             if self.options.cron:
                 return 0
-            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
             try:
@@ -1155,6 +1022,8 @@ class Node(Svc, Freezer):
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
         compp = os.path.join(rcEnv.pathvar, 'compliance')
+        if not os.path.exists(compp):
+            os.makedirs(compp, 0o755)
         import shutil
         try:
             shutil.rmtree(backp)
@@ -1200,16 +1069,21 @@ class Node(Svc, Freezer):
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
+        kwargs = {}
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf)
-        except IOError:
+            import ssl
+            context = ssl._create_unverified_context()
+            kwargs['context'] = context
+        except:
+            pass
+        try:
+            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
+        except IOError as e:
+            print("download failed", ":", e[1], file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
                 pass
-            import traceback
-            e = sys.exc_info()
-            print("download failed", ":", e[1], file=sys.stderr)
             return 1
         if 'invalid file' in headers.values():
             try:
@@ -1291,12 +1165,22 @@ class Node(Svc, Freezer):
         return default
 
     def dequeue_actions(self):
+        if self.skip_action("dequeue_actions"):
+            return
+        self.task_dequeue_actions()
+
+    @scheduler_fork
+    def task_dequeue_actions(self):
         actions = self.collector.call('collector_get_action_queue')
         if actions is None:
             return "unable to fetch actions scheduled by the collector"
+        import re
+        regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
+            out = regex.sub('', out).decode('utf8', 'ignore')
+            err = regex.sub('', err).decode('utf8', 'ignore')
             data.append((action.get('id'), ret, out, err))
         if len(actions) > 0:
             self.collector.call('collector_update_action_queue', data)
@@ -1308,7 +1192,7 @@ class Node(Svc, Freezer):
         else:
             nodemgr = os.path.join(rcEnv.pathbin, "nodemgr")
             svcmgr = os.path.join(rcEnv.pathbin, "svcmgr")
-        if action.get("svcname") is None:
+        if action.get("svcname") is None or action.get("svcname") == "":
             cmd = [nodemgr]
         else:
             cmd = [svcmgr, "-s", action.get("svcname")]
@@ -1482,7 +1366,7 @@ class Node(Svc, Freezer):
         except:
             pass
 
-    def do_svcs_action(self, action, rid, tags):
+    def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
         err = 0
         if self.options.parallel:
             from multiprocessing import Process
@@ -1496,6 +1380,7 @@ class Node(Svc, Freezer):
                   'action': action,
                   'rid': rid,
                   'tags': tags,
+                  'subsets': subsets,
                   'waitlock': self.options.waitlock
                 }
                 p[s.svcname] = Process(target=self.service_action_worker,
@@ -1505,11 +1390,11 @@ class Node(Svc, Freezer):
                 p[s.svcname].start()
             else:
                 try:
-                    err += s.action(action, rid=rid, tags=tags, waitlock=self.options.waitlock)
+                    err += s.action(action, rid=rid, tags=tags, subsets=subsets, waitlock=self.options.waitlock)
                 except s.exMonitorAction:
-                    s.cluster = True
                     s.action('toc')
-                    s.action(s.monitor_action)
+                except ex.excSignal:
+                    break
 
         if self.options.parallel:
             for svcname in p:

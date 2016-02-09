@@ -1,11 +1,6 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
-module use OSVC_COMP_USER_... vars
-which define {"gssftp": {"disable": "no", "server_args": "-l -a -u 022", ...}, ...}
-
-supported dictionnary keys:
-- disable
-- server_args
+module use OSVC_COMP_SYSCTL_... vars
 """
 
 import os
@@ -19,7 +14,9 @@ sys.path.append(os.path.dirname(__file__))
 from comp import *
 
 class Sysctl(object):
-    def __init__(self, prefix='OSVC_COMP_XINETD_'):
+    def __init__(self, prefix='OSVC_COMP_SYSCTL_'):
+        if os.uname()[0] != "Linux":
+            raise NotApplicable()
         self.prefix = prefix.upper()
         self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
@@ -115,6 +112,7 @@ class Sysctl(object):
                 continue
             val = self.parse_val(l[1])
             if target == val[index]:
+                done = True
                 continue
             print "sysctl: set %s[%d] = %s"%(keyname, index, str(target))
             val[index] = target
@@ -126,8 +124,8 @@ class Sysctl(object):
             val = self.get_live_key(key['key'])
             if target != val[index]:
                 val[index] = target
-                print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
-                lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
+            print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
+            lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
 
         try:
             with open(self.cf, 'w') as f:

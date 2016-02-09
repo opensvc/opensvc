@@ -28,13 +28,29 @@ u = __import__('rcUtilitiesHP-UX')
 import resVgHpVm
 
 class HpVm(resContainer.Container):
-    def __init__(self, rid, name, guestos="HP-UX", optional=False, disabled=False,
-                 monitor=False, restart=0, tags=set([]), always_on=set([])):
-        resContainer.Container.__init__(self, rid=rid, name=name, type="container.hpvm",
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="HP-UX",
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
+                                        type="container.hpvm",
                                         guestos=guestos,
-                                        optional=optional, disabled=disabled,
-                                        monitor=monitor, restart=restart,
-                                        tags=tags, always_on=always_on)
+                                        optional=optional,
+                                        disabled=disabled,
+                                        monitor=monitor,
+                                        restart=restart,
+                                        subset=subset,
+                                        tags=tags,
+                                        always_on=always_on)
         self.vg = resVgHpVm.Vg(
           rid = 'vmdg#'+self.rid,
           name = 'vmdg_'+self.name,

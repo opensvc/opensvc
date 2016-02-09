@@ -4,7 +4,7 @@
 #
 # Starts the services driven by OpenSVC
 #
-# chkconfig: 345 99 01
+# chkconfig: 2345 99 01
 # description: Starts the services driven by OpenSVC whose
 #              autostart node is this node.
 # processname:
@@ -12,14 +12,23 @@
 # Source function library.
 . /etc/init.d/functions
 
+DEFAULTS="/etc/sysconfig/opensvc"
+
+# Include opensvc defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
 osvc_path=/opt/opensvc/bin
-osvc_opts="--parallel"
+osvc_opts=${osvc_opts:---parallel}
 allservices=${osvc_path}/allservices
 
 case $1 in
 start)
 	${osvc_path}/nodemgr pushasset
-	${allservices} ${osvc_opts} boot
+	[ "${osvc_background}" == "true" ] && {
+		${allservices} ${osvc_opts} boot &
+	} || {
+		${allservices} ${osvc_opts} boot
+	}
 	[ -d /var/lock/subsys ] && touch /var/lock/subsys/opensvc
 	;;
 stop)

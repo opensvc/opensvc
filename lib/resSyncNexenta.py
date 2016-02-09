@@ -43,7 +43,7 @@ class syncNexenta(resSync.Sync):
         # only available from CLI ?
         pass
 
-    def syncupdate(self):
+    def sync_update(self):
         try:
             self.get_endpoints()
         except ex.excError as e:
@@ -92,7 +92,7 @@ class syncNexenta(resSync.Sync):
         if not done:
             self.log.info("%s head already unbound"%self.remote.head)
 
-    def syncresync(self):
+    def sync_resync(self):
         try:
             self.get_endpoints()
             self.bind()
@@ -102,7 +102,7 @@ class syncNexenta(resSync.Sync):
             self.log.error(str(e))
             raise ex.excError
 
-    def syncbreak(self):
+    def sync_break(self):
         try:
             self.get_endpoints()
             self.unbind()
@@ -236,16 +236,28 @@ class syncNexenta(resSync.Sync):
                 raise ex.excError("both heads unreachable")
 
          
-    def __init__(self, rid=None, name=None, path=None, filers={},
-                 reversible=False, sync_max_delay=None, sync_interval=None,
-                 sync_days=None, sync_period=None, optional=False,
-                 disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.nexenta",
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 path=None,
+                 filers={},
+                 reversible=False,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 internal=False,
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.nexenta",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
         self.label = "nexenta autosync %s"%name
         self.autosync = name
         self.filers = filers

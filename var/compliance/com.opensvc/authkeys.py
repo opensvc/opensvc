@@ -1,50 +1,107 @@
-#!/opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_AUTHKEY_... vars
-which define
-{
- "action": "add",                # optional, defaults to "add"
- "authfile": "authorized_keys",  # optional, defaults to "authorized_keys2"
- "user": "foo",                  # mandatory
- "key": "XXXX..."                # mandatory
-}
-where:
-- user: the username the key authorize to log as
-- key: a single pub key to authorize
+#!/usr/bin/env /opt/opensvc/bin/python
+
+data = {
+  "default_prefix": "OSVC_COMP_AUTHKEY_",
+  "example_value": """ 
+    {
+      "action": "add",
+      "authfile": "authorized_keys",
+      "user": "testuser",
+      "key": "ssh-dss AAAAB3NzaC1kc3MAAACBAPiO1jlT+5yrdPLfQ7sYF52NkfCEzT0AUUNIl+14Sbkubqe+TcU7U3taUtiDJ5YOGOzIVFIDGGtwD0AqNHQbvsiS1ywtC5BJ9362FlrpVH4o1nVZPvMxRzz5hgh3HjxqIWqwZDx29qO8Rg1/g1Gm3QYCxqPFn2a5f2AUiYqc1wtxAAAAFQC49iboZGNqssicwUrX6TUrT9H0HQAAAIBo5dNRmTF+Vd/+PI0JUOIzPJiHNKK9rnySlaxSDml9hH2LuDSjYz7BWuNP8UnPOa2pcFA4meDp5u8d5dGOWxkuYO0bLnXwDZuHtDW/ySytjwEaBLPxoqRBAyfyQNlusGsuiqDYRA7j7bS0RxINBxvDw79KdyQhuOn8/lKVG+sjrQAAAIEAoShly/JlGLQxQzPyWADV5RFlaRSPaPvFzcYT3hS+glkVd6yrCbzc30Yc8Ndu4cflQiXSZzRoUMgsy5PzuiH1M8JjwHTGNl8r9OfJpnN/OaAhMpIyA06y1ZZD9iEME3UmthFQoZnfRuE3yxi7bqyXJU4rOq04iyCTpU1UKInPdXQ= testuser"
+    }
+  """,
+  "description": """* Installs or removes ssh public keys from authorized_key files
+* Looks up the authorized_key and authorized_key2 file location in the running sshd daemon configuration.
+* Add user to sshd_config AllowUser and AllowGroup if used
+* Reload sshd if sshd_config has been changed
+""",
+  "form_definition": """
+Desc: |
+  Describe a list of ssh public keys to authorize login as the specified Unix user.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: dict
+    Class: authkey
+
+Inputs:
+  -
+    Id: action
+    Label: Action
+    DisplayModeLabel: action
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Candidates:
+      - add
+      - del
+    Help: Defines wether the public key must be installed or uninstalled.
+
+  -
+    Id: user
+    Label: User
+    DisplayModeLabel: user
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: string
+    Help: Defines the Unix user name who will accept those ssh public keys.
+
+  -
+    Id: key
+    Label: Public key
+    DisplayModeLabel: key
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: text
+    DisplayModeTrim: 60
+    Help: The ssh public key as seen in authorized_keys files.
+
+  -
+    Id: authfile
+    Label: Authorized keys file name
+    DisplayModeLabel: authfile
+    LabelCss: hd16
+    Mandatory: Yes
+    Candidates:
+      - authorized_keys
+      - authorized_keys2
+    Default: authorized_keys2
+    Type: string
+    Help: The authorized_keys file to write the keys into.
 """
+}
 
 import os
 import sys
-import json
-import pwd
+import pwd, grp
 import codecs
+import datetime
+import shutil
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompAuthKeys(object):
-    def __init__(self, prefix='OSVC_COMP_AUTHKEY_', authfile="authorized_keys2"):
-        self.prefix = prefix.upper()
-        self.authkeys = []
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.authkeys += [json.loads(os.environ[k])]
-            except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to authkey list'
+class CompAuthKeys(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
 
-        if len(self.authkeys) == 0:
-            raise NotApplicable()
+    def init(self):
+        self.authkeys = self.get_rules()
 
         for ak in self.authkeys:
             ak['key'] = ak['key'].replace('\n', '')
 
         self.installed_keys_d = {}
-        if authfile not in ("authorized_keys", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", authfile, "(use authorized_keys or authorized_keys2)"
-            raise NotApplicable()
-        self.authfile = authfile
+        self.default_authfile = "authorized_keys2"
+        self.allowusers_check_done = []
+        self.allowusers_fix_todo = []
+        self.allowgroups_check_done = []
+        self.allowgroups_fix_todo = []
 
     def sanitize(self, ak):
         if 'user' not in ak:
@@ -56,10 +113,10 @@ class CompAuthKeys(object):
         if 'action' not in ak:
             ak['action'] = 'add'
         if 'authfile' not in ak:
-            ak['authfile'] = self.authfile
+            ak['authfile'] = self.default_authfile
         if ak['authfile'] not in ("authorized_keys", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.authfile+")"
-            ak['authfile'] = self.authfile
+            print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.default_authfile+")"
+            ak['authfile'] = self.default_authfile
         for key in ('user', 'key', 'action', 'authfile'):
             ak[key] = ak[key].strip()
         return ak
@@ -74,6 +131,56 @@ class CompAuthKeys(object):
             s = "'"+key[0:17] + "..." + key[-30:]+"'"
         return s.encode('utf8')
 
+    def reload_sshd(self):
+        cmd = ['ps', '-ef']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            print >>sys.stderr, "can not find sshd process"
+            return RET_ERR
+        lines = out.split('\n')
+        for line in lines:
+            if not line.endswith('sbin/sshd'):
+                continue
+            l = line.split()
+            pid = int(l[1])
+            name = l[-1]
+            print "send sighup to pid %d (%s)" % (pid, name)
+            os.kill(pid, 1)
+            return RET_OK
+        print >>sys.stderr, "can not find sshd process to signal"
+        return RET_ERR
+
+    def get_sshd_config(self):
+        cfs = []
+        if hasattr(self, "cache_sshd_config_f"):
+            return self.cache_sshd_config_f
+
+        cmd = ['ps', '-eo', 'comm']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode == 0:
+            l = out.split('\n')
+            if '/usr/local/sbin/sshd' in l:
+                cfs.append(os.path.join(os.sep, 'usr', 'local', 'etc', 'sshd_config'))
+            if '/usr/sfw/sbin/sshd' in l:
+                cfs.append(os.path.join(os.sep, 'etc', 'sshd_config'))
+
+        cfs += [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
+                os.path.join(os.sep, 'opt', 'etc', 'sshd_config'),
+                os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config'),
+                os.path.join(os.sep, 'usr', 'local', 'etc', 'sshd_config')]
+        cf = None
+        for _cf in cfs:
+            if os.path.exists(_cf):
+                cf = _cf
+                break
+        self.cache_sshd_config_f = cf
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
+            return None
+        return cf
+
     def _get_authkey_file(self, key):
         if key == "authorized_keys":
             # default
@@ -83,13 +190,9 @@ class CompAuthKeys(object):
         else:
             print >>sys.stderr, "unknown key", key
             return None
-        cfs = [os.path.join(os.sep, 'etc', 'ssh', 'sshd_config'),
-               os.path.join(os.sep, 'etc', 'opt', 'ssh', 'sshd_config')]
-        cf = None
-        for _cf in cfs:
-            if os.path.exists(_cf):
-                cf = _cf
-                break
+
+
+        cf = self.get_sshd_config()
         if cf is None:
             print >>sys.stderr, "sshd_config not found"
             return None
@@ -104,12 +207,51 @@ class CompAuthKeys(object):
         # not found, return default
         return ".ssh/authorized_keys2"
 
+    def get_allowusers(self):
+        if hasattr(self, "cache_allowusers"):
+            return self.cache_allowusers
+        cf = self.get_sshd_config()
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
+            return None
+        with open(cf, 'r') as f:
+            buff = f.read()
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) < 2:
+                continue
+            if l[0].strip() == "AllowUsers":
+                self.cache_allowusers = l[1:]
+                return l[1:]
+        self.cache_allowusers = None
+        return None
+
+    def get_allowgroups(self):
+        if hasattr(self, "cache_allowgroups"):
+            return self.cache_allowgroups
+        cf = self.get_sshd_config()
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
+            return None
+        with open(cf, 'r') as f:
+            buff = f.read()
+        for line in buff.split('\n'):
+            l = line.split()
+            if len(l) < 2:
+                continue
+            if l[0].strip() == "AllowGroups":
+                self.cache_allowgroups = l[1:]
+                return l[1:]
+        self.cache_allowgroups = None
+        return None
+
     def get_authkey_file(self, key, user):
         p = self._get_authkey_file(key)
         if p is None:
             return None
         p = p.replace('%u', user)
         p = p.replace('%h', os.path.expanduser('~'+user))
+        p = p.replace('~', os.path.expanduser('~'+user))
         if not p.startswith('/'):
             p = os.path.join(os.path.expanduser('~'+user), p)
         return p
@@ -135,9 +277,127 @@ class CompAuthKeys(object):
             if not os.path.exists(p):
                 continue
             with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
-                print p
                 self.installed_keys_d[user] += f.read().split('\n')
         return self.installed_keys_d[user]
+
+    def get_user_group(self, user):
+        gid = pwd.getpwnam(user).pw_gid
+        try:
+            gname = grp.getgrgid(gid).gr_name
+        except KeyError:
+            gname = None
+        return gname
+
+    def fix_allowusers(self, ak, verbose=True):
+        self.check_allowuser(ak, verbose=False)
+        if not ak['user'] in self.allowusers_fix_todo:
+            return RET_OK
+        self.allowusers_fix_todo.remove(ak['user'])
+        au = self.get_allowusers()
+        if au is None:
+            return RET_OK
+        l = ["AllowUsers"] + au + [ak['user']]
+        s = " ".join(l)
+
+        print "adding", ak['user'], "to currently allowed users"
+        cf = self.get_sshd_config()
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
+            return None
+        with open(cf, 'r') as f:
+            buff = f.read()
+        lines = buff.split('\n')
+        for i, line in enumerate(lines):
+            l = line.split()
+            if len(l) < 2:
+                continue
+            if l[0].strip() == "AllowUsers":
+                lines[i] = s
+        buff = "\n".join(lines)
+        backup = cf+'.'+str(datetime.datetime.now())
+        shutil.copy(cf, backup)
+        with open(cf, 'w') as f:
+            f.write(buff)
+        self.reload_sshd()
+        return RET_OK
+
+    def fix_allowgroups(self, ak, verbose=True):
+        self.check_allowgroup(ak, verbose=False)
+        if not ak['user'] in self.allowgroups_fix_todo:
+            return RET_OK
+        self.allowgroups_fix_todo.remove(ak['user'])
+        ag = self.get_allowgroups()
+        if ag is None:
+            return RET_OK
+        ak['group'] = self.get_user_group(ak['user'])
+        if ak['group'] is None:
+            print >>sys.stderr, "can not set AllowGroups in sshd_config: primary group of user %s not found" % ak['user']
+            return RET_ERR
+        l = ["AllowGroups"] + ag + [ak['group']]
+        s = " ".join(l)
+
+        print "adding", ak['group'], "to currently allowed groups"
+        cf = self.get_sshd_config()
+        if cf is None:
+            print >>sys.stderr, "sshd_config not found"
+            return RET_ERR
+        with open(cf, 'r') as f:
+            buff = f.read()
+        lines = buff.split('\n')
+        for i, line in enumerate(lines):
+            l = line.split()
+            if len(l) < 2:
+                continue
+            if l[0].strip() == "AllowGroups":
+                lines[i] = s
+        buff = "\n".join(lines)
+        backup = cf+'.'+str(datetime.datetime.now())
+        shutil.copy(cf, backup)
+        with open(cf, 'w') as f:
+            f.write(buff)
+        self.reload_sshd()
+        return RET_OK
+
+    def check_allowuser(self, ak, verbose=True):
+        if ak['user'] in self.allowusers_check_done:
+            return RET_OK
+        self.allowusers_check_done.append(ak['user'])
+        au = self.get_allowusers()
+        if au is None:
+            return RET_OK
+        elif ak['user'] in au:
+            if verbose:
+                print ak['user'], "is correctly set in sshd AllowUsers"
+            r = RET_OK
+        else:
+            if verbose:
+                print >>sys.stderr, ak['user'], "is not set in sshd AllowUsers"
+            self.allowusers_fix_todo.append(ak['user'])
+            r = RET_ERR
+        return r
+
+    def check_allowgroup(self, ak, verbose=True):
+        if ak['user'] in self.allowgroups_check_done:
+            return RET_OK
+        self.allowgroups_check_done.append(ak['user'])
+        ag = self.get_allowgroups()
+        if ag is None:
+            return RET_OK
+        ak['group'] = self.get_user_group(ak['user'])
+        if ak['group'] is None:
+            if verbose:
+                print >>sys.stderr, "can not determine primary group of user %s to add to AllowGroups" % ak['user']
+            return RET_ERR
+        elif ak['group'] in ag:
+            if verbose:
+                print ak['group'], "is correctly set in sshd AllowGroups"
+            r = RET_OK
+        else:
+            if verbose:
+                print >>sys.stderr, ak['group'], "is not set in sshd AllowGroups"
+            self.allowgroups_fix_todo.append(ak['user'])
+            r = RET_ERR
+        return r
 
     def check_authkey(self, ak, verbose=True):
         ak = self.sanitize(ak)
@@ -168,7 +428,8 @@ class CompAuthKeys(object):
     def fix_authkey(self, ak):
         ak = self.sanitize(ak)
         if ak['action'] == 'add':
-            return self.add_authkey(ak)
+            r = self.add_authkey(ak)
+            return r
         elif ak['action'] == 'del':
             return self.del_authkey(ak)
         else:
@@ -241,7 +502,7 @@ class CompAuthKeys(object):
                 continue
 
             with open(p, 'w') as f:
-                f.write('\n'.join(l))
+                f.write('\n'.join(l).encode('utf8'))
                 print 'key', self.truncate_key(ak['key']), 'uninstalled for user', ak['user']
 
         return RET_OK
@@ -250,39 +511,20 @@ class CompAuthKeys(object):
         r = 0
         for ak in self.authkeys:
             r |= self.check_authkey(ak)
+            if ak['action'] == 'add':
+                r |= self.check_allowgroup(ak)
+                r |= self.check_allowuser(ak)
         return r
 
     def fix(self):
         r = 0
         for ak in self.authkeys:
             r |= self.fix_authkey(ak)
+            if ak['action'] == 'add':
+                r |= self.fix_allowgroups(ak)
+                r |= self.fix_allowusers(ak)
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompAuthKeys(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompAuthKeys)
 

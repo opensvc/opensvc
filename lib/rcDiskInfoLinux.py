@@ -26,6 +26,7 @@ from rcUtilities import justcall, which
 import rcDiskInfo
 import math
 from rcGlobalEnv import rcEnv
+import rcDevTreeVeritas
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
@@ -37,13 +38,14 @@ class diskInfo(rcDiskInfo.diskInfo):
         return '.'.join((rcEnv.nodename, id))
 
     def disk_id(self, dev):
-        regex = re.compile(r'/dev/mapper/[0-9a-f]{17}')
         if 'cciss' in dev:
             id = self.cciss_id(dev)
         elif dev.startswith('/dev/mapper/3'):
             id = dev.replace('/dev/mapper/3', '')
-        elif dev.startswith('/dev/mapper/') and regex.match(dev) is not None:
-            id = dev.replace('/dev/mapper/', '')
+        elif dev.startswith('/dev/mapper/2'):
+            id = dev.replace('/dev/mapper/2', '')
+        elif "dmp/" in dev:
+            id = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
         else:
             id = self.scsi_id(dev)
         if len(id) == 0:
@@ -98,7 +100,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                         continue
                     if regex.match(w) is None:
                         continue
-                    if w.startswith("3"):
+                    if w[0] in ("2,", "3", "5"):
                         wwid = w[1:]
             elif " sd" in line:
                 l = line.split()
@@ -133,15 +135,12 @@ class diskInfo(rcDiskInfo.diskInfo):
             scsi_id = '/lib/udev/scsi_id'
         else:
             return ""
-        regex = re.compile(r'[0-9a-f]{17}')
         cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
-            if id.startswith('3'):
+            if id.startswith('3') or id.startswith('2') or id.startswith('5'):
                 id = id[1:]
-            elif regex.match(id) is not None:
-                pass
             else:
                 id = self.prefix_local(id)
             self.disk_ids[dev] = id
@@ -151,10 +150,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
-            if id.startswith('3'):
+            if id.startswith('3') or id.startswith('2') or id.startswith('5'):
                 id = id[1:]
-            elif regex.match(id) is not None:
-                pass
             else:
                 id = self.prefix_local(id)
             self.disk_ids[dev] = id

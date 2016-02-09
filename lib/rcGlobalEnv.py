@@ -35,7 +35,8 @@ class rcEnv:
     """Class to store globals
     """
 
-    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA']
+    logging_initialized = []
+    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ']
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
     nodename = socket.gethostname().lower()
@@ -60,15 +61,6 @@ class rcEnv:
     else:
         rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
-
-    """Database sink for node and service configurations and status collection.
-    """
-    dbopensvc_host = "dbopensvc"
-    dbopensvc_port = "8000"
-    dbopensvc_app = "feed"
-    dbcompliance_host = dbopensvc_host
-    dbcompliance_port = dbopensvc_port
-    dbcompliance_app = "init"
 
     """EZ-HA defines. EZ-HA does heartbeat, stonith, automatic service failover
 
@@ -164,12 +156,12 @@ class rcEnv:
         [["/home/oracle", "/home/sybase", "/opt/oracle", "/opt/sybase"], drp_sync_excludes],
     ]
 
-    vt_cloud = ['vcloud', 'openstack']
+    vt_cloud = ['vcloud', 'openstack', 'amazon']
     vt_libvirt = ['kvm']
     vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx'] + vt_cloud
-    vt_container = ['zone', 'lxc', 'jail', 'vz', 'srp']
+    vt_container = ['zone', 'lxc', 'jail', 'vz', 'srp', 'docker']
     vt_supported = vt_vm + vt_container
 
-    dbopensvc = "http://%s:%s/%s/default/call/xmlrpc"%(dbopensvc_host, dbopensvc_port, dbopensvc_app)
-    dbcompliance = "http://%s:%s/%s/compliance/call/xmlrpc"%(dbcompliance_host, dbcompliance_port, dbcompliance_app)
+    dbopensvc = "None"
+    dbcompliance = "None"
 

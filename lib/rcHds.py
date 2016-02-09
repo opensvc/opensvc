@@ -8,8 +8,7 @@ pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
 pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
 pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
 
-def _cmd(cmd, url, username, password, serial):
-    bin = "HiCommandCLI"
+def _cmd(cmd, url, username, password, serial, bin):
     if which(bin) is None:
         print("Can not find %s"%bin)
         raise ex.excError
@@ -48,23 +47,28 @@ class Hdss(object):
             if stype != "hds":
                 continue
             try:
+                bin = conf.get(s, 'bin')
+            except:
+                bin = None
+            try:
                 url = conf.get(s, 'url')
                 arrays = conf.get(s, 'array').split()
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m += [(url, arrays, username, password)]
+                m += [(url, arrays, username, password, bin)]
             except:
                 print("error parsing section", s)
                 pass
+
         del(conf)
         done = []
-        for url, arrays, username, password in m:
+        for url, arrays, username, password, bin in m:
             for name in arrays:
                 if self.filtering and name not in self.objects:
                     continue
                 if name in done:
                     continue
-                self.arrays.append(Hds(name, url, username, password))
+                self.arrays.append(Hds(name, url, username, password, bin))
                 done.append(name)
 
     def __iter__(self):
@@ -77,16 +81,20 @@ class Hdss(object):
         return self.arrays[self.index-1]
 
 class Hds(object):
-    def __init__(self, serial, url, username, password):
+    def __init__(self, serial, url, username, password, bin=None):
         self.keys = ['lu', 'arraygroup', 'port']
         self.name = serial
         self.serial = serial
         self.url = url
         self.username = username
         self.password = password
+        if bin is None:
+            self.bin = "HiCommandCLI"
+        else:
+            self.bin = bin
 
     def _cmd(self, cmd):
-        return _cmd(cmd, self.url, self.username, self.password, self.serial)
+        return _cmd(cmd, self.url, self.username, self.password, self.serial, self.bin)
 
     def get_lu(self):
         cmd = ['GetStorageArray', 'subtarget=Logicalunit', 'lusubinfo=Path,LDEV,VolumeConnection']
@@ -109,5 +117,5 @@ class Hds(object):
 if __name__ == "__main__":
     o = Hdss()
     for hds in o:
-        print(hds.lu())
+        print(hds.get_lu())
 

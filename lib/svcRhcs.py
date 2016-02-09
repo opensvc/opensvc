@@ -20,10 +20,12 @@
 
 import os
 import svc
+import socket
 import rcExceptions as ex
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 from xml.etree.ElementTree import ElementTree, SubElement
+import rcIfconfigLinux as rcIfconfig
 
 class SvcRhcs(svc.Svc):
 
@@ -31,7 +33,42 @@ class SvcRhcs(svc.Svc):
         svc.Svc.__init__(self, svcname, "rhcs", optional=optional, disabled=disabled, tags=tags)
         self.cf = "/etc/cluster/cluster.conf"
         self.pkg_name = pkg_name
+        ifconfig = rcIfconfig.ifconfig()
+        self.node_ips = []
+        self.member_to_nodename_h = {}
+        for i in ifconfig.intf:
+            self.node_ips += i.ipaddr
         self.builder()
+
+    def getaddr(self, ipname):
+        a = socket.getaddrinfo(ipname, None)
+        if len(a) == 0:
+            raise ex.excError("unable to resolve %s ip address" % ipname)
+        addr = a[0][4][0]
+        return addr
+
+    def member_to_nodename(self, member):
+        if member in self.member_to_nodename_h:
+            return self.member_to_nodename_h[member]
+
+        try:
+            addr = self.getaddr(member)
+        except:
+            self.member_to_nodename_h[member] = member
+            return self.member_to_nodename_h[member]
+
+        if addr in self.node_ips:
+            self.member_to_nodename_h[member] = rcEnv.nodename
+            return self.member_to_nodename_h[member]
+
+        cmd = rcEnv.rsh.split() + [member, "hostname"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            self.member_to_nodename_h[member] = member
+            return self.member_to_nodename_h[member]
+
+        self.member_to_nodename_h[member] = out.strip()
+        return self.member_to_nodename_h[member]
 
     def load_cluster_conf(self):
         self.tree = ElementTree()
@@ -127,12 +164,15 @@ class SvcRhcs(svc.Svc):
     def load_nodes(self):
         nodes = set([])
         for m in self.xml.findall("clusternodes/clusternode"):
-            nodes.add(m.attrib['name'])
+            member = m.attrib['name']
+            nodename = self.member_to_nodename(member)
+            nodes.add(nodename)
         self.nodes = nodes
 
-    def get_ref(refname):
-        for m in self.xml.findall("rm/resources"):
-            if m.attrib['name'] == refname:
+    def get_ref(self, refname):
+        for m in self.xml.findall("rm/resources/*"):
+            if m.attrib.get('name') == refname or \
+               m.attrib.get('address') == refname:
                 return m
         return None
 

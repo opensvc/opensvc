@@ -1,7 +1,7 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
-OSVC_COMP_MPATH='[{"key": "defaults.polling_interval", "op": ">=", "value": 20}, {"key": "device.HP.HSV210.prio", "op": "=", "value": "alua"}]' ./linux.mpath.py OSVC_COMP_MPATH check
+OSVC_COMP_SSH='[{"key": "PermitRootLogin", "op": "=", "value": "yes"}]' /opt/opensvc/bin/python /opt/opensvc/var/compliance/com.opensvc/keyval.py OSVC_COMP_SSH check /etc/ssh/sshd_config
 """
 
 import os
@@ -33,13 +33,19 @@ class KeyVal(object):
             raise NotApplicable()
 
         self.target_n_key = {}
-        for key in self.keys:
+        for i, key in enumerate(self.keys):
+             if self.keys[i]['op'] == 'IN':
+                 self.keys[i]['value'] = json.loads(self.keys[i]['value'])
              if 'op' in key and 'key' in key and key['op'] not in ("unset", "reset"):
                  if key['key'] not in self.target_n_key:
                      self.target_n_key[key['key']] = 1
                  else:
                      self.target_n_key[key['key']] += 1
-        self.conf = Parser(path)
+        try:
+            self.conf = Parser(path)
+        except ParserError as e:
+            print >>sys.stderr, e
+            raise ComplianceError()
 
 
     def fixable(self):
@@ -91,9 +97,14 @@ class KeyVal(object):
                 return RET_OK
 
         if value is None:
-            if verbose:
-                print >>sys.stderr, "%s[%d] is not set, target: %s"%(keyname, instance, str(target))
-            return RET_ERR
+            if op == 'IN' and "unset" in map(str, target):
+                if verbose:
+                    print "%s is not set, on target"%(keyname)
+                return RET_OK
+            else:
+                if verbose:
+                    print >>sys.stderr, "%s[%d] is not set, target: %s"%(keyname, instance, str(target))
+                return RET_ERR
 
         if type(value) == list:
             if str(target) in value:
@@ -107,6 +118,13 @@ class KeyVal(object):
 
         if op == '=':
             if str(value) != str(target):
+                if verbose:
+                    print >>sys.stderr, "%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target))
+                r |= RET_ERR
+            elif verbose:
+                print "%s=%s on target"%(keyname, str(value))
+        elif op == 'IN':
+            if str(value) not in map(str, target):
                 if verbose:
                     print >>sys.stderr, "%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target))
                 r |= RET_ERR
@@ -144,7 +162,7 @@ class KeyVal(object):
             op = key['op']
         target = key['value']
 
-        allowed_ops = ('>=', '<=', '=', 'unset', 'reset')
+        allowed_ops = ('>=', '<=', '=', 'unset', 'reset', 'IN')
         if op not in allowed_ops:
             if verbose:
                 print >>sys.stderr, key['key'], "'op' value must be one of", ", ".join(allowed_ops)
@@ -158,16 +176,24 @@ class KeyVal(object):
         return r
 
     def fix_key(self, key, instance=0):
-        if key['op'] == "unset":
+        if key['op'] == "unset" or (key['op'] == "IN" and key['value'][0] == "unset"):
             print "%s unset"%key['key']
-            self.conf.unset(key['key'], key['value'])
+            if key['op'] == "IN":
+                target = None
+            else:
+                target = key['value']
+            self.conf.unset(key['key'], target)
         elif key['op'] == "reset":
             target_n_key = self.target_n_key[key['key']] if key['key'] in self.target_n_key else 0
             print "%s truncated to %d definitions"%(key['key'], target_n_key)
             self.conf.truncate(key['key'], target_n_key)
         else:
-            print "%s=%s set"%(key['key'], key['value'])
-            self.conf.set(key['key'], key['value'], instance=instance)
+            if key['op'] == "IN":
+                target = key['value'][0]
+            else:
+                target = key['value']
+            print "%s=%s set"%(key['key'], target)
+            self.conf.set(key['key'], target, instance=instance)
 
     def check(self):
         r = 0
@@ -229,6 +255,8 @@ if __name__ == "__main__":
             print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
             print >>sys.stderr, syntax
             RET = RET_ERR
+    except ComplianceError:
+        sys.exit(RET_ERR)
     except NotApplicable:
         sys.exit(RET_NA)
     except:

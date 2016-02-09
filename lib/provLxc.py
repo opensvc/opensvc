@@ -136,7 +136,14 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.r.log.info("template %s already downloaded"%self.template_fname)
             return
         import urllib
-        fname, headers = urllib.urlretrieve(template, self.template_local)
+        kwargs = {}
+        try:
+            import ssl
+            context = ssl._create_unverified_context()
+            kwargs['context'] = context
+        except:
+            pass
+        fname, headers = urllib.urlretrieve(template, self.template_local, **kwargs)
         if 'invalid file' in headers.values():
             self.r.log.error("%s not found"%self.template)
             raise ex.excError
@@ -248,6 +255,7 @@ iface %(ipdev)s inet static
         self.setup_authkeys()
         self.setup_ips()
 
+        self.remove_keywords(["template"])
         self.r.start()
         self.r.log.info("provisioned")
         return True

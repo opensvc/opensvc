@@ -6,14 +6,23 @@
 # BEFORE: 
 # KEYWORD: shutdown
 
+DEFAULTS="/etc/defaults/opensvc"
+
+# Include opensvc defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
 osvc_path=/opt/opensvc/bin
-osvc_opts="--parallel"
+osvc_opts=${osvc_opts:---parallel}
 allservices=${osvc_path}/allservices
 
 case $1 in
 faststart)
         ${osvc_path}/nodemgr pushasset
-	${allservices} ${osvc_opts} boot
+	[ "${osvc_background}" == "true" ] && {
+		${allservices} ${osvc_opts} boot &
+	} || {
+		${allservices} ${osvc_opts} boot
+	}
 	;;
 faststop)
 	${allservices} ${osvc_opts} shutdown

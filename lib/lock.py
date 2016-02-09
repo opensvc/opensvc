@@ -1,3 +1,5 @@
+#!/opt/opensvc/bin/python
+
 import os
 import time
 import rcExceptions as ex
@@ -21,7 +23,7 @@ class lockAcquire(Exception):
     def __init__(self, pid):
         self.pid = pid
 
-def monlock(timeout=30, delay=5, fname='svcmon.lock'):
+def monlock(timeout=0, delay=0, fname='svcmon.lock'):
     lockfile = os.path.join(rcEnv.pathlock, fname)
     try:
         lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)
@@ -46,11 +48,17 @@ def monunlock(lockfd):
     unlock(lockfd)
 
 def lock(timeout=30, delay=5, lockfile=None):
-    for i in range(timeout//delay):
+    if timeout == 0 or delay == 0:
+        l = [1]
+    else:
+        l = range(timeout//delay)
+    for i in l:
+        if i > 0:
+            time.sleep(delay)
         try:
             return lock_nowait(lockfile)
         except lockAcquire:
-            time.sleep(delay)
+            pass
     raise lockTimeout
 
 def lock_nowait(lockfile=None):
@@ -120,5 +128,26 @@ def unlock(lockfd):
     except:
         """ already released by a parent process ?
         """
+        pass
+
+
+if __name__ == "__main__":
+    import optparse
+    import time
+    import sys
+    pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+    sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
+
+    parser = optparse.OptionParser()
+    parser.add_option("-f", "--file", default="", action="store", dest="file",
+                  help="The file to lock")
+    parser.add_option("-t", "--time", default=60, action="store", type="int", dest="time",
+                  help="The time we will hold the lock")
+    (options, args) = parser.parse_args()
+    lockfd = lock(timeout=5, delay=1, lockfile=options.file)
+    print("lock acquired")
+    try:
+        time.sleep(options.time)
+    except KeyboardInterrupt:
         pass
 

@@ -1,12 +1,13 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
 """
-OSVC_COMP_NODECONF='[{"key": "node.repopkg", "op": "=", "value": "ftp://iisprddistrib.dsit.sncf.fr/opensvc"}, {"key": "node.repocomp", "op": "=", "value": "ftp://master:MasteR0@iisprddistrib.dsit.sncf.fr/"}]' ./nodeconf.py OSVC_COMP_NODECONF check
+OSVC_COMP_NODECONF='[{"key": "node.repopkg", "op": "=", "value": "ftp://ftp.opensvc.com/opensvc"}, {"key": "node.repocomp", "op": "=", "value": "ftp://ftp.opensvc.com/compliance"}]' ./nodeconf.py OSVC_COMP_NODECONF check
 """
 
 import os
 import sys
 import json
+import re
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -27,8 +28,41 @@ class NodeConf(object):
         if len(self.keys) == 0:
             raise NotApplicable()
 
+        for key in self.keys:
+            if "value" in key:
+                key['value'] = self.subst(key['value'])
+
+    def subst(self, v):
+        if type(v) == list:
+            l = []
+            for _v in v:
+                l.append(self.subst(_v))
+            return l
+        if type(v) != str and type(v) != unicode:
+            return v
+
+        p = re.compile('%%ENV:\w+%%')
+        for m in p.findall(v):
+            s = m.strip("%").replace('ENV:', '')
+            if s in os.environ:
+                _v = os.environ[s]
+            elif 'OSVC_COMP_'+s in os.environ:
+                _v = os.environ['OSVC_COMP_'+s]
+            else:
+                print >>sys.stderr, s, 'is not an env variable'
+                raise NotApplicable()
+            v = v.replace(m, _v)
+        return v
+
     def fixable(self):
         return RET_OK
+
+    def unset_val(self, keyname):
+        cmd = ['/opt/opensvc/bin/nodemgr', 'unset', '--param', keyname]
+        print ' '.join(cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        return p.returncode
 
     def set_val(self, keyname, target):
         if type(target) == int:
@@ -66,6 +100,10 @@ class NodeConf(object):
                 r |= RET_ERR
             elif verbose:
                 print "%s=%s on target"%(keyname, str(value))
+        elif op == 'unset':
+            if verbose:
+                print >>sys.stderr, "%s=%s value must be unset"%(keyname, str(value))
+            r |= RET_ERR
         else:
             if type(value) != int:
                 if verbose:
@@ -98,22 +136,35 @@ class NodeConf(object):
             op = key['op']
         target = key['value']
 
-        if op not in ('>=', '<=', '='):
+        if op not in ('>=', '<=', '=', 'unset'):
             if verbose:
-                print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
+                print >>sys.stderr, "'value' list member 0 must be either '=', '>=', '<=' or unset: %s"%str(key)
             return RET_NA
 
         keyname = key['key']
         value = self.get_val(keyname)
 
         if value is None:
-            print >>sys.stderr, "%s key is not set"%keyname
-            return RET_ERR
+            if op == 'unset':
+		 if verbose:
+                     print "%s key is not set"%keyname
+                 return RET_OK
+            else:
+		 if verbose:
+                     print >>sys.stderr, "%s key is not set"%keyname
+                 return RET_ERR
 
         return self._check_key(keyname, target, op, value, verbose)
 
     def fix_key(self, key):
-        return self.set_val(key['key'], key['value'])
+        if 'op' not in key:
+            op = "="
+        else:
+            op = key['op']
+        if op == "unset":
+            return self.unset_val(key['key'])
+        else:
+            return self.set_val(key['key'], key['value'])
 
     def check(self):
         r = 0

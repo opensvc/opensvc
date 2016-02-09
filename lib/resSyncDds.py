@@ -29,24 +29,27 @@ import resSync
 
 class syncDds(resSync.Sync):
     def pre_action(self, rset, action):
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         """Don't sync PRD services when running on !PRD node
         """
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        for i, r in enumerate(resources):
             if not r.svc_syncable():
                 return
             r.get_info()
-            if action == 'syncfullsync':
+            if action == 'sync_full':
                 r.create_snap1()
-            elif action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
-                if action == 'syncnodes' and self.target != ['nodes']:
+            elif action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
+                if action == 'sync_nodes' and self.target != ['nodes']:
                     return
-                if action == 'syncdrp' and self.target != ['drpnodes']:
+                if action == 'sync_drp' and self.target != ['drpnodes']:
                     return
                 r.get_info()
                 r.get_snap1_uuid()
@@ -152,15 +155,16 @@ class syncDds(resSync.Sync):
 
         return True
 
-    def syncfullsync(self):
+    def sync_full(self):
         if not self.svc_syncable():
             return
         for n in self.targets:
             self.do_fullsync(n)
 
     def do_fullsync(self, node):
+        dst = self.dsts[node]
         cmd1 = ['dd', 'if='+self.snap1, 'bs=1M']
-        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+self.dst]
+        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+dst]
         self.log.info(' '.join(cmd1 + ["|"] + cmd2))
         p1 = Popen(cmd1, stdout=PIPE)
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
@@ -198,9 +202,12 @@ class syncDds(resSync.Sync):
             self._push_statefile(s)
 
     def apply_delta(self, node):
+        if not which('dds'):
+            raise ex.excError("dds executable not found")
+        dst = self.dsts[node]
         extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
                        self.snap2]
-        merge_cmd = ['dds', '--merge', '--dest', self.dst, '-v']
+        merge_cmd = ['dds', '--merge', '--dest', dst, '-v']
         merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
         self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
         p1 = Popen(extract_cmd, stdout=PIPE)
@@ -277,17 +284,17 @@ class syncDds(resSync.Sync):
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
 
-    def syncnodes(self):
+    def sync_nodes(self):
         if self.target != ['nodes']:
             return
-        self.syncupdate()
+        self.sync_update()
 
-    def syncdrp(self):
+    def sync_drp(self):
         if self.target != ['drpnodes']:
             return
-        self.syncupdate()
+        self.sync_update()
 
-    def syncupdate(self):
+    def sync_update(self):
         if not self.svc_syncable():
             return
         for n in self.targets:
@@ -310,7 +317,7 @@ class syncDds(resSync.Sync):
         else:
             self.checksums[node] = o[0]
 
-    def syncverify(self):
+    def sync_verify(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if s['overall'].status != rcStatus.UP:
             self.log.debug("won't verify this resource for a service not up")
@@ -327,8 +334,9 @@ class syncDds(resSync.Sync):
         ps = []
         self.log.info("start checksum threads. please be patient.")
         for n in self.targets:
+            dst = self.dsts[n]
             queues[n] = Queue()
-            p = Process(target=self.checksum, args=(n, self.dst, queues[n]))
+            p = Process(target=self.checksum, args=(n, dst, queues[n]))
             p.start()
             ps.append(p)
         self.checksum(rcEnv.nodename, self.snap1)
@@ -386,22 +394,34 @@ class syncDds(resSync.Sync):
             return rcStatus.WARN
         return rcStatus.UP
 
-    def __init__(self, rid=None, target=None, src=None, dst=None,
-                 delta_store=None, sender=None,
-                 snap_size=0, sync_max_delay=None,
-                 sync_interval=None, sync_days=None, sync_period=None,
-                 optional=False, disabled=False, tags=set([])):
-        resSync.Sync.__init__(self, rid=rid, type="sync.dds",
+    def __init__(self,
+                 rid=None,
+                 target=None,
+                 src=None,
+                 dsts={},
+                 delta_store=None,
+                 sender=None,
+                 snap_size=0,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.dds",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "dds of %s to %s"%(src, target)
         self.target = target
         self.src = src
-        self.dst = dst
+        self.dsts = dsts
         self.snap_size = snap_size
         if delta_store is None:
             self.delta_store = rcEnv.pathvar

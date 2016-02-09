@@ -39,26 +39,57 @@ SVCS="/usr/bin/svcs"
 MULTI_USER_SMF="svc:/milestone/multi-user:default"
 
 class Zone(resContainer.Container):
-    def __init__(self, rid, name, guestos="SunOS", optional=False, disabled=False, monitor=False,
-                 restart=0, tags=set([]), always_on=set([])):
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="SunOS",
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
         """define Zone object attribute :
                 name
                 label
                 state
                 zonepath
         """
-        resContainer.Container.__init__(self, rid=rid, name=name, type="container.zone", guestos=guestos,
-                              optional=optional, disabled=disabled,
-                              monitor=monitor, restart=restart,
-                              tags=tags, always_on=always_on)
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
+                                        type="container.zone",
+                                        guestos=guestos,
+                                        optional=optional,
+                                        disabled=disabled,
+                                        monitor=monitor,
+                                        restart=restart,
+                                        subset=subset,
+                                        tags=tags,
+                                        always_on=always_on)
         self.label = name
         self.state = None
-        self.zonepath = os.path.realpath(os.path.join(os.sep, 'zones', self.name))
         self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
+        self.zone_cf = "/etc/zones/"+self.name+".xml"
+        self.delayed_noaction = True
+
+    def on_add(self):
+        self.get_zonepath()
+
+    def get_zonepath(self):
+        if hasattr(self, "zonepath"):
+            return self.zonepath
+        cmd = [ZONECFG, '-z', self.name, 'info', 'zonepath']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("unable to determine zonepath using %s"%' '.join(cmd))
+        self.zonepath = out.replace("zonepath: ", "").strip()
+        return self.zonepath
 
     def files_to_sync(self):
-        return ["/etc/zones/"+self.name+".xml"]
+        return [self.zone_cf]
 
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
@@ -229,9 +260,15 @@ class Zone(resContainer.Container):
     def _status(self, verbose=False):
         self.zone_refresh()
         if self.state == 'running' :
-            return rcStatus.UP
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.UP
         else:
-            return rcStatus.DOWN
+            if rcEnv.nodename in self.always_on:
+                return rcStatus.STDBY_DOWN
+            else:
+                return rcStatus.DOWN
 
     def zone_refresh(self):
         """ refresh Zone object attributes:
@@ -245,10 +282,13 @@ class Zone(resContainer.Container):
         (out,err,st) = justcall([ 'zoneadm', '-z', self.name, 'list', '-p' ])
 
         if st == 0 :
+            out = out.strip()
             l = out.split(':')
             n_fields = len(l)
             if n_fields == 9:
                 (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp) = l
+            elif n_fields == 10:
+                (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp,dummy) = l
             elif n_fields == 7:
                 (zoneid,zonename,state,zonepath,uuid,brand,iptype) = l
             else:
@@ -326,6 +366,9 @@ class Zone(resContainer.Container):
         for resource in self.svc.get_resources('fs'):
             mntpts.append(resource.mountPoint)
         for mount in mounts.mounts:
+	    # don't unmount zonepath itself
+	    if mount.mnt == self.zonepath:
+		continue
             if not mount.mnt.startswith(self.zonepath):
                 continue
             # don't umount fs not handled by the service
@@ -337,10 +380,12 @@ class Zone(resContainer.Container):
                 zfs_setprop(mount.dev, 'canmount', 'noauto')
 
     def start(self):
-        self.attach()
-        self.ready()
+        if not 'noaction' in self.tags:
+            self.attach()
+            self.ready()
         self.svc.sub_set_action("ip", "start", tags=set([self.name]))
-        self.boot()
+        if not 'noaction' in self.tags:
+            self.boot()
         self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
         self.svc.sub_set_action("fs", "start", tags=set([self.name]))
@@ -350,11 +395,13 @@ class Zone(resContainer.Container):
         self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
         self.svc.sub_set_action("ip", "stop", tags=set([self.name]))
-        self.halt()
-        self.detach()
+        if not 'noaction' in self.tags:
+            self.halt()
+            self.detach()
 
     def provision(self):
-        self._provision()
+        if not 'noaction' in self.tags:
+            self._provision()
         self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
         self.svc.sub_set_action("fs", "provision", tags=set([self.name]))

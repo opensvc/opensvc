@@ -24,11 +24,19 @@ def brocadetelnetcmd(cmd, switch, username, password):
     return out, "", 0
 
 def brocadecmd(cmd, switch, username, key):
-    _cmd = ['ssh', '-l', username, '-i', key, switch, cmd]
+    _cmd = ['ssh', '-o', 'StrictHostKeyChecking=no',
+                   '-o', 'ForwardX11=no',
+                   '-o', 'ConnectTimeout=5',
+                   '-o', 'PasswordAuthentication=no',
+                   '-l', username, '-i', key, switch, cmd]
     out, err, ret = justcall(_cmd)
     if "command not found" in err:
         # bogus firmware syntax
-        _cmd = ['ssh', '-l', username, '-i', key, switch, 'bash --login -c '+cmd]
+        _cmd = ['ssh', '-o', 'StrictHostKeyChecking=no',
+                       '-o', 'ForwardX11=no',
+                       '-o', 'ConnectTimeout=5',
+                       '-o', 'PasswordAuthentication=no',
+                       '-l', username, '-i', key, switch, 'bash --login -c '+cmd]
         out, err, ret = justcall(_cmd)
     if ret != 0:
         raise ex.excError("brocade command execution error")

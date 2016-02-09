@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 Verify file content. The collector provides the format with
 wildcards. The module replace the wildcards with contextual
@@ -32,6 +32,7 @@ from stat import *
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
+from utilities import which
 
 class CompFs(object):
     def __init__(self, prefix='OSVC_COMP_FS_'):
@@ -49,9 +50,14 @@ class CompFs(object):
             os.environ['OSVC_COMP_SERVICES_SVC_NAME'] = ""
             self.svcname = None
             self.osvc_service = False
+
+        keys = [key for key in os.environ if key.startswith(self.prefix)]
+        if len(keys) == 0:
+            raise NotApplicable()
+
         self.vglist()
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
+        for k in keys:
             try:
                 self.fs += self.add_fs(os.environ[k])
             except ValueError:
@@ -70,11 +76,15 @@ class CompFs(object):
         self.vg = l
 
     def vglist_Linux(self):
+        if not which("vgs"):
+            print >>sys.stderr, 'vgs command not found'
+            raise ComplianceError()
         cmd = ['vgs', '-o', 'vg_name', '--noheadings']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            raise
+            print >>sys.stderr, 'failed to list volume groups'
+            raise ComplianceError()
         self.vg = out.split()
 
     def vglist(self):
@@ -154,7 +164,10 @@ class CompFs(object):
         d['mnt'] = self.normpath(d['mnt'])
         d['devpath'] = self.devpath(d)
         d['rdevpath'] = self.rdevpath(d)
-        d['size'] = self.size_to_mb(d)
+        try:
+            d['size'] = self.size_to_mb(d)
+        except ComplianceError:
+            return []
 
         return [d]
 
@@ -278,7 +291,7 @@ class CompFs(object):
             s = str(size//1024)
         else:
             print >>sys.stderr, "unknown size unit in rule: %s (use T, G, M or K)"%s
-            raise CompError()
+            raise ComplianceError()
         return s
 
     def createlv_HPUX(self, fs):
@@ -657,6 +670,8 @@ if __name__ == "__main__":
             RET = RET_ERR
     except NotApplicable:
         sys.exit(RET_NA)
+    except ComplianceError:
+        sys.exit(RET_ERR)
     except:
         import traceback
         traceback.print_exc()

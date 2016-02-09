@@ -24,8 +24,10 @@ class check(checks.check):
 
     def find_svc(self, vgname):
         for svc in self.svcs:
-            for rs in svc.get_res_sets('disk.vg'):
+            for rs in svc.get_res_sets('disk'):
                 for r in rs.resources:
+                    if not hasattr(r, "name"):
+                        continue
                     if r.name == vgname:
                         return svc.svcname
         return ''

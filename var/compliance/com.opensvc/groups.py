@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 module use OSVC_COMP_GROUP_... vars
 which define {'groupname':{'propname':'propval',... }, ...}
@@ -20,17 +20,62 @@ import os
 import sys
 import json
 import grp
+import re
 from subprocess import Popen 
 
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
+blacklist = [
+ "root",
+ "bin",
+ "daemon",
+ "sys",
+ "adm",
+ "tty",
+ "disk",
+ "lp",
+ "mem",
+ "kmem",
+ "wheel",
+ "mail",
+ "uucp",
+ "man",
+ "games",
+ "gopher",
+ "video",
+ "dip",
+ "ftp",
+ "lock",
+ "audio",
+ "nobody",
+ "users",
+ "utmp",
+ "utempter",
+ "floppy",
+ "vcsa",
+ "cdrom",
+ "tape",
+ "dialout",
+ "saslauth",
+ "postdrop",
+ "postfix",
+ "sshd",
+ "opensvc",
+ "mailnull",
+ "smmsp",
+ "slocate",
+ "rpc",
+ "rpcuser",
+ "nfsnobody",
+ "tcpdump",
+ "ntp"
+]
+
 class CompGroup(object):
     def __init__(self, prefix='OSVC_COMP_GROUP_'):
         self.prefix = prefix.upper()
-        self.groupmod = 'groupmod'
-        self.groupadd = 'groupadd'
         self.grt = {
             'gid': 'gr_gid',
         }
@@ -41,14 +86,23 @@ class CompGroup(object):
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
-        if self.sysname == 'AIX':
-            self.groupmod = 'chgroup'
-            self.groupadd = 'mkgroup'
+        if self.sysname == "FreeBSD":
+            self.groupadd = ["pw", "groupadd"]
+            self.groupmod = ["pw", "groupmod"]
+            self.groupdel = ["pw", "groupdel"]
+        elif self.sysname == 'AIX':
+            self.groupmod = ['chgroup']
+            self.groupadd = ['mkgroup']
+            self.groupdel = ['rmgroup']
             self.groupmod_p = {
                 'gid': 'id',
             }
+        else:
+            self.groupadd = ["groupadd"]
+            self.groupmod = ["groupmod"]
+            self.groupdel = ["groupdel"]
 
-        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
+        if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable
 
@@ -61,6 +115,24 @@ class CompGroup(object):
 
         if len(self.groups) == 0:
             raise NotApplicable
+
+        p = re.compile('%%ENV:\w+%%')
+        for group, d in self.groups.items():
+            for k in d:
+                if type(d[k]) not in [str, unicode]:
+                    continue
+                for m in p.findall(d[k]):
+                    s = m.strip("%").replace('ENV:', '')
+                    if s in os.environ:
+                        v = os.environ[s]
+                    elif 'OSVC_COMP_'+s in os.environ:
+                        v = os.environ['OSVC_COMP_'+s]
+                    else:
+                        print >>sys.stderr, s, 'is not an env variable'
+                        raise NotApplicable()
+                    d[k] = d[k].replace(m, v)
+                if k in ('uid', 'gid'):
+                    d[k] = int(d[k])
 
     def fixable(self):
         return RET_NA
@@ -79,9 +151,12 @@ class CompGroup(object):
         
     def fix_item(self, group, item, target):
         if item in self.groupmod_p:
-            cmd = [getattr(self, 'groupmod')]
+            cmd = [] + self.groupmod
+            if self.sysname == "FreeBSD":
+                cmd += [group]
             cmd += self.fmt_opt(self.groupmod_p[item], str(target))
-            cmd += [group]
+            if self.sysname != "FreeBSD":
+                cmd += [group]
             print ' '.join(cmd)
             p = Popen(cmd)
             out, err = p.communicate()
@@ -117,7 +192,18 @@ class CompGroup(object):
             return True
         return False
 
+    def check_group_del(self, group):
+        try:
+            groupinfo = grp.getgrnam(group)
+        except KeyError:
+            print 'group', group, 'does not exist, on target'
+            return RET_OK
+        print >>sys.stderr, 'group', group, "exists, shouldn't"
+        return RET_ERR
+
     def check_group(self, group, props):
+        if group.startswith('-'):
+            return self.check_group_del(group.lstrip('-'))
         r = 0
         try:
             groupinfo = grp.getgrnam(group)
@@ -134,10 +220,31 @@ class CompGroup(object):
         return r
 
     def create_group(self, group, props):
-        cmd = [getattr(self, 'groupadd')]
+        cmd = [] + self.groupadd
+        if self.sysname == "FreeBSD":
+            cmd += [group]
         for item in self.grt:
             cmd += self.fmt_opt(self.groupmod_p[item], str(props[item]))
-        cmd += [group]
+        if self.sysname != "FreeBSD":
+            cmd += [group]
+        print ' '.join(cmd)
+        p = Popen(cmd)
+        out, err = p.communicate()
+        r = p.returncode
+        if r == 0:
+            return RET_OK
+        else:
+            return RET_ERR
+
+    def fix_group_del(self, group):
+        if group in blacklist:
+            print >>sys.stderr, "delete", group, "... cowardly refusing"
+            return RET_ERR
+        try:
+            groupinfo = grp.getgrnam(group)
+        except KeyError:
+            return RET_OK
+        cmd = self.groupdel + [group]
         print ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
@@ -148,6 +255,8 @@ class CompGroup(object):
             return RET_ERR
 
     def fix_group(self, group, props):
+        if group.startswith('-'):
+            return self.fix_group_del(group.lstrip('-'))
         r = 0
         try:
             groupinfo = grp.getgrnam(group)

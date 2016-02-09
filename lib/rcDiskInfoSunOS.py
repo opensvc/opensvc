@@ -18,6 +18,7 @@
 #
 
 import rcDiskInfo
+import rcDevTreeVeritas
 from rcUtilities import justcall
 import math
 from rcGlobalEnv import rcEnv
@@ -68,6 +69,8 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def get_size(self, dev):
         size = 0
+        dev = dev.replace("/dev/dsk/", "/dev/rdsk/")
+        dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
         cmd = ['prtvtoc', dev]
         (out, err, ret) = justcall(cmd)
         if ret != 0:
@@ -129,36 +132,44 @@ class diskInfo(rcDiskInfo.diskInfo):
             self.scan_dev(dev)
 
     def scan_dev(self, dev):
-        cmd = ["mpathadm", "show", "lu", dev]
-        (out, err, ret) = justcall(cmd)
-        if ret != 0:
-            return
-        if "Error: Logical-unit " + dev + " is not found" in err:
-            dsk = dev.replace("/dev/rdsk/", "")
-            dsk = dsk.replace("s2", "")
-            wwid = rcEnv.nodename + "." + dsk
-            vid = "LOCAL"
-            pid = ""
-            size = 0
-        else:
-            wwid = ""
+        dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
+        if "dmp/" in dev:
+            wwid = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
             vid = ""
             pid = ""
             size = 0
+        else:
+            cmd = ["mpathadm", "show", "lu", dev]
+            (out, err, ret) = justcall(cmd)
+            if ret != 0:
+                return
+            if "Error: Logical-unit " + dev + " is not found" in err:
+                dsk = dev.replace("/dev/rdsk/", "")
+                dsk = dsk.replace("s2", "")
+                wwid = rcEnv.nodename + "." + dsk
+                vid = "LOCAL"
+                pid = ""
+                size = 0
+            else:
+                wwid = ""
+                vid = ""
+                pid = ""
+                size = 0
 
-            for line in out.split('\n'):
-                if line.startswith("\tVendor:"):
-                    vid = self.get_val(line)
-                elif line.startswith("\tProduct:"):
-                    pid = self.get_val(line)
-                elif line.startswith("\tName:"):
-                    wwid = self.get_val(line)
+                for line in out.split('\n'):
+                    if line.startswith("\tVendor:"):
+                        vid = self.get_val(line)
+                    elif line.startswith("\tProduct:"):
+                        pid = self.get_val(line)
+                    elif line.startswith("\tName:"):
+                        wwid = self.get_val(line)
 
         size = self.get_size(dev)
         self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
     def get(self, dev, type):
-        if self.deferred:
+        dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
+        if self.deferred or dev not in self.h:
             self.scan_dev(dev)
         dummy = dict(wwid="unknown", vid="unknown", pid="unknown", size=0)
         if dev not in self.h:

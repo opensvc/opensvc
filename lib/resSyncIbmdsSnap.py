@@ -69,6 +69,8 @@ class syncIbmdsSnap(resSync.Sync):
         s = 'mkflash -dev %s -persist' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
+        else:
+            s += ' -nocp'
         l = [s]
         if options is not None:
             l.append(options)
@@ -82,6 +84,8 @@ class syncIbmdsSnap(resSync.Sync):
         s = 'resyncflash -dev %s -persist -record' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
+        else:
+            s += ' -nocp'
         l = [s]
         if options is not None:
             l.append(options)
@@ -174,26 +178,37 @@ class syncIbmdsSnap(resSync.Sync):
         self.status_log("Last sync on %s"%self.last)
         return rcStatus.UP
 
-    def syncbreak(self):
+    def sync_break(self):
         pass
 
-    def syncresync(self):
+    def sync_resync(self):
         self.resyncflash()
 
     def start(self):
-        self.syncbreak()
+        self.sync_break()
 
-    def __init__(self, rid=None, pairs=[], array=None,
-                 bgcopy=True, recording=True,
-                 sync_max_delay=None, sync_interval=None, sync_days=None,
-                 sync_period=None,
-                 optional=False, disabled=False, tags=set([]), internal=False):
-        resSync.Sync.__init__(self, rid=rid, type="sync.ibmdssnap",
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 array=None,
+                 bgcopy=True,
+                 recording=True,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 internal=False):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.ibmdssnap",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "flash copy %s"%','.join(pairs)
         self.pairs = pairs
@@ -254,6 +269,8 @@ class syncIbmdsSnap(resSync.Sync):
             d = {}
             l = line.split(',')
             for i, key in enumerate(headers):
+                if i >= len(l):
+                    raise ex.excError("the command dataset does not match its advertized columning")
                 key = key.strip()
                 if headers_multipliers[i] is not None:
                     try:

@@ -50,14 +50,21 @@ class Share(Resource):
         
     def is_up(self):
         self.issues = {}
+        self.issues_missing_client = []
+        self.issues_wrong_opts = []
+        self.issues_none = []
         exports = self.get_exports()
         if self.path not in exports:
             return False
         for client in self.opts:
             if client not in exports[self.path]:
                 self.issues[client] = "%s not exported to client %s"%(self.path, client)
+                self.issues_missing_client.append(client)
             elif self.opts[client] > exports[self.path][client]:
                 self.issues[client] = "%s is exported to client %s with missing options: current '%s', minimum required '%s'"%(self.path, client, ','.join(exports[self.path][client]), ','.join(self.opts[client]))
+                self.issues_wrong_opts.append(client)
+            else:
+                self.issues_none.append(client)
         return True
 
     def start(self):
@@ -66,12 +73,17 @@ class Share(Resource):
         except ex.excError as e:
             self.log.error("skip start because the share is in unknown state")
             return
-        if up:
+
+        if up and len(self.issues) == 0:
             self.log.info("%s is already up" % self.path)
             return
+
         self.can_rollback = True
         for client, opts in self.opts.items():
-            if client in self.issues:
+            if client in self.issues_none:
+                continue
+
+            if client in self.issues_wrong_opts:
                 cmd = [ 'exportfs', '-u', ':'.join((client, self.path)) ]
                 ret, out, err = self.vcall(cmd)
 
@@ -118,11 +130,27 @@ class Share(Resource):
         opts = _l[1].strip(')')
         return client, set(opts.split(','))
 
-    def __init__(self, rid, path, opts, always_on=set([]),
-                 disabled=False, tags=set([]), optional=False, monitor=False, restart=0):
-        Resource.__init__(self, rid, type="share.nfs", always_on=always_on,
-                          disabled=disabled, tags=tags, optional=optional,
-                          monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid,
+                 path,
+                 opts,
+                 always_on=set([]),
+                 disabled=False,
+                 tags=set([]),
+                 optional=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        Resource.__init__(self,
+                          rid,
+                          type="share.nfs",
+                          always_on=always_on,
+                          disabled=disabled,
+                          tags=tags,
+                          optional=optional,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
         if not which("exportfs"):
             raise ex.excInitError("exportfs is not installed")
         self.label = "nfs:"+path

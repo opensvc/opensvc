@@ -1,35 +1,78 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 
-"""
-OSVC_COMP_ETCSYSTEM='[{"key": "fcp:fcp_offline_delay", "op": ">=", "value": 21}, {"key": "ssd:ssd_io_time", "op": "=", "value": "0x3C"}]' ./etcsystem.py OSVC_COMP_ETCSYSTEM check
-"""
+data = {
+  "default_prefix": "OSVC_COMP_ETCSYSTEM_",
+  "example_value": """ [{"key": "fcp:fcp_offline_delay", "op": ">=", "value": 21}, {"key": "ssd:ssd_io_time", "op": "=", "value": "0x3C"}] """,
+  "description": "Checks and setup values in /etc/system respecting strict targets or thresholds.",
+  "form_definition": """
+Desc: |
+  A rule to set a list of Solaris kernel parameters to be set in /etc/system. Current values can be checked as strictly equal, or superior/inferior to their target value.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: etcsystem
+
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: The /etc/system parameter to check.
+
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The /etc/system parameter target value.
+
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter current value.
+""",
+}
 
 import os
 import sys
-import json
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class EtcSystem(object):
-    def __init__(self, prefix='OSVC_COMP_FILELINE_'):
-        self.prefix = prefix.upper()
-        self.data = {}
+class EtcSystem(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
 
-        self.cf = os.path.join(os.sep, 'etc', 'system')
-        self.keys = []
-        self.load_file(self.cf)
-
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
-
+    def init(self):
+        self.keys = self.get_rules()
         if len(self.keys) == 0:
             raise NotApplicable()
+
+        self.data = {}
+        self.cf = os.path.join(os.sep, 'etc', 'system')
+        self.load_file(self.cf)
 
     def fixable(self):
         return RET_OK
@@ -188,32 +231,4 @@ class EtcSystem(object):
         return RET_OK
 
 if __name__ == "__main__":
-    """ test: OSVC_COMP_SYSCTL='[{"key": "net.unix.max_dgram_qlen", "value": [">=", 9]}, {"key": "kernel.ctrl-alt-del", "value": ["=", 1]}, {"key": "kernel.printk", "value": [[], [] , [], [">=", 12]]}]' ./sysctl.py OSVC_COMP_SYSCTL check
-    """
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = EtcSystem(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(EtcSystem)

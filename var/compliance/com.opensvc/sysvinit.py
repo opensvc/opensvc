@@ -47,7 +47,7 @@ class SysVInit(object):
         self.levels = (0, 1, 2, 3, 4, 5, 6)
         default = "none"
 
-        self.base_d = "/sbin"
+        self.base_d = "/etc"
         self.init_d = self.base_d + "/init.d"
         if not os.path.exists(self.init_d):
             self.base_d = "/sbin"

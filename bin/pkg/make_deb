@@ -36,6 +36,6 @@ Provides: opensvc
 Description: tools to drive OpenSVC services
 EOF
 
-dpkg -b $CHROOT || exit 1
+dpkg-deb -Zgzip -b $CHROOT || exit 1
 
 [ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $CHROOT/../$DEB

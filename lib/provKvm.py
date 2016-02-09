@@ -142,6 +142,6 @@ class ProvisioningKvm(Provisioning):
         self.setup_cfdisk()
         self.setup_kvm()
         self.setup_ips()
-
+        self.remove_keywords(["snap", "snapof", "virtinst"])
         self.r.log.info("provisioned")
         return True

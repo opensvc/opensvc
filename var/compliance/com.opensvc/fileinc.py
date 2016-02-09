@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
 """ 
 Verify file content. The collector provides the format with
 wildcards. The module replace the wildcards with contextual
@@ -58,26 +58,6 @@ class FileInc(object):
     def fixable(self):
         return RET_NA
 
-    def get_env_item(self, d, item):
-        if item not in d:
-            return d
-        if type(d[item]) != str and type(d[item]) != unicode:
-            return d
-        if not d[item].startswith("%%"):
-            return d
-        s = d[item].strip('%').replace('ENV:', '')
-        if not s.startswith('OSVC_COMP_'):
-            s = 'OSVC_COMP_'+s
-        if s not in os.environ:
-            print >>sys.stderr, "%s is not set"%s
-            raise
-        d[item] = os.environ[s]
-        try:
-            d[item] = int(d[item])
-        except:
-            pass
-        return d
-
     def parse_fmt(self, x):
         if isinstance(x, int):
             x = str(x)
@@ -130,7 +110,7 @@ class FileInc(object):
         out = ''
         try :
             f = codecs.open(path, 'r', encoding="utf8", errors="ignore")
-            out = f.read()
+            out = f.read().rstrip('\n')
             f.close()
         except IOError as (errno, strerror):
             print "cannot read '%s', error=%d - %s" %(path, errno, strerror)
@@ -148,10 +128,6 @@ class FileInc(object):
             r |= RET_ERR
         if 'fmt' in d and 'ref' in d:
             print >>sys.stderr, "'fmt' and 'ref' are exclusive:", d
-            r |= RET_ERR
-        try:
-            d = self.get_env_item(d, 'check')
-        except:
             r |= RET_ERR
         for k in ('path', 'check', 'fmt', 'ref'):
             if k in d:
@@ -188,6 +164,7 @@ class FileInc(object):
         else:
             print >>sys.stderr, "'fmt' or 'ref' should be defined:", d
             r |= RET_ERR
+        c = c.strip()
         if re.match(d['check'], c) is not None or len(c) == 0:
             val = True
         else:
@@ -213,7 +190,7 @@ class FileInc(object):
             for line in lines:
                 if re.match(ck['check'], line):
                     m += 1
-                    if len(ck['add']) > 0 and line == ck['add'].strip():
+                    if len(ck['add']) > 0 and line == ck['add']:
                         print "line '%s' found in '%s'" %(line, ck['path'])
                         ok += 1
                     if m > 1:
@@ -226,7 +203,7 @@ class FileInc(object):
                 else:
                     print "pattern '%s' not found in %s"%(ck['check'], ck['path'])
             elif ok == 0:
-                print >>sys.stderr, "line '%s' not found in %s"%(ck['add'].strip(), ck['path'])
+                print >>sys.stderr, "line '%s' not found in %s"%(ck['add'], ck['path'])
                 pr |= RET_ERR
             elif m == 0:
                 print >>sys.stderr, "pattern '%s' not found in %s"%(ck['check'], ck['path'])
@@ -266,14 +243,14 @@ class FileInc(object):
                 continue
             need_rewrite = False
             m = 0
-            lines = self.files[ck['path']].split('\n')
+            lines = self.files[ck['path']].rstrip('\n').split('\n')
             for i, line in enumerate(lines):
                 if re.match(ck['check'], line):
                     m += 1
                     if m == 1:
-                        if line != ck['add'].strip():
+                        if line != ck['add']:
                             # rewrite line
-                            print "rewrite %s:%d:'%s', new content: '%s'" %(ck['path'], i, line, ck['add'].strip('\n'))
+                            print "rewrite %s:%d:'%s', new content: '%s'" %(ck['path'], i, line, ck['add'])
                             lines[i] = ck['add']
                             need_rewrite = True
                     elif m > 1:
@@ -287,9 +264,7 @@ class FileInc(object):
                 need_rewrite = True
 
             if need_rewrite:
-                if lines[-1] != '':
-                    lines.append('')
-                self.files[ck['path']] = '\n'.join(lines)
+                self.files[ck['path']] = '\n'.join(lines).rstrip("\n")+"\n"
                 self.upds[ck['path']] = 1
 
         r |= self.rewrite_files()

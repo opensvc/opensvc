@@ -23,6 +23,7 @@
 """Module providing Generic device group resources
 """
 
+import os
 import resources as Res
 import rcStatus
 import rcExceptions as exc
@@ -31,14 +32,27 @@ from rcGlobalEnv import rcEnv
 class Dg(Res.Resource):
     """ basic Dg resource, must be extend for LVM / Veritas / ZFS
     """
-    def __init__(self, rid=None, name=None, type=None,
-                 always_on=set([]), optional=False,
-                 disabled=False, tags=set([]), monitor=False, restart=0):
-        Res.Resource.__init__(self, rid, type,
-                              optional=optional, disabled=disabled,
-                              tags=tags, monitor=monitor, restart=restart)
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 always_on=set([]),
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None,
+                 monitor=False,
+                 restart=0):
+        Res.Resource.__init__(self,
+                              rid, type,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset,
+                              monitor=monitor,
+                              restart=restart,
+                              always_on=always_on)
         self.name = name
-        self.always_on = always_on
         self.disks = set()
         self.devs = set()
 
@@ -58,7 +72,6 @@ class Dg(Res.Resource):
 
     def start(self):
         self.do_start()
-        self.can_rollback = True
 
     def _status(self, verbose=False):
         if rcEnv.nodename in self.always_on:
@@ -67,6 +80,26 @@ class Dg(Res.Resource):
         else:
             if self.is_up(): return rcStatus.UP
             else: return rcStatus.DOWN
+
+    def create_static_name(self, dev, suffix="0"):
+        d = self.create_dev_dir()
+        lname = self.rid.replace("#", ".") + "." + suffix
+        l = os.path.join(d, lname)
+        if os.path.exists(l) and os.path.realpath(l) == dev:
+            return
+        self.log.info("create static device name %s -> %s" % (l, dev))
+        try:
+            os.unlink(l)
+        except:
+            pass
+        os.symlink(dev, l)
+
+    def create_dev_dir(self):
+        d = os.path.join(rcEnv.pathvar, self.svc.svcname, "dev")
+        if os.path.exists(d):
+            return d
+        os.makedirs(d)
+        return d
 
 if __name__ == "__main__":
     for c in (Dg,) :

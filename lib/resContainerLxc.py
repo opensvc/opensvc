@@ -61,20 +61,33 @@ class Lxc(resContainer.Container):
     def files_to_sync(self):
         # the config file might be in a umounted fs resource
         # in which case, no need to ask for its sync as the sync won't happen
+        l = []
+
+        # replicate the config file in the system standard path
+        cf = self.get_cf_path()
+        if cf:
+            l.append(cf)
+
+        # and the config file actually used by opensvc
+        # (might be the same)
         try:
             self.find_cf()
         except:
-            return []
+            return l
         if self.cf is None:
-            return []
+            return l
 
-        l = [self.cf]
+        if self.cf not in l:
+            l.append(self.cf)
+
+        # and the eventual fstab file referenced from the main config
         try:
             fstab = self.get_cf_value("lxc.mount")
             if os.path.exists(fstab):
                 l.append(fstab)
         except:
             pass
+
         return l
 
     def rcp_from(self, src, dst):
@@ -171,6 +184,23 @@ class Lxc(resContainer.Container):
         return self.is_up(nodename)
 
     def is_up(self, nodename=None):
+        if which("lxc-ps"):
+            return self.is_up_ps(nodename=nodename)
+        else:
+            return self.is_up_info(nodename=nodename)
+
+    def is_up_info(self, nodename=None):
+        cmd = ['lxc-info', '--name', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if 'RUNNING' in out:
+            return True
+        return False
+
+    def is_up_ps(self, nodename=None):
         cmd = ['lxc-ps', '--name', self.name]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
@@ -197,6 +227,37 @@ class Lxc(resContainer.Container):
             self.log.debug("lxc-info is not in PATH")
             return False
         return True
+
+    def get_cf_path(self):
+        path = which('lxc-info')
+        if path is None:
+            return None
+        dpath = os.path.dirname(path)
+        if not dpath.endswith("bin"):
+            return
+        dpath = os.path.realpath(os.path.join(dpath, ".."))
+
+        if dpath in (os.sep, "/usr") and os.path.exists("/var/lib/lxc"):
+            return "/var/lib/lxc/%s/config" % self.name
+        if dpath in ("/usr/local") and os.path.exists("/usr/local/var/lib/lxc"):
+            return "/usr/local/var/lib/lxc/%s/config" % self.name
+        if dpath in (os.sep, "/usr") and os.path.exists("/etc/lxc"):
+            return "/etc/lxc/%s/config" % self.name
+
+    def check_installed_cf(self):
+        cf = self.get_cf_path()
+        if cf is None:
+            self.status_log("could not determine the config file standard hosting directory")
+            return False
+        if os.path.exists(cf):
+            return True
+        self.status_log("config file is not installed as %s" % cf)
+        return False
+
+    def _status(self, verbose=False):
+        if not self.check_installed_cf():
+            return rcStatus.WARN
+        return resContainer.Container._status(self, verbose=verbose)
 
     def find_cf(self):
         if self.cf is not None:
@@ -237,26 +298,49 @@ class Lxc(resContainer.Container):
                  return prefix
         return None
 
-    def __init__(self, rid, name, guestos="Linux", cf=None, optional=False, disabled=False, monitor=False,
-                 restart=0, tags=set([]), always_on=set([])):
-        resContainer.Container.__init__(self, rid=rid, name=name,
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="Linux",
+                 cf=None,
+                 rcmd=None,
+                 optional=False,
+                 disabled=False,
+                 monitor=False,
+                 restart=0,
+                 subset=None,
+                 tags=set([]),
+                 always_on=set([])):
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
                                         type="container.lxc",
                                         guestos=guestos,
-                                        optional=optional, disabled=disabled,
-                                        monitor=monitor, restart=restart,
-                                        tags=tags, always_on=always_on)
+                                        optional=optional,
+                                        disabled=disabled,
+                                        monitor=monitor,
+                                        restart=restart,
+                                        subset=subset,
+                                        tags=tags,
+                                        always_on=always_on)
 
-        if which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
+        if rcmd is not None:
+            self.runmethod = rcmd
+        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             self.runmethod = ['lxc-attach', '-n', name, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [name]
+
+        if "lxc-attach" in ' '.join(self.runmethod):
             # override getaddr from parent class with a noop
             self.getaddr = self.dummy
         else:
-            self.runmethod = rcEnv.rsh.split() + [name]
             # enable ping test on start
             self.ping = self._ping
+
         self.cf = cf
 
-    def dummy(self):
+    def dummy(self, cache_fallback=False):
         pass
 
     def on_add(self):
@@ -264,6 +348,31 @@ class Lxc(resContainer.Container):
         if self.prefix is None:
             self.log.error("lxc install prefix not found")
             raise ex.excInitError
+
+    def operational(self):
+        if not resContainer.Container.operational(self):
+            return False
+
+        cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
+        out, err, ret = justcall(cmd)
+        if ret == 1:
+            # not a systemd container. no more checking.
+            return True
+
+        # systemd on-demand loading will let us start the encap service before
+        # the network is fully initialized, causing start issues with nfs mounts
+        # and listening apps.
+        # => wait for systemd default target to become active
+        cmd = self.runmethod + ['systemctl', 'is-active', 'default.target']
+        out, err, ret = justcall(cmd)
+        if ret == 1:
+            # if systemctl is-active fails, no point in waiting more
+            return True
+        if out.strip() == "active":
+            return True
+
+        # ok, wait some more
+        return False
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

@@ -26,9 +26,13 @@ import snap
 
 class Snap(snap.Snap):
     def mntopt_and_ro(self, m):
+        opt_set = set([])
+        if m.fsType == "xfs":
+            opt_set.add("nouuid")
         if m.mntOpt is None:
-            return 'ro'
-        opt_set = set(m.mntOpt.split(','))
+            opt_set.add("ro")
+            return ','.join(opt_set)
+        opt_set |= set(m.mntOpt.split(','))
         opt_set -= set(['rw', 'ro'])
         opt_set |= set(['ro'])
         return ','.join(opt_set)
@@ -50,7 +54,9 @@ class Snap(snap.Snap):
         else:
             snap_size = int(lv_size//10)
 
-        out, err, ret = justcall(['lvcreate', '-A', 'n', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)])
+        cmd = ['lvcreate', '-A', 'n', '-s', '-L'+str(snap_size)+'M', '-n', snap_name, os.path.join(vg_name, lv_name)]
+        self.log.info(' '.join(cmd))
+        out, err, ret = justcall(cmd)
         err_l1 = err.split('\n')
         err_l2 = []
         out_l = out.split('\n')
@@ -72,9 +78,13 @@ class Snap(snap.Snap):
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0o755)
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
-        self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
-        (ret, buff, err) = self.vcall(['mount', '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
+        if m.fsType != "xfs":
+            self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
+        (ret, buff, err) = self.vcall(['mount', '-t', m.fsType, '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
         if ret != 0:
+            self.vcall(["mount"])
+            self.vcall(["fuser", "-v", snap_mnt])
+            self.vcall(['lvremove', '-A', 'n', '-f', snap_dev])
             raise ex.syncSnapMountError
         self.snaps[m.mountPoint] = dict(lv_name=lv_name,
                                         vg_name=vg_name,

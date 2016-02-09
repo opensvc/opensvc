@@ -1,4 +1,12 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env /opt/opensvc/bin/python
+
+data = {
+  "default_prefix": "OSVC_COMP_BIOS_",
+  "example_value": "0.6.0",
+  "description": """* Checks an exact BIOS version, as returned by dmidecode or sysfs
+* Module need to be called with the exposed bios version as variable (bios.py $OSVC_COMP_TEST_BIOS_1 check)
+""",
+}
 
 import os
 import sys
@@ -8,11 +16,13 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompBios(object):
-    def __init__(self, target):
-        self.target = target
-        self.sysname, self.nodename, x, x, self.machine = os.uname()
+class CompBios(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
 
+    def init(self):
+        self.rules = self.get_rules_raw()
+        self.sysname, self.nodename, x, x, self.machine = os.uname()
         if self.sysname not in ['Linux']:
             print >>sys.stderr, 'module not supported on', self.sysname
             raise NotApplicable()
@@ -46,43 +56,23 @@ class CompBios(object):
         return RET_NA
 
     def check(self):
-        ver = self.get_bios_version_Linux()
-        if ver is None:
+        self.ver = self.get_bios_version_Linux()
+        if self.ver is None:
             return RET_NA
-        if ver == self.target:
-            print "bios version is %s, on target"%ver
+        r = RET_OK
+        for rule in self.rules:
+            r |= self._check(rule)
+        return r
+
+    def _check(self, rule):
+        if self.ver == rule:
+            print "bios version is %s, on target" % self.ver
             return RET_OK
-        print >>sys.stderr, "bios version is %s, target %s"%(ver, self.target)
+        print >>sys.stderr, "bios version is %s, target %s" % (self.ver, rule)
         return RET_ERR
 
     def fix(self):
         return RET_NA
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s TARGET check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompBios(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompBios)

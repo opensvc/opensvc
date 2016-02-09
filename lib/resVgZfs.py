@@ -32,15 +32,29 @@ import re
 class Pool(resDg.Dg):
     """ basic pool resource
     """
-    def __init__(self, rid=None, name=None, type=None,
-                 optional=False, disabled=False, tags=set([]),
-                 always_on=set([]), monitor=False, restart=0):
+    def __init__(self,
+                 rid=None,
+                 name=None,
+                 type=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
         self.label = 'pool ' + name
-        resDg.Dg.__init__(self, rid=rid, name=name,
+        resDg.Dg.__init__(self,
+                          rid=rid,
+                          name=name,
                           type='disk.zpool',
                           always_on=always_on,
-                          optional=optional, disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
 
     def disklist_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
@@ -89,6 +103,7 @@ class Pool(resDg.Dg):
                 self.log.info("import %s: FallBack Long Way" %self.name)
         cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
         (ret, out, err) = self.vcall(cmd)
+        self.can_rollback = True
         return ret
 
     def do_stop(self):
@@ -148,8 +163,11 @@ class Pool(resDg.Dg):
                 disk = line.split()[0]
                 if disk.startswith(rcEnv.pathvar):
                     disk = disk.split('/')[-1]
-                if re.match("^.*", disk) is not None :
-                    disks.add("/dev/rdsk/" + disk )
+                if re.match("^.*", disk) is None:
+                    continue
+                if not disk.startswith("/dev/rdsk/"):
+                    disk = "/dev/rdsk/" + disk
+                disks.add(disk)
 
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         for d in disks:

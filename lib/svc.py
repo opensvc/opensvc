@@ -25,9 +25,10 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
 import xmlrpcClient
+import sys
 import os
 import signal
 import lock
@@ -35,6 +36,7 @@ import rcLogger
 import logging
 import datetime
 import node
+from rcScheduler import *
 
 def signal_handler(signum, frame):
     raise ex.excSignal
@@ -46,15 +48,21 @@ class Options(object):
         self.master = False
         self.cron = False
         self.force = False
+        self.remote = False
         self.ignore_affinity = False
         self.debug = False
         self.disable_rollback = False
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
+        self.dry_run = False
+        self.refresh = False
+        self.parm_rid = None
+        self.parm_tags = None
+        self.parm_subsets = None
         os.environ['LANG'] = 'C'
 
-class Svc(Resource, Freezer):
+class Svc(Resource, Scheduler):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
@@ -63,14 +71,13 @@ class Svc(Resource, Freezer):
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
         """usage : aSvc=Svc(type)"""
         self.encap = False
-        self.encapnodes = set([])
         self.has_encap_resources = False
         self.options = Options()
         self.node = None
         self.ha = False
         self.sync_dblogger = False
         self.svcname = svcname
-        self.containerize = True
+        self.create_pg = True
         self.hostid = rcEnv.nodename
         self.resSets = []
         self.type2resSets = {}
@@ -79,16 +86,30 @@ class Svc(Resource, Freezer):
         self.cron = False
         self.force = False
         self.cluster = False
+        self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
+        self.disk_types = [
+         "disk.loop",
+         "disk.raw",
+         "disk.rados",
+         "disk.gandi",
+         "disk.drbd",
+         "disk.md",
+         "disk.zpool",
+         "disk.lock",
+         "disk.vg",
+        ]
         self.status_types = ["container.hpvm",
                              "container.kvm",
+                             "container.amazon",
                              "container.openstack",
                              "container.vcloud",
                              "container.xen",
                              "container.esx",
                              "container.ovm",
                              "container.lxc",
+                             "container.docker",
                              "container.vz",
                              "container.srp",
                              "container.zone",
@@ -98,26 +119,38 @@ class Svc(Resource, Freezer):
                              "disk.drbd",
                              "disk.loop",
                              "disk.gandi",
+                             "disk.raw",
+                             "disk.rados",
                              "disk.scsireserv",
+                             "disk.lock",
                              "disk.vg",
                              "disk.lv",
                              "disk.zpool",
+                             "disk.md",
                              "share.nfs",
                              "fs",
                              "ip",
                              "sync.rsync",
                              "sync.symclone",
+                             "sync.rados",
                              "sync.symsrdfs",
+                             "sync.hp3par",
                              "sync.ibmdssnap",
                              "sync.evasnap",
+                             "sync.necismsnap",
+                             "sync.btrfssnap",
+                             "sync.s3",
                              "sync.dcssnap",
                              "sync.dcsckpt",
                              "sync.dds",
                              "sync.zfs",
                              "sync.btrfs",
+                             "sync.docker",
                              "sync.netapp",
                              "sync.nexenta",
                              "app",
+                             "stonith.ilo",
+                             "stonith.callout",
                              "hb.openha",
                              "hb.sg",
                              "hb.rhcs",
@@ -126,14 +159,15 @@ class Svc(Resource, Freezer):
                              "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
-        self.log = rcLogger.initLogger(self.svcname.upper())
-        Freezer.__init__(self, svcname)
+        Scheduler.__init__(self)
+
+        self.log = rcLogger.initLogger(self.svcname)
+        self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
         self.resources_by_id = {}
         self.rset_status_cache = None
-        self.print_status_fmt = "%-14s %-8s %s"
         self.presync_done = False
         self.presnap_trigger = None
         self.postsnap_trigger = None
@@ -141,25 +175,99 @@ class Svc(Resource, Freezer):
         self.action_start_date = datetime.datetime.now()
         self.monitor_action = None
         self.group_status_cache = None
+        self.config_defaults = {
+          'push_schedule': '00:00-06:00@361',
+          'sync_schedule': '04:00-06:00@121',
+          'comp_schedule': '00:00-06:00@361',
+          'mon_schedule': '@9',
+          'no_schedule': '',
+        }
+        self.scheduler_actions = {
+         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+"_last_comp_check", schedule_option="comp_schedule"),
+         "push_env": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_env", schedule_option="push_schedule"),
+         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_service_status", schedule_option="mon_schedule"),
+        }
 
     def __cmp__(self, other):
         """order by service name
         """
         return cmp(self.svcname, other.svcname)
 
+    def scheduler(self):
+        self.cron = True
+        self.sync_dblogger = True
+        for action in self.scheduler_actions:
+            try:
+                if action == "sync_all":
+                    # save the action logging to the collector if sync_all
+                    # is not needed
+                    self.sched_sync_all()
+                else:
+                    self.action(action)
+            except:
+                import traceback
+                traceback.print_exc()
+
+    def post_build(self):
+        syncs = []
+        for r in self.get_resources("sync"):
+            syncs += [SchedOpts(r.rid, fname=self.svcname+"_last_syncall_"+r.rid, schedule_option="sync_schedule")]
+        if len(syncs) > 0:
+            self.scheduler_actions["sync_all"] = syncs
+
+        apps = []
+        for r in self.get_resources("app"):
+            apps += [SchedOpts(r.rid, fname=self.svcname+"_last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
+        if len(apps) > 0:
+            self.scheduler_actions["push_appinfo"] = apps
+
+    def purge_status_last(self):
+        for rset in self.resSets:
+            rset.purge_status_last()
+
+    def get_subset_parallel(self, rtype):
+        rtype = rtype.split(".")[0]
+        subset_section = 'subset#' + rtype
+        if not hasattr(self, "config"):
+            self.load_config()
+        if not self.config.has_section(subset_section):
+            return False
+        try:
+            return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
+        except Exception as e:
+            return False
+
     def __iadd__(self, r):
         """svc+=aResourceSet
         svc+=aResource
         """
-        if r.type in self.type2resSets:
-            self.type2resSets[r.type] += r
+        if r.subset is not None:
+            # the resource wants to be added to a specific resourceset
+            # for action grouping, parallel execution or sub-resource
+            # triggers
+            base_type = r.type.split(".")[0]
+            rtype = "%s:%s" % (base_type, r.subset)
+        else:
+            rtype = r.type
 
-        elif isinstance(r, ResourceSet):
+        if rtype in self.type2resSets:
+            # the resource set already exists. add resource or resourceset.
+            self.type2resSets[rtype] += r
+
+        elif hasattr(r, 'resources'):
+            # new ResourceSet or ResourceSet-derived class
             self.resSets.append(r)
-            self.type2resSets[r.type] = r
+            self.type2resSets[rtype] = r
 
         elif isinstance(r, Resource):
-            R = ResourceSet(r.type, [r])
+            parallel = self.get_subset_parallel(rtype)
+            if hasattr(r, 'rset_class'):
+                R = r.rset_class(type=rtype, resources=[r], parallel=parallel)
+            else:
+                R = ResourceSet(type=rtype, resources=[r], parallel=parallel)
+            R.rid = rtype
+            R.svc = self
+            R.pg_settings = get_pg_settings(self, "subset#"+rtype)
             self.__iadd__(R)
 
         else:
@@ -171,10 +279,7 @@ class Svc(Resource, Freezer):
 
         r.svc = self
         import logging
-        if r.rid is not None:
-            r.log = logging.getLogger(str(self.svcname+'.'+str(r.rid)).upper())
-        else:
-            r.log = logging.getLogger(str(self.svcname+'.'+str(r.type)).upper())
+        r.log = logging.getLogger(r.log_label())
 
         if r.type.startswith("hb"):
             self.ha = True
@@ -197,21 +302,30 @@ class Svc(Resource, Freezer):
     def svclock(self, action=None, timeout=30, delay=5):
         suffix = None
         list_actions_no_lock = [
+          'docker',
           'push',
+          'push_env',
           'push_appinfo',
           'print_status',
+          'print_resource_status',
+          'push_service_status',
           'status',
           'freeze',
           'frozen',
           'thaw',
           'get',
           'freezestop',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_disklist',
           'print_devlist',
+          'print_config',
+          'edit_config',
           'json_status',
           'json_disklist',
-          'json_devlist'
+          'json_devlist',
+          'json_env'
         ]
         if action in list_actions_no_lock:
             # no need to serialize this action
@@ -223,28 +337,34 @@ class Svc(Resource, Freezer):
             # compliance modules are allowed to execute actions on the service
             # so give them their own lock
             suffix = "compliance"
+        elif action.startswith("sync"):
+            suffix = "sync"
+
         if self.lockfd is not None:
             # already acquired
             return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
+
+        details = "(timeout %d, delay %d, action %s)" % (timeout, delay, action)
+        self.log.debug("acquire service lock %s %s" % (lockfile, details))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.lockTimeout:
-            raise ex.excError("timed out waiting for lock")
+            raise ex.excError("timed out waiting for lock %s" % details)
         except lock.lockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param")
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.lockCreateError:
-            raise ex.excError("can not create lock file %s"%lockfile)
+            raise ex.excError("can not create lock file %s %s" % (lockfile, details))
         except lock.lockAcquire as e:
-            raise ex.excError("another action is currently running (pid=%s)"%e.pid)
+            raise ex.excError("another action is currently running (pid=%s) %s" % (e.pid, details))
         except ex.excSignal:
-            raise ex.excError("interrupted by signal")
+            raise ex.excError("interrupted by signal %s" % details)
         except:
             import traceback
             traceback.print_exc()
-            raise ex.excError("unexpected locking error")
+            raise ex.excError("unexpected locking error %s" % details)
         if lockfd is not None:
             self.lockfd = lockfd
 
@@ -256,7 +376,7 @@ class Svc(Resource, Freezer):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resources(self, _type=None, strict=False):
+    def get_resources(self, _type=None, strict=False, discard_disabled=True):
          if _type is None:
              rsets = self.resSets
          else:
@@ -267,7 +387,7 @@ class Svc(Resource, Freezer):
              for r in rs.resources:
                  if not self.encap and 'encap' in r.tags:
                      continue
-                 if r.disabled:
+                 if discard_disabled and r.disabled:
                      continue
                  resources.append(r)
          return resources
@@ -277,21 +397,27 @@ class Svc(Resource, Freezer):
              l = [_type]
          else:
              l = _type
-         rsets = []
-         for t in l:
-             for rs in self.resSets:
-                 if '.' in t:
-                     # exact match
-                     if rs.type == t:
-                         rsets.append(rs)
-                 elif '.' in rs.type and not strict:
-                     # group match
-                     _t = rs.type.split('.')
-                     if _t[0] == t:
-                         rsets.append(rs)
-                 else:
-                     if rs.type == t:
-                         rsets.append(rs)
+         rsets = {}
+         for rs in self.resSets:
+             if ':' in rs.type and rs.has_resource_with_types(l, strict=strict):
+                 # subset
+                 rsets[rs.type] = rs
+                 continue
+             rs_base_type = rs.type.split(".")[0]
+             if rs.type in l:
+                 # exact match
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
+                 rsets[rs_base_type] += rs
+             elif rs_base_type in l and not strict:
+                 # group match
+                 if rs_base_type not in rsets:
+                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                     rsets[rs_base_type].svc = self
+                 rsets[rs_base_type] += rs
+         rsets = rsets.values()
+         rsets.sort()
          return rsets
 
     def has_res_set(self, type, strict=False):
@@ -301,20 +427,15 @@ class Svc(Resource, Freezer):
             return False
 
     def all_set_action(self, action=None, tags=set([])):
-        """Call action on each member of the subset of specified type
-        """
         self.set_action(self.resSets, action=action, tags=tags)
 
     def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        """Call action on each member of the subset of specified type
+        """ Call action on each member of the subset of specified type
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
-    def sub_set_action_parallel(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags, parallel=True)
-
     def need_snap_trigger(self, sets, action):
-        if action not in ["syncnodes", "syncdrp", "syncresync", "syncupdate"]:
+        if action not in ["sync_nodes", "sync_drp", "sync_resync", "sync_update"]:
             return False
         for rs in sets:
             for r in rs.resources:
@@ -326,20 +447,31 @@ class Svc(Resource, Freezer):
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False, parallel=False):
+    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
         list_actions_no_pre_action = [
+          "delete",
+          "enable",
+          "disable",
           "status",
+          'scheduler',
+          'pg_freeze',
+          'pg_thaw',
+          'pg_kill',
+          'print_schedule',
           "print_status",
+          'print_resource_status',
           "print_disklist",
           "print_devlist",
+          'print_config',
+          'edit_config',
           "json_disklist",
           "json_devlist",
+          "json_status",
+          "json_env",
           "push_appinfo",
           "push",
-          "json_status",
-          "json_disklist",
           "group_status",
           "presync",
           "postsync",
@@ -358,22 +490,35 @@ class Svc(Resource, Freezer):
             if ret != 0:
                 raise ex.excError
 
+        """ Multiple resourcesets of the same type need to be sorted
+            so that the start and stop action happen in a predictible order.
+            Sort alphanumerically on reseourceset type.
+
+            Exemple, on start:
+             app
+             app.1
+             app.2
+            on stop:
+             app.2
+             app.1
+             app
+        """
+        if "stop" in action or action in ("rollback", "shutdown"):
+            reverse = True
+        else:
+            reverse = False
+        sets = sorted(sets, lambda x, y: cmp(x.type, y.type), reverse=reverse)
+
         for r in sets:
-            if action in list_actions_no_pre_action:
+            if action in list_actions_no_pre_action or r.skip:
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
                 r.pre_action(r, action)
             except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise
+                raise
             except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+                continue
             except:
                 self.save_exc()
                 raise ex.excError
@@ -381,38 +526,22 @@ class Svc(Resource, Freezer):
         if ns and self.postsnap_trigger is not None:
             (ret, out, err) = self.vcall(self.postsnap_trigger)
             if ret != 0:
-                raise ex.excError
+                raise ex.excError(err)
 
         for r in sets:
             self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
-            try:
-                r.action(action, tags=tags, xtags=xtags, parallel=parallel)
-            except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise
-            except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+            r.action(action, tags=tags, xtags=xtags)
 
         for r in sets:
-            if action in list_actions_no_post_action:
+            if action in list_actions_no_post_action or r.skip:
                 break
             try:
+                r.log.debug("start %s post_action"%r.type)
                 r.post_action(r, action)
             except ex.excError:
-                if r.is_optional():
-                    pass
-                else:
-                    raise ex.excError
+                raise
             except ex.excAbortAction:
-                if r.is_optional():
-                    pass
-                else:
-                    break
+                continue
             except:
                 self.save_exc()
                 raise ex.excError
@@ -454,12 +583,15 @@ class Svc(Resource, Freezer):
         import json
         d = {
               'resources': {},
+              'frozen': self.frozen(),
             }
 
         containers = self.get_resources('container')
         if len(containers) > 0:
             d['encap'] = {}
             for container in containers:
+                if container.name is None or len(container.name) == 0:
+                    continue
                 try:
                     d['encap'][container.name] = self.encap_json_status(container)
                 except:
@@ -471,6 +603,7 @@ class Svc(Resource, Freezer):
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log':log,
+                                       'tags': sorted(list(r.tags)),
                                        'monitor':monitor,
                                        'disable': disable,
                                        'optional': optional,
@@ -478,7 +611,43 @@ class Svc(Resource, Freezer):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print(json.dumps(d))
+        print(json.dumps(d, indent=4, separators=(',', ': ')))
+
+    def json_env(self):
+        import json
+        svcenv = {}
+        tmp = {}
+        self.load_config()
+        config = self.config
+
+        defaults = config.defaults()
+        for key in defaults.iterkeys():
+            tmp[key] = defaults[key]
+
+        svcenv['DEFAULT'] = tmp
+        config._defaults = {}
+
+        sections = config.sections()
+        for section in sections:
+            options = config.options(section)
+            tmpsection = {}
+            for option in options:
+                if config.has_option(section, option):
+                    tmpsection[option] = config.get(section, option)
+            svcenv[section] = tmpsection
+        print(json.dumps(svcenv, indent=4, separators=(',', ': ')))
+
+    def print_resource_status(self):
+        if len(self.action_rid) != 1:
+            print("only one resource id is allowed", file=sys.stderr)
+            return 1
+        for rid in self.action_rid:
+            if rid not in self.resources_by_id:
+                print("resource not found")
+                continue
+            r = self.resources_by_id[rid]
+            print(rcStatus.colorize(rcStatus.status_str(r.status())))
+        return 0
 
     def print_status(self):
         """print() each resource status for a service
@@ -494,7 +663,7 @@ class Svc(Resource, Freezer):
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
-            print(fmt%(rid, flags, status, label))
+            print(fmt%(rid, flags, rcStatus.colorize(status), label))
             if len(log) > 0:
                 print('\n'.join(wrap(log,
                                      initial_indent = subpfx,
@@ -504,17 +673,36 @@ class Svc(Resource, Freezer):
                                )
                 )
 
+        avail_resources = sorted(self.get_resources("ip", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("disk", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("fs", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("container", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("share", discard_disabled=False))
+        avail_resources += sorted(self.get_resources("app", discard_disabled=False))
+        accessory_resources = sorted(self.get_resources("hb", discard_disabled=False))
+        accessory_resources += sorted(self.get_resources("stonith", discard_disabled=False))
+        accessory_resources += sorted(self.get_resources("sync", discard_disabled=False))
+        n_accessory_resources = len(accessory_resources)
+
         print(self.svcname)
-        fmt = "%-20s %4s %-8s %s"
-        print(fmt%("overall", '', str(self.group_status()['overall']), ''))
-        fmt = "|- %-17s %4s %-8s %s"
-        print(fmt%("avail", '', str(self.group_status()['avail']), ''))
+        frozen = 'frozen' if self.frozen() else ''
+        fmt = "%-20s %4s %-10s %s"
+        print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), frozen))
+        if n_accessory_resources == 0:
+            fmt = "'- %-17s %4s %-10s %s"
+            head_c = " "
+        else:
+            fmt = "|- %-17s %4s %-10s %s"
+            head_c = "|"
+        print(fmt%("avail", '', rcStatus.colorize(self.group_status()['avail']), ''))
 
         encap_res_status = {}
         for container in self.get_resources('container'):
             try:
-                res = self.encap_json_status(container)['resources']
-                encap_res_status[container.rid] = res
+                js = self.encap_json_status(container)
+                encap_res_status[container.rid] = js["resources"]
+                if js.get("frozen", False):
+                    container.status_log("frozen")
             except ex.excNotAvailable as e:
                 encap_res_status[container.rid] = {}
             except Exception as e:
@@ -523,28 +711,27 @@ class Svc(Resource, Freezer):
 
         l = []
         cr = {}
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in rs.resources if not _r.rid.startswith('sync') and not _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-                if rid.startswith("container") and rid in encap_res_status:
-                    _l = []
-                    for _rid, val in encap_res_status[rid].items():
-                        _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
-                    cr[rid] = _l
+	for r in avail_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
+            if rid.startswith("container") and rid in encap_res_status:
+                _l = []
+                for _rid, val in encap_res_status[rid].items():
+                    _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
+                cr[rid] = _l
 
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-8s %s"
-                    pfx = "|     %-14s %4s %-8s "%('','','')
+                    fmt = head_c+"  '- %-14s %4s %-10s %s"
+                    pfx = head_c+"     %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-8s %s"
-                    pfx = "|  |  %-14s %4s %-8s "%('','','')
-                    if e[0] in cr:
-                        subpfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                    fmt = head_c+"  |- %-14s %4s %-10s %s"
+                    pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
+                    if e[0] in cr and len(cr[e[0]]) > 0:
+                        subpfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
@@ -553,56 +740,35 @@ class Svc(Resource, Freezer):
                     if _last >= 0:
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
-                                fmt = "|  |  '- %-11s %4s %-8s %s"
-                                pfx = "|  |     %-11s %4s %-8s "%('','','')
+                                fmt = head_c+"  |  '- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |     %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
                             else:
-                                fmt = "|  |  |- %-11s %4s %-8s %s"
-                                pfx = "|  |  |  %-11s %4s %-8s "%('','','')
+                                fmt = head_c+"  |  |- %-11s %4s %-10s %s"
+                                pfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
-        fmt = "|- %-17s %4s %-8s %s"
-        print(fmt%("sync", '', str(self.group_status()['sync']), ''))
+        if n_accessory_resources > 0:
+            fmt = "'- %-17s %4s %-10s %s"
+            print(fmt%("accessory", '', '', ''))
 
         l = []
-        for rs in self.get_res_sets(self.status_types, strict=True):
-            for r in [_r for _r in rs.resources if _r.rid.startswith('sync')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
+        for r in accessory_resources:
+            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            if rid in encap_res_status:
+                status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
+
         last = len(l) - 1
         if last >= 0:
             for i, e in enumerate(l):
                 if i == last:
-                    fmt = "|  '- %-14s %4s %-8s %s"
-                    pfx = "|     %-14s %4s %-8s "%('','','')
+                    fmt = "   '- %-14s %4s %-10s %s"
+                    pfx = "      %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
                 else:
-                    fmt = "|  |- %-14s %4s %-8s %s"
-                    pfx = "|  |  %-14s %4s %-8s "%('','','')
-                    print_res(e, fmt, pfx)
-
-        fmt = "'- %-17s %4s %-8s %s"
-        print(fmt%("hb", '', str(self.group_status()['hb']), ''))
-
-        l = []
-        for rs in self.get_res_sets(self.status_types, ):
-            for r in [_r for _r in rs.resources if _r.rid.startswith('hb')]:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-                if rid in encap_res_status:
-                    status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-                l.append((rid, status, label, log, monitor, disable, optional, encap))
-        last = len(l) - 1
-        if last >= 0:
-            for i, e in enumerate(l):
-                if i == last:
-                    fmt = "   '- %-14s %4s %-8s %s"
-                    pfx = "      %-14s %4s %-8s "%('','','')
-                    print_res(e, fmt, pfx)
-                else:
-                    fmt = "   |- %-14s %4s %-8s %s"
-                    pfx = "   |  %-14s %4s %-8s "%('','','')
+                    fmt = "   |- %-14s %4s %-10s %s"
+                    pfx = "   |  %-14s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):
@@ -620,6 +786,9 @@ class Svc(Resource, Freezer):
                 "rid",
                 "res_desc",
                 "res_status",
+                "res_monitor",
+                "res_optional",
+                "res_disable",
                 "updated",
                 "res_log"]
         r_vals = []
@@ -637,6 +806,9 @@ class Svc(Resource, Freezer):
                                repr(r.rid),
                                repr(r.label),
                                repr(str(rstatus)),
+                               "1" if r.monitor else "0",
+                               "1" if r.optional else "0",
+                               "1" if r.disabled else "0",
                                repr(str(now)),
                                r.status_log_str])
 
@@ -711,6 +883,9 @@ class Svc(Resource, Freezer):
                                    repr(str(rid)),
                                    repr(str(encap_res_status['resources'][rid]['label'])),
                                    repr(str(rstatus)),
+                                   "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
+                                   "1" if encap_res_status['resources'][rid].get('optional', False) else "0",
+                                   "1" if encap_res_status['resources'][rid].get('disabled', False) else "0",
                                    repr(str(now)),
                                    repr(str(encap_res_status['resources'][rid]['log']))])
 
@@ -748,17 +923,17 @@ class Svc(Resource, Freezer):
             if g not in groups:
                 continue
             for rs in self.get_res_sets(t, strict=True):
-                rset_status[rs.type] = rs.status()
+                if rs.type not in rset_status:
+                    rset_status[rs.type] = rs.status()
+                else:
+                    rset_status[rs.type] = rcStatus._merge(rset_status[rs.type], rs.status())
         return rset_status
 
     def resource_monitor(self):
+        self.options.refresh = True
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
-        has_hb = False
-        for r in self.get_resources('hb'):
-            if not r.disabled:
-                has_hb = True
-        if not has_hb:
+        if not self.ha:
             self.log.debug("no active heartbeat resource. no need to check monitored resources.")
             return
         hb_status = self.group_status_cache['hb']
@@ -771,48 +946,54 @@ class Svc(Resource, Freezer):
             if r.monitor:
                 monitored_resources.append(r)
 
-        if len(monitored_resources) == 0:
-            self.log.debug("no monitored resource")
-            return
-
         for r in monitored_resources:
-            if r.rstatus != rcStatus.UP:
-                if self.restart_resource(r):
-                    # restart suceeded : don't TOC because of this resource
-                    continue
+            if r.rstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
+                if len(r.status_log_str) > 0:
+                    rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
+                else:
+                    rstatus_log = ''
+                self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
+
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
-                    if len(r.status_log_str) > 0:
-                        rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
-                    else:
-                        rstatus_log = ''
-                    self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
                     raise self.exMonitorAction
                 else:
                     self.log.info("Would TOC but no (or unknown) resource monitor action set.")
                 return
 
-        self.log.debug("monitored resources are up")
-
-    def restart_resource(self, r):
-        if r.restart == 0:
-            return False
-        if not hasattr(r, 'start'):
-            self.log.error("resource restart configured on resource %s with no 'start' action support"%r.rid)
-            return False
-        for i in range(r.restart):
+        for container in self.get_resources('container'):
             try:
-                self.log.info("restart resource %s. try number %d/%d"%(r.rid, i+1, r.restart))
-                r.start()
+                encap_status = self.encap_json_status(container)
+                res = encap_status["resources"]
             except Exception as e:
-                self.log.error("restart resource failed: " + str(e))
-                return False
-            if r.is_up():
-                self.log.info("monitored resource %s restarted. abording TOC."%r.rid)
-                return True
-            if i + 1 < r.restart:
-                time.sleep(1)
-        return False
+                encap_status = {}
+                res = {}
+            if encap_status.get("frozen"):
+                continue
+            for rid, r in res.items():
+                if not r.get("monitor"):
+                    continue
+                erid = rid+"@"+container.name
+                monitored_resources.append(erid)
+                if r.get("status") not in ("up", "n/a"):
+                    if len(r.get("log")) > 0:
+                        rstatus_log = ''.join((' ', '(', r.get("log").strip().strip("# "), ')'))
+                    else:
+                        rstatus_log = ''
+                    self.log.info("monitored resource %s is in state %s%s"%(erid, r.get("status"), rstatus_log))
+
+                    if self.monitor_action is not None and \
+                       hasattr(self, self.monitor_action):
+                        raise self.exMonitorAction
+                    else:
+                        self.log.info("Would TOC but no (or unknown) resource monitor action set.")
+                    return
+
+        if len(monitored_resources) == 0:
+            self.log.debug("no monitored resource")
+        else:
+            rids = ','.join([r if type(r) in (str, unicode) else r.rid for r in monitored_resources])
+            self.log.debug("monitored resources are up (%s)" % rids)
 
     class exMonitorAction(Exception):
         pass
@@ -823,16 +1004,50 @@ class Svc(Resource, Freezer):
     def crash(self):
         self.node.os.crash()
 
+    def pg_freeze(self):
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            self.sub_set_action('app', '_pg_freeze')
+            self.sub_set_action('container', '_pg_freeze')
+        else:
+            self._pg_freeze()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
+
+    def pg_thaw(self):
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            self.sub_set_action('app', '_pg_thaw')
+            self.sub_set_action('container', '_pg_thaw')
+        else:
+            self._pg_thaw()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
+
+    def pg_kill(self):
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            self.sub_set_action('app', '_pg_kill')
+            self.sub_set_action('container', '_pg_kill')
+        else:
+            self._pg_kill()
+            for r in self.get_resources(["app", "container"]):
+                r.status(refresh=True, restart=False)
+
     def freezestop(self):
         self.sub_set_action('hb.openha', 'freezestop')
 
     def stonith(self):
         self.sub_set_action('stonith.ilo', 'start')
         self.sub_set_action('stonith.callout', 'start')
-        
+
     def toc(self):
         self.log.info("start monitor action '%s'"%self.monitor_action)
-        
+        getattr(self, self.monitor_action)()
+
     def encap_cmd(self, cmd, verbose=False, error="raise"):
         for container in self.get_resources('container'):
             try:
@@ -845,6 +1060,8 @@ class Svc(Resource, Freezer):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
+        if container.pg_frozen():
+            raise ex.excError("can't join a frozen container. abort encap command.")
         vmhostname = container.vm_hostname()
         try:
             autostart_node = conf_get_string_scope(self, self.config, 'DEFAULT', 'autostart_node', impersonate=vmhostname).split()
@@ -853,8 +1070,11 @@ class Svc(Resource, Freezer):
         if cmd == ["start"] and container.booted and vmhostname in autostart_node:
             self.log.info("skip encap service start in container %s: already started on boot"%vmhostname)
             return '', '', 0
-        if not self.has_encap_resources or container.status() == rcStatus.DOWN:
-            # no need to run encap cmd (no encap resource)
+        if not self.has_encap_resources:
+            self.log.debug("skip encap %s: no encap resource" % ' '.join(cmd))
+            return '', '', 0
+        if not container.is_up():
+            self.log.info("skip encap %s: the container is not running here" % ' '.join(cmd))
             return '', '', 0
 
         if self.options.slave is not None and not \
@@ -867,7 +1087,27 @@ class Svc(Resource, Freezer):
             self.log.info("skip start in container %s: the encap service is configured to start on container boot."%container.name)
             return '', '', 0
 
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + cmd
+        # now we known we'll execute a command in the slave, so purge the encap cache
+        self.purge_cache_encap_json_status(container.rid)
+
+        options = []
+        if self.options.dry_run:
+            options.append('--dry-run')
+        if self.options.refresh:
+            options.append('--refresh')
+        if self.options.disable_rollback:
+            options.append('--disable-rollback')
+        if self.options.parm_rid:
+            options.append('--rid')
+            options.append(self.options.parm_rid)
+        if self.options.parm_tags:
+            options.append('--tags')
+            options.append(self.options.parm_tags)
+        if self.options.parm_subsets:
+            options.append('--subsets')
+            options.append(self.options.parm_subsets)
+
+        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
 
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
@@ -886,9 +1126,42 @@ class Svc(Resource, Freezer):
             raise ex.excError("error from encap service command '%s': %d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         return out, err, ret
 
+    def get_encap_json_status_path(self, rid):
+        return os.path.join(rcEnv.pathvar, self.svcname, "encap.status."+rid)
+
+    def purge_cache_encap_json_status(self, rid):
+        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+            del(self.encap_json_status_cache[rid])
+        path = self.get_encap_json_status_path(rid)
+        if os.path.exists(path):
+            os.unlink(path)
+
+    def put_cache_encap_json_status(self, rid, data):
+        if not hasattr(self, 'encap_json_status_cache'):
+            self.encap_json_status_cache = {}
+        self.encap_json_status_cache[rid] = data
+        path = self.get_encap_json_status_path(rid)
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        try:
+            with open(path, 'w') as f:
+                 gs = f.write(json.dumps(data))
+        except:
+            os.unlink(path)
+
+    def get_cache_encap_json_status(self, rid):
+        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+            return self.encap_json_status_cache[rid]
+        path = self.get_encap_json_status_path(rid)
+        try:
+            with open(path, 'r') as f:
+                 gs = json.loads(f.read())
+        except:
+            gs = None
+        return gs
+
     def encap_json_status(self, container, refresh=False):
-        if not refresh and hasattr(self, 'encap_json_status_cache') and container.rid in self.encap_json_status_cache:
-            return self.encap_json_status_cache[container.rid]
         if container.guestos == 'windows':
             raise ex.excNotAvailable
         if container.status() == rcStatus.DOWN:
@@ -912,7 +1185,7 @@ class Svc(Resource, Freezer):
                 for r in rs.resources:
                     if not self.encap and 'encap' in r.tags:
                         gs['resources'][r.rid] = {'status': 'down'}
-            
+
             groups = set(["app", "sync"])
             for g in groups:
                 gs[g] = 'n/a'
@@ -925,6 +1198,11 @@ class Svc(Resource, Freezer):
                         gs['resources'][r.rid] = {'status': 'n/a'}
 
             return gs
+
+        if not refresh and not self.options.refresh:
+            gs = self.get_cache_encap_json_status(container.rid)
+            if gs:
+                return gs
 
         gs = {
           'avail': 'n/a',
@@ -950,15 +1228,12 @@ class Svc(Resource, Freezer):
         except:
             pass
 
-        # feed cache
-        if not hasattr(self, 'encap_json_status_cache'):
-            self.encap_json_status_cache = {}
-        self.encap_json_status_cache[container.rid] = gs
+        self.put_cache_encap_json_status(container.rid, gs)
 
         return gs
-        
+
     def group_status(self,
-                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb"]),
+                     groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb", "stonith"]),
                      excluded_groups=set([])):
         from copy import copy
         """print() each resource status for a service
@@ -972,7 +1247,7 @@ class Svc(Resource, Freezer):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb')]:
+        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
             group = t.split('.')[0]
             if group not in groups:
                 continue
@@ -991,9 +1266,17 @@ class Svc(Resource, Freezer):
         elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["avail"].status = rcStatus.STDBY_UP
 
-        # overall status is avail + sync status
+        # overall status is avail + accessory resources status
         # seed overall with avail
         status["overall"] = copy(status["avail"])
+
+        for t in [_t for _t in self.status_types if _t.startswith('stonith')]:
+            if 'stonith' not in groups:
+                continue
+            for r in self.get_res_sets(t, strict=True):
+                s = rset_status[r.type]
+                status['stonith'] += s
+                status["overall"] += s
 
         for t in [_t for _t in self.status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
@@ -1029,11 +1312,11 @@ class Svc(Resource, Freezer):
 
     def json_disklist(self):
         import json
-        print(json.dumps(list(self.disklist())))
+        print(json.dumps(list(self.disklist()), indent=4, separators=(',', ': ')))
 
     def json_devlist(self):
         import json
-        print(json.dumps(list(self.devlist())))
+        print(json.dumps(list(self.devlist()), indent=4, separators=(',', ': ')))
 
     def disklist(self):
         if len(self.disks) == 0:
@@ -1045,20 +1328,24 @@ class Svc(Resource, Freezer):
         """
         disks = set()
         for r in self.get_resources():
+            if r.skip:
+                continue
             disks |= r.disklist()
         self.log.debug("found disks %s held by service" % disks)
         return disks
 
-    def devlist(self):
+    def devlist(self, filtered=True):
         if len(self.devs) == 0:
-            self.devs = self._devlist()
+            self.devs = self._devlist(filtered=filtered)
         return self.devs
 
-    def _devlist(self):
+    def _devlist(self, filtered=True):
         """List all devs held by all resources of this service
         """
         devs = set()
         for r in self.get_resources():
+            if filtered and r.skip:
+                continue
             devs |= r.devlist()
         self.log.debug("found devs %s held by service" % devs)
         return devs
@@ -1090,17 +1377,23 @@ class Svc(Resource, Freezer):
         elif defaults.get('autostart_node') in (container.name, 'encapnodes'):
             return False
         return True
-        
+
     def boot(self):
-        if rcEnv.nodename in self.autostart_node:
-            try:
-                self.start()
-            except ex.excError as e:
-                self.log.error(str(e))
-                self.log.info("start failed. try to start standby")
-                self.startstandby()
-        else:
-            self.cluster = True
+        if rcEnv.nodename not in self.autostart_node:
+            self.startstandby()
+            return
+
+        l = self.get_resources('hb')
+        if len(l) > 0:
+            self.log.warning("cluster nodes should not be in autostart_nodes for HA configuration")
+            self.startstandby()
+            return
+
+        try:
+            self.start()
+        except ex.excError as e:
+            self.log.error(str(e))
+            self.log.info("start failed. try to start standby")
             self.startstandby()
 
     def shutdown(self):
@@ -1112,6 +1405,7 @@ class Svc(Resource, Freezer):
         except ex.excError:
             pass
         self.shutdowncontainer()
+        self.master_shutdownshare()
         self.master_shutdownfs()
         self.master_shutdownip()
 
@@ -1121,7 +1415,7 @@ class Svc(Resource, Freezer):
                 return
             if self.running_action not in ('migrate', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.slaves or \
                self.options.slave is not None or \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
@@ -1137,13 +1431,14 @@ class Svc(Resource, Freezer):
                self.running_action not in ('migrate', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
                self.has_encap_resources and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excAbortAction("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.master or \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 fn(self)
         return _fn
 
     def start(self):
+        self.master_starthb()
         self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -1155,17 +1450,15 @@ class Svc(Resource, Freezer):
         self.master_startip()
         self.master_startfs()
         self.master_startshare()
-        self.startcontainer()
+        self.master_startcontainer()
         self.master_startapp()
         self.slave_start()
-        self.master_starthb()
 
     @_slave_action
     def slave_start(self):
         self.encap_cmd(['start'], verbose=True)
 
     def rollback(self):
-        self.rollbackhb()
         self.encap_cmd(['rollback'], verbose=True)
         try:
             self.rollbackapp()
@@ -1196,18 +1489,24 @@ class Svc(Resource, Freezer):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
-    def cluster_mode_safety_net(self):
+    def cluster_mode_safety_net(self, action):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
-        all_disabled = True
-        for r in self.get_resources('hb'):
+        n_hb = 0
+        n_hb_enabled = 0
+        for r in self.get_resources('hb', discard_disabled=False):
+            n_hb += 1
             if not r.disabled:
-                all_disabled = False
-        if all_disabled:
+                n_hb_enabled += 1
+        if n_hb > 0 and n_hb_enabled == 0 and self.cluster:
+            raise ex.excAbortAction("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
+        if n_hb_enabled == 0:
             return
         if not self.cluster:
-            self.log.info("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
-            raise ex.excError
+            for r in self.get_resources("hb"):
+                if hasattr(r, action):
+                    getattr(r, action)()
+            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 
     def starthb(self):
         self.master_starthb()
@@ -1232,10 +1531,6 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_stophb(self):
         self.master_hb('stop')
-
-    @_master_action
-    def rollbackhb(self):
-        self.master_hb('rollback')
 
     def master_hb(self, action):
         self.sub_set_action("hb", action)
@@ -1307,6 +1602,7 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_stopvg(self):
         self.sub_set_action("disk.vg", "stop")
+        self.sub_set_action("disk.lock", "stop")
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     def startvg(self):
@@ -1320,6 +1616,7 @@ class Svc(Resource, Freezer):
     @_master_action
     def master_startvg(self):
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
+        self.sub_set_action("disk.lock", "start")
         self.sub_set_action("disk.vg", "start")
 
     def startpool(self):
@@ -1363,13 +1660,8 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.nexenta", "startstandby")
         self.sub_set_action("sync.symclone", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
-        self.sub_set_action("disk.loop", "startstandby")
-        self.sub_set_action("disk.gandi", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['prevg']))
-        self.sub_set_action("disk.zpool", "startstandby", xtags=set(['zone']))
-        self.sub_set_action("disk.vg", "startstandby")
-        self.sub_set_action("disk.drbd", "startstandby", tags=set(['postvg']))
+        self.sub_set_action(self.disk_types, "startstandby", xtags=set(['zone']))
 
     @_master_action
     def master_startdisk(self):
@@ -1378,14 +1670,10 @@ class Svc(Resource, Freezer):
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
         self.sub_set_action("sync.symsrdfs", "start")
+        self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
-        self.sub_set_action("disk.loop", "start")
-        self.sub_set_action("disk.gandi", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "start", tags=set(['prevg']))
-        self.sub_set_action("disk.zpool", "start", xtags=set(['zone']))
-        self.sub_set_action("disk.vg", "start")
-        self.sub_set_action("disk.drbd", "start", tags=set(['postvg']))
+        self.sub_set_action(self.disk_types, "start", xtags=set(['zone']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -1397,35 +1685,22 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopdisk(self):
-        self.sub_set_action("disk.drbd", "stop", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "stop")
-        self.sub_set_action("disk.zpool", "stop", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "stop", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "stop")
-        self.sub_set_action("disk.gandi", "stop")
 
     @_master_action
     def master_shutdowndisk(self):
-        self.sub_set_action("disk.drbd", "shutdown", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "shutdown")
-        self.sub_set_action("disk.zpool", "shutdown", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "shutdown", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "shutdown")
-        self.sub_set_action("disk.gandi", "shutdown")
 
     def rollbackdisk(self):
-        self.sub_set_action("disk.drbd", "rollback", tags=set(['postvg']))
-        self.sub_set_action("disk.vg", "rollback")
-        self.sub_set_action("disk.zpool", "rollback", xtags=set(['zone']))
-        self.sub_set_action("disk.drbd", "rollback", tags=set(['prevg']))
+        self.sub_set_action(self.disk_types, "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
-        self.sub_set_action("disk.loop", "rollback")
-        self.sub_set_action("disk.gandi", "rollback")
 
     def abort_start(self):
         for r in self.get_resources():
+            if r.skip or r.disabled:
+                continue
             if hasattr(r, 'abort_start') and r.abort_start():
                 raise ex.excError("start aborted due to resource %s conflict"%r.rid)
 
@@ -1439,11 +1714,11 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_startstandbyip(self):
-        self.sub_set_action("ip", "startstandby", xtags=set(['zone']))
+        self.sub_set_action("ip", "startstandby", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_startip(self):
-        self.sub_set_action("ip", "start", xtags=set(['zone']))
+        self.sub_set_action("ip", "start", xtags=set(['zone', 'docker']))
 
     def stopip(self):
         self.slave_stopip()
@@ -1455,14 +1730,14 @@ class Svc(Resource, Freezer):
 
     @_master_action
     def master_stopip(self):
-        self.sub_set_action("ip", "stop", xtags=set(['zone']))
+        self.sub_set_action("ip", "stop", xtags=set(['zone', 'docker']))
 
     @_master_action
     def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown", xtags=set(['zone']))
+        self.sub_set_action("ip", "shutdown", xtags=set(['zone', 'docker']))
 
     def rollbackip(self):
-        self.sub_set_action("ip", "rollback", xtags=set(['zone']))
+        self.sub_set_action("ip", "rollback", xtags=set(['zone', 'docker']))
 
     def startshare(self):
         self.master_startshare()
@@ -1539,13 +1814,17 @@ class Svc(Resource, Freezer):
         self.sub_set_action("fs", "rollback", xtags=set(['zone']))
         self.rollbackdisk()
 
+    def startcontainer(self):
+        self.abort_start()
+        self.master_startcontainer()
+
     @_master_action
-    def startstandbycontainer(self):
+    def master_startstandbycontainer(self):
         self.sub_set_action("container", "startstandby")
         self.refresh_ip_status()
 
     @_master_action
-    def startcontainer(self):
+    def master_startcontainer(self):
         self.sub_set_action("container", "start")
         self.refresh_ip_status()
 
@@ -1554,23 +1833,11 @@ class Svc(Resource, Freezer):
             status change after its own start/stop
         """
         for r in self.get_resources("ip"):
-            r.status(refresh=True)
+            r.status(refresh=True, restart=False)
 
     @_master_action
     def shutdowncontainer(self):
-        self.sub_set_action("container.vbox", "shutdown")
-        self.sub_set_action("container.ldom", "shutdown")
-        self.sub_set_action("container.hpvm", "shutdown")
-        self.sub_set_action("container.xen", "shutdown")
-        self.sub_set_action("container.esx", "shutdown")
-        self.sub_set_action("container.ovm", "shutdown")
-        self.sub_set_action("container.kvm", "shutdown")
-        self.sub_set_action("container.openstack", "shutdown")
-        self.sub_set_action("container.vcloud", "shutdown")
-        self.sub_set_action("container.jail", "shutdown")
-        self.sub_set_action("container.lxc", "shutdown")
-        self.sub_set_action("container.vz", "shutdown")
-        self.sub_set_action("container.srp", "shutdown")
+        self.sub_set_action("container", "shutdown")
         self.refresh_ip_status()
 
     @_master_action
@@ -1583,10 +1850,10 @@ class Svc(Resource, Freezer):
         self.refresh_ip_status()
 
     def provision(self):
+        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.sub_set_action("disk", "provision", xtags=set(['zone']))
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
-        self.sub_set_action("ip", "provision", xtags=set(['zone']))
         self.push()
 
     def startapp(self):
@@ -1660,9 +1927,8 @@ class Svc(Resource, Freezer):
         self.master_startstandbyip()
         self.master_startstandbyfs()
         self.master_startstandbyshare()
-        self.startstandbycontainer()
+        self.master_startstandbycontainer()
         self.master_startstandbyapp()
-        self.master_starthb()
 
     @_slave_action
     def slave_startstandby(self):
@@ -1679,37 +1945,49 @@ class Svc(Resource, Freezer):
 
     def postsync(self):
         """ action triggered by a remote master node after
-            syncnodes and syncdrp. Typically make use of files
+            sync_nodes and sync_drp. Typically make use of files
             received in var/
         """
         self.all_set_action("postsync")
 
     def remote_postsync(self):
-        """ run the remote exec of postsync async because the
-            waitlock timeout is long, and we ourselves still
-            hold the service lock we want to release early.
+        """ release the svc lock at this point because the
+            waitlock timeout is long and we are done touching
+            local data.
         """
         """ action triggered by a remote master node after
-            syncnodes and syncdrp. Typically make use of files
+            sync_nodes and sync_drp. Typically make use of files
             received in var/.
             use a long waitlock timeout to give a chance to
             remote syncs to finish
         """
+        self.svcunlock()
         for n in self.need_postsync:
             self.remote_action(n, 'postsync', waitlock=3600)
 
         self.need_postsync = set([])
 
-    def remote_action(self, node, action, waitlock=60):
+    def remote_action(self, node, action, waitlock=60, sync=False):
+        if self.cron:
+            # the scheduler action runs forked. don't use the cmdworker
+            # in this context as it may hang
+            sync = True
+
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
+	if self.log.isEnabledFor(logging.DEBUG):
+	    rcmd += ['--debug']
         if self.cluster:
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
         rcmd += ['--waitlock', str(waitlock)] + action.split()
-        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         cmd = rcEnv.rsh.split() + [node] + rcmd
-        self.node.cmdworker.enqueue(cmd)
+        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+        if sync:
+            out, err, ret = justcall(cmd)
+            return out, err, ret
+        else:
+            self.node.cmdworker.enqueue(cmd)
 
     def presync(self):
         """ prepare files to send to slave nodes in var/.
@@ -1721,135 +1999,226 @@ class Svc(Resource, Freezer):
         self.all_set_action("presync")
         self.presync_done = True
 
-    def syncnodes(self):
+    def sync_nodes(self):
+        if not self.can_sync('nodes'):
+            return
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncnodes")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncnodes")
-        self.sub_set_action("sync.dds", "syncnodes")
-        self.sub_set_action("sync.symsrdfs", "syncnodes")
+        self.sub_set_action("sync.rsync", "sync_nodes")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_nodes")
+        self.sub_set_action("sync.docker", "sync_nodes")
+        self.sub_set_action("sync.dds", "sync_nodes")
+        self.sub_set_action("sync.symsrdfs", "sync_nodes")
         self.remote_postsync()
 
-    def syncdrp(self):
+    def sync_drp(self):
+        if not self.can_sync('drpnodes'):
+            return
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncdrp")
-        self.sub_set_action("sync.zfs", "syncdrp")
-        self.sub_set_action("sync.btrfs", "syncdrp")
-        self.sub_set_action("sync.dds", "syncdrp")
-        self.sub_set_action("sync.symsrdfs", "syncdrp")
+        self.sub_set_action("sync.rsync", "sync_drp")
+        self.sub_set_action("sync.zfs", "sync_drp")
+        self.sub_set_action("sync.btrfs", "sync_drp")
+        self.sub_set_action("sync.docker", "sync_drp")
+        self.sub_set_action("sync.dds", "sync_drp")
+        self.sub_set_action("sync.symsrdfs", "sync_drp")
         self.remote_postsync()
 
     def syncswap(self):
         self.sub_set_action("sync.netapp", "syncswap")
         self.sub_set_action("sync.symsrdfs", "syncswap")
+        self.sub_set_action("sync.hp3par", "syncswap")
         self.sub_set_action("sync.nexenta", "syncswap")
 
-    def syncresume(self):
-        self.sub_set_action("sync.netapp", "syncresume")
-        self.sub_set_action("sync.symsrdfs", "syncresume")
-        self.sub_set_action("sync.dcsckpt", "syncresume")
-        self.sub_set_action("sync.nexenta", "syncresume")
+    def sync_revert(self):
+        self.sub_set_action("sync.hp3par", "sync_revert")
 
-    def syncquiesce(self):
-        self.sub_set_action("sync.netapp", "syncquiesce")
-        self.sub_set_action("sync.nexenta", "syncquiesce")
+    def sync_resume(self):
+        self.sub_set_action("sync.netapp", "sync_resume")
+        self.sub_set_action("sync.symsrdfs", "sync_resume")
+        self.sub_set_action("sync.hp3par", "sync_resume")
+        self.sub_set_action("sync.dcsckpt", "sync_resume")
+        self.sub_set_action("sync.nexenta", "sync_resume")
+
+    def sync_quiesce(self):
+        self.sub_set_action("sync.netapp", "sync_quiesce")
+        self.sub_set_action("sync.nexenta", "sync_quiesce")
 
     def resync(self):
         self.stop()
-        self.syncresync()
+        self.sync_resync()
         self.start()
 
-    def syncresync(self):
-        self.sub_set_action("sync.netapp", "syncresync")
-        self.sub_set_action("sync.nexenta", "syncresync")
-        self.sub_set_action("sync.symclone", "syncresync")
-        self.sub_set_action("sync.ibmdssnap", "syncresync")
-        self.sub_set_action("sync.evasnap", "syncresync")
-        self.sub_set_action("sync.dcssnap", "syncresync")
-        self.sub_set_action("sync.dds", "syncresync")
+    def sync_resync(self):
+        self.sub_set_action("sync.netapp", "sync_resync")
+        self.sub_set_action("sync.nexenta", "sync_resync")
+        self.sub_set_action("sync.symclone", "sync_resync")
+        self.sub_set_action("sync.rados", "sync_resync")
+        self.sub_set_action("sync.ibmdssnap", "sync_resync")
+        self.sub_set_action("sync.evasnap", "sync_resync")
+        self.sub_set_action("sync.necismsnap", "sync_resync")
+        self.sub_set_action("sync.dcssnap", "sync_resync")
+        self.sub_set_action("sync.dds", "sync_resync")
 
-    def syncbreak(self):
-        self.sub_set_action("sync.netapp", "syncbreak")
-        self.sub_set_action("sync.nexenta", "syncbreak")
-        self.sub_set_action("sync.symclone", "syncbreak")
-        self.sub_set_action("sync.ibmdssnap", "syncbreak")
-        self.sub_set_action("sync.dcsckpt", "syncbreak")
+    def sync_break(self):
+        self.sub_set_action("sync.netapp", "sync_break")
+        self.sub_set_action("sync.nexenta", "sync_break")
+        self.sub_set_action("sync.symclone", "sync_break")
+        self.sub_set_action("sync.hp3par", "sync_break")
+        self.sub_set_action("sync.ibmdssnap", "sync_break")
+        self.sub_set_action("sync.dcsckpt", "sync_break")
 
-    def syncupdate(self):
-        self.sub_set_action("sync.netapp", "syncupdate")
-        self.sub_set_action("sync.nexenta", "syncupdate")
-        self.sub_set_action("sync.dcsckpt", "syncupdate")
-        self.sub_set_action("sync.dds", "syncupdate")
-        self.sub_set_action("sync.zfs", "syncnodes")
+    def sync_update(self):
+        if not self.can_sync():
+            return
+        self.sub_set_action("sync.netapp", "sync_update")
+        self.sub_set_action("sync.hp3par", "sync_update")
+        self.sub_set_action("sync.nexenta", "sync_update")
+        self.sub_set_action("sync.dcsckpt", "sync_update")
+        self.sub_set_action("sync.dds", "sync_update")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfssnap", "sync_update")
+        self.sub_set_action("sync.s3", "sync_update")
 
-    def syncfullsync(self):
-        self.sub_set_action("sync.dds", "syncfullsync")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncfullsync")
+    def sync_full(self):
+        self.sub_set_action("sync.dds", "sync_full")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_full")
+        self.sub_set_action("sync.s3", "sync_full")
 
-    def syncsplit(self):
-        self.sub_set_action("sync.symsrdfs", "syncsplit")
+    def sync_restore(self):
+        self.sub_set_action("sync.s3", "sync_restore")
 
-    def syncestablish(self):
-        self.sub_set_action("sync.symsrdfs", "syncestablish")
+    def sync_split(self):
+        self.sub_set_action("sync.symsrdfs", "sync_split")
 
-    def syncverify(self):
-        self.sub_set_action("sync.dds", "syncverify")
+    def sync_establish(self):
+        self.sub_set_action("sync.symsrdfs", "sync_establish")
 
-    def printsvc(self):
-        print(str(self))
+    def sync_verify(self):
+        self.sub_set_action("sync.dds", "sync_verify")
+
+    def print_config(self):
+        try:
+            with open(self.pathenv, 'r') as f:
+                print(f.read())
+        except Exception as e:
+            print(s, file=sys.stderr)
+
+    def edit_config(self):
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        return os.system(' '.join((editor, self.pathenv)))
 
     def can_sync(self, target=None):
         ret = False
         rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
-                  "sync.rsync", "sync.btrfs"]
+                  "sync.rsync", "sync.docker", "sync.btrfs", "sync.hp3par"]
         for rt in rtypes:
             for r in self.get_resources(rt):
                 try:
                     ret |= r.can_sync(target)
-                except ex.excError:
+                except ex.excError as e:
                     return False
                 if ret: return True
+        self.log.debug("nothing to sync for the service for now")
         return False
 
-    def syncall(self):
+    def sched_sync_all(self):
+        data = self.skip_action("sync_all", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self._sched_sync_all(data["keep"])
+
+    @scheduler_fork
+    def _sched_sync_all(self, sched_options):
+        self.action("sync_all", rid=[o.section for o in sched_options])
+        self.sched_write_timestamp(sched_options)
+
+    def sync_all(self):
+        if not self.can_sync():
+            return
+        if self.cron:
+            self.sched_delay()
         self.presync()
-        self.sub_set_action_parallel("sync.rsync", "syncnodes")
-        self.sub_set_action("sync.zfs", "syncnodes")
-        self.sub_set_action("sync.btrfs", "syncnodes")
-        self.sub_set_action("sync.dds", "syncnodes")
-        self.sub_set_action("sync.symsrdfs", "syncnodes")
-        self.sub_set_action_parallel("sync.rsync", "syncdrp")
-        self.sub_set_action("sync.zfs", "syncdrp")
-        self.sub_set_action("sync.btrfs", "syncdrp")
-        self.sub_set_action("sync.dds", "syncdrp")
-        self.syncupdate()
+        self.sub_set_action("sync.rsync", "sync_nodes")
+        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.btrfs", "sync_nodes")
+        self.sub_set_action("sync.docker", "sync_nodes")
+        self.sub_set_action("sync.dds", "sync_nodes")
+        self.sub_set_action("sync.symsrdfs", "sync_nodes")
+        self.sub_set_action("sync.rsync", "sync_drp")
+        self.sub_set_action("sync.zfs", "sync_drp")
+        self.sub_set_action("sync.btrfs", "sync_drp")
+        self.sub_set_action("sync.docker", "sync_drp")
+        self.sub_set_action("sync.dds", "sync_drp")
+        self.sync_update()
         self.remote_postsync()
 
-    def push_appinfo(self):
-        self.node.collector.call('push_appinfo', [self])
+    def push_service_status(self):
+        if self.skip_action("push_service_status"):
+            return
+        self.task_push_service_status()
 
+    @scheduler_fork
+    def task_push_service_status(self):
+        if self.cron:
+            self.sched_delay()
+        import rcSvcmon
+        self.options.refresh = True
+        rcSvcmon.svcmon_normal([self])
+
+    def push_appinfo(self):
+        data = self.skip_action("push_appinfo", deferred_write_timestamp=True)
+        if len(data["keep"]) == 0:
+            return
+        self.task_push_appinfo()
+
+    @scheduler_fork
+    def task_push_appinfo(self):
+        if self.cron:
+            self.sched_delay()
+        self.node.collector.call('push_appinfo', [self])
+        self.sched_write_timestamp(self.scheduler_actions["push_appinfo"])
+
+    def push_env(self):
+        if self.skip_action("push_env"):
+            return
+        self.push()
+
+    @scheduler_fork
     def push(self):
         if self.encap:
             return
+        if self.cron:
+            self.sched_delay()
         self.push_encap_env()
         self.node.collector.call('push_all', [self])
-        print("send %s to collector ... OK"%self.pathenv)
+        self.log.handlers[1].setLevel(logging.CRITICAL)
+        self.log.info("send %s to collector" % self.pathenv)
         try:
             import time
             with open(self.push_flag, 'w') as f:
                 f.write(str(time.time()))
-            ret = "OK"
+            self.log.info("update %s timestamp" % self.push_flag)
+            self.log.handlers[1].setLevel(logging.INFO)
         except:
-            ret = "ERR"
-        print("update %s timestamp"%self.push_flag, "...", ret)
+            self.log.error("failed to update %s timestamp" % self.push_flag)
+            self.log.handlers[1].setLevel(logging.INFO)
 
     def push_encap_env(self):
         if self.encap or not self.has_encap_resources:
             return
 
         for r in self.get_resources('container'):
-            if r.status() != rcStatus.UP:
+            if r.status() not in (rcStatus.STDBY_UP, rcStatus.UP):
                 continue
             self._push_encap_env(r)
 
@@ -1881,15 +2250,21 @@ class Svc(Resource, Freezer):
         else:
             cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+rcEnv.pathetc+'/']
             out, err, ret = justcall(cmd)
-        print("send %s to %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+        self.log.handlers[1].setLevel(logging.CRITICAL)
         if ret != 0:
+            self.log.error("failed to send %s to %s" % (self.pathenv, r.name))
+            self.log.handlers[0].setLevel(logging.INFO)
             raise ex.excError()
+        self.log.info("send %s to %s" % (self.pathenv, r.name))
 
         cmd = ['install', '--envfile', self.pathenv]
         out, err, ret = self._encap_cmd(cmd, container=r)
-        print("install %s slave service ..."%r.name, "OK" if ret == 0 else "ERR\n%s"%err)
         if ret != 0:
+            self.log.error("failed to install %s slave service" % r.name)
+            self.log.handlers[1].setLevel(logging.INFO)
             raise ex.excError()
+        self.log.info("install %s slave service" % r.name)
+        self.log.handlers[1].setLevel(logging.INFO)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
@@ -1897,13 +2272,13 @@ class Svc(Resource, Freezer):
                 return True
         return False
 
-    def set_skip_resources(self, keeprid=[], keeptags=set([]), xtags=set([])):
+    def set_skip_resources(self, keeprid=[], xtags=set([])):
         if len(keeprid) > 0:
             ridfilter = True
         else:
             ridfilter = False
 
-        if len(keeptags) > 0 or len(xtags) > 0:
+        if len(xtags) > 0:
             tagsfilter = True
         else:
             tagsfilter = False
@@ -1916,24 +2291,103 @@ class Svc(Resource, Freezer):
                 r.skip = True
             if ridfilter and r.rid in keeprid:
                 continue
-            if tagsfilter and self.tag_match(r.tags, keeptags):
-                continue
             r.skip = True
 
-    def setup_environ(self):
+    def setup_environ(self, action=None):
         """ Those are available to startup scripts and triggers
         """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
+        if action:
+            os.environ['OPENSVC_ACTION'] = action
         for r in self.get_resources():
             r.setup_environ()
 
-    def action(self, action, rid=[], tags=set([]), xtags=set([]), waitlock=60):
+    def expand_rid(self, rid):
+        l = set([])
+        for e in self.resources_by_id.keys():
+            if e is None:
+                continue
+            if '#' not in e:
+                if e == rid:
+                    l.add(e)
+                else:
+                    continue
+            elif e[:e.index('#')] == rid:
+                l.add(e)
+        return l
+
+    def expand_rids(self, rid):
+        l = set([])
+        for e in set(rid):
+            if '#' in e:
+                if e not in self.resources_by_id:
+                    continue
+                l.add(e)
+                continue
+            l |= self.expand_rid(e)
+        return l
+
+    def expand_subsets(self, subsets):
+        l = set([])
+        if subsets is None:
+            return l
+        for r in self.resources_by_id.values():
+            if r.subset in subsets:
+                l.add(r.rid)
+        self.log.debug("rids added from --subsets %s: %s" % (",".join(subsets), ",".join(l)))
+        return l
+
+    def expand_tags(self, tags):
+        l = set([])
+        if tags is None:
+            return l
+        for r in self.resources_by_id.values():
+            if len(r.tags & tags) > 0:
+                l.add(r.rid)
+        self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
+        return l
+
+    def action_translate(self, action):
+        translation = {
+          "syncnodes": "sync_nodes",
+          "syncdrp": "sync_drp",
+          "syncupdate": "sync_update",
+          "syncresync": "sync_resync",
+          "syncall": "sync_all",
+          "syncfullsync": "sync_full",
+          "syncrestore": "sync_restore",
+          "syncquiesce": "sync_quiesce",
+          "syncsplit": "sync_split",
+          "syncestablish": "sync_establish",
+          "syncrevert": "sync_revert",
+          "syncbreak": "sync_break",
+          "syncresume": "sync_resume",
+          "syncverify": "sync_verify",
+        }
+        if action in translation:
+            return translation[action]
+        return action
+
+    def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
+        rids = self.expand_rids(rid)
+        rids |= self.expand_subsets(subsets)
+        rids |= self.expand_tags(tags)
+        rids = list(rids)
+
+        if not self.options.slaves and self.options.slave is None and \
+           len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
+            self.log.error("no resource match the given --rid, --subset and --tags specifiers")
+            return 1
+
+        self.action_rid = rids
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
         if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
+
+        action = self.action_translate(action)
 
         actions_list_allow_on_frozen = [
           'get',
@@ -1948,78 +2402,95 @@ class Svc(Resource, Freezer):
           'status',
           'frozen',
           'push',
+          'push_env',
           'push_appinfo',
-          'printsvc',
+          'push_service_status',
+          'edit_config',
+          'scheduler',
+          'print_schedule',
+          'print_config',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
+          'json_env',
           'json_status',
-          'json_disklist'
+          'json_disklist',
           'json_devlist'
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
+          'docker',
           'boot',
+          'toc',
           'startstandby',
           'resource_monitor',
           'presync',
           'postsync',
-          'syncall'
+          'sync_drp',
+          'sync_nodes',
+          'sync_all'
         ]
         if action not in actions_list_allow_on_frozen and \
            'compliance' not in action and \
            'collector' not in action:
-            if self.frozen():
-                self.log.info("Abort action for frozen service")
+            if self.frozen() and not self.force:
+                self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
             try:
                 if action not in actions_list_allow_on_cluster:
-                    self.cluster_mode_safety_net()
-            except ex.excError:
+                    self.cluster_mode_safety_net(action)
+            except ex.excAbortAction as e:
+                self.log.info(str(e))
+                return 0
+            except ex.excEndAction as e:
+                self.log.info(str(e))
+                return 0
+            except ex.excError as e:
+                self.log.error(str(e))
                 return 1
+            #
+            # here we know we will run a resource state-changing action
+            # purge the resource status file cache, so that we don't take
+            # decision on outdated information
+            #
+            if not self.options.dry_run and action != "resource_monitor":
+                self.log.debug("purge all resource status file caches")
+                self.purge_status_last()
 
-        self.setup_environ()
+        self.setup_environ(action=action)
         self.setup_signal_handlers()
-        self.set_skip_resources(keeprid=rid, keeptags=tags, xtags=xtags)
+        self.set_skip_resources(keeprid=rids, xtags=xtags)
         actions_list_no_log = [
           'get',
           'set',
           'push',
+          'push_env',
           'push_appinfo',
-          'enable',
-          'disable',
-          'delete',
+          'push_service_status',
+          'scheduler',
+          'print_schedule',
           'print_env_mtime',
           'print_status',
+          'print_resource_status',
           'print_disklist',
           'print_devlist',
+          'print_config',
+          'edit_config',
           'json_status',
           'json_disklist',
           'json_devlist',
+          'json_env',
           'status',
           'group_status',
           'resource_monitor'
         ]
         if action in actions_list_no_log or \
-           'compliance' in action or \
-           'collector' in action:
+           action.startswith("compliance") or \
+           action.startswith("collector") or \
+           action.startswith("docker") or \
+           self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
-        elif action in ["syncall", "syncdrp", "syncnodes", "syncupdate"]:
-            if action == "syncall" or "syncupdate": kwargs = {}
-            elif action == "syncnodes": kwargs = {'target': 'nodes'}
-            elif action == "syncdrp": kwargs = {'target': 'drpnodes'}
-            try:
-                # timeout=1, delay=1 => immediate response
-                self.svclock(action, timeout=1, delay=1)
-            except:
-                if not self.cron:
-                    self.log.info("%s action is already running"%action)
-                return 0
-            if self.can_sync(**kwargs):
-                err = self.do_logged_action(action, waitlock=waitlock)
-            else:
-                err = 0
-                self.log.debug("nothing to sync for the service for now")
         else:
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
@@ -2030,13 +2501,14 @@ class Svc(Resource, Freezer):
         err = 0
         try:
             self.svclock(action, timeout=waitlock)
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             return 1
 
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
-                o = Compliance(self.node.skip_action, self.options, self.node.collector, self.svcname)
+                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname)
                 getattr(o, action)()
             elif action.startswith("collector_"):
                 from collector import Collector
@@ -2044,17 +2516,25 @@ class Svc(Resource, Freezer):
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action
-                getattr(self, action)()
+                err = getattr(self, action)()
+                if err is None:
+                    err = 0
                 self.running_action = None
             else:
-                self.log.error("unsupported action")
+                self.log.error("unsupported action %s" % action)
                 err = 1
-        except ex.excAbortAction as e:
-            s = "'%s' action stopped on execution error"%action
+        except ex.excEndAction as e:
+            s = "'%s' action ended by last resource"%action
             if len(str(e)) > 0:
                 s += ": %s"%str(e)
-            self.log.error(s)
-            err = 1
+            self.log.info(s)
+            err = 0
+        except ex.excAbortAction as e:
+            s = "'%s' action aborted by last resource"%action
+            if len(str(e)) > 0:
+                s += ": %s"%str(e)
+            self.log.info(s)
+            err = 0
         except ex.excError as e:
             s = "'%s' action stopped on execution error"%action
             if len(str(e)) > 0:
@@ -2073,13 +2553,30 @@ class Svc(Resource, Freezer):
             self.save_exc()
 
         self.svcunlock()
+
+        if action == "start" and self.cluster and self.ha:
+            """ This situation is typical of a hb-initiated service start.
+                While the hb starts the service, its resource status is warn from
+                opensvc point of view. So after a successful startup, the hb res
+                status would stay warn until the next svcmon.
+                To avoid this drawback we can force from here the hb status.
+            """
+            if err == 0:
+                for r in self.get_resources(['hb']):
+                    if r.disabled:
+                        continue
+                    r.force_status(rcStatus.UP)
+
         return err
 
     def rollback_handler(self, action):
+        if 'start' not in action:
+            return
 	if self.options.disable_rollback:
             self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
             return
-        if 'start' not in action:
+	if self.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
             return
         rids = [r.rid for r in self.get_resources() if r.can_rollback]
         if len(rids) == 0:
@@ -2090,7 +2587,7 @@ class Svc(Resource, Freezer):
             self.rollback()
         except:
             self.log.error("rollback %s failed"%action)
- 
+
     def do_logged_action(self, action, waitlock=60):
         from datetime import datetime
         import tempfile
@@ -2115,6 +2612,7 @@ class Svc(Resource, Freezer):
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
+        self.log.info(" ".join(sys.argv))
 
         err = self.do_action(action, waitlock=waitlock)
 
@@ -2138,29 +2636,30 @@ class Svc(Resource, Freezer):
     @_master_action
     def migrate(self):
         if not hasattr(self, "destination_node"):
-            self.log.error("a destination node must be provided for the switch action")
-            raise ex.excError
+            raise ex.excError("a destination node must be provided for the switch action")
+        if self.destination_node == rcEnv.nodename:
+            raise ex.excError("the destination node is source node")
         if self.destination_node not in self.nodes:
-            self.log.error("destination node %s is not in service node list"%self.destination_node)
-            raise ex.excError
+            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
         self.master_prstop()
         try:
             self.remote_action(node=self.destination_node, action='startfs --master')
             self._migrate()
         except:
             if self.has_res_set(['disk.scsireserv']):
-                self.log.error("scsi reservations where dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
+                self.log.error("scsi reservations were dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
             raise
         self.master_stopfs()
         self.remote_action(node=self.destination_node, action='prstart --master')
 
     def switch(self):
+        self.sub_set_action("hb", "switch")
         if not hasattr(self, "destination_node"):
-            self.log.error("a destination node must be provided for the switch action")
-            raise ex.excError
+            raise ex.excError("a destination node must be provided for the switch action")
+        if self.destination_node == rcEnv.nodename:
+            raise ex.excError("the destination node is source node")
         if self.destination_node not in self.nodes:
-            self.log.error("destination node %s is not in service node list"%self.destination_node)
-            raise ex.excError
+            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
         self.stop()
         self.remote_action(node=self.destination_node, action='start')
 
@@ -2201,7 +2700,6 @@ class Svc(Resource, Freezer):
 
     def unset(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2225,7 +2723,6 @@ class Svc(Resource, Freezer):
 
     def get(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2245,7 +2742,6 @@ class Svc(Resource, Freezer):
 
     def set(self):
         self.load_config()
-        import sys
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -2268,6 +2764,74 @@ class Svc(Resource, Freezer):
         except:
             return 1
         return 0
+
+    def set_disable(self, rids=[], disable=True):
+        if len(rids) == 0:
+            rids = ['DEFAULT']
+        for rid in rids:
+            if rid != 'DEFAULT' and not self.config.has_section(rid):
+                self.log.error("service", svcname, "has not resource", rid)
+                continue
+            self.log.info("set %s.disable = %s" % (rid, str(disable)))
+            self.config.set(rid, "disable", disable)
+        try:
+            f = open(self.pathenv, 'w')
+        except:
+            self.log.error("failed to open", self.pathenv, "for writing")
+            return 1
+
+        #
+        # if we set DEFAULT.disable = True,
+        # we don't want res#n.disable = False
+        #
+        if len(rids) == 0 and disable:
+            for s in self.config.sections():
+                if self.config.has_option(s, "disable") and \
+                   self.config.getboolean(s, "disable") == False:
+                    self.log.info("remove %s.disable = false" % s)
+                    self.config.remove_option(s, "disable")
+
+        self.config.write(f)
+        return 0
+
+    def enable(self):
+        return self.set_disable(self.action_rid, False)
+
+    def disable(self):
+        return self.set_disable(self.action_rid, True)
+
+    def delete(self):
+        from svcBuilder import delete
+        return delete([self.svcname], self.action_rid)
+
+    def docker(self):
+        import subprocess
+        containers = self.get_resources('container')
+        if not hasattr(self, "docker_argv"):
+            print("no docker command arguments supplied", file=sys.stderr)
+            return 1
+        for r in containers:
+            if hasattr(r, "docker_cmd"):
+                r.docker_start(verbose=False)
+                cmd = r.docker_cmd + self.docker_argv
+                p = subprocess.Popen(cmd)
+                p.communicate()
+                return p.returncode
+        print("this service has no docker resource", file=sys.stderr)
+        return 1
+
+    def freeze(self):
+        for r in self.get_resources("hb"):
+            r.freeze()
+        self.freezer.freeze()
+
+    def thaw(self):
+        for r in self.get_resources("hb"):
+            r.thaw()
+        self.freezer.thaw()
+
+    def frozen(self):
+        return self.freezer.frozen()
 
 if __name__ == "__main__" :
     for c in (Svc,) :

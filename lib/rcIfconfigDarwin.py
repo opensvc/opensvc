@@ -1,6 +1,7 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@opensvc.com>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2014 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +19,7 @@
 #
 
 from subprocess import *
+from rcUtilities import which
 
 import rcIfconfig
 
@@ -71,7 +73,43 @@ class ifconfig(rcIfconfig.ifconfig):
             prevprev = prev
             prev = w
 
-    def __init__(self):
+    def get_mcast(self):
+        if which('netstat'):
+            cmd = ['netstat', '-gn']
+            out = Popen(cmd, stdout=PIPE).communicate()[0]
+            return self.parse_mcast_netstat(out)
+
+    def parse_mcast_netstat(self, out):
+        lines = out.split('\n')
+        found = False
+        data = {}
+        for i, line in enumerate(lines):
+            if line.startswith('IPv4 Multicast'):
+                found = True
+                break
+        if not found:
+            return data
+        if len(lines) == i+1:
+            return data
+        lines = lines[i+2:]
+        for line in lines:
+            if line.startswith('IPv6 Multicast') or line.startswith('Group'):
+                continue
+            try:
+                addr, lladdr, intf = line.split()
+            except:
+                continue
+            if intf not in data:
+                data[intf] = [addr]
+            else:
+                data[intf] += [addr]
+        return data
+
+    def __init__(self, mcast=False):
         self.intf = []
+        if mcast:
+            self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
         out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
         self.parse(out)

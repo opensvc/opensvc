@@ -28,27 +28,15 @@ relative paths to locate libs
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, 'lib')
-sys.path.append(pathlib)
+sys.path = [pathlib] + sys.path
 
 import node
+
 n = node.Node()
-n.options.cron = True
+n.scheduler()
 
-for action in ["pushstats", "pushpkg", "pushpatch", "pushservices",
-               "pushasset", "checks", "syncservices", "compliance_check",
-               "push_appinfo", "pushdisks", "auto_rotate_root_pw"]:
-    try:
-        n.action(action)
-    except:
-        import traceback
-        traceback.print_exc()
-
+n.build_services()
 for s in n.svcs:
-    s.cron = True
-    try:
-        s.action('compliance_check')
-    except:
-        import traceback
-        traceback.print_exc()
+    s.scheduler()
 
 n.close()

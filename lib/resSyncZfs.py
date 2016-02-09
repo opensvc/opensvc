@@ -27,17 +27,30 @@ from rcZfs import a2pool_dataset, Dataset
 class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
     """
-    def __init__(self, rid=None, target=None, src=None, dst=None,
-                 delta_store=None, sender=None, recursive = True,
-                 snap_size=0, sync_max_delay=None, sync_interval=None,
-                 sync_days=None, sync_period=None,
-                 optional=False, disabled=False, tags=set([])):
-        resSync.Sync.__init__(self, rid=rid, type="sync.zfs",
+    def __init__(self,
+                 rid=None,
+                 target=None,
+                 src=None,
+                 dst=None,
+                 delta_store=None,
+                 sender=None,
+                 recursive = True,
+                 snap_size=0,
+                 sync_max_delay=None,
+                 schedule=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 subset=None):
+        resSync.Sync.__init__(self,
+                              rid=rid,
+                              type="sync.zfs",
                               sync_max_delay=sync_max_delay,
-                              sync_interval=sync_interval,
-                              sync_days=sync_days,
-                              sync_period=sync_period,
-                              optional=optional, disabled=disabled, tags=tags)
+                              schedule=schedule,
+                              optional=optional,
+                              disabled=disabled,
+                              tags=tags,
+                              subset=subset)
 
         self.label = "zfs of %s to %s"%(src, target)
         self.target = target
@@ -56,20 +69,23 @@ class SyncZfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+
+        if len(resources) == 0:
+            return
+
         if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
             self.log.debug("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
-        for i, r in enumerate(rset.resources):
-            if r.is_disabled():
-                continue
+        for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
                 continue
             r.get_info()
-            if action in ['syncupdate', 'syncresync', 'syncdrp', 'syncnodes']:
-                if action == 'syncnodes' and self.target != ['nodes']:
+            if action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
+                if action == 'sync_nodes' and self.target != ['nodes']:
                     return
-                if action == 'syncdrp' and self.target != ['drpnodes']:
+                if action == 'sync_drp' and self.target != ['drpnodes']:
                     return
                 nb = 0
                 tgts = r.targets.copy()
@@ -134,13 +150,13 @@ class SyncZfs(resSync.Sync):
         self.get_src_info()
         self.get_dst_info()
 
-    def syncnodes(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+    def sync_nodes(self):
+        """alias to sync_update"""
+        self.sync_update()
 
-    def syncfullsync(self):
-        """alias to syncupdate"""
-        self.syncupdate()
+    def sync_full(self):
+        """alias to sync_update"""
+        self.sync_update()
 
     def zfs_send_incremental(self, node):
         if self.recursive :  
@@ -220,7 +236,7 @@ class SyncZfs(resSync.Sync):
         self.remove_snap(dst, node)
         self.rename_snap(src, dst, node)
 
-    def syncupdate(self):
+    def sync_update(self):
         """
         test if service status is UP else return
         create the snap_tosend if not already created (during pre_action)
