@@ -932,6 +932,13 @@ class Node(Svc, Freezer, Scheduler):
         if u is None:
             print("failed to obtain a registration number", file=sys.stderr)
             return 1
+        elif isinstance(u, dict) and "ret" in u and u["ret"] != 0:
+            print("failed to obtain a registration number", file=sys.stderr)
+            try:
+                print(u["msg"])
+            except:
+                pass
+            return 1
         elif isinstance(u, list):
             print(u[0], file=sys.stderr)
             return 1
