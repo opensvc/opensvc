@@ -28,6 +28,7 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 from svcBuilder import conf_get_string_scope
+from distutils.version import LooseVersion as V
 
 os.environ['LANG'] = 'C'
 
@@ -56,14 +57,14 @@ class DockerLib(object):
                     return line.split()[0]
 
     def docker_min_version(self, version):
-        cmd = ["docker", "--version"]
-        out, err, ret = justcall(cmd)
-        v = out.split()
-        if len(v) < 3:
-            return False
-        version_s = v[2]
-        from distutils.version import LooseVersion as V
-        if V(version_s) >= V(version):
+        if not hasattr(self, "docker_version"):
+            cmd = ["docker", "--version"]
+            out, err, ret = justcall(cmd)
+            v = out.split()
+            if len(v) < 3:
+                return False
+            self.docker_version = v[2]
+        if V(self.docker_version) >= V(version):
             return True
         return False
 
@@ -167,9 +168,15 @@ class DockerLib(object):
         os.kill(pid, signal.SIGTERM)
 
     def dockerd_cmd(self):
-        cmd = self.docker_cmd + ['-r=false', '-d',
-               '-g', self.docker_data_dir,
-               '-p', self.docker_pid_file]
+        if self.docker_min_version("1.8"):
+            cmd = [self.docker_exe(), 'daemon',
+                   '-H', self.docker_socket,
+                   '-g', self.docker_data_dir,
+                   '-p', self.docker_pid_file]
+        else:
+            cmd = self.docker_cmd + ['-r=false', '-d',
+                   '-g', self.docker_data_dir,
+                   '-p', self.docker_pid_file]
         cmd += self.docker_daemon_args
         return cmd
 
