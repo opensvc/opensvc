@@ -76,7 +76,10 @@ class SysReport(object):
         l = json.loads(buff)
         stat = {}
         for e in l:
-            stat[e["fpath"]] = e
+            try:
+                stat[e["fpath"]] = e
+            except:
+                pass
         return stat
 
     def write_stat(self):
@@ -268,6 +271,9 @@ class SysReport(object):
         dst_d = self.collect_file_d + os.path.dirname(fpath)
         fname = os.path.basename(fpath)
         dst_f = os.path.join(dst_d, fname)
+        if os.path.isdir(dst_f):
+            # the fpath has changed from dir to file. cleanup the dst tree.
+            shutil.rmtree(dst_f)
         if not os.path.exists(dst_d):
             os.makedirs(dst_d)
 
