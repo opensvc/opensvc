@@ -2070,6 +2070,9 @@ class Svc(Resource, Scheduler):
     def sync_update(self):
         if not self.can_sync():
             return
+        self._sync_update()
+
+    def _sync_update(self):
         self.sub_set_action("sync.netapp", "sync_update")
         self.sub_set_action("sync.hp3par", "sync_update")
         self.sub_set_action("sync.nexenta", "sync_update")
@@ -2159,7 +2162,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.btrfs", "sync_drp")
         self.sub_set_action("sync.docker", "sync_drp")
         self.sub_set_action("sync.dds", "sync_drp")
-        self.sync_update()
+        self._sync_update()
         self.remote_postsync()
 
     def push_service_status(self):
