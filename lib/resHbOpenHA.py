@@ -398,7 +398,13 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
-	    self.log.debug('start : called by heartbeat daemon, returning.')
+	    self.log.debug('start: called by heartbeat daemon, returning.')
+            return
+
+        if self.svc.options.parm_rid is not None or \
+           self.svc.options.parm_tags is not None or \
+           self.svc.options.parm_subsets is not None:
+	    self.log.debug('start: called with --rid, --tags or --subset, returning.')
             return
 
         local_status = self.service_local_status()
@@ -443,7 +449,13 @@ class Hb(resHb.Hb):
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
-	    self.log.debug('stop : called by heartbeat daemon, returning.')
+	    self.log.debug('stop: called by heartbeat daemon, returning.')
+            return
+
+        if self.svc.options.parm_rid is not None or \
+           self.svc.options.parm_tags is not None or \
+           self.svc.options.parm_subsets is not None:
+	    self.log.debug('stop: called with --rid, --tags or --subset, returning.')
             return
 
         local_status = self.service_local_status()
