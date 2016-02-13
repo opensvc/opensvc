@@ -163,3 +163,5 @@ class Asset(rcAsset.Asset):
                 maps.append((portwwn, tgtportwwn))
         return maps
 
+    def get_last_boot(self):
+        return
