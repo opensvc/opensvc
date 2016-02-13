@@ -2328,6 +2328,8 @@ class Svc(Resource, Scheduler):
                 l.add(e)
                 continue
             l |= self.expand_rid(e)
+        if len(l) > 0:
+            self.log.debug("rids added from --rid %s: %s" % (",".join(rid), ",".join(l)))
         return l
 
     def expand_subsets(self, subsets):
@@ -2337,7 +2339,8 @@ class Svc(Resource, Scheduler):
         for r in self.resources_by_id.values():
             if r.subset in subsets:
                 l.add(r.rid)
-        self.log.debug("rids added from --subsets %s: %s" % (",".join(subsets), ",".join(l)))
+        if len(l) > 0:
+            self.log.debug("rids added from --subsets %s: %s" % (",".join(subsets), ",".join(l)))
         return l
 
     def expand_tags(self, tags):
@@ -2347,7 +2350,8 @@ class Svc(Resource, Scheduler):
         for r in self.resources_by_id.values():
             if len(r.tags & tags) > 0:
                 l.add(r.rid)
-        self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
+        if len(l) > 0:
+            self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
         return l
 
     def action_translate(self, action):
@@ -2376,6 +2380,7 @@ class Svc(Resource, Scheduler):
         rids |= self.expand_subsets(subsets)
         rids |= self.expand_tags(tags)
         rids = list(rids)
+        self.log.debug("rids retained after all expansions: %s" % ";".join(rids))
 
         if not self.options.slaves and self.options.slave is None and \
            len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
