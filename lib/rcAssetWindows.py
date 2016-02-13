@@ -164,4 +164,12 @@ class Asset(rcAsset.Asset):
         return maps
 
     def get_last_boot(self):
-        return
+        payload = self.w.Win32_PerfFormattedData_PerfOS_System()
+        uptime = payload[-1].SystemUpTime
+        try:
+            last = datetime.datetime.now() - datetime.timedelta(seconds=int(uptime))
+        except:
+            return
+        last = last.strftime("%Y-%m-%d")
+        self.print_last_boot(last)
+        return last
