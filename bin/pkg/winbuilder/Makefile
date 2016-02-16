@@ -52,7 +52,7 @@ XSLFILE=$(WXSDIR)\opensvc.transform.xsl
 
 all: build
 
-build: copy clean heat candle light movensis nsisexe
+build: copy version clean heat candle light movensis nsisexe
 
 copy:
         @echo =^> Erasing old build directories
@@ -63,6 +63,7 @@ copy:
 		@mkdir "$(OSVCNSIS)\tmp"
         @mkdir "$(OSVCPKGROOT)"
 		@mkdir "$(OSVCPKGROOT)\etc"
+		@mkdir "$(OSVCPKGROOT)\var"
 		@mkdir "$(OSVCPKGROOT)\var\cache"
 		@mkdir "$(OSVCPKGROOT)\var\lock"
 		@mkdir "$(OSVCPKGROOT)\log"
@@ -76,6 +77,13 @@ copy:
         @xcopy "$(VCREDISTX86)" "$(OSVCNSIS)\tmp" /s /i /q
 		@echo =^> Copying Python distribution to build directory
 		@xcopy "$(PYTHON)" "$(OSVCPKGROOT)\python" /s /i /q
+
+version:
+	    @echo =^> Generating version.py file in "$(OSVCPKGROOT)\lib\"
+	    @if not exist "$(OSVCPKGROOT)" mkdir "$(OSVCPKGROOT)"
+	    @if not exist "$(OSVCPKGROOT)\lib" mkdir "$(OSVCPKGROOT)\lib"
+           echo version = "$(OSVCMAKEVERSION)-$(OSVCMAKERELEASE)" > "$(OSVCPKGROOT)\lib\version.py" 
+
 
 clean:
 	    @echo =^> Removing old objects files 

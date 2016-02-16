@@ -1500,6 +1500,11 @@ class Svc(Resource, Scheduler):
     def cluster_mode_safety_net(self, action):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            self.log.debug('stop: called with --rid, --tags or --subset, allow action on ha service.')
+            return
         n_hb = 0
         n_hb_enabled = 0
         for r in self.get_resources('hb', discard_disabled=False):
@@ -1512,7 +1517,7 @@ class Svc(Resource, Scheduler):
             return
         if not self.cluster:
             for r in self.get_resources("hb"):
-                if hasattr(r, action):
+                if not r.skip and hasattr(r, action):
                     getattr(r, action)()
             raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 

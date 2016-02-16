@@ -163,6 +163,8 @@ class Hb(resHb.Hb):
                 continue
             if l[1] == 'net':
                 suffix = ''
+            elif l[1] == 'unicast':
+                suffix = '_unicast'
             elif l[1] == 'disk':
                 suffix = '_raw'
             else:
