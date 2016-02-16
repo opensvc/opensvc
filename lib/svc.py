@@ -1248,11 +1248,13 @@ class Svc(Resource, Scheduler):
             status[group] = rcStatus.Status(rcStatus.NA)
 
         for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
+            if t in excluded_groups:
+                continue
             group = t.split('.')[0]
             if group not in groups:
                 continue
-            for r in self.get_res_sets(t, strict=True):
-                s = rcStatus.Status(rset_status[r.type])
+            for r in self.get_resources(t):
+                s = r.status()
                 status[group] += s
                 status["avail"] += s
 
@@ -1273,26 +1275,32 @@ class Svc(Resource, Scheduler):
         for t in [_t for _t in self.status_types if _t.startswith('stonith')]:
             if 'stonith' not in groups:
                 continue
-            for r in self.get_res_sets(t, strict=True):
-                s = rset_status[r.type]
+            if t in excluded_groups:
+                continue
+            for r in self.get_resources(t):
+                s = r.status()
                 status['stonith'] += s
                 status["overall"] += s
 
         for t in [_t for _t in self.status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
                 continue
-            for r in self.get_res_sets(t, strict=True):
-                s = rset_status[r.type]
+            if t in excluded_groups:
+                continue
+            for r in self.get_resources(t):
+                s = r.status()
                 status['hb'] += s
                 status["overall"] += s
 
         for t in [_t for _t in self.status_types if _t.startswith('sync')]:
             if 'sync' not in groups:
                 continue
-            for r in self.get_res_sets(t, strict=True):
+            if t in excluded_groups:
+                continue
+            for r in self.get_resources(t):
                 """ sync are expected to be up
                 """
-                s = rset_status[r.type]
+                s = r.status()
                 status['sync'] += s
                 if s == rcStatus.UP:
                     status["overall"] += rcStatus.UNDEF
