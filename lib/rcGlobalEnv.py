@@ -36,7 +36,7 @@ class rcEnv:
     """
 
     logging_initialized = []
-    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ']
+    allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ', 'STG']
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
     nodename = socket.gethostname().lower()
