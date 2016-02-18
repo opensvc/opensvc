@@ -1005,9 +1005,7 @@ class Svc(Resource, Scheduler):
         self.node.os.crash()
 
     def pg_freeze(self):
-        if self.options.parm_rid is not None or \
-           self.options.parm_tags is not None or \
-           self.options.parm_subsets is not None:
+        if self.command_is_scoped():
             self.sub_set_action('app', '_pg_freeze')
             self.sub_set_action('container', '_pg_freeze')
         else:
@@ -1016,9 +1014,7 @@ class Svc(Resource, Scheduler):
                 r.status(refresh=True, restart=False)
 
     def pg_thaw(self):
-        if self.options.parm_rid is not None or \
-           self.options.parm_tags is not None or \
-           self.options.parm_subsets is not None:
+        if self.command_is_scoped():
             self.sub_set_action('app', '_pg_thaw')
             self.sub_set_action('container', '_pg_thaw')
         else:
@@ -1027,9 +1023,7 @@ class Svc(Resource, Scheduler):
                 r.status(refresh=True, restart=False)
 
     def pg_kill(self):
-        if self.options.parm_rid is not None or \
-           self.options.parm_tags is not None or \
-           self.options.parm_subsets is not None:
+        if self.command_is_scoped():
             self.sub_set_action('app', '_pg_kill')
             self.sub_set_action('container', '_pg_kill')
         else:
@@ -1417,11 +1411,18 @@ class Svc(Resource, Scheduler):
         self.master_shutdownfs()
         self.master_shutdownip()
 
+    def command_is_scoped(self):
+        if self.options.parm_rid is not None or \
+           self.options.parm_tags is not None or \
+           self.options.parm_subsets is not None:
+            return True
+        return False
+
     def _slave_action(fn):
         def _fn(self):
             if self.encap or not self.has_encap_resources:
                 return
-            if self.running_action not in ('migrate', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+            if (self.command_is_scoped() or self.running_action not in ('migrate', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
             if self.options.slaves or \
@@ -1436,7 +1437,7 @@ class Svc(Resource, Scheduler):
     def _master_action(fn):
         def _fn(self):
             if not self.encap and \
-               self.running_action not in ('migrate', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby') and \
+               (self.command_is_scoped() or self.running_action not in ('migrate', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
                self.has_encap_resources and \
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
@@ -1500,9 +1501,7 @@ class Svc(Resource, Scheduler):
     def cluster_mode_safety_net(self, action):
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
-        if self.options.parm_rid is not None or \
-           self.options.parm_tags is not None or \
-           self.options.parm_subsets is not None:
+        if self.command_is_scoped():
             self.log.debug('stop: called with --rid, --tags or --subset, allow action on ha service.')
             return
         n_hb = 0
