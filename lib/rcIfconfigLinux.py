@@ -70,8 +70,14 @@ class ifconfig(rcIfconfig.ifconfig):
                 """
                 _line = line.split()
                 ifname = _line[1].strip(":")
-
+                if "@if" in ifname:
+                    ifkname = ifname[ifname.index("@if"):]
+                    ifname = ifname[:ifname.index("@if")]
+		else:
+                    ifkname = None
                 i = rcIfconfig.interface(ifname)
+                i.ifkname = ifkname
+
                 # defaults
                 i.link_encap = ''
                 i.scope = []
