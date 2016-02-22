@@ -817,7 +817,12 @@ def install_profile():
     logit("begin")
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
-    buff = "export PATH=$PATH:"+pathbin+":"+pathetc+"\n"
+    buff = "if ! echo ${PATH} | grep -q "+pathetc+"; then"+"\n"
+    buff = buff+"    PATH=${PATH}:"+pathetc+"\n"
+    buff = buff+"fi\n\n"
+    buff = buff+"if ! echo ${PATH} | grep -q "+pathbin+"; then"+"\n"
+    buff = buff+"    PATH=${PATH}:"+pathbin+"\n"
+    buff = buff+"fi\n"
     if not os.path.exists(prof_d):
         logit("no profile directory found")
         return
