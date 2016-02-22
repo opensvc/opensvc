@@ -159,7 +159,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         # announce
         if which("arping") is not None:
             cmd = ["ip", "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
-            ret, out, err = self.vcall(cmd)
+            self.log.info(" ".join(cmd))
+            out, err, ret = justcall(cmd)
 
         self.delete_netns_link(nspid=nspid)
         return 0, "", ""
@@ -281,7 +282,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         # announce
         if which("arping") is not None:
             cmd = ["ip", "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
-            ret, out, err = self.vcall(cmd)
+            self.log.info(" ".join(cmd))
+            out, err, ret = justcall(cmd)
 
     def ip_wait(self):
         # ip activation may still be incomplete
