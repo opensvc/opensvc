@@ -151,10 +151,11 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return ret, out, err
 
         # add default route
-        cmd = ["ip", "netns", "exec", nspid, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            return ret, out, err
+        if self.gateway:
+            cmd = ["ip", "netns", "exec", nspid, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                return ret, out, err
 
         # announce
         if which("arping") is not None:
@@ -274,10 +275,11 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         if ret != 0:
             return ret, out, err
 
-        cmd = ["ip", "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            return ret, out, err
+        if self.gateway:
+            cmd = ["ip", "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                return ret, out, err
 
         # announce
         if which("arping") is not None:
