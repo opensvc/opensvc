@@ -33,6 +33,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                  ipName=None,
                  mask=None,
                  gateway=None,
+                 network=None,
+                 del_net_route=False,
                  container_rid=None,
                  optional=False,
                  disabled=False,
@@ -54,6 +56,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                         monitor=monitor,
                         restart=restart)
         self.gateway = gateway
+        self.network = network
+        self.del_net_route = del_net_route
         self.container_rid = container_rid
         self.label = ipName + '@' + ipDev
         self.tags.add("docker")
@@ -277,6 +281,12 @@ class Ip(Res.Ip, rcDocker.DockerLib):
 
         if self.gateway:
             cmd = ["ip", "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                return ret, out, err
+
+        if self.del_net_route and self.network:
+            cmd = ["ip", "netns", "exec", nspid, "ip", "route", "del", self.network+"/"+self.mask, "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err

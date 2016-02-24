@@ -1538,6 +1538,34 @@ class KeywordIpIpdevext(Keyword):
                   text="The interface name extension for crossbow ipadm configuration."
                 )
 
+class KeywordIpNetwork(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="docker",
+                  keyword="network",
+                  order=12,
+                  at=True,
+                  required=False,
+                  example="10.0.0.0",
+                  text="The network base address. Used to delete the network route if del_net_route is set to true."
+                )
+
+class KeywordIpDelNetRoute(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="docker",
+                  keyword="del_net_route",
+                  order=12,
+                  at=True,
+                  required=False,
+                  example="true",
+                  text="Some docker ip configuration requires dropping the network route autoconfigured when installing the ip address. In this case set this parameter to true, and also set the network parameter."
+                )
+
 class KeywordIpNetmask(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2960,6 +2988,8 @@ class KeyDict(KeywordStore):
         self += KeywordIpIpname()
         self += KeywordIpIpdev()
         self += KeywordIpIpdevext()
+        self += KeywordIpNetwork()
+        self += KeywordIpDelNetRoute()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpZone()

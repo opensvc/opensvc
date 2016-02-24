@@ -502,6 +502,16 @@ def add_ip(svc, conf, s):
     except ex.OptNotFound:
         pass
 
+    if rtype == "docker":
+        try:
+            kwargs['network'] = conf_get_string_scope(svc, conf, s, 'network')
+        except ex.OptNotFound:
+            pass
+        try:
+            kwargs['del_net_route'] = conf_get_boolean_scope(svc, conf, s, 'del_net_route')
+        except ex.OptNotFound:
+            pass
+
     if rtype == "crossbow":
         if 'zone' in kwargs:
             svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s"%s)
