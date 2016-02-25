@@ -52,6 +52,7 @@ class Options(object):
         self.ignore_affinity = False
         self.debug = False
         self.disable_rollback = False
+        self.show_disabled = False
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
@@ -675,15 +676,15 @@ class Svc(Resource, Scheduler):
                                )
                 )
 
-        avail_resources = sorted(self.get_resources("ip", discard_disabled=False))
-        avail_resources += sorted(self.get_resources("disk", discard_disabled=False))
-        avail_resources += sorted(self.get_resources("fs", discard_disabled=False))
-        avail_resources += sorted(self.get_resources("container", discard_disabled=False))
-        avail_resources += sorted(self.get_resources("share", discard_disabled=False))
-        avail_resources += sorted(self.get_resources("app", discard_disabled=False))
-        accessory_resources = sorted(self.get_resources("hb", discard_disabled=False))
-        accessory_resources += sorted(self.get_resources("stonith", discard_disabled=False))
-        accessory_resources += sorted(self.get_resources("sync", discard_disabled=False))
+        avail_resources = sorted(self.get_resources("ip", discard_disabled=not self.options.show_disabled))
+        avail_resources += sorted(self.get_resources("disk", discard_disabled=not self.options.show_disabled))
+        avail_resources += sorted(self.get_resources("fs", discard_disabled=not self.options.show_disabled))
+        avail_resources += sorted(self.get_resources("container", discard_disabled=not self.options.show_disabled))
+        avail_resources += sorted(self.get_resources("share", discard_disabled=not self.options.show_disabled))
+        avail_resources += sorted(self.get_resources("app", discard_disabled=not self.options.show_disabled))
+        accessory_resources = sorted(self.get_resources("hb", discard_disabled=not self.options.show_disabled))
+        accessory_resources += sorted(self.get_resources("stonith", discard_disabled=not self.options.show_disabled))
+        accessory_resources += sorted(self.get_resources("sync", discard_disabled=not self.options.show_disabled))
         n_accessory_resources = len(accessory_resources)
 
         print(self.svcname)

@@ -160,6 +160,9 @@ parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock"
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
                   help="remote node to start or migrate the service to")
+parser.add_option("--show-disabled", default=False,
+                  action="store_true", dest="show_disabled",
+                  help="tell print|json status action to include the disabled resources in the output. Default is to not include those.")
 parser.add_option("--attach", default=False,
                   action="store_true", dest="attach",
                   help="attach the modulesets specified during a compliance check/fix/fixable command")
