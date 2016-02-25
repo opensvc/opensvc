@@ -409,6 +409,58 @@ def add_resources(restype, svc, conf):
             continue
         globals()['add_'+restype](svc, conf, s)
  
+def add_ip_gce(svc, conf, s):
+    kwargs = {}
+
+    try:
+        rtype = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        rtype = None
+
+    if rtype != "gce":
+        return
+
+    try:
+        kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
+    except ex.OptNotFound:
+        svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
+        return
+
+    try:
+        kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+    except ex.OptNotFound:
+        svc.log.error("ipdev must be defined in config file section %s" % s)
+        return
+
+    try:
+        kwargs['eip'] = conf_get_string_scope(svc, conf, s, 'eip')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['routename'] = conf_get_string_scope(svc, conf, s, 'routename')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['gce_zone'] = conf_get_string_scope(svc, conf, s, 'gce_zone')
+    except ex.OptNotFound:
+        pass
+
+    ip = __import__('resIpGce')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+    r = ip.Ip(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_ip_amazon(svc, conf, s):
     kwargs = {}
 
@@ -462,6 +514,8 @@ def add_ip(svc, conf, s):
 
     if rtype == "amazon":
         return add_ip_amazon(svc, conf, s)
+    elif rtype == "gce":
+        return add_ip_gce(svc, conf, s)
 
     kwargs = {}
 

@@ -1499,13 +1499,43 @@ class KeywordIpAmazonDockerDaemonIp(Keyword):
                   example="True"
                 )
 
+class KeywordIpGceRoutename(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="gce",
+                  keyword="routename",
+                  provisioning=False,
+                  order=13,
+                  at=True,
+                  required=False,
+                  text="Set the gce route name",
+                  example="rt-ip1"
+                )
+
+class KeywordIpGceZone(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="gce",
+                  keyword="gce_zone",
+                  provisioning=False,
+                  order=13,
+                  at=True,
+                  required=False,
+                  text="Set the gce ip route next hop zone",
+                  example="europe-west1-b"
+                )
+
 class KeywordIpType(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="ip",
                   keyword="type",
-                  candidates=[None, 'crossbow', 'amazon', 'docker'],
+                  candidates=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   text="The opensvc ip driver name.",
                   required=False,
                   order=10,
@@ -2997,6 +3027,8 @@ class KeyDict(KeywordStore):
         self += KeywordIpAmazonEip()
         self += KeywordIpAmazonCascadeAllocation()
         self += KeywordIpAmazonDockerDaemonIp()
+        self += KeywordIpGceZone()
+        self += KeywordIpGceRoutename()
         self += KeywordVgType()
         self += KeywordVgAmazonVolumes()
         self += KeywordVgRawDevs()

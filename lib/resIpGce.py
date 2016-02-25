@@ -1,0 +1,220 @@
+#
+# Copyright (c) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+import resIp
+import os
+import rcStatus
+from rcGlobalEnv import rcEnv
+import rcExceptions as ex
+from rcUtilities import getaddr, justcall
+import json
+
+rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+
+class Ip(resIp.Ip):
+    def __init__(self,
+                 rid=None,
+                 ipName=None,
+                 ipDev=None,
+                 eip=None,
+                 routename=None,
+                 gce_zone=None,
+                 optional=False,
+                 disabled=False,
+                 tags=set([]),
+                 always_on=set([]),
+                 monitor=False,
+                 restart=0,
+                 subset=None):
+        resIp.Ip.__init__(self,
+                          rid=rid,
+                          ipName=ipName,
+                          ipDev=ipDev,
+                          always_on=always_on,
+                          optional=optional,
+                          disabled=disabled,
+                          tags=tags,
+                          monitor=monitor,
+                          restart=restart,
+                          subset=subset)
+        self.label = "gce ip %s@%s" % (ipName, ipDev)
+        if eip:
+            self.label += ", eip %s" % eip
+
+        self.eip = eip
+        self.routename = routename
+        self.gce_zone = gce_zone
+
+        # cache for route data
+        self.gce_route_data = None
+
+    def start_local_route(self):
+        if self.has_local_route():
+            self.log.info("ip route %s/32 dev %s is already installed" % (self.addr, self.ipDev))
+            return
+        self.add_local_route()
+
+    def stop_local_route(self):
+        if not self.has_local_route():
+            self.log.info("ip route %s/32 dev %s is already uninstalled" % (self.addr, self.ipDev))
+            return
+        self.del_local_route()
+
+    def add_local_route(self):
+        cmd = ["ip", "route", "replace", self.addr+"/32", "dev", self.ipDev]
+        self.vcall(cmd)
+
+    def del_local_route(self):
+        cmd = ["ip", "route", "del", self.addr+"/32", "dev", self.ipDev]
+        self.vcall(cmd)
+
+    def has_local_route(self):
+        cmd = ["ip", "route", "list", self.addr+"/32", "dev", self.ipDev]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if out == "":
+            return False
+        return True
+
+    def start_gce_route(self):
+        if not self.routename:
+            return
+        if self.has_gce_route():
+            self.log.info("gce route %s, %s to instance %s is already installed" % (self.routename, self.addr, rcEnv.nodename))
+            return
+        if self.exist_gce_route():
+            self.del_gce_route()
+        self.add_gce_route()
+
+    def stop_gce_route(self):
+        if not self.routename:
+            return
+        if not self.has_gce_route():
+            self.log.info("gce route %s, %s to instance %s is already uninstalled" % (self.routename, self.addr, rcEnv.nodename))
+            return
+        self.del_gce_route()
+
+    def add_gce_route(self):
+        cmd = ["gcloud", "compute", "routes", "-q", "create", self.routename,
+               "--destination-range", self.addr+"/32",
+               "--next-hop-instance", rcEnv.nodename,
+               "--next-hop-instance-zone", self.gce_zone]
+        self.vcall(cmd)
+
+    def del_gce_route(self):
+        cmd = ["gcloud", "compute", "routes", "-q", "delete", self.routename]
+        self.vcall(cmd)
+
+    def get_gce_route_data(self, refresh=False):
+        if not self.routename:
+            return
+        if not refresh and self.gce_route_data:
+            return self.gce_route_data
+        cmd = ["gcloud", "compute", "routes", "describe", self.routename, "--format", "json"]
+        out, err, ret = justcall(cmd)
+        if "not found" in err:
+            return
+        if ret != 0:
+            raise ex.excError("gcloud route describe returned with error: %s, %s" % (out, err))
+        try:
+            data = json.loads(out)
+        except:
+            raise ex.excError("unable to parse gce route data: %s" % out)
+        self.gce_route_data = data
+        return data
+
+    def exist_gce_route(self):
+        if not self.routename:
+            return True
+        data = self.get_gce_route_data()
+        if not data:
+            return False
+        return True
+
+    def has_gce_route(self):
+        if not self.routename:
+            return True
+        data = self.get_gce_route_data(refresh=True)
+        if not data:
+            return False
+        if data.get("destRange") != self.addr+"/32":
+            return False
+        if data.get("nextHopInstance").split("/")[-1] != rcEnv.nodename:
+            return False
+        return True
+
+    def is_up(self):
+        """Returns True if ip is associated with this node
+        """
+        self.getaddr()
+        if not self.has_local_route():
+            return False
+        if not self.has_gce_route():
+            return False
+        return True
+
+    def _status(self, verbose=False):
+        self.getaddr()
+        try:
+            local_status = self.has_local_route()
+            if not local_status:
+                self.status_log("local route is not installed")
+        except ex.excError as e:
+            self.status_log(str(e))
+            local_status = False
+
+        try:
+            gce_status = self.has_gce_route()
+            if not gce_status:
+                self.status_log("gce route is not installed")
+        except ex.excError as e:
+            self.status_log(str(e))
+            gce_status = False
+
+        if local_status != gce_status:
+            return rcStatus.WARN
+        s = local_status & gce_status
+        if rcEnv.nodename in self.always_on:
+            if s:
+                return rcStatus.STDBY_UP
+            else:
+                return rcStatus.STDBY_DOWN
+        else:
+            if s:
+                return rcStatus.UP
+            else:
+                return rcStatus.DOWN
+
+    def check_ping(self, count=1, timeout=5):
+        pass
+
+    def start(self):
+        self.getaddr()
+        self.start_local_route()
+        self.start_gce_route()
+
+    def stop(self):
+        self.getaddr()
+        self.stop_local_route()
+        # don't unconfigure the gce route: too long. let the start replace it if necessary.
+
+    #def provision(self):
+        #m = __import__("provIpGce")
+        #prov = getattr(m, "ProvisioningIp")(self)
+        #prov.provisioner()
+
