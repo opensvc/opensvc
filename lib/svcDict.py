@@ -1499,6 +1499,52 @@ class KeywordIpAmazonDockerDaemonIp(Keyword):
                   example="True"
                 )
 
+class KeywordDiskGceNames(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="names",
+                  provisioning=False,
+                  order=1,
+                  at=True,
+                  required=True,
+                  text="Set the gce disk names",
+                  example="svc1-disk1"
+                )
+
+class KeywordDiskGceZone(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="gce_zone",
+                  provisioning=False,
+                  order=2,
+                  at=True,
+                  required=True,
+                  text="Set the gce zone",
+                  example="europe-west1-b"
+                )
+
+class KeywordDiskGceDetachOnStop(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="detach_on_stop",
+                  provisioning=False,
+                  order=3,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="Set to false when you don't switch the attachment frequently, to speed up the stop and subsequent start actions.",
+                  example="europe-west1-b"
+                )
+
 class KeywordIpGceRoutename(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3029,6 +3075,9 @@ class KeyDict(KeywordStore):
         self += KeywordIpAmazonDockerDaemonIp()
         self += KeywordIpGceZone()
         self += KeywordIpGceRoutename()
+        self += KeywordDiskGceNames()
+        self += KeywordDiskGceZone()
+        self += KeywordDiskGceDetachOnStop()
         self += KeywordVgType()
         self += KeywordVgAmazonVolumes()
         self += KeywordVgRawDevs()
