@@ -186,8 +186,6 @@ class Ip(resIp.Ip):
             self.status_log(str(e))
             gce_status = False
 
-        if local_status != gce_status:
-            return rcStatus.WARN
         s = local_status & gce_status
         if rcEnv.nodename in self.always_on:
             if s:
