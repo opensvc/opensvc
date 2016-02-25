@@ -53,6 +53,10 @@ class Vg(resDg.Dg):
         self.gce_zone = gce_zone
         self.label = self.fmt_label()
 
+    def get_disk_names(self, refresh=False):
+        data = self.get_disks(refresh=refresh)
+        return [d["name"] for d in data]
+
     def get_attached_disk_names(self, refresh=False):
         data = self.get_attached_disks(refresh=refresh)
         return [d["name"] for d in data]
@@ -142,6 +146,10 @@ class Vg(resDg.Dg):
                     ])
 
     def do_start_one(self, name):
+        existing = self.get_disk_names()
+        if name not in existing:
+            self.log.info(name+" does not exist")
+            return
         attached = self.get_attached_disk_names()
         if name in attached:
             self.log.info(name+" is already attached")
@@ -158,12 +166,15 @@ class Vg(resDg.Dg):
         self.can_rollback = True
 
     def do_start(self):
-        self.validate_volumes()
         for name in self.names:
             self.do_start_one(name)
         self.get_attached_disks(refresh=True)
 
     def do_stop_one(self, name):
+        existing = self.get_disk_names()
+        if name not in existing:
+            self.log.info(name+" does not exist")
+            return
         attached = self.get_attached_disk_names()
         if name not in attached:
             self.log.info(name+" is already detached")
@@ -176,7 +187,6 @@ class Vg(resDg.Dg):
         ])
 
     def do_stop(self):
-        self.validate_volumes()
         for name in self.names:
             self.do_stop_one(name)
         self.get_attached_disks(refresh=True)
