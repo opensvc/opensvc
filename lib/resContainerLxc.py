@@ -367,9 +367,9 @@ class Lxc(resContainer.Container):
         cmd = self.runmethod + ['systemctl', 'is-active', 'default.target']
         out, err, ret = justcall(cmd)
         if ret == 1:
-            # if systemctl is-active fails, no point in waiting more
+            # if systemctl is-active fails, retry later
             self.log.debug("systemctl is-active failed")
-            return True
+            return False
         if out.strip() == "active":
             self.log.debug("systemctl is-active succeeded")
             return True
