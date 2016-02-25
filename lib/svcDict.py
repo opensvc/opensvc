@@ -1674,7 +1674,7 @@ class KeywordVgType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'amazon'],
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
