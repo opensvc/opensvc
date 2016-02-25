@@ -357,6 +357,7 @@ class Lxc(resContainer.Container):
         out, err, ret = justcall(cmd)
         if ret == 1:
             # not a systemd container. no more checking.
+            self.log.debug("/bin/systemctl not found in container")
             return True
 
         # systemd on-demand loading will let us start the encap service before
@@ -367,11 +368,14 @@ class Lxc(resContainer.Container):
         out, err, ret = justcall(cmd)
         if ret == 1:
             # if systemctl is-active fails, no point in waiting more
+            self.log.debug("systemctl is-active failed")
             return True
         if out.strip() == "active":
+            self.log.debug("systemctl is-active succeeded")
             return True
 
         # ok, wait some more
+        self.log.debug("waiting for lxc to come up")
         return False
 
     def __str__(self):
