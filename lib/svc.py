@@ -1703,11 +1703,13 @@ class Svc(Resource, Scheduler):
 
     @_master_action
     def master_stopdisk(self):
+        self.sub_set_action("sync.btrfssnap", "stop")
         self.sub_set_action(self.disk_types, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     @_master_action
     def master_shutdowndisk(self):
+        self.sub_set_action("sync.btrfssnap", "shutdown")
         self.sub_set_action(self.disk_types, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
 

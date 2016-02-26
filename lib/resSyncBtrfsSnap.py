@@ -24,6 +24,7 @@ import time
 import datetime
 import resSync
 import rcBtrfs
+from rcUtilities import justcall
 
 class syncBtrfsSnap(resSync.Sync):
     def __init__(self,
@@ -53,6 +54,23 @@ class syncBtrfsSnap(resSync.Sync):
 
     def on_add(self):
         pass
+
+    def test_btrfs(self, label):
+        cmd = ["btrfs", "fi", "show", label]
+        out, err, ret = justcall(cmd)
+        return ret
+
+    def stop(self):
+        for s in self.subvol:
+            print("here")
+            try:
+                label, subvol = s.split(":")
+            except:
+                self.log.error("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
+                continue
+            btrfs = self.get_btrfs(label)
+            cmd = ["umount", btrfs.rootdir]
+            self.vcall(cmd)
 
     def get_btrfs(self, label):
         if label in self.btrfs:
@@ -100,12 +118,18 @@ class syncBtrfsSnap(resSync.Sync):
                 raise ex.excError
 
     def _status_one(self, label, subvol):
+        if self.test_btrfs(label) != 0:
+            self.status_log("snap of %s suspended: not writable"%label)
+            return
         try:
             btrfs = self.get_btrfs(label)
         except Exception as e:
             self.status_log("%s:%s %s" % (label, subvol, str(e)))
             return
-        btrfs.get_subvols()
+        try:
+            btrfs.get_subvols()
+        except:
+            return
         snaps = []
         for sv in btrfs.subvols.values():
             if not sv["path"].startswith(subvol):
@@ -134,7 +158,13 @@ class syncBtrfsSnap(resSync.Sync):
                 self.status_log("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
                 continue
             self._status_one(label, subvol)
-        if len(self.status_log_str) == 0:
+        messages = set(self.status_log_str.split("\n")) - set([''])
+        not_writable = set([r for r in messages if "not writable" in r])
+        issues = messages - not_writable
+
+        if len(not_writable) > 0 and len(not_writable) == len(messages):
+            return rcStatus.NA
+        if len(issues) == 0:
             return rcStatus.UP
         return rcStatus.WARN
 
@@ -143,6 +173,9 @@ class syncBtrfsSnap(resSync.Sync):
             label, subvol = s.split(":")
         except:
             self.log.error("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
+            return
+        if self.test_btrfs(label) != 0:
+            self.log.info("skip snap of %s while the btrfs is no writable"%label)
             return
         self.create_snap(label, subvol)
         self.remove_snap(label, subvol)
