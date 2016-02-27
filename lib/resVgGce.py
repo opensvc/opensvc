@@ -203,8 +203,8 @@ class Vg(resDg.Dg):
         attached = self.get_attached_disks()
         return set([d["deviceName"] for d in attached if d["name"] in self.names])
 
-    #def provision(self):
-    #    m = __import__("provVgGce")
-    #    prov = getattr(m, "ProvisioningVg")(self)
-    #    prov.provisioner()
+    def provision(self):
+        m = __import__("provVgGce")
+        prov = getattr(m, "ProvisioningVg")(self)
+        prov.provisioner()
 

@@ -1545,6 +1545,103 @@ class KeywordDiskGceDetachOnStop(Keyword):
                   example="europe-west1-b"
                 )
 
+class KeywordDiskGceDescription(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="description",
+                  provisioning=True,
+                  order=5,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="An optional, textual description for the disks being created.",
+                  example="foo"
+                )
+
+class KeywordDiskGceImage(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="image",
+                  provisioning=True,
+                  order=5,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="An image to apply to the disks being created. When using this option, the size of the disks must be at least as large as the image size.",
+                  example="centos-7"
+                )
+
+class KeywordDiskGceImageProject(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="image_project",
+                  provisioning=True,
+                  order=5,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="The project against which all image references will be resolved.",
+                  example="myprj"
+                )
+
+class KeywordDiskGceSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="size",
+                  provisioning=True,
+                  order=3,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="Indicates the size of the disks. The OpenSVC size converter is used to produce gce compatible size, so k, K, kib, KiB, kb, KB, ki, Ki and all their g, t, p, e variants are supported.",
+                  example="20g"
+                )
+
+class KeywordDiskGceSourceSnapshot(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="source_snapshot",
+                  provisioning=True,
+                  order=5,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="A source snapshot used to create the disks. It is safe to delete a snapshot after a disk has been created from the snapshot. In such cases, the disks will no longer reference the deleted snapshot. When using this option, the size of the disks must be at least as large as the snapshot size.",
+                  example="mysrcsnap"
+                )
+
+
+class KeywordDiskGceDiskType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="gce",
+                  keyword="disk_type",
+                  provisioning=True,
+                  order=5,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="Specifies the type of disk to create. To get a list of available disk types, run 'gcloud compute disk-types list'. The default disk type is pd-standard.",
+                  example="pd-standard"
+                )
+
 class KeywordIpGceRoutename(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3078,6 +3175,12 @@ class KeyDict(KeywordStore):
         self += KeywordDiskGceNames()
         self += KeywordDiskGceZone()
         self += KeywordDiskGceDetachOnStop()
+        self += KeywordDiskGceDescription()
+        self += KeywordDiskGceImage()
+        self += KeywordDiskGceImageProject()
+        self += KeywordDiskGceSize()
+        self += KeywordDiskGceSourceSnapshot()
+        self += KeywordDiskGceDiskType()
         self += KeywordVgType()
         self += KeywordVgAmazonVolumes()
         self += KeywordVgRawDevs()
