@@ -3296,6 +3296,11 @@ def build(name):
         del(svc)
         return None
 
+    try:
+        svc.show_disabled = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'show_disabled')
+    except ex.OptNotFound:
+        svc.show_disabled = True
+
     if not hasattr(svc, "service_type"):
         if "service_type" in defaults:
             svc.svctype = defaults["service_type"]

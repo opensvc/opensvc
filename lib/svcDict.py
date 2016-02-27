@@ -607,7 +607,7 @@ class KeywordNoPreemptAbort(Keyword):
                   order=15,
                   at=True,
                   required=False,
-                  candidates=[True, False],
+                  candidates=(True, False),
                   default=False,
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
                 )
@@ -623,6 +623,19 @@ class KeywordCluster(Keyword):
                   default=None,
                   text="The symbolic name of the cluster. Used to label shared disks represented to tiers-2 consumers like containers.",
                   example="cluster1"
+                )
+
+class KeywordShowDisabled(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="show_disabled",
+                  order=15,
+                  required=False,
+                  default=True,
+                  candidates=[True, False],
+                  text="Specifies if the disabled resources must be included in the print status and json status output."
                 )
 
 class KeywordClusterType(Keyword):
@@ -3099,6 +3112,7 @@ class KeyDict(KeywordStore):
         self += KeywordDockerDaemonArgs()
         self += KeywordAntiAffinity()
         self += KeywordNoPreemptAbort()
+        self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()
         self += KeywordFlexMinNodes()
