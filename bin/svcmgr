@@ -53,6 +53,10 @@ def _exit(r):
 
 node = node_mod.Node()
 
+def pull_service(svcnames):
+    for svcname in svcnames:
+        node.pull(svcname)
+
 def install_service(svcnames, src_env):
     if len(svcnames) != 1:
         print("only one service must be specified", file=sys.stderr)
@@ -283,7 +287,7 @@ if not action in rcOptParser.supported_actions():
     parser.set_usage(__usage + rcOptParser.format_desc(action=action))
     parser.error("unsupported action")
 
-if node.svcs is None and action != "create":
+if node.svcs is None and action not in ("create", "pull"):
     parm_primary = False
     parm_secondary = False
     parm_status = None
@@ -322,7 +326,7 @@ if node.svcs is None and action != "create":
 if node.svcs is not None:
     svcnames = map(lambda x: x.svcname, node.svcs)
 
-if action in ("create", "install") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+if action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
     svcnames = options.parm_svcs.split(',')
 
 if cmd == 'svcmgr' and len(svcnames) == 0:
@@ -336,6 +340,10 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
  svcname
 """)
     _exit(1)
+
+if action == 'pull':
+    r = pull_service(svcnames)
+    sys.exit(r)
 
 if action == 'install':
     r = install_service(svcnames, options.param_envfile)

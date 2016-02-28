@@ -39,6 +39,12 @@ from subprocess import *
 from rcScheduler import *
 
 try:
+    import urllib2
+    import base64
+except:
+    pass
+
+try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
@@ -1414,6 +1420,112 @@ class Node(Svc, Freezer, Scheduler):
 
         return err
 
+    def collector_api(self):
+        if hasattr(self, "collector_api_cache"):
+            return self.collector_api_cache
+        import platform
+        sysname, nodename, x, x, machine, x = platform.uname()
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+        config = ConfigParser.RawConfigParser({})
+        config.read("/opt/opensvc/etc/node.conf")
+        data = {}
+        data["username"] = nodename
+        data["password"] = config.get("node", "uuid")
+        data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        self.collector_api_cache = data
+        return self.collector_api_cache
+
+    def collector_url(self):
+        api = self.collector_api()
+        s = "%s:%s@" % (api["username"], api["password"])
+        url = api["url"].replace("https://", "https://"+s)
+        url = url.replace("http://", "http://"+s)
+        return url
+
+    def collector_request(self, path):
+        api = self.collector_api()
+        url = api["url"]
+        request = urllib2.Request(url+path)
+        base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
+        request.add_header("Authorization", "Basic %s" % base64string)
+        return request
+
+    def collector_rest_get(self, path):
+        api = self.collector_api()
+        request = self.collector_request(path)
+        if api["url"].startswith("https"):
+            import ssl
+            context = ssl._create_unverified_context()
+        else:
+            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        try:
+            f = urllib2.urlopen(request, context=context)
+        except urllib2.HTTPError as e:
+            try:
+                err = json.loads(e.read())["error"]
+                e = ex.excError(err)
+            except:
+                pass
+            raise e
+        import json
+        data = json.loads(f.read())
+        f.close()
+        return data
+
+    def collector_rest_get_to_file(self, path, fpath):
+        api = self.collector_api()
+        request = self.collector_request(path)
+        if api["url"].startswith("https"):
+            import ssl
+            context = ssl._create_unverified_context()
+        else:
+            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        try:
+            f = urllib2.urlopen(request, context=context)
+        except urllib2.HTTPError as e:
+            try:
+                err = json.loads(e.read())["error"]
+                e = ex.excError(err)
+            except:
+                pass
+            raise e
+        with open(fpath, 'wb') as df:
+            for chunk in iter(lambda: f.read(4096), b""):
+                df.write(chunk)
+        f.close()
+
+    def install_service_files(self, svcname):
+        if rcEnv.sysname == 'Windows':
+            return
+
+        # install svcmgr link
+        ls = os.path.join(rcEnv.pathetc, svcname)
+        s = os.path.join(rcEnv.pathbin, 'svcmgr')
+        if not os.path.exists(ls):
+            os.symlink(s, ls)
+        elif os.path.realpath(s) != os.path.realpath(ls):
+            os.unlink(ls)
+            os.symlink(s, ls)
+
+    def pull(self, svcname):
+        env = os.path.join(rcEnv.pathetc, svcname+'.env')
+        data = self.collector_rest_get("/services/"+svcname+"?props=svc_envfile&meta=0")
+        if "error" in data:
+            self.log.error(data["error"])
+            return 1
+        if len(data["data"]) == 0:
+            self.log.error("service not found on the collector")
+            return 1
+        if len(data["data"][0]["svc_envfile"]) == 0:
+            self.log.error("service has an empty configuration")
+            return 1
+        with open(env, "w") as f:
+            f.write(data["data"][0]["svc_envfile"].replace("\\n", "\n").replace("\\t", "\t"))
+        self.log.info("%s pulled" % env)
+        self.install_service_files(svcname)
 
 
 if __name__ == "__main__" :
