@@ -46,11 +46,34 @@ class diskInfo(rcDiskInfo.diskInfo):
             id = dev.replace('/dev/mapper/2', '')
         elif "dmp/" in dev:
             id = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
+        elif "Google_PersistentDisk_" in dev or "google-" in dev:
+            id = self.gce_disk_id(dev)
         else:
             id = self.scsi_id(dev)
         if len(id) == 0:
             return self.prefix_local(dev.replace('/dev/','').replace('/','!'))
         return id
+
+    def get_gce_instance_data(self):
+        if hasattr(self, "cache_instance_data"):
+            return self.cache_instance_data
+        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
+        out, err, ret = justcall(cmd)
+        import json
+        self.cache_instance_data = json.loads(out)
+        return self.cache_instance_data
+
+    def gce_disk_id(self, dev):
+        if "Google_PersistentDisk_" in dev:
+            devname = dev.split("Google_PersistentDisk_")[-1]
+        else:
+            devname = dev.split("google-")[-1]
+        gce_instance_data = self.get_gce_instance_data()
+        for disk in gce_instance_data["disks"]:
+            if disk["deviceName"] != devname:
+                continue
+            i = disk["source"].index("/project")
+            return disk["source"][i:].replace("/projects", "").replace("/zones", "").replace("/disks", "")
 
     def cciss_id(self, dev):
         if dev in self.disk_ids:
