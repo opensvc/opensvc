@@ -490,3 +490,7 @@ class Asset(rcAsset.Asset):
 
         return l
 
+if __name__ == "__main__":
+    from rcGlobalEnv import rcEnv
+    import json
+    print(json.dumps(Asset(rcEnv.nodename).get_asset_dict(), indent=4))

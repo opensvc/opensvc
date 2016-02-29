@@ -19,7 +19,7 @@ from rcGlobalEnv import rcEnv
 import os
 from subprocess import *
 import datetime
-from rcUtilities import try_decode
+from rcUtilities import try_decode, justcall, which
 
 class Asset(object):
     s_config = "node configuration file"
@@ -294,6 +294,61 @@ class Asset(object):
 
     def print_enclosure(self, s, source):
         print("enclosure (%s)"%source)
+        print("  %s"%s)
+
+    def get_connect_to(self):
+        s = None
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'connect_to')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_connect_to()
+                source = self.s_probe
+            except:
+                pass
+        if s:
+            self.print_connect_to(s, source)
+        return s
+
+    def _get_connect_to(self):
+        if self.data["model"] != "Google":
+            return
+        if not which("gcloud"):
+            return
+        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
+        out, err, ret = justcall(cmd)
+        """
+	  "networkInterfaces": [
+	    {
+	      "accessConfigs": [
+		{
+		  "kind": "compute#accessConfig",
+		  "name": "external-nat",
+		  "natIP": "23.251.137.71",
+		  "type": "ONE_TO_ONE_NAT"
+		}
+	      ],
+	      "name": "nic0",
+	      "networkIP": "10.132.0.2",
+	    }
+        """
+        import json
+        try:
+            data = json.loads(out)
+        except:
+            return
+        nics = [d for d in data["networkInterfaces"] if len(d["accessConfigs"]) > 0]
+        if len(nics) == 0:
+            return
+        for nic in nics:
+            if nic["name"] == "nic0":
+                return nic["accessConfigs"][0]["natIP"]
+        return nics[0]["accessConfigs"][0]["natIP"]
+
+    def print_connect_to(self, s, source):
+        print("connect to address (%s)"%source)
         print("  %s"%s)
 
     def get_model(self):
@@ -694,86 +749,89 @@ class Asset(object):
         print("  %s" % last)
 
     def get_asset_dict(self):
-        d = {}
-        d['nodename'] = rcEnv.nodename
-        d['fqdn'] = rcEnv.fqdn
-        d['version'] = self.get_version()
-        d['os_name'] = rcEnv.sysname
-        d['os_vendor'] = self.get_os_vendor()
-        d['os_release'] = self.get_os_release()
-        d['os_kernel'] = self.get_os_kernel()
-        d['os_arch'] = self.get_os_arch()
-        d['mem_bytes'] = self.get_mem_bytes()
-        d['mem_banks'] = self.get_mem_banks()
-        d['mem_slots'] = self.get_mem_slots()
-        d['cpu_freq'] = self.get_cpu_freq()
-        d['cpu_threads'] = self.get_cpu_threads()
-        d['cpu_cores'] = self.get_cpu_cores()
-        d['cpu_dies'] = self.get_cpu_dies()
-        d['cpu_model'] = self.get_cpu_model()
-        d['serial'] = self.get_serial()
-        d['model'] = self.get_model()
-        d['host_mode'] = self.get_host_mode()
-        d['enclosure'] = self.get_enclosure()
-        d['listener_port'] = self.get_listener_port()
+        self.data = {}
+        self.data['nodename'] = rcEnv.nodename
+        self.data['fqdn'] = rcEnv.fqdn
+        self.data['version'] = self.get_version()
+        self.data['os_name'] = rcEnv.sysname
+        self.data['os_vendor'] = self.get_os_vendor()
+        self.data['os_release'] = self.get_os_release()
+        self.data['os_kernel'] = self.get_os_kernel()
+        self.data['os_arch'] = self.get_os_arch()
+        self.data['mem_bytes'] = self.get_mem_bytes()
+        self.data['mem_banks'] = self.get_mem_banks()
+        self.data['mem_slots'] = self.get_mem_slots()
+        self.data['cpu_freq'] = self.get_cpu_freq()
+        self.data['cpu_threads'] = self.get_cpu_threads()
+        self.data['cpu_cores'] = self.get_cpu_cores()
+        self.data['cpu_dies'] = self.get_cpu_dies()
+        self.data['cpu_model'] = self.get_cpu_model()
+        self.data['serial'] = self.get_serial()
+        self.data['model'] = self.get_model()
+        self.data['host_mode'] = self.get_host_mode()
+        self.data['enclosure'] = self.get_enclosure()
+        self.data['listener_port'] = self.get_listener_port()
+	connect_to = self.get_connect_to()
+        if connect_to is not None:
+            self.data['connect_to'] = connect_to
         last_boot = self.get_last_boot()
         if last_boot is not None:
-            d['last_boot'] = last_boot
+            self.data['last_boot'] = last_boot
         sec_zone = self.get_sec_zone()
         if sec_zone is not None:
-            d['sec_zone'] = sec_zone
+            self.data['sec_zone'] = sec_zone
         environnement = self.get_environnement()
         if environnement is not None:
-            d['environnement'] = environnement
+            self.data['environnement'] = environnement
         loc_country = self.get_loc_country()
         if loc_country is not None:
-            d['loc_country'] = loc_country
+            self.data['loc_country'] = loc_country
         loc_city = self.get_loc_city()
         if loc_city is not None:
-            d['loc_city'] = loc_city
+            self.data['loc_city'] = loc_city
         loc_building = self.get_loc_building()
         if loc_building is not None:
-            d['loc_building'] = loc_building
+            self.data['loc_building'] = loc_building
         loc_room = self.get_loc_room()
         if loc_room is not None:
-            d['loc_room'] = loc_room
+            self.data['loc_room'] = loc_room
         loc_rack = self.get_loc_rack()
         if loc_rack is not None:
-            d['loc_rack'] = loc_rack
+            self.data['loc_rack'] = loc_rack
         loc_addr = self.get_loc_addr()
         if loc_addr is not None:
-            d['loc_addr'] = loc_addr
+            self.data['loc_addr'] = loc_addr
         loc_floor = self.get_loc_floor()
         if loc_floor is not None:
-            d['loc_floor'] = loc_floor
+            self.data['loc_floor'] = loc_floor
         loc_zip = self.get_loc_zip()
         if loc_zip is not None:
-            d['loc_zip'] = loc_zip
+            self.data['loc_zip'] = loc_zip
         team_responsible = self.get_team_responsible()
         if team_responsible is not None:
-            d['team_responsible'] = team_responsible
+            self.data['team_responsible'] = team_responsible
         team_integ = self.get_team_integ()
         if team_integ is not None:
-            d['team_integ'] = team_integ
+            self.data['team_integ'] = team_integ
         team_support = self.get_team_support()
         if team_support is not None:
-            d['team_support'] = team_support
+            self.data['team_support'] = team_support
         project = self.get_project()
         if project is not None:
-            d['project'] = project
+            self.data['project'] = project
         hba = self.get_hba()
         if hba is not None:
-            d['hba'] = hba
+            self.data['hba'] = hba
         targets = self.get_targets()
         if targets is not None:
-            d['targets'] = targets
+            self.data['targets'] = targets
         lan = self.get_lan()
         if lan is not None:
-            d['lan'] = lan
+            self.data['lan'] = lan
         uids = self.get_uids()
         if uids is not None:
-            d['uids'] = uids
+            self.data['uids'] = uids
         gids = self.get_gids()
         if gids is not None:
-            d['gids'] = gids
-        return d
+            self.data['gids'] = gids
+        return self.data
