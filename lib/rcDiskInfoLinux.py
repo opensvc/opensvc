@@ -73,7 +73,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             if disk["deviceName"] != devname:
                 continue
             i = disk["source"].index("/project")
-            return disk["source"][i:].replace("/projects", "").replace("/zones", "").replace("/disks", "")
+            return str(disk["source"][i:].replace("/projects", "").replace("/zones", "").replace("/disks", ""))
 
     def cciss_id(self, dev):
         if dev in self.disk_ids:
