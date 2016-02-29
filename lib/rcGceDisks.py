@@ -21,7 +21,7 @@ class GceDiskss(object):
 
 class GceDisks(object):
     def __init__(self):
-        self.keys = ['disks', 'snapshots', 'quotas']
+        self.keys = ['disks', 'snapshots', 'quotas', 'instances']
         self.name = "gce project "+rcEnv.fqdn.split(".")[-2]
 
     def get_disks(self):
@@ -36,6 +36,11 @@ class GceDisks(object):
 
     def get_quotas(self):
         cmd = ["gcloud", "compute", "regions", "list", "-q", "--format", "json"]
+        out, err, ret = justcall(cmd)
+        return out
+
+    def get_instances(self):
+        cmd = ["gcloud", "compute", "instances", "list", "-q", "--format", "json"]
         out, err, ret = justcall(cmd)
         return out
 
