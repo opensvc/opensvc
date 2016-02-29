@@ -1219,6 +1219,27 @@ class Collector(object):
             except:
                 print("error pushing", ibmds.name)
 
+    def push_gcedisks(self, objects=[], sync=True):
+        if 'update_gcedisks' not in self.proxy_methods:
+           print("'update_gcedisks' method is not exported by the collector")
+           return
+        m = __import__('rcGceDisks')
+        try:
+            arrays = m.GceDiskss(objects)
+        except:
+            return
+        for array in arrays:
+            vals = []
+            for key in array.keys:
+                vals.append(getattr(array, 'get_'+key)())
+            args = [array.name, array.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            try:
+                self.proxy.update_gcedisks(*args)
+            except Exception as e:
+                print("error pushing %s: %s" % (array.name, str(e)))
+
     def push_freenas(self, objects=[], sync=True):
         if 'update_freenas' not in self.proxy_methods:
            print("'update_freenas' method is not exported by the collector")

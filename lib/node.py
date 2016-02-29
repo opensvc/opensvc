@@ -145,6 +145,7 @@ class Node(Svc, Freezer, Scheduler):
             'pushhp3par':     'push HP 3par configuration to collector',
             'pushibmds':      'push IBM DS configuration to collector',
             'pushvioserver':  'push IBM VIO server configuration to collector',
+            'pushgcedisks':   'push Google Compute Engine disks configuration to collector',
             'pushbrocade':    'push Brocade switch configuration to collector',
             'pushnsr':        'push EMC Networker index to collector',
             'sysreport':      'push system report to the collector for archiving and diff analysis',
@@ -230,6 +231,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
 	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
 	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
+	 "pushgcedisks": SchedOpts("gcedisks", schedule_option="no_schedule"),
 	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
 	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
 	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
@@ -607,6 +609,15 @@ class Node(Svc, Freezer, Scheduler):
     @scheduler_fork
     def task_pushibmds(self):
         self.collector.call('push_ibmds', self.options.objects)
+
+    def pushgcedisks(self):
+        if self.skip_action("pushgcedisks"):
+            return
+        self.task_pushgcedisks()
+
+    @scheduler_fork
+    def task_pushgcedisks(self):
+        self.collector.call('push_gcedisks', self.options.objects)
 
     def pushfreenas(self):
         if self.skip_action("pushfreenas"):
