@@ -163,7 +163,9 @@ class Ip(resIp.Ip):
         data = self.get_gce_route_data()
         if not data:
             return False
-        return True
+        if self.routename in data:
+            return True
+        return False
 
     def has_gce_route(self):
         if not self.routename:
