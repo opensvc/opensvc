@@ -122,6 +122,9 @@ class Sysctl(object):
         if not done:
             # if key is not in sysctl.conf, get the value from kernel
             val = self.get_live_key(key['key'])
+            if val is None:
+                print >>sys.stderr, "key '%s' not found in live kernel parameters" % key['key']
+                return RET_ERR
             if target != val[index]:
                 val[index] = target
             print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
