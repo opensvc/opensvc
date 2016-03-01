@@ -322,10 +322,12 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         if not os.path.exists(run_d):
             return
         run_netns = os.path.join(run_d, nspid)
-        if os.path.exists(run_netns):
+        try:
+            os.unlink(run_netns)
             if verbose:
                 self.log.info("remove %s" % run_netns)
-            os.unlink(run_netns)
+        except:
+            pass
 
     def create_netns_link(self, nspid=None, verbose=True):
         if nspid is None:
