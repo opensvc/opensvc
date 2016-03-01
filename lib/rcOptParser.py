@@ -89,7 +89,7 @@ action_desc = {
       'json_devlist': 'provide the service device list in json format, for use by tier tools',
       'resource_monitor': 'detect monitored resource failures and trigger monitor_action',
       'stonith': 'command provided to the heartbeat daemon to fence peer node in case of split brain',
-      'docker': 'wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon',
+      'docker': 'wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The %images% and %instances% words in the wrapped command are replaced by, respectively, the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like "frontend". Note the opensvc filters must be positioned before the docker command in the arguments list.',
       'print_schedule': "print the service tasks schedule",
       'scheduler': "run the service task scheduler",
       'pg_freeze': "freeze the tasks of a process group",

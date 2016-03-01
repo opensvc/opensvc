@@ -2843,10 +2843,21 @@ class Svc(Resource, Scheduler):
         if not hasattr(self, "docker_argv"):
             print("no docker command arguments supplied", file=sys.stderr)
             return 1
+
+        def subst(argv):
+            for i, arg in enumerate(argv):
+                if arg == "%instances%":
+                    s = " ".join([r.container_name for r in containers if not r.skip and not r.disabled])
+                    argv[i] = s
+                elif arg == "%images%":
+                    s = " ".join(set([r.run_image for r in containers if not r.skip and not r.disabled]))
+                    argv[i] = s
+            return argv
+
         for r in containers:
             if hasattr(r, "docker_cmd"):
                 r.docker_start(verbose=False)
-                cmd = r.docker_cmd + self.docker_argv
+                cmd = r.docker_cmd + subst(self.docker_argv)
                 p = subprocess.Popen(cmd)
                 p.communicate()
                 return p.returncode
