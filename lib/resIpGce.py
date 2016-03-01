@@ -100,6 +100,10 @@ class Ip(resIp.Ip):
         if self.exist_gce_route():
             self.del_gce_route()
         self.add_gce_route()
+        self.svc.gce_routes_cache[self.routename] = {
+          "destRange": self.addr+"/32",
+          "nextHopInstance": rcEnv.nodename,
+        }
 
     def stop_gce_route(self):
         if not self.routename:
@@ -108,6 +112,8 @@ class Ip(resIp.Ip):
             self.log.info("gce route %s, %s to instance %s is already uninstalled" % (self.routename, self.addr, rcEnv.nodename))
             return
         self.del_gce_route()
+        self.get_gce_routes_list(refresh=True)
+        del(self.svc.gce_routes_cache[self.routename])
 
     def add_gce_route(self):
         cmd = ["gcloud", "compute", "routes", "-q", "create", self.routename,
@@ -121,22 +127,35 @@ class Ip(resIp.Ip):
         self.vcall(cmd)
 
     def get_gce_route_data(self, refresh=False):
+        data = self.get_gce_routes_list(refresh=refresh)
+        if data is None:
+            return
+        if not self.routename in data:
+            return
+        return data[self.routename]
+
+    def get_gce_routes_list(self, refresh=False):
+        if not refresh and hasattr(self.svc, "gce_routes_cache"):
+            return self.svc.gce_routes_cache
+        self.svc.gce_routes_cache = self._get_gce_routes_list()
+        return self.svc.gce_routes_cache
+
+    def _get_gce_routes_list(self):
         if not self.routename:
             return
-        if not refresh and self.gce_route_data:
-            return self.gce_route_data
-        cmd = ["gcloud", "compute", "routes", "describe", self.routename, "--format", "json"]
+        routenames = " ".join([r.routename for r in self.svc.get_resources("ip") if hasattr(r, "routename")])
+        cmd = ["gcloud", "compute", "routes", "list", "--format", "json", routenames]
         out, err, ret = justcall(cmd)
-        if "not found" in err:
-            return
         if ret != 0:
             raise ex.excError("gcloud route describe returned with error: %s, %s" % (out, err))
         try:
             data = json.loads(out)
         except:
             raise ex.excError("unable to parse gce route data: %s" % out)
-        self.gce_route_data = data
-        return data
+        h = {}
+        for route in data:
+            h[route["name"]] = route
+        return h
 
     def exist_gce_route(self):
         if not self.routename:
@@ -149,7 +168,7 @@ class Ip(resIp.Ip):
     def has_gce_route(self):
         if not self.routename:
             return True
-        data = self.get_gce_route_data(refresh=True)
+        data = self.get_gce_route_data()
         if not data:
             return False
         if data.get("destRange") != self.addr+"/32":
