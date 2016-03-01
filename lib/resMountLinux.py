@@ -125,6 +125,11 @@ class Mount(Res.Mount):
         if ret:
             return True
 
+        # might be defined as a symlink. Linux display realpaths in /proc/mounts
+        ret = self.Mounts.has_mount(os.path.realpath(self.device), os.path.realpath(self.mountPoint))
+        if ret:
+            return True
+
         # might be a mount by label or uuid
         for dev in self.devlist():
             ret = self.Mounts.has_mount(dev, self.mountPoint)
