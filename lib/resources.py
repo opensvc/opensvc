@@ -269,6 +269,7 @@ class Resource(object):
         if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_log_str = ""
             self.rstatus = self._status(verbose)
+            self.log.debug("refresh status: %s => %s" % (rcStatus.status_str(last_status), rcStatus.status_str(self.rstatus)))
             self.write_status()
 
         if restart:
