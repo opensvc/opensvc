@@ -333,6 +333,8 @@ def add_scsireserv(svc, resource, conf, section):
 
 def add_triggers(svc, resource, conf, section):
     triggers = [
+      'pre_provision', 'pre_provision',
+      'post_provision', 'post_provision',
       'pre_stop', 'pre_start',
       'post_stop', 'post_start',
       'pre_sync_nodes', 'pre_sync_drp',
