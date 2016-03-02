@@ -465,7 +465,7 @@ class Rsync(resSync.Sync):
         self.bwlimit = bwlimit
         self.internal = internal
         self.timeout = 3600
-        self.options = ['-HpogDtrlvx',
+        self.options = ['-HAXpogDtrlvx',
                         '--stats',
                         '--delete',
                         '--force',
