@@ -3351,6 +3351,24 @@ def build(name):
         svc.clustername = defaults["cluster"]
 
     #
+    # docker options
+    #
+    try:
+        svc.docker_data_dir = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_data_dir')
+    except ex.OptNotFound:
+        svc.docker_data_dir = None
+
+    try:
+        svc.docker_daemon_args = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_daemon_args').split()
+    except ex.OptNotFound:
+        svc.docker_daemon_args = []
+
+    if svc.docker_data_dir:
+        from rcDocker import DockerLib
+        if "--exec-opt" not in svc.docker_daemon_args and DockerLib().docker_min_version("1.7"):
+            svc.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
+
+    #
     # instanciate resources
     #
     try:

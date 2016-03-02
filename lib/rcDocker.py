@@ -34,11 +34,20 @@ os.environ['LANG'] = 'C'
 
 class DockerLib(object):
 
-    def get_container_id_by_name(self):
+    def get_ps(self, refresh=False):
+        if not refresh and hasattr(self.svc, "cache_docker_ps"):
+            return self.svc.cache_docker_ps
         cmd = self.docker_cmd + ['ps', '-a']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        self.svc.cache_docker_ps = out
+        return out
+
+    def get_container_id_by_name_hash(self, refresh=False):
+        if not refresh and hasattr(self.svc, "cache_docker_container_id_by_name_hash"):
+            return self.svc.cache_docker_container_id_by_name_hash
+        out = self.get_ps(refresh=refresh)
         lines = out.split('\n')
         if len(lines) < 2:
             return
@@ -46,15 +55,37 @@ class DockerLib(object):
             start = lines[0].index('NAMES')
         except:
             return
+        data = {}
         for line in lines[1:]:
-            names = line[start:].strip().split(',')
+            if len(line.strip()) == 0:
+                continue
+            try:
+                names = line[start:].strip().split(',')
+            except:
+                continue
             for name in names:
                 # swarm names are preffixed by <nodename>/
                 v = name.split("/")
-                if self.container_name == v[-1]:
-                    if len(v) == 2:
-                        self.swarm_node = v[0]
-                    return line.split()[0]
+                container_name = v[-1]
+                if len(v) == 2:
+                    swarm_node = v[0]
+                else:
+                    swarm_node = None
+                data[container_name] = {
+                  "id": line.split()[0],
+                  "swarm_node": swarm_node,
+                }
+        self.svc.cache_docker_container_id_by_name_hash = data
+        return data
+
+    def get_container_id_by_name(self, refresh=False):
+        data = self.get_container_id_by_name_hash(refresh=refresh)
+        if data is None or not self.container_name in data:
+            return
+        d = data[self.container_name]
+        if d["swarm_node"]:
+            self.swarm_node = d["swarm_node"]
+        return d["id"]
 
     def docker_min_version(self, version):
         if not hasattr(self, "docker_version"):
@@ -94,7 +125,8 @@ class DockerLib(object):
             raise ex.excError
 
         if action == 'start':
-            self.container_id = self.get_container_id_by_name()
+            self.container_id = self.get_container_id_by_name(refresh=True)
+        self.get_running_instance_ids(refresh=True)
 
     def get_run_image_id(self, run_image=None):
         if run_image is None and hasattr(self, "run_image"):
@@ -256,16 +288,8 @@ class DockerLib(object):
             self.docker_socket = proto + self.run_swarm
         else:
             self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
-        try:
-            self.docker_data_dir = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_data_dir')
-        except ex.OptNotFound:
-            self.docker_data_dir = None
-        try:
-            self.docker_daemon_args = conf_get_string_scope(self.svc, self.svc.config, 'DEFAULT', 'docker_daemon_args').split()
-        except ex.OptNotFound:
-            self.docker_daemon_args = []
-        if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
-            self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
+        self.docker_data_dir = self.svc.docker_data_dir
+        self.docker_daemon_args = self.svc.docker_daemon_args
         self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket]
 
     def docker_exe(self):

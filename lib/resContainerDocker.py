@@ -175,12 +175,20 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             self.status_log("can not find container id")
             return False
 
-        cmd = self.docker_cmd + ['ps', '-q']
-        out, err, ret = justcall(cmd)
-
-        if self.container_id in out.replace('\n', ' ').split():
+        if self.container_id in self.get_running_instance_ids():
             return True
         return False
+
+    def get_running_instance_ids(self, refresh=False):
+        if not refresh and hasattr(self.svc, "docker_running_instance_ids_cache"):
+            return self.svc.docker_running_instance_ids_cache
+        self.svc.docker_running_instance_ids_cache = self._get_running_instance_ids()
+        return self.svc.docker_running_instance_ids_cache
+
+    def _get_running_instance_ids(self):
+        cmd = self.docker_cmd + ['ps', '-q']
+        out, err, ret = justcall(cmd)
+        return out.replace('\n', ' ').split()
 
     def get_container_info(self):
         return {'vcpus': '0', 'vmem': '0'}
