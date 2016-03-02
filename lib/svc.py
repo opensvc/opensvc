@@ -2845,13 +2845,19 @@ class Svc(Resource, Scheduler):
             return 1
 
         def subst(argv):
+            n = len(argv)
             for i, arg in enumerate(argv):
                 if arg == "%instances%":
-                    s = " ".join([r.container_name for r in containers if not r.skip and not r.disabled])
-                    argv[i] = s
-                elif arg == "%images%":
-                    s = " ".join(set([r.run_image for r in containers if not r.skip and not r.disabled]))
-                    argv[i] = s
+                    del argv[i]
+                    s = [r.container_name for r in containers if not r.skip and not r.disabled]
+                    for instance in s:
+                        argv.insert(i, instance)
+            for i, arg in enumerate(argv):
+                if arg == "%images%":
+                    del argv[i]
+                    s = list(set([r.run_image for r in containers if not r.skip and not r.disabled]))
+                    for image in s:
+                        argv.insert(i, image)
             return argv
 
         for r in containers:
