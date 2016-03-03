@@ -51,6 +51,10 @@ class Asset(rcAsset.Asset):
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
 
+    def _get_tz(self):
+        # TODO: return in fmt "+01:00"
+        return
+
     def _get_mem_bytes(self):
         return str(self.memstat.ullTotalPhys // 1024 // 1024)
 

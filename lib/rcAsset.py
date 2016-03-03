@@ -296,6 +296,35 @@ class Asset(object):
         print("enclosure (%s)"%source)
         print("  %s"%s)
 
+    def get_tz(self):
+        s = None
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'tz')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_tz()
+                source = self.s_probe
+            except Exception as e:
+                print(e)
+                pass
+        if s:
+            self.print_tz(s, source)
+        return s
+
+    def _get_tz(self):
+        cmd = ["date", "+%z"]
+        out, err, ret = justcall(cmd)
+        out = out.strip()
+        if len(out) != 5:
+            return
+        return out[:3] + ":" + out[3:]
+
+    def print_tz(self, s, source):
+        print("timezone (%s)"%source)
+        print("  %s"%s)
+
     def get_connect_to(self):
         s = None
         source = self.s_default
@@ -783,6 +812,9 @@ class Asset(object):
         environnement = self.get_environnement()
         if environnement is not None:
             self.data['environnement'] = environnement
+        tz = self.get_tz()
+        if tz is not None:
+            self.data['tz'] = tz
         loc_country = self.get_loc_country()
         if loc_country is not None:
             self.data['loc_country'] = loc_country
