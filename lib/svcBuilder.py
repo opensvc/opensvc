@@ -3452,7 +3452,6 @@ def build_services(status=None, svcnames=[],
     setup_logging(svcnames)
 
     for name in svcnames:
-        fix_default_section([name])
         try:
             svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
@@ -3585,7 +3584,6 @@ def create(svcname, resources=[], interactive=False, provision=False):
     return {"ret": 0, "rid": sections.keys()}
 
 def update(svcname, resources=[], interactive=False, provision=False):
-    fix_default_section(svcname)
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
         return {"ret": 1}
@@ -3718,36 +3716,3 @@ def fix_exe_link(dst, src):
         os.unlink(src)
         os.symlink(dst, src)
 
-def _fix_default_section(svcname):
-    """ [default] section is not returned by ConfigParser.defaults()
-        [DEFAULT] is. Just replace when this occurs.
-    """
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    if not os.path.exists(envfile):
-        # nothing to fix
-        return
-    try:
-        f = open(envfile, 'r')
-    except:
-        print("failed to open", envfile, "for reading", file=sys.stderr)
-        return 1
-    found = False
-    lines = []
-    for line in f.readlines():
-        if line.startswith('[default]'):
-            line = '[DEFAULT]\n'
-            found = True
-        lines.append(line)
-    f.close()
-    if found:
-        try:
-            f = open(envfile, 'w')
-        except:
-            print("failed to open", envfile, "for writing", file=sys.stderr)
-            return 1
-        f.write(''.join(lines))
-        f.close()
-
-def fix_default_section(svcnames):
-    for svcname in svcnames:
-        _fix_default_section(svcname)
