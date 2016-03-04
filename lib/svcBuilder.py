@@ -3476,53 +3476,6 @@ def build_services(status=None, svcnames=[],
     rcLogger.set_streamformatter(services.values())
     return [ s for n, s in sorted(services.items()) ]
 
-def delete_one(svcname, rids=[]):
-    if len(svcname) == 0:
-        print("service name must not be empty", file=sys.stderr)
-        return 1
-    if svcname not in list_services():
-        print("service", svcname, "does not exist", file=sys.stderr)
-        return 0
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    with open(envfile, 'r') as f:
-        lines = f.read().split("\n")
-    need_write = False
-
-    for rid in rids:
-        section = "[%s]" % rid
-        in_section = False
-        for i, line in enumerate(lines):
-            sline = line.strip()
-            if sline == section:
-                in_section = True
-                need_write = True
-                del(lines[i])
-                while i < len(lines) and not lines[i].strip().startswith("["):
-                   del(lines[i])
-
-        if not in_section:
-            print("service", svcname, "has no resource", rid, file=sys.stderr)
-
-    if not need_write:
-        return 0
-    try:
-        with open(envfile, "w") as f:
-            f.write("\n".join(lines))
-    except:
-        print("failed to rewrite", envfile, file=sys.stderr)
-        return 1
-    return 0
-
-def delete(svcnames, rid=[]):
-    fix_default_section(svcnames)
-    if len(rid) == 0:
-        print("no resource flagged for deletion")
-        return 0
-    r = 0
-    for svcname in svcnames:
-        r |= delete_one(svcname, rid)
-    return r
-
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)

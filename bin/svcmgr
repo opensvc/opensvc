@@ -283,7 +283,7 @@ if not action in rcOptParser.supported_actions():
     parser.set_usage(__usage + rcOptParser.format_desc(action=action))
     parser.error("unsupported action")
 
-if action in ("get", "set", "unset"):
+if action in ("get", "set", "unset", "delete"):
     build_kwargs["minimal"] = True
 else:
     build_kwargs["minimal"] = False

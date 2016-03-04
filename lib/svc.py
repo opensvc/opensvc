@@ -2401,16 +2401,22 @@ class Svc(Resource, Scheduler):
         return action
 
     def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
-        rids = self.expand_rids(rid)
-        rids |= self.expand_subsets(subsets)
-        rids |= self.expand_tags(tags)
-        rids = list(rids)
-        self.log.debug("rids retained after all expansions: %s" % ";".join(rids))
+        if len(self.resources_by_id.keys()) > 0:
+            rids = self.expand_rids(rid)
+            rids |= self.expand_subsets(subsets)
+            rids |= self.expand_tags(tags)
+            rids = list(rids)
+            self.log.debug("rids retained after all expansions: %s" % ";".join(rids))
 
-        if not self.options.slaves and self.options.slave is None and \
-           len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
-            self.log.error("no resource match the given --rid, --subset and --tags specifiers")
-            return 1
+            if not self.options.slaves and self.options.slave is None and \
+               len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
+                self.log.error("no resource match the given --rid, --subset and --tags specifiers")
+                return 1
+        else:
+            # no resources certainly mean the build was done with minimal=True
+            # let the action go on. 'delete', for one, takes a --rid but does not
+            # need resource initialization
+            rids = rid
 
         self.action_rid = rids
         if self.node is None:
@@ -2498,6 +2504,7 @@ class Svc(Resource, Scheduler):
           'get',
           'set',
           'unset',
+          'delete',
           'push',
           'push_env',
           'push_appinfo',
@@ -2909,8 +2916,37 @@ class Svc(Resource, Scheduler):
         return self.set_disable(self.action_rid, True)
 
     def delete(self):
-        from svcBuilder import delete
-        return delete([self.svcname], self.action_rid)
+        if len(self.action_rid) == 0:
+            print("no resource flagged for deletion")
+            return 0
+        with open(self.pathenv, 'r') as f:
+            lines = f.read().split("\n")
+        need_write = False
+
+        for rid in self.action_rid:
+            section = "[%s]" % rid
+            in_section = False
+            for i, line in enumerate(lines):
+                sline = line.strip()
+                if sline == section:
+                    in_section = True
+                    need_write = True
+                    del(lines[i])
+                    while i < len(lines) and not lines[i].strip().startswith("["):
+                       del(lines[i])
+
+            if not in_section:
+                print("service", self.svcname, "has no resource", rid, file=sys.stderr)
+
+        if not need_write:
+            return 0
+        try:
+            with open(self.pathenv, "w") as f:
+                f.write("\n".join(lines))
+        except:
+            print("failed to rewrite", self.pathenv, file=sys.stderr)
+            return 1
+        return 0
 
     def docker(self):
         import subprocess
