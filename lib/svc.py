@@ -2345,6 +2345,8 @@ class Svc(Resource, Scheduler):
         return l
 
     def expand_rids(self, rid):
+        if len(rid) == 0:
+            return
         l = set([])
         for e in set(rid):
             if '#' in e:
@@ -2358,6 +2360,8 @@ class Svc(Resource, Scheduler):
         return l
 
     def expand_subsets(self, subsets):
+        if len(subsets) == 0:
+            return
         l = set([])
         if subsets is None:
             return l
@@ -2369,6 +2373,8 @@ class Svc(Resource, Scheduler):
         return l
 
     def expand_tags(self, tags):
+        if len(tags) == 0:
+            return
         l = set([])
         if tags is None:
             return l
@@ -2402,11 +2408,18 @@ class Svc(Resource, Scheduler):
 
     def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
         if len(self.resources_by_id.keys()) > 0:
-            rids = self.expand_rids(rid)
-            rids |= self.expand_subsets(subsets)
-            rids |= self.expand_tags(tags)
+            rids = set(self.resources_by_id.keys())
+            l = self.expand_rids(rid)
+            if l is not None:
+                rids &= l
+            l = self.expand_subsets(subsets)
+            if l is not None:
+                rids &= l
+            l = self.expand_tags(tags)
+            if l is not None:
+                rids &= l
             rids = list(rids)
-            self.log.debug("rids retained after all expansions: %s" % ";".join(rids))
+            self.log.debug("rids retained after expansions intersection: %s" % ";".join(rids))
 
             if not self.options.slaves and self.options.slave is None and \
                len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
