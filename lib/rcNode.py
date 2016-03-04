@@ -42,5 +42,6 @@ def node_get_hostmode():
 def discover_node():
     """Fill rcEnv class with information from node discovery
     """
-    rcEnv.host_mode = node_get_hostmode()
+    if not hasattr(rcEnv, "host_mode"):
+        rcEnv.host_mode = node_get_hostmode()
 
