@@ -3484,19 +3484,33 @@ def delete_one(svcname, rids=[]):
         print("service", svcname, "does not exist", file=sys.stderr)
         return 0
     envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    conf = ConfigParser.RawConfigParser()
-    conf.read(envfile)
+    with open(envfile, 'r') as f:
+        lines = f.read().split("\n")
+    need_write = False
+
     for rid in rids:
-        if not conf.has_section(rid):
-            print("service", svcname, "has not resource", rid, file=sys.stderr)
-            continue
-        conf.remove_section(rid)
+        section = "[%s]" % rid
+        in_section = False
+        for i, line in enumerate(lines):
+            sline = line.strip()
+            if sline == section:
+                in_section = True
+                need_write = True
+                del(lines[i])
+                while i < len(lines) and not lines[i].strip().startswith("["):
+                   del(lines[i])
+
+        if not in_section:
+            print("service", svcname, "has no resource", rid, file=sys.stderr)
+
+    if not need_write:
+        return 0
     try:
-       f = open(envfile, 'w')
+        with open(envfile, "w") as f:
+            f.write("\n".join(lines))
     except:
-        print("failed to open", envfile, "for writing", file=sys.stderr)
+        print("failed to rewrite", envfile, file=sys.stderr)
         return 1
-    conf.write(f)
     return 0
 
 def delete(svcnames, rid=[]):
