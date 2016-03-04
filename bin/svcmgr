@@ -217,48 +217,47 @@ parser.add_option("--like", default="%",
                   help="a sql like filtering expression. leading and trailing wildcards are automatically set.")
 
 
+build_kwargs = {}
 cluster = False
 svcnames = []
 cmd = os.path.basename(__file__)
 
-try:
-    if cmd == 'allservices':
-        node.build_services()
-    elif cmd == 'allupservices':
-        node.build_services(status=rcStatus.UP)
-        node.build_services(status=rcStatus.WARN)
-    elif cmd == 'alldownservices':
-        node.build_services(status=rcStatus.DOWN)
-    elif cmd == 'allprimaryservices':
-        node.build_services(onlyprimary=True)
-    elif cmd == 'allsecondaryservices':
-        node.build_services(onlysecondary=True)
-    elif cmd == 'svcmgr':
-        parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
-                  help="comma-separated list of service to operate on")
-        parser.add_option("--status", default=None, action="store", dest="parm_status",
-                  help="operate only on service in the specified status (up/down/warn)")
-        parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
-                  help="operate only on service flagged for autostart on this node")
-        parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
-                  help="operate only on service not flagged for autostart on this node")
-        parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
-                  help="the envfile to use when installing a service")
+if cmd == 'svcmgr':
+    parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
+              help="comma-separated list of service to operate on")
+    parser.add_option("--status", default=None, action="store", dest="parm_status",
+              help="operate only on service in the specified status (up/down/warn)")
+    parser.add_option("--onlyprimary", default=None, action="store_true", dest="parm_primary",
+              help="operate only on service flagged for autostart on this node")
+    parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
+              help="operate only on service not flagged for autostart on this node")
+    parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
+              help="the envfile to use when installing a service")
+
+if cmd == 'allservices':
+    pass
+elif cmd == 'allupservices':
+    build_kwargs["status"] = [rcStatus.UP, rcStatus.WARN]
+elif cmd == 'alldownservices':
+    build_kwargs["status"] = [rcStatus.DOWN]
+elif cmd == 'allprimaryservices':
+    build_kwargs["onlyprimary"] = True
+elif cmd == 'allsecondaryservices':
+    build_kwargs["onlysecondary"] = True
+elif cmd == 'svcmgr':
+    pass
+else:
+    svcname = cmd.split('.')
+    if len(svcname) > 1 and svcname[-1] == 'cluster':
+        cluster = True
+        svcname = ".".join(svcname[:-1])
+    elif len(svcname) > 1 and svcname[-1] == 'stonith':
+        cluster = True
+        svcname = ".".join(svcname[:-1])
+        args = ["stonith"]
     else:
-        svcname = cmd.split('.')
-        if len(svcname) > 1 and svcname[-1] == 'cluster':
-                cluster = True
-                svcname = ".".join(svcname[:-1])
-        elif len(svcname) > 1 and svcname[-1] == 'stonith':
-                cluster = True
-                svcname = ".".join(svcname[:-1])
-                action = "stonith"
-        else:
-            svcname = cmd
-        node.build_services(svcnames=svcname)
-except ex.excError as e:
-    print("build error:", e)
-    build_err = True
+        svcname = cmd
+    build_kwargs["svcnames"] = svcname
 
 docker_argv = None
 if len(sys.argv) > 1 and 'docker' in sys.argv:
@@ -270,9 +269,6 @@ if len(sys.argv) > 1 and 'docker' in sys.argv:
     sys.argv = sys.argv[:pos+1]
 
 (options, args) = parser.parse_args()
-
-if action is not None:
-    args = ['stonith']
 
 if len(args) is 0:
     node.close()
@@ -287,18 +283,18 @@ if not action in rcOptParser.supported_actions():
     parser.set_usage(__usage + rcOptParser.format_desc(action=action))
     parser.error("unsupported action")
 
-if node.svcs is None and action not in ("create", "pull"):
-    parm_primary = False
-    parm_secondary = False
-    parm_status = None
+if action in ("get", "set", "unset"):
+    build_kwargs["minimal"] = True
+else:
+    build_kwargs["minimal"] = False
 
+
+if len(set(["svcnames", "allupservices", "alldownservices", "status", "allprimaryservices", "allsecondaryservices"]) & set(build_kwargs.keys())) == 0:
     if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-        svcnames = options.parm_svcs.split(',')
+        build_kwargs["svcnames"] = options.parm_svcs.split(',')
 
     if hasattr(options, "parm_status") and options.parm_status is not None:
-        status = rcStatus.status_value(options.parm_status)
-    else:
-        status = None
+        build_kwargs["status"] = [rcStatus.status_value(s) for s in options.parm_status.split(",")]
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None and \
        hasattr(options, "parm_secondary") and options.parm_secondary is not None:
@@ -306,21 +302,16 @@ if node.svcs is None and action not in ("create", "pull"):
         parser.error("--onlyprimary and --onlysecondary are exclusive")
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None:
-        onlyprimary = options.parm_primary
-    else:
-        onlyprimary = False
+        build_kwargs["onlyprimary"] = options.parm_primary
 
     if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-        onlysecondary = options.parm_secondary
-    else:
-        onlysecondary = False
+        build_kwargs["onlysecondary"] = options.parm_secondary
 
+if action not in ("create", "pull"):
     try:
-        node.build_services(svcnames=svcnames,
-                            status=status,
-                            onlyprimary=onlyprimary,
-                            onlysecondary=onlysecondary)
-    except ex.excError:
+        node.build_services(**build_kwargs)
+    except ex.excError as e:
+        print("build error:", e)
         build_err = True
 
 if node.svcs is not None:
@@ -336,8 +327,9 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
  alldownservices
  allprimaryservices
  allsecondaryservices
- svcmgr -s svcname,...
- svcname
+ svcmgr -s <svcname>[,<svcname>]
+ svcmgr --status <status>[,<status>]
+ <svcname>
 """)
     _exit(1)
 
@@ -383,7 +375,7 @@ if action in ['create', 'update', 'install']:
         del(node.svcs)
         node.svcs = None
         try:
-            node.build_services(svcnames=svcnames, autopush=False)
+            node.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
         except ex.excError as e:
             print("build error:", e, file=sys.stderr)
             build_err = True

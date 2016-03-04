@@ -3059,7 +3059,7 @@ def setup_logging(svcnames):
     rcLogger.max_svcname_len = max_svcname_len
     log = rcLogger.initLogger('init')
 
-def build(name):
+def build(name, minimal=False):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
@@ -3154,6 +3154,23 @@ def build(name):
     svc.conf = svcconf
     svc.initd = svcinitd
     svc.config = conf
+
+    #
+    # Store and validate the service type
+    #
+    if not hasattr(svc, "service_type"):
+        if "service_type" in defaults:
+            svc.svctype = defaults["service_type"]
+        else:
+            svc.svctype = ''
+
+    if svc.svctype not in rcEnv.allowed_svctype:
+        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(rcEnv.allowed_svctype)))
+        del(svc)
+        return None
+
+    if minimal:
+        return svc
 
     #
     # Setup service properties from config file content
@@ -3303,17 +3320,6 @@ def build(name):
     except ex.OptNotFound:
         svc.show_disabled = True
 
-    if not hasattr(svc, "service_type"):
-        if "service_type" in defaults:
-            svc.svctype = defaults["service_type"]
-        else:
-            svc.svctype = ''
-
-    if svc.svctype not in rcEnv.allowed_svctype:
-        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(rcEnv.allowed_svctype)))
-        del(svc)
-        return None
-
     """ prune service whose service type does not match host mode
     """
     if svc.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
@@ -3429,7 +3435,7 @@ def list_services():
     return l
 
 def build_services(status=None, svcnames=[],
-                   onlyprimary=False, onlysecondary=False):
+                   onlyprimary=False, onlysecondary=False, minimal=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
@@ -3448,7 +3454,7 @@ def build_services(status=None, svcnames=[],
     for name in svcnames:
         fix_default_section([name])
         try:
-            svc = build(name)
+            svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
             log.error(str(e))
             continue
@@ -3460,7 +3466,7 @@ def build_services(status=None, svcnames=[],
             continue
         if svc is None :
             continue
-        if status is not None and svc.status() != status:
+        if status is not None and not svc.status() in status:
             continue
         if onlyprimary and rcEnv.nodename not in svc.autostart_node:
             continue
