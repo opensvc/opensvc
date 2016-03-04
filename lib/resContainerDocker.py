@@ -148,7 +148,10 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             inspect = self.docker_inspect(self.container_id)
         except Exception as e:
             return s
-        running_image_id = str(inspect['Image'][:12])
+       if self.docker_min_version("1.10"):
+               running_image_id = str(inspect['Image'][7:19])
+       else:
+               running_image_id = str(inspect['Image'][:12])
         run_image_id = self.get_run_image_id()
 
         if run_image_id != running_image_id:
