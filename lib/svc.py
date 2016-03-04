@@ -2497,6 +2497,7 @@ class Svc(Resource, Scheduler):
         actions_list_no_log = [
           'get',
           'set',
+          'unset',
           'push',
           'push_env',
           'push_appinfo',
@@ -2741,15 +2742,40 @@ class Svc(Resource, Scheduler):
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
-        if section != 'DEFAULT' and not self.config.has_section(section):
-            print("section '%s' not found"%section, file=sys.stderr)
+        section = "[%s]" % section
+        with open(self.pathenv, 'r') as f:
+            lines = f.read().split("\n")
+
+        need_write = False
+        in_section = False
+        for i, line in enumerate(lines):
+            sline = line.strip()
+            if sline == section:
+                in_section = True
+            elif in_section:
+                if sline.startswith("["):
+                    break
+                elif "=" in sline:
+                    v = sline.split("=")
+                    _option = v[0].strip()
+                    if option != _option:
+                        continue
+                    del(lines[i])
+                    need_write = True
+                    while i < len(lines) and "=" not in lines[i] and not lines[i].strip().startswith("[") and lines[i].strip() != "":
+                        del(lines[i])
+
+        if not in_section:
+            print("section %s not found"%section, file=sys.stderr)
             return 1
-        if not self.config.has_option(section, option):
-            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
+
+        if not need_write:
+            print("option '%s' not found in section %s"%(option, section), file=sys.stderr)
             return 1
+
         try:
-            self.config.remove_option(section, option)
-            self.write_config()
+            with open(self.pathenv, "w") as f:
+                f.write("\n".join(lines))
         except:
             return 1
         return 0
@@ -2765,10 +2791,10 @@ class Svc(Resource, Scheduler):
             return 1
         section, option = l
         if section != 'DEFAULT' and not self.config.has_section(section):
-            print("section '%s' not found"%section, file=sys.stderr)
+            print("section [%s] not found"%section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
+            print("option '%s' not found in section [%s]"%(option, section), file=sys.stderr)
             return 1
         print(self.config.get(section, option))
         return 0
@@ -2786,14 +2812,63 @@ class Svc(Resource, Scheduler):
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
-        if section != 'DEFAULT' and not self.config.has_section(section):
-            self.config.add_section(section)
-        if self.config.has_option(section, option) and \
-           self.config.get(section, option) == self.options.value:
-            return
-        self.config.set(section, option, self.options.value)
+        section = "[%s]" % section
+        with open(self.pathenv, 'r') as f:
+            lines = f.read().split("\n")
+
+        done = False
+        in_section = False
+        for i, line in enumerate(lines):
+            sline = line.strip()
+            if sline == section:
+                in_section = True
+            elif in_section:
+                if sline.startswith("[") and not done:
+                    # section found and parsed and no option => add option
+                    j = i
+                    while j > 0 and lines[j-1].strip() == "":
+                        j -= 1
+                    lines.insert(j, "%s = %s" % (option, self.options.value))
+                    done = True
+                    break
+                elif "=" in sline:
+                    v = sline.split("=")
+                    _option = v[0].strip()
+                    if option != _option:
+                        continue
+                    if done:
+                        # option already set : remove dup
+                        del(lines[i])
+                        while i < len(lines) and "=" not in lines[i] and not lines[i].strip().startswith("[") and lines[i].strip() != "":
+                            del(lines[i])
+                        continue
+                    _value = v[1].strip()
+                    j = i
+                    while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("["):
+                        j += 1
+                        if lines[j].strip() == "":
+                            continue
+                        _value += " %s" % lines[j].strip()
+                    if self.options.value.replace("\n", " ") == _value:
+                        return 0
+                    lines[i] = "%s = %s" % (option, self.options.value)
+                    j = i
+                    while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("[") and lines[j+1].strip() != "":
+                        del(lines[j+1])
+                    done = True
+
+        if not done:
+            while lines[-1].strip() == "":
+                lines.pop()
+            if not in_section:
+                # section in last position and no option => add section
+                lines.append("")
+                lines.append(section)
+            lines.append("%s = %s" % (option, self.options.value))
+
         try:
-            self.write_config()
+            with open(self.pathenv, "w") as f:
+                f.write("\n".join(lines))
         except:
             return 1
         return 0
