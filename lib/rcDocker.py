@@ -150,19 +150,30 @@ class DockerLib(object):
                 return l[2]
         return run_image
 
-    def image_userfriendly_name(self):
-        if ':' in self.run_image:
-            return self.run_image
+    def get_images(self):
+        if hasattr(self.svc, "docker_images_cache"):
+            return self.svc.docker_images_cache
         cmd = self.docker_cmd + ['images']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            return self.run_image
+            return
+        data = {}
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 3:
                 continue
-            if l[2] == self.run_image:
-                return l[0]+':'+l[1]
+            data[l[2]] = l[0]+':'+l[1]
+        self.svc.docker_images_cache = data
+        return data
+
+    def image_userfriendly_name(self):
+        if ':' in self.run_image:
+            return self.run_image
+        images = self.get_images()
+        if images is None:
+            return self.run_image
+        if self.run_image in images:
+            return images[self.run_image]
         return self.run_image
         
     def docker_inspect(self, id):
