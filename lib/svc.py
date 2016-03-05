@@ -2422,7 +2422,7 @@ class Svc(Resource, Scheduler):
 
     def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
         if len(self.resources_by_id.keys()) > 0:
-            rids = set(self.resources_by_id.keys())
+            rids = set(self.resources_by_id.keys()) - set([None])
             l = self.expand_rids(rid)
             if l is not None:
                 rids &= l
