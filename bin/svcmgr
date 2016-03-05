@@ -155,7 +155,7 @@ parser.add_option("--rid", default=None, action="store", dest="parm_rid",
 parser.add_option("--subsets", default=None, action="store", dest="parm_subsets",
                   help="comma-separated list of resource subsets to limit action to")
 parser.add_option("--tags", default=None, action="store", dest="parm_tags",
-                  help="comma-separated list of resource tags to limit action to")
+                  help="comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.")
 parser.add_option("--resource", default=[], action="append",
                   help="a resource definition in json dictionary format fed to create or update")
 parser.add_option("--provision", default=False, action="store_true", dest="provision",
@@ -351,14 +351,14 @@ else:
    slave = None
 
 if options.parm_tags is not None:
-   tags = set(options.parm_tags.split(','))
+   tags = options.parm_tags.replace("+", ",+").split(',')
 else:
-   tags = set([])
+   tags = []
 
 if options.parm_subsets is not None:
-   subsets = set(options.parm_subsets.split(','))
+   subsets = options.parm_subsets.split(',')
 else:
-   subsets = set([])
+   subsets = []
 
 if action in ['create', 'update', 'install']:
     if action in ['create', 'update']:

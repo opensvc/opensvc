@@ -2360,11 +2360,9 @@ class Svc(Resource, Scheduler):
         return l
 
     def expand_subsets(self, subsets):
-        if len(subsets) == 0:
+        if len(subsets) == 0 or subsets is None:
             return
         l = set([])
-        if subsets is None:
-            return l
         for r in self.resources_by_id.values():
             if r.subset in subsets:
                 l.add(r.rid)
@@ -2373,14 +2371,30 @@ class Svc(Resource, Scheduler):
         return l
 
     def expand_tags(self, tags):
-        if len(tags) == 0:
+        if len(tags) == 0 or tags is None:
             return
         l = set([])
-        if tags is None:
-            return l
-        for r in self.resources_by_id.values():
-            if len(r.tags & tags) > 0:
-                l.add(r.rid)
+        unions = []
+        intersection = []
+        for i, tag in enumerate(tags):
+            if tag[0] == "+":
+                tag = tag[1:]
+                intersection.append(tag)
+                if i == len(tags) - 1:
+                    unions.append(intersection)
+            else:
+                if len(intersection) > 0:
+                    # new intersection, store the current
+                    unions.append(intersection)
+                # open a new intersection
+                intersection = [tag]
+                if i == len(tags) - 1:
+                    unions.append(intersection)
+
+        for intersection in unions:
+            for r in self.resources_by_id.values():
+                if set(intersection) & r.tags == set(intersection):
+                    l.add(r.rid)
         if len(l) > 0:
             self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
         return l
@@ -2406,7 +2420,7 @@ class Svc(Resource, Scheduler):
             return translation[action]
         return action
 
-    def action(self, action, rid=[], tags=set([]), subsets=set([]), xtags=set([]), waitlock=60):
+    def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.resources_by_id.keys())
             l = self.expand_rids(rid)
@@ -2422,7 +2436,7 @@ class Svc(Resource, Scheduler):
             self.log.debug("rids retained after expansions intersection: %s" % ";".join(rids))
 
             if not self.options.slaves and self.options.slave is None and \
-               len(set(rid) | subsets | tags) > 0 and len(rids) == 0:
+               len(set(rid) | set(subsets) | set(tags)) > 0 and len(rids) == 0:
                 self.log.error("no resource match the given --rid, --subset and --tags specifiers")
                 return 1
         else:
