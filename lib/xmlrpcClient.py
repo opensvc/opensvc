@@ -19,13 +19,13 @@
 #
 from __future__ import print_function
 import socket
+import sys
 socket.setdefaulttimeout(180)
 
-try:
+kwargs = {}
+if sys.hexversion >= 0x02070900:
     import ssl
-    context = ssl._create_unverified_context()
-except:
-    context = None
+    kwargs["context"] = ssl._create_unverified_context()
 
 try:
     import xmlrpclib
@@ -39,7 +39,7 @@ except ImportError:
 
 def get_proxy(uri):
     try:
-        return xmlrpclib.ServerProxy(uri, context=context)
+        return xmlrpclib.ServerProxy(uri, **kwargs)
     except Exception as e:
         if "__init__" in str(e):
             return xmlrpclib.ServerProxy(uri)

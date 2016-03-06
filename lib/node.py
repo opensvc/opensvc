@@ -1006,12 +1006,10 @@ class Node(Svc, Freezer, Scheduler):
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         kwargs = {}
-        try:
+        if sys.hexversion >= 0x02070900:
             import ssl
             context = ssl._create_unverified_context()
             kwargs['context'] = context
-        except:
-            pass
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
         except IOError as e:
@@ -1094,12 +1092,10 @@ class Node(Svc, Freezer, Scheduler):
         print("get %s (%s)"%(pkg_name, tmpf))
         import urllib
         kwargs = {}
-        try:
+        if sys.hexversion >= 0x02070900:
             import ssl
             context = ssl._create_unverified_context()
             kwargs['context'] = context
-        except:
-            pass
         try:
             fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
         except IOError as e:
@@ -1467,13 +1463,14 @@ class Node(Svc, Freezer, Scheduler):
     def collector_rest_get(self, path):
         api = self.collector_api()
         request = self.collector_request(path)
-        if api["url"].startswith("https"):
-            import ssl
-            context = ssl._create_unverified_context()
-        else:
+        if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        kwargs = {}
+        if sys.hexversion >= 0x02070900:
+            import ssl
+            kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, context=context)
+            f = urllib2.urlopen(request, *kwargs)
         except urllib2.HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
@@ -1490,12 +1487,13 @@ class Node(Svc, Freezer, Scheduler):
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
-            import ssl
-            context = ssl._create_unverified_context()
-        else:
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        kwargs = {}
+        if sys.hexversion >= 0x02070900:
+            import ssl
+            kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, context=context)
+            f = urllib2.urlopen(request, **kwargs)
         except urllib2.HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
