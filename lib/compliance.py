@@ -345,8 +345,15 @@ class Compliance(object):
             raise ex.excError('--moduleset and --module are exclusive')
 
         if self.data is None:
-            self.data = self.get_comp_data()
+            try:
+                self.data = self.get_comp_data()
+            except Exception as e:
+                raise ex.excError(str(e))
             if self.data is None:
+                raise ex.excError("could not fetch compliance data from the collector")
+            if "ret" in self.data and self.data["ret"] == 1:
+                if "msg" in self.data:
+                    raise ex.excError(self.data["msg"])
                 raise ex.excError("could not fetch compliance data from the collector")
             modulesets = []
             if self.options.moduleset != "":
@@ -530,7 +537,18 @@ class Compliance(object):
                 for _ms in data["modset_relations"][ms]:
                     recurse(_ms, depth+1)
 
-        data = self.get_moduleset()
+        try:
+            data = self.get_moduleset()
+        except Exception as e:
+            print(e, file=sys.stderr)
+            return 1
+        if "ret" in data and data["ret"] == 1:
+            if "msg" in data:
+                print(data["msg"], file=sys.stderr)
+            return 1
+        if "root_modulesets" not in data:
+            print("(none)")
+            return 0
         for ms in data["root_modulesets"]:
             recurse(ms)
 
