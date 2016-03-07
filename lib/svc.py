@@ -1723,11 +1723,40 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
 
     def abort_start(self):
+        if rcEnv.sysname == "Windows":
+            mp = False
+        else:
+            try:
+                from multiprocessing import Process
+                mp = True
+                def wrapper(fn):
+                    if fn():
+                        sys.exit(1)
+            except:
+                mp = False
+
+        ps = {}
         for r in self.get_resources():
             if r.skip or r.disabled:
                 continue
-            if hasattr(r, 'abort_start') and r.abort_start():
-                raise ex.excError("start aborted due to resource %s conflict"%r.rid)
+            if not hasattr(r, 'abort_start'):
+                continue
+            if not mp:
+                if r.abort_start():
+                    raise ex.excError("start aborted due to resource %s conflict"%r.rid)
+            else:
+                p = Process(target=wrapper, args=[r.abort_start])
+                p.start()
+                ps[r.rid] = p
+
+        if mp:
+            err = []
+            for rid, p in ps.items():
+                p.join()
+                if p.exitcode > 0:
+                    err.append(rid)
+        if len(err) > 0:
+            raise ex.excError("start aborted due to resource %s conflict" % ",".join(err))
 
     def startip(self):
         self.master_startip()
