@@ -163,7 +163,7 @@ class Ip(resIp.Ip):
         data = self.get_gce_route_data()
         if not data:
             return False
-        if self.routename in data:
+        if data:
             return True
         return False
 
