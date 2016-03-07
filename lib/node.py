@@ -1470,7 +1470,7 @@ class Node(Svc, Freezer, Scheduler):
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, *kwargs)
+            f = urllib2.urlopen(request, **kwargs)
         except urllib2.HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
