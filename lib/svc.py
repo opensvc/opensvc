@@ -2595,6 +2595,10 @@ class Svc(Resource, Scheduler):
     def do_action(self, action, waitlock=60):
         """Trigger action
         """
+        if self.cluster and "flex" in self.clustertype and rcEnv.nodename == self.flex_primary:
+            a = [e for e in sys.argv[1:] if e != "--cluster"]
+            for n in set(self.nodes) - set([rcEnv.nodename]):
+                self.remote_action(node=n, action=" ".join(a))
         err = 0
         try:
             self.svclock(action, timeout=waitlock)
