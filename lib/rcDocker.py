@@ -224,6 +224,14 @@ class DockerLib(object):
         return cmd
 
     def docker_start(self, verbose=True):
+        import lock
+        lockfile = os.path.join(rcEnv.pathlock, 'docker_start')
+        try:
+            lockfd = lock.lock(timeout=5, delay=1, lockfile=lockfile)
+        except:
+            self.log.debug("dockerd start lock already held")
+            return
+
         # Sanity checks before deciding to start the daemon
         if self.docker_running():
             return
@@ -260,6 +268,7 @@ class DockerLib(object):
                 self.container_id = self.get_container_id_by_name()
                 return
             time.sleep(1)
+        lock.unlock(lockfd)
 
     def docker_running(self):
         if not os.path.exists(self.docker_pid_file):
