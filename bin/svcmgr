@@ -307,17 +307,17 @@ if len(set(["svcnames", "allupservices", "alldownservices", "status", "allprimar
     if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
         build_kwargs["onlysecondary"] = options.parm_secondary
 
-if action not in ("create", "pull"):
+if action not in ("create"):
     try:
         node.build_services(**build_kwargs)
     except ex.excError as e:
-        print("build error:", e)
-        build_err = True
+        if not action in ("pull"):
+            print("build error:", e)
+            build_err = True
 
-if node.svcs is not None:
+if node.svcs is not None and len(node.svcs) > 0:
     svcnames = map(lambda x: x.svcname, node.svcs)
-
-if action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
     svcnames = options.parm_svcs.split(',')
 
 if cmd == 'svcmgr' and len(svcnames) == 0:
@@ -333,7 +333,7 @@ if cmd == 'svcmgr' and len(svcnames) == 0:
 """)
     _exit(1)
 
-if action == 'pull':
+if action == 'pull' and (node.svcs is None or len(node.svcs) == 0):
     r = pull_service(svcnames)
     sys.exit(r)
 

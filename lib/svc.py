@@ -3054,6 +3054,9 @@ class Svc(Resource, Scheduler):
     def frozen(self):
         return self.freezer.frozen()
 
+    def pull(self):
+        self.node.pull(self.svcname)
+
 if __name__ == "__main__" :
     for c in (Svc,) :
         help(c)
