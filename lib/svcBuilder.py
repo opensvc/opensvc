@@ -824,11 +824,6 @@ def add_disk_gce(svc, conf, s):
         svc.log.error("gce_zone must be set in section %s"%s)
         return
 
-    try:
-        kwargs['detach_on_stop'] = conf_get_boolean_scope(svc, conf, s, 'detach_on_stop')
-    except ex.OptNotFound:
-        pass
-
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)

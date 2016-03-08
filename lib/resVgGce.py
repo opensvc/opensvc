@@ -29,7 +29,6 @@ class Vg(resDg.Dg):
                  type="disk.gce",
                  names=set([]),
                  gce_zone=None,
-                 detach_on_stop=True,
                  optional=False,
                  disabled=False,
                  tags=set([]),

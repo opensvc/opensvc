@@ -1542,22 +1542,6 @@ class KeywordDiskGceZone(Keyword):
                   example="europe-west1-b"
                 )
 
-class KeywordDiskGceDetachOnStop(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="disk",
-                  rtype="gce",
-                  keyword="detach_on_stop",
-                  provisioning=False,
-                  order=3,
-                  at=True,
-                  required=False,
-                  default=True,
-                  text="Set to false when you don't switch the attachment frequently, to speed up the stop and subsequent start actions.",
-                  example="europe-west1-b"
-                )
-
 class KeywordDiskGceDescription(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3188,7 +3172,6 @@ class KeyDict(KeywordStore):
         self += KeywordIpGceRoutename()
         self += KeywordDiskGceNames()
         self += KeywordDiskGceZone()
-        self += KeywordDiskGceDetachOnStop()
         self += KeywordDiskGceDescription()
         self += KeywordDiskGceImage()
         self += KeywordDiskGceImageProject()
