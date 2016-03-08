@@ -174,6 +174,8 @@ class Ip(Res.Resource):
                     self.log.info("switch %s to valid alternate path %s" % (self.ipDev, l[0].name))
                     intf = l[0]
                     self.ipDev = l[0].name
+            elif hasattr(self, "start_link"):
+                    self.start_link()
             else:
                 self.log.error("interface %s is not up. Cannot stack over it." % self.ipDev)
                 raise ex.IpDevDown(self.ipDev)

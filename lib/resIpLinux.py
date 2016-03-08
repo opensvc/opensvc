@@ -22,12 +22,21 @@
 
 import resIp as Res
 import rcExceptions as ex
-from rcUtilitiesLinux import check_ping
+from rcUtilitiesLinux import check_ping, which
 
 class Ip(Res.Ip):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
         return check_ping(self.addr, timeout=timeout, count=count)
+
+    def start_link(self):
+        if which("ip"):
+           cmd = ['ip', 'link', 'set', 'dev', self.ipDev, 'up']
+        else:
+           cmd = ['ifconfig', self.ipDev, 'up']
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
 
     def startip_cmd(self):
         if ':' in self.addr:
