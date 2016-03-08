@@ -455,6 +455,11 @@ class Asset(rcAsset.Asset):
         if hba_id is not None:
             l.append((hba_id, hba_type, ''))
 
+        # gce
+        if self._get_model() == "Google":
+            from rcGlobalEnv import rcEnv
+            l.append((rcEnv.nodename, "virtual", ''))
+
         return l
 
     def _get_hba(self):
@@ -487,6 +492,22 @@ class Asset(rcAsset.Asset):
                    if len(line) == 0:
                        continue
                    l.append((hba_id, line.split()[-1]))
+
+        # gce
+        if self._get_model() == "Google":
+            try:
+                cmd = ["gcloud", "compute", "regions", "list", "-q", "--format", "json"]
+                out, err, ret = justcall(cmd)
+                import json
+                from rcGlobalEnv import rcEnv
+                data = json.loads(out)
+                hba_id = rcEnv.nodename
+                for region in data:
+                    i = region["selfLink"].index("/projects")
+                    tgt_id = region["selfLink"][i:].replace("/projects", "").replace("/regions", "")
+                    l.append((hba_id, tgt_id))
+            except:
+                pass
 
         return l
 
