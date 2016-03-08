@@ -2021,7 +2021,7 @@ class Svc(Resource, Scheduler):
 
         self.need_postsync = set([])
 
-    def remote_action(self, node, action, waitlock=60, sync=False):
+    def remote_action(self, node, action, waitlock=60, sync=False, verbose=True):
         if self.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
@@ -2036,7 +2036,8 @@ class Svc(Resource, Scheduler):
             rcmd += ['--cron']
         rcmd += ['--waitlock', str(waitlock)] + action.split()
         cmd = rcEnv.rsh.split() + [node] + rcmd
-        self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+        if verbose:
+            self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
         if sync:
             out, err, ret = justcall(cmd)
             return out, err, ret
@@ -2592,19 +2593,62 @@ class Svc(Resource, Scheduler):
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
 
+    def do_cluster_action(self, action, waitlock=60):
+        if not self.cluster:
+            return
+        if not "flex" in self.clustertype:
+            return
+        if rcEnv.nodename != self.flex_primary:
+            return
+
+        a = [e for e in sys.argv[1:] if e != "--cluster"]
+        if hasattr(self, "docker_argv") and len(self.docker_argv) > 0:
+            a += self.docker_argv
+
+        def wrapper(**kwargs):
+            out, err, ret = self.remote_action(**kwargs)
+            if len(out):
+                print(out)
+            if len(err):
+                print(err)
+
+        if rcEnv.sysname == "Windows":
+            mp = False
+        else:
+            try:
+                from multiprocessing import Process
+                mp = True
+                    
+            except:
+                mp = False
+
+        ps = {}
+        for n in set(self.nodes) - set([rcEnv.nodename]):
+            kwargs = {"node": n, "action": " ".join(a), "waitlock": waitlock, "verbose": False, "sync": True}
+            if mp:
+                p = Process(target=wrapper, args=[], kwargs=kwargs)
+                p.start()
+                ps[n] = p
+            else:
+                wrapper(**kwargs)
+        return ps
+
+    def join_cluster_action(self, ps):
+        for n, p in ps.items():
+            p.join()
+
     def do_action(self, action, waitlock=60):
         """Trigger action
         """
-        if self.cluster and "flex" in self.clustertype and rcEnv.nodename == self.flex_primary:
-            a = [e for e in sys.argv[1:] if e != "--cluster"]
-            for n in set(self.nodes) - set([rcEnv.nodename]):
-                self.remote_action(node=n, action=" ".join(a))
+
         err = 0
         try:
             self.svclock(action, timeout=waitlock)
         except Exception as e:
             self.log.error(str(e))
             return 1
+
+        ps = self.do_cluster_action(action, waitlock=waitlock)
 
         try:
             if action.startswith("compliance_"):
@@ -2667,6 +2711,8 @@ class Svc(Resource, Scheduler):
                     if r.disabled:
                         continue
                     r.force_status(rcStatus.UP)
+
+        self.join_cluster_action(ps)
 
         return err
 
