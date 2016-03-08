@@ -2634,6 +2634,8 @@ class Svc(Resource, Scheduler):
         return ps
 
     def join_cluster_action(self, ps):
+        if ps is None:
+            return
         for n, p in ps.items():
             p.join()
 
