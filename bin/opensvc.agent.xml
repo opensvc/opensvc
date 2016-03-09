@@ -1,0 +1,39 @@
+<?xml version='1.0'?>
+<!DOCTYPE service_bundle SYSTEM '/usr/share/lib/xml/dtd/service_bundle.dtd.1'>
+<service_bundle type='manifest' name='site/application/opensvc'>
+  <service name='site/application/opensvc' type='service' version='0'>
+    <dependency name='multi_user_dependency' grouping='require_all' restart_on='none' type='service'>
+      <service_fmri value='svc:/milestone/multi-user'/>
+    </dependency>
+    <property_group name='startd' type='framework'>
+      <propval name='duration' type='astring' value='transient'/>
+    </property_group>
+    <instance name='boot' enabled='true'>
+      <dependency name='opensvc_d_zones' grouping='require_all' restart_on='none' type='service'>
+        <service_fmri value='svc:/system/zones:default'/>
+      </dependency>
+      <dependency name='opensvc_d_postinstall' grouping='require_all' restart_on='none' type='service'>
+        <service_fmri value='svc:/site/application/opensvc:postinstall'/>
+      </dependency>
+      <exec_method name='start' type='method' exec='/opt/opensvc/bin/opensvc.init.SunOS start' timeout_seconds='0'/>
+      <exec_method name='stop' type='method' exec='/opt/opensvc/bin/opensvc.init.SunOS stop' timeout_seconds='0'/>
+      <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
+      <property_group name='boot' type='application'>
+        <propval name='firstrun' type='astring' value='done'/>
+      </property_group>
+    </instance>
+    <instance name='postinstall' enabled='true'>
+      <exec_method name='start' type='method' exec='/opt/opensvc/bin/postinstall' timeout_seconds='60'/>
+      <exec_method name='stop' type='method' exec=':true' timeout_seconds='60'/>
+      <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
+    </instance>
+    <template>
+      <common_name>
+        <loctext xml:lang='C'>OpenSVC Agent</loctext>
+      </common_name>
+      <description>
+        <loctext xml:lang='C'>OpenSVC Agent software stack</loctext>
+      </description>
+    </template>
+  </service>
+</service_bundle>
