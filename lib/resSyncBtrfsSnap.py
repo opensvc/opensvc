@@ -29,6 +29,7 @@ from rcUtilities import justcall
 class syncBtrfsSnap(resSync.Sync):
     def __init__(self,
                  rid=None,
+                 name=None,
                  subvol=[],
                  keep=1,
                  sync_max_delay=None,
@@ -47,9 +48,13 @@ class syncBtrfsSnap(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        self.label = "btrfs snapshot %s" % ", ".join(subvol)
+        if name:
+            self.label = "btrfs '%s' snapshot %s" % (name, ", ".join(subvol))
+        else:
+            self.label = "btrfs snapshot %s" % ", ".join(subvol)
         self.subvol = subvol
         self.keep = keep
+        self.name = name
         self.btrfs = {}
 
     def on_add(self):
@@ -67,7 +72,6 @@ class syncBtrfsSnap(resSync.Sync):
 
     def stop(self):
         for s in self.subvol:
-            print("here")
             try:
                 label, subvol = s.split(":")
             except:
@@ -90,7 +94,12 @@ class syncBtrfsSnap(resSync.Sync):
         btrfs = self.get_btrfs(label)
         orig = os.path.join(btrfs.rootdir, subvol)
         snap = os.path.join(btrfs.rootdir, subvol)
-        snap += datetime.datetime.now().strftime(".snap.%Y-%m-%d.%H:%M:%S")
+        if self.name:
+            suffix = "."+self.name
+        else:
+            suffix = ""
+        suffix += ".snap.%Y-%m-%d.%H:%M:%S"
+        snap += datetime.datetime.now().strftime(suffix)
         try:
             btrfs.snapshot(orig, snap, readonly=True, recursive=False)
         except rcBtrfs.ExistError:
@@ -104,6 +113,12 @@ class syncBtrfsSnap(resSync.Sync):
         snaps = {}
         for sv in btrfs.subvols.values():
             if not sv["path"].startswith(subvol):
+                continue
+            s = sv["path"].replace(subvol, "")
+            l = s.split('.')
+            if len(l) < 2:
+                continue
+            if l[1] not in ("snap", self.name):
                 continue
             try:
                 ds = sv["path"].split(".snap.")[-1]
@@ -138,6 +153,12 @@ class syncBtrfsSnap(resSync.Sync):
         snaps = []
         for sv in btrfs.subvols.values():
             if not sv["path"].startswith(subvol):
+                continue
+            s = sv["path"].replace(subvol, "")
+            l = s.split('.')
+            if len(l) < 2:
+                continue
+            if l[1] not in ("snap", self.name):
                 continue
             try:
                 ds = sv["path"].split(".snap.")[-1]

@@ -2352,6 +2352,11 @@ def add_syncs_btrfssnap(svc, conf, s):
     kwargs = {}
 
     try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        pass
+
+    try:
         kwargs['keep'] = conf_get_int_scope(svc, conf, s, 'keep')
     except ex.OptNotFound:
         pass

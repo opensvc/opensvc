@@ -1152,9 +1152,23 @@ class KeywordSyncS3FullSchedule(Keyword):
                   order=10,
                   at=True,
                   required=True,
-                  example="* sun",
-                  default="* sun",
+                  example="@1441 sun",
+                  default="@1441 sun",
                   text="The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
+                )
+
+class KeywordSyncBtrfsSnapName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="name",
+                  rtype="btrfssnap",
+                  order=10,
+                  at=True,
+                  required=False,
+                  example="weekly",
+                  text="A name included in the snapshot name to avoid retention conflicts between multiple btrfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
                 )
 
 class KeywordSyncBtrfsSnapSubvol(Keyword):
@@ -3133,6 +3147,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncBtrfsDst()
         self += KeywordSyncBtrfsTarget()
         self += KeywordSyncBtrfsRecursive()
+        self += KeywordSyncBtrfsSnapName()
         self += KeywordSyncBtrfsSnapSubvol()
         self += KeywordSyncBtrfsSnapKeep()
         self += KeywordSyncS3Src()
