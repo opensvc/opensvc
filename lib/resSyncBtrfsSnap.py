@@ -56,7 +56,12 @@ class syncBtrfsSnap(resSync.Sync):
         pass
 
     def test_btrfs(self, label):
-        cmd = ["btrfs", "fi", "show", label]
+        cmd = ["blkid", "-L", label]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return ret
+        dev = out.strip()
+        cmd = ["btrfs", "fi", "show", dev]
         out, err, ret = justcall(cmd)
         return ret
 
