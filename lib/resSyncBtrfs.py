@@ -395,6 +395,7 @@ class SyncBtrfs(resSync.Sync):
         return True
 
     def _status(self, verbose=False):
+        self.init_src_btrfs()
         try:
             ls = self.get_local_state()
             now = datetime.datetime.now()

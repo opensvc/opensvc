@@ -58,16 +58,21 @@ class Btrfs(object):
         if self.label is None:
             raise InitError("failed to determine btrfs label")
 
-        self.dev = label_to_dev("LABEL="+self.label)
-        if self.dev is None:
-            self.dev = "LABEL="+self.label
-
         self.setup_rootvol()
         self.path = self.rootdir
         self.snapdir = os.path.join(self.rootdir, self.snapvol)
         self.snapdir = os.path.normpath(self.snapdir)
 
-        self.get_subvols()
+
+    def get_dev(self):
+        if hasattr(self, "dev"):
+            return
+        if self.node is None:
+            self.dev = label_to_dev("LABEL="+self.label)
+        else:
+            return
+        if self.dev is None:
+            self.dev = "LABEL="+self.label
 
     def rmdir(self, path):
         cmd = ['rmdir', path]
@@ -84,7 +89,7 @@ class Btrfs(object):
             return False
         return True
 
-    def get_subvols(self):
+    def get_subvols(self, refresh=False):
         """
         ID 256 parent 5 top level 5 path btrfssvc
         ID 259 parent 256 top level 5 path btrfssvc/child
@@ -95,6 +100,8 @@ class Btrfs(object):
         ID 264 parent 5 top level 5 path subdir/vol
         ID 265 parent 256 top level 5 path btrfssvc/cross_mnt_snap
         """
+        if not refresh and hasattr(self, "subvols"):
+            return
         self.subvols = {}
         cmd = ['btrfs', 'subvol', 'list', '-p', self.path]
         out, err, ret = self.justcall(cmd)
@@ -141,7 +148,7 @@ class Btrfs(object):
             raise ExecError()
 
     def get_subvols_in_path(self, path):
-        self.get_subvols()
+        self.get_subvols(refresh=True)
         head = self.path_to_subvol(path)
         subvols = [path]
         for subvol in self.subvols.values():
@@ -174,7 +181,7 @@ class Btrfs(object):
 
     def has_subvol(self, subvol):
         # refresh subvol list
-        self.get_subvols()
+        self.get_subvols(refresh=True)
 
         subvol = self.path_to_subvol(subvol)
         for sub in self.subvols.values():
@@ -183,12 +190,16 @@ class Btrfs(object):
         return False
 
     def mount_snapvol(self):
+        self.get_dev()
         cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, self.dev, self.snapdir]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s subvol:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
 
     def mount_rootvol(self):
+        if self.node:
+            return
+        self.get_dev()
         if self.is_mounted_subvol(self.rootdir):
             return
         cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, self.rootdir]
@@ -197,6 +208,7 @@ class Btrfs(object):
             raise ExecError("error mounting %s btrfs:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
 
     def create_snapvol(self):
+        self.get_dev()
         error = False
 
         import tempfile
@@ -396,6 +408,7 @@ class Btrfs(object):
         raise ExecError("can't find %s transid\n"%path)
 
     def __str__(self):
+        self.get_subvols()
         s = "label: %s\n" % self.label
         s += "subvolumes:\n"
         for sub in self.subvols.values():
