@@ -227,22 +227,25 @@ class DockerLib(object):
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'docker_start')
         try:
-            lockfd = lock.lock(timeout=5, delay=1, lockfile=lockfile)
-        except:
-            self.log.debug("dockerd start lock already held")
+            lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
+        except Exception as e:
+            self.log.error("dockerd start lock acquire failed: %s"%str(e))
             return
 
         # Sanity checks before deciding to start the daemon
         if self.docker_running():
+            lock.unlock(lockfd)
             return
 
         if self.docker_data_dir is None:
+            lock.unlock(lockfd)
             return
 
         resource = self.docker_data_dir_resource()
         if resource is not None and resource._status() not in (rcStatus.UP, rcStatus.STDBY_UP):
             state= rcStatus.status_str(resource._status())
             self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, state))
+            lock.unlock(lockfd)
             return
 
         if os.path.exists(self.docker_pid_file):
@@ -266,6 +269,7 @@ class DockerLib(object):
         for i in range(self.max_wait_for_dockerd):
             if self.docker_working():
                 self.container_id = self.get_container_id_by_name()
+                lock.unlock(lockfd)
                 return
             time.sleep(1)
         lock.unlock(lockfd)
