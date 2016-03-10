@@ -712,19 +712,19 @@ class ResourceSet(Resource):
                 ps[r.rid] = p
             for p in ps.values():
                 p.join()
-            err = 0
+            err = []
             for r in resources:
                 if r.rid not in ps:
                     continue
                 p = ps[r.rid]
                 if p.exitcode == 1 and not r.optional:
-                    err += 1
+                    err.append(r.rid)
                 elif p.exitcode == 2:
                     # can_rollback resource property is lost with the thread
                     # the action_job tells us what to do with it through its exitcode
                     r.can_rollback = True
-            if err > 0:
-                raise exc.excError
+            if len(err) > 0:
+                raise exc.excError("%s non-optional resources jobs returned with error" % ",".join(err))
         else:
             if self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
                 r.log.info("entering parallel subset")
@@ -737,7 +737,8 @@ class ResourceSet(Resource):
     def action_job(self, r, action):
         try:
             getattr(r, 'action')(action)
-        except:
+        except Exception as e:
+            self.log.error(str(e))
             sys.exit(1)
         if r.can_rollback:
             sys.exit(2)
