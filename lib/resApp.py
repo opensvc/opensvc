@@ -31,14 +31,6 @@ import resources as Res
 import rcStatus
 import rcExceptions as ex
 
-try:
-    if rcEnv.sysname == "Windows":
-        raise
-    from multiprocessing import Process, Queue
-    mp = True
-except:
-    mp = False
-
 def run_as_popen_kwargs(fpath):
     if rcEnv.sysname == "Windows":
         return {}
