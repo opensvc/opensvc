@@ -375,7 +375,7 @@ if action in ['create', 'update', 'install']:
         del(node.svcs)
         node.svcs = None
         try:
-            node.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
+            node.build_services(svcnames=svcnames, autopush=False, minimal=build_kwargs["minimal"])
         except ex.excError as e:
             print("build error:", e, file=sys.stderr)
             build_err = True
