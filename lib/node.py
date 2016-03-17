@@ -945,20 +945,31 @@ class Node(Svc, Freezer, Scheduler):
         return 0
 
     def register(self):
-        u = self.collector.call('register_node')
-        if u is None:
-            print("failed to obtain a registration number", file=sys.stderr)
-            return 1
-        elif isinstance(u, dict) and "ret" in u and u["ret"] != 0:
-            print("failed to obtain a registration number", file=sys.stderr)
+        if self.options.user is None:
+            u = self.collector.call('register_node')
+            if u is None:
+                print("failed to obtain a registration number", file=sys.stderr)
+                return 1
+            elif isinstance(u, dict) and "ret" in u and u["ret"] != 0:
+                print("failed to obtain a registration number", file=sys.stderr)
+                try:
+                    print(u["msg"])
+                except:
+                    pass
+                return 1
+            elif isinstance(u, list):
+                print(u[0], file=sys.stderr)
+                return 1
+        else:
             try:
-                print(u["msg"])
-            except:
-                pass
-            return 1
-        elif isinstance(u, list):
-            print(u[0], file=sys.stderr)
-            return 1
+                data = self.collector_rest_post("/register", {"nodename": rcEnv.nodename})
+            except Exception as e:
+                print(e, file=sys.stderr)
+                return 1
+            if "error" in data:
+                print(data["error"], file=sys.stderr)
+                return 1
+            u = data["data"]["uuid"]
         try:
             if not self.config.has_section('node'):
                 self.config.add_section('node')
@@ -1430,20 +1441,43 @@ class Node(Svc, Freezer, Scheduler):
     def collector_api(self):
         if hasattr(self, "collector_api_cache"):
             return self.collector_api_cache
-        import platform
-        sysname, nodename, x, x, machine, x = platform.uname()
+        data = {}
+        if self.options.user is None:
+            username, password = self.collector_auth_node()
+        else:
+            username, password = self.collector_auth_user()
+        data["username"] = username
+        data["password"] = password
         try:
             import ConfigParser
         except ImportError:
             import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         config.read("/opt/opensvc/etc/node.conf")
-        data = {}
-        data["username"] = nodename
-        data["password"] = config.get("node", "uuid")
         data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
         self.collector_api_cache = data
         return self.collector_api_cache
+
+    def collector_auth_node(self):
+        import platform
+        sysname, username, x, x, machine, x = platform.uname()
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+        config = ConfigParser.RawConfigParser({})
+        config.read("/opt/opensvc/etc/node.conf")
+        password = config.get("node", "uuid")
+        return username, password
+
+    def collector_auth_user(self):
+        username = self.options.user
+        import getpass
+        try:
+            password = getpass.getpass()
+        except EOFError:
+            raise KeyboardInterrupt()
+        return username, password
 
     def collector_url(self):
         api = self.collector_api()
@@ -1461,10 +1495,19 @@ class Node(Svc, Freezer, Scheduler):
         return request
 
     def collector_rest_get(self, path):
+        return self.collector_rest_request(path)
+
+    def collector_rest_post(self, path, data=None):
+        return self.collector_rest_request(path, data)
+
+    def collector_rest_request(self, path, data=None):
         api = self.collector_api()
         request = self.collector_request(path)
         if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        if data:
+            import urllib
+            request.add_data(urllib.urlencode(data))
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
