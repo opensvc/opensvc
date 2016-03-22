@@ -563,7 +563,9 @@ class Collector(object):
                 'app_key',
                 'app_value']
         vals = []
-        for r in svc.get_resources('app'):
+        for r in svc.get_resources():
+            if not hasattr(r, "info"):
+                continue
             vals += r.info()
         if len(vals) == 0:
             return

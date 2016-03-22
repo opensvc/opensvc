@@ -142,6 +142,10 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         resContainer.Container.stop(self)
         self.docker_stop()
  
+    def info(self):
+        data = self.docker_info()
+        return data
+
     def _status(self, verbose=False):
         s = resContainer.Container._status(self, verbose)
         try:

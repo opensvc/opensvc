@@ -219,7 +219,9 @@ class Svc(Resource, Scheduler):
             self.scheduler_actions["sync_all"] = syncs
 
         apps = []
-        for r in self.get_resources("app"):
+        for r in self.get_resources():
+            if not hasattr(r, "info"):
+                continue
             apps += [SchedOpts(r.rid, fname=self.svcname+"_last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
         if len(apps) > 0:
             self.scheduler_actions["push_appinfo"] = apps

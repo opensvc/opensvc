@@ -87,15 +87,25 @@ class DockerLib(object):
             self.swarm_node = d["swarm_node"]
         return d["id"]
 
-    def docker_min_version(self, version):
+    def get_docker_info(self):
+        if not hasattr(self, "docker_info_cache"):
+            cmd = ["docker", "info"]
+            out, err, ret = justcall(cmd)
+            self.docker_info_cache = out
+        return self.docker_info_cache
+
+    def get_docker_version(self):
         if not hasattr(self, "docker_version"):
             cmd = ["docker", "--version"]
             out, err, ret = justcall(cmd)
             v = out.split()
             if len(v) < 3:
                 return False
-            self.docker_version = v[2]
-        if V(self.docker_version) >= V(version):
+            self.docker_version = v[2].rstrip(",")
+        return self.docker_version
+
+    def docker_min_version(self, version):
+        if V(self.get_docker_version()) >= V(version):
             return True
         return False
 
@@ -162,8 +172,74 @@ class DockerLib(object):
             l = line.split()
             if len(l) < 3:
                 continue
+            if l[2] == "IMAGE":
+                continue
             data[l[2]] = l[0]+':'+l[1]
         self.svc.docker_images_cache = data
+        return data
+
+    def docker_info(self):
+        if hasattr(self.svc, "docker_info_done"):
+            return []
+
+        def fmt(l):
+            _l = []
+            for e in l:
+                e = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype] + e
+                _l.append(e)
+            return _l
+        data = []
+        data += self.docker_info_version()
+        data += self.docker_info_drivers()
+        data += self.docker_info_images()
+        return fmt(data)
+
+    def docker_info_version(self):
+        return [[
+          "",
+          "docker_version",
+          self.get_docker_version()
+        ]]
+
+    def docker_info_drivers(self):
+        data = []
+        lines = self.get_docker_info().split("\n")
+        for line in lines:
+             l = line.split(": ")
+             if len(l) < 2:
+                 continue
+             if l[0] == "Storage Driver":
+                 data.append(["", "storage_driver", l[1]])
+             if l[0] == "Execution Driver":
+                 data.append(["", "exec_driver", l[1]])
+        return data
+
+    def docker_info_images(self):
+        data = []
+        images = self.get_images()
+        h = {}
+        for r in self.svc.get_resources("container.docker"):
+            image_id = r.get_run_image_id()
+            d = {"rid": r.rid, "instance_id": r.container_id}
+            if image_id in h:
+                h[image_id].append(d)
+            else:
+                h[image_id] = [d]
+        for image_id in images:
+            if image_id in h:
+                for d in h[image_id]:
+                    data.append([
+                      d["rid"],
+                      "docker_image",
+                      image_id+":"+d["instance_id"]
+                    ])
+            else:
+                data.append([
+                  "",
+                  "docker_image",
+                  image_id
+                ])
+        self.svc.docker_info_done = True
         return data
 
     def image_userfriendly_name(self):
