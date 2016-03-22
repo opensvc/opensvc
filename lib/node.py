@@ -1442,7 +1442,7 @@ class Node(Svc, Freezer, Scheduler):
         if hasattr(self, "collector_api_cache"):
             return self.collector_api_cache
         data = {}
-        if self.options.user is None:
+        if not hasattr(self.options, "user") or self.options.user is None:
             username, password = self.collector_auth_node()
         else:
             username, password = self.collector_auth_user()
