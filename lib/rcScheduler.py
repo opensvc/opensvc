@@ -780,6 +780,8 @@ class Scheduler(object):
         return timestamp_f
 
     def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
+        if action not in self.scheduler_actions:
+            return {"count": 0, "keep": [], "skip": []}
         if type(self.scheduler_actions[action]) == list:
             data = {"count": 0, "keep": [], "skip": []}
             for i, so in enumerate(self.scheduler_actions[action]):
