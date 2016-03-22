@@ -479,23 +479,6 @@ class Asset(object):
         print("listener port (%s)"%source)
         print("  %s"%s)
 
-    def get_team_responsible(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'team_responsible')
-            source = self.s_config
-        except:
-            pass
-        self.print_team_responsible(s, source)
-        return s
-
-    def print_team_responsible(self, s, source):
-        if s is None:
-            return
-        print("team responsible (%s)"%source)
-        print("  %s"%s)
-
     def print_generic_cf(self, s, source, title):
         if s is None:
             return
@@ -610,17 +593,6 @@ class Asset(object):
         except:
             pass
         self.print_generic_cf(s, source, "team support")
-        return s
-
-    def get_project(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'project')
-            source = self.s_config
-        except:
-            pass
-        self.print_generic_cf(s, source, "project")
         return s
 
     def get_hba(self):
@@ -839,18 +811,12 @@ class Asset(object):
         loc_zip = self.get_loc_zip()
         if loc_zip is not None:
             self.data['loc_zip'] = loc_zip
-        team_responsible = self.get_team_responsible()
-        if team_responsible is not None:
-            self.data['team_responsible'] = team_responsible
         team_integ = self.get_team_integ()
         if team_integ is not None:
             self.data['team_integ'] = team_integ
         team_support = self.get_team_support()
         if team_support is not None:
             self.data['team_support'] = team_support
-        project = self.get_project()
-        if project is not None:
-            self.data['project'] = project
         hba = self.get_hba()
         if hba is not None:
             self.data['hba'] = hba
