@@ -531,7 +531,10 @@ zlib                                                               ALL  @@R:zlib
             print >>sys.stderr, "no repo specified in the rule"
             return RET_NA
 
-        pkg_url = data['repo']+"/"+pkg
+        if data['repo'].endswith("/"):
+            pkg_url = data['repo']+"/"+pkg
+        else:
+            pkg_url = data['repo']
         print "download", pkg_url
         try:
             dname = self.download(pkg_url)
