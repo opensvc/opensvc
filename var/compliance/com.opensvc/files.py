@@ -393,8 +393,8 @@ class CompFiles(CompObject):
     def fix_file_fmt(self, f):
         if f['path'].endswith("/") and not os.path.exists(f['path']):
             try:
+                print "mkdir", f['path']
                 os.makedirs(f['path'])
-                print f['path'], "created"
             except:
                 print >>sys.stderr, "failed to create", f['path']
                 return RET_ERR
@@ -407,15 +407,18 @@ class CompFiles(CompObject):
 
         d = os.path.dirname(f['path'])
         if not os.path.exists(d):
+           print "mkdir", d
            os.makedirs(d)
            try:
                os.chown(d, f['uid'], f['gid'])
-           except:
+           except Exception as e:
+               print >>sys.stderr, e
                pass
         try:
             with codecs.open(f['path'], 'w', encoding="utf8", errors="ignore") as fi:
                 fi.write(f['fmt'])
-        except:
+        except Exception as e:
+            print >>sys.stderr, e
             return RET_ERR
         print f['path'], "rewritten"
         return RET_OK
