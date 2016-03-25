@@ -100,6 +100,7 @@ import ssl
 import tempfile
 import pwd
 import grp
+import codecs
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -262,7 +263,7 @@ class CompFiles(CompObject):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfname = tmpf.name
         tmpf.close()
-        with open(tmpfname, 'w') as tmpf:
+        with codecs.open(tmpfname, 'w', encoding="utf8", errors="ignore") as tmpf:
             tmpf.write(f['fmt'])
         ret = self.check_file_diff(f, tmpfname, verbose=verbose)
         os.unlink(tmpfname)
@@ -412,7 +413,7 @@ class CompFiles(CompObject):
            except:
                pass
         try:
-            with open(f['path'], 'w') as fi:
+            with codecs.open(f['path'], 'w', encoding="utf8", errors="ignore") as fi:
                 fi.write(f['fmt'])
         except:
             return RET_ERR
