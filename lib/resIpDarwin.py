@@ -21,6 +21,7 @@
 import resIp as Res
 import rcExceptions as ex
 from rcUtilitiesFreeBSD import check_ping
+from rcUtilities import to_cidr
 
 class Ip(Res.Ip):
     def check_ping(self, count=1, timeout=5):
@@ -32,10 +33,7 @@ class Ip(Res.Ip):
 
     def startip_cmd(self):
         if ':' in self.addr:
-            if '.' in self.mask:
-                self.log.error("netmask parameter is mandatory for ipv6 adresses")
-                raise ex.excError
-            cmd = ['ifconfig', self.ipDev, 'inet6', '/'.join([self.addr, self.mask]), 'add']
+            cmd = ['ifconfig', self.ipDev, 'inet6', '/'.join([self.addr, to_cidr(self.mask)]), 'add']
         else:
             cmd = ['ifconfig', self.ipDev, 'inet', self.addr, 'netmask', '0xffffffff', 'add']
         return self.vcall(cmd)

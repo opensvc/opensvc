@@ -120,7 +120,7 @@ class Ip(Res.Ip):
         if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+dotted_to_cidr(self.mask), self.stacked_dev+'/'+self.ipDevExt]
+        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipDevExt]
         r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=['ipadm', 'show-if' ]

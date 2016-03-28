@@ -455,6 +455,16 @@ def cidr_to_dotted(s):
     _out += str(int(_in[24:32], 2))
     return _out
 
+def to_dotted(s):
+    if '.' in s:
+        return s
+    return cidr_to_dotted(s)
+
+def hexmask_to_str(mask):
+    mask = mask.replace('0x', '')
+    s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
+    return '.'.join(s)
+
 def dotted_to_cidr(mask):
     if mask is None:
         return ''
@@ -466,12 +476,12 @@ def dotted_to_cidr(mask):
     l = map(lambda x: int(x), l)
     for a in l:
         cnt += str(bin(a)).count("1")
-    return '/'+str(cnt)
+    return str(cnt)
 
-def hexmask_to_str(mask):
-    mask = mask.replace('0x', '')
-    s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
-    return '.'.join(s)
+def to_cidr(s):
+    if '.' in s:
+        return dotted_to_cidr(s)
+    return s
 
 if __name__ == "__main__":
     #print("call(('id','-a'))")

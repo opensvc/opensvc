@@ -23,8 +23,8 @@ import resIpLinux as Res
 import rcExceptions as ex
 import rcDocker
 import rcIfconfigLinux as rcIfconfig
-from rcUtilitiesLinux import check_ping, justcall
-from rcUtilities import which
+from rcUtilitiesLinux import check_ping
+from rcUtilities import which, justcall, to_cidr
 
 class Ip(Res.Ip, rcDocker.DockerLib):
     def __init__(self,
@@ -143,7 +143,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return ret, out, err
 
         # plumb the ip
-        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, self.mask), "dev", self.guest_dev]
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -206,7 +206,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return ret, out, err
 
         # plumb ip
-        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", self.addr+"/"+self.mask, "dev", self.guest_dev]
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -249,7 +249,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return ret, out, err
 
         # plumb the ip
-        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, self.mask), "dev", self.guest_dev]
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -286,7 +286,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = ["ip", "netns", "exec", nspid, "ip", "route", "del", self.network+"/"+self.mask, "dev", self.guest_dev]
+            cmd = ["ip", "netns", "exec", nspid, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
@@ -348,7 +348,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.create_netns_link(nspid=nspid)
         if intf is None:
             raise ex.excError("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
-        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+self.mask, "dev", intf]
+        cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
         self.delete_netns_link(nspid=nspid)
         return ret, out, err

@@ -1758,7 +1758,7 @@ class KeywordIpNetmask(Keyword):
                   keyword="netmask",
                   at=True,
                   order=13,
-                  text="If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
+                  text="If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is either dotted or octal for IPv4, ex: 255.255.252.0 or 22, and octal for IPv6, ex: 64.",
                   example="255.255.255.0"
                 )
 
