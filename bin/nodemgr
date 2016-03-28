@@ -120,6 +120,8 @@ parser.add_option("--table", default=False, action="store_true", dest="table",
                   help="used table representation of collector data instead of the default itemized list of objects and properties")
 parser.add_option("--user", default=None, action="store", dest="user",
                   help="authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.")
+parser.add_option("--app", default=None, action="store", dest="app",
+                  help="Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.")
 
 
 (options, args) = parser.parse_args()

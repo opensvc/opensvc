@@ -962,7 +962,10 @@ class Node(Svc, Freezer, Scheduler):
                 return 1
         else:
             try:
-                data = self.collector_rest_post("/register", {"nodename": rcEnv.nodename})
+                data = self.collector_rest_post("/register", {
+                  "nodename": rcEnv.nodename,
+                  "app": self.options.app
+                })
             except Exception as e:
                 print(e, file=sys.stderr)
                 return 1
