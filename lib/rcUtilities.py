@@ -441,6 +441,38 @@ def convert_size(s, _to='', _round=1):
         size = (size // _round) * _round
     return size
 
+def cidr_to_dotted(s):
+    i = int(s)
+    _in = ""
+    _out = ""
+    for i in range(i):
+        _in += "1"
+    for i in range(32-i):
+        _in += "0"
+    _out += str(int(_in[0:8], 2))+'.'
+    _out += str(int(_in[8:16], 2))+'.'
+    _out += str(int(_in[16:24], 2))+'.'
+    _out += str(int(_in[24:32], 2))
+    return _out
+
+def dotted_to_cidr(mask):
+    if mask is None:
+        return ''
+    cnt = 0
+    if '.' in mask:
+        l = mask.split(".")
+    else:
+        l = hexmask_to_str(mask).split(".")
+    l = map(lambda x: int(x), l)
+    for a in l:
+        cnt += str(bin(a)).count("1")
+    return '/'+str(cnt)
+
+def hexmask_to_str(mask):
+    mask = mask.replace('0x', '')
+    s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
+    return '.'.join(s)
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

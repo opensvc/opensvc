@@ -18,7 +18,7 @@
 #
 
 from subprocess import *
-from rcUtilities import which
+from rcUtilities import which, cidr_to_dotted
 
 import rcIfconfig
 import copy
@@ -43,20 +43,6 @@ ip addr:
        valid_lft forever preferred_lft forever
 
 """
-
-def octal_to_cidr(s):
-    i = int(s)
-    _in = ""
-    _out = ""
-    for i in range(i):
-        _in += "1"
-    for i in range(32-i):
-        _in += "0"
-    _out += str(int(_in[0:8], 2))+'.'
-    _out += str(int(_in[8:16], 2))+'.'
-    _out += str(int(_in[16:24], 2))+'.'
-    _out += str(int(_in[24:32], 2))
-    return _out
 
 class ifconfig(rcIfconfig.ifconfig):
     def parse_ip(self, out):
@@ -160,7 +146,7 @@ class ifconfig(rcIfconfig.ifconfig):
                             # tun for example
                             continue
                         _i.ipaddr += [ipaddr]
-                        _i.mask += [octal_to_cidr(mask)]
+                        _i.mask += [cidr_to_dotted(mask)]
                     elif 'inet6' == prev:
                         try:
                             ip6addr, ip6mask = w.split('/')

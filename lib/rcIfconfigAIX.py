@@ -18,15 +18,11 @@
 #
 
 from subprocess import *
+from rcUtilities import hexmask_to_str
 
 import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
-    def hexmask_to_str(self, mask):
-        mask = mask.replace('0x', '')
-        s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
-        return '.'.join(s)
-
     def get_mac(self, intf):
         buff = self.get_netstat_in()
         for line in buff.split("\n"):
@@ -91,7 +87,7 @@ class ifconfig(rcIfconfig.ifconfig):
             elif 'inet' == prev:
                 i.ipaddr += [w]
             elif 'netmask' == prev:
-                i.mask += [self.hexmask_to_str(w)]
+                i.mask += [hexmask_to_str(w)]
             elif 'inet6' == prev:
                 i.ip6addr += [w.split('/')[0]]
                 i.ip6mask += [w.split('/')[1]]

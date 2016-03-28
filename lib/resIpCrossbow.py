@@ -24,7 +24,7 @@ import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, dotted_to_cidr
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
@@ -87,24 +87,6 @@ class Ip(Res.Ip):
         err += e
         return ret, out, err
 
-    def _hexmask_to_str(self, mask):
-        mask = mask.replace('0x', '')
-        s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
-        return '.'.join(s)
-
-    def _dotted2cidr(self):
-        if self.mask is None:
-            return ''
-        cnt = 0
-        if '.' in self.mask:
-            l = self.mask.split(".")
-        else:
-            l = self._hexmask_to_str(self.mask).split(".")
-        l = map(lambda x: int(x), l)
-        for a in l:
-            cnt += str(bin(a)).count("1")
-        return '/'+str(cnt)
-        
     def wait_net_smf(self, max_wait=30):
         r = 0
         prev_s = None
@@ -138,7 +120,7 @@ class Ip(Res.Ip):
         if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+self._dotted2cidr(), self.stacked_dev+'/'+self.ipDevExt]
+        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+dotted_to_cidr(self.mask), self.stacked_dev+'/'+self.ipDevExt]
         r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=['ipadm', 'show-if' ]
