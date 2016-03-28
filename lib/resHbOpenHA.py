@@ -436,10 +436,12 @@ class Hb(resHb.Hb):
             if ret != 0:
                 raise ex.excError(err)
             
-        if local_status not in ('frozen_stop', 'start_ready'):
+        if local_status in ('frozen_stop', 'start_ready'):
+            self.service_action("unfreeze")
+        elif local_status == 'stopped':
+            pass
+        else:
             raise ex.excError("%s on local node. unexpected state"%local_status)
-
-        self.service_action("unfreeze")
 
         self.wait_for_state(['starting', 'started', 'start_failed'])
         self.thaw()
