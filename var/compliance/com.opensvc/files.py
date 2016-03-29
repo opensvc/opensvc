@@ -166,7 +166,7 @@ class CompFiles(CompObject):
             raise InitError()
         d['fmt'] = f.read()
         if '<title>404 Not Found</title>' in d['fmt']:
-            print >>sys.stderr, url, "not found on collector"
+            print >>sys.stderr, d['ref'], "not found on collector"
             raise InitError()
         f.close()
         return self.parse_fmt(d, add_linefeed=False)
