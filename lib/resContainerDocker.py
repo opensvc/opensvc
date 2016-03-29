@@ -107,7 +107,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
                 if not os.path.exists(v[0]):
                     raise ex.excError("source dir of mapping %s does not exist" % (volarg))
         if self.docker_min_version("1.7"):
-            l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid, self.rid.replace("#", "."))]
+            l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid.replace(":", "."), self.rid.replace("#", "."))]
         return l
 
     def swarm_primary(self):

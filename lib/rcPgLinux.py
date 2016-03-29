@@ -208,7 +208,7 @@ def get_cgroup_path(o, t, create=True):
     else:
         elements = [cgroup_mntpt, svcname]
         if hasattr(o, "rset") and o.rset is not None:
-            elements.append(o.rset.rid)
+            elements.append(o.rset.rid.replace(":", ".")
         if hasattr(o, "rid") and o.rid is not None:
             elements.append(o.rid.replace("#", "."))
         cgp = os.path.join(*elements)
