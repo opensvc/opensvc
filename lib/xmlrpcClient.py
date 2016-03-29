@@ -858,8 +858,12 @@ class Collector(object):
                 'pkg_version',
                 'pkg_arch']
         vals = p.listpkg()
-        if len(vals) == 0:
+        n = len(vals)
+        if n == 0:
+            print("No package found. Skip push.")
             return
+        else:
+            print("Pushing %d packages information."%n)
         if len(vals[0]) >= 5:
             vars.append('pkg_type')
         if len(vals[0]) >= 6:
