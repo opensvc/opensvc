@@ -115,7 +115,7 @@ class DockerLib(object):
             if self.container_id is None:
                 self.container_id = self.get_container_id_by_name()
             if self.container_id is None:
-                cmd += ['run', '-t', '-i', '-d', '--name='+self.container_name]
+                cmd += ['run', '-d', '--name='+self.container_name]
                 cmd += self.add_run_args()
                 cmd += [self.run_image]
                 if self.run_command is not None and self.run_command != "":
