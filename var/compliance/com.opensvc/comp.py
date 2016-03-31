@@ -98,7 +98,7 @@ class CompObject(object):
             s = self.subst(os.environ[k])
             rules += [s]
         if len(rules) == 0:
-            raise NotApplicable()
+            raise NotApplicable("no rules")
         return rules
 
     def get_rules(self):
@@ -114,7 +114,7 @@ class CompObject(object):
             else:
                 rules += [data]
         if len(rules) == 0:
-            raise NotApplicable()
+            raise NotApplicable("no rules")
         return rules
 
     def subst(self, v):
@@ -249,8 +249,9 @@ def main(co):
     syntax += """ %s test|info"""%sys.argv[0]
     try:
         o = co()
-    except NotApplicable:
-        return
+    except NotApplicable as e:
+        print e
+        sys.exit(RET_NA)
     if o.extra_syntax_parms:
         syntax += " "+o.extra_syntax_parms
 
@@ -281,7 +282,8 @@ def main(co):
     except ComplianceError as e:
         print >>sys.stderr, e
         sys.exit(RET_ERR)
-    except NotApplicable:
+    except NotApplicable as e:
+        print e
         sys.exit(RET_NA)
     except:
         import traceback
