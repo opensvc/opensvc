@@ -1,6 +1,7 @@
 [Unit]
 Description=OpenSVC Agent
 Documentation=http://docs.opensvc.com/ file:/opt/opensvc/usr/share/doc/
+After=network.target network-online.target
 
 [Service]
 Type=idle
