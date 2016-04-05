@@ -183,6 +183,8 @@ class Collector(object):
                 rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(rcEnv.dbcompliance)
             except:
                 self.log.error("malformed dbcompliance url: %s"%rcEnv.dbcompliance)
+        else:
+            rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = None, None, None, None
         if config.has_option('node', 'uuid'):
             rcEnv.uuid = config.get('node', 'uuid')
         else:
