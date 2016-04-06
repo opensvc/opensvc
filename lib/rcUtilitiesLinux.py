@@ -5,6 +5,63 @@ from rcUtilities import call, qcall, justcall, which
 
 label_to_dev_cache = {}
 
+def dev_to_paths(dev, log=None):
+    cmd = ['multipath', '-l', dev]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.excError
+    paths = []
+    for line in out.split("\n"):
+        l = line.split()
+        if len(l) < 3:
+            continue
+        dev = l[2]
+        if not dev.startswith("sd"):
+            continue
+        paths.append("/dev/"+dev)
+    return paths
+
+def dev_rescan(dev, log=None):
+    dev = dev.replace('/dev/', '')
+    sysdev = "/sys/block/%s/device/rescan"%dev
+    if log:
+        log.info("echo 1>%s"%sysdev)
+    with open(sysdev, 'w') as s:
+        s.write("1")
+
+def refresh_multipath(dev, log=None):
+    cmd = ['multipath', '-v0', '-r', dev]
+    (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
+    if ret != 0:
+        raise ex.excError
+
+def dev_ready(dev, log=None):
+    cmd = ['sg_turs', dev]
+    (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
+    if ret != 0:
+        return False
+    return True
+
+def wait_for_dev_ready(dev, log=None):
+    delay = 1
+    timeout = 5
+    for i in range(timeout/delay):
+        if dev_ready(dev, log=log):
+            return
+        if i == 0:
+            if log:
+                log.info("waiting for device %s to become ready (max %i secs)"%(dev,timeout))
+        time.sleep(delay)
+    if log:
+        log.error("timed out waiting for device %s to become ready (max %i secs)"%(dev,timeout))
+    raise ex.excError
+
+def promote_dev_rw(dev, log=None):
+    for dev in dev_to_paths(dev, log=log):
+       dev_rescan(dev, log=log)
+       wait_for_dev_ready(dev, log=log)
+       refresh_multipath(dev, log=log)
+
 def label_to_dev(label):
     """
        blkid can return a device slave of a drbd, as drbd is

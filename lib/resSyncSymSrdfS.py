@@ -31,6 +31,43 @@ os.environ['PATH'] += ":/usr/symcli/bin"
 
 class syncSymSrdfS(resSync.Sync):
 
+    def list_pd(self):
+        """
+        <?xml version="1.0" standalone="yes" ?>
+        <SymCLI_ML>
+          <DG>
+            <Device>
+              <Front_End>
+                <Port>
+                  <pd_name>/dev/sdq</pd_name>
+                  <director>07E</director>
+                  <port>1</port>
+                </Port>
+              </Front_End>
+            </Device>
+          </DG>
+        </SymCLI_ML>
+        """
+        cmd = ['symdg', '-g', self.symdg, 'list', 'ld', '-output', 'xml_e']
+        (ret, out, err) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+        devs = []
+        xml = XML(out)
+        for e in xml.findall("DG/Device/Front_End/Port"):
+            devs.append(e.find("pd_name").text)
+        return devs
+
+    def promote_devs_rw(self):
+        if rcEnv.sysname != "Linux":
+            return
+        for dev in self.list_pd():
+            self.promote_dev_rw(dev)
+
+    def promote_dev_rw(self, dev):
+        from rcUtilitiesLinux import promote_dev_rw
+        promote_dev_rw(dev, log=self.log)
+
     def postsync(self):
         self.do_dgimport()
 
@@ -41,21 +78,26 @@ class syncSymSrdfS(resSync.Sync):
 
     def files_to_sync(self):
         return [self.dgfile_rdf_name()]
-   
+
     def do_local_dgexport(self):
         cmd = ['symdg', 'export', self.symdg, '-f', self.dgfile_local_name()]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
-        
+
     def do_rdf_dgexport(self):
-        cmd = ['symdg', 'export', self.symdg, '-f', self.dgfile_rdf_name(), '-rdf']
+        fpath = self.dgfile_rdf_name()
+        try:
+            os.unlink(fpath)
+        except:
+            pass
+        cmd = ['symdg', 'export', self.symdg, '-f', fpath, '-rdf']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
-        
+
     def do_dgremove(self):
         cmd = ['symdg', 'delete', self.symdg, '-force']
         (ret, out, err) = self.call(cmd)
@@ -125,11 +167,10 @@ class syncSymSrdfS(resSync.Sync):
         except:
             return {}
         self.xmldg = XML(rdf_query)
-        self.dglist = {} 
-        for dg in self.xmldg.iter("DG_Info"):
-	        name = dg.find('name').text
-	        self.dglist[name] = None
-        
+        self.dglist = {}
+        for dg in self.xmldg.findall("DG/DG_Info"):
+            name = dg.find('name').text
+            self.dglist[name] = None
         return self.dglist
 
     def get_dg_rdf_type(self):
@@ -156,7 +197,7 @@ class syncSymSrdfS(resSync.Sync):
 
     def get_dg_state(self):
         h = {}
-        for pair in self.xmldg.iter("RDF_Pair"):
+        for pair in self.xmldg.findall("DG/RDF_Pair"):
             mode = pair.find('mode').text
             state = pair.find('pair_state').text
             key = mode + "/" + state
@@ -173,13 +214,13 @@ class syncSymSrdfS(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
-	    self.rdfpairs = {}   # remote_symm;remote_dev;rdfg
-	    self.xmldg = XML(out)
+        self.rdfpairs = {}   # remote_symm;remote_dev;rdfg
+        self.xmldg = XML(out)
 
-        for pair in self.xmldg.iter("RDF_Pair"):
-	        source = pair.find('Source/dev_name').text
-	        target = pair.find('Target/dev_name').text
-	        self.rdfpairs[source] = target
+        for pair in self.xmldg.findall("DG/RDF_Pair"):
+            source = pair.find('Source/dev_name').text
+            target = pair.find('Target/dev_name').text
+            self.rdfpairs[source] = target
         print self.rdfpairs
 
     def is_synchronous_mode(self):
@@ -320,10 +361,7 @@ class syncSymSrdfS(resSync.Sync):
         self.flush_cache()
 
     def get_syminfo(self):
-        # self.get_symdevs()
-	    self.get_dg_rdf_type()
-        #self.get_symld()
-       # self.get_pairs()
+        self.get_dg_rdf_type()
 
     def get_last(self):
         if self.last is not None:
@@ -348,11 +386,11 @@ class syncSymSrdfS(resSync.Sync):
         self.status_log("expecting synchronous/synchronized")
         return rcStatus.WARN
 
-    # SRDF split 
+    # SRDF split
     def sync_split(self):
         self.split()
 
-    # SRDF suspend 
+    # SRDF suspend
     def sync_quiesce(self):
         self.suspend()
 
@@ -375,18 +413,15 @@ class syncSymSrdfS(resSync.Sync):
             if self.is_rdf2_dg():
                 if self.is_synchronous_and_synchronized_state():
                     self.split()
-                    return
                 elif self.is_partitioned_state():
                     self.log.warning("symrdf dg %s is RDF2 and partitioned. failover is preferred action."%self.symdg)
                     self.failover()
-                    return
                 elif self.is_failedover_state():
                     self.log.info("symrdf dg %s is already RDF2 and FailedOver."%self.symdg)
                     return
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF2 and suspended: R2 data may be outdated"%self.symdg)
                     self.split()
-                    return
                 elif self.is_split_state():
                     self.log.info("symrdf dg %s is RDF2 and already splitted."%self.symdg)
                     return
@@ -417,15 +452,13 @@ class syncSymSrdfS(resSync.Sync):
                     raise ex.excError("symrdf dg %s is RDF1 on primary node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
             elif self.is_rdf2_dg():         # start on metrocluster passive node
                 if self.is_synchronous_and_synchronized_state():
-                    self.failoverestablish() 
+                    self.failoverestablish()
                 elif self.is_partitioned_state():
                     self.log.warning("symrdf dg %s is RDF2 and partitioned, failover is preferred action."%self.symdg)
-                    self.failover() 
-                    return
+                    self.failover()
                 else:
                     raise ex.excError("symrdf dg %s is RDF2 on primary node, you have to manually return to a sane SRDF status.")
-
-# self.svc.force = True ou False            
+        self.promote_devs_rw()
 
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
