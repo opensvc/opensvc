@@ -132,10 +132,10 @@ class syncSymSrdfS(resSync.Sync):
         return out
 
     def dgfile_local_name(self):
-        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.svc.svcname + '.dg.local')
+        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.local')
 
     def dgfile_rdf_name(self):
-        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.svc.svcname + '.dg.rdf')
+        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
         self.rdf_query_cache = None
@@ -423,36 +423,32 @@ class syncSymSrdfS(resSync.Sync):
                     self.failover()
                 elif self.is_failedover_state():
                     self.log.info("symrdf dg %s is already RDF2 and FailedOver."%self.symdg)
-                    return
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF2 and suspended: R2 data may be outdated"%self.symdg)
                     self.split()
                 elif self.is_split_state():
                     self.log.info("symrdf dg %s is RDF2 and already splitted."%self.symdg)
-                    return
                 else:
                     raise ex.excError("symrdf dg %s is RDF2 on drp node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
             elif self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
-                    return
+                    pass
+
+
                 else:
                     raise ex.excError("symrdf dg %s is RDF1 on drp node, you have to manually return to a sane SRDF status.")
         elif rcEnv.nodename in self.svc.nodes:
             if self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
                     self.log.info("symrdf dg %s is RDF1 and synchronous/synchronized."%self.symdg)
-                    return
                 elif self.is_partitioned_state():
                     self.log.warning("symrdf dg %s is RDF1 and partitioned."%self.symdg)
-                    return
                 elif self.is_failedover_state():
                     raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie loosing R2 data), or syncfailback (ie loosing R1 data)"%self.symdg)
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF1 and suspended."%self.symdg)
-                    return
                 elif self.is_split_state():
                     self.log.warning("symrdf dg %s is RDF1 and splitted."%self.symdg)
-                    return
                 else:
                     raise ex.excError("symrdf dg %s is RDF1 on primary node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
             elif self.is_rdf2_dg():         # start on metrocluster passive node

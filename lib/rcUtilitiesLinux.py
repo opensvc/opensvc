@@ -21,6 +21,14 @@ def dev_to_paths(dev, log=None):
         paths.append("/dev/"+dev)
     return paths
 
+def dev_is_ro(dev):
+    dev = dev.replace('/dev/', '')
+    sysdev = "/sys/block/%s/ro"%dev
+    with open(sysdev, 'r') as s:
+        buff = s.read()
+    if buff.strip() == "1":
+        return True
+
 def dev_rescan(dev, log=None):
     dev = dev.replace('/dev/', '')
     sysdev = "/sys/block/%s/device/rescan"%dev
@@ -58,9 +66,13 @@ def wait_for_dev_ready(dev, log=None):
 
 def promote_dev_rw(dev, log=None):
     for dev in dev_to_paths(dev, log=log):
-       dev_rescan(dev, log=log)
-       wait_for_dev_ready(dev, log=log)
-       refresh_multipath(dev, log=log)
+       count = 0
+       if dev_is_ro(dev):
+           dev_rescan(dev, log=log)
+           wait_for_dev_ready(dev, log=log)
+           count += 1
+       if count > 0:
+           refresh_multipath(dev, log=log)
 
 def label_to_dev(label):
     """
