@@ -2497,6 +2497,7 @@ class Svc(Resource, Scheduler):
           'delete',
           'freeze',
           'thaw',
+          'prstatus',
           'status',
           'frozen',
           'push',
