@@ -30,6 +30,7 @@ pathetc = os.path.join(pathsvc, 'etc')
 sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
 prog = os.path.basename(__file__)
 action = None
+_args = None
 
 import svcBuilder
 import rcStatus
@@ -254,7 +255,7 @@ else:
     elif len(svcname) > 1 and svcname[-1] == 'stonith':
         cluster = True
         svcname = ".".join(svcname[:-1])
-        args = ["stonith"]
+        _args = ["stonith"]
     else:
         svcname = cmd
     build_kwargs["svcnames"] = svcname
@@ -269,6 +270,8 @@ if len(sys.argv) > 1 and 'docker' in sys.argv:
     sys.argv = sys.argv[:pos+1]
 
 (options, args) = parser.parse_args()
+if _args is not None:
+    args = _args
 
 if len(args) is 0:
     node.close()
