@@ -80,7 +80,12 @@ class syncSymSrdfS(resSync.Sync):
         return [self.dgfile_rdf_name()]
 
     def do_local_dgexport(self):
-        cmd = ['symdg', 'export', self.symdg, '-f', self.dgfile_local_name()]
+        fpath = self.dgfile_local_name()
+        try:
+            os.unlink(fpath)
+        except:
+            pass
+        cmd = ['symdg', 'export', self.symdg, '-f', fpath]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
