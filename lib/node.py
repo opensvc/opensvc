@@ -1230,7 +1230,8 @@ class Node(Svc, Freezer, Scheduler):
             cmd = [nodemgr]
         else:
             cmd = [svcmgr, "-s", action.get("svcname")]
-        cmd += action.get("command", "").split()
+        import shlex
+        cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
