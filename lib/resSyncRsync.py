@@ -1,6 +1,7 @@
 #
 # Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
 # Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2016 Arnaud Veron <arnaud.veron@opensvc.com>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, justcall
 import rcExceptions as ex
 import rcStatus
 import datetime
@@ -199,10 +200,9 @@ class Rsync(resSync.Sync):
         return bwlimit
 
     def mangle_options(self, ruser):
+        options = self.get_options()
         if ruser != "root":
-            options = add_sudo_rsync_path(self.options)
-        else:
-            options = self.options
+            options = add_sudo_rsync_path(options)
         options += self.bwlimit_option()
         if '-e' in options:
             return options
@@ -387,6 +387,12 @@ class Rsync(resSync.Sync):
             self.status_log("no destination nodes")
             return rcStatus.NA
 
+        try:
+            self.get_options()
+        except ex.excError as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+
         """ sync state on nodes where the service is not UP
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
@@ -419,6 +425,23 @@ class Rsync(resSync.Sync):
 
         self.status_log("%s need update"%', '.join(nodes))
         return rcStatus.DOWN
+
+    def get_options(self):
+        if which("rsync") is None:
+	    raise ex.excError("rsync not found")
+	baseopts = '-HAXpogDtrlvx'
+        cmd = ['rsync', '--version']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+	    raise ex.excError("can not determine rsync capabilities")
+
+	if 'no xattrs' in out:
+	    baseopts = baseopts.replace('X', '')
+	if 'no ACLs' in out:
+	    baseopts = baseopts.replace('A', '')
+
+        options = [baseopts, '--stats', '--delete', '--force', '--timeout='+str(self.timeout)] + self.options
+        return options
 
     def __init__(self,
                  rid=None,
@@ -465,14 +488,9 @@ class Rsync(resSync.Sync):
         self.bwlimit = bwlimit
         self.internal = internal
         self.timeout = 3600
-        self.options = ['-HAXpogDtrlvx',
-                        '--stats',
-                        '--delete',
-                        '--force',
-                        '--timeout='+str(self.timeout)]
-        self.options += options
+        self.options = options
 
     def __str__(self):
         return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\
-                self.src, self.dst, self.options, str(self.target))
+                self.src, self.dst, self.get_options(), str(self.target))
 
