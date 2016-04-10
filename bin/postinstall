@@ -679,12 +679,12 @@ def gen_keys():
     if not os.path.exists(sshhome):
         logit("create dir %s"%sshhome,stdout=True)
 	os.makedirs(sshhome, 0700)
-    priv = os.path.join(sshhome, "id_dsa")
-    pub = os.path.join(sshhome, "id_dsa.pub")
+    priv = os.path.join(sshhome, "id_rsa")
+    pub = os.path.join(sshhome, "id_rsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
         logit("either %s or %s already exist"%(pub,priv))
         return
-    cmd = ['ssh-keygen', '-t', 'dsa', '-b', '1024', '-P', '""', '-f', priv]
+    cmd = ['ssh-keygen', '-t', 'rsa', '-b', '2048', '-P', '""', '-f', priv]
     try:
         ret = os.system(' '.join(cmd))
     except:
