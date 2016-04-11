@@ -63,16 +63,20 @@ class Vg(resDg.Dg):
             self.str_types = (str, unicode)
         else:
             self.str_types = (str)
-        
-        for dev in devs:
+
+        self.get_uid()
+        self.get_gid()
+        self.original_devs = devs
+        self.devs = set([])
+        self.devs_not_found = set([])
+
+    def validate_devs(self):
+        for dev in self.original_devs:
             l = set(glob.glob(dev))
             if len(l) > 0:
                 self.devs |= l
             else:
                 self.devs_not_found.add(dev)
-
-        self.get_uid()
-        self.get_gid()
 
     def on_add(self):
         try:
@@ -149,6 +153,7 @@ class Vg(resDg.Dg):
         return self.has_it()
 
     def _status(self, verbose=False):
+        self.validate_devs()
         if self.is_up():
             return rcStatus.NA
         else:
@@ -162,3 +167,4 @@ class Vg(resDg.Dg):
 
     def disklist(self):
         return self.devs
+

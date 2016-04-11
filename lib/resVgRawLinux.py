@@ -37,14 +37,14 @@ class Vg(resVgRaw.Vg):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         resVgRaw.Vg.__init__(self,
                              rid=rid,
                              devs=devs,
                              user=user,
                              group=group,
                              perm=perm,
-                             type=type,
+                             type="disk.raw",
                              optional=optional,
                              disabled=disabled,
                              tags=tags,
@@ -142,7 +142,7 @@ class Vg(resVgRaw.Vg):
             self.log.error("no more raw device can be allocated")
             raise ex.excError
         return '/dev/raw/raw%d'%sorted(list(candidates))[0]
-        
+
     def devname_to_rdevname(self, devname):
         b = os.path.basename(devname)
         return '/dev/raw/'+self.svc.svcname+"."+b
@@ -213,6 +213,7 @@ class Vg(resVgRaw.Vg):
         return not r
 
     def _status(self, verbose=False):
+        self.validate_devs()
         if self.dummy:
             if not self.has_it():
                 return rcStatus.WARN
@@ -225,6 +226,7 @@ class Vg(resVgRaw.Vg):
             else: return rcStatus.DOWN
 
     def do_start(self):
+        self.validate_devs()
         if self.dummy:
             return
         self.lock()
@@ -273,6 +275,7 @@ class Vg(resVgRaw.Vg):
         self.unlock()
 
     def do_stop(self):
+        self.validate_devs()
         if self.dummy:
             return
         self.get_raws()
@@ -313,6 +316,7 @@ class Vg(resVgRaw.Vg):
             Resolve those names into well known systems device names, so that they can be
             found in the DevTree
         """
+        self.validate_devs()
         if not self.dummy:
             return self.devs
         sys_devs = set([])
@@ -327,3 +331,4 @@ class Vg(resVgRaw.Vg):
             sys_dev = self.sys_devs[dev_t]
             sys_devs.add(sys_dev)
         return sys_devs
+
