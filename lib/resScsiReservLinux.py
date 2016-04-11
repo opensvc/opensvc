@@ -56,6 +56,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             if "unsupported service action" in out[1]:
                 self.log.error("disk %s does not support persistent reservation" % d)
                 raise ex.excScsiPrNotsupported
+            if "error opening file" in out[1]:
+                return 0
             if "Unit Attention" in out[0] or ret != 0:
                 self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
                 time.sleep(1)
@@ -92,12 +94,31 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
         return ret
 
-    def get_reservation_key(self, disk):
-        self.set_read_only(1)
-        cmd = [ 'sg_persist', '-n', '-r', disk ]
+    def dev_to_mpath_dev(self, devpath):
+        if which("multipath") is None:
+            raise ex.excError("multipath not found.")
+        cmd = ["multipath", "-l", "-v1", devpath]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            self.log.error("failed to list reservation for disk %s" % disk)
+            raise ex.excError(err)
+        _devpath = "/dev/mapper/"+out.strip()
+        if not os.path.exists(_devpath):
+            raise ex.excError("%s does not exist")
+        return _devpath
+
+    def get_reservation_key(self, disk):
+        try:
+            return self._get_reservation_key(disk)
+        except ex.excError as e:
+            disk = self.dev_to_mpath_dev(disk)
+            return self._get_reservation_key(disk)
+
+    def _get_reservation_key(self, disk):
+        self.set_read_only(1)
+        cmd = [ 'sg_persist', '-n', '-r', disk ]
+        (ret, out, err) = self.call(cmd, errlog=None)
+        if ret != 0:
+            raise ex.excError("failed to list reservation for disk %s" % disk)
         if 'Key=' not in out:
             return None
         for w in out.split():
@@ -106,11 +127,18 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         raise Exception()
 
     def disk_reserved(self, disk):
+        try:
+            return self._disk_reserved(disk)
+        except ex.excError as e:
+            disk = self.dev_to_mpath_dev(disk)
+            return self._disk_reserved(disk)
+
+    def _disk_reserved(self, disk):
         self.set_read_only(1)
         cmd = [ 'sg_persist', '-n', '-r', disk ]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            self.log.error("failed to read reservation for disk %s" % disk)
+            raise ex.excError("failed to read reservation for disk %s" % disk)
         if self.hostid in out:
             return True
         return False
