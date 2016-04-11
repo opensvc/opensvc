@@ -28,6 +28,7 @@ import logging
 import rcUtilities
 import sys
 import time
+import shlex
 from rcGlobalEnv import rcEnv
 
 class Resource(object):
@@ -84,7 +85,7 @@ class Resource(object):
 
         s += "%s:%s#%s" % (self.type.split(".")[0], self.subset, v[1])
         return s
-       
+
     def __str__(self):
         output="object=%s rid=%s type=%s" % (self.__class__.__name__,
                                              self.rid, self.type)
@@ -140,13 +141,18 @@ class Resource(object):
     def disable(self): self.disabled=True
     def enable(self):  self.disabled=False
 
-    def action_triggers(self, type, action):
+    def action_triggers(self, type, action, blocking=False):
         attr = type+"_"+action
         if hasattr(self, attr):
+            cmd = getattr(self, attr)
+            cmdv = shlex.split(cmd)
+
             if self.svc.options.dry_run:
                 self.log.info("exec trigger %s" % getattr(self, attr))
                 return
-            self.vcall(getattr(self, attr))
+            ret, out, err = self.vcall(cmdv)
+            if blocking and ret != 0:
+                raise exc.excError("%s trigger %s error" % (type, cmd))
 
     def action_main(self, action):
         if self.svc.options.dry_run:
@@ -171,8 +177,10 @@ class Resource(object):
                     return
             self.setup_environ()
             self.action_triggers("pre", action)
+            self.action_triggers("blocking_pre", action, blocking=True)
             self.action_main(action)
             self.action_triggers("post", action)
+            self.action_triggers("blocking_post", action, blocking=True)
             if not self.svc.options.dry_run and \
                ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action in ("provision", "install", "create", "switch", "migrate")):
                 """ refresh resource status cache after changing actions
@@ -659,7 +667,7 @@ class ResourceSet(Resource):
         if len(resources) == 0:
             return False
         return True
-        
+
     def action(self, action=None, tags=set([]), xtags=set([])):
         """Call action on each resource of the ResourceSet
         """

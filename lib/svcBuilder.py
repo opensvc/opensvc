@@ -349,13 +349,14 @@ def add_triggers(svc, resource, conf, section):
       'post_syncupdate', 'pre_syncupdate',
     ]
     for trigger in triggers + compat_triggers:
-        try:
-            s = conf_get_string_scope(svc, conf, resource.rid, trigger)
-        except ex.OptNotFound:
-            continue
-        if trigger in compat_triggers:
-            trigger = trigger.replace("sync", "sync_")
-        setattr(resource, trigger, s.split())
+        for prefix in ("", "blocking_"):
+            try:
+                s = conf_get_string_scope(svc, conf, resource.rid, prefix+trigger)
+            except ex.OptNotFound:
+                continue
+            if trigger in compat_triggers:
+                trigger = trigger.replace("sync", "sync_")
+            setattr(resource, prefix+trigger, s)
 
 def always_on_nodes_set(svc, conf, section):
     try:

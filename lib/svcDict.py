@@ -3003,84 +3003,169 @@ class KeyDict(KeywordStore):
                   section=resource,
                   keyword="pre_start",
                   at=True,
-                  text="A script to execute before the resource start action"
+                  text="A command or script to execute before the resource start action. Errors do not interrupt the action."
                 )
         def kw_post_start(resource):
             return Keyword(
                   section=resource,
                   keyword="post_start",
                   at=True,
-                  text="A script to execute after the resource start action"
+                  text="A command or script to execute after the resource start action. Errors do not interrupt the action."
                 )
         def kw_pre_stop(resource):
             return Keyword(
                   section=resource,
                   keyword="pre_stop",
                   at=True,
-                  text="A script to execute before the resource stop action"
+                  text="A command or script to execute before the resource stop action. Errors do not interrupt the action."
                 )
         def kw_post_stop(resource):
             return Keyword(
                   section=resource,
                   keyword="post_stop",
                   at=True,
-                  text="A script to execute after the resource stop action"
+                  text="A command or script to execute after the resource stop action. Errors do not interrupt the action."
                 )
         def kw_pre_sync_nodes(resource):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_nodes",
                   at=True,
-                  text="A script to execute before the resource sync_nodes action"
+                  text="A command or script to execute before the resource sync_nodes action. Errors do not interrupt the action."
                 )
         def kw_post_sync_nodes(resource):
             return Keyword(
                   section=resource,
                   keyword="post_sync_nodes",
                   at=True,
-                  text="A script to execute after the resource sync_nodes action"
+                  text="A command or script to execute after the resource sync_nodes action. Errors do not interrupt the action."
                 )
         def kw_pre_sync_drp(resource):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_drp",
                   at=True,
-                  text="A script to execute before the resource sync_drp action"
+                  text="A command or script to execute before the resource sync_drp action. Errors do not interrupt the action."
                 )
         def kw_post_sync_drp(resource):
             return Keyword(
                   section=resource,
                   keyword="post_sync_drp",
                   at=True,
-                  text="A script to execute after the resource sync_drp action"
+                  text="A command or script to execute after the resource sync_drp action. Errors do not interrupt the action."
                 )
         def kw_pre_sync_resync(resource):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_resync",
                   at=True,
-                  text="A script to execute before the resource sync_resync action"
+                  text="A command or script to execute before the resource sync_resync action. Errors do not interrupt the action."
                 )
         def kw_post_sync_resync(resource):
             return Keyword(
                   section=resource,
                   keyword="post_sync_resync",
                   at=True,
-                  text="A script to execute after the resource sync_resync action"
+                  text="A command or script to execute after the resource sync_resync action. Errors do not interrupt the action."
                 )
         def kw_pre_sync_update(resource):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_update",
                   at=True,
-                  text="A script to execute before the resource sync_update action"
+                  text="A command or script to execute before the resource sync_update action. Errors do not interrupt the action."
                 )
         def kw_post_sync_update(resource):
             return Keyword(
                   section=resource,
                   keyword="post_sync_update",
                   at=True,
-                  text="A script to execute after the resource sync_update action"
+                  text="A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
+                )
+
+        def kw_blocking_pre_start(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_start",
+                  at=True,
+                  text="A command or script to execute before the resource start action. Errors interrupt the action."
+                )
+        def kw_blocking_post_start(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_start",
+                  at=True,
+                  text="A command or script to execute after the resource start action. Errors interrupt the action."
+                )
+        def kw_blocking_pre_stop(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_stop",
+                  at=True,
+                  text="A command or script to execute before the resource stop action. Errors interrupt the action."
+                )
+        def kw_blocking_post_stop(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_stop",
+                  at=True,
+                  text="A command or script to execute after the resource stop action. Errors interrupt the action."
+                )
+        def kw_blocking_pre_sync_nodes(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_sync_nodes",
+                  at=True,
+                  text="A command or script to execute before the resource sync_nodes action. Errors interrupt the action."
+                )
+        def kw_blocking_post_sync_nodes(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_sync_nodes",
+                  at=True,
+                  text="A command or script to execute after the resource sync_nodes action. Errors interrupt the action."
+                )
+        def kw_blocking_pre_sync_drp(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_sync_drp",
+                  at=True,
+                  text="A command or script to execute before the resource sync_drp action. Errors interrupt the action."
+                )
+        def kw_blocking_post_sync_drp(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_sync_drp",
+                  at=True,
+                  text="A command or script to execute after the resource sync_drp action. Errors interrupt the action."
+                )
+        def kw_blocking_pre_sync_resync(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_sync_resync",
+                  at=True,
+                  text="A command or script to execute before the resource sync_resync action. Errors interrupt the action."
+                )
+        def kw_blocking_post_sync_resync(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_sync_resync",
+                  at=True,
+                  text="A command or script to execute after the resource sync_resync action. Errors interrupt the action."
+                )
+        def kw_blocking_pre_sync_update(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_sync_update",
+                  at=True,
+                  text="A command or script to execute before the resource sync_update action. Errors interrupt the action."
+                )
+        def kw_blocking_post_sync_update(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_sync_update",
+                  at=True,
+                  text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
 
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
@@ -3091,6 +3176,7 @@ class KeyDict(KeywordStore):
             self += kw_disable(r)
             self += kw_optional(r)
             self += kw_always_on(r)
+
             self += kw_pre_start(r)
             self += kw_post_start(r)
             self += kw_pre_stop(r)
@@ -3103,6 +3189,19 @@ class KeyDict(KeywordStore):
             self += kw_post_sync_resync(r)
             self += kw_pre_sync_update(r)
             self += kw_post_sync_update(r)
+
+            self += kw_blocking_pre_start(r)
+            self += kw_blocking_post_start(r)
+            self += kw_blocking_pre_stop(r)
+            self += kw_blocking_post_stop(r)
+            self += kw_blocking_pre_sync_nodes(r)
+            self += kw_blocking_post_sync_nodes(r)
+            self += kw_blocking_pre_sync_drp(r)
+            self += kw_blocking_post_sync_drp(r)
+            self += kw_blocking_pre_sync_resync(r)
+            self += kw_blocking_post_sync_resync(r)
+            self += kw_blocking_pre_sync_update(r)
+            self += kw_blocking_post_sync_update(r)
 
         self += KeywordMode()
         self += KeywordPkgName()
