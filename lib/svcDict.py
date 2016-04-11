@@ -2544,13 +2544,25 @@ class KeywordSyncSymcloneSymdg(Keyword):
                   text="Name of the symmetrix device group where the source and target devices are grouped."
                 )
 
+class KeywordSyncSymSrdfsSymid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symid",
+                  at=True,
+                  rtype="symsrdfs",
+                  required=True,
+                  text="Id of the local symmetrix array hosting the symdg. This parameter is usually scoped to define different array ids for different nodes."
+                )
+
 class KeywordSyncSymSrdfsSymdg(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="sync",
                   keyword="symdg",
-                  at=True,
+                  at=False,
                   rtype="symsrdfs",
                   required=True,
                   text="Name of the symmetrix device group where the source and target devices are grouped."
@@ -2562,7 +2574,7 @@ class KeywordSyncSymSrdfsRdfg(Keyword):
                   self,
                   section="sync",
                   keyword="rdfg",
-                  at=True,
+                  at=False,
                   rtype="symsrdfs",
                   required=True,
                   text="Name of the RDF group paring the source and target devices."
@@ -3344,6 +3356,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncIbmdssnapArray()
         self += KeywordSyncIbmdssnapBgcopy()
         self += KeywordSyncIbmdssnapRecording()
+        self += KeywordSyncSymSrdfsSymid()
         self += KeywordSyncSymSrdfsSymdg()
         self += KeywordSyncSymSrdfsRdfg()
         self += KeywordSyncSymcloneSymdg()

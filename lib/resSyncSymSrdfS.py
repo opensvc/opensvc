@@ -68,19 +68,31 @@ class syncSymSrdfS(resSync.Sync):
         from rcUtilitiesLinux import promote_dev_rw
         promote_dev_rw(dev, log=self.log)
 
+    def get_symid_from_export(self, cf):
+        with open(cf, 'r') as f:
+            buff = f.read()
+        return buff.split("\n")[0].split()[-1]
+
     def postsync(self):
-        self.do_dgimport()
+        local_export_symid = self.get_symid_from_export(self.dgfile_local_name())
+        if local_export_symid == self.symid:
+            return self.do_dgimport(self.dgfile_local_name())
+        remote_export_symid = self.get_symid_from_export(self.dgfile_rdf_name())
+        if remote_export_symid == self.symid:
+            self.do_dgimport(self.dgfile_rdf_name())
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if self.svc.force or s['overall'].status == rcStatus.UP:
             self.do_rdf_dgexport()
+            self.do_local_dgexport()
 
     def files_to_sync(self):
-        return [self.dgfile_rdf_name()]
+        return [self.dgfile_rdf_name(), self.dgfile_local_name()]
 
-    def do_local_dgexport(self):
-        fpath = self.dgfile_local_name()
+    def do_local_dgexport(self, fpath=None):
+        if fpath is None:
+            fpath = self.dgfile_local_name()
         try:
             os.unlink(fpath)
         except:
@@ -105,19 +117,19 @@ class syncSymSrdfS(resSync.Sync):
 
     def do_dgremove(self):
         cmd = ['symdg', 'delete', self.symdg, '-force']
-        (ret, out, err) = self.call(cmd)
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def is_dgimport_needed(self):
-        self.do_local_dgexport()
+        self.do_local_dgexport(fpath=self.dgfile_tmp_local_name())
         import filecmp
         if filecmp.cmp(self.dgfile_local_name(), self.dgfile_rdf_name(), shallow=False):
             return False
         return True
 
-    def do_dgimport(self):
+    def do_dgimport(self, ef):
         if self.symdg in self.get_dg_list():
             if not self.is_dgimport_needed():
                 self.log.info("symrdf dg %s is already up to date"%self.symdg)
@@ -125,11 +137,14 @@ class syncSymSrdfS(resSync.Sync):
             else:
                 self.do_dgremove()
         self.log.info("symrdf dg %s will be imported from file"%self.symdg)
-        cmd = ['symdg', 'import', self.symdg, '-f', self.dgfile_rdf_name()]
-        (ret, out, err) = self.call(cmd)
+        cmd = ['symdg', 'import', self.symdg, '-f', ef]
+        (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
+
+    def dgfile_tmp_local_name(self):
+        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.tmp.local')
 
     def dgfile_local_name(self):
         return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.local')
@@ -433,8 +448,6 @@ class syncSymSrdfS(resSync.Sync):
             elif self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
                     pass
-
-
                 else:
                     raise ex.excError("symrdf dg %s is RDF1 on drp node, you have to manually return to a sane SRDF status.")
         elif rcEnv.nodename in self.svc.nodes:
@@ -470,6 +483,7 @@ class syncSymSrdfS(resSync.Sync):
 
     def __init__(self,
                  rid=None,
+                 symid=None,
                  symdg=None,
                  rdfg=None,
                  symdevs=[],
@@ -493,6 +507,9 @@ class syncSymSrdfS(resSync.Sync):
 
         self.rdf_query_cache = None
         self.label = "srdf/s symdg %s"%(symdg)
+        self.symid = symid
+
+
         self.symdg = symdg
         self.rdfg = rdfg
         self.symdevs = symdevs
