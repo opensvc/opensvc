@@ -427,6 +427,10 @@ def convert_size(s, _to='', _round=1):
         unit = _to[0].upper()
     else:
         unit = ''
+
+    if unit == 'B':
+        unit = ''
+
     try:
         end_idx = l.index(unit)
     except:
