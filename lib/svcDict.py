@@ -2601,7 +2601,7 @@ class KeywordSyncSymSrdfsRdfg(Keyword):
                   at=False,
                   rtype="symsrdfs",
                   required=True,
-                  text="Name of the RDF group paring the source and target devices."
+                  text="Name of the RDF group pairing the source and target devices."
                 )
 
 class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
