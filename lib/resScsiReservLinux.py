@@ -45,6 +45,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         os.environ["SG_PERSIST_O_RDONLY"] = str(val)
 
     def ack_unit_attention(self, d):
+        if not os.path.exists(d):
+            return 0
         i = self.preempt_timeout
         self.set_read_only(0)
         while i>0:
