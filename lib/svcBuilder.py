@@ -78,6 +78,7 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
          'drpnodes': svc.drpnodes,
          'encapnodes': svc.encapnodes,
          'flex_primary': svc.flex_primary,
+         'drp_flex_primary': svc.drp_flex_primary,
         }
     else:
         d = svc
@@ -101,6 +102,9 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     elif conf.has_option(s, o+"@flex_primary") and \
          nodename == d['flex_primary']:
         return f(s, o+"@flex_primary")
+    elif conf.has_option(s, o+"@drp_flex_primary") and \
+         nodename == d['drp_flex_primary']:
+        return f(s, o+"@drp_flex_primary")
     elif conf.has_option(s, o):
         try:
             return f(s, o)
@@ -3129,6 +3133,14 @@ def build(name, minimal=False):
 
         kwargs['disabled'] = get_disabled(conf, "", "")
 
+        if "drp_flex_primary" in defaults:
+            drp_flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drp_flex_primary").lower()
+        else:
+            drp_flex_primary = ''
+        d_nodes['drp_flex_primary'] = drp_flex_primary
+
+        kwargs['disabled'] = get_disabled(conf, "", "")
+
         if "pkg_name" in defaults:
             if svcmode not in ["sg", "rhcs", "vcs"]:
                 log.error("can not set 'pkg_name' with '%s' mode in %s env"%(svcmode, name))
@@ -3184,6 +3196,8 @@ def build(name, minimal=False):
         svc.encapnodes = encapnodes
     if not hasattr(svc, "flex_primary"):
         svc.flex_primary = flex_primary
+    if not hasattr(svc, "drp_flex_primary"):
+        svc.drp_flex_primary = drp_flex_primary
 
     try:
         svc.presnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'presnap_trigger').split()

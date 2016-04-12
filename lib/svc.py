@@ -2601,7 +2601,11 @@ class Svc(Resource, Scheduler):
             return
         if not "flex" in self.clustertype:
             return
-        if rcEnv.nodename != self.flex_primary:
+        if rcEnv.nodename == self.drp_flex_primary:
+            peers = set(self.drpnodes) - set([rcEnv.nodename])
+        elif rcEnv.nodename == self.flex_primary:
+            peers = set(self.nodes) - set([rcEnv.nodename])
+        else:
             return
 
         a = [e for e in sys.argv[1:] if e != "--cluster"]
@@ -2626,7 +2630,7 @@ class Svc(Resource, Scheduler):
                 mp = False
 
         ps = {}
-        for n in set(self.nodes) - set([rcEnv.nodename]):
+        for n in peers:
             kwargs = {"node": n, "action": " ".join(a), "waitlock": waitlock, "verbose": False, "sync": True}
             if mp:
                 p = Process(target=wrapper, args=[], kwargs=kwargs)

@@ -104,7 +104,7 @@ class Keyword(object):
         if self.text:
             s += wrapper.fill("  help:        "+self.text)
         if self.at:
-            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ', '@flex_primary' or '@encapnodes '\n"
+            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ', '@flex_primary', '@drp_flex_primary' or '@encapnodes '\n"
             s += "to specify a scope-specific value.\n"
             s += "You will be prompted for new values until you submit an empty value.\n"
         s += "\n"
@@ -210,6 +210,30 @@ class KeywordPkgName(Keyword):
                   order=11,
                   depends=[('mode', ["vcs", "sg", "rhcs"])],
                   text="The wrapped cluster package name, as known to the cluster manager in charge."
+                )
+
+class KeywordFlexPrimary(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="flex_primary",
+                  required=False,
+                  order=11,
+                  depends=[('cluster_type', ["flex"])],
+                  text="The node in charge of syncing the other nodes. --cluster actions on the flex_primary are execute on all peer nodes (ie, not drpnodes)."
+                )
+
+class KeywordDrpFlexPrimary(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="drp_flex_primary",
+                  required=False,
+                  order=11,
+                  depends=[('cluster_type', ["flex"])],
+                  text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not prd nodes)."
                 )
 
 class KeywordDockerDataDir(Keyword):
@@ -3249,6 +3273,8 @@ class KeyDict(KeywordStore):
         self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()
+        self += KeywordFlexPrimary()
+        self += KeywordDrpFlexPrimary()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
         self += KeywordFlexCpuMinThreshold()
