@@ -310,7 +310,7 @@ if len(set(["svcnames", "allupservices", "alldownservices", "status", "allprimar
     if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
         build_kwargs["onlysecondary"] = options.parm_secondary
 
-if action not in ("create"):
+if action not in ("create", "install"):
     try:
         node.build_services(**build_kwargs)
     except ex.excError as e:
