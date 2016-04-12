@@ -287,16 +287,14 @@ def add_scsireserv(svc, resource, conf, section):
     pr_rid = resource.rid+"pr"
 
     try:
-        pa = conf_get_boolean_scope(svc, conf, pr_rid, 'no_preempt_abort')
+        kwargs["prkey"] = conf_get_string_scope(svc, conf, resource.rid, 'prkey')
     except ex.OptNotFound:
-        try:
-            pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
-        except ex.OptNotFound:
-            defaults = conf.defaults()
-            if 'no_preempt_abort' in defaults:
-                pa = bool(defaults['no_preempt_abort'])
-            else:
-                pa = False
+        pass
+
+    try:
+        pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
+    except ex.OptNotFound:
+        pa = False
 
     try:
         kwargs['optional'] = get_optional(conf, pr_rid, svc)

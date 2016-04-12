@@ -39,6 +39,7 @@ class ScsiReserv(Res.Resource):
                  rid=None,
                  peer_resource=None,
                  no_preempt_abort=False,
+                 prkey=None,
                  disabled=False,
                  tags=set([]),
                  optional=False,
@@ -51,6 +52,7 @@ class ScsiReserv(Res.Resource):
         self.prtype = '5'
         self.hostid = None
         self.peer_resource = peer_resource
+        self.prkey = prkey
         Res.Resource.__init__(self,
                               rid=rid+"pr",
                               type="disk.scsireserv",
@@ -74,10 +76,20 @@ class ScsiReserv(Res.Resource):
     def get_hostid(self):
         if self.hostid:
             return
+        if self.prkey:
+            self.hostid = self.prkey
+            return
         try:
             self.hostid = self.svc.node.get_prkey()
         except Exception as e:
             raise ex.excError(str(e))
+
+    def info(self):
+        self.get_hostid()
+        data = [
+          [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype, self.rid, "prkey", self.hostid],
+        ]
+        return data
 
     def scsireserv_supported(self):
         return False

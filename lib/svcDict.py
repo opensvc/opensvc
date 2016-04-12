@@ -598,6 +598,18 @@ class KeywordAntiAffinity(Keyword):
                   example="svc1 svc2"
                 )
 
+class KeywordPrKey(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="prkey",
+                  order=15,
+                  at=True,
+                  required=False,
+                  text="Defines a specific default persistent reservation key for the service. A prkey set in a resource takes priority. If no prkey is specified in the service nor in the DEFAULT section, the prkey in node.conf is used. If node.conf has no prkey set, the hostid is computed and written in node.conf."
+                )
+
 class KeywordNoPreemptAbort(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1524,6 +1536,18 @@ class KeywordIpAmazonDockerDaemonIp(Keyword):
                   required=False,
                   text="Set new allocated ip as value as a '--ip <addr>' argument in the DEFAULT.docker_daemon_args parameter.",
                   example="True"
+                )
+
+class KeywordDiskPrKey(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="prkey",
+                  order=15,
+                  at=True,
+                  required=False,
+                  text="Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
                 )
 
 class KeywordDiskGceNames(Keyword):
@@ -3216,6 +3240,7 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_update(r)
 
         self += KeywordMode()
+        self += KeywordPrKey()
         self += KeywordPkgName()
         self += KeywordDockerDataDir()
         self += KeywordDockerDaemonArgs()
@@ -3296,6 +3321,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpAmazonDockerDaemonIp()
         self += KeywordIpGceZone()
         self += KeywordIpGceRoutename()
+        self += KeywordDiskPrKey()
         self += KeywordDiskGceNames()
         self += KeywordDiskGceZone()
         self += KeywordDiskGceDescription()
