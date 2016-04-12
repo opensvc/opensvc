@@ -289,4 +289,6 @@ class ScsiReserv(Res.Resource):
         if self.scsirelease() != 0:
             raise ex.excError
 
+    def provision(self):
+        self.start()
 
