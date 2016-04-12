@@ -84,7 +84,7 @@ class Zone(resContainer.Container):
         cmd = [ZONECFG, '-z', self.name, 'info', 'zonepath']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("unable to determine zonepath using %s"%' '.join(cmd))
+            raise excError("unable to determine zonepath using %s"%' '.join(cmd))
         self.zonepath = out.replace("zonepath: ", "").strip()
         return self.zonepath
 
