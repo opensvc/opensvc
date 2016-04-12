@@ -24,7 +24,7 @@ import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, dotted_to_cidr
+from rcUtilities import which, to_cidr
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
