@@ -403,7 +403,7 @@ class syncSymSrdfS(resSync.Sync):
         self.status_log("current state %s"%state)
         if self.is_synchronous_and_synchronized_state():
             return rcStatus.UP
-        self.status_log("expecting synchronous/synchronized")
+        self.status_log("expecting Synchronous/Synchronized")
         return rcStatus.WARN
 
     # SRDF split
