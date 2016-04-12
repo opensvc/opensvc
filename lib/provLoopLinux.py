@@ -13,6 +13,10 @@ class ProvisioningLoop(Provisioning):
             self.size = self.r.svc.config.get(self.r.rid, 'size')
         except Exception as e:
             raise ex.excError(str(e))
+        if os.path.exists(self.path):
+            self.r.log.info("already provisionned")
+            self.r.start()
+            return
         d = os.path.dirname(self.path)
         try:
             if not os.path.exists(d):
@@ -26,6 +30,5 @@ class ProvisioningLoop(Provisioning):
             self.r.log.error("Failed to create %s: %s"% (self.path, str(e)))
             raise ex.excError
 
-        self.remove_keywords(["size"])
         self.r.log.info("provisioned")
         self.r.start()
