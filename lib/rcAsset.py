@@ -646,7 +646,8 @@ class Asset(object):
                 i = int(l[2])
             except:
                 continue
-            d.append((l[0], l[2]))
+            name = repr(l[0]).strip("'")
+            d.append((name, l[2]))
         return d
 
     def get_lan(self):
