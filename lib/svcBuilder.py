@@ -1330,7 +1330,7 @@ def add_fs(svc, conf, s):
         svc.log.error("mnt must be set in section %s"%s)
         return
 
-    if kwargs['mountPoint'][-1] == '/':
+    if kwargs['mountPoint'][-1] != "/" and kwargs['mountPoint'][-1] == '/':
         """ Remove trailing / to not risk losing rsync src trailing /
             upon snap mountpoint substitution.
         """
