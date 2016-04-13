@@ -70,6 +70,8 @@ class Mount(Res.Resource):
         for r in rset.resources:
             if r.skip or r.disabled:
                 continue
+            if "noaction" in r.tags:
+                continue
             if cwd.startswith(r.mountPoint):
                 raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
 
