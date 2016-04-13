@@ -75,8 +75,22 @@ class Zone(resContainer.Container):
         self.zone_cf = "/etc/zones/"+self.name+".xml"
         self.delayed_noaction = True
 
-    def on_add(self):
-        self.get_zonepath()
+    def zone_cfg_dir(self):
+        return os.path.join(rcEnv.pathvar, self.svc.svcname, "zonecfg")
+
+    def zone_cfg_path(self):
+        return os.path.join(self.zone_cfg_dir(), self.name+".cfg")
+
+    def export_zone_cfg(self):
+        cfg_d = self.zone_cfg_dir()
+        if not os.path.exists(cfg_d):
+            os.makedirs(cfg_d)
+
+        cfg = self.zone_cfg_path()
+        cmd = [ZONECFG, "-z", self.name, "export", "-f", cfg]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0 and not os.path.exists(cfg):
+            raise ex.excError(err)
 
     def get_zonepath(self):
         if hasattr(self, "zonepath"):
@@ -127,6 +141,7 @@ class Zone(resContainer.Container):
         return ret
 
     def set_zonepath_perms(self):
+        self.get_zonepath()
         if not os.path.exists(self.zonepath):
             os.makedirs(self.zonepath)
         s = os.stat(self.zonepath)
@@ -139,6 +154,7 @@ class Zone(resContainer.Container):
             self.vcall(['chmod', '700', self.zonepath])
 
     def rcp_from(self, src, dst):
+        self.get_zonepath()
         src = os.path.realpath(self.zonepath + '/root/' + src)
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -147,6 +163,7 @@ class Zone(resContainer.Container):
         return out, err, ret
 
     def rcp(self, src, dst):
+        self.get_zonepath()
         dst = os.path.realpath(self.zonepath + '/root/' + dst)
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -159,11 +176,16 @@ class Zone(resContainer.Container):
         if self.state in ('installed' , 'ready', 'running'):
             self.log.info("zone container %s already installed" % self.name)
             return 0
+        elif self.state is None:
+            cmd = [ZONECFG, "-z", self.name, "-f", self.zone_cfg_path()]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
         try:
             self.umount_fs_in_zonepath()
             self.zoneadm('attach')
         except excError:
-            self.zoneadm('attach', ['-F'] )
+            self.zoneadm('attach', ['-F'])
         self.can_rollback = True
 
     def detach(self):
@@ -182,6 +204,7 @@ class Zone(resContainer.Container):
         return self.zoneadm('ready')
 
     def install_drp_flag(self):
+        self.get_zonepath()
         flag = os.path.join(self.zonepath, ".drp_flag")
         self.log.info("install drp flag in container : %s"%flag)
         with open(flag, 'w') as f:
@@ -355,6 +378,7 @@ class Zone(resContainer.Container):
            if they are needed, them still may be mounted by opensvc
            if declared as zoned fs or encap fs.
         """
+        self.get_zonepath()
         if self.zonepath == "/":
             # sanity check
             return
@@ -391,6 +415,7 @@ class Zone(resContainer.Container):
         self.svc.sub_set_action("fs", "start", tags=set([self.name]))
 
     def stop(self):
+        self.export_zone_cfg()
         self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
@@ -405,6 +430,12 @@ class Zone(resContainer.Container):
         self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
         self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
+
+    def presync(self):
+        self.export_zone_cfg()
+
+    def files_to_sync(self):
+        return [self.zone_cfg_path()]
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
