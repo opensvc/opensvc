@@ -43,6 +43,7 @@ class Zone(resContainer.Container):
                  rid,
                  name,
                  guestos="SunOS",
+                 delete_on_stop=False,
                  optional=False,
                  disabled=False,
                  monitor=False,
@@ -70,6 +71,7 @@ class Zone(resContainer.Container):
                                         always_on=always_on)
         self.label = name
         self.state = None
+        self.delete_on_stop = delete_on_stop
         self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
         self.zone_cf = "/etc/zones/"+self.name+".xml"
@@ -188,6 +190,19 @@ class Zone(resContainer.Container):
             self.zoneadm('attach', ['-F'])
         self.can_rollback = True
 
+    def delete(self):
+        if not self.delete_on_stop:
+            return 0
+        self.zone_refresh()
+        if self.state is None:
+            self.log.info("zone container %s already deleted" % self.name)
+            return 0
+        cmd = [ZONECFG, "-z", self.name, "delete", "-F"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        return 0
+
     def detach(self):
         self.zone_refresh()
         if self.state == "configured" :
@@ -275,7 +290,7 @@ class Zone(resContainer.Container):
         ret = self.zoneadm('halt')
         if ret != 0:
             return ret
-        return self.detach()
+        return 0
 
     def container_start(self):
         return self.boot()
@@ -423,6 +438,7 @@ class Zone(resContainer.Container):
         if not 'noaction' in self.tags:
             self.halt()
             self.detach()
+            self.delete()
 
     def provision(self):
         if not 'noaction' in self.tags:
