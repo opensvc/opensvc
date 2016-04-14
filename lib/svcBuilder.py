@@ -1360,12 +1360,17 @@ def add_fs(svc, conf, s):
         zp = None
         for r in svc.get_resources("container.zone"):
             if r.name == zone:
-                zp = r.zonepath
+                try:
+                    zp = r.zonepath
+                except AttributeError:
+                    zp = "<deleted>"
                 break
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
             raise ex.excError()
-        kwargs['mountPoint'] = os.path.realpath(zp+'/root/'+kwargs['mountPoint'])
+        kwargs['mountPoint'] = zp+'/root/'+kwargs['mountPoint']
+        if zp != "<deleted>":
+            kwargs['mountPoint'] = os.path.realpath(kwargs['mountPoint'])
 
     try:
         mount = __import__('resMount'+rcEnv.sysname)
