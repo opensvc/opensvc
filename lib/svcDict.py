@@ -322,6 +322,20 @@ class KeywordContainerType(Keyword):
                   order=1
                 )
 
+class KeywordContainerZoneDeleteOnStop(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype="zone",
+                  keyword="delete_on_stop",
+                  candidates=(True, False),
+                  text="If set to true, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
+                  default=False,
+                  required=False,
+                  order=1
+                )
+
 class KeywordDockerRunImage(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3441,6 +3455,7 @@ class KeyDict(KeywordStore):
         self += KeywordStonithTarget()
         self += KeywordStonithCalloutCmd()
         self += KeywordContainerType()
+        self += KeywordContainerZoneDeleteOnStop()
         self += KeywordVmName()
         self += KeywordGuestos()
         self += KeywordRootfs()

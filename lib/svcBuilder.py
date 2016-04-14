@@ -1552,6 +1552,11 @@ def add_containers_zone(svc, conf, s):
     except ex.OptNotFound:
         pass
 
+    try:
+        kwargs['delete_on_stop'] = conf_get_boolean_scope(svc, conf, s, 'delete_on_stop')
+    except ex.OptNotFound:
+        pass
+
     m = __import__('resContainerZone')
 
     kwargs['rid'] = s
