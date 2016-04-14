@@ -22,6 +22,7 @@
 
 import os
 import time
+import re
 
 import rcStatus
 import rcMountsSunOS as rcMounts
@@ -82,6 +83,15 @@ class Mount(Res.Mount):
     def start(self):
         self.Mounts = None
         Res.Mount.start(self)
+        m = re.match("<(\w+)>", self.mountPoint)
+        if m:
+            # the zone was not created when the service was built. now it should,
+            # so try the redetect the zonepath
+            zone = m.group(1)
+            for r in self.svc.get_resources("container.zone"):
+                if r.name == zone:
+                    zonepath = r.get_zonepath()
+                    self.mountPoint = re.sub("<\w+>", zonepath, self.mountPoint)
 
         if self.fsType == 'zfs' :
             if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
@@ -174,7 +184,7 @@ class Mount(Res.Mount):
                     (self.device, self.mountPoint))
             return
 
-        try: 
+        try:
             self.try_umount()
         except:
             self.Mounts = None
