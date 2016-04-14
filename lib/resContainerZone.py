@@ -94,15 +94,34 @@ class Zone(resContainer.Container):
         if ret != 0 and not os.path.exists(cfg):
             raise ex.excError(err)
 
-    def get_zonepath(self):
-        if hasattr(self, "zonepath"):
-            return self.zonepath
+    def get_zonepath_from_zonecfg_cmd(self):
         cmd = [ZONECFG, '-z', self.name, 'info', 'zonepath']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise excError("unable to determine zonepath using %s"%' '.join(cmd))
-        self.zonepath = out.replace("zonepath: ", "").strip()
-        return self.zonepath
+        zp = out.replace("zonepath: ", "").strip()
+        return zp
+
+    def get_zonepath_from_zonecfg_export(self):
+        fpath = self.zone_cfg_path()
+        if not os.path.exists(fpath):
+            raise excError("zone config export file %s not found. unable to determine zonepath" % fpath)
+        with open(fpath, "r") as f:
+            buff = f.read()
+        for line in buff.split("\n"):
+            if "set zonepath" in line:
+                return line.split("=")[-1].strip()
+        raise excError("set zonepath command not found in %s" % fpath)
+
+    def get_zonepath(self):
+        if hasattr(self, "zonepath"):
+            return self.zonepath
+        try:
+            zp = self.get_zonepath_from_zonecfg_cmd()
+        except:
+            zp = self.get_zonepath_from_zonecfg_export()
+        self.zonepath = zp
+        return zp
 
     def files_to_sync(self):
         return [self.zone_cf]
@@ -249,7 +268,7 @@ class Zone(resContainer.Container):
     def wait_multi_user(self):
         self.log.info("wait for smf state on on %s", MULTI_USER_SMF)
         self.wait_for_fn(self.is_multi_user, self.startup_timeout, 2)
-        
+
     def boot(self):
         "return 0 if zone is running else return self.zoneadm('boot')"
         self.zone_refresh()
@@ -280,7 +299,7 @@ class Zone(resContainer.Container):
                     for t2 in range(self.shutdown_timeout):
                         time.sleep(1)
                         (out,err,st) = justcall([ 'pgrep', '-fl', 'ipkg/poststate.*'+ self.name])
-                        if st == 0 : 
+                        if st == 0 :
                             self.log.info("Waiting for ipkg poststate complete: %s" % out)
                         else:
                             break
@@ -385,7 +404,7 @@ class Zone(resContainer.Container):
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
- 
+
     def umount_fs_in_zonepath(self):
         """zone boot will fail if some fs linger under the zonepath.
            those fs might be datasets automounted upon zpool import.
@@ -405,9 +424,9 @@ class Zone(resContainer.Container):
         for resource in self.svc.get_resources('fs'):
             mntpts.append(resource.mountPoint)
         for mount in mounts.mounts:
-	    # don't unmount zonepath itself
-	    if mount.mnt == self.zonepath:
-		continue
+            # don't unmount zonepath itself
+            if mount.mnt == self.zonepath:
+                continue
             if not mount.mnt.startswith(self.zonepath):
                 continue
             # don't umount fs not handled by the service
@@ -475,7 +494,7 @@ class Zone(resContainer.Container):
                     vcpus = l[-1][:l[-1].index(',')]
                     vcpus = str(float(vcpus)/100)
                     break
-                
+
         cmd = [ZONECFG, "-z", self.name, "info", "capped-memory"]
         (out, err, status) = justcall(cmd)
         if status == 0:
@@ -495,10 +514,11 @@ class Zone(resContainer.Container):
                     elif vmem.endswith('K'):
                         vmem = str(float(vmem[:-1])/1024)
                     break
-                
+
         return {'vcpus': vcpus, 'vmem': vmem}
 
 
 if __name__ == "__main__":
     for c in (Zone,) :
         help(c)
+

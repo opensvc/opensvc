@@ -184,7 +184,7 @@ def get_monitor(conf, section, svc):
         except:
             return False
 
-    # deprecated 
+    # deprecated
     if conf.has_option(section, 'monitor_on'):
         nodes = set([])
         l = conf.get(section, "monitor_on").split()
@@ -413,7 +413,7 @@ def add_resources(restype, svc, conf):
         if s in svc.resources_by_id:
             continue
         globals()['add_'+restype](svc, conf, s)
- 
+
 def add_ip_gce(svc, conf, s):
     kwargs = {}
 
@@ -709,7 +709,7 @@ def add_stonith(svc, conf, s):
             kwargs['name'] = conf_get_string_scope(svc, conf, s, 'target')
         except ex.OptNotFound:
             pass
-    
+
         if 'name' not in kwargs:
             svc.log.error("target must be set in section %s"%s)
             return
@@ -718,7 +718,7 @@ def add_stonith(svc, conf, s):
             kwargs['cmd'] = conf_get_string_scope(svc, conf, s, 'cmd')
         except ex.OptNotFound:
             pass
-    
+
         if 'cmd' not in kwargs:
             svc.log.error("cmd must be set in section %s"%s)
             return
@@ -1274,7 +1274,7 @@ def add_share(svc, conf, s):
 
     fname = 'add_share_'+_type
     if fname not in globals():
-        svc.log.error("type '%s' not supported in section %s"%(_type, s)) 
+        svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, conf, s)
 
 def add_share_nfs(svc, conf, s):
@@ -1361,15 +1361,15 @@ def add_fs(svc, conf, s):
         for r in svc.get_resources("container.zone"):
             if r.name == zone:
                 try:
-                    zp = r.zonepath
-                except AttributeError:
-                    zp = "<deleted>"
+                    zp = r.get_zonepath()
+                except:
+                    zp = "<%s>" % zone
                 break
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
             raise ex.excError()
-        kwargs['mountPoint'] = zp+'/root/'+kwargs['mountPoint']
-        if zp != "<deleted>":
+        kwargs['mountPoint'] = zp+'/root'+kwargs['mountPoint']
+        if "<%s>" % zone != zp:
             kwargs['mountPoint'] = os.path.realpath(kwargs['mountPoint'])
 
     try:
@@ -2209,7 +2209,7 @@ def add_syncs_dds(svc, conf, s):
     if len(dsts) == 0:
         for node in svc.nodes | svc.drpnodes:
             dsts[node] = kwargs['src']
-    
+
     kwargs['dsts'] = dsts
 
     try:
@@ -2900,7 +2900,7 @@ def add_app(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
- 
+
     r = resApp.App(**kwargs)
     add_triggers(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
@@ -2939,11 +2939,11 @@ def add_apps_sysv(svc, conf):
         d = {
           'script': script,
           'rid': get_next_rid(),
-          'info': 50, 
-          'optional': True, 
-          'disabled': disabled, 
-          'monitor': monitor, 
-          'restart': restart, 
+          'info': 50,
+          'optional': True,
+          'disabled': disabled,
+          'monitor': monitor,
+          'restart': restart,
         }
         return d
 
@@ -3261,7 +3261,7 @@ def build(name, minimal=False):
         svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
     except ex.OptNotFound:
         pass
-    
+
     """ prune not managed service
     """
     if svc.svcmode not in rcEnv.vt_cloud and rcEnv.nodename not in svc.nodes | svc.drpnodes:
