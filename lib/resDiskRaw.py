@@ -99,6 +99,25 @@ class Disk(resDg.Dg):
                 data += [["dev", dev]]
         return self.fmt_info(data)
 
+    def subst_container_root(self, path):
+        m = re.match("<(\w+)>", path)
+        if m is None:
+            return path
+        container_name = m.group(1)
+        for r in self.svc.get_resources("container"):
+            if hasattr(r, "name") and r.name == container_name:
+                if hasattr(r, "get_zonepath"):
+                    # zone
+                    container_root = r.get_zonepath()
+                elif hasattr(r, "get_rootfs"):
+                    # lxc
+                    container_root = r.get_rootfs()
+                else:
+                    return path
+                path = re.sub("<\w+>", container_root, path)
+                break
+        return path
+
     def validate_devs(self):
         for dev in self.original_devs:
             if ":" in dev:
@@ -109,6 +128,7 @@ class Disk(resDg.Dg):
                 if not os.path.exists(src) or not self.verify_dev(src):
                     self.devs_not_found.add(src)
                     continue
+                dst = self.subst_container_root(dst)
                 if not os.path.exists(dst):
                     self.dst_devs_not_found.add(dst)
                 self.devs_map[src] = dst

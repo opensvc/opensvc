@@ -1876,6 +1876,20 @@ class KeywordDiskRawDevs(Keyword):
                   example="/dev/mapper/svc.d0:/dev/oracle/redo001 /dev/mapper/svc.d1"
                 )
 
+class KeywordDiskRawZone(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="raw",
+                  keyword="zone",
+                  order=12,
+                  at=True,
+                  required=False,
+                  text="The zone name the raw resource is linked to. If set, the raw files are configured from the global reparented to the zonepath.",
+                  example="zone1"
+                )
+
 class KeywordDiskRawCreateCharDevices(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3388,6 +3402,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskType()
         self += KeywordDiskAmazonVolumes()
         self += KeywordDiskRawDevs()
+        self += KeywordDiskRawZone()
         self += KeywordDiskRawCreateCharDevices()
         self += KeywordDiskVgname()
         self += KeywordDiskDsf()

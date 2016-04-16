@@ -446,11 +446,13 @@ class Zone(resContainer.Container):
             self.boot()
         self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
+        self.svc.sub_set_action("disk.raw", "start", tags=set([self.name]))
         self.svc.sub_set_action("fs", "start", tags=set([self.name]))
 
     def stop(self):
         self.export_zone_cfg()
         self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.raw", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
         self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
         self.svc.sub_set_action("ip", "stop", tags=set([self.name]))
@@ -464,6 +466,7 @@ class Zone(resContainer.Container):
             self._provision()
         self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
         self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
 
     def presync(self):

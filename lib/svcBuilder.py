@@ -923,6 +923,10 @@ def add_raw(svc, conf, s):
     kwargs = {}
     _type = "Raw"+rcEnv.sysname
     try:
+        zone = conf_get_string_scope(svc, conf, s, 'zone')
+    except:
+        zone = None
+    try:
         kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
     except ex.OptNotFound:
         pass
@@ -939,7 +943,10 @@ def add_raw(svc, conf, s):
     except ex.OptNotFound:
         pass
     try:
-        kwargs['devs'] = set(conf_get_string_scope(svc, conf, s, 'devs').split())
+        devs = conf_get_string_scope(svc, conf, s, 'devs')
+        if zone is not None:
+            devs = devs.replace(":", ":<%s>" % zone)
+        kwargs['devs'] = set(devs.split())
     except ex.OptNotFound:
         svc.log.error("devs must be set in section %s"%s)
         return
@@ -969,6 +976,9 @@ def add_raw(svc, conf, s):
     r = m.Disk(**kwargs)
     if dummy:
         r.tags.add("noaction")
+    if zone is not None:
+        r.tags.add('zone')
+        r.tags.add(zone)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
