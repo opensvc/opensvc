@@ -921,7 +921,7 @@ def add_rados(svc, conf, s):
 
 def add_raw(svc, conf, s):
     kwargs = {}
-    vgtype = "Raw"+rcEnv.sysname
+    _type = "Raw"+rcEnv.sysname
     try:
         kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
     except ex.OptNotFound:
@@ -935,7 +935,7 @@ def add_raw(svc, conf, s):
     except ex.OptNotFound:
         pass
     try:
-        kwargs['dummy'] = conf_get_boolean_scope(svc, conf, s, 'dummy')
+        kwargs['create_char_devices'] = conf_get_boolean_scope(svc, conf, s, 'create_char_devices')
     except ex.OptNotFound:
         pass
     try:
@@ -943,6 +943,13 @@ def add_raw(svc, conf, s):
     except ex.OptNotFound:
         svc.log.error("devs must be set in section %s"%s)
         return
+
+    # backward compat : the dummy keyword is deprecated in favor of
+    # the standard "noaction" tag.
+    try:
+        dummy = conf_get_boolean_scope(svc, conf, s, 'dummy')
+    except ex.OptNotFound:
+        dummy = False
 
     kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
     kwargs['rid'] = s
@@ -954,12 +961,14 @@ def add_raw(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        vg = __import__('resVg'+vgtype)
+        m = __import__('resDisk'+_type)
     except ImportError:
-        svc.log.error("vg type %s is not implemented"%vgtype)
+        svc.log.error("disk type %s driver is not implemented"%_type)
         return
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
+    if dummy:
+        r.tags.add("noaction")
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)

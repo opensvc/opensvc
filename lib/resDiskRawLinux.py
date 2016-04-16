@@ -15,21 +15,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import resVgRaw
+import resDiskRaw
 import os
 import rcStatus
 import re
 import rcExceptions as ex
 from rcGlobalEnv import *
 
-class Vg(resVgRaw.Vg):
+class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,
                  devs=set([]),
-                 user="root",
-                 group="root",
-                 perm="660",
-                 dummy=False,
+                 create_char_devices=True,
+                 user=None,
+                 group=None,
+                 perm=None,
                  optional=False,
                  disabled=False,
                  tags=set([]),
@@ -38,7 +38,7 @@ class Vg(resVgRaw.Vg):
                  restart=0,
                  subset=None):
 
-        resVgRaw.Vg.__init__(self,
+        resDiskRaw.Disk.__init__(self,
                              rid=rid,
                              devs=devs,
                              user=user,
@@ -52,9 +52,9 @@ class Vg(resVgRaw.Vg):
                              monitor=monitor,
                              restart=restart,
                              subset=subset)
-        self.dummy = dummy
         self.min_raw = 1
         self.raws = {}
+        self.create_char_devices = create_char_devices
         self.sys_devs = {}
 
     def get_devs_t(self):
@@ -141,11 +141,7 @@ class Vg(resVgRaw.Vg):
         if len(candidates) == 0:
             self.log.error("no more raw device can be allocated")
             raise ex.excError
-        return '/dev/raw/raw%d'%sorted(list(candidates))[0]
-
-    def devname_to_rdevname(self, devname):
-        b = os.path.basename(devname)
-        return '/dev/raw/'+self.svc.svcname+"."+b
+        return 'raw%d'%sorted(list(candidates))[0]
 
     def find_raw(self, dev):
         for raw, d in self.raws.items():
@@ -185,49 +181,32 @@ class Vg(resVgRaw.Vg):
         import lock
         lock.unlock(self.lockfd)
 
-    def has_it(self):
-        """Returns True if all raw devices are present and correctly
-           named
-        """
+    def has_it_char_devices(self):
         r = False
-        if len(self.devs_not_found) > 0:
-            self.status_log("%s not found"%', '.join(self.devs_not_found))
-            r |= True
-        if self.dummy:
-            return not r
         self.get_raws()
+        l = []
         for dev in self.devs:
             raw = self.find_raw(dev)
             if raw is None:
-                self.status_log("%s is not mapped to a raw device"%dev)
+                l.append(dev)
                 r |= True
-            elif '/dev/raw/'+self.raws[raw]['rdevname'] != self.devname_to_rdevname(dev):
-                self.status_log("%s raw device is named %s, expected %s"%(dev, '/dev/raw/'+self.raws[raw]['rdevname'], self.devname_to_rdevname(dev)))
-                r |= True
-            elif not self.check_uid('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
-                r |= True
-            elif not self.check_gid('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
-                r |= True
-            elif not self.check_perm('/dev/raw/'+self.raws[raw]['rdevname'], verbose=True):
-                r |= True
+        if len(l) > 0 and len(l) < len(self.devs):
+            self.status_log("%s not mapped to a raw device"% ", ".join(l))
         return not r
 
-    def _status(self, verbose=False):
-        self.validate_devs()
-        if self.dummy:
-            if not self.has_it():
-                return rcStatus.WARN
-            return rcStatus.NA
-        if rcEnv.nodename in self.always_on:
-            if self.is_up(): return rcStatus.STDBY_UP
-            else: return rcStatus.STDBY_DOWN
-        else:
-            if self.is_up(): return rcStatus.UP
-            else: return rcStatus.DOWN
+    def mangle_devs_map(self):
+        self.get_raws()
+        if not self.create_char_devices:
+            return
+        for dev in self.devs:
+            raw = self.find_raw(dev)
+            if dev in self.devs_map:
+                if raw is not None:
+                    self.devs_map["/dev/raw/"+raw] = self.devs_map[dev]
+                del(self.devs_map[dev])
 
-    def do_start(self):
-        self.validate_devs()
-        if self.dummy:
+    def do_start_char_devices(self):
+        if not self.create_char_devices:
             return
         self.lock()
         self.get_raws()
@@ -235,63 +214,30 @@ class Vg(resVgRaw.Vg):
             raw = self.find_raw(dev)
             if raw is not None:
                 self.log.info("%s is already mapped to a raw device"%dev)
-                rdevname = '/dev/raw/'+self.raws[raw]['rdevname']
-                if rdevname != self.devname_to_rdevname(dev):
-                    cmd = ['mv', rdevname, self.devname_to_rdevname(dev)]
-                    ret, out, err = self.vcall(cmd)
-                    if ret != 0:
-                        self.unlock()
-                        raise ex.excError
-                else:
-                    self.log.info("%s is correctly named"%rdevname)
             else:
                 raw = self.find_next_raw()
-                cmd = ['raw', raw, dev]
+                cmd = ['raw', "/dev/raw/"+raw, dev]
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
                     self.unlock()
                     raise ex.excError
-                s = os.stat(raw)
-                self.raws[raw] = {'rdevname': self.devname_to_rdevname(dev),
-                                  'rdev': (os.major(s.st_rdev), os.minor(s.st_rdev)),
-                                  'devname': dev,
-                                  'bdev': self.devs_t[dev]}
-                cmd = ['mv', raw, self.devname_to_rdevname(dev)]
-                ret, out, err = self.vcall(cmd)
-                if ret != 0:
-                    self.unlock()
-                    raise ex.excError
-
-            rdevname = self.raws[raw]['rdevname']
-            if not self.check_uid(rdevname) or not self.check_gid(rdevname):
-                self.vcall(['chown', ':'.join((str(self.uid),str(self.gid))), rdevname])
-            else:
-                self.log.info("%s has correct ownership"%rdevname)
-            if not self.check_perm(rdevname):
-                self.vcall(['chmod', self.perm, rdevname])
-            else:
-                self.log.info("%s has correct permissions"%rdevname)
+                s = os.stat("/dev/raw/"+raw)
+                self.raws[raw] = {
+                  'rdev': (os.major(s.st_rdev), os.minor(s.st_rdev)),
+                  'devname': dev,
+                  'bdev': self.devs_t[dev]
+                }
 
         self.unlock()
 
-    def do_stop(self):
-        self.validate_devs()
-        if self.dummy:
+    def do_stop_char_devices(self):
+        if not self.create_char_devices:
             return
         self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
             if raw is not None:
                 cmd = ['raw', '/dev/raw/raw%d'%self.raws[raw]['rdev'][1], '0', '0']
-                ret, out, err = self.vcall(cmd)
-                if ret != 0:
-                    raise ex.excError
-            rdevname = self.devname_to_rdevname(dev)
-            if os.path.exists(rdevname):
-                if '*' in rdevname:
-                    self.log.error("no wildcard allow in raw device names")
-                    raise ex.excError
-                cmd = ['rm', '-f', rdevname]
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
                     raise ex.excError
@@ -317,7 +263,7 @@ class Vg(resVgRaw.Vg):
             found in the DevTree
         """
         self.validate_devs()
-        if not self.dummy:
+        if not self.create_char_devices:
             return self.devs
         sys_devs = set([])
         self.load_sys_devs()

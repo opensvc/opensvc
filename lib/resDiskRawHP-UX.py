@@ -15,15 +15,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-import resVgRaw
+import resDiskRaw
 import os
 import rcStatus
 import re
+from rcUtilities import justcall
 
-class Vg(resVgRaw.Vg):
+class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,
                  devs=set([]),
+                 create_char_devices=False,
                  type=None,
                  optional=False,
                  disabled=False,
@@ -33,9 +35,10 @@ class Vg(resVgRaw.Vg):
                  restart=0,
                  subset=None):
         
-        resVgRaw.Vg.__init__(self,
+        resDiskRaw.Disk.__init__(self,
                              rid=rid,
                              devs=devs,
+                             create_char_devices=False,
                              type=type,
                              optional=optional,
                              disabled=disabled,
@@ -45,33 +48,9 @@ class Vg(resVgRaw.Vg):
                              restart=restart,
                              subset=subset)
 
-        self.devs = set([])
-        self.devs_not_found = set([])
-
-        for dev in devs:
-            if re.match("^.*[sp][0-9]*$", dev) is not None:
-                # partition, substitute s2 to given part
-                regex = re.compile("[sp][0-9]*$", re.UNICODE)
-                dev = regex.sub("s2", dev)
-            else:
-                # base device, append s2
-                dev += 's2'
-
-            if os.path.exists(dev):
-                self.devs.add(dev)
-            else:
-                self.devs_not_found.add(dev)
-
-    def disklist(self):
-        l = set([])
-        for dev in self.devs:
-            if re.match("^/dev/rdsk/c[0-9]*", dev) is not None:
-                if os.path.exists(dev):
-                    if re.match('^.*s[0-9]*$', dev) is None:
-                        dev += "s2"
-                    else:
-                        regex = re.compile('s[0-9]*$', re.UNICODE)
-                        dev = regex.sub('s2', dev)
-                    l.add(dev)
-        return l
-
+    def verify_dev(self, dev):
+        cmd = ["diskinfo", dev]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        return True

@@ -1836,7 +1836,7 @@ class KeywordIpGateway(Keyword):
                   provisioning=True
                 )
 
-class KeywordVgType(Keyword):
+class KeywordDiskType(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1848,7 +1848,7 @@ class KeywordVgType(Keyword):
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
-class KeywordVgAmazonVolumes(Keyword):
+class KeywordDiskAmazonVolumes(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1862,7 +1862,7 @@ class KeywordVgAmazonVolumes(Keyword):
                   example="vol-123456 vol-654321"
                 )
 
-class KeywordVgRawDevs(Keyword):
+class KeywordDiskRawDevs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1872,11 +1872,26 @@ class KeywordVgRawDevs(Keyword):
                   order=10,
                   at=True,
                   required=True,
-                  text="a list of device paths, whitespace separated. Those devices are listed as owned by the service and scsi reservation policy is applied to them.",
-                  example="/dev/mapper/svc.d0 /dev/mapper/svc.d1"
+                  text="a list of device paths or <src>:<dst> device paths mappings, whitespace separated. Those devices are owned by the service and scsi reservation policy is applied to them.",
+                  example="/dev/mapper/svc.d0:/dev/oracle/redo001 /dev/mapper/svc.d1"
                 )
 
-class KeywordVgVgname(Keyword):
+class KeywordDiskRawCreateCharDevices(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="raw",
+                  keyword="create_char_devices",
+                  order=10,
+                  at=True,
+                  required=False,
+                  default=True,
+                  text="On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
+                  example="false"
+                )
+
+class KeywordDiskVgname(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1888,7 +1903,7 @@ class KeywordVgVgname(Keyword):
                   text="The name of the volume group"
                 )
 
-class KeywordVgOptions(Keyword):
+class KeywordDiskOptions(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1901,7 +1916,7 @@ class KeywordVgOptions(Keyword):
                   text="The vgcreate options to use upon vg provisioning."
                 )
 
-class KeywordVgMdUuid(Keyword):
+class KeywordDiskMdUuid(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1913,7 +1928,7 @@ class KeywordVgMdUuid(Keyword):
                   text="The md uuid to use with mdadm assemble commands"
                 )
 
-class KeywordVgMdDevs(Keyword):
+class KeywordDiskMdDevs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1927,7 +1942,7 @@ class KeywordVgMdDevs(Keyword):
                   text="The md member devices to use with mdadm create command"
                 )
 
-class KeywordVgMdLevel(Keyword):
+class KeywordDiskMdLevel(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1941,7 +1956,7 @@ class KeywordVgMdLevel(Keyword):
                   text="The md raid level to use with mdadm create command (see mdadm man for values)"
                 )
 
-class KeywordVgMdLayout(Keyword):
+class KeywordDiskMdLayout(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1954,7 +1969,7 @@ class KeywordVgMdLayout(Keyword):
                   text="The md raid layout to use with mdadm create command (see mdadm man for values)"
                 )
 
-class KeywordVgMdChunk(Keyword):
+class KeywordDiskMdChunk(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1968,7 +1983,7 @@ class KeywordVgMdChunk(Keyword):
                   text="The md chunk size to use with mdadm create command. Values are converted to kb and rounded to 4."
                 )
 
-class KeywordVgMdSpares(Keyword):
+class KeywordDiskMdSpares(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1982,7 +1997,7 @@ class KeywordVgMdSpares(Keyword):
                   text="The md number of spare devices to use with mdadm create command"
                 )
 
-class KeywordVgMdShared(Keyword):
+class KeywordDiskMdShared(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1994,7 +2009,7 @@ class KeywordVgMdShared(Keyword):
                   text="Trigger additional checks on the passive nodes. If not specified, the shared parameter defaults to True if no multiple nodes and drpnodes are defined and no md section parameter use scoping."
                 )
 
-class KeywordVgClientId(Keyword):
+class KeywordDiskClientId(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2004,7 +2019,7 @@ class KeywordVgClientId(Keyword):
                   text="Client id to use for authentication with the rados servers"
                 )
 
-class KeywordVgKeyring(Keyword):
+class KeywordDiskKeyring(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2015,7 +2030,7 @@ class KeywordVgKeyring(Keyword):
                   text="keyring to look for the client id secret for authentication with the rados servers"
                 )
 
-class KeywordVgLock(Keyword):
+class KeywordDiskLock(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2026,7 +2041,7 @@ class KeywordVgLock(Keyword):
                   text="Locking mode for the rados images"
                 )
 
-class KeywordVgLockSharedTag(Keyword):
+class KeywordDiskLockSharedTag(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2037,7 +2052,7 @@ class KeywordVgLockSharedTag(Keyword):
                   text="The tag to use upon rados image locking in shared mode"
                 )
 
-class KeywordVgImageFormat(Keyword):
+class KeywordDiskImageFormat(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2049,7 +2064,7 @@ class KeywordVgImageFormat(Keyword):
                   text="The rados image format"
                 )
 
-class KeywordVgSize(Keyword):
+class KeywordDiskSize(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2060,7 +2075,7 @@ class KeywordVgSize(Keyword):
                   text="The rados image size in MB"
                 )
 
-class KeywordVgImages(Keyword):
+class KeywordDiskImages(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2070,7 +2085,7 @@ class KeywordVgImages(Keyword):
                   text="The rados image names handled by this vg resource. whitespace separated."
                 )
 
-class KeywordVgDsf(Keyword):
+class KeywordDiskDsf(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2082,7 +2097,7 @@ class KeywordVgDsf(Keyword):
                   text="HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed /dev/dsk/... devices. Otherwize, ad-hoc multipathed /dev/disk/... devices."
                 )
 
-class KeywordVgScsireserv(Keyword):
+class KeywordDiskScsireserv(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -2093,7 +2108,7 @@ class KeywordVgScsireserv(Keyword):
                   text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
                 )
 
-class KeywordVgPvs(Keyword):
+class KeywordDiskPvs(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -3370,28 +3385,29 @@ class KeyDict(KeywordStore):
         self += KeywordDiskGceSize()
         self += KeywordDiskGceSourceSnapshot()
         self += KeywordDiskGceDiskType()
-        self += KeywordVgType()
-        self += KeywordVgAmazonVolumes()
-        self += KeywordVgRawDevs()
-        self += KeywordVgVgname()
-        self += KeywordVgDsf()
-        self += KeywordVgImages()
-        self += KeywordVgMdUuid()
-        self += KeywordVgMdDevs()
-        self += KeywordVgMdLevel()
-        self += KeywordVgMdChunk()
-        self += KeywordVgMdLayout()
-        self += KeywordVgMdSpares()
-        self += KeywordVgMdShared()
-        self += KeywordVgClientId()
-        self += KeywordVgKeyring()
-        self += KeywordVgLock()
-        self += KeywordVgLockSharedTag()
-        self += KeywordVgSize()
-        self += KeywordVgImageFormat()
-        self += KeywordVgOptions()
-        self += KeywordVgScsireserv()
-        self += KeywordVgPvs()
+        self += KeywordDiskType()
+        self += KeywordDiskAmazonVolumes()
+        self += KeywordDiskRawDevs()
+        self += KeywordDiskRawCreateCharDevices()
+        self += KeywordDiskVgname()
+        self += KeywordDiskDsf()
+        self += KeywordDiskImages()
+        self += KeywordDiskMdUuid()
+        self += KeywordDiskMdDevs()
+        self += KeywordDiskMdLevel()
+        self += KeywordDiskMdChunk()
+        self += KeywordDiskMdLayout()
+        self += KeywordDiskMdSpares()
+        self += KeywordDiskMdShared()
+        self += KeywordDiskClientId()
+        self += KeywordDiskKeyring()
+        self += KeywordDiskLock()
+        self += KeywordDiskLockSharedTag()
+        self += KeywordDiskSize()
+        self += KeywordDiskImageFormat()
+        self += KeywordDiskOptions()
+        self += KeywordDiskScsireserv()
+        self += KeywordDiskPvs()
         self += KeywordPoolPoolname()
         self += KeywordVmdgContainerid()
         self += KeywordDrbdRes()
