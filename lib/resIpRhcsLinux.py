@@ -35,7 +35,7 @@ class Ip(Res.Ip):
         cmd = ['ip', 'addr', 'ls']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            self.rstatus_log("%s exec failed"%' '.join(cmd))
+            self.status_log("%s exec failed"%' '.join(cmd))
             return rcStatus.WARN
         if " "+self.addr+"/" in out:
             return rcStatus.UP
