@@ -144,7 +144,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
  
     def info(self):
         data = self.docker_info()
-        return data
+        return self.fmt_info(data)
 
     def _status(self, verbose=False):
         s = resContainer.Container._status(self, verbose)

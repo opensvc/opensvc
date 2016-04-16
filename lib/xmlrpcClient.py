@@ -568,12 +568,15 @@ class Collector(object):
         for r in svc.get_resources():
             if not hasattr(r, "info"):
                 continue
-            vals += r.info()
+            try:
+                vals += r.info()
+            except Exception as e:
+                print(e, file=sys.stderr)
         if len(vals) == 0:
             return
 
         for val in vals:
-            print("%s: %s"%(val[4], val[5]))
+            print("%-16s %-20s %s"%(val[3], val[4], val[5]))
 
         args = [vars, vals]
         if self.auth_node:

@@ -196,20 +196,20 @@ class App(Res.Resource):
         self.validate_on_action()
         if self.info_seq is None:
             return []
-        l = []
+        l = [["script", self.script]]
         s = self.run('info', dedicated_log=False, return_out=True)
         if type(s) != str or len(s) == 0:
-            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, "Error", "info not implemented in launcher"])
+            l.append(["Error", "info not implemented in launcher"])
             return l
         for line in s.split('\n'):
             if len(line) == 0:
                 continue
             v = line.split(":")
             if len(v) < 2:
-                l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, "Error", "parsing: %s"%line])
+                l.append(["Error", "parsing: %s"%line])
                 continue
-            l.append([self.svc.svcname, rcEnv.nodename, self.svc.clustertype, self.script, v[0].strip(), ":".join(v[1:]).strip()])
-        return l
+            l.append([v[0].strip(), ":".join(v[1:]).strip()])
+        return self.fmt_info(l)
 
     def start(self):
         self.create_pg()

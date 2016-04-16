@@ -65,6 +65,14 @@ class Resource(object):
         self.status_log_str = ""
         self.can_rollback = False
 
+    def fmt_info(self, keys=[]):
+        for i, e in enumerate(keys):
+            if len(e) == 2:
+                keys[i] = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype, self.rid] + e
+            elif len(e) == 3:
+                keys[i] = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype] + e
+        return keys
+
     def log_label(self):
         s = ""
         if hasattr(self, "svc"):

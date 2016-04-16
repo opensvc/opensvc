@@ -181,18 +181,11 @@ class DockerLib(object):
     def docker_info(self):
         if hasattr(self.svc, "docker_info_done"):
             return []
-
-        def fmt(l):
-            _l = []
-            for e in l:
-                e = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype] + e
-                _l.append(e)
-            return _l
         data = []
         data += self.docker_info_version()
         data += self.docker_info_drivers()
         data += self.docker_info_images()
-        return fmt(data)
+        return data
 
     def docker_info_version(self):
         return [[

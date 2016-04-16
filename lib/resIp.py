@@ -61,19 +61,13 @@ class Ip(Res.Resource):
         self.gateway = gateway
 
     def info(self):
-        def fmt(l):
-            _l = []
-            for e in l:
-                e = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype] + e
-                _l.append(e)
-            return _l
         data = [
           [self.rid, "ipname", self.ipName],
           [self.rid, "ipdev", self.ipDev],
           [self.rid, "mask", str(self.mask)],
           [self.rid, "gateway", str(self.gateway)],
         ]
-        return fmt(data)
+        return self.fmt_info(data)
 
     def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
