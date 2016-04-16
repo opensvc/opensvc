@@ -25,6 +25,7 @@ import stat
 import sys
 import glob
 import rcExceptions as ex
+from rcUtilities import which
 
 class Disk(resDg.Dg):
     def __init__(self,
@@ -33,6 +34,7 @@ class Disk(resDg.Dg):
                  user=None,
                  group=None,
                  perm=None,
+                 create_char_devices=False,
                  type=None,
                  optional=False,
                  disabled=False,
@@ -59,6 +61,7 @@ class Disk(resDg.Dg):
         self.user = user
         self.group = group
         self.perm = perm
+        self.create_char_devices = create_char_devices
 
         if sys.version_info[0] < 3:
             self.str_types = (str, unicode)
@@ -149,20 +152,32 @@ class Disk(resDg.Dg):
     def check_uid(self, rdev, verbose=False):
         if not os.path.exists(rdev):
             return True
+        if self.user is None:
+            return True
+        if self.uid is None:
+            if verbose:
+                self.status_log('user %s uid not found'%str(self.user))
+            return False
         uid = os.stat(rdev).st_uid
         if uid != self.uid:
             if verbose:
-                self.status_log('%s uid should be %d but is %d'%(rdev, self.uid, uid))
+                self.status_log('%s uid should be %s but is %d'%(rdev, str(self.uid), uid))
             return False
         return True
 
     def check_gid(self, rdev, verbose=False):
         if not os.path.exists(rdev):
             return True
+        if self.group is None:
+            return True
+        if self.gid is None:
+            if verbose:
+                self.status_log('group %s gid not found'%str(self.group))
+            return False
         gid = os.stat(rdev).st_gid
         if gid != self.gid:
             if verbose:
-                self.status_log('%s gid should be %d but is %d'%(rdev, self.gid, gid))
+                self.status_log('%s gid should be %s but is %d'%(rdev, str(self.gid), gid))
             return False
         return True
 
@@ -196,10 +211,24 @@ class Disk(resDg.Dg):
         return not r
 
     def fix_ownership(self, path):
-        if self.uid and not self.check_uid(path):
+        self.fix_ownership_user(path)
+        self.fix_ownership_group(path)
+
+    def fix_ownership_user(self, path):
+        if self.user is None:
+            return
+        if self.uid is None:
+            raise ex.excError("user %s does not exist" % str(self.user))
+        if not self.check_uid(path):
             self.vcall(['chown', str(self.uid), path])
         else:
             self.log.info("%s has correct user ownership (%s)"% (path, str(self.uid)))
+
+    def fix_ownership_group(self, path):
+        if self.group is None:
+            return
+        if self.gid is None:
+            raise ex.excError("group %s does not exist" % str(self.group))
         if self.gid and not self.check_gid(path):
             self.vcall(['chgrp', str(self.gid), path])
         else:
@@ -294,12 +323,24 @@ class Disk(resDg.Dg):
                 os.makedirs(d)
             if not os.path.exists(dst):
                 src_st = os.stat(src)
-                self.log.info("create node %s from %s" % (dst, src))
-                os.mknod(dst, src_st.st_mode, src_st.st_rdev)
+                if stat.S_ISBLK(src_st.st_mode):
+                    t = "b"
+                elif stat.S_ISCHR(src_st.st_mode):
+                    t = "c"
+                else:
+                    raise ex.excError("%s is not a block nor a char device" % src)
+                major = os.major(src_st.st_rdev)
+                minor = os.minor(src_st.st_rdev)
+                cmd = ["mknod", dst, t, str(major), str(minor)]
+                ret, out, err = self.vcall(cmd)
+                if ret != 0:
+                    raise ex.excError
         self.fix_ownership(dst)
         self.fix_perms(dst)
 
     def do_start_blocks(self):
+        if which("mknod") is None:
+            raise ex.excError("mknod not found")
         for src, dst in self.devs_map.items():
             self.do_start_block(src, dst)
 

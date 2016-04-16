@@ -44,6 +44,7 @@ class Disk(resDiskRaw.Disk):
                              user=user,
                              group=group,
                              perm=perm,
+                             create_char_devices=create_char_devices,
                              type="disk.raw",
                              optional=optional,
                              disabled=disabled,
@@ -54,7 +55,6 @@ class Disk(resDiskRaw.Disk):
                              subset=subset)
         self.min_raw = 1
         self.raws = {}
-        self.create_char_devices = create_char_devices
         self.sys_devs = {}
 
     def get_devs_t(self):

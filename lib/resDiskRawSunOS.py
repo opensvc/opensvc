@@ -24,6 +24,9 @@ class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,
                  devs=set([]),
+                 user=None,
+                 group=None,
+                 perm=None,
                  create_char_devices=False,
                  type=None,
                  optional=False,
@@ -34,6 +37,7 @@ class Disk(resDiskRaw.Disk):
                  restart=0,
                  subset=None):
         
+        devs = list(devs)
         for i, dev in enumerate(devs):
             if ":" in dev:
                 suffix = dev[dev.index(":"):]
@@ -51,7 +55,10 @@ class Disk(resDiskRaw.Disk):
 
         resDiskRaw.Disk.__init__(self,
                              rid=rid,
-                             devs=devs,
+                             devs=set(devs),
+                             user=user,
+                             group=group,
+                             perm=perm,
                              create_char_devices=False,
                              type=type,
                              optional=optional,
