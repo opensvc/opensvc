@@ -1583,6 +1583,20 @@ class Node(Svc, Freezer, Scheduler):
         self.log.info("%s pulled" % env)
         self.install_service_files(svcname)
 
+    def set_rlimit(self):
+        try:
+            n = 64 * len(self.svcs)
+        except:
+            n = 4096
+        try:
+            import resource
+            (vs, vg) = resource.getrlimit(resource.RLIMIT_NOFILE)
+            if vs < n:
+		self.log.debug("raise nofile resource from %d limit to %d" % (vs, n))
+                resource.setrlimit(resource.RLIMIT_NOFILE, (n, vg))
+        except:
+            pass
+
 
 if __name__ == "__main__" :
     for n in (Node,) :

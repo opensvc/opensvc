@@ -232,6 +232,8 @@ if len(options.parm_svcs) > 0:
 else:
     node.build_services()
 
+node.set_rlimit()
+
 for s in node.svcs:
     s.options.debug = options.debug
     s.options.refresh = options.upddb

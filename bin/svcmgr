@@ -390,6 +390,8 @@ if action in ['create', 'update', 'install']:
 node.options.parallel = options.parallel
 node.options.waitlock = options.parm_waitlock
 
+node.set_rlimit()
+
 for s in node.svcs:
     s.options = options
     s.force = options.force
