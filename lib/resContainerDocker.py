@@ -152,10 +152,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             inspect = self.docker_inspect(self.container_id)
         except Exception as e:
             return s
-        if self.docker_min_version("1.10"):
-            running_image_id = str(inspect['Image'][7:19])
-        else:
-            running_image_id = str(inspect['Image'][:12])
+        running_image_id = inspect['Image']
         run_image_id = self.get_run_image_id()
 
         if run_image_id != running_image_id:
@@ -193,7 +190,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         return self.svc.docker_running_instance_ids_cache
 
     def _get_running_instance_ids(self):
-        cmd = self.docker_cmd + ['ps', '-q']
+        cmd = self.docker_cmd + ['ps', '-q', '--no-trunc']
         out, err, ret = justcall(cmd)
         return out.replace('\n', ' ').split()
 
@@ -243,13 +240,11 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.container_name = self.svc.svcname+'.'+self.rid
         self.container_name = self.container_name.replace('#', '.')
         rcDocker.DockerLib.on_add(self)
-        self.label = ""
         try:
             self.container_id = self.get_container_id_by_name()
-            self.label += self.container_id + "@"
         except Exception as e:
             self.container_id = None
-        self.label += self.image_userfriendly_name()
+        self.label = "@".join((self.container_name, self.image_userfriendly_name()))
         if hasattr(self, "swarm_node"):
             self.label += " on " + self.swarm_node
 

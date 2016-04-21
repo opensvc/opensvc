@@ -37,7 +37,7 @@ class DockerLib(object):
     def get_ps(self, refresh=False):
         if not refresh and hasattr(self.svc, "cache_docker_ps"):
             return self.svc.cache_docker_ps
-        cmd = self.docker_cmd + ['ps', '-a']
+        cmd = self.docker_cmd + ['ps', '-a', '--no-trunc']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
@@ -148,7 +148,7 @@ class DockerLib(object):
         except:
             image_name, image_tag = [run_image, "latest"]
 
-        cmd = self.docker_cmd + ['images', image_name]
+        cmd = self.docker_cmd + ['images', '--no-trunc', image_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return run_image
@@ -163,7 +163,7 @@ class DockerLib(object):
     def get_images(self):
         if hasattr(self.svc, "docker_images_cache"):
             return self.svc.docker_images_cache
-        cmd = self.docker_cmd + ['images']
+        cmd = self.docker_cmd + ['images', '--no-trunc']
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -259,7 +259,7 @@ class DockerLib(object):
         if not os.path.exists(self.docker_pid_file):
             return
 
-        cmd = self.docker_cmd + ['ps', '-q']
+        cmd = self.docker_cmd + ['ps', '-q', '--no-trunc']
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
