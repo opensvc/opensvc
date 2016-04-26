@@ -44,6 +44,9 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
     def operational(self):
         return True
 
+    def vm_hostname(self):
+        return ""
+
     def get_rootfs(self):
         import glob
         inspect = self.docker_inspect(self.container_id)
