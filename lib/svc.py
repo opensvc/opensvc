@@ -923,8 +923,7 @@ class Svc(Resource, Scheduler):
                                str(status["overall"]+rcStatus.Status(encap_res_status['overall'])),
                                str(now),
                                ' '.join(self.nodes),
-                               frozen,
-                               str(container.name)])
+                               frozen])
 
         return g_vars, g_vals, r_vars, r_vals
 
