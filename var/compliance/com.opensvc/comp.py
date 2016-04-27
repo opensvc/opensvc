@@ -176,12 +176,15 @@ class CompObject(object):
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
-            import ssl
-            context = ssl._create_unverified_context()
+            try:
+                import ssl
+                kwargs = {"context": ssl._create_unverified_context()}
+            except:
+                kwargs = {}
         else:
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
         try:
-            f = urllib2.urlopen(request, context=context)
+            f = urllib2.urlopen(request, **kwargs)
         except urllib2.HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
@@ -198,12 +201,15 @@ class CompObject(object):
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
-            import ssl
-            context = ssl._create_unverified_context()
+            try:
+                import ssl
+                kwargs = {"context": ssl._create_unverified_context()}
+            except:
+                kwargs = {}
         else:
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
         try:
-            f = urllib2.urlopen(request, context=context)
+            f = urllib2.urlopen(request, **kwargs)
         except urllib2.HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
