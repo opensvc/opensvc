@@ -21,6 +21,7 @@ import os, sys
 import datetime
 import logging
 import socket
+import re
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
@@ -464,7 +465,7 @@ def to_dotted(s):
         return s
     return cidr_to_dotted(s)
 
-def hexmask_to_str(mask):
+def hexmask_to_dotted(mask):
     mask = mask.replace('0x', '')
     s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
     return '.'.join(s)
@@ -473,10 +474,7 @@ def dotted_to_cidr(mask):
     if mask is None:
         return ''
     cnt = 0
-    if '.' in mask:
-        l = mask.split(".")
-    else:
-        l = hexmask_to_str(mask).split(".")
+    l = mask.split(".")
     l = map(lambda x: int(x), l)
     for a in l:
         cnt += str(bin(a)).count("1")
@@ -484,6 +482,10 @@ def dotted_to_cidr(mask):
 
 def to_cidr(s):
     if '.' in s:
+        return dotted_to_cidr(s)
+    elif re.match("^(0x)*[0-9a-f]{8}$", s):
+        # example: 0xffffff00
+        s = hexmask_to_dotted(s)
         return dotted_to_cidr(s)
     return s
 
