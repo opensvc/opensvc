@@ -3049,7 +3049,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=None,
                   default=None,
-                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service."
+                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service, 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
             return Keyword(

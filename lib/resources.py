@@ -272,6 +272,10 @@ class Resource(object):
             self.status_log("disabled")
             return rcStatus.NA
 
+        if "nostatus" in self.tags:
+            self.status_log("nostatus tag")
+            return rcStatus.NA
+
         if self.rstatus is not None and not refresh:
             return self.rstatus
 
