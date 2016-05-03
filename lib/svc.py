@@ -736,7 +736,9 @@ class Svc(Resource, Scheduler):
                 if i == last:
                     fmt = head_c+"  '- %-14s %4s %-10s %s"
                     pfx = head_c+"     %-14s %4s %-10s "%('','','')
-                    print_res(e, fmt, pfx)
+                    subpfx = head_c+"     |  %-11s %4s %-10s "%('','','')
+                    print_res(e, fmt, pfx, subpfx=subpfx)
+                    subresbar = " "
                 else:
                     fmt = head_c+"  |- %-14s %4s %-10s %s"
                     pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
@@ -745,17 +747,18 @@ class Svc(Resource, Scheduler):
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
+                    subresbar = "|"
                 if e[0] in cr:
                     _last = len(cr[e[0]]) - 1
                     if _last >= 0:
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
-                                fmt = head_c+"  |  '- %-11s %4s %-10s %s"
-                                pfx = head_c+"  |     %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  "+subresbar+"  '- %-11s %4s %-10s %s"
+                                pfx = head_c+"  "+subresbar+"     %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
                             else:
-                                fmt = head_c+"  |  |- %-11s %4s %-10s %s"
-                                pfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
+                                fmt = head_c+"  "+subresbar+"  |- %-11s %4s %-10s %s"
+                                pfx = head_c+"  "+subresbar+"  |  %-11s %4s %-10s "%('','','')
                                 print_res(_e, fmt, pfx)
 
         if n_accessory_resources > 0:
