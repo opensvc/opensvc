@@ -2603,6 +2603,12 @@ class Svc(Resource, Scheduler):
             return
         if not "flex" in self.clustertype:
             return
+        if action in (
+            "edit_config",
+            "print_config",
+            "json_env",
+        ) or "sync" in action:
+            return
         if rcEnv.nodename == self.drp_flex_primary:
             peers = set(self.drpnodes) - set([rcEnv.nodename])
         elif rcEnv.nodename == self.flex_primary:
