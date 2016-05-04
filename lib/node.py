@@ -908,12 +908,12 @@ class Node(Svc, Freezer, Scheduler):
             return 1
         section, option = l
         if not self.config.has_section(section):
-            print("section '%s' not found"%section, file=sys.stderr)
-            return 1
-        if not self.config.has_option(section, option):
+            self.config.add_section(section)
+        try:
+            print(self.config.get(section, option))
+        except ConfigParser.NoOptionError:
             print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
-        print(self.config.get(section, option))
         return 0
 
     def set(self):
