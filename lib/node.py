@@ -934,9 +934,6 @@ class Node(Svc, Freezer, Scheduler):
             except ValueError as e:
                 print(e)
                 return 1
-        if self.config.has_option(section, option) and \
-           self.config.get(section, option) == self.options.value:
-            return
         self.config.set(section, option, self.options.value)
         try:
             self.write_config()
