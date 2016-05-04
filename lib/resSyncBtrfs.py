@@ -268,6 +268,23 @@ class SyncBtrfs(resSync.Sync):
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
+    def remove_snap_tosend(self, node=None):
+        self.init_src_btrfs()
+        if node is not None:
+            o = self.dst_btrfs[node]
+            subvol = self.dst_snap_tosend
+        else:
+            o = self.src_btrfs
+            subvol = self.src_snap_tosend
+
+        if not o.has_subvol(subvol):
+            return
+
+        try:
+            o.subvol_delete(subvol, recursive=self.recursive)
+        except rcBtrfs.ExecError:
+            raise ex.excError()
+
     def remove_snap(self, node=None):
         self.init_src_btrfs()
         if node is not None:
@@ -276,6 +293,9 @@ class SyncBtrfs(resSync.Sync):
         else:
             o = self.src_btrfs
             subvol = self.src_snap_sent
+
+        if not o.has_subvol(subvol):
+            return
 
         try:
             o.subvol_delete(subvol, recursive=self.recursive)
@@ -351,20 +371,20 @@ class SyncBtrfs(resSync.Sync):
         if len(self.targets) == 0:
             return
         self.get_src_info()
+
         if not self.src_btrfs.has_subvol(self.src_snap_tosend):
             self.create_snap(self.src, self.src_snap_tosend)
-        if self.src_btrfs.has_subvol(self.src_snap_sent):
-            for n in self.targets:
-                self.get_dst_info(n)
+
+        for n in self.targets:
+            self.get_dst_info(n)
+            self.remove_snap_tosend(n)
+            if self.src_btrfs.has_subvol(self.src_snap_sent) and self.dst_btrfs[n].has_subvol(self.dst_snap_sent):
                 self.btrfs_send_incremental(n)
-                self.rotate_snaps(n)
-                self.install_snaps(n)
-        else:
-            for n in self.targets:
-                self.get_dst_info(n)
+            else:
                 self.btrfs_send_initial(n)
-                self.rotate_snaps(n)
-                self.install_snaps(n)
+            self.rotate_snaps(n)
+            self.install_snaps(n)
+
         self.rotate_snaps()
         self.write_statefile()
         for n in self.targets:
