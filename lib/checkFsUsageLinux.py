@@ -48,6 +48,12 @@ class check(checks.check):
                 continue
             if l[5].startswith('/Volumes'):
                 continue
+            if l[5].startswith('/run'):
+                continue
+            if l[5].startswith('/sys/'):
+                continue
+            if l[5] == "/dev/shm":
+                continue
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
