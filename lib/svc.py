@@ -1173,7 +1173,7 @@ class Svc(Resource, Scheduler):
     def encap_json_status(self, container, refresh=False):
         if container.guestos == 'windows':
             raise ex.excNotAvailable
-        if container.status() == rcStatus.DOWN:
+        if container.status(ignore_nostatus=True) == rcStatus.DOWN:
             """
                passive node for the vservice => forge encap resource status
                  - encap sync are n/a
@@ -2280,7 +2280,7 @@ class Svc(Resource, Scheduler):
             return
 
         for r in self.get_resources('container'):
-            if r.status() not in (rcStatus.STDBY_UP, rcStatus.UP):
+            if r.status(ignore_nostatus=True) not in (rcStatus.STDBY_UP, rcStatus.UP):
                 continue
             self._push_encap_env(r)
 

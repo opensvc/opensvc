@@ -265,14 +265,14 @@ class Resource(object):
         self.status_log_str = "forced"
         self.write_status()
 
-    def status(self, verbose=False, refresh=False, restart=True):
+    def status(self, verbose=False, refresh=False, restart=True, ignore_nostatus=False):
         # refresh param: used by do_action() to force a res status re-eval
         # self.svc.options.refresh: used to purge disk cache
         if self.disabled:
             self.status_log("disabled")
             return rcStatus.NA
 
-        if "nostatus" in self.tags:
+        if not ignore_nostatus and "nostatus" in self.tags:
             self.status_log("nostatus tag")
             return rcStatus.NA
 
