@@ -101,7 +101,7 @@ action_desc = {
       'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',
       'create': 'create a new service configuration file. --interactive triggers the interactive mode',
       'update': 'update definitions in an existing service configuration file',
-      'delete': 'delete resources passed through --rid in services passed through --service',
+      'delete': 'delete the service instance on the local node if no --rid is specified, or delete the resources pointed by --rid in services passed through --service',
       'set': 'set a service configuration parameter (pointed by --param) value (pointed by --value)',
       'get': 'get the value of the node configuration parameter pointed by --param',
       'unset': 'unset a node configuration parameter pointed by --param',

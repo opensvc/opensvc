@@ -3040,7 +3040,26 @@ class Svc(Resource, Scheduler):
 
     def delete(self):
         if len(self.action_rid) == 0:
-            print("no resource flagged for deletion")
+            import shutil
+            dpaths = [
+              os.path.join(rcEnv.pathetc, self.svcname+".dir"),
+              os.path.join(rcEnv.pathvar, self.svcname),
+            ]
+            fpaths = [
+              self.pathenv,
+              os.path.join(rcEnv.pathetc, self.svcname),
+              os.path.join(rcEnv.pathetc, self.svcname+".d"),
+              os.path.join(rcEnv.pathetc, self.svcname+".cluster"),
+              os.path.join(rcEnv.pathetc, self.svcname+".stonith"),
+            ]
+            for fpath in fpaths:
+                if os.path.exists(fpath):
+                    print("remove %s" % fpath)
+                    os.unlink(fpath)
+            for dpath in dpaths:
+                if os.path.exists(dpath):
+                    print("remove %s" % dpath)
+                    shutil.rmtree(dpath)
             return 0
         with open(self.pathenv, 'r') as f:
             lines = f.read().split("\n")
