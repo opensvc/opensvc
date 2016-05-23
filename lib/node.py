@@ -75,6 +75,7 @@ class Node(Svc, Freezer, Scheduler):
         return s
 
     def __init__(self):
+        self.ex_monitor_action_exit_code = 10251
         self.auth_config = None
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
@@ -982,7 +983,14 @@ class Node(Svc, Freezer, Scheduler):
         return 0
 
     def service_action_worker(self, s, **kwargs):
-        r = s.action(**kwargs)
+        try:
+            r = s.action(**kwargs)
+        except s.exMonitorAction:
+            self.close()
+            sys.exit(self.ex_monitor_action_exit_code)
+        except:
+            self.close()
+            sys.exit(1)
         self.close()
         sys.exit(r)
 
@@ -1432,10 +1440,12 @@ class Node(Svc, Freezer, Scheduler):
             for svcname in p:
                 p[svcname].join()
                 r = p[svcname].exitcode
-                if r > 0:
-                   # r is negative when p[svcname] is killed by signal.
-                   # in this case, we don't want to decrement the err counter.
-                   err += r
+                if r == self.ex_monitor_action_exit_code:
+                    s.action('toc')
+                elif r > 0:
+                    # r is negative when p[svcname] is killed by signal.
+                    # in this case, we don't want to decrement the err counter.
+                    err += r
 
         return err
 
