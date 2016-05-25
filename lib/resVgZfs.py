@@ -116,10 +116,8 @@ class Pool(resDg.Dg):
 
     def disklist(self):
         if not os.path.exists(self.disklist_name()):
-            s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-            import rcStatus
-            if s['overall'].status == rcStatus.UP:
-                self.log.debug("no disklist cache file and service up ... refresh disklist cache")
+            if self.is_up():
+                self.log.debug("no disklist cache file and resource up ... refresh disklist cache")
                 self.presync()
             else:
                 self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
