@@ -319,6 +319,7 @@ class Svc(Resource, Scheduler):
           'frozen',
           'thaw',
           'get',
+          'toc',
           'freezestop',
           'scheduler',
           'print_schedule',
