@@ -75,7 +75,7 @@ class Node(Svc, Freezer, Scheduler):
         return s
 
     def __init__(self):
-        self.ex_monitor_action_exit_code = 10251
+        self.ex_monitor_action_exit_code = 251
         self.auth_config = None
         self.nodename = socket.gethostname().lower()
         self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
