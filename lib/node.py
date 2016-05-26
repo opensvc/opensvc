@@ -1414,6 +1414,7 @@ class Node(Svc, Freezer, Scheduler):
                 from multiprocessing import set_executable
                 set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             p = {}
+            svcs = {}
         for s in self.svcs:
             if self.options.parallel:
                 d = {
@@ -1423,6 +1424,7 @@ class Node(Svc, Freezer, Scheduler):
                   'subsets': subsets,
                   'waitlock': self.options.waitlock
                 }
+                svcs[s.svcname] = s
                 p[s.svcname] = Process(target=self.service_action_worker,
                                        name='worker_'+s.svcname,
                                        args=[s],
@@ -1441,7 +1443,7 @@ class Node(Svc, Freezer, Scheduler):
                 p[svcname].join()
                 r = p[svcname].exitcode
                 if r == self.ex_monitor_action_exit_code:
-                    s.action('toc')
+                    svcs[svcname].action('toc')
                 elif r > 0:
                     # r is negative when p[svcname] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
