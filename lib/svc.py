@@ -849,6 +849,7 @@ class Svc(Resource, Scheduler):
                 "mon_frozen"]
 
         containers = self.get_resources('container')
+        containers = [ c for c in containers if c.type != "container.docker" ]
         if len(containers) == 0:
             g_vals=[self.svcname,
                     self.svctype,
