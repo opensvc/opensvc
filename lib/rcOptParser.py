@@ -80,6 +80,7 @@ action_desc = {
       'push': 'push service configuration to the collector',
       'pull': 'pull a service configuration from the collector',
       'push_appinfo': 'push service application launchers appinfo key/value pairs to database',
+      'push_service_status': 'push service and its resources status to database',
       'print_disklist': 'print service disk list',
       'print_devlist': 'print service device list',
       'switch': 'stop the service on the local node and start on the remote node. --to <node> specify the remote node to switch the service to.',
