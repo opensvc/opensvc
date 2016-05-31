@@ -3404,6 +3404,13 @@ def build(name, minimal=False):
     # docker options
     #
     try:
+        svc.docker_daemon_private = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'docker_daemon_private')
+    except ex.OptNotFound:
+        svc.docker_daemon_private = True
+    if rcEnv.sysname != "Linux":
+        svc.docker_daemon_private = False
+
+    try:
         svc.docker_data_dir = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_data_dir')
     except ex.OptNotFound:
         svc.docker_data_dir = None

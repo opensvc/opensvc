@@ -245,8 +245,22 @@ class KeywordDockerDataDir(Keyword):
                   at=True,
                   required=False,
                   order=12,
-                  text="if the service has docker-type container resources, the service handles the startup of a private docker daemon. Its socket is /opt/opensvc/var/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
+                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is /opt/opensvc/var/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
                   example="/srv/svc1/data/docker"
+                )
+
+class KeywordDockerDaemonPrivate(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_daemon_private",
+                  at=True,
+                  required=False,
+                  default=True,
+                  order=11,
+                  text="If set to False, this service will use the system's shared docker daemon instance. This is parameter is forced to False on non-Linux systems.",
+                  example="True"
                 )
 
 class KeywordDockerDaemonArgs(Keyword):
@@ -3309,6 +3323,7 @@ class KeyDict(KeywordStore):
         self += KeywordMode()
         self += KeywordPrKey()
         self += KeywordPkgName()
+        self += KeywordDockerDaemonPrivate()
         self += KeywordDockerDataDir()
         self += KeywordDockerDaemonArgs()
         self += KeywordAntiAffinity()

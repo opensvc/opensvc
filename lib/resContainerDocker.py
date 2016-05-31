@@ -171,7 +171,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         return check_ping(self.addr, timeout=1)
 
     def is_up(self, nodename=None):
-        if self.docker_data_dir is None:
+        if self.svc.docker_daemon_private and self.docker_data_dir is None:
             self.status_log("DEFAULT.docker_data_dir must be defined")
 
         if not self.docker_running():

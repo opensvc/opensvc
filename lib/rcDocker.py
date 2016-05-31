@@ -89,14 +89,14 @@ class DockerLib(object):
 
     def get_docker_info(self):
         if not hasattr(self, "docker_info_cache"):
-            cmd = ["docker", "info"]
+            cmd = [self.docker_exe(), "info"]
             out, err, ret = justcall(cmd)
             self.docker_info_cache = out
         return self.docker_info_cache
 
     def get_docker_version(self):
         if not hasattr(self, "docker_version"):
-            cmd = ["docker", "--version"]
+            cmd = [self.docker_exe(), "--version"]
             out, err, ret = justcall(cmd)
             v = out.split()
             if len(v) < 3:
@@ -252,6 +252,8 @@ class DockerLib(object):
         return data[0]
 
     def docker_stop(self):
+        if not self.svc.docker_daemon_private:
+            return
         if not self.docker_running():
             return
         if self.docker_data_dir is None:
@@ -293,6 +295,8 @@ class DockerLib(object):
         return cmd
 
     def docker_start(self, verbose=True):
+        if not self.svc.docker_daemon_private:
+            return
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'docker_start')
         try:
@@ -344,6 +348,18 @@ class DockerLib(object):
         lock.unlock(lockfd)
 
     def docker_running(self):
+        if self.svc.docker_daemon_private:
+            return self.docker_running_private()
+        else:
+            return self.docker_running_shared()
+
+    def docker_running_shared(self):
+        out = self.get_docker_info()
+        if out == "":
+            return False
+        return True
+
+    def docker_running_private(self):
         if not os.path.exists(self.docker_pid_file):
             self.log.debug("docker_running: no pid file %s" % self.docker_pid_file)
             return False
@@ -372,18 +388,30 @@ class DockerLib(object):
         self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
         if not os.path.exists(self.docker_var_d):
             os.makedirs(self.docker_var_d)
-        self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
         if hasattr(self, "run_swarm") and self.run_swarm is not None:
             if "://" not in self.run_swarm:
                 proto = "tcp://"
             else:
                 proto = ""
             self.docker_socket = proto + self.run_swarm
-        else:
+        elif self.svc.docker_daemon_private:
             self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
-        self.docker_data_dir = self.svc.docker_data_dir
+        else:
+            self.docker_socket = None
+        if self.svc.docker_daemon_private:
+            self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
+            self.docker_data_dir = self.svc.docker_data_dir
+        else:
+            self.docker_pid_file = None
+            l = [line for line in self.get_docker_info().split("\n") if "Root Dir" in line]
+            try:
+                self.docker_data_dir = l[0].split(":")[-1].strip()
+            except:
+                self.docker_data_dir = None
         self.docker_daemon_args = self.svc.docker_daemon_args
-        self.docker_cmd = [self.docker_exe(), '-H', self.docker_socket]
+        self.docker_cmd = [self.docker_exe()]
+        if self.docker_socket:
+            self.docker_cmd += ['-H', self.docker_socket]
 
     def docker_exe(self):
         if which("docker.io"):
