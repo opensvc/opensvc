@@ -147,6 +147,17 @@ class Mount(Res.Mount):
 
         self.can_rollback = True
 
+    def can_check_writable(self):
+        if self.fsType != 'zfs':
+	    return True
+        pool = self.device.split("/")[0]
+        cmd = ["zpool", "status", pool]
+	out, err, ret = justcall(cmd)
+	if "state: SUSPENDED" in out:
+	    self.status_log("pool %s is suspended")
+	    return False
+        return True
+
     def try_mount(self, fstype, mntopt):
         cmd = ['mount'] + fstype + mntopt + [self.device, self.mountPoint]
         ret, out, err = self.vcall(cmd)
