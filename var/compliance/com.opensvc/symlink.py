@@ -61,7 +61,7 @@ from comp import *
 class InitError(Exception):
     pass
 
-class CompFiles(CompObject):
+class CompSymlink(CompObject):
     def __init__(self, prefix='OSVC_COMP_SYMLINK_'):
         CompObject.__init__(self, prefix=prefix, data=data)
 
@@ -136,5 +136,5 @@ class CompFiles(CompObject):
         return r
 
 if __name__ == "__main__":
-    main(CompFiles)
+    main(CompSymlink)
 
