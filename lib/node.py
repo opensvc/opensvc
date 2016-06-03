@@ -1023,42 +1023,16 @@ class Node(Svc, Freezer, Scheduler):
         tmpf = f.name
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
-        import urllib
-        kwargs = {}
-        if sys.hexversion >= 0x02070900:
-            import ssl
-            context = ssl._create_unverified_context()
-            kwargs['context'] = context
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
+            self.urlretrieve(pkg_name, tmpf)
         except IOError as e:
-            print("download failed", ":", e[1], file=sys.stderr)
+            print("download failed", ":", e, file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
                 pass
             if self.options.cron:
                 return 0
-            return 1
-        if 'invalid file' in headers.values():
-            try:
-                os.unlink(fname)
-            except:
-                pass
-            if self.options.cron:
-                return 0
-            print("invalid file", file=sys.stderr)
-            return 1
-        with open(fname, 'r') as f:
-            content = f.read()
-        if content.startswith('<') and '404 Not Found' in content:
-            try:
-                os.unlink(fname)
-            except:
-                pass
-            if self.options.cron:
-                return 0
-            print("not found", file=sys.stderr)
             return 1
         tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
@@ -1109,32 +1083,10 @@ class Node(Svc, Freezer, Scheduler):
         tmpf = f.name
         f.close()
         print("get %s (%s)"%(pkg_name, tmpf))
-        import urllib
-        kwargs = {}
-        if sys.hexversion >= 0x02070900:
-            import ssl
-            context = ssl._create_unverified_context()
-            kwargs['context'] = context
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, tmpf, **kwargs)
+            self.urlretrieve(pkg_name, tmpf)
         except IOError as e:
-            print("download failed", ":", e[1], file=sys.stderr)
-            try:
-                os.unlink(fname)
-            except:
-                pass
-            return 1
-        if 'invalid file' in headers.values():
-            try:
-                os.unlink(fname)
-            except:
-                pass
-            print("invalid file", file=sys.stderr)
-            return 1
-        with open(fname, 'r') as f:
-            content = f.read()
-        if content.startswith('<') and '404 Not Found' in content:
-            print("not found", file=sys.stderr)
+            print("download failed", ":", e, file=sys.stderr)
             try:
                 os.unlink(fname)
             except:
@@ -1512,6 +1464,17 @@ class Node(Svc, Freezer, Scheduler):
 
     def collector_rest_post(self, path, data=None):
         return self.collector_rest_request(path, data)
+
+    def urlretrieve(self, url, fpath):
+        request = urllib2.Request(url)
+        kwargs = {}
+        if sys.hexversion >= 0x02070900:
+            import ssl
+            kwargs["context"] = ssl._create_unverified_context()
+        f = urllib2.urlopen(request, **kwargs)
+        with open(fpath, 'wb') as df:
+            for chunk in iter(lambda: f.read(4096), b""):
+                df.write(chunk)
 
     def collector_rest_request(self, path, data=None):
         api = self.collector_api()

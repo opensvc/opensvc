@@ -135,15 +135,15 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         if os.path.exists(self.template_local):
             self.r.log.info("template %s already downloaded"%self.template_fname)
             return
-        import urllib
         import sys
-        kwargs = {}
-        if sys.hexversion >= 0x02070900:
-            import ssl
-            kwargs['context'] = ssl._create_unverified_context()
-        fname, headers = urllib.urlretrieve(template, self.template_local, **kwargs)
-        if 'invalid file' in headers.values():
-            self.r.log.error("%s not found"%self.template)
+        try:
+            self.r.svc.node.urlretrieve(template, self.template_local)
+        except IOError as e:
+            self.r.log.error("download failed", ":", e)
+            try:
+                os.unlink(self.template_local)
+            except:
+                pass
             raise ex.excError
 
     def unpack_template(self):
