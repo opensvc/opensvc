@@ -147,28 +147,14 @@ class CompFiles(CompObject):
     def parse_ref(self, d):
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
-        try:
-            if d['ref'].startswith("https"):
-                try:
-                    context = ssl._create_unverified_context()
-                    fname, headers = urllib.urlretrieve(d['ref'], tmpf, context=context)
-                except:
-                    fname, headers = urllib.urlretrieve(d['ref'], tmpf)
-            else:
-                fname, headers = urllib.urlretrieve(d['ref'], tmpf)
-        except IOError:
-            import traceback
-            e = sys.exc_info()
-            print >>sys.stderr, "can not download", d['ref'], ":", e[1]
-            raise InitError()
-        if 'invalid file' in headers.values():
-            print >>sys.stderr, d['ref'], "not found on collector"
-            raise InitError()
-        d['fmt'] = f.read()
-        if '<title>404 Not Found</title>' in d['fmt']:
-            print >>sys.stderr, d['ref'], "not found on collector"
-            raise InitError()
         f.close()
+        try:
+            self.urlretrieve(d['ref'], tmpf)
+        except IOError as e:
+            print >>sys.stderr, d['ref'], "download failed:", e
+            raise InitError()
+        with open(tmpf, "r") as f:
+            d['fmt'] = f.read()
         return self.parse_fmt(d, add_linefeed=False)
 
     def get_env_item(self, d, item):
