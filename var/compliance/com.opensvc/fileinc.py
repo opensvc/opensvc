@@ -1,25 +1,71 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-Verify file content. The collector provides the format with
-wildcards. The module replace the wildcards with contextual
-values.
 
-The variable format is json-serialized:
-
+data = {
+  "default_prefix": "OSVC_COMP_FILEINC_",
+  "example_value": """ 
 {
-  "path": "/some/path/to/file",
-  "check": "some pattern into the file",
-  "fmt": "full added content with %%HOSTNAME%%@corp.com",
- - or - 
-  "ref": "http:// ..."
+ "path": "/tmp/foo",
+ "check": ".*some pattern.*",
+ "fmt": "full added content with %%HOSTNAME%%@corp.com: some pattern into the file."
 }
+  """,
+  "description": """* Verify file content.
+* The collector provides the format with wildcards.
+* The module replace the wildcards with contextual values.
+* The fmt must match the check pattern
 
 Wildcards:
 %%ENV:VARNAME%%		Any environment variable value
 %%HOSTNAME%%		Hostname
 %%SHORT_HOSTNAME%%	Short hostname
 
-"""
+""",
+  "form_definition": """
+Desc: |
+  A fileinc rule, fed to the 'fileinc' compliance object to verify a line matching the 'check' regular expression is present in the specified file.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Class: fileinc
+    Type: json
+    Format: dict
+
+Inputs:
+  -
+    Id: path
+    Label: Path
+    DisplayModeLabel: path
+    LabelCss: hd16
+    Mandatory: Yes
+    Help: File path to search the matching line into.
+    Type: string
+  -
+    Id: check
+    Label: Check regexp
+    DisplayModeLabel: check
+    LabelCss: action16
+    Mandatory: Yes
+    Help: A regular expression. Matching the regular expression is sufficent to grant compliancy.
+    Type: string
+  -
+    Id: fmt
+    Label: Format
+    DisplayModeLabel: fmt
+    LabelCss: action16
+    Help: The line installed if the check pattern is not found in the file.
+    Type: string
+  -
+    Id: ref
+    Label: URL to format
+    DisplayModeLabel: ref
+    LabelCss: loc
+    Help: An URL pointing to a file containing the line installed if the check pattern is not found in the file.
+    Type: string
+
+""",
+}
 
 import os
 import sys
@@ -36,21 +82,19 @@ from comp import *
 
 MAXSZ = 8*1024*1024
 
-class FileInc(object):
-    def __init__(self, prefix='OSVC_COMP_FILEINC_'):
-        self.prefix = prefix.upper()
+class CompFileInc(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.files = {}
         self.ok = {}
         self.checks = []
         self.upds = {}
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
-
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.add_file(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
+        for rule in self.get_rules():
+            self.add_rule(rule)
 
         if len(self.checks) == 0:
             raise NotApplicable()
@@ -69,40 +113,13 @@ class FileInc(object):
         f = tempfile.NamedTemporaryFile()
         tmpf = f.name
         try:
-            fname, headers = urllib.urlretrieve(url, tmpf)
-            if 'invalid file' in headers.values():
-                print >>sys.stderr, url, "not found on collector"
-                return RET_ERR
-            content = unicode(f.read())
+            self.urlretrieve(url, tmpf)
             f.close()
-        except:
-             print >>sys.stderr, url, "not found on collector"
+        except Exception as e:
+             print >>sys.stderr, url, "download error:", e
              return ''
-        if '<title>404 Not Found</title>' in content:
-            print >>sys.stderr, url, "not found on collector"
-            return ''
+        content = unicode(f.read())
         return self.parse_fmt(content)
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
 
     def read_file(self, path):
         if not os.path.exists(path):
@@ -120,18 +137,14 @@ class FileInc(object):
             raise
         return out
 
-    def add_file(self,v):
+    def add_rule(self, d):
         r = RET_OK
-        d = json.loads(v)
         if 'path' not in d:
             print >>sys.stderr, "'path' should be defined:", d
             r |= RET_ERR
         if 'fmt' in d and 'ref' in d:
             print >>sys.stderr, "'fmt' and 'ref' are exclusive:", d
             r |= RET_ERR
-        for k in ('path', 'check', 'fmt', 'ref'):
-            if k in d:
-                d[k] = self.subst(d[k])
         if 'path' in d:
             d['path'] = d['path'].strip()
         if 'ref' in d:
@@ -272,32 +285,4 @@ class FileInc(object):
 
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = FileInc(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except ComplianceError:
-        sys.exit(RET_ERR)
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompFileInc)
