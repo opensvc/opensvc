@@ -1,8 +1,42 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_PACKAGES_... vars
-which define ['pkg1', 'pkg2', ...]
-"""
+
+data = {
+  "default_prefix": "OSVC_COMP_PACKAGES_",
+  "example_value": """ 
+[
+ "bzip2",
+ "-zip",
+ "zip"
+]
+  """,
+  "description": """* Verify a list of packages is installed or removed
+* A '-' prefix before the package name means the package should be removed
+* No prefix before the package name means the package should be installed
+* The package version is not checked
+""",
+  "form_definition": """
+Desc: |
+  A rule defining a set of packages, fed to the 'packages' compliance object for it to check each package installed or not-installed status.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Class: package
+    Type: json
+    Format: list
+
+Inputs:
+  -
+    Id: pkgname
+    Label: Package name
+    DisplayModeLabel: ""
+    LabelCss: pkg16
+    Mandatory: Yes
+    Help: Use '-' as a prefix to set 'not installed' as the target state. Use '*' as a wildcard for package name expansion for operating systems able to list packages available for installation.
+    Type: string
+""",
+}
 
 import os
 import re
@@ -17,11 +51,13 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompPackages(object):
+class CompPackages(CompObject):
     def __init__(self, prefix='OSVC_COMP_PACKAGES_', uri=None):
-        self.combo_fix = False
+        CompObject.__init__(self, prefix=prefix, data=data)
         self.uri = uri
-        self.prefix = prefix.upper()
+
+    def init(self):
+        self.combo_fix = False
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch', '*']
 
@@ -35,12 +71,7 @@ class CompPackages(object):
         else:
             self.pkg_type = 'product'
 
-        self.packages = []
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.packages += json.loads(self.subst(os.environ[k]))
-            except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to package list'
+        self.packages = self.get_rules()
 
         if len(self.packages) == 0:
             raise NotApplicable()
@@ -106,28 +137,6 @@ class CompPackages(object):
         self.packages = map(lambda x: x.strip(), self.packages)
         self.expand_pkgnames()
         self.installed_packages = self.get_installed_packages()
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v.strip()
 
     def load_reloc(self):
         self.reloc = {}
@@ -435,32 +444,14 @@ zlib                                                               ALL  @@R:zlib
             pass
         fname = os.path.join(dname, "file")
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, fname)
+            self.urllib.urlretrieve(pkg_name, fname)
         except IOError:
-            import traceback
-            e = sys.exc_info()
             try:
                 os.unlink(fname)
                 os.unlink(dname)
             except:
                 pass
-            raise Exception("download failed: %s" % str(e[1]))
-        if 'invalid file' in headers.values():
-            try:
-                os.unlink(fname)
-                os.unlink(dname)
-            except:
-                pass
-            raise Exception("invalid file")
-        with open(fname, 'r') as f:
-            content = f.read(500)
-        if content.startswith('<') and '404' in content and 'Not Found' in content:
-            try:
-                os.unlink(fname)
-                os.unlink(dname)
-            except:
-                pass
-            raise Exception("not found")
+            raise Exception("download failed: %s" % str(e))
         import tarfile
         os.chdir(dname)
         try:
@@ -810,35 +801,4 @@ zlib                                                               ALL  @@R:zlib
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix [uri]"""%sys.argv[0]
-    if len(sys.argv) not in [3, 4]:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        argv = [sys.argv[1]]
-        if len(sys.argv) == 4:
-            argv.append(sys.argv[3])
-        o = CompPackages(*argv)
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except ComplianceError:
-        sys.exit(RET_ERR)
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompPackages)
