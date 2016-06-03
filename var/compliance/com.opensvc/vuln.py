@@ -1,9 +1,64 @@
 #!/usr/bin/env /opt/opensvc/bin/python
+
+data = {
+  "default_prefix": "OSVC_COMP_VULN_",
+  "example_value": """ 
+[
+ {
+  "pkgname": "kernel",
+  "minver": "2.6.18-238.19.1.el5",
+  "firstver": "2.6.18-238"
+ },
+ {
+  "pkgname": "kernel-xen",
+  "minver": "2.6.18-238.19.1.el5"
+ }
+]
+  """,
+  "description": """* Raise an alert if an installed package version is in a version range
+* If the package is not installed, do not raise an alert
+""",
+  "form_definition": """
+Desc: |
+  A rule defining a list of vulnerable packages and their minimum release version fixing the vulnerability.
+
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: vuln
+
+Inputs:
+  -
+    Id: pkgname
+    Label: Package name
+    DisplayModeLabel: pkgname
+    LabelCss: pkg16
+    Mandatory: Yes
+    Type: string
+    Help: The package name, as known to the target system's package manager.
+  -
+    Id: firstver
+    Label: First vulnerable version
+    DisplayModeLabel: firstver
+    LabelCss: pkg16
+    Mandatory: No
+    Type: string
+    Help: The first vulnerable package version. In the security context, the package version introducing the vulnerability.
+  -
+    Id: minver
+    Label: Minimum version
+    DisplayModeLabel: minver
+    LabelCss: pkg16
+    Mandatory: Yes
+    Type: string
+    Help: The package minimum version. In the security context, the package version fixing the vulnerability.
+
 """ 
-OSVC_COMP_VULN_11_117=\
-[{"pkgname": "kernel", "minver": "2.6.18-238.19.1.el5", "firstver": "2.6.18-238"},\
- {"pkgname": "kernel-xen", "minver": "2.6.18-238.19.1.el5"}]
-"""
+}
 
 import os
 import sys
@@ -27,10 +82,12 @@ def repl(matchobj):
 class LiveKernVulnerable(Exception):
     pass
 
-class CompVuln(object):
-    def __init__(self, prefix='OSVC_COMP_VULN_', uri=None):
+class CompVuln(CompObject):
+    def __init__(self, prefix=None, uri=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
         self.uri = uri
-        self.prefix = prefix.upper()
+
+    def init(self):
         self.highest_avail_version = "0"
         self.fix_list = []
         self.need_pushpkg = False
@@ -49,18 +106,13 @@ class CompVuln(object):
             self.pkg_type = 'product'
 
         self.packages = []
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
+        for k, rule in self.get_rule_items():
             try:
-                o = json.loads(self.subst(os.environ[k]))
+                self.packages += self.add_rule(k, rule)
+            except InitError:
+                continue
             except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
-                continue
-            if type(o) != list:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
-                continue
-            for i, d in enumerate(o):
-                o[i]["rule"] = k.replace("OSVC_COMP_", "")
-            self.packages += o
+                print >>sys.stderr, 'failed to parse variable', os.environ[k]
 
         if len(self.packages) == 0:
             raise NotApplicable()
@@ -114,27 +166,9 @@ class CompVuln(object):
 
         self.installed_packages = self.get_installed_packages()
 
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v.strip()
+    def add_rule(self, k, o):
+        o["rule"] = k.replace("OSVC_COMP_", "")
+        return [o]
 
     def get_free(self, c):
         if not os.path.exists(c):
@@ -179,32 +213,14 @@ class CompVuln(object):
             pass
         fname = os.path.join(dname, "file")
         try:
-            fname, headers = urllib.urlretrieve(pkg_name, fname)
+            self.urlretrieve(pkg_name, fname)
         except IOError:
-            import traceback
-            e = sys.exc_info()
             try:
                 os.unlink(fname)
                 os.unlink(dname)
             except:
                 pass
-            raise Exception("download failed: %s" % str(e[1]))
-        if 'invalid file' in headers.values():
-            try:
-                os.unlink(fname)
-                os.unlink(dname)
-            except:
-                pass
-            raise Exception("invalid file")
-        with open(fname, 'r') as f:
-            content = f.read(500)
-        if content.startswith('<') and '404' in content and 'Not Found' in content:
-            try:
-                os.unlink(fname)
-                os.unlink(dname)
-            except:
-                pass
-            raise Exception("not found")
+            raise Exception("download failed: %s" % str(e))
         import tarfile
         os.chdir(dname)
         try:
@@ -702,33 +718,5 @@ class CompVuln(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix [uri]"""%sys.argv[0]
-    if len(sys.argv) not in (3, 4):
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        if len(sys.argv) == 4:
-            o = CompVuln(sys.argv[1], sys.argv[3])
-        else:
-            o = CompVuln(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompVuln)
 
