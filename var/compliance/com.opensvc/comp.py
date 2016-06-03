@@ -36,6 +36,9 @@ class Unfixable(Exception):
 class ComplianceError(Exception):
      pass
 
+class InitError(Exception):
+     pass
+
 class CompObject(object):
     def __init__(self,
                  prefix=None,
@@ -102,6 +105,9 @@ class CompObject(object):
         return rules
 
     def get_rules(self):
+        return [v[1] for v in self.get_rule_items()]
+
+    def get_rule_items(self):
         rules = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             s = self.subst(os.environ[k])
@@ -110,9 +116,10 @@ class CompObject(object):
             except ValueError:
                 print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
             if type(data) == list:
-                rules += data
+                for d in data:
+                    rules += [(k, d)]
             else:
-                rules += [data]
+                rules += [(k, data)]
         if len(rules) == 0:
             raise NotApplicable("no rules")
         return rules
@@ -239,6 +246,17 @@ class CompObject(object):
         if len(data["data"]) == 0:
             raise ComplianceError(uuid + ": metadata not found")
         return data["data"][0]
+
+    def urlretrieve(self, url, fpath):
+        request = urllib2.Request(url)
+        kwargs = {}
+        if sys.hexversion >= 0x02070900:
+            import ssl
+            kwargs["context"] = ssl._create_unverified_context()
+        f = urllib2.urlopen(request, **kwargs)
+        with open(fpath, 'wb') as df:
+            for chunk in iter(lambda: f.read(4096), b""):
+                df.write(chunk)
 
     def md5(self, fpath):
         import hashlib
