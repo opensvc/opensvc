@@ -366,11 +366,13 @@ class DockerLib(object):
         with open(self.docker_pid_file, "r") as f:
             buff = f.read()
         self.log.debug("docker_running: pid found in pid file %s" % buff)
-        if not os.path.exists("/proc/%s"%buff):
-            self.log.debug("docker_running: no proc info in %s" % "/proc/%s"%buff)
-            return False
         exe = os.path.join(os.sep, "proc", buff, "exe")
-        exe = os.path.realpath(exe)
+        try:
+            exe = os.path.realpath(exe)
+        except OSError as e:
+            self.log.debug("docker_running: no proc info in %s" % "/proc/%s"%buff)
+            os.unlink(self.docker_pid_file)
+            return False
         if "docker" not in exe:
             self.log.debug("docker_running: pid found but owned by a process that is not a docker (%s)" % exe)
             os.unlink(self.docker_pid_file)
