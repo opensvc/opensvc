@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 import sys
+import os
 import logging
 import logging.handlers
 from rcGlobalEnv import *
@@ -68,6 +69,43 @@ def initLogger(name):
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(streamformatter)
     log.addHandler(streamhandler)
+
+    """ syslog
+    """
+    try:
+        import ConfigParser
+    except ImportError:
+        import configparser as ConfigParser
+    config = ConfigParser.RawConfigParser({})
+    try:
+        config.read("/opt/opensvc/etc/node.conf")
+    except:
+        pass
+    try:
+        facility = config.get("syslog", "facility")
+    except:
+        facility = "user"
+    try:
+        host = config.get("syslog", "host")
+    except:
+        host = None
+    try:
+        port = int(config.get("syslog", "port"))
+    except:
+        port = None
+    if host is None and port is None and os.path.exists("/dev/log"):
+        address = "/dev/log"
+    else:
+        if host is None:
+            host = "localhost"
+        if port is None:
+            port = 514
+        address = (host, port)
+
+    syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
+    sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+    sysloghandler.setFormatter(syslogformatter)
+    log.addHandler(sysloghandler)
 
     if '--debug' in sys.argv:
             rcEnv.loglevel = logging.DEBUG
