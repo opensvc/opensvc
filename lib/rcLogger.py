@@ -18,11 +18,35 @@
 #
 import sys
 import os
+import errno
 import logging
 import logging.handlers
 from rcGlobalEnv import *
+from subprocess import *
 
 min_name_len = 8
+
+class LoggerHandler(logging.handlers.SysLogHandler):
+    def __init__(self, facility=logging.handlers.SysLogHandler.LOG_USER):
+        logging.Handler.__init__(self)
+        self.facility = facility
+        self.formatter = None
+
+    def close(self):
+        pass
+
+    def emit(self, record):
+        try:    
+            msg = self.format(record)
+            cmd = ["logger", "-t", "", "-p", self.facility+"."+record.levelname.lower(), msg]
+            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+            p.communicate()
+        except (KeyboardInterrupt, SystemExit):
+            raise   
+        except: 
+            self.handleError(record)
+
+
 
 def set_streamformatter(svcs):
     maxlen = get_max_name_len(svcs)
@@ -84,7 +108,7 @@ def initLogger(name):
     try:
         facility = config.get("syslog", "facility")
     except:
-        facility = "user"
+        facility = "daemon"
     try:
         host = config.get("syslog", "host")
     except:
@@ -97,8 +121,8 @@ def initLogger(name):
     if host is None and port is None:
         if os.path.exists("/dev/log"):
             address = os.path.realpath("/dev/log")
-        elif os.path.exists("/var/log/syslog"):
-            address = os.path.realpath("/var/log/syslog")
+        elif os.path.exists("/var/run/syslog"):
+            address = os.path.realpath("/var/run/syslog")
     if address is None:
         if host is None:
             host = "localhost"
@@ -109,10 +133,15 @@ def initLogger(name):
     syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
     try:
         sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+    except Exception as e:
+        if e.errno == errno.ENOTSOCK:
+            # solaris /dev/log is a stream device 
+	    sysloghandler = LoggerHandler(facility=facility)
+        else:
+	    sysloghandler = None
+    if sysloghandler:
         sysloghandler.setFormatter(syslogformatter)
         log.addHandler(sysloghandler)
-    except Exception as e:
-        pass
 
     if '--debug' in sys.argv:
             rcEnv.loglevel = logging.DEBUG
