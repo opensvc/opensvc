@@ -93,9 +93,13 @@ def initLogger(name):
         port = int(config.get("syslog", "port"))
     except:
         port = None
-    if host is None and port is None and os.path.exists("/dev/log"):
-        address = "/dev/log"
-    else:
+    address = None
+    if host is None and port is None:
+        if os.path.exists("/dev/log"):
+            address = os.path.realpath("/dev/log")
+        elif os.path.exists("/var/log/syslog"):
+            address = os.path.realpath("/var/log/syslog")
+    if address is None:
         if host is None:
             host = "localhost"
         if port is None:
@@ -103,9 +107,12 @@ def initLogger(name):
         address = (host, port)
 
     syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
-    sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
-    sysloghandler.setFormatter(syslogformatter)
-    log.addHandler(sysloghandler)
+    try:
+        sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+        sysloghandler.setFormatter(syslogformatter)
+        log.addHandler(sysloghandler)
+    except Exception as e:
+        pass
 
     if '--debug' in sys.argv:
             rcEnv.loglevel = logging.DEBUG
