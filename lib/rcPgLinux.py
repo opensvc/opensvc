@@ -203,7 +203,7 @@ def get_cgroup_path(o, t, create=True):
     if cgroup_mntpt is None:
         raise ex.excError("cgroup fs with option %s is not mounted" % t)
 
-    if o.type == "container.lxc":
+    if o.type == "container.lxc" and hasattr(o, "name"):
         cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
     else:
         elements = [cgroup_mntpt, svcname]
