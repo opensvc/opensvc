@@ -26,6 +26,7 @@ import resDg
 from rcUtilities import qcall
 import os
 import rcExceptions as ex
+import glob
 
 import re
 
@@ -130,7 +131,23 @@ class Pool(resDg.Dg):
         except:
             self.log.error("corrupted disklist cache file %s"%self.disklist_name())
             raise ex.excError
-        return dl
+        vdl = []
+        for d in dl:
+            if os.path.exists(d):
+                vdl.append(d)
+                continue
+            if len(d) < 36 or not d.endswith("s2"):
+                self.log.debug("no remapping possible for disk %s. keep as is." % d)
+                vdl.append(d)
+                continue
+            wwid = d[-35:-2]
+            l = glob.glob("/dev/rdsk/*"+wwid+"s2")
+            if len(l) != 1:
+                self.log.warning("discard disk %s from disklist cache: not found" % wwid)
+                continue
+            self.log.debug("remapped device %s to %s" % (d, l[0]))
+            vdl.append(l[0])
+        return set(vdl)
 
     def _disklist(self):
         """disklist() search zpool vdevs from
