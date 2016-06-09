@@ -21,8 +21,6 @@ from rcGlobalEnv import *
 
 action_desc = {
     'Service actions': {
-      'print_config': 'display service current configuration',
-      'edit_config': 'edit service configuration',
       'boot': 'start a service if executed on the primary node (or one of the primary nodes in case of a flex service), startstandby if not',
       'shutdown': 'stop a service, disabling the background database logging',
       'start': 'start all service resources',
@@ -86,7 +84,6 @@ action_desc = {
       'switch': 'stop the service on the local node and start on the remote node. --to <node> specify the remote node to switch the service to.',
       'migrate': 'live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.',
       'json_status': 'provide the resource and aggregated status in json format, for use by tier tools',
-      'json_env': 'provide the service configuration in json format, for use by tier tools',
       'json_disklist': 'provide the service disk list in json format, for use by tier tools',
       'json_devlist': 'provide the service device list in json format, for use by tier tools',
       'resource_monitor': 'detect monitored resource failures and trigger monitor_action',
@@ -99,6 +96,10 @@ action_desc = {
       'pg_kill': "kill the tasks of a process group",
      },
     'Service configuration': {
+      'print_config': 'display service current configuration',
+      'json_config': 'provide the service configuration in json format, for use by tier tools',
+      'edit_config': 'edit service configuration',
+      'validate_config': 'check the sections and parameters are valid.',
       'install': 'install a service using the configuration file pointed by --envfile. used by master services when pushing the envfile to their slave.',
       'create': 'create a new service configuration file. --interactive triggers the interactive mode',
       'update': 'update definitions in an existing service configuration file',
@@ -156,6 +157,7 @@ action_desc = {
 }
 
 deprecated_actions = [
+  "json_env",
   "syncnodes",
   "syncdrp",
   "syncupdate",

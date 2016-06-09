@@ -331,7 +331,8 @@ class Svc(Resource, Scheduler):
           'json_status',
           'json_disklist',
           'json_devlist',
-          'json_env'
+          'json_env',
+          'validate_config',
         ]
         if action in list_actions_no_lock:
             # no need to serialize this action
@@ -2179,7 +2180,8 @@ class Svc(Resource, Scheduler):
         if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
-        return os.system(' '.join((editor, self.pathenv)))
+        os.system(' '.join((editor, self.pathenv)))
+        return self.validate_config()
 
     def can_sync(self, target=None):
         ret = False
@@ -2437,6 +2439,7 @@ class Svc(Resource, Scheduler):
 
     def action_translate(self, action):
         translation = {
+          "json_env": "json_config",
           "syncnodes": "sync_nodes",
           "syncdrp": "sync_drp",
           "syncupdate": "sync_update",
@@ -2520,7 +2523,8 @@ class Svc(Resource, Scheduler):
           'json_env',
           'json_status',
           'json_disklist',
-          'json_devlist'
+          'json_devlist',
+          'validate_config',
         ]
         actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
           'docker',
@@ -2532,7 +2536,8 @@ class Svc(Resource, Scheduler):
           'postsync',
           'sync_drp',
           'sync_nodes',
-          'sync_all'
+          'sync_all',
+          'validate_config',
         ]
         if action not in actions_list_allow_on_frozen and \
            'compliance' not in action and \
@@ -2588,7 +2593,8 @@ class Svc(Resource, Scheduler):
           'json_env',
           'status',
           'group_status',
-          'resource_monitor'
+          'resource_monitor',
+          'validate_config',
         ]
         if action in actions_list_no_log or \
            action.startswith("compliance") or \
@@ -2609,6 +2615,7 @@ class Svc(Resource, Scheduler):
             "edit_config",
             "print_config",
             "json_env",
+            "validate_config",
         ) or "sync" in action:
             return
         if rcEnv.nodename == self.drp_flex_primary:
@@ -3140,6 +3147,35 @@ class Svc(Resource, Scheduler):
 
     def pull(self):
         self.node.pull(self.svcname)
+
+    def validate_config(self):
+        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+        data = KeyDict(provision=True)
+        ret = 0
+
+        # validate DEFAULT options
+        for option in self.config.defaults():
+            if data.sections["DEFAULT"].getkey(option) is None:
+                self.log.warning("ignored option DEFAULT.%s" % option)
+                ret += 1
+
+        # validate resources options
+        for section in self.config.sections():
+            family = section.split("#")[0]
+            if self.config.has_option(section, "type"):
+                rtype = self.config.get(section, "type")
+            else:
+                rtype = None
+            if family not in data.sections:
+                self.log.warning("ignored section %s" % section)
+            for option in self.config.options(section):
+                if option in self.config.defaults():
+                    continue
+                if data.sections[family].getkey(option, rtype=rtype) is None and data.sections[family].getkey(option) is None:
+                    self.log.warning("ignored option %s.%s, driver %s" % (section, option, rtype if rtype else "generic"))
+                    ret += 1
+        return ret
+                
 
 if __name__ == "__main__" :
     for c in (Svc,) :
