@@ -68,7 +68,9 @@ class ProvisioningLv(Provisioning):
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
         try:
-            justcall(["dmsetup", "mknodes"])
+            cmd = ['dmsetup', 'mknodes']
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            p.communicate()
         except:
             # best effort
             pass

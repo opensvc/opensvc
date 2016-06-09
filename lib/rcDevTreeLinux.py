@@ -54,7 +54,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             return self.dm_h
         try:
             cmd = ['dmsetup', 'mknodes']
-            p = Popen(cmd, stdout=None, stderr=None)
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             p.communicate()
         except:
             # best effort
