@@ -189,7 +189,7 @@ class SvcVcs(svc.Svc):
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'fs#vcs%d'%self.n_fs
-        m = __import__("resMountVcs"+rcEnv.sysname)
+        m = __import__("resFsVcs"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt,
                     disabled=disabled, monitor=monitor)
         r.vcs_name = name
@@ -203,7 +203,7 @@ class SvcVcs(svc.Svc):
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'fs#vcs%d'%self.n_fs
-        m = __import__("resMountVcs"+rcEnv.sysname)
+        m = __import__("resFsVcs"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt,
                     disabled=disabled, monitor=monitor)
         r.vcs_name = name

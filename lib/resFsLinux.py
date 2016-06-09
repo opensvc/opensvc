@@ -22,7 +22,7 @@
 import os
 
 import rcMountsLinux as rcMounts
-import resMount as Res
+import resFs as Res
 from rcUtilities import qcall, protected_mount, getmount, which, justcall
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
 from rcGlobalEnv import rcEnv

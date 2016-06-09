@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2010 Christophe Varoqui <christophe.varoqui@opensvc.com>'
-# Copyright (c) 2010 Cyril Galibern <cyril.galibern@opensvc.com>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,12 @@
 
 import os
 
-import rcMountsAIX as rcMounts
-import resMount as Res
-from rcUtilities import qcall, protected_mount, getmount
+import rcStatus
 from rcGlobalEnv import rcEnv
+rcMounts = __import__('rcMounts'+rcEnv.sysname)
+import resFs as Res
+from rcUtilities import qcall, protected_mount
 import rcExceptions as ex
-from stat import *
 
 def try_umount(self):
     cmd = ['umount', self.mountPoint]
@@ -34,7 +34,7 @@ def try_umount(self):
     if ret == 0:
         return 0
 
-    """ don't try to kill process using the source of a 
+    """ don't try to kill process using the source of a
         protected bind mount
     """
     if protected_mount(self.mountPoint):
@@ -48,7 +48,7 @@ def try_umount(self):
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     for i in range(4):
-        cmd = ['fuser', '-k', '-x', '-c', self.mountPoint]
+        cmd = ['fuser', '-kc', self.mountPoint]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         self.log.info('umount %s'%self.mountPoint)
         cmd = ['umount', self.mountPoint]
@@ -60,7 +60,7 @@ def try_umount(self):
 
 
 class Mount(Res.Mount):
-    """ define Linux mount/umount doAction """
+    """ define HP-UX mount/umount doAction """
     def __init__(self,
                  rid,
                  mountPoint,
@@ -75,7 +75,6 @@ class Mount(Res.Mount):
                  monitor=False,
                  restart=0,
                  subset=None):
-        self.Mounts = None
         Res.Mount.__init__(self,
                            rid,
                            mountPoint,
@@ -83,7 +82,7 @@ class Mount(Res.Mount):
                            fsType,
                            mntOpt,
                            snap_size,
-                           always_on,
+                           always_on=always_on,
                            disabled=disabled,
                            tags=tags,
                            optional=optional,
@@ -91,57 +90,13 @@ class Mount(Res.Mount):
                            restart=restart,
                            subset=subset)
         self.fsck_h = {
-            'jfs': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs', self.device]},
-            'jfs2': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs2', self.device]},
-        }
+            'vxfs': {'bin': 'fsck', 'cmd': ['fsck', '-F', 'vxfs', '-y', self.device]},
+        } 
 
     def is_up(self):
-        self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mountPoint)
-
-    def realdev(self):
-        try:
-            mode = os.stat(self.device)[ST_MODE]
-        except:
-            self.log.debug("can not stat %s" % self.device)
-            return None
-        if S_ISBLK(mode):
-            dev = self.device
-        else:
-            mnt = getmount(self.device)
-            if self.Mounts is None:
-                self.Mounts = rcMounts.Mounts()
-            m = self.Mounts.has_param("mnt", mnt)
-            if m is None:
-                self.log.debug("can't find dev %(dev)s mounted in %(mnt)s in mnttab"%dict(mnt=mnt, dev=self.device))
-                return None
-            dev = m.dev
-
-        return dev
-
-    def mplist(self):
-        dev = self.realdev()
-        if dev is None:
-            return set([])
-
-        return self._mplist([dev])
-
-    def _mplist(self, devs):
-        mps = set([])
-        return mps
-
-    def disklist(self):
-        dev = self.realdev()
-        if dev is None:
-            return set([])
-        return set([])
-
-    def can_check_writable(self):
-        return True
+        return rcMounts.Mounts().has_mount(self.device, self.mountPoint)
 
     def start(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
         Res.Mount.start(self)
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
@@ -151,7 +106,7 @@ class Mount(Res.Mount):
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
         if self.fsType != "":
-            fstype = ['-v', self.fsType]
+            fstype = ['-F', self.fsType]
         else:
             fstype = []
         if self.mntOpt != "":
@@ -162,23 +117,19 @@ class Mount(Res.Mount):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        self.Mounts = None
         self.can_rollback = True
 
     def stop(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
                     (self.device, self.mountPoint))
-            return
+            return 0
         for i in range(3):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
             self.log.error('failed to umount %s'%self.mountPoint)
             raise ex.excError
-        self.Mounts = None
 
 if __name__ == "__main__":
     for c in (Mount,) :

@@ -26,7 +26,7 @@ import re
 
 import rcStatus
 import rcMountsSunOS as rcMounts
-import resMount as Res
+import resFs as Res
 import rcExceptions as ex
 from rcZfs import zfs_getprop, zfs_setprop
 from rcUtilities import justcall

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013 Christophe Varoqui <christophe.varoqui@opensvc.com>
+# Copyright (c) 2012 Christophe Varoqui <christophe.varoqui@opensvc.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,10 +18,8 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 
-import rcStatus
-import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-Res = __import__("resMountLinux")
+Res = __import__("resFsLinux")
 
 class Mount(Res.Mount):
     def __init__(self,
@@ -38,6 +36,7 @@ class Mount(Res.Mount):
                  monitor=False,
                  restart=0,
                  subset=None):
+        self.sgname = device
         Res.Mount.__init__(self,
                            rid,
                            mountPoint,
@@ -53,20 +52,22 @@ class Mount(Res.Mount):
                            restart=restart,
                            subset=subset)
 
-    def _status(self, verbose=False):
-        try:
-            s = self.svc.get_res_val(self.vcs_name, 'State')
-        except ex.excError as e:
-            self.status_log(str(e))
-            return rcStatus.WARN
-
-        if s == "ONLINE":
-            return rcStatus.UP
-        elif s == "OFFLINE":
-            return rcStatus.DOWN
+    def is_up(self):
+        if 'resource' in self.svc.cmviewcl and \
+           self.mon_name in self.svc.cmviewcl['resource']:
+            state = self.svc.cmviewcl['resource'][self.mon_name][('status', rcEnv.nodename)]
+            if state == "up":
+                return True
+            else:
+                return False
         else:
-            self.status_log(s)
-            return rcStatus.WARN
+            return Res.Mount.is_up(self)
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
 
 if __name__ == "__main__":
     for c in (Mount,) :

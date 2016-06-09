@@ -291,7 +291,7 @@ class SvcSg(svc.Svc):
         lvname = dev.split('/')[3]
         n = self.n_resource
         rid = 'fs#sg%d'%n
-        m = __import__("resMountSg"+rcEnv.sysname)
+        m = __import__("resFsSg"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt)
         r.mon_name = '/vg/%s/lv/status/%s'%(vgname, lvname)
         if 'resource' in self.cmviewcl and \

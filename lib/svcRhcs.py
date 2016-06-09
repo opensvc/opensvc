@@ -155,7 +155,7 @@ class SvcRhcs(svc.Svc):
         mntopt = ""
         n = self.n_fs
         rid = 'fs#rhcs%d'%n
-        m = __import__("resMountRhcs"+rcEnv.sysname)
+        m = __import__("resFsRhcs"+rcEnv.sysname)
         r = m.Mount(rid, mnt, dev, fstype, mntopt)
         r.monitor = True
         self += r

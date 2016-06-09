@@ -19,7 +19,7 @@
 # and open the template in the editor.
 
 from rcGlobalEnv import rcEnv
-Res = __import__("resMountLinux")
+Res = __import__("resFsLinux")
 
 class Mount(Res.Mount):
     def __init__(self,

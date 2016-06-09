@@ -19,7 +19,7 @@
 # and open the template in the editor.
 
 from rcGlobalEnv import rcEnv
-Res = __import__("resMountLinux")
+Res = __import__("resFsHP-UX")
 
 class Mount(Res.Mount):
     def __init__(self,
@@ -28,8 +28,8 @@ class Mount(Res.Mount):
                  device,
                  fsType,
                  mntOpt,
-                 always_on=set([]),
                  snap_size=None,
+                 always_on=set([]),
                  disabled=False,
                  tags=set([]),
                  optional=False,
@@ -43,8 +43,8 @@ class Mount(Res.Mount):
                            device,
                            fsType,
                            mntOpt,
+                           snap_size,
                            always_on=always_on,
-                           snap_size=snap_size,
                            disabled=disabled,
                            tags=tags,
                            optional=optional,

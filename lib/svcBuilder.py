@@ -1392,9 +1392,9 @@ def add_fs(svc, conf, s):
             kwargs['mountPoint'] = os.path.realpath(kwargs['mountPoint'])
 
     try:
-        mount = __import__('resMount'+rcEnv.sysname)
+        mount = __import__('resFs'+rcEnv.sysname)
     except ImportError:
-        svc.log.error("resMount%s is not implemented"%rcEnv.sysname)
+        svc.log.error("resFs%s is not implemented"%rcEnv.sysname)
         return
 
     kwargs['rid'] = s
