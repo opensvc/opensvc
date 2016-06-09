@@ -2364,12 +2364,12 @@ class KeywordFsDirGroup(Keyword):
                   text="The group that should be owner of the directory. Either in numeric or symbolic form."
                 )
 
-class KeywordFsDirPerms(Keyword):
+class KeywordFsDirPerm(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="fs",
-                  keyword="perms",
+                  keyword="perm",
                   rtype="directory",
                   order=11,
                   at=True,
@@ -3523,7 +3523,7 @@ class KeyDict(KeywordStore):
         self += KeywordFsDirPath()
         self += KeywordFsDirUser()
         self += KeywordFsDirGroup()
-        self += KeywordFsDirPerms()
+        self += KeywordFsDirPerm()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordAppScript()

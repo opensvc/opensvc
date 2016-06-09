@@ -1351,7 +1351,7 @@ def add_fs_directory(svc, conf, s):
         pass
 
     try:
-        kwargs['perms'] = conf_get_string_scope(svc, conf, s, 'perms')
+        kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
     except ex.OptNotFound:
         pass
 
