@@ -67,7 +67,11 @@ class ProvisioningLv(Provisioning):
             self.r.log.error(err)
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
-        justcall(["dmsetup", "mknodes"])
+        try:
+            justcall(["dmsetup", "mknodes"])
+        except:
+            # best effort
+            pass
         mapname = "%s-%s"%(self.vg.replace('-','--'),
                            dev.replace('-','--'))
         dev = '/dev/mapper/'+mapname

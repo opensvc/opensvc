@@ -52,9 +52,13 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         self.dm_h = {}
         if not os.path.exists("/dev/mapper"):
             return self.dm_h
-        cmd = ['dmsetup', 'mknodes']
-        p = Popen(cmd, stdout=None, stderr=None)
-        p.communicate()
+        try:
+            cmd = ['dmsetup', 'mknodes']
+            p = Popen(cmd, stdout=None, stderr=None)
+            p.communicate()
+        except:
+            # best effort
+            pass
         devpaths = glob.glob("/dev/mapper/*")
         if '/dev/mapper/control' in devpaths:
             devpaths.remove('/dev/mapper/control')
