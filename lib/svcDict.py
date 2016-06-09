@@ -21,6 +21,7 @@ class Keyword(object):
                  default=None,
                  validator=None,
                  candidates=None,
+                 strict_candidates=True,
                  depends=[],
                  text="",
                  example="foo",
@@ -36,6 +37,7 @@ class Keyword(object):
         self.required = required
         self.default = default
         self.candidates = candidates
+        self.strict_candidates = strict_candidates
         self.depends = depends
         self.text = text
         self.example = example
@@ -59,6 +61,9 @@ class Keyword(object):
             candidates = " | ".join(map(lambda x: str(x), self.candidates))
         else:
             candidates = str(self.candidates)
+        if not self.strict_candidates:
+            candidates += " ..."
+
         s = '#\n'
         s += "# keyword:       %s\n"%self.keyword
         s += "# ----------------------------------------------------------------------------\n"
@@ -91,6 +96,13 @@ class Keyword(object):
         if depends == "":
             depends = None
 
+        if type(self.candidates) in (list, tuple, set):
+            candidates = " | ".join(map(lambda x: str(x), self.candidates))
+        else:
+            candidates = str(self.candidates)
+        if not self.strict_candidates:
+            candidates += " ..."
+
         s = ''
         s += "------------------------------------------------------------------------------\n"
         s += "section:       %s\n"%self.section
@@ -98,7 +110,7 @@ class Keyword(object):
         s += "------------------------------------------------------------------------------\n"
         s += "  required:    %s\n"%str(self.required)
         s += "  default:     %s\n"%str(self.default)
-        s += "  candidates:  %s\n"%str(self.candidates)
+        s += "  candidates:  %s\n"%candidates
         s += "  depends:     %s\n"%depends
         s += "  scopable:    %s\n"%str(self.at)
         if self.text:
@@ -2296,7 +2308,9 @@ class KeywordFsType(Keyword):
                   keyword="type",
                   order=14,
                   required=True,
-                  text="The filesystem type. Used to determine the fsck command to use."
+                  strict_candidates=False,
+                  candidates=["directory"],
+                  text="The filesystem type or 'directory'. Used to determine the fsck command to use."
                 )
 
 class KeywordFsSnapSize(Keyword):
@@ -2307,6 +2321,61 @@ class KeywordFsSnapSize(Keyword):
                   keyword="snap_size",
                   order=14,
                   text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
+                )
+
+class KeywordFsDirPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="path",
+                  rtype="directory",
+                  order=10,
+                  at=True,
+                  required=True,
+                  text="The fullpath of the directory to create."
+                )
+
+class KeywordFsDirUser(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="user",
+                  rtype="directory",
+                  order=11,
+                  at=True,
+                  required=True,
+                  example="root",
+                  text="The user that should be owner of the directory. Either in numeric or symbolic form."
+                )
+
+class KeywordFsDirGroup(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="group",
+                  rtype="directory",
+                  order=11,
+                  at=True,
+                  required=True,
+                  example="sys",
+                  text="The group that should be owner of the directory. Either in numeric or symbolic form."
+                )
+
+class KeywordFsDirPerms(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="perms",
+                  rtype="directory",
+                  order=11,
+                  at=True,
+                  required=True,
+                  example="1777",
+                  text="The permissions the directory should have. A string representing the octal permissions."
                 )
 
 class KeywordLoopSize(Keyword):
@@ -2813,6 +2882,8 @@ class Section(object):
         if k.candidates is None:
             return self._template()
         s = ""
+        if not k.strict_candidates:
+            s += self._template()
         for t in k.candidates:
             s += self._template(t)
         return s
@@ -2960,7 +3031,7 @@ class KeywordStore(dict):
                 key = self.sections[section].getkey(keyword, rtype)
             if key is None:
                 continue
-            if key.candidates is not None and value not in key.candidates:
+            if key.strict_candidates and key.candidates is not None and value not in key.candidates:
                 print("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
                 raise KeyInvalidValue()
 
@@ -3449,6 +3520,10 @@ class KeyDict(KeywordStore):
         self += KeywordFsSnapSize()
         self += KeywordFsVg()
         self += KeywordFsSize()
+        self += KeywordFsDirPath()
+        self += KeywordFsDirUser()
+        self += KeywordFsDirGroup()
+        self += KeywordFsDirPerms()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordAppScript()
