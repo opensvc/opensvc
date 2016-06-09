@@ -224,6 +224,30 @@ class KeywordPkgName(Keyword):
                   text="The wrapped cluster package name, as known to the cluster manager in charge."
                 )
 
+class KeywordRollback(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="rollback",
+                  required=False,
+                  order=11,
+                  default=True,
+                  text="If set to False, the default rollback on action error is inhibited, leaving the service in its half-started state."
+                )
+
+class KeywordMonSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="mon_schedule",
+                  required=False,
+                  order=11,
+                  default="@10",
+                  text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
 class KeywordFlexPrimary(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1931,6 +1955,49 @@ class KeywordDiskRawCreateCharDevices(Keyword):
                   example="false"
                 )
 
+class KeywordDiskRawUser(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="user",
+                  rtype="raw",
+                  order=11,
+                  at=True,
+                  required=True,
+                  example="root",
+                  text="The user that should be owner of the device. Either in numeric or symbolic form."
+                )
+
+class KeywordDiskRawGroup(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="group",
+                  rtype="raw",
+                  order=11,
+                  at=True,
+                  required=False,
+                  example="sys",
+                  text="The group that should be owner of the device. Either in numeric or symbolic form."
+                )
+
+class KeywordDiskRawPerm(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="perm",
+                  rtype="raw",
+                  order=11,
+                  at=True,
+                  required=False,
+                  example="600",
+                  text="The permissions the device should have. A string representing the octal permissions."
+                )
+
+
 class KeywordDiskVgname(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2345,7 +2412,7 @@ class KeywordFsDirUser(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=True,
+                  required=False,
                   example="root",
                   text="The user that should be owner of the directory. Either in numeric or symbolic form."
                 )
@@ -2359,7 +2426,7 @@ class KeywordFsDirGroup(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=True,
+                  required=False,
                   example="sys",
                   text="The group that should be owner of the directory. Either in numeric or symbolic form."
                 )
@@ -2373,7 +2440,7 @@ class KeywordFsDirPerm(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=True,
+                  required=False,
                   example="1777",
                   text="The permissions the directory should have. A string representing the octal permissions."
                 )
@@ -3356,6 +3423,8 @@ class KeyDict(KeywordStore):
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
 
+        self += kw_disable("DEFAULT")
+
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
             self += kw_restart(r)
             self += kw_tags(r)
@@ -3404,6 +3473,8 @@ class KeyDict(KeywordStore):
         self += KeywordClusterType()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
+        self += KeywordRollback()
+        self += KeywordMonSchedule()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
         self += KeywordFlexCpuMinThreshold()
@@ -3490,6 +3561,9 @@ class KeyDict(KeywordStore):
         self += KeywordDiskRawDevs()
         self += KeywordDiskRawZone()
         self += KeywordDiskRawCreateCharDevices()
+        self += KeywordDiskRawUser()
+        self += KeywordDiskRawGroup()
+        self += KeywordDiskRawPerm()
         self += KeywordDiskVgname()
         self += KeywordDiskDsf()
         self += KeywordDiskImages()
