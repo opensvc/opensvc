@@ -1331,11 +1331,85 @@ def add_share_nfs(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
+def add_fs_directory(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+    except ex.OptNotFound:
+        svc.log.error("path must be set in section %s"%s)
+        return
+
+    try:
+        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'group')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['perms'] = conf_get_string_scope(svc, conf, s, 'perms')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        zone = conf_get_string_scope(svc, conf, s, 'zone')
+    except:
+        zone = None
+
+    if zone is not None:
+        zp = None
+        for r in svc.get_resources("container.zone"):
+            if r.name == zone:
+                try:
+                    zp = r.get_zonepath()
+                except:
+                    zp = "<%s>" % zone
+                break
+        if zp is None:
+            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
+            raise ex.excError()
+        kwargs['path'] = zp+'/root'+kwargs['path']
+        if "<%s>" % zone != zp:
+            kwargs['path'] = os.path.realpath(kwargs['path'])
+
+    mod = __import__('resFsDir')
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    r = mod.FsDir(**kwargs)
+
+    if zone is not None:
+        r.tags.add(zone)
+        r.tags.add('zone')
+
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_fs(svc, conf, s):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
     """
     kwargs = {}
+
+    try:
+        kwargs['fsType'] = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        kwargs['fsType'] = ""
+
+    if kwargs['fsType'] == "directory":
+        add_fs_directory(svc, conf, s)
+        return
 
     try:
         kwargs['device'] = conf_get_string_scope(svc, conf, s, 'dev')
@@ -1354,11 +1428,6 @@ def add_fs(svc, conf, s):
             upon snap mountpoint substitution.
         """
         kwargs['mountPoint'] = kwargs['mountPoint'][0:-1]
-
-    try:
-        kwargs['fsType'] = conf_get_string_scope(svc, conf, s, 'type')
-    except ex.OptNotFound:
-        kwargs['fsType'] = ""
 
     try:
         kwargs['mntOpt'] = conf_get_string_scope(svc, conf, s, 'mnt_opt')
