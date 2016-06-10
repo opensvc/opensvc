@@ -1,8 +1,68 @@
 #!/usr/bin/env /opt/opensvc/bin/python
 
-"""
-OSVC_COMP_NODECONF='[{"key": "node.repopkg", "op": "=", "value": "ftp://ftp.opensvc.com/opensvc"}, {"key": "node.repocomp", "op": "=", "value": "ftp://ftp.opensvc.com/compliance"}]' ./nodeconf.py OSVC_COMP_NODECONF check
-"""
+data = {
+  "default_prefix": "OSVC_COMP_NODECONF_",
+  "example_value": """
+[
+  {
+    "key": "node.repopkg",
+    "op": "=",
+    "value": "ftp://ftp.opensvc.com/opensvc"
+  },
+  {
+    "key": "node.repocomp",
+    "op": "=",
+    "value": "ftp://ftp.opensvc.com/compliance"
+  }
+]
+""",
+  "description": """* Verify opensvc agent configuration parameter
+""",
+  "form_definition": """
+Desc: |
+  A rule to set a parameter in OpenSVC node.conf configuration file. Used by the 'nodeconf' compliance object.
+Css: comp48
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: nodeconf
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: The OpenSVC node.conf parameter to check.
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter value.
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The OpenSVC node.conf parameter value to check.
+""",
+}
+
 
 import os
 import sys
@@ -14,45 +74,12 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class NodeConf(object):
-    def __init__(self, prefix='OSVC_COMP_NODECONF_'):
-        self.prefix = prefix.upper()
-        self.keys = []
+class NodeConf(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
-
-        if len(self.keys) == 0:
-            raise NotApplicable()
-
-        for key in self.keys:
-            if "value" in key:
-                key['value'] = self.subst(key['value'])
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
+    def init(self):
+        self.keys = self.get_rules()
 
     def fixable(self):
         return RET_OK
@@ -180,30 +207,5 @@ class NodeConf(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = NodeConf(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(NodeConf)
 
