@@ -1,8 +1,74 @@
 #!/usr/bin/env /opt/opensvc/bin/python
 
-"""
-OSVC_COMP_MPATH='[{"key": "defaults.polling_interval", "op": ">=", "value": 20}, {"key": "device.HP.HSV210.prio", "op": "=", "value": "alua"}]' ./linux.mpath.py OSVC_COMP_MPATH check
-"""
+data = {
+  "default_prefix": "OSVC_COMP_MPATH_",
+  "example_value": """
+[
+  {
+    "key": "defaults.polling_interval",
+    "op": ">=",
+    "value": 20
+  },
+  {
+    "key": "device.HP.HSV210.prio",
+    "op": "=",
+    "value": "alua"
+  }
+]
+""",
+  "description": """* Setup and verify the Linux native multipath configuration
+""",
+  "form_definition": """
+Desc: |
+  A rule to set a list of Linux multipath.conf parameters. Current values can be checked as strictly equal, or superior/inferior to their target value.
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: linux_mpath
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeTrim: 64
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: >
+     The multipath.conf parameter to check.
+     ex: defaults.polling_interval or
+         device.device.HP.HSV100 or
+         multipaths.multipath.6006000000000000 or
+         blacklist.wwid or
+         blacklist.device.HP.HSV210
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter current value.
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The multipath.conf parameter target value.
+""",
+}
+
 
 import os
 import sys
@@ -203,24 +269,16 @@ class Conf(object):
         if m:
             return m.group(1)
 
-class LinuxMpath(object):
-    def __init__(self, prefix='OSVC_COMP_MPATH_'):
-        self.prefix = prefix.upper()
+class LinuxMpath(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.need_restart = False
         self.cf = os.path.join(os.sep, 'etc', 'multipath.conf')
         self.nocf = False
         self.conf = Conf()
-
-        self.keys = []
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
-
-        if len(self.keys) == 0:
-            raise NotApplicable()
-
+        self.keys = self.get_rules()
         self.load_file(self.cf)
 
     def fixable(self):
@@ -479,30 +537,4 @@ class LinuxMpath(object):
             print >>sys.stderr, err
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = LinuxMpath(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(LinuxMpath)
