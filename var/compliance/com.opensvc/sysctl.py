@@ -5,9 +5,9 @@ data = {
   "example_value": """ 
 {
   "key": "vm.lowmem_reserve_ratio",
-  "index": "1",
+  "index": 1,
   "op": ">",
-  "value": 256,
+  "value": 256
 }
   """,
   "description": """* Verify a linux kernel parameter value is on target
