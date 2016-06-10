@@ -1,19 +1,27 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_GROUP_... vars
-which define {'groupname':{'propname':'propval',... }, ...}
 
-example: 
-{"tibco":{"gid":1000,"members":"tibco,tibadm",},
- "tibco1":{"gid":1001,"members":"tibco",},
+data = {
+  "default_prefix": "OSVC_COMP_GROUP_",
+  "example_value": """
+{
+  "tibco": {
+    "gid": 1000,
+    "members": ["tibco", "tibco1"]
+  },
+  "tibco1": {
+    "gid": 1001,
+    "members": ["tibco1"]
+  }
 }
+""",
+  "description": """* Verify a local system group configuration
+* A minus (-) prefix to the group name indicates the user should not exist
 
-supported dictionnary keys:
-- members
-
-dictionnary keys used by another module:
-- gid
-"""
+""",
+  "form_definition": """
+Uses the groups form
+""",
+}
 
 import os
 import sys
@@ -26,28 +34,31 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class CompGroupMembership(object):
-    def __init__(self, prefix='OSVC_COMP_GROUP_'):
+class CompGroupMembership(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.member_of_h = {}
-        self.prefix = prefix.upper()
         self.grt = {
             'members': 'gr_mem',
         }
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            print >>sys.stderr, 'group_membership: compliance object not supported on', self.sysname
             raise NotApplicable
 
         self.groups = {}
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.groups.update(json.loads(os.environ[k]))
-            except ValueError:
-                print 'group syntax error on var[', k, '] = ', os.environ[k]
-
-        if len(self.groups) == 0:
-            raise NotApplicable
+        for d in self.get_rules():
+            if type(d) != dict:
+                continue
+            for k, v in d.items():
+                if "members" not in v:
+                    continue
+                for i, m in enumerate(v["members"]):
+                    d[k]["members"][i] = m.strip()
+            self.groups.update(d)
 
         if os.path.exists('/usr/xpg4/bin/id'):
             self.id_bin = '/usr/xpg4/bin/id'
@@ -99,7 +110,7 @@ class CompGroupMembership(object):
             print >>sys.stderr, 'group', group+':', 'cannot add inexistant user "%s"'%user
             return RET_ERR
         if self.get_primary_group(user) == group:
-            print "%s is already the primary group of user %s: skip declaration as a secondary group (you may want to change your rule)" % (group, user)
+            print "group %s is already the primary group of user %s: skip declaration as a secondary group (you may want to change your rule)" % (group, user)
             return RET_OK
         ag = self.member_of(user)
         g = ag | set([group])
@@ -108,7 +119,7 @@ class CompGroupMembership(object):
 
     def fix_member(self, g, user):
         cmd = ['usermod', '-G', g, user]
-        print ' '.join(cmd)
+        print "group_membership:", ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -130,7 +141,7 @@ class CompGroupMembership(object):
         if item == 'members':
             return self.fix_members(group, target)
         else:
-            print >>sys.stderr, 'no fix implemented for', item
+            print >>sys.stderr, "group_membership:", 'no fix implemented for', item
             return RET_ERR
 
     def _check_member_accnt(self, user):
@@ -144,14 +155,14 @@ class CompGroupMembership(object):
         xout, xerr = xp.communicate()
         return xp.returncode
 
-    def _check_members_accnts(self, group, list, which, verbose):
+    def _check_members_accnts(self, group, user_list, which, verbose):
         r = RET_OK
-        for user in list:
+        for user in user_list:
             rc = self._check_member_accnt(user)
             if rc != 0:
                 r |= RET_ERR
                 if verbose:
-                    print >>sys.stderr, 'group', group, 'inexistant user "%s" which is %s'%(user, which)
+                    print >>sys.stderr, 'group', group, '%s member "%s" does not exist'%(which, user)
         return r
 
     def filter_target(self, group, target):
@@ -163,14 +174,14 @@ class CompGroupMembership(object):
             new_target.append(user)
         discarded = set(target)-set(new_target)
         if len(discarded) > 0:
-            print "discarded %s from members of group %s, as they already use this group as primary (you may want to change your rule)" % (', '.join(discarded), group)
+            print "group %s members discarded: %s, as they already use this group as primary (you may want to change your rule)" % (group, ', '.join(discarded))
         return new_target
                 
     def check_item(self, group, item, target, current, verbose=False):
         r = RET_OK
         if item == 'members':
-            r |= self._check_members_accnts(group, current, 'INCLUDED', verbose)
-            r |= self._check_members_accnts(group, target, 'REQUIRED', verbose)
+            r |= self._check_members_accnts(group, current, 'existing', verbose)
+            r |= self._check_members_accnts(group, target, 'target', verbose)
         if not isinstance(current, list):
             current = [current]
         target = self.filter_target(group, target)
@@ -221,30 +232,4 @@ class CompGroupMembership(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompGroupMembership(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompGroupMembership)
