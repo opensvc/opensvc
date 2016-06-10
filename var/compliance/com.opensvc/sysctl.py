@@ -1,7 +1,77 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_SYSCTL_... vars
-"""
+
+data = {
+  "default_prefix": "OSVC_COMP_SYSCTL_",
+  "example_value": """ 
+{
+  "key": "vm.lowmem_reserve_ratio",
+  "index": "1",
+  "op": ">",
+  "value": 256,
+}
+  """,
+  "description": """* Verify a linux kernel parameter value is on target
+* Live parameter value (sysctl executable)
+* Persistent parameter value (/etc/sysctl.conf)
+""",
+  "form_definition": """
+Desc: |
+  A rule to set a list of Linux kernel parameters to be set in /etc/sysctl.conf. Current values can be checked as strictly equal, or superior/inferior to their target value. Each field in a vectored value can be tuned independantly using the index key.
+Css: comp48
+
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: sysctl
+
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: The /etc/sysctl.conf parameter to check.
+
+  -
+    Id: index
+    Label: Index
+    DisplayModeLabel: idx
+    LabelCss: action16
+    Mandatory: Yes
+    Default: 0
+    Type: integer
+    Help: The /etc/sysctl.conf parameter to check.
+
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter current value.
+
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The /etc/sysctl.conf parameter target value.
+""",
+}
 
 import os
 import sys
@@ -13,11 +83,13 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class Sysctl(object):
-    def __init__(self, prefix='OSVC_COMP_SYSCTL_'):
+class Sysctl(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         if os.uname()[0] != "Linux":
             raise NotApplicable()
-        self.prefix = prefix.upper()
         self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
         if not os.path.exists(self.cf):
@@ -27,11 +99,7 @@ class Sysctl(object):
         self.keys = []
         self.cache = None
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'sysctl key syntax error on var[', k, '] = ',os.environ[k]
+        self.keys = self.get_rules()
 
         if len(self.keys) == 0:
             raise NotApplicable()
@@ -224,32 +292,4 @@ class Sysctl(object):
         return r
 
 if __name__ == "__main__":
-    """ test: OSVC_COMP_SYSCTL='[{"key": "net.unix.max_dgram_qlen", "value": [">=", 9]}, {"key": "kernel.ctrl-alt-del", "value": ["=", 1]}, {"key": "kernel.printk", "value": [[], [] , [], [">=", 12]]}]' ./sysctl.py OSVC_COMP_SYSCTL check
-    """
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = Sysctl(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(Sysctl)
