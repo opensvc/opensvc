@@ -156,7 +156,7 @@ class CompObject(object):
                 elif 'OSVC_COMP_'+s in os.environ:
                     _v = os.environ['OSVC_COMP_'+s]
                 else:
-                    print >>sys.stderr, s, 'is not an env variable'
+                    _v = ""
                     raise NotApplicable()
                 v = v.replace(m, _v)
             return v
