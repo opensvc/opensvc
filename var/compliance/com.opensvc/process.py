@@ -1,12 +1,86 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-Checks if a process is present, specifying its comm,
-and optionnaly its owner's uid and/or username.
 
-[{"command": "foo", "uid": "2345", "user": "foou"},
- {"command": "bar", "uid": "2345"},
- ...]
-"""
+data = {
+  "default_prefix": "OSVC_COMP_PROC_",
+  "example_value": """
+[
+  {
+    "comm": "foo",
+    "uid": 2345,
+    "state": "on",
+    "user": "foou"
+  },
+  {
+    "comm": "bar",
+    "state": "off",
+    "uid": 2345
+  }
+]
+""",
+  "description": """* Checks if a process is present, specifying its comm, and optionnaly its owner's uid and/or username.
+""",
+  "form_definition": """
+Desc: |
+  A rule defining a process that should be running or not running on the target host, its owner's username and the command to launch it or to stop it.
+Css: comp48
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: process
+Inputs:
+  -
+    Id: comm
+    Label: Command
+    DisplayModeLabel: comm
+    LabelCss: action16
+    Mandatory: No
+    Type: string
+    Help: The Unix process command, as shown in the ps comm column.
+  -
+    Id: args
+    Label: Arguments
+    DisplayModeLabel: args
+    LabelCss: action16
+    Mandatory: No
+    Type: string
+    Help: The Unix process arguments, as shown in the ps args column.
+  -
+    Id: state
+    Label: State
+    DisplayModeLabel: state
+    LabelCss: action16
+    Type: string
+    Mandatory: Yes
+    Default: on
+    Candidates:
+      - "on"
+      - "off"
+    Help: The expected process state.
+  -
+    Id: uid
+    Label: Owner user id
+    DisplayModeLabel: uid
+    LabelCss: guy16
+    Type: integer
+    Help: The Unix user id owning the process.
+  -
+    Id: user
+    Label: Owner user name
+    DisplayModeLabel: user
+    LabelCss: guy16
+    Type: string
+    Help: The Unix user name owning the process.
+  -
+    Id: start
+    Label: Start command
+    DisplayModeLabel: start
+    LabelCss: action16
+    Type: string
+    Help: The command to start or stop the process, including the executable arguments. The executable must be defined with full path.
+""",
+}
 
 import os
 import sys
@@ -19,9 +93,11 @@ sys.path.append(os.path.dirname(__file__))
 from comp import *
 from utilities import which
 
-class CompProcess(object):
-    def __init__(self, prefix='OSVC_COMP_PROCESS_'):
-        self.prefix = prefix.upper()
+class CompProcess(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['Linux', 'AIX', 'SunOS', 'FreeBSD', 'Darwin', 'HP-UX']:
@@ -31,40 +107,13 @@ class CompProcess(object):
         if self.sysname == 'HP-UX' and 'UNIX95' not in os.environ:
             os.environ['UNIX95'] = ""
 
-        self.process = []
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.process += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to process list'
-
+        self.process = self.get_rules()
         self.validate_process()
 
         if len(self.process) == 0:
             raise NotApplicable()
 
         self.load_ps()
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
 
     def load_ps_args(self):
         self.ps_args = {}
@@ -121,10 +170,6 @@ class CompProcess(object):
         self.process = l
 
     def _validate_process(self, process):
-        for i in 'comm', 'uid', 'args', 'user':
-            if i not in process:
-                continue
-            process[i] = self.subst(process[i])
         if 'comm' not in process and 'args' not in process:
             print >>sys.stderr, process, 'rule is malformed ... nor comm nor args key present'
             return RET_ERR
@@ -371,30 +416,4 @@ class CompProcess(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompProcess(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompProcess)
