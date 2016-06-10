@@ -39,6 +39,9 @@ class ComplianceError(Exception):
 class InitError(Exception):
      pass
 
+class EndRecursion(Exception):
+     pass
+
 class CompObject(object):
     def __init__(self,
                  prefix=None,
@@ -125,6 +128,13 @@ class CompObject(object):
         return rules
 
     def subst(self, v):
+        """
+          A rule value can contain references to other rules as %%ENV:OTHER%%.
+          This function substitutes these markers with the referenced rules values,
+          which may themselves contain references. Hence the recursion.
+        """
+        max_recursion = 10
+
         if type(v) == list:
             l = []
             for _v in v:
@@ -134,16 +144,29 @@ class CompObject(object):
             return v
 
         p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
+
+        def _subst(v):
+            matches = p.findall(v)
+            if len(matches) == 0:
+                raise EndRecursion
+            for m in matches:
+                s = m.strip("%").replace('ENV:', '')
+                if s in os.environ:
+                    _v = os.environ[s]
+                elif 'OSVC_COMP_'+s in os.environ:
+                    _v = os.environ['OSVC_COMP_'+s]
+                else:
+                    print >>sys.stderr, s, 'is not an env variable'
+                    raise NotApplicable()
+                v = v.replace(m, _v)
+            return v
+
+        for i in range(max_recursion):
+            try:
+                v = _subst(v)
+            except EndRecursion:
+                break
+
         return v
 
     def collector_api(self):
