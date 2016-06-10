@@ -1,20 +1,60 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_GROUP_... vars
-which define {'groupname':{'propname':'propval',... }, ...}
 
-example: 
+data = {
+  "default_prefix": "OSVC_COMP_GROUP_",
+  "example_value": """
 {
- "tibco":{"gid":1000,"members":"tibco,tibadm",},
- "tibco1":{"gid":1001,"members":"tibco",},
+  "tibco": {
+    "gid": 1000,
+    "members": "tibco,tibco1"
+  },
+  "tibco1": {
+    "gid": 1001,
+    "members": "tibco1"
+  }
 }
+""",
+  "description": """* Verify a local system group configuration
+* A minus (-) prefix to the group name indicates the user should not exist
 
-supported dictionnary keys:
-- gid
-
-dictionnary keys used by another module:
-- members
-"""
+""",
+  "form_definition": """
+Desc: |
+  A rule defining a list of Unix groups and their properties. Used by the groups and group_membership compliance objects.
+Css: comp48
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: dict of dict
+    Key: group
+    EmbedKey: No
+    Class: group
+Inputs:
+  -
+    Id: group
+    Label: Group name
+    DisplayModeLabel: group
+    LabelCss: guys16
+    Mandatory: Yes
+    Type: string
+    Help: The Unix group name.
+  -
+    Id: gid
+    Label: Group id
+    DisplayModeLabel: gid
+    LabelCss: guys16
+    Type: string or integer
+    Help: The Unix gid of this group.
+  -
+    Id: members
+    Label: Group members
+    DisplayModeLabel: members
+    LabelCss: guy16
+    Type: list of string
+    Help: A comma-separed list of Unix user names members of this group.
+""",
+}
 
 import os
 import sys
@@ -73,9 +113,11 @@ blacklist = [
  "ntp"
 ]
 
-class CompGroup(object):
-    def __init__(self, prefix='OSVC_COMP_GROUP_'):
-        self.prefix = prefix.upper()
+class CompGroup(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.grt = {
             'gid': 'gr_gid',
         }
@@ -103,36 +145,17 @@ class CompGroup(object):
             self.groupdel = ["groupdel"]
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            print >>sys.stderr, 'group: module not supported on', self.sysname
             raise NotApplicable
 
         self.groups = {}
-        for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.groups.update(json.loads(os.environ[k]))
-            except ValueError:
-                print >>sys.stderr, 'group syntax error on var[', k, '] = ', os.environ[k]
+        for d in self.get_rules():
+            self.groups.update(d)
 
-        if len(self.groups) == 0:
-            raise NotApplicable
-
-        p = re.compile('%%ENV:\w+%%')
         for group, d in self.groups.items():
-            for k in d:
-                if type(d[k]) not in [str, unicode]:
-                    continue
-                for m in p.findall(d[k]):
-                    s = m.strip("%").replace('ENV:', '')
-                    if s in os.environ:
-                        v = os.environ[s]
-                    elif 'OSVC_COMP_'+s in os.environ:
-                        v = os.environ['OSVC_COMP_'+s]
-                    else:
-                        print >>sys.stderr, s, 'is not an env variable'
-                        raise NotApplicable()
-                    d[k] = d[k].replace(m, v)
-                if k in ('uid', 'gid'):
-                    d[k] = int(d[k])
+            for k in ('uid', 'gid'):
+                if k in d:
+                    self.groups[group][k] = int(d[k])
 
     def fixable(self):
         return RET_NA
@@ -157,7 +180,7 @@ class CompGroup(object):
             cmd += self.fmt_opt(self.groupmod_p[item], str(target))
             if self.sysname != "FreeBSD":
                 cmd += [group]
-            print ' '.join(cmd)
+            print "group:", ' '.join(cmd)
             p = Popen(cmd)
             out, err = p.communicate()
             r = p.returncode
@@ -166,7 +189,7 @@ class CompGroup(object):
             else:
                 return RET_ERR
         else:
-            print >>sys.stderr, 'no fix implemented for', item
+            print >>sys.stderr, 'group: no fix implemented for', item
             return RET_ERR
 
     def check_item(self, group, item, target, current, verbose=False):
@@ -227,7 +250,7 @@ class CompGroup(object):
             cmd += self.fmt_opt(self.groupmod_p[item], str(props[item]))
         if self.sysname != "FreeBSD":
             cmd += [group]
-        print ' '.join(cmd)
+        print "group:", ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -238,14 +261,14 @@ class CompGroup(object):
 
     def fix_group_del(self, group):
         if group in blacklist:
-            print >>sys.stderr, "delete", group, "... cowardly refusing"
+            print >>sys.stderr, "group", group, "... cowardly refusing to delete"
             return RET_ERR
         try:
             groupinfo = grp.getgrnam(group)
         except KeyError:
             return RET_OK
         cmd = self.groupdel + [group]
-        print ' '.join(cmd)
+        print "group:", ' '.join(cmd)
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -285,30 +308,4 @@ class CompGroup(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompGroup(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(CompGroup)
