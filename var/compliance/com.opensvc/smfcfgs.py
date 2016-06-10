@@ -68,9 +68,6 @@ class SmfCfgS(object):
             print 'Only used on Solaris 11 and behond'
             return
 
-        if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
-            os.environ["OSVC_COMP_SERVICES_SVC_NAME"] = ""
-
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
                 self.data += self.add_fmri(os.environ[k])
