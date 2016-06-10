@@ -120,9 +120,6 @@ class CompFiles(CompObject):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         self.files = []
 
-        if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
-            os.environ["OSVC_COMP_SERVICES_SVC_NAME"] = ""
-
         for rule in self.get_rules():
             try:
                 self.files += self.add_file(rule)
@@ -157,17 +154,6 @@ class CompFiles(CompObject):
             d['fmt'] = f.read()
         return self.parse_fmt(d, add_linefeed=False)
 
-    def get_env_item(self, d, item):
-        if item not in d:
-            return d
-        if type(d[item]) != str and type(d[item]) != unicode:
-            return d
-        try:
-            d[item] = int(d[item])
-        except:
-            pass
-        return d
-
     def add_file(self, d):
         if 'path' not in d:
             print >>sys.stderr, 'path should be in the dict:', d
@@ -182,11 +168,13 @@ class CompFiles(CompObject):
             RET = RET_ERR
             return []
         try:
-            d = self.get_env_item(d, 'uid')
-            d = self.get_env_item(d, 'gid')
-        except Exception as e:
-            print "discard file %s: failed to get uid or gid" % d["path"]
-            return []
+            d["uid"] = int(d["uid"])
+        except:
+            pass
+        try:
+            d["gid"] = int(d["gid"])
+        except:
+            pass
         if 'fmt' in d:
             return self.parse_fmt(d)
         if 'ref' in d:
