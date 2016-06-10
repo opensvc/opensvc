@@ -331,7 +331,7 @@ class Svc(Resource, Scheduler):
           'json_status',
           'json_disklist',
           'json_devlist',
-          'json_env',
+          'json_config',
           'validate_config',
         ]
         if action in list_actions_no_lock:
@@ -476,7 +476,7 @@ class Svc(Resource, Scheduler):
           "json_disklist",
           "json_devlist",
           "json_status",
-          "json_env",
+          "json_config",
           "push_appinfo",
           "push",
           "group_status",
@@ -620,7 +620,7 @@ class Svc(Resource, Scheduler):
             d[g] = str(ss[g])
         print(json.dumps(d, indent=4, separators=(',', ': ')))
 
-    def json_env(self):
+    def json_config(self):
         import json
         svcenv = {}
         tmp = {}
@@ -2520,7 +2520,7 @@ class Svc(Resource, Scheduler):
           'print_resource_status',
           'print_disklist',
           'print_devlist',
-          'json_env',
+          'json_config',
           'json_status',
           'json_disklist',
           'json_devlist',
@@ -2590,7 +2590,7 @@ class Svc(Resource, Scheduler):
           'json_status',
           'json_disklist',
           'json_devlist',
-          'json_env',
+          'json_config',
           'status',
           'group_status',
           'resource_monitor',
@@ -2614,7 +2614,7 @@ class Svc(Resource, Scheduler):
         if action in (
             "edit_config",
             "print_config",
-            "json_env",
+            "json_config",
             "validate_config",
         ) or "sync" in action:
             return
