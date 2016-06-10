@@ -15,6 +15,7 @@ data = {
 }
 """,
   "description": """* Verify a local system user configuration
+* A minus (-) prefix to the user name indicates the user should not exist
 
 Environment variable modifying the object behaviour:
 * OSVC_COMP_USERS_INITIAL_PASSWD=true|false

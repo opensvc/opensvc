@@ -76,7 +76,7 @@ class CompSymlink(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', rule
+                print >>sys.stderr, 'symlink: failed to parse variable', rule
 
     def add_symlink(self, v):
         if 'symlink' not in v:
@@ -99,13 +99,13 @@ class CompSymlink(CompObject):
 
     def check_symlink(self, f, verbose=False):
         if not os.path.islink(f['symlink']):
-            print >>sys.stderr, f['symlink'], "does not exist"
+            print >>sys.stderr, "symlink", f['symlink'], "does not exist"
             return RET_ERR
         if os.readlink(f['symlink']) != f['target']:
-            print >>sys.stderr, f['symlink'], "does not point to", f['target']
+            print >>sys.stderr, "symlink", f['symlink'], "does not point to", f['target']
             return RET_ERR
         if verbose:
-            print f['symlink'], "->", f['target'], "is ok"
+            print "symlink", f['symlink'], "->", f['target'], "is ok"
         return RET_OK
 
     def fix_symlink_notexists(self, f):
@@ -117,14 +117,14 @@ class CompSymlink(CompObject):
                os.makedirs(d)
            except OSError as e:
                if e.errno == 20:
-                   print >>sys.stderr, "can not create dir", d, "to host the symlink", f['symlink'], ": a parent is not a directory"
+                   print >>sys.stderr, "symlink: can not create dir", d, "to host the symlink", f['symlink'], ": a parent is not a directory"
                    return RET_ERR
                raise
         try:
            os.symlink(f['target'], f['symlink'])
         except:
             return RET_ERR
-        print f['symlink'], "->", f['target'], "created"
+        print "symlink", f['symlink'], "->", f['target'], "created"
         return RET_OK
 
     def check(self):

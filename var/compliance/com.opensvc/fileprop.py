@@ -87,14 +87,14 @@ class CompFileProp(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', os.environ[k]
+                print >>sys.stderr, 'fileprop: failed to parse variable', os.environ[k]
 
         if len(self.files) == 0:
             raise NotApplicable()
 
     def add_file(self, d):
         if 'path' not in d:
-            print >>sys.stderr, 'path should be in the dict:', d
+            print >>sys.stderr, 'fileprop: path should be in the dict:', d
             RET = RET_ERR
             return []
         try:
@@ -113,13 +113,13 @@ class CompFileProp(CompObject):
     def check_file_type(self, f, verbose=False):
         r = RET_OK
         if not os.path.exists(f["path"].rstrip("/")):
-            if verbose: print >>sys.stderr, f["path"], "does not exist"
+            if verbose: print >>sys.stderr, "fileprop:", f["path"], "does not exist"
             r = RET_ERR
         elif f["path"].endswith("/") and not os.path.isdir(f["path"]):
-            if verbose: print >>sys.stderr, f["path"], "exists but is not a directory"
+            if verbose: print >>sys.stderr, "fileprop:", f["path"], "exists but is not a directory"
             r = RET_ERR
         elif not f["path"].endswith("/") and os.path.isdir(f["path"]):
-            if verbose: print >>sys.stderr, f["path"], "exists but is a directory"
+            if verbose: print >>sys.stderr, "fileprop:", f["path"], "exists but is a directory"
             r = RET_ERR
         return r  
 
@@ -129,11 +129,11 @@ class CompFileProp(CompObject):
         try:
             mode = oct(stat.S_IMODE(os.stat(f['path']).st_mode))
         except:
-            if verbose: print >>sys.stderr, f['path'], 'can not stat file'
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'can not stat file'
             return RET_ERR
         mode = str(mode).lstrip("0")
         if mode != str(f['mode']):
-            if verbose: print >>sys.stderr, f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
             return RET_ERR
         return RET_OK
 
@@ -147,7 +147,7 @@ class CompFileProp(CompObject):
                 tuid = info[2]
                 self._usr[uid] = tuid
             except:
-                print >>sys.stderr, "user %s does not exist"%uid
+                print >>sys.stderr, "fileprop:", "user %s does not exist"%uid
                 raise ComplianceError()
         return tuid
 
@@ -161,7 +161,7 @@ class CompFileProp(CompObject):
                 tgid = info[2]
                 self._grp[gid] = tgid
             except:
-                print >>sys.stderr, "group %s does not exist"%gid
+                print >>sys.stderr,"fileprop:",  "group %s does not exist"%gid
                 raise ComplianceError()
         return tgid
 
@@ -172,10 +172,10 @@ class CompFileProp(CompObject):
         try:
             uid = os.stat(f['path']).st_uid
         except:
-            if verbose: print >>sys.stderr, f['path'], 'can not stat file'
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'can not stat file'
             return RET_ERR
         if uid != tuid:
-            if verbose: print >>sys.stderr, f['path'], 'uid should be %s but is %s'%(tuid, str(uid))
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'uid should be %s but is %s'%(tuid, str(uid))
             return RET_ERR
         return RET_OK
 
@@ -186,10 +186,10 @@ class CompFileProp(CompObject):
         try:
             gid = os.stat(f['path']).st_gid
         except:
-            if verbose: print >>sys.stderr, f['path'], 'can not stat file'
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'can not stat file'
             return RET_ERR
         if gid != tgid:
-            if verbose: print >>sys.stderr, f['path'], 'gid should be %s but is %s'%(tgid, str(gid))
+            if verbose: print >>sys.stderr, "fileprop:", f['path'], 'gid should be %s but is %s'%(tgid, str(gid))
             return RET_ERR
         return RET_OK
 
@@ -206,7 +206,7 @@ class CompFileProp(CompObject):
         r |= self.check_file_uid(f, verbose)
         r |= self.check_file_gid(f, verbose)
         if r == 0 and verbose:
-            print f['path'], "is ok"
+            print "fileprop:", f['path'], "is ok"
         return r
 
     def fix_file_mode(self, f):
@@ -215,7 +215,7 @@ class CompFileProp(CompObject):
         if self.check_file_mode(f) == RET_OK:
             return RET_OK
         try:
-            print "%s mode set to %s"%(f['path'], str(f['mode']))
+            print "fileprop:", "%s mode set to %s"%(f['path'], str(f['mode']))
             os.chmod(f['path'], int(str(f['mode']), 8))
         except:
             return RET_ERR
@@ -236,9 +236,9 @@ class CompFileProp(CompObject):
         try:
             os.chown(f['path'], uid, gid)
         except:
-            print >>sys.stderr, "failed to set %s ownership to %d:%d"%(f['path'], uid, gid)
+            print >>sys.stderr, "fileprop:", "failed to set %s ownership to %d:%d"%(f['path'], uid, gid)
             return RET_ERR
-        print "%s ownership set to %d:%d"%(f['path'], uid, gid)
+        print "fileprop:", "%s ownership set to %d:%d"%(f['path'], uid, gid)
         return RET_OK
 
     def fix_file_notexists(self, f):
@@ -246,37 +246,37 @@ class CompFileProp(CompObject):
             if f['path'].endswith("/"):
                 try:
                     os.makedirs(f['path'])
-                    print f['path'], "created"
+                    print "fileprop:", f['path'], "created"
                 except:
-                    print >>sys.stderr, "failed to create", f['path']
+                    print >>sys.stderr, "fileprop:", "failed to create", f['path']
                     return RET_ERR
                 return RET_OK
             else:
                 dirname = os.path.dirname(f['path'])
                 if not os.path.exists(dirname):
-                    print "create", dirname
+                    print "fileprop:", "create", dirname
                     try:
                         os.makedirs(dirname)
                     except Exception as e:
-                        print >>sys.stderr, "failed to create", dirname
+                        print >>sys.stderr, "fileprop:", "failed to create", dirname
                         return RET_ERR
-                print "touch", f['path']
+                print "fileprop:", "touch", f['path']
                 open(f['path'], 'a').close()
         elif f['path'].endswith("/") and not os.path.isdir(f['path']):
-                print "delete file", f['path'].rstrip("/")
+                print "fileprop:", "delete file", f['path'].rstrip("/")
                 try:
                     os.unlink(f['path'].rstrip("/"))
                 except Exception as e:
-                    print >>sys.stderr, e
+                    print >>sys.stderr, "fileprop:", e
                     return RET_ERR
-                print "make directory", f['path']
+                print "fileprop:", "make directory", f['path']
                 try:
                     os.makedirs(f['path'])
                 except Exception as e:
-                    print >>sys.stderr, e
+                    print >>sys.stderr, "fileprop:", e
                     return RET_ERR
         elif not f['path'].endswith("/") and os.path.isdir(f['path']):
-            print >>sys.stderr, "cowardly refusing to remove the existing", f['path'], "directory to create a regular file"
+            print >>sys.stderr, "fileprop:", "cowardly refusing to remove the existing", f['path'], "directory to create a regular file"
             return RET_ERR
 
         if self.check_file_exists(f) == RET_OK:
@@ -293,7 +293,7 @@ class CompFileProp(CompObject):
                 fi.write('')
         except:
             return RET_ERR
-        print f['path'], "created"
+        print "fileprop:", f['path'], "created"
         return RET_OK
 
     def check(self):
