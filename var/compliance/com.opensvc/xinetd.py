@@ -1,12 +1,49 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_USER_... vars
-which define {"gssftp": {"disable": "no", "server_args": "-l -a -u 022", ...}, ...}
 
-supported dictionnary keys:
-- disable
-- server_args
-"""
+data = {
+  "default_prefix": "OSVC_COMP_XINETD_",
+  "example_value": """
+{
+  "gssftp": {
+    "disable": "no",
+    "server_args": "-l -a -u 022"
+  }
+}""",
+  "description": """* Setup and verify a xinetd service configuration
+""",
+  "form_definition": """
+Desc: |
+  A rule defining how a xinetd service should be configured
+
+Inputs:
+  -
+    Id: xinetdsvc
+    Label: Service Name
+    DisplayModeLabel: service
+    LabelCss: action16
+    Mandatory: Yes
+    Help: The xinetd service name, ie the service file name in /etc/xinetd.d/
+    Type: string
+  -
+    Id: disable
+    Label: Disable 
+    DisplayModeLabel: Disable
+    LabelCss: action16
+    Help: Defines if the xinetd service target state is enabled or disabled
+    Type: string
+    Default: yes
+    Candidates:
+      - "yes"
+      - "no"
+  -
+    Id: server_args
+    Label: Server Args
+    DisplayModeLabel: args
+    LabelCss: action16
+    Help: Command line parameter to pass to the service's server executable
+    Type: string
+""",
+}
 
 import os
 import sys
@@ -18,23 +55,23 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class Xinetd(object):
-    def __init__(self, prefix='OSVC_COMP_XINETD_'):
-        self.prefix = prefix.upper()
+class Xinetd(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.base = os.path.join(os.sep, "etc", "xinetd.d")
         if not os.path.exists(self.base):
             print >>sys.stderr, self.base, 'does not exist'
             raise NotApplicable()
 
         self.svcs = {}
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.svcs.update(json.loads(os.environ[k]))
-            except ValueError:
-                print >>sys.stderr, 'xinetd service syntax error on var[', k, '] = ',os.environ[k]
+        for d in self.get_rules():
+            self.svcs.update(d)
 
         if len(self.svcs) == 0:
             raise NotApplicable()
+
         self.cf_d = {}
         self.known_props = (
             "flags",
@@ -168,30 +205,4 @@ class Xinetd(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = Xinetd(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(Xinetd)
