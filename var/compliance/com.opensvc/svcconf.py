@@ -1,8 +1,88 @@
 #!/usr/bin/env /opt/opensvc/bin/python
 
-"""
-OSVC_COMP_SERVICES_SVCNAME=app2.prd OSVC_COMP_SVCCONF_APP2_PRD='[{"value": "fd5373b3d938", "key": "container#1.run_image", "op": "="}, {"value": "/bin/sh", "key": "container#1.run_command", "op": "="}, {"value": "/opt/%%ENV:SERVICES_SVCNAME%%", "key": "DEFAULT.docker_data_dir", "op": "="}, {"value": "no", "key": "container(type=docker).disable", "op": "="}, {"value": 123, "key": "container(type=docker&&run_command=/bin/sh).newvar", "op": "="}]' ./svcconf.py OSVC_COMP_SVCCONF check
-"""
+data = {
+  "default_prefix": "OSVC_COMP_GROUP_",
+  "example_env": {
+    "OSVC_COMP_SERVICES_SVCNAME": "testsvc",
+  },
+  "example_value": """
+[
+  {
+    "value": "fd5373b3d938",
+    "key": "container#1.run_image",
+    "op": "="
+  },
+  {
+    "value": "/bin/sh",
+    "key": "container#1.run_command",
+    "op": "="
+  },
+  {
+    "value": "/opt/%%ENV:SERVICES_SVCNAME%%",
+    "key": "DEFAULT.docker_data_dir",
+    "op": "="
+  },
+  {
+    "value": "no",
+    "key": "container(type=docker).disable",
+    "op": "="
+  },
+  {
+    "value": 123,
+    "key": "container(type=docker&&run_command=/bin/sh).newvar",
+    "op": "="
+  }
+]
+""",
+  "description": """* Setup and verify parameters in a opensvc service configuration.
+
+""",
+  "form_definition": """
+Desc: |
+  A rule to set a parameter in OpenSVC <service>.env configuration file. Used by the 'svcconf' compliance object.
+Css: comp48
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: svcconf
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: The OpenSVC <service>.env parameter to check.
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter value.
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The OpenSVC <service>.env parameter value to check.
+
+""",
+}
+
 
 import os
 import sys
@@ -15,9 +95,11 @@ sys.path.append(os.path.dirname(__file__))
 
 from comp import *
 
-class SvcConf(object):
-    def __init__(self, prefix='OSVC_COMP_SVCCONF_'):
-        self.prefix = prefix.upper()
+class SvcConf(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.keys = []
 
         if "OSVC_COMP_SERVICES_SVCNAME" not in os.environ:
@@ -26,23 +108,12 @@ class SvcConf(object):
 
         self.svcname = os.environ['OSVC_COMP_SERVICES_SVCNAME']
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
-
-        if len(self.keys) == 0:
-            raise NotApplicable()
-
-        for key in self.keys:
-            if "value" in key:
-                key['value'] = self.subst(key['value'])
+        self.keys = self.get_rules()
 
         try:
             self.get_env_file(refresh=True)
         except Exception as e:
-            print >>sys.stderr, "unable to load service configuration: %s", str(e)
+            print >>sys.stderr, "unable to load service configuration:", str(e)
             raise ComplianceError()
 
         self.sanitize_keys()
@@ -54,34 +125,8 @@ class SvcConf(object):
        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_env']
        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
        out, err = p.communicate()
-       for line in out.split('\n'):
-           if line.startswith('{'):
-               out = line
-               break
        self.svcenv = json.loads(out)
        return self.svcenv
-
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-
-        p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                print >>sys.stderr, s, 'is not an env variable'
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
 
     def fixable(self):
         return RET_NA
@@ -309,30 +354,4 @@ class SvcConf(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = SvcConf(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(SvcConf)

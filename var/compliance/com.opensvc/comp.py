@@ -56,6 +56,7 @@ class CompObject(object):
         self.extra_syntax_parms = data.get("extra_syntax_parms")
         self.example_value = data.get("example_value", "")
         self.example_kwargs = data.get("example_kwargs", {})
+        self.example_env = data.get("example_env", {})
         self.description = data.get("description", "(no description)")
         self.form_definition = data.get("form_definition", "(no form definition)")
         self.init_done = False
@@ -72,6 +73,8 @@ class CompObject(object):
     def test(self):
         self.__init__(**self.example_kwargs)
         self.prefix = "OSVC_COMP_CO_TEST"
+        for k, v in self.example_env.items():
+            os.environ[k] = v
         os.environ[self.prefix] = self.example_value
         return self.check()
 
