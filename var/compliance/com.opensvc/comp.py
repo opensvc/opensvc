@@ -55,6 +55,7 @@ class CompObject(object):
 
         self.extra_syntax_parms = data.get("extra_syntax_parms")
         self.example_value = data.get("example_value", "")
+        self.example_kwargs = data.get("example_kwargs", {})
         self.description = data.get("description", "(no description)")
         self.form_definition = data.get("form_definition", "(no form definition)")
         self.init_done = False
@@ -69,6 +70,7 @@ class CompObject(object):
         pass
 
     def test(self):
+        self.__init__(**self.example_kwargs)
         self.prefix = "OSVC_COMP_CO_TEST"
         os.environ[self.prefix] = self.example_value
         return self.check()
@@ -294,6 +296,7 @@ def main(co):
     syntax =  "syntax:\n"
     syntax += """ %s <ENV VARS PREFIX> check|fix|fixable\n"""%sys.argv[0]
     syntax += """ %s test|info"""%sys.argv[0]
+
     try:
         o = co()
     except NotApplicable as e:
@@ -316,12 +319,15 @@ def main(co):
             o.info()
             sys.exit(0)
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print >>sys.stderr, syntax
         sys.exit(RET_ERR)
 
+    argv = [sys.argv[1]]
+    if len(sys.argv) > 3:
+        argv += sys.argv[3:] 
+    o.__init__(*argv)
     try:
-        o.set_prefix(sys.argv[1])
         if sys.argv[2] == 'check':
             RET = o.check()
         elif sys.argv[2] == 'fix':

@@ -1,8 +1,69 @@
 #!/usr/bin/env /opt/opensvc/bin/python
 
-"""
-OSVC_COMP_SSH='[{"key": "PermitRootLogin", "op": "=", "value": "yes"}]' /opt/opensvc/bin/python /opt/opensvc/var/compliance/com.opensvc/keyval.py OSVC_COMP_SSH check /etc/ssh/sshd_config
-"""
+data = {
+  "default_prefix": "OSVC_COMP_GROUP_",
+  "example_kwargs": {
+    "path": "/etc/ssh/sshd_config",
+  },
+  "example_value": """
+[
+  {
+    "key": "PermitRootLogin",
+    "op": "=",
+    "value": "yes"
+  }
+]
+""",
+  "description": """* Setup and verify keys in "key value" formatted configuration file.
+* Example files: sshd_config, ssh_config, ntp.conf, ...
+""",
+  "form_definition": """
+Desc: |
+  A rule to set a list of parameters in simple keyword/value configuration file format. Current values can be checked as set or unset, strictly equal, or superior/inferior to their target value.
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: keyval
+Inputs:
+  -
+    Id: key
+    Label: Key
+    DisplayModeTrim: 64
+    DisplayModeLabel: key
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help:
+  -
+    Id: op
+    Label: Comparison operator
+    DisplayModeLabel: op
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Default: "="
+    Candidates:
+      - reset
+      - unset
+      - "="
+      - ">"
+      - ">="
+      - "<"
+      - "<="
+    Help: The comparison operator to use to check the parameter current value.
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The configuration file parameter target value.
+""",
+}
+
 
 import os
 import sys
@@ -13,24 +74,18 @@ sys.path.append(os.path.dirname(__file__))
 from comp import *
 from keyval_parser import Parser, ParserError
 
-class KeyVal(object):
-    def __init__(self, prefix='OSVC_COMP_KEYVAL_', path=None):
-        self.prefix = prefix.upper()
+class KeyVal(CompObject):
+    def __init__(self, prefix=None, path=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
         self.cf = path
+
+    def init(self):
         self.nocf = False
-        if path is None:
+        if self.cf is None:
             print >>sys.stderr, "no file path specified"
             raise NotApplicable()
 
-        self.keys = []
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                self.keys += json.loads(os.environ[k])
-            except ValueError:
-                print >>sys.stderr, 'key syntax error on var[', k, '] = ',os.environ[k]
-
-        if len(self.keys) == 0:
-            raise NotApplicable()
+        self.keys = self.get_rules()
 
         self.target_n_key = {}
         for i, key in enumerate(self.keys):
@@ -42,7 +97,7 @@ class KeyVal(object):
                  else:
                      self.target_n_key[key['key']] += 1
         try:
-            self.conf = Parser(path)
+            self.conf = Parser(self.cf)
         except ParserError as e:
             print >>sys.stderr, e
             raise ComplianceError()
@@ -237,32 +292,4 @@ class KeyVal(object):
         return RET_OK
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix configfile_path"""%sys.argv[0]
-    if len(sys.argv) != 4:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = KeyVal(sys.argv[1], sys.argv[3])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except ComplianceError:
-        sys.exit(RET_ERR)
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
-
+    main(KeyVal)
