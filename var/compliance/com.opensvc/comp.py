@@ -304,8 +304,14 @@ def main(co):
 
     if len(sys.argv) == 2:
         if sys.argv[1] == 'test':
-            RET = o.test()
-            sys.exit(RET)
+            try:
+                RET = o.test()
+                sys.exit(RET)
+            except ComplianceError as e:
+                print >>sys.stderr, e
+                sys.exit(RET_ERR)
+            except NotApplicable:
+                sys.exit(RET_NA)
         elif sys.argv[1] == 'info':
             o.info()
             sys.exit(0)
