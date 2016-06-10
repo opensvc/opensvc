@@ -1,24 +1,102 @@
 #!/usr/bin/env /opt/opensvc/bin/python
-""" 
-module use OSVC_COMP_USER_... vars
-which define {'username':{'propname':'propval',... }, ...}
 
-example: 
-{"tibco":{"shell":"/bin/ksh","gecos":"agecos",},
- "tibco1":{"shell":"/bin/tcsh","gecos":"another gecos",},
+data = {
+  "default_prefix": "OSVC_COMP_USER_",
+  "example_value": """
+{
+  "tibco": {
+    "shell": "/bin/ksh",
+    "gecos":"agecos"
+  },
+  "tibco1": {
+    "shell": "/bin/tcsh",
+    "gecos": "another gecos"
+  }
 }
+""",
+  "description": """* Verify a local system user configuration
 
-supported dictionnary keys:
-- uid
-- gid
-- gecos
-- home
-- shell
-
-supported toggles:
-- OSVC_COMP_USERS_INITIAL_PASSWD=true|false
-
-"""
+Environment variable modifying the object behaviour:
+* OSVC_COMP_USERS_INITIAL_PASSWD=true|false
+""",
+  "form_definition": """
+Desc: |
+  A rule defining a list of Unix users and their properties. Used by the users and group_membership compliance objects.
+Css: comp48
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: dict of dict
+    Key: user
+    EmbedKey: No
+    Class: user
+Inputs:
+  -
+    Id: user
+    Label: User name
+    DisplayModeLabel: user
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: string
+    Help: The Unix user name.
+  -
+    Id: uid
+    Label: User id
+    DisplayModeLabel: uid
+    LabelCss: guy16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The Unix uid of this user.
+  -
+    Id: gid
+    Label: Group id
+    DisplayModeLabel: gid
+    LabelCss: guys16
+    Mandatory: Yes
+    Type: string or integer
+    Help: The Unix principal gid of this user.
+  -
+    Id: shell
+    Label: Login shell
+    DisplayModeLabel: shell
+    LabelCss: action16
+    Type: string
+    Help: The Unix login shell for this user.
+  -
+    Id: home
+    Label: Home directory
+    DisplayModeLabel: home
+    LabelCss: action16
+    Type: string
+    Help: The Unix home directory full path for this user.
+  -
+    Id: password
+    Label: Password hash
+    DisplayModeLabel: pwd
+    LabelCss: action16
+    Type: string
+    Help: The password hash for this user. It is recommanded to set it to '!!' or to set initial password to change upon first login. Leave empty to not check nor set the password.
+  -
+    Id: gecos
+    Label: Gecos
+    DisplayModeLabel: gecos
+    LabelCss: action16
+    Type: string
+    Help: A one-line comment field describing the user.
+  -
+    Id: check_home
+    Label: Enforce homedir ownership
+    DisplayModeLabel: home ownership
+    LabelCss: action16
+    Type: string
+    Default: yes
+    Candidates:
+      - "yes"
+      - "no"
+    Help: Toggles the user home directory ownership checking.
+""",
+}
 
 import os
 import sys
@@ -68,9 +146,11 @@ blacklist = [
  "ntp"
 ]
 
-class CompUser(object):
-    def __init__(self, prefix='OSVC_COMP_USER_'):
-        self.prefix = prefix.upper()
+class CompUser(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.pwt = {
             'shell': 'pw_shell',
             'home': 'pw_dir',
@@ -113,41 +193,23 @@ class CompUser(object):
             self.userdel = ["userdel"]
 
         self.users = {}
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
-            try:
-                d = json.loads(os.environ[k])
-                for user in d:
-                    if user not in self.users:
-                        self.users[user] = d[user]
-                    else:
-                        for key in self.usermod_p.keys():
-                            if key in d[user] and key not in self.users[user]:
-                                self.users[user][key] = d[user][key]
-            except ValueError:
-                print >>sys.stderr, 'user syntax error on var[', k, '] = ',os.environ[k]
-
-        if len(self.users) == 0:
-            raise NotApplicable()
-
-        p = re.compile('%%ENV:\w+%%')
-        for user, d in self.users.items():
-            for k in d:
-                if type(d[k]) not in [str, unicode]:
-                    continue
-                for m in p.findall(d[k]):
-                    s = m.strip("%").replace('ENV:', '')
-                    if s in os.environ:
-                        v = os.environ[s]
-                    elif 'OSVC_COMP_'+s in os.environ:
-                        v = os.environ['OSVC_COMP_'+s]
-                    else:
-                        print >>sys.stderr, s, 'is not an env variable'
-                        raise NotApplicable()
-                    d[k] = d[k].replace(m, v)
-                if k in ('uid', 'gid'):
-                    d[k] = int(d[k])
+        for d in self.get_rules():
+            for user in d:
+                if user not in self.users:
+                    self.users[user] = d[user]
+                else:
+                    for key in self.usermod_p.keys():
+                        if key in d[user] and key not in self.users[user]:
+                            self.users[user][key] = d[user][key]
 
         for user, d in self.users.items():
+            for k in ('uid', 'gid'):
+                if k in self.users[user]:
+                    self.users[user][k] = int(d[k])
+
+            if "password" in d and len(d["password"]) == 0:
+                del(self.users[user]["password"])
+
             if cap_shadow:
                 if "password" in d and len(d["password"]) > 0 and \
                    ("spassword" not in d or len(d["spassword"]) == 0):
@@ -162,6 +224,7 @@ class CompUser(object):
                     del self.users[user]["spassword"]
                 if "password" not in d:
                     self.users[user]["password"] = "x"
+
 
     def fixable(self):
         if not which(self.usermod[0]):
@@ -486,30 +549,5 @@ class CompUser(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s PREFIX check|fixable|fix"""%sys.argv[0]
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
-        sys.exit(RET_ERR)
-    try:
-        o = CompUser(sys.argv[1])
-        if sys.argv[2] == 'check':
-            RET = o.check()
-        elif sys.argv[2] == 'fix':
-            RET = o.fix()
-        elif sys.argv[2] == 'fixable':
-            RET = o.fixable()
-        else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(CompUser)
 
