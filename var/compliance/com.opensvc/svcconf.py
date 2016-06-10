@@ -1,7 +1,7 @@
 #!/usr/bin/env /opt/opensvc/bin/python
 
 """
-OSVC_COMP_SERVICES_SVC_NAME=app2.prd OSVC_COMP_SVCCONF_APP2_PRD='[{"value": "fd5373b3d938", "key": "container#1.run_image", "op": "="}, {"value": "/bin/sh", "key": "container#1.run_command", "op": "="}, {"value": "/opt/%%ENV:SERVICES_SVC_NAME%%", "key": "DEFAULT.docker_data_dir", "op": "="}, {"value": "no", "key": "container(type=docker).disable", "op": "="}, {"value": 123, "key": "container(type=docker&&run_command=/bin/sh).newvar", "op": "="}]' ./svcconf.py OSVC_COMP_SVCCONF check
+OSVC_COMP_SERVICES_SVCNAME=app2.prd OSVC_COMP_SVCCONF_APP2_PRD='[{"value": "fd5373b3d938", "key": "container#1.run_image", "op": "="}, {"value": "/bin/sh", "key": "container#1.run_command", "op": "="}, {"value": "/opt/%%ENV:SERVICES_SVCNAME%%", "key": "DEFAULT.docker_data_dir", "op": "="}, {"value": "no", "key": "container(type=docker).disable", "op": "="}, {"value": 123, "key": "container(type=docker&&run_command=/bin/sh).newvar", "op": "="}]' ./svcconf.py OSVC_COMP_SVCCONF check
 """
 
 import os
@@ -20,11 +20,11 @@ class SvcConf(object):
         self.prefix = prefix.upper()
         self.keys = []
 
-        if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
-            print "SERVICES_SVC_NAME is not set"
+        if "OSVC_COMP_SERVICES_SVCNAME" not in os.environ:
+            print "SERVICES_SVCNAME is not set"
             raise NotApplicable()
 
-        self.svcname = os.environ['OSVC_COMP_SERVICES_SVC_NAME']
+        self.svcname = os.environ['OSVC_COMP_SERVICES_SVCNAME']
 
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
