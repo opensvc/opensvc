@@ -43,11 +43,11 @@ class CompFs(object):
         self.res = {}
         self.res_status = {}
 
-        if 'OSVC_COMP_SERVICES_SVC_NAME' in os.environ:
-            self.svcname = os.environ['OSVC_COMP_SERVICES_SVC_NAME']
+        if 'OSVC_COMP_SERVICES_SVCNAME' in os.environ:
+            self.svcname = os.environ['OSVC_COMP_SERVICES_SVCNAME']
             self.osvc_service = True
         else:
-            os.environ['OSVC_COMP_SERVICES_SVC_NAME'] = ""
+            os.environ['OSVC_COMP_SERVICES_SVCNAME'] = ""
             self.svcname = None
             self.osvc_service = False
 
@@ -175,12 +175,12 @@ class CompFs(object):
         key = "OSVC_COMP_FS_STRIP_SVCNAME_FROM_DEV_IF_IN_VG"
         if key not in os.environ or os.environ[key] != "true":
             return fs['dev']
-        if "%%ENV:SERVICES_SVC_NAME%%" not in fs['vg_orig'][fs['prefvg_idx']]:
+        if "%%ENV:SERVICES_SVCNAME%%" not in fs['vg_orig'][fs['prefvg_idx']]:
             return fs['dev']
 
         # the vg is dedicated to the service. no need to embed
         # the service name in the lv name too
-        s = fs['dev'].replace("%%ENV:SERVICES_SVC_NAME%%", "")
+        s = fs['dev'].replace("%%ENV:SERVICES_SVCNAME%%", "")
         if s == "lv_":
             s = "root"
         return s
