@@ -104,7 +104,7 @@ class CompObject(object):
             s = self.subst(os.environ[k])
             rules += [s]
         if len(rules) == 0:
-            raise NotApplicable("no rules")
+            raise NotApplicable("no rules (%s)" % self.prefix)
         return rules
 
     def get_rules(self):
@@ -124,7 +124,7 @@ class CompObject(object):
             else:
                 rules += [(k, data)]
         if len(rules) == 0:
-            raise NotApplicable("no rules")
+            raise NotApplicable("no rules (%s)" % self.prefix)
         return rules
 
     def subst(self, v):
