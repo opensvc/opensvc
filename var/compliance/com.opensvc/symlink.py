@@ -48,6 +48,7 @@ Inputs:
 }
 
 import os
+import errno
 import sys
 import stat
 import re
@@ -68,9 +69,6 @@ class CompSymlink(CompObject):
     def init(self):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         self.symlinks = []
-
-        if "OSVC_COMP_SERVICES_SVC_NAME" not in os.environ:
-            os.environ["OSVC_COMP_SERVICES_SVC_NAME"] = ""
 
         for rule in self.get_rules():
             try:
@@ -115,7 +113,13 @@ class CompSymlink(CompObject):
             return RET_OK
         d = os.path.dirname(f['symlink'])
         if not os.path.exists(d):
-           os.makedirs(d)
+           try:
+               os.makedirs(d)
+           except OSError as e:
+               if e.errno == 20:
+                   print >>sys.stderr, "can not create dir", d, "to host the symlink", f['symlink'], ": a parent is not a directory"
+                   return RET_ERR
+               raise
         try:
            os.symlink(f['target'], f['symlink'])
         except:
