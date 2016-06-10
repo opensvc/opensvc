@@ -143,14 +143,14 @@ class CompObject(object):
         if type(v) != str and type(v) != unicode:
             return v
 
-        p = re.compile('%%ENV:\w+%%')
+        p = re.compile('%%ENV:\w+%%', re.IGNORECASE)
 
         def _subst(v):
             matches = p.findall(v)
             if len(matches) == 0:
                 raise EndRecursion
             for m in matches:
-                s = m.strip("%").replace('ENV:', '')
+                s = m.strip("%").upper().replace('ENV:', '')
                 if s in os.environ:
                     _v = os.environ[s]
                 elif 'OSVC_COMP_'+s in os.environ:
