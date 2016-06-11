@@ -179,12 +179,12 @@ class Drbd(Res.Resource):
             self.drbdadm_up()
 
     def get_roles(self):
-        (ret, out, err) = self.call(self.drbdadm_cmd('role'))
+        out, err, ret = justcall(self.drbdadm_cmd('role'))
         if ret != 0:
-            raise ex.excError
+            raise ex.excError(err)
         out = out.strip().split('/')
         if len(out) != 2:
-            raise ex.excError
+            raise ex.excError(out)
         return out
 
     def start_role(self, role):
