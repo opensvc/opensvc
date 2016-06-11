@@ -2251,7 +2251,7 @@ class KeywordVmdgContainerid(Keyword):
                   text="The id of the container whose configuration to extract the disk mapping from."
                 )
 
-class KeywordDrbdRes(Keyword):
+class KeywordDiskDrbdRes(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -3585,7 +3585,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskPvs()
         self += KeywordPoolPoolname()
         self += KeywordVmdgContainerid()
-        self += KeywordDrbdRes()
+        self += KeywordDiskDrbdRes()
         self += KeywordFsType()
         self += KeywordFsDev()
         self += KeywordFsZone()

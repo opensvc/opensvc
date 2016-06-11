@@ -653,8 +653,8 @@ def add_drbd(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
-    drbd = __import__('resDrbd')
-    r = drbd.Drbd(**kwargs)
+    mod = __import__('resDiskDrbd')
+    r = mod.Drbd(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
