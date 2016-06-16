@@ -109,7 +109,7 @@ class syncBtrfsSnap(resSync.Sync):
 
     def remove_snap(self, label, subvol):
         btrfs = self.get_btrfs(label)
-        btrfs.get_subvols()
+        btrfs.get_subvols(refresh=True)
         snaps = {}
         for sv in btrfs.subvols.values():
             if not sv["path"].startswith(subvol):
