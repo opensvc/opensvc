@@ -61,6 +61,8 @@ class Options(object):
         self.parm_rid = None
         self.parm_tags = None
         self.parm_subsets = None
+        self.discard = False
+        self.recover = False
         os.environ['LANG'] = 'C'
 
 class Svc(Resource, Scheduler):
@@ -2169,6 +2171,20 @@ class Svc(Resource, Scheduler):
         except Exception as e:
             print(s, file=sys.stderr)
 
+    def make_temp_config(self):
+        import shutil
+        path = os.path.join(rcEnv.pathtmp, self.svcname+".env.tmp")
+        if os.path.exists(path):
+            if self.options.recover:
+                pass
+            elif self.options.discard:
+                shutil.copy(self.pathenv, path)
+            else:
+                raise ex.excError("%s exists: service is already being edited. Set --discard to edit from the current configuration, or --recover to open the unapplied config" % path)
+        else:
+            shutil.copy(self.pathenv, path)
+        return path
+
     def edit_config(self):
         if "EDITOR" in os.environ:
             editor = os.environ["EDITOR"]
@@ -2180,8 +2196,16 @@ class Svc(Resource, Scheduler):
         if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
-        os.system(' '.join((editor, self.pathenv)))
-        return self.validate_config()
+        path = self.make_temp_config()
+        os.system(' '.join((editor, path)))
+        r = self._validate_config(path=path)
+        if r["errors"] == 0:
+            import shutil
+            shutil.copy(path, self.pathenv)
+            os.unlink(path)
+        else:
+            print("your changes were not applied because of the errors reported above. you can use the edit config command with --recover to try to fix your changes or with --discard to restart from the live config")
+        return r["errors"] + r["warnings"]
 
     def can_sync(self, target=None):
         ret = False
@@ -3148,32 +3172,78 @@ class Svc(Resource, Scheduler):
     def pull(self):
         self.node.pull(self.svcname)
 
-    def validate_config(self):
+    def validate_config(self, path=None):
+        ret = self._validate_config(path=path)
+        return ret["warnings"] + ret["errors"]
+
+    def _validate_config(self, path=None):
         from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
         data = KeyDict(provision=True)
-        ret = 0
+        ret = {
+          "errors": 0,
+          "warnings": 0,
+        }
+
+        if path is None:
+            config = self.config
+        else:
+            import ConfigParser
+            config = ConfigParser.RawConfigParser()
+            config.read(path)
 
         # validate DEFAULT options
-        for option in self.config.defaults():
+        for option in config.defaults():
             if data.sections["DEFAULT"].getkey(option) is None:
                 self.log.warning("ignored option DEFAULT.%s" % option)
-                ret += 1
+                ret["warnings"] += 1
 
         # validate resources options
-        for section in self.config.sections():
+        for section in config.sections():
             family = section.split("#")[0]
-            if self.config.has_option(section, "type"):
-                rtype = self.config.get(section, "type")
+            if config.has_option(section, "type"):
+                rtype = config.get(section, "type")
             else:
                 rtype = None
             if family not in data.sections:
                 self.log.warning("ignored section %s" % section)
-            for option in self.config.options(section):
-                if option in self.config.defaults():
+                ret["warnings"] += 1
+            for option in config.options(section):
+                if option in config.defaults():
                     continue
-                if data.sections[family].getkey(option, rtype=rtype) is None and data.sections[family].getkey(option) is None:
+                key = data.sections[family].getkey(option, rtype=rtype)
+                if key is None:
+                    key = data.sections[family].getkey(option)
+                if key is None:
                     self.log.warning("ignored option %s.%s, driver %s" % (section, option, rtype if rtype else "generic"))
-                    ret += 1
+                    ret["warnings"] += 1
+                else:
+                    if not key.at and "@" in option:
+                        self.log.error("option %s.%s does not support scoping" % (section, option))
+                        ret["errors"] += 1
+                    if type(key.default) == bool:
+                        value = config.getboolean(section, option)
+                    elif type(key.default) == int:
+                        try:
+                            value = config.getint(section, option)
+                        except:
+                            # might be a size string like 11mib
+                            value = config.get(section, option)
+                    else:
+                        value = config.get(section, option)
+                    if key.strict_candidates and key.candidates and value not in key.candidates:
+                        self.log.error("option %s.%s value %s is not in valid candidates: %s" % (section, option, str(value), str(key.candidates)))
+                        ret["errors"] += 1
+
+        from svcBuilder import build
+        try:
+            svc = build(self.svcname, svcconf=path)
+        except Exception as e:
+            self.log.error("the new configuration causes the following build error: %s" % str(e))
+            ret["errors"] += 1
+        if svc is None:
+            self.log.error("the new configuration causes errors in the build process")
+            ret["errors"] += 1
+
         return ret
                 
 
