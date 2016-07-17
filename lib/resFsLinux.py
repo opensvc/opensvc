@@ -1,6 +1,6 @@
 #
-# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>'
-# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>'
+# Copyright (c) 2009 Christophe Varoqui <christophe.varoqui@free.fr>
+# Copyright (c) 2009 Cyril Galibern <cyril.galibern@free.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -434,7 +434,6 @@ class Mount(Res.Mount):
                 self.kill_users()
             else:
                 raise
-            raise ex.excError('mount point %s does not exist' % self.mountPoint)
         self.remove_holders()
         self.remove_deeper_mounts()
         for i in range(3):
