@@ -248,6 +248,18 @@ class KeywordMonSchedule(Keyword):
                   text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
                 )
 
+class KeywordPushSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="push_schedule",
+                  required=False,
+                  order=11,
+                  default="00:00-06:00@361",
+                  text="The service configuration emission to the collector schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
 class KeywordFlexPrimary(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3475,6 +3487,7 @@ class KeyDict(KeywordStore):
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()
         self += KeywordMonSchedule()
+        self += KeywordPushSchedule()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
         self += KeywordFlexCpuMinThreshold()
