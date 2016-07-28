@@ -98,7 +98,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     def dev_to_mpath_dev(self, devpath):
         if which("multipath") is None:
-            raise ex.excError("multipath not found.")
+            return devpath
         cmd = ["multipath", "-l", "-v1", devpath]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
