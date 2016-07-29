@@ -186,7 +186,10 @@ class Pool(resDg.Dg):
 
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         for d in disks:
-            if re.match('^.*s[0-9]*$', d) is None:
+            if "emcpower" in d:
+                regex = re.compile('[a-g]$', re.UNICODE)
+                d = regex.sub('c', d)
+            elif re.match('^.*s[0-9]*$', d) is None:
                 d += "s2"
             else:
                 regex = re.compile('s[0-9]*$', re.UNICODE)
