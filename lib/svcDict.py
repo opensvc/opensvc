@@ -1,5 +1,3 @@
-#!/opt/opensvc/bin/python
-
 import sys
 import os
 from rcGlobalEnv import rcEnv
