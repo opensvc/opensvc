@@ -180,7 +180,6 @@ def save_file(infile):
     
     logit("saving file <%s> to <%s>"%(infile,outfile),stdout=True)
     try:
-        import shutil
         shutil.copyfile(infile, outfile)
     except:
         import traceback
@@ -728,6 +727,31 @@ def convert_svclinks():
         logit("create link %s -> %s"%(fpath,svcmgr))
         os.symlink(svcmgr, fpath)
 
+def move_var_files_in_subdirs():
+    for fpath in glob.glob(os.path.join(pathvar, "last_*")):
+        dst = os.path.join(pathvar, "node")
+        fname = os.path.basename(fpath)
+        new_fpath = os.path.join(dst, fname)
+        logit("move %s to %s" % (fpath, new_fpath))
+        shutil.move(fpath, new_fpath)
+
+    for fpath in glob.glob(os.path.join(pathvar, "*_last_*")):
+        fname = os.path.basename(fpath)
+        svcname = fname.split("_last_")[0]
+        dst = os.path.join(pathvar, svcname)
+        fname = fname.replace(svcname+"_", "")
+        new_fpath = os.path.join(dst, fname)
+        logit("move %s to %s" % (fpath, new_fpath))
+        shutil.move(fpath, new_fpath)
+
+    for fpath in glob.glob(os.path.join(pathvar, "*.push")):
+        svcname = os.path.basename(fpath).split(".push")[0]
+        dst = os.path.join(pathvar, svcname)
+        fname = "last_pushed_env"
+        new_fpath = os.path.join(dst, fname)
+        logit("move %s to %s" % (fpath, new_fpath))
+        shutil.move(fpath, new_fpath)
+
 def move_usr_to_opt():
     logit("begin")
     linksvc = os.path.join(os.sep, 'service')
@@ -1086,6 +1110,7 @@ def dump_install_content():
 
 try:
     install_pythonlink()
+    move_var_files_in_subdirs()
     move_usr_to_opt()
     missing_dirs()
     convert_svclinks()
