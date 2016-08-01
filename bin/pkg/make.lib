@@ -50,26 +50,13 @@ function prepare_chroot {
 	mkdir -p $CHROOT/opt/opensvc/var/cache || return 1
 
 	# install tracked files
-	EXCL=
-	EXCL="$EXCL --exclude=.be/"
-	EXCL="$EXCL --exclude=bin/pkg"
-	EXCL="$EXCL --exclude=bin/sssu"
-	EXCL="$EXCL --exclude=bin/python"
-	EXCL="$EXCL --exclude=*.pyc"
-	EXCL="$EXCL --exclude='log/*'"
-	EXCL="$EXCL --exclude='etc/*'"
-	EXCL="$EXCL --exclude='etc/.*'"
-	EXCL="$EXCL --exclude='tmp/*'"
-	EXCL="$EXCL --exclude=var/host_mode"
-	EXCL="$EXCL --exclude=var/last_comp_check*"
-	EXCL="$EXCL --exclude=var/*push"
-	EXCL="$EXCL --exclude='var/lock/*'"
-	EXCL="$EXCL --exclude='var/cache/*'"
-	EXCL="$EXCL --exclude=lib/rcLocalEnv.py"
-	EXCL="$EXCL --exclude=*.swp"
 	cd $OSVC || return 1
-	tar cf - $EXCL bin lib usr var/compliance/*com.opensvc* | tar xf - -C $CHROOT/opt/opensvc || return 1
-	echo "version = \"$VERSION-$RELEASE\"" > $CHROOT/opt/opensvc/lib/version.py || return 1
+	git archive --format=tar HEAD | ( cd $CHROOT/opt/opensvc && tar xf - )
+	rm -rf $CHROOT/opt/opensvc/bin/pkg
+	rm -f $CHROOT/opt/opensvc/*.cmd
+	rm -f $CHROOT/opt/opensvc/.gitignore
+
+	echo "version = \"$VERSION-$RELEASE\"" | tee $CHROOT/opt/opensvc/lib/version.py || return 1
 
 	cd $CHROOT/opt/opensvc/usr/share/doc
 	for f in $(echo template*env)
@@ -79,7 +66,8 @@ function prepare_chroot {
 	done
 	cd $OSVC
 
-        $SUDO chown -R 0:0 $CHROOT/opt/opensvc || return 1
+	$SUDO chown -R 0:0 $CHROOT/opt/opensvc || return 1
+	$SUDO chmod -R og-w $CHROOT/opt/opensvc || return 1
 	return 0
 }
 
