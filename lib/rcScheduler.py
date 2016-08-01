@@ -101,7 +101,7 @@ class SchedOpts(object):
         self.section = section 
         self.fname = fname 
         if self.fname is None: 
-            self.fname = "last_"+section+"_push" 
+            self.fname = "node"+os.sep+"last_"+section+"_push" 
         self.schedule_option = schedule_option 
 
 class Scheduler(object):

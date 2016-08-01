@@ -91,7 +91,7 @@ class Svc(Resource, Scheduler):
         self.cluster = False
         self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
-        self.push_flag = os.path.join(rcEnv.pathvar, svcname+'.push')
+        self.push_flag = os.path.join(rcEnv.pathvar, svcname, 'last_pushed_env')
         self.disk_types = [
          "disk.loop",
          "disk.raw",
@@ -188,9 +188,9 @@ class Svc(Resource, Scheduler):
           'no_schedule': '',
         }
         self.scheduler_actions = {
-         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+"_last_comp_check", schedule_option="comp_schedule"),
-         "push_env": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_env", schedule_option="push_schedule"),
-         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+"_last_push_service_status", schedule_option="mon_schedule"),
+         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
+         "push_env": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_env", schedule_option="push_schedule"),
+         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="mon_schedule"),
         }
 
     def __cmp__(self, other):
@@ -216,7 +216,7 @@ class Svc(Resource, Scheduler):
     def post_build(self):
         syncs = []
         for r in self.get_resources("sync"):
-            syncs += [SchedOpts(r.rid, fname=self.svcname+"_last_syncall_"+r.rid, schedule_option="sync_schedule")]
+            syncs += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_syncall_"+r.rid, schedule_option="sync_schedule")]
         if len(syncs) > 0:
             self.scheduler_actions["sync_all"] = syncs
 
@@ -224,7 +224,7 @@ class Svc(Resource, Scheduler):
         for r in self.get_resources():
             if not hasattr(r, "info"):
                 continue
-            apps += [SchedOpts(r.rid, fname=self.svcname+"_last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
+            apps += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
         if len(apps) > 0:
             self.scheduler_actions["push_appinfo"] = apps
 
@@ -2283,6 +2283,11 @@ class Svc(Resource, Scheduler):
             return
         self.push()
 
+    def create_var_subdir(self):
+        sd = os.path.join(rcEnv.pathvar, self.svcname)
+        if not os.path.exists(sd):
+            os.makedirs(sd)
+
     @scheduler_fork
     def push(self):
         if self.encap:
@@ -2294,6 +2299,7 @@ class Svc(Resource, Scheduler):
         self.log.handlers[1].setLevel(logging.CRITICAL)
         self.log.info("send %s to collector" % self.pathenv)
         try:
+            self.create_var_subdir()
             import time
             with open(self.push_flag, 'w') as f:
                 f.write(str(time.time()))

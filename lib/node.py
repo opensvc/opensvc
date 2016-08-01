@@ -242,9 +242,9 @@ class Node(Svc, Freezer, Scheduler):
 	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
 	 "pushdisks": SchedOpts("disks"),
 	 "sysreport": SchedOpts("sysreport"),
-	 "compliance_auto": SchedOpts("compliance", fname="last_comp_check", schedule_option="comp_schedule"),
-	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="last_rotate_root_pw", schedule_option="no_schedule"),
-	 "auto_reboot": SchedOpts("reboot", fname="last_auto_reboot", schedule_option="no_schedule")
+	 "compliance_auto": SchedOpts("compliance", fname="node"+os.sep+"last_comp_check", schedule_option="comp_schedule"),
+	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="node"+os.sep+"last_rotate_root_pw", schedule_option="no_schedule"),
+	 "auto_reboot": SchedOpts("reboot", fname="node"+os.sep+"last_auto_reboot", schedule_option="no_schedule")
         }
 
 
