@@ -3,7 +3,6 @@
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $0);pwd)"
 . $PATH_SCRIPT/make.lib
 
-NAWK=nawk;
 PKGNAME=opensvc
 ARCH=${ARCH:-all}
 BASE=/opt/opensvc
@@ -15,16 +14,8 @@ REPODIR=$(cd $(dirname $0);pwd)
 export REPODIR
 PATH=/usr/local/bin:$PWD:$PATH:/opt/sfw/bin
 
-TMPARCHIVE=/var/tmp/tmparchive$$
-TMPROOT=$TMPARCHIVE
-
 LANG=C
 export LANG
-
-
-function date_to_release {
-        date -d "$*" +%y%m%d.%H%M
-}
 
 HEAD=$(git log -1 --pretty=format:%aD  || exit 1)
    
@@ -32,19 +23,13 @@ function date_to_release {
         date -d "$*" +%y%m%d.%H%M
 }
 
-HEAD=$(git log -1 --pretty=format:%aD  || exit 1)
+function date_to_release {
+        date -d "$*" +%y%m%d.%H%M
+}
 
 function my_log {
 	echo $@
 }
-
-GNUTAR=$(tar --version)
- if [ $? -ne 0 ] ; then
-   my_log "Gnu Tar is required..."
-   exit 1
- else
-   my_log "Gnu Tar found. Proceeding."
- fi
 
 function question {
 	# usage: question default_value Comment 
@@ -145,33 +130,10 @@ function create_pkg {
 	return $STATUS
 }
 
-if [ -d $TMPARCHIVE ] ; then
-	echo "Error $TMPARCHIVE already exists"
-	echo "It should be removed first"       
-	exit 1
-fi
-
-echo "----- git archive current to $TMPARCHIVE ..."
-mkdir $TMPARCHIVE
-cd $BASE && git archive --format=tar HEAD | (
-	cd $TMPARCHIVE && tar xf - 			\
-	&& rm $TMPARCHIVE/.gitignore			\
-	&& rm $TMPARCHIVE/*.cmd			\
-	&& rm -rf $TMPARCHIVE/.be			\
-	&& rm -rf $TMPARCHIVE/bin/pkg			\
-	&& chown -R root:root $TMPARCHIVE		\
-	&& chmod -R og-w $TMPARCHIVE
-	)
-
-for f in $(echo $TMPARCHIVE/usr/share/doc/template*env)
-do
-	echo "gzip $f"
-	gzip $f
-done
+echo "----- git archive current to $CHROOT ..."
+prepare_chroot || exit 1
 
 cd $REPODIR 
-
-echo "version = \"$VERSION-$RELEASE\"" > $TMPARCHIVE/lib/version.py
 
 cat > $REPODIR/postinstall <<EOF
 #!/sbin/sh
@@ -180,7 +142,7 @@ su root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=\$
 EOF
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
-create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
+create_pkg -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
 
 opensvc Service Manager for logical servers v${VERSION}-$RELEASE
 $ARCH
@@ -189,13 +151,13 @@ $VERSION,REV=$RELEASE
 http://www.opensvc.com
 support@opensvc.com
 OPENSVC-${VERSION},REV=${RELEASE}
-$TMPROOT=$BASE
+$CHROOT=$BASE
 
 EOF
 
-echo "----- Cleaning /var/spool/pkg/$PKGNAME $TMPARCHIVE $REPODIR/postinstall"
+echo "----- Cleaning /var/spool/pkg/$PKGNAME $CHROOT $REPODIR/postinstall"
 [ "$PKGNAME" != "" ] && [ -d /var/spool/pkg/$PKGNAME ] && rm -r /var/spool/pkg/$PKGNAME
-[ -d $TMPARCHIVE ] && rm -r $TMPARCHIVE
+[ -d $CHROOT ] && rm -r $CHROOT
 rm $REPODIR/postinstall
 
 echo "----- New package available into /tmp/$P"
