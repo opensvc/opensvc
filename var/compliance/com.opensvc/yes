@@ -1,0 +1,7 @@
+#!/opt/opensvc/bin/python
+
+try:
+    while True:
+        print "yes"
+except:
+    pass
