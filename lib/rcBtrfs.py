@@ -265,9 +265,7 @@ class Btrfs(object):
         # verify this is the right subvol (missing: path->subvol name fn)
 
     def setup_rootvol(self):
-        pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-        pathvar = os.path.join(pathsvc, 'var')
-        self.rootdir = os.path.join(pathvar, 'btrfs', self.label)
+        self.rootdir = os.path.join(rcEnv.pathvar, 'btrfs', self.label)
 
         if not self.dir_exists(self.rootdir):
             cmd = ['mkdir', '-p', self.rootdir]
