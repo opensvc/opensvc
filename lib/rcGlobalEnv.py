@@ -147,3 +147,20 @@ class rcEnv:
     dbopensvc = "None"
     dbcompliance = "None"
 
+    pathlib = os.path.realpath(os.path.dirname(__file__))
+    if pathlib.startswith('/usr/share'):
+        pathbin = '/usr/bin'
+        pathetc = '/etc/opensvc'
+        pathlog = '/var/log/opensvc'
+        pathtmp = '/var/tmp/opensvc'
+        pathvar = '/var/lib/opensvc'
+        pathlock = '/var/lib/opensvc/lock'
+    else:
+        pathsvc = os.path.join(pathlib, '..')
+        pathbin = os.path.join(pathsvc, 'bin')
+        pathetc = os.path.join(pathsvc, 'etc')
+        pathlog = os.path.join(pathsvc, 'log')
+        pathtmp = os.path.join(pathsvc, 'tmp')
+        pathvar = os.path.join(pathsvc, 'var')
+        pathlock = os.path.join(pathvar, 'lock')
+

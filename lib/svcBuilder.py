@@ -22,18 +22,6 @@ except ImportError:
 
 check_privs()
 
-#
-# file tree abstraction
-#
-rcEnv.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-rcEnv.pathbin = os.path.join(rcEnv.pathsvc, 'bin')
-rcEnv.pathetc = os.path.join(rcEnv.pathsvc, 'etc')
-rcEnv.pathlib = os.path.join(rcEnv.pathsvc, 'lib')
-rcEnv.pathlog = os.path.join(rcEnv.pathsvc, 'log')
-rcEnv.pathtmp = os.path.join(rcEnv.pathsvc, 'tmp')
-rcEnv.pathvar = os.path.join(rcEnv.pathsvc, 'var')
-rcEnv.pathlock = os.path.join(rcEnv.pathvar, 'lock')
-
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
 os.environ['LANG'] = 'C'
@@ -3512,7 +3500,7 @@ def build(name, minimal=False, svcconf=None):
 def is_service(f):
     if os.name == 'nt':
         return True
-    svcmgr = os.path.join(rcEnv.pathsvc, 'bin', 'svcmgr')
+    svcmgr = os.path.join(rcEnv.pathbin, 'svcmgr')
     if os.path.realpath(f) != os.path.realpath(svcmgr):
         return False
     if not os.path.exists(f + '.env'):
