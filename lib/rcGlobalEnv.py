@@ -59,7 +59,6 @@ class rcEnv:
     """Directory on DRP node where to store the PRD nodes files necessary
     for takeover.
     """
-    drp_path = "/opt/opensvc/var/cache/"
     drp_sync_excludes = [
         '--exclude="/spice"',
         '--exclude="/dbadm"',
@@ -155,12 +154,32 @@ class rcEnv:
         pathtmp = '/var/tmp/opensvc'
         pathvar = '/var/lib/opensvc'
         pathlock = '/var/lib/opensvc/lock'
+        pathcron = '/usr/share/opensvc'
+        postinstall = '/usr/share/opensvc/postinstall'
     else:
-        pathsvc = os.path.join(pathlib, '..')
+        pathsvc = os.path.realpath(os.path.join(pathlib, '..'))
         pathbin = os.path.join(pathsvc, 'bin')
         pathetc = os.path.join(pathsvc, 'etc')
         pathlog = os.path.join(pathsvc, 'log')
         pathtmp = os.path.join(pathsvc, 'tmp')
         pathvar = os.path.join(pathsvc, 'var')
         pathlock = os.path.join(pathvar, 'lock')
+        pathcron = pathbin
+        postinstall = os.path.join(pathbin, 'postinstall')
+
+    if sysname == "Windows":
+        svcmgr = os.path.join(pathsvc, "svcmgr.cmd")
+        nodemgr = os.path.join(pathsvc, "nodemgr.cmd")
+        svcmon = os.path.join(pathsvc, "svcmon.cmd")
+        cron = os.path.join(pathsvc, "cron.cmd")
+    else:
+        svcmgr = os.path.join(pathbin, "svcmgr")
+        nodemgr = os.path.join(pathbin, "nodemgr")
+        svcmon = os.path.join(pathbin, "svcmon")
+        cron = os.path.join(pathcron, "cron")
+
+    nodeconf = os.path.join(pathetc, "node.conf")
+    authconf = os.path.join(pathetc, "auth.conf")
+
+    drp_path = os.path.join(pathvar, "cache")
 
