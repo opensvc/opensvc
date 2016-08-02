@@ -4,7 +4,7 @@ import re
 from rcGlobalEnv import *
 from rcUtilities import call, which
 import rcStatus
-import resLoop as Res
+import resDiskLoop as Res
 import rcExceptions as ex
 
 def file_to_loop(f):
@@ -33,7 +33,7 @@ def file_to_loop(f):
         devs.append(l[0])
     return devs
 
-class Loop(Res.Loop):
+class Disk(Res.Disk):
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
@@ -80,7 +80,7 @@ class Loop(Res.Loop):
                  monitor=False,
                  restart=0,
                  subset=None):
-        Res.Loop.__init__(self,
+        Res.Disk.__init__(self,
                           rid,
                           loopFile,
                           always_on=always_on,

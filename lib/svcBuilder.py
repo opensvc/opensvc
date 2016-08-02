@@ -785,12 +785,12 @@ def add_loop(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        loop = __import__('resLoop'+rcEnv.sysname)
+        m = __import__('resDiskLoop'+rcEnv.sysname)
     except ImportError:
-        svc.log.error("resLoop%s is not implemented"%rcEnv.sysname)
+        svc.log.error("resDiskLoop%s is not implemented"%rcEnv.sysname)
         return
 
-    r = loop.Loop(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 

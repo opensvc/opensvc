@@ -1,7 +1,7 @@
 import resources as Res
 from rcGlobalEnv import rcEnv
 
-class Loop(Res.Resource):
+class Disk(Res.Resource):
     """ basic loopback device resource
     """
     def __init__(self,
@@ -32,12 +32,4 @@ class Loop(Res.Resource):
                                  self.loopFile)
 
 if __name__ == "__main__":
-    for c in (Loop,) :
-        help(c)
-
-    print("""v1=vg("myvg")""")
-    v=vg("myvg")
-    print("show v", v)
-    print("""v.do_action("start")""")
-    v.do_action("start")
-
+    help(Disk)

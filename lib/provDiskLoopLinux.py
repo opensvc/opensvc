@@ -3,7 +3,7 @@ import os
 import rcExceptions as ex
 from rcUtilities import convert_size
 
-class ProvisioningLoop(Provisioning):
+class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

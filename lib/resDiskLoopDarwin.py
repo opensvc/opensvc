@@ -4,11 +4,11 @@ import re
 from rcGlobalEnv import *
 from rcUtilities import call, which
 import rcStatus
-import resLoop as Res
+import resDiskLoop as Res
 import rcExceptions as ex
-from rcLoopLinux import file_to_loop
+from rcDiskLoopDarwin import file_to_loop
 
-class Loop(Res.Loop):
+class Disk(Res.Disk):
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
@@ -19,10 +19,10 @@ class Loop(Res.Loop):
 
     def start(self):
         if self.is_up():
-            self.log.info("%s is already up" % self.label)
+            self.log.info("%s is already up" % self.loopFile)
             return
-        cmd = [ 'losetup', '-f', self.loopFile ]
-        (ret, out, err) = self.vcall(cmd)
+        cmd = ['hdiutil', 'attach', self.loopFile]
+        (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
@@ -31,34 +31,19 @@ class Loop(Res.Loop):
 
     def stop(self):
         if not self.is_up():
-            self.log.info("%s is already down" % self.label)
+            self.log.info("%s is already down" % self.loopFile)
             return 0
         for loop in self.loop:
-            cmd = [ 'losetup', '-d', loop ]
+            cmd = ['hdiutil', 'detach', loop.strip('md')]
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
 
-    def parent_dir_handled_by_service(self):
-        d = os.path.dirname(self.loopFile)
-        mntpts = {}
-        for r in self.svc.get_resources(["fs"]):
-            mntpts[r.mountPoint] = r
-        while True:
-            if d in mntpts.keys():
-                return mntpts[d]
-            d = os.path.dirname(d)
-            if d == os.sep:
-                return
-
     def _status(self, verbose=False):
-        r = self.parent_dir_handled_by_service()
-        if not os.path.exists(self.loopFile):
-            if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
-                self.status_log("%s does not exist" % self.loopFile)
-                return rcStatus.WARN
-        if self.is_up(): return rcStatus.UP
-        else: return rcStatus.DOWN
+        if self.is_up():
+            return self.status_stdby(rcStatus.UP)
+        else:
+            return self.status_stdby(rcStatus.DOWN)
 
     def __init__(self,
                  rid,
@@ -70,19 +55,14 @@ class Loop(Res.Loop):
                  monitor=False,
                  restart=0,
                  subset=None):
-        Res.Loop.__init__(self,
+        Res.Disk.__init__(self,
                           rid,
                           loopFile,
                           always_on=always_on,
                           disabled=disabled,
                           tags=tags,
-                          subset=subset,
                           optional=optional,
                           monitor=monitor,
-                          restart=restart)
-
-    def provision(self):
-        m = __import__("provLoopLinux")
-        prov = m.ProvisioningLoop(self)
-        prov.provisioner()
+                          restart=restart,
+                          subset=subset)
 
