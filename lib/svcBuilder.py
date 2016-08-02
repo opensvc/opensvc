@@ -1187,7 +1187,7 @@ def add_disk(svc, conf, s):
     if disk_type == 'Veritas':
         add_veritas(svc, conf, s)
         return
-    if disk_type == 'Lvm' or disk_type == 'Vg' disk_type == rcEnv.sysname:
+    if disk_type == 'Lvm' or disk_type == 'Vg' or disk_type == rcEnv.sysname:
         add_vg(svc, conf, s)
         return
 
