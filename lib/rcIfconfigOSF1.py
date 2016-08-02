@@ -15,7 +15,7 @@ def ipv4_bitmask(s):
         pk = s[2*i:2*i+2]
         r.append(int(pk, 16))
     return '.'.join(map(str, r))
-        
+
 class ifconfig(rcIfconfig.ifconfig):
 
     def __init__(self, mcast=False):

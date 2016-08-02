@@ -10,10 +10,10 @@ class logger(object):
 
     def info(self, msg):
         print(msg)
-    
+
     def warning(self, msg):
         print(msg)
-    
+
     def error(self, msg):
         print(msg)
 
@@ -29,7 +29,7 @@ class Nexenta(object):
             self.log = log
         else:
             self.log = logger()
-   
+
     def init(self):
         if self.username is not None and self.password is not None:
             return
@@ -149,7 +149,7 @@ class Nexenta(object):
         if data['error'] is not None:
             raise ex.excError(data["error"])
         return data['result']
- 
+
     def zvol_clone(self, src, dst):
         data = self.rest("zvol", "clone", [src, dst])
         if data['error'] is not None:

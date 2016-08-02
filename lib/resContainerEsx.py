@@ -131,7 +131,7 @@ class Esx(resContainer.Container):
             self.info['vmem'] = self.getconfig('memsize')
         except:
             self.info['vmem'] = '0'
-        return self.info           
+        return self.info
 
     def check_manual_boot(self):
         """ ESX will handle the vm startup itself """

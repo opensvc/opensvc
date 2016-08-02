@@ -29,7 +29,7 @@ class ProvisioningFs(Provisioning):
         else:
             return
         p.ProvisioningDisk(self.r).provisioner()
-           
+
     def provisioner_fs(self):
         for i in ('dev', 'mnt'):
             if i not in self.section:

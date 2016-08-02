@@ -32,7 +32,7 @@ class DevRelation(object):
     def set_used(self, used):
         self.used_set = True
         self.used = used
-        
+
     def get_used(self, used):
         #
         # logical volumes and concatset need to set explicitly
@@ -250,7 +250,7 @@ class DevTree(object):
     def print_tree_bottom_up(self):
         for dev in self.get_bottom_devs():
             dev.print_dev_bottom_up()
-        
+
     def has_relations(self, devname):
         l = []
         for r in self.root:

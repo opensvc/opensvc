@@ -30,7 +30,7 @@ class Share(Resource):
                 client = '*'
             self.data[path][client] = opts
         return self.data
-        
+
     def is_up(self):
         self.issues = {}
         self.issues_missing_client = []
@@ -146,5 +146,5 @@ class Share(Resource):
             except ex.excError as e:
                 raise ex.excInitError(str(e))
             self.opts[client] = opts
-            
+
 

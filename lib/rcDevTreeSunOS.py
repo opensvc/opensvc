@@ -99,7 +99,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             return
         lines = out.split('\n')
         lines.reverse()
-        
+
         """
         # metastat -p
         d11 -m d2 d3 1
@@ -256,7 +256,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         else:
             raise Exception("unit not supported: %s"%unit)
         return int(size)
-        
+
     def load(self, di=None):
         if di is not None:
             self.di = di

@@ -32,7 +32,7 @@ def mpath_to_path(disks):
         for d in b:
             l.append(d.replace("/dev/dsk", "/dev/rdsk"))
     return l
-    
+
 class ScsiReserv(resScsiReserv.ScsiReserv):
     def __init__(self,
                  rid=None,

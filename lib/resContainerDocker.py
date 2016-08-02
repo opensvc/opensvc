@@ -126,7 +126,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
         self.docker_stop()
- 
+
     def info(self):
         data = self.docker_info()
         return self.fmt_info(data)

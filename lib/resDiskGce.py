@@ -19,7 +19,7 @@ class Disk(resDisk.Disk):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
@@ -123,7 +123,7 @@ class Disk(resDisk.Disk):
                     self.vcall([
                       "gcloud", "compute", "instances", "detach-disk", "-q",
                       instance,
-                      "--disk", name, 
+                      "--disk", name,
                       "--zone", self.gce_zone
                     ])
 
@@ -141,7 +141,7 @@ class Disk(resDisk.Disk):
         self.vcall([
           "gcloud", "compute", "instances", "attach-disk", "-q",
           rcEnv.nodename,
-          "--disk", name, 
+          "--disk", name,
           "--zone", self.gce_zone,
           "--device-name", self.fmt_disk_devname(name),
         ])

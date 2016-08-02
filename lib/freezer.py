@@ -15,7 +15,7 @@ class Freezer:
         return False
 
     def freeze(self):
-        open(self.flag, 'w').close() 
+        open(self.flag, 'w').close()
 
     def thaw(self):
         if self.flag != self.base_flag and os.path.exists(self.flag):

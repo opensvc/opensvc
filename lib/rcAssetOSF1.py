@@ -18,7 +18,7 @@ class Asset(rcAsset.Asset):
             return 1024 * int(float(s))
         else:
             return 0
-    
+
     def _get_mem_bytes(self):
         # MB
         cmd = ['vmstat', '-P']
@@ -170,36 +170,36 @@ def _justcall(cmd):
     data = {}
 
     data[('hwmgr', '-show', 'fibre', '-ada')] = """
-    
+
             ADAPTER   LINK    LINK             FABRIC     SCSI     CARD
      HWID:  NAME      STATE   TYPE             STATE      BUS      MODEL
     --------------------------------------------------------------------------------
-       53:  emx0      up      point-to-point   attached   scsi3    KGPSA-CA 
-    
-    		Revisions:  driver 2.17           firmware 3.93A0 
+       53:  emx0      up      point-to-point   attached   scsi3    KGPSA-CA
+
+    		Revisions:  driver 2.17           firmware 3.93A0
     		FC Address: 0x1ece00
     		TARGET:     -1
-    		WWPN/WWNN:  1000-0000-c922-585c   2000-0000-c922-585c 
-    
+    		WWPN/WWNN:  1000-0000-c922-585c   2000-0000-c922-585c
+
             ADAPTER   LINK    LINK             FABRIC     SCSI     CARD
      HWID:  NAME      STATE   TYPE             STATE      BUS      MODEL
     --------------------------------------------------------------------------------
-       61:  emx1      up      point-to-point   attached   scsi4    KGPSA-CA 
-    
-    		Revisions:  driver 2.17           firmware 3.93A0 
+       61:  emx1      up      point-to-point   attached   scsi4    KGPSA-CA
+
+    		Revisions:  driver 2.17           firmware 3.93A0
     		FC Address: 0x1cce00
     		TARGET:     -1
-    		WWPN/WWNN:  1000-0000-c924-a43d   2000-0000-c924-a43d 
-    
+    		WWPN/WWNN:  1000-0000-c924-a43d   2000-0000-c924-a43d
+
     """
-    
+
     data[('hwmgr', '-show', 'fibre', '-topo')] = """
-    
+
             ADAPTER   LINK    LINK             FABRIC     SCSI     CARD
      HWID:  NAME      STATE   TYPE             STATE      BUS      MODEL
     --------------------------------------------------------------------------------
-       53:  emx0      up      point-to-point   attached   scsi3    KGPSA-CA 
-    
+       53:  emx0      up      point-to-point   attached   scsi3    KGPSA-CA
+
     	FC DID	  TARGET    WWPN     		 WWNN                 lfd  LSIT
     	------------------------------------------------------------------------
     	0x382200      2     5000-1fe1-5012-9d49  5000-1fe1-5012-9d40  l--  L--T
@@ -208,12 +208,12 @@ def _justcall(cmd):
     	0x383200      1     5000-1fe1-5012-9d4b  5000-1fe1-5012-9d40  l--  L--T
     	0xfffffc     -1     21fc-0005-1e36-2110  1000-0005-1e36-2110  l-d  ----
     	0xfffffe     -1     20ce-0005-1e36-2110  1000-0005-1e36-2110  lf-  ----
-    
+
             ADAPTER   LINK    LINK             FABRIC     SCSI     CARD
      HWID:  NAME      STATE   TYPE             STATE      BUS      MODEL
     --------------------------------------------------------------------------------
-       61:  emx1      up      point-to-point   attached   scsi4    KGPSA-CA 
-    
+       61:  emx1      up      point-to-point   attached   scsi4    KGPSA-CA
+
     	FC DID	  TARGET    WWPN     		 WWNN                 lfd  LSIT
     	------------------------------------------------------------------------
     	0xef1200      2     5000-1fe1-5012-9d4e  5000-1fe1-5012-9d40  l--  L--T
@@ -222,67 +222,67 @@ def _justcall(cmd):
     	0xef2200      1     5000-1fe1-5012-9d48  5000-1fe1-5012-9d40  l--  L--T
     	0xfffffc     -1     21fc-0005-1e36-1eee  1000-0005-1e36-1eee  l-d  ----
     	0xfffffe     -1     20ce-0005-1e36-1eee  1000-0005-1e36-1eee  lf-  ----
-    
+
     """
-    
+
     data[('hwmgr', '-show', 'scsi', '-full', '-id', '83', '-nowrap')] = """
-    
-            SCSI                DEVICE    DEVICE  DRIVER NUM  DEVICE FIRST 
+
+            SCSI                DEVICE    DEVICE  DRIVER NUM  DEVICE FIRST
      HWID:  DEVICEID HOSTNAME   TYPE      SUBTYPE OWNER  PATH FILE   VALID PATH
     -------------------------------------------------------------------------
-       83:  16       wrus01     disk      none    2      8    dsk13  [3/2/1]   
-    
+       83:  16       wrus01     disk      none    2      8    dsk13  [3/2/1]
+
           WWID:01000010:6005-08b4-000b-440a-0000-f000-1325-0000
-    
-    
-          BUS   TARGET  LUN   PATH STATE   
+
+
+          BUS   TARGET  LUN   PATH STATE
           ---------------------------------
-          3     2       1     valid     
-          3     3       1     valid     
-          3     1       1     valid     
-          3     0       1     valid     
-          4     3       1     valid     
-          4     2       1     valid     
-          4     1       1     valid     
-          4     0       1     valid     
-    
+          3     2       1     valid
+          3     3       1     valid
+          3     1       1     valid
+          3     0       1     valid
+          4     3       1     valid
+          4     2       1     valid
+          4     1       1     valid
+          4     0       1     valid
+
     """
-    
+
     data[('uname', '-a')] = """OSF1 wrus01 V5.1 2650 alpha
     """
-    
+
     data[('dupatch', '-track', '-type', 'kit', '-nolog')] = """
     Gathering details of relevant patches, this may take a bit of time
-    
-    
+
+
     	Patches installed on the system came from following software kits:
     	------------------------------------------------------------------
-    
+
     	- T64V51BB24AS0003-20030929 OSF540
     	- T64V51BB26AS0005-20050502 IOS540
     	- T64V51BB26AS0005-20050502 OSF540
               ================
                  kernelver
-    
+
     				NOTE
-    
-    	When a patch kit is listed, it does not necessarily mean 
+
+    	When a patch kit is listed, it does not necessarily mean
     	all patches on that kit are installed on your system.
     """
-    
+
     data[('psrinfo',)] = """0	on-line   since 05/19/2012 16:00:50
     """
-    
+
     data[('psrinfo', '-v')] = """Status of processor 0 as of: 06/15/12 18:35:40
       Processor has been on-line since 05/19/2012 16:00:50
       The alpha EV6.8CB (21264C) processor operates at 1000 MHz,
       has a cache size of 8388608 bytes,
       and has an alpha internal floating point processor.
     """
-    
+
     data[('consvar', '-g', 'sys_serial_num')] = """ sys_serial_num = AY14610125
     """
-    
+
     data[('hwmgr', '-v', 'h')] = """HWID:   hardware hierarchy
     -------------------------------------------------------------------------------
        1:   platform AlphaServer ES45 Model 2
@@ -290,30 +290,30 @@ def _justcall(cmd):
        6:     bus iop0
        7:       bus hose0
     """
-    
+
     data[('ifconfig', '-a')] = """ee0: flags=c63<UP,BROADCAST,NOTRAILERS,RUNNING,MULTICAST,SIMPLEX>
-         inet 10.6.65.37 netmask fffffc00 broadcast 10.6.67.255 ipmtu 1500 
-         inet 10.6.66.160 netmask fffffc00 broadcast 10.6.67.255 ipmtu 1500 
-    
+         inet 10.6.65.37 netmask fffffc00 broadcast 10.6.67.255 ipmtu 1500
+         inet 10.6.66.160 netmask fffffc00 broadcast 10.6.67.255 ipmtu 1500
+
     ee1: flags=c63<UP,BROADCAST,NOTRAILERS,RUNNING,MULTICAST,SIMPLEX>
-         inet 10.40.32.241 netmask fffffc00 broadcast 10.40.35.255 ipmtu 1500 
-    
+         inet 10.40.32.241 netmask fffffc00 broadcast 10.40.35.255 ipmtu 1500
+
     lo0: flags=100c89<UP,LOOPBACK,NOARP,MULTICAST,SIMPLEX,NOCHECKSUM>
-         inet 127.0.0.1 netmask ff000000 ipmtu 4096 
-    
+         inet 127.0.0.1 netmask ff000000 ipmtu 4096
+
     sl0: flags=10<POINTOPOINT>
-    
+
     tun0: flags=80<NOARP>
-    
+
     tun1: flags=80<NOARP>
     """
-    
+
     data[('vmstat', '-P')] = """Total Physical Memory =  1024.00 M
     """
 
     return data[tuple(cmd)], '', 0
-    
-    
+
+
 if __name__ == "__main__":
     o = Asset("wrus01")
     print(o._get_mem_bytes())

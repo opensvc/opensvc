@@ -226,7 +226,7 @@ class DockerLib(object):
         if self.run_image in images:
             return images[self.run_image]
         return self.run_image
-        
+
     def docker_inspect(self, id):
         cmd = self.docker_cmd + ['inspect', id]
         out, err, ret = justcall(cmd)

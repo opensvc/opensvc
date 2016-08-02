@@ -19,7 +19,7 @@ def try_umount(self, mnt=None):
     if "not mounted" in err:
         return 0
 
-    """ don't try to kill process using the source of a 
+    """ don't try to kill process using the source of a
         protected bind mount
     """
     if protected_mount(mnt):

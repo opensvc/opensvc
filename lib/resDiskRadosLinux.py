@@ -20,7 +20,7 @@ class Disk(resDisk.Disk):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
@@ -47,7 +47,7 @@ class Disk(resDisk.Disk):
                 l.append(image)
         if len(l):
             raise ex.excError("wrong format (expected pool/image): "+", ".join(l))
-        
+
     def fmt_label(self):
         s = "rados images: "
         s += ", ".join(self.images)
@@ -208,7 +208,7 @@ class DiskLock(Disk):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         self.lock = lock
         self.lock_shared_tag = lock_shared_tag
 

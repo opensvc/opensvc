@@ -6,7 +6,7 @@ import rcExceptions as ex
 import rcStatus
 import resSync
 import datetime
-from rcNexenta import Nexenta 
+from rcNexenta import Nexenta
 
 class syncNexenta(resSync.Sync):
     def can_sync(self, target=None):
@@ -218,7 +218,6 @@ class syncNexenta(resSync.Sync):
             elif localdown:
                 raise ex.excError("both heads unreachable")
 
-         
     def __init__(self,
                  rid=None,
                  name=None,

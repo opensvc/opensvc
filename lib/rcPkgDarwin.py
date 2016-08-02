@@ -10,7 +10,7 @@ version: 10.6.0.1.1.1238328574
 volume: /
 location: /
 install-time: 1285389505
-groups: com.apple.snowleopard-repair-permissions.pkg-group com.apple.FindSystemFiles.pkg-group 
+groups: com.apple.snowleopard-repair-permissions.pkg-group com.apple.FindSystemFiles.pkg-group
 """
 
 def pkgversion(package):

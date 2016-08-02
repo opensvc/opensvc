@@ -17,7 +17,7 @@ class syncIbmdsSnap(resSync.Sync):
         data = self.lsflash()
         ese_pairs = []
         other_pairs = []
-        
+
         for d in data:
             if d['isTgtSE'] == 'ESE':
                 ese_pairs.append(d['ID'])

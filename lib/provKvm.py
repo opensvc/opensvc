@@ -61,7 +61,7 @@ class ProvisioningKvm(Provisioning):
         if not which('btrfs'):
             self.r.log.error("'btrfs' command not found")
             raise ex.excError
- 
+
         cmd = ['btrfs', 'subvolume', 'snapshot', self.snapof, self.snap]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:

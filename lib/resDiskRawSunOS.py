@@ -19,7 +19,7 @@ class Disk(resDiskRaw.Disk):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         devs = list(devs)
         for i, dev in enumerate(devs):
             if ":" in dev:

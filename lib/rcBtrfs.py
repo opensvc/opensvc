@@ -339,7 +339,7 @@ class Btrfs(object):
             l = l[:-1]
 
         raise InitError("could not get label from path %s"%path)
-        
+
     def parse_fi_show(self):
         """
         Label: 'data'  uuid: 0d05d0b9-ffab-4ab8-b923-15a38ec806d5

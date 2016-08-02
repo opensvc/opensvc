@@ -43,7 +43,7 @@ class Disk(resDisk.Disk):
         self.user = user
         self.group = group
         self.perm = perm
-        
+
         self.get_uid()
         self.get_gid()
 
@@ -177,7 +177,7 @@ class Disk(resDisk.Disk):
         if _disk is None:
             raise ex.excError()
         return _disk
- 
+
     def do_start(self):
         try:
             node = self.get_node()

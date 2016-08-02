@@ -127,10 +127,10 @@ class Ovm(resContainer.Container):
                 continue
             self.info['vcpus'] = l[3]
             self.info['vmem'] = l[2]
-            return self.info           
+            return self.info
         self.log.error("malformed 'xm list %s' output: %s"%(self.uuid, line))
         self.info = {'vcpus': '0', 'vmem': '0'}
-        return self.info           
+        return self.info
 
     def check_manual_boot(self):
         f = os.path.join(self.xen_auto_d, self.uuid)

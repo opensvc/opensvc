@@ -37,7 +37,7 @@ class Ip(resIp.Ip, Amazon):
             self.label += ", eip %s" % eip
 
         self.eip = eip
-        
+
     def get_eip(self):
         ip = getaddr(self.eip, True)
         data = self.aws(["ec2", "describe-addresses", "--public-ips", self.eip], verbose=False)

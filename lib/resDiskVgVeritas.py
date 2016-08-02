@@ -107,7 +107,7 @@ class Disk(resDisk.Disk):
                 if re.match('^.*s[0-9]$', disk) is None:
                     disk += "s2"
                 disks.add("/dev/rdsk/" + disk )
-       
+
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
         self.disks = disks
 

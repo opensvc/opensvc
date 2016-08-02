@@ -86,7 +86,7 @@ class ProvisioningZone(Provisioning):
         self.r.svc.config.set(r.rid, "tags", ' '.join(r.tags))
         with open(envfile, 'w') as f:
             self.r.svc.config.write(f)
-            
+
         return s
 
     def get_tz(self):

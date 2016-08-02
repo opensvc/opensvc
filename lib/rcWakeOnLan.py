@@ -15,7 +15,7 @@ class wolrequest(object):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def check_mac(self):
-        if not ':' and not '-' in self.mac: 
+        if not ':' and not '-' in self.mac:
             return False
         if regex_mac.match(self.mac.lower()) is None:
             return False

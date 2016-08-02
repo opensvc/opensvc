@@ -559,7 +559,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                     continue
                 d.add_child(partname)
                 p.add_parent(devname)
- 
+
     def tune_lv_relations(self):
         dm_h = self.get_dm()
         for lv, segments in self.get_lv_linear().items():

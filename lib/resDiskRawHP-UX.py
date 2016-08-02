@@ -20,7 +20,7 @@ class Disk(resDiskRaw.Disk):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         resDiskRaw.Disk.__init__(self,
                              rid=rid,
                              devs=devs,

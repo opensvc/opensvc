@@ -16,11 +16,11 @@ class ProvisioningFsZfs(ProvisioningFs):
         if 'size' in self.section:
             nv_list['refquota'] = self.section['size']
         ds.verify_prop(nv_list)
-           
+
     def provisioner(self):
 
         self.provision_dev()
 
         self.r.log.info("provisioned")
-        # self.r.start(), 
+        # self.r.start(),
         return True

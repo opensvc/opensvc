@@ -6,7 +6,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 
 class Mount(Res.Resource):
-    """Define a mount resource 
+    """Define a mount resource
     """
     def __init__(self,
                  rid=None,
@@ -103,7 +103,7 @@ class Mount(Res.Resource):
         else:
             allowed_ret = [0]
         if ret not in allowed_ret:
-            raise ex.excError 
+            raise ex.excError
 
     def need_check_writable(self):
         if 'ro' in self.mntOpt.split(','):

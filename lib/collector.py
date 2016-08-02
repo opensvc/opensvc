@@ -279,7 +279,7 @@ class Collector(object):
     def collector_events(self):
         d = self._collector_events()
         print_table(d, width=50, table=self.options.table)
-        
+
     def collector_json_events(self):
         d = self._collector_events()
         import json
@@ -304,7 +304,7 @@ class Collector(object):
     def collector_show_actions(self):
         d = self._collector_show_actions()
         print_table(d, width=50, table=self.options.table)
-        
+
     def collector_json_show_actions(self):
         d = self._collector_show_actions()
         import json
@@ -401,7 +401,7 @@ class Collector(object):
         d = self._collector_list_nodes()
         for node in d:
             print(node)
-        
+
     def collector_json_list_nodes(self):
         d = self._collector_list_nodes()
         import json
@@ -420,7 +420,7 @@ class Collector(object):
         d = self._collector_list_services()
         for service in d:
             print(service)
-        
+
     def collector_json_list_services(self):
         d = self._collector_list_services()
         import json
@@ -439,7 +439,7 @@ class Collector(object):
         d = self._collector_list_filtersets()
         for fset in d:
             print(fset)
-        
+
     def collector_json_list_filtersets(self):
         d = self._collector_list_filtersets()
         import json

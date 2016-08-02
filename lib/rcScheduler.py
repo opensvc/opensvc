@@ -82,27 +82,27 @@ def scheduler_fork(fn):
             fn(*args, **kwargs)
     return _fn
 
-class SchedNotAllowed(Exception): 
+class SchedNotAllowed(Exception):
     pass
 
-class SchedNoDefault(Exception): 
-    pass 
- 
-class SchedSyntaxError(Exception): 
-    pass 
- 
-class SchedExcluded(Exception): 
-    pass 
- 
-class SchedOpts(object): 
-    def __init__(self, section, 
-                 fname=None, 
-                 schedule_option="push_schedule"): 
-        self.section = section 
-        self.fname = fname 
-        if self.fname is None: 
-            self.fname = "node"+os.sep+"last_"+section+"_push" 
-        self.schedule_option = schedule_option 
+class SchedNoDefault(Exception):
+    pass
+
+class SchedSyntaxError(Exception):
+    pass
+
+class SchedExcluded(Exception):
+    pass
+
+class SchedOpts(object):
+    def __init__(self, section,
+                 fname=None,
+                 schedule_option="push_schedule"):
+        self.section = section
+        self.fname = fname
+        if self.fname is None:
+            self.fname = "node"+os.sep+"last_"+section+"_push"
+        self.schedule_option = schedule_option
 
 class Scheduler(object):
     def __init__(self):
@@ -564,7 +564,7 @@ class Scheduler(object):
             else:
                 raise SchedSyntaxError("malformed month definition")
 
-            
+
             if month_s in ("", "*"):
                 _allowed_months = set(range(12))
             else:
@@ -603,7 +603,7 @@ class Scheduler(object):
             if s not in self.calendar_names:
                  raise SchedSyntaxError("unknown calendar name")
             return self.calendar_names[s]
-            
+
     def sched_expand_value(self, s):
         v = set([])
         if s in ("*", ""):
@@ -675,7 +675,7 @@ class Scheduler(object):
                 d["probabilistic"] = probabilistic
                 tr.append(d)
                 continue
-            
+
             l = e.split("@")
             n = len(l)
             if n != 2:
@@ -888,7 +888,7 @@ class Scheduler(object):
 
     def test_schedule(self, schedule_s, date_s, expected):
         d = self.str_to_datetime(date_s)
-        
+
         try:
             schedule = self.sched_get_schedule("dummy", "dummy", schedules=schedule_s)
         except SchedSyntaxError:
@@ -956,4 +956,4 @@ if __name__ == "__main__":
     sched = Scheduler()
     for test in tests:
         sched.test_schedule(*test)
-        
+

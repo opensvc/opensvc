@@ -41,7 +41,7 @@ class syncConfigSyntaxError(Exception):
     """
 
 class syncNotSnapable(Exception):
-    """ A dir/file specified as source of a sync with snap is not included in a 
+    """ A dir/file specified as source of a sync with snap is not included in a
         snapable resource mount => abort all
     """
 

@@ -131,17 +131,17 @@ class md5:
 
 ##  /* Buffer remaining input */
         self.buffer = self.buffer[:index] + input[i:inputLen]
-        
+
 
 ##/* MD5 finalization. Ends an MD5 message-digest operation, writing the
 ##  the message digest and zeroizing the context.
 ## */
-        
+
     def final(self):
 
 ##  /* Save number of bits */
         bits = Encode((self.count & 0xffffffffL, self.count>>32), 8)
-            
+
 ##  /* Pad out to 56 mod 64.
 
         index = int((self.count >> 3) & 0x3f)
@@ -162,7 +162,7 @@ class md5:
         self.__dict__.clear()
 
         return digest
-    
+
     digest = final  # alias
 
 ##/* MD5 basic transformation. Transforms state based on block.

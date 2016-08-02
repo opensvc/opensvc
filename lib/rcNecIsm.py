@@ -208,7 +208,7 @@ SV Information
             Special File : /dev/sdaq
             State        : normal
             Reserve Area : -
-        
+
         Pair Information
             SV:LD Name              : xxxxxxxxxxx_00cc_SV00ce
                Type                 : LX
@@ -298,7 +298,7 @@ class NecIsms(Nec):
             return
         cmd = ['iSMvollist', '-r']
         out, err, ret = justcall(cmd)
- 
+
     def next(self):
         if self.index == len(self.arrays):
             raise StopIteration

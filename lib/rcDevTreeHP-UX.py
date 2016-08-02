@@ -141,7 +141,7 @@ Last Open or Close state      = ACTIVE
                 continue
             pv, le, pe = line.split()
             h[pv] = int(pe) * self.pe_size[vgname]
-            
+
         # use the linux lvm naming convention
         devname = lv.replace('/dev/','').replace('-','--').replace('/','-')
         d = self.add_dev(devname, size, "linear")

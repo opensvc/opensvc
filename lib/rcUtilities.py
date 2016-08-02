@@ -214,7 +214,7 @@ def printplus(obj):
         for k, v in sorted(obj.items()):
             print(u'{0}: {1}'.format(k, v))
 
-    # List or tuple            
+    # List or tuple
     elif isinstance(obj, list) or isinstance(obj, tuple):
         for x in obj:
             print(x)
@@ -230,7 +230,7 @@ def cmdline2list(cmdline):
 
     1) Arguments are delimited by white space, which is either a
        space or a tab.
-    
+
     2) A string surrounded by double quotation marks is
        interpreted as a single argument, regardless of white space
        contained within.  A quoted string can be embedded in an
@@ -371,7 +371,7 @@ def getaddr_caching(name, log=None):
     return addr
 
 def convert_size(s, _to='', _round=1):
-    l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E'] 
+    l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     if type(s) in (int, float):
         s = str(s)
     s = s.strip().replace(",", ".")

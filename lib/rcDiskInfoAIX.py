@@ -28,7 +28,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             size = int(out.strip())
         else:
             size = 0
-        
+
         wwid = self.odmget(lname, 'ww_name').replace('0x', '')
         if wwid == 'unknown':
             wwid = self.get_vscsi_id(lname)

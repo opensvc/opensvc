@@ -15,7 +15,7 @@ def try_umount(self):
     if "not currently mounted" in err:
         return 0
 
-    """ don't try to kill process using the source of a 
+    """ don't try to kill process using the source of a
         protected bind mount
     """
     if protected_mount(self.mountPoint):

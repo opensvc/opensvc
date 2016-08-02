@@ -11,26 +11,26 @@ dor
 	Id           : 46a70bfd.000964b0.6.8001
 	Files        :      158,  SLim=        0,  HLim=        0
 	Blocks  (1k) : 36035624,  SLim=        0,  HLim=        0
-	Quota Status : user=on  group=on  
-	Object Safety: off 
-	Fragging     : on 
-	DMAPI        : off 
+	Quota Status : user=on  group=on
+	Object Safety: off
+	Fragging     : on
+	DMAPI        : off
 stock_systemes
 	Id           : 4ad8612f.000923f8.1.8001
 	Clone is     : stock_systemes@osvc_sync
 	Files        :   499709,  SLim=        0,  HLim=        0
 	Blocks  (1k) : 35305996,  SLim=        0,  HLim=        0
-	Quota Status : user=off group=off 
-	Object Safety: off 
-	Fragging     : on 
-	DMAPI        : off 
+	Quota Status : user=off group=off
+	Object Safety: off
+	Fragging     : on
+	DMAPI        : off
 stock_systemes@osvc_sync
 	Id           : 4ad8612f.000923f8.2.8001
 	Clone of     : stock_systemes
 	Revision     : 1
-	Object Safety: off 
-	Fragging     : on 
-	DMAPI        : off 
+	Object Safety: off
+	Fragging     : on
+	DMAPI        : off
     """
     def __init__(self, lines):
         for line in lines:
@@ -114,7 +114,7 @@ class Fdmn(object):
                Id	       Date Created  LogPgs  Version  Domain Name
 46a70bfd.000964b0  Wed Jul 25 10:38:21 2007     512        4  dom1
 
-  Vol    1K-Blks        Free  % Used  Cmode  Rblks  Wblks  Vol Name 
+  Vol    1K-Blks        Free  % Used  Cmode  Rblks  Wblks  Vol Name
    2L   62914560    21056568     67%     on    256    256  /dev/disk/dsk13c
         """
         lines = out.split('\n')

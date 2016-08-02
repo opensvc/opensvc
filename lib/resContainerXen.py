@@ -104,7 +104,7 @@ class Xen(resContainer.Container):
             if "CPU(s):" in line: self.info['vcpus'] = line.split(':')[1].strip()
             if "Max memory" in line: self.info['vmem'] = line.split(':')[1].strip()
             if "Autostart:" in line: self.info['autostart'] = line.split(':')[1].strip()
-        return self.info           
+        return self.info
 
     def check_manual_boot(self):
         self.get_container_info()

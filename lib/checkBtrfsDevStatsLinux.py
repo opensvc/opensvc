@@ -3,7 +3,7 @@ from rcUtilities import justcall
 import os
 import re
 from rcGlobalEnv import rcEnv
- 
+
 class check(checks.check):
     """
 # btrfs dev stats /mnt
@@ -19,7 +19,7 @@ class check(checks.check):
 [/dev/loop1].generation_errs 0
     """
     chk_type = "btrfs"
- 
+
     def _get_dev_stats(self, mntpt, data):
         cmd = ['btrfs', 'dev', 'stats', mntpt]
         out, err, ret = justcall(cmd)
@@ -73,7 +73,7 @@ class check(checks.check):
             if dev in svc.disklist():
                 return svc.svcname
         return ''
- 
+
     def do_check(self):
         r = []
         data = self.get_dev_stats()

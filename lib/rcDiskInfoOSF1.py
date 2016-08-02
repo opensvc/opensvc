@@ -74,7 +74,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             d[l[0].strip()] = l[1].strip()
         d['mb'] = int(d['capacity']) * int(d['block_size']) // 1024 // 1024
         return d
-        
+
     def get(self, dev, type):
         dev = dev.replace('/dev/rdisk/','')
         dev = dev.replace('/dev/disk/','')

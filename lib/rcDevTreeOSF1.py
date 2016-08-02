@@ -18,7 +18,7 @@ class DevTree(rcDevTree.DevTree):
 # /dev/rdisk/dsk15a:
 type: SCSI
 disk: HSV210
-label: 
+label:
 flags:
 bytes/sector: 512
 sectors/track: 128
@@ -32,18 +32,18 @@ trackskew: 7
 cylinderskew: 26
 headswitch: 0		# milliseconds
 track-to-track seek: 0	# milliseconds
-drivedata: 0 
+drivedata: 0
 
 8 partitions:
 #            size       offset    fstype  fsize  bsize   cpg  # ~Cyl values
-  a:       131072            0    unused      0      0        #      0 - 7 
-  b:       262144       131072    unused      0      0        #      8 - 23 
-  c:    251658240            0     AdvFS                      #      0 - 15359 
-  d:            0            0    unused      0      0        #      0 - 0 
-  e:            0            0    unused      0      0        #      0 - 0 
-  f:            0            0    unused      0      0        #      0 - 0 
-  g:    125632512       393216    unused      0      0        #     24 - 7691 
-  h:    125632512    126025728    unused      0      0        #   7692 - 15359 
+  a:       131072            0    unused      0      0        #      0 - 7
+  b:       262144       131072    unused      0      0        #      8 - 23
+  c:    251658240            0     AdvFS                      #      0 - 15359
+  d:            0            0    unused      0      0        #      0 - 0
+  e:            0            0    unused      0      0        #      0 - 0
+  f:            0            0    unused      0      0        #      0 - 0
+  g:    125632512       393216    unused      0      0        #     24 - 7691
+  h:    125632512    126025728    unused      0      0        #   7692 - 15359
 """
         if ret != 0:
             return
@@ -56,7 +56,7 @@ drivedata: 0
             part = l[0].replace(':','')
             size = 1. * int(l[1]) * bs / 1024 / 1024
             size = int(size)
-            
+
             partname = devname+part
             child_dev = self.add_dev(partname, size, "linear")
             child_dev.set_devpath('/dev/disk/'+partname)

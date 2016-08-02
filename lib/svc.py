@@ -2651,7 +2651,6 @@ class Svc(Resource, Scheduler):
             try:
                 from multiprocessing import Process
                 mp = True
-                    
             except:
                 mp = False
 
@@ -3230,7 +3229,6 @@ class Svc(Resource, Scheduler):
             ret["errors"] += 1
 
         return ret
-                
 
 if __name__ == "__main__" :
     for c in (Svc,) :

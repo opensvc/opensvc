@@ -39,7 +39,7 @@ class DevTreeVeritas(rcDevTree.DevTree):
          v  lv_sanperftest_01 -       ENABLED  ACTIVE   1024.00m SELECT    -        fsgen
          v  lvset_sanperftest_01 vset_sanperftest ENABLED ACTIVE 16384.00m SELECT - fsgen
          v  lvset_sanperftest_02 vset_sanperftest ENABLED ACTIVE 10240.00m SELECT - fsgen
-         vt vset_sanperftest -        ENABLED  ACTIVE   2           
+         vt vset_sanperftest -        ENABLED  ACTIVE   2
         """
         _dg, _vt = devname.split("/")
         out = self.vxprint(_dg)

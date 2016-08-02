@@ -36,7 +36,7 @@ class ifconfig(rcIfconfig.ifconfig):
         lines = lines[i+1:]
         for i, line in enumerate(lines):
 	    if len(line) == 0:
-	        break 
+	        break
             try:
                 intf, addr, refcnt = line.split()
             except:
@@ -59,7 +59,7 @@ class ifconfig(rcIfconfig.ifconfig):
         lines = lines[i+1:]
         for i, line in enumerate(lines):
 	    if len(line) == 0:
-	        break 
+	        break
             try:
                 intf, addr, refcnt = line.split()
             except:

@@ -120,7 +120,7 @@ class Disk(resDisk.Disk):
         if ret == 2:
             self.log.info("no changes were made to the array")
         elif ret != 0:
-            raise ex.excError 
+            raise ex.excError
         else:
             self.wait_for_fn(self.has_it, self.startup_timeout, 1, errmsg="waited too long for devpath creation")
 
@@ -128,7 +128,7 @@ class Disk(resDisk.Disk):
         cmd = [self.mdadm, "--manage", self.md_devpath(), "--stop"]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError 
+            raise ex.excError
 
     def detail(self):
         try:
@@ -144,7 +144,7 @@ class Disk(resDisk.Disk):
         if ret != 0:
             if "does not appear to be active" in err:
                 return "State : md does not appear to be active"
-            raise ex.excError(err) 
+            raise ex.excError(err)
         return out
 
     def detail_status(self):
@@ -214,7 +214,7 @@ class Disk(resDisk.Disk):
         else:
             self.devs = self.devlist_inactive()
         return self.devs
-            
+
     def devlist_inactive(self):
         devs = set()
 

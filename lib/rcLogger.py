@@ -18,14 +18,14 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         pass
 
     def emit(self, record):
-        try:    
+        try:
             msg = self.format(record)
             cmd = ["logger", "-t", "", "-p", self.facility+"."+record.levelname.lower(), msg]
             p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
             p.communicate()
         except (KeyboardInterrupt, SystemExit):
-            raise   
-        except: 
+            raise
+        except:
             self.handleError(record)
 
 
@@ -117,7 +117,7 @@ def initLogger(name):
         sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
     except Exception as e:
         if e.errno == errno.ENOTSOCK:
-            # solaris /dev/log is a stream device 
+            # solaris /dev/log is a stream device
 	    sysloghandler = LoggerHandler(facility=facility)
         else:
 	    sysloghandler = None

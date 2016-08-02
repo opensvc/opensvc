@@ -3,7 +3,7 @@ from rcUtilities import justcall
 import os
 import re
 from rcGlobalEnv import rcEnv
- 
+
 class check(checks.check):
     """
     # zpool status
@@ -16,7 +16,7 @@ class check(checks.check):
             'zpool replace'.
      scrub: scrub completed after 0h40m with 0 errors on Sun Jun 24 05:41:27 2012
     config:
- 
+
             NAME          STATE     READ WRITE CKSUM
             rpool         DEGRADED     0     0     0
               mirror      DEGRADED     0     0     0
@@ -24,7 +24,7 @@ class check(checks.check):
                 c0t1d0s0  OFFLINE      0     0     0
     """
     chk_type = "zpool"
- 
+
     def find_svc(self, pool):
         devs = []
         cmd = ['zpool', 'status', pool]
@@ -68,7 +68,7 @@ class check(checks.check):
                 if '/dev/rdsk/'+d in svc.disklist():
                     return svc.svcname
         return ''
- 
+
     def do_check(self):
         cmd = ['zpool', 'list', '-H', '-o', 'name,health']
         out, err, ret = justcall(cmd)

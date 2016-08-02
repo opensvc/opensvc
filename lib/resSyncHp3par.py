@@ -276,7 +276,7 @@ class syncHp3par(resSync.Sync):
                 vv_data[a] = b
             vv_data['LastSyncTime'] = self.lastsync_s_to_datetime(vv_data['LastSyncTime'])
             vv_l.append(vv_data)
-        data = {'rcg': rcg_data, 'vv': vv_l}   
+        data = {'rcg': rcg_data, 'vv': vv_l}
         self.showrcopy_cache = data
         return self.showrcopy_cache
 
@@ -329,7 +329,7 @@ class syncHp3par(resSync.Sync):
 
         if r is not None:
             return r
-        
+
         return rcStatus.UP
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
         #response = urllib2.urlopen(req)
     except Exception as e:
         return "", str(e)
-    
+
     try:
         d = json.loads(response)
         ret = d['ret']

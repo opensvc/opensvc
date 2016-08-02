@@ -26,7 +26,7 @@ class Share(Resource):
             opts = words[3]
             return self.parse_opts(opts)
         return ""
-        
+
     def is_up(self):
         self.issues = ""
         opts = self.get_opts()

@@ -45,7 +45,7 @@ class SyncDcs(resSync.Sync):
             raise ex.excError("no password set for manager %s in %s"%(self.active_manager, self.conf))
         self.username = self.config.get(self.active_manager, "username")
         self.password = self.config.get(self.active_manager, "password")
- 
+
     def dcscmd(self, cmd="", verbose=False, check=True, dcs=None):
         if len(cmd) == 0:
             return

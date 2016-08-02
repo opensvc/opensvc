@@ -4,14 +4,14 @@ import rcExceptions as ex
 from rcUtilities import *
 
 
-if rcEnv.sysname == "Windows":                                                                                                                              
-    mp = False                                                                                                                                        
-else:                                                                                                                                                 
-    try:                                                                                                                                              
-        from multiprocessing import Process, Queue, Lock                                                                                              
-        mp = True                                                                                                                                     
-    except:                                                                                                                                           
-        mp = False                                                                                                                                    
+if rcEnv.sysname == "Windows":
+    mp = False
+else:
+    try:
+        from multiprocessing import Process, Queue, Lock
+        mp = True
+    except:
+        mp = False
 
 def svcmon_normal1(svc, queue=None):
     # don't schedule svcmon updates for encap services.

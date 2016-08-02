@@ -17,7 +17,7 @@ class syncEvasnap(resSync.Sync):
 
     def can_sync(self, target=None):
         ts = None
- 
+
         """ get oldest snap
         """
         for pair in self.pairs:
@@ -137,7 +137,7 @@ class syncEvasnap(resSync.Sync):
             host = p.find("hostname").text
             lunid = p.find("lunnumber").text
             info['mask'][host] = int(lunid)
-        
+
         e_oxuid = e.find("objectparenthexuid")
         if e_oxuid is not None:
             info['oxuid'] = e_oxuid.text.replace('-','')
@@ -264,7 +264,6 @@ class syncEvasnap(resSync.Sync):
             raise ex.excError("error login to %s"%self.manager)
         elif "Error" in out:
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
-        
 
     def __init__(self,
                  rid=None,

@@ -9,7 +9,7 @@ from rcUtilities import justcall
 class syncDcsSnap(resSyncDcs.SyncDcs):
     def can_sync(self, target=None):
         ts = None
- 
+
         """ get oldest snap
         """
         for snap in self.snapname:

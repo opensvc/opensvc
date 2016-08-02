@@ -33,7 +33,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 continue
             if line[0] != " ":
                 """
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN 
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
                 """
                 _line = line.split()
                 ifname = _line[1].strip(":")
@@ -81,8 +81,7 @@ class ifconfig(rcIfconfig.ifconfig):
                                 i.flag_multicast = True
                             if 'LOOPBACK' == w:
                                 i.flag_loopback = True
-    
-    
+
                     prev = w
             elif line.strip().startswith("link"):
                 """
@@ -99,7 +98,7 @@ class ifconfig(rcIfconfig.ifconfig):
             elif line.strip().startswith("inet"):
                 """
     inet 127.0.0.1/8 scope host lo
-    inet6 ::1/128 scope host 
+    inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
                 """
                 _line = line.split()
@@ -140,7 +139,7 @@ class ifconfig(rcIfconfig.ifconfig):
                         _i.bcast += [w]
                     elif 'scope' == prev and 'inet' in line:
                         _i.scope += [w]
-    
+
                     prev = w
 
 

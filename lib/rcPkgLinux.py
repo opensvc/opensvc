@@ -60,4 +60,4 @@ else:
     listpkg = listpkg_dummy
 
 def listpatch():
-    return [] 
+    return []

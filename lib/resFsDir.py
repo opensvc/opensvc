@@ -8,7 +8,7 @@ import grp
 import stat
 
 class FsDir(Res.Resource):
-    """Define a mount resource 
+    """Define a mount resource
     """
     def __init__(self,
                  rid=None,

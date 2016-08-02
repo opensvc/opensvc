@@ -82,11 +82,11 @@ class syncS3(resSync.Sync):
         except Exception as e:
             self.status_log(str(e))
             return rcStatus.WARN
-        
+
         if n is None:
             self.status_log("no backup found")
             return rcStatus.WARN
-        
+
         if n > 0 and not os.path.exists(self.snar):
             self.status_log("snar file not found at %s" % self.snar)
             return rcStatus.WARN
@@ -166,7 +166,7 @@ class syncS3(resSync.Sync):
         except:
             raise ex.excError("aws_secret_access_key not found in section %s of %s" % (profile, aws_cf_f))
         return key, secret
-        
+
     def set_creds(self):
         key, secret = self.get_creds_from_aws()
         os.environ["AWS_ACCESS_KEY_ID"] = key

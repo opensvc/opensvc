@@ -10,7 +10,7 @@ class Amazon(object):
         if hasattr(self.svc, "aws") and which(self.svc.aws) is not None:
             _cmd = [self.svc.aws]
         else:
-            _cmd = ["aws"] 
+            _cmd = ["aws"]
         _cmd += ["--output=json"]
         if hasattr(self.svc, "aws_profile"):
             _cmd += ["--profile", self.svc.aws_profile]
@@ -40,6 +40,6 @@ class Amazon(object):
             self.instance_data = data["Reservations"][0]["Instances"][0]
         except Exception as e:
             self.instance_data = None
-        return self.instance_data 
+        return self.instance_data
 
 

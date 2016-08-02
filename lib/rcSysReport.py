@@ -174,7 +174,6 @@ class SysReport(object):
                     self.changed.append(self.collect_stat)
                 if self.collect_stat not in self.full:
                     self.full.append(self.collect_stat)
- 
 
     def cmdlist2fname(self, l):
         fname = '(space)'.join(l)

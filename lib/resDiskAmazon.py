@@ -21,7 +21,7 @@ class Disk(resDisk.Disk, Amazon):
                  monitor=False,
                  restart=0,
                  subset=None):
-        
+
         resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,

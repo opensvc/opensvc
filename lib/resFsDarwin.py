@@ -24,7 +24,7 @@ def try_umount(self):
     if ret == 0:
         return 0
 
-    """ don't try to kill process using the source of a 
+    """ don't try to kill process using the source of a
         protected bind mount
     """
     if protected_mount(self.mountPoint):
@@ -186,7 +186,7 @@ class Mount(Res.Mount):
             self.log.info("fs(%s %s) is already mounted"%
                 (self.device, self.mountPoint))
             return 0
-        
+
         if not os.path.exists(self.mountPoint):
             os.makedirs(self.mountPoint, 0o755)
 

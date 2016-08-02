@@ -257,7 +257,7 @@ class App(Res.Resource):
         return rcStatus.WARN
 
     def set_executable(self):
-        if self.script_exec: 
+        if self.script_exec:
             return
         if not os.path.exists(self.script):
             return
@@ -274,7 +274,7 @@ class App(Res.Resource):
             elif action == "stop":
                 self.log.info("script %s does not exist. hosting fs might already be down" % self.script)
                 return 0
-            elif return_out: 
+            elif return_out:
                 return 0
             else:
                 self.status_log("script %s does not exist" % self.script)

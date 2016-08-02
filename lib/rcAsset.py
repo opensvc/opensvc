@@ -685,7 +685,6 @@ class Asset(object):
                         }
                     lan[intf.hwaddr] += [d]
 
-                
         self.print_lan(lan)
         return lan
 

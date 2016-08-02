@@ -382,7 +382,7 @@ class Compliance(object):
                         print("module %s not found in any attached moduleset" % module)
                     elif len(in_modsets) > 1:
                         raise ex.excError("module %s found in multiple attached moduleset (%s). Use --moduleset instead of --module to clear the ambiguity" % (module, ', '.join(in_modsets)))
-                    
+
             if len(modulesets) > 0 and \
                hasattr(self.options, "attach") and self.options.attach:
                 self._compliance_attach_moduleset(modulesets)
@@ -481,7 +481,7 @@ class Compliance(object):
             return self.collector.call('comp_get_data', modulesets)
 
     def merge_moduleset_modules(self):
-        l = [] 
+        l = []
         for ms, data in self.data['modulesets'].items():
             for module, autofix in data:
                 if (module, autofix) not in l:

@@ -396,7 +396,7 @@ class Asset(rcAsset.Asset):
             with open(path, 'r') as f:
                 hba_id = f.read().split('=')[-1].strip()
         return hba_id
- 
+
     def __get_hba(self):
         # fc / fcoe
         l = []

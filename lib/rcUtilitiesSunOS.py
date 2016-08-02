@@ -41,7 +41,7 @@ def get_solaris_version():
 	osver = int(osver)
     except:
         osver = 0
-    
+
     if osver >= '11':
 	cmd = ['uname', '-v']
 	out, err, ret = justcall(cmd)

@@ -51,7 +51,7 @@ class Disk(resDisk.Disk):
             vgname = l[2]
         if vgname == self.name:
             return True
-        return False  
+        return False
 
     def has_it(self):
         try:

@@ -69,7 +69,7 @@ class Drbd(Res.Resource):
 
         from xml.etree.ElementTree import XML, fromstring
         tree = fromstring(out)
-        
+
         for res in tree.getiterator('resource'):
             if res.attrib['name'] != self.res:
                 continue
@@ -97,7 +97,7 @@ class Drbd(Res.Resource):
 
         from xml.etree.ElementTree import XML, fromstring
         tree = fromstring(out)
-        
+
         for res in tree.getiterator('resource'):
             if res.attrib['name'] != self.res:
                 continue

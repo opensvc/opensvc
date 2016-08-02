@@ -13,7 +13,7 @@ OPEN LVs:           10                       QUORUM:         2 (Enabled)
 TOTAL PVs:          1                        VG DESCRIPTORS: 2
 STALE PVs:          0                        STALE PPs:      0
 ACTIVE PVs:         1                        AUTO ON:        yes
-MAX PPs per VG:     32512                                     
+MAX PPs per VG:     32512
 MAX PPs per PV:     1016                     MAX PVs:        32
 LTG size (Dynamic): 256 kilobyte(s)          AUTO SYNC:      no
 HOT SPARE:          no                       BB POLICY:      relocatable

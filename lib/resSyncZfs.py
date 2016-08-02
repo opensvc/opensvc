@@ -142,7 +142,7 @@ class SyncZfs(resSync.Sync):
         self.sync_update()
 
     def zfs_send_incremental(self, node):
-        if self.recursive :  
+        if self.recursive:
             send_cmd = ['zfs', 'send', '-R', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
         else:
@@ -166,7 +166,7 @@ class SyncZfs(resSync.Sync):
             self.log.info(buff[0])
 
     def zfs_send_initial(self, node=None):
-        if self.recursive :  
+        if self.recursive:
             send_cmd = ['zfs', 'send', '-R', self.src_snap_tosend]
         else:
             send_cmd = ['zfs', 'send', self.src_snap_tosend]

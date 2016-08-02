@@ -40,7 +40,7 @@ class check(checks.check):
         for svc in self.svcs:
             for rs in svc.get_res_sets('container'):
                 for r in rs.resources:
-                    if  r.type == "container.zone": 
+                    if  r.type == "container.zone":
                         zp = self.get_zonepath(r.name)
                         if zp is not None and zp == mnt:
                             return svc.svcname

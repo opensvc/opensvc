@@ -114,7 +114,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         except:
             self.r.log.error("can not get container hostname")
             raise ex.excError
-    
+
         if h != self.vm_name:
             self.r.log.info("container hostname is not %s"%self.vm_name)
             return False

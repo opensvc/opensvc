@@ -202,7 +202,7 @@ class SyncBtrfs(resSync.Sync):
             self.push_statefile(n)
 
     def btrfs_send_incremental(self, node):
-        if self.recursive :  
+        if self.recursive:
             send_cmd = ['btrfs', 'send', '-R',
                         '-c', self.src_snap_sent,
                         '-p', self.src_snap_sent,
@@ -230,7 +230,7 @@ class SyncBtrfs(resSync.Sync):
             self.log.info(buff[0])
 
     def btrfs_send_initial(self, node=None):
-        if self.recursive :  
+        if self.recursive:
             send_cmd = ['btrfs', 'send', '-R', self.src_snap_tosend]
         else:
             send_cmd = ['btrfs', 'send', self.src_snap_tosend]
@@ -323,7 +323,7 @@ class SyncBtrfs(resSync.Sync):
             self.dst_btrfs[node].subvol_delete(subvols)
         except rcBtrfs.ExecError:
             raise ex.excError()
-            
+
     def install_dst(self, node=None):
         if node is None:
             return

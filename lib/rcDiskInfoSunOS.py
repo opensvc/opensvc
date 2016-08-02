@@ -108,7 +108,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         for e in lines:
             if "/dev/" not in e:
                 continue
-            
+
             dev = e.strip()
             self.scan_dev(dev)
 

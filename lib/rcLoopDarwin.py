@@ -31,5 +31,5 @@ def file_to_loop(f):
                         devs.append(diskdevice)
                     else:
                         return []
-    
+
     return devs

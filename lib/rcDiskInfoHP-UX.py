@@ -43,9 +43,9 @@ class diskInfo(rcDiskInfo.diskInfo):
         self.ioscan = []
         """
         virtbus:wsio:T:T:F:1:13:10:disk:esdisk:64000/0xfa00/0xa:0 0 4 50 0 0 0 0 51 248 164 14 250 83 253 237 :18:root.ext_virtroot.esvroot.esdisk:esdisk:CLAIMED:DEVICE:EMC     SYMMETRIX:-1:online
-                      /dev/disk/disk17            /dev/disk/disk17_p3         /dev/rdisk/disk17_p1      
-                      /dev/disk/disk17_p1         /dev/pt/x64lmwbieb9_system  /dev/rdisk/disk17_p2      
-                      /dev/disk/disk17_p2         /dev/rdisk/disk17           /dev/rdisk/disk17_p3      
+                      /dev/disk/disk17            /dev/disk/disk17_p3         /dev/rdisk/disk17_p1
+                      /dev/disk/disk17_p1         /dev/pt/x64lmwbieb9_system  /dev/rdisk/disk17_p2
+                      /dev/disk/disk17_p2         /dev/rdisk/disk17           /dev/rdisk/disk17_p3
         """
         for line in out.split('\n'):
             if not line.startswith(' ') and not line.startswith('\t') and len(line) > 0:
@@ -145,7 +145,7 @@ class diskInfo(rcDiskInfo.diskInfo):
     def scanscsi(self):
         ioscan_before = self.load_ioscan()
         disks_before = map(lambda x: x['devname'], ioscan_before)
-        
+
         cmd = ['/usr/sbin/ioscan', '-fnC', 'disk']
         out, err, ret = justcall(cmd)
         if ret != 0:

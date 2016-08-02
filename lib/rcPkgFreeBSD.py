@@ -19,4 +19,4 @@ def listpkg():
     return lines
 
 def listpatch():
-    return [] 
+    return []

@@ -70,7 +70,7 @@ class Mount(Res.Mount):
                            subset=subset)
         self.fsck_h = {
             'vxfs': {'bin': 'fsck', 'cmd': ['fsck', '-F', 'vxfs', '-y', self.device]},
-        } 
+        }
 
     def is_up(self):
         return rcMounts.Mounts().has_mount(self.device, self.mountPoint)

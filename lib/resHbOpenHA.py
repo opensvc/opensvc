@@ -166,7 +166,7 @@ class Hb(resHb.Hb):
         h = {}
         for d in daemons:
             h[d] = 1
-        # ckecking running daemons 
+        # ckecking running daemons
         lines = [ l for l in out.split('\n') if "heart" in l or "nmond" in l ]
         if self.log.isEnabledFor(logging.DEBUG):
             for line in lines:
@@ -414,7 +414,7 @@ class Hb(resHb.Hb):
             do_remote = False
             if ret != 0:
                 raise ex.excError(err)
-            
+
         if local_status in ('frozen_stop', 'start_ready'):
             self.service_action("unfreeze")
         elif local_status == 'stopped':
@@ -424,7 +424,7 @@ class Hb(resHb.Hb):
 
         self.wait_for_state(['starting', 'started', 'start_failed'])
         self.thaw()
-        
+
         raise ex.excEndAction("heartbeat actions done")
 
     def stop(self):
