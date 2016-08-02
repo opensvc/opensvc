@@ -1904,7 +1904,8 @@ class KeywordDiskType(Keyword):
                   keyword="type",
                   order=9,
                   required=False,
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'amazon', 'gce'],
+                  default="vg",
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -2013,7 +2014,7 @@ class KeywordDiskVgname(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lvm",
+                  rtype=["lvm", "vg"],
                   keyword="vgname",
                   order=10,
                   required=True,
@@ -2025,7 +2026,7 @@ class KeywordDiskOptions(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lvm",
+                  rtype=["lvm", "vg"],
                   keyword="options",
                   default="",
                   required=False,
@@ -2207,7 +2208,7 @@ class KeywordDiskDsf(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lvm",
+                  rtype=["lvm", "vg"],
                   keyword="dsf",
                   candidates=(True, False),
                   default=True,
@@ -2230,7 +2231,7 @@ class KeywordDiskPvs(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lvm",
+                  rtype=["lvm", "vg"],
                   keyword="pvs",
                   required=True,
                   text="The list of paths to the physical volumes of the volume group.",
