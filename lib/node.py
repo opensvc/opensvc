@@ -1397,7 +1397,7 @@ class Node(Svc, Freezer, Scheduler):
         except ImportError:
             import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
-        config.read("/opt/opensvc/etc/node.conf")
+        config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
         self.collector_api_cache = data
         return self.collector_api_cache
@@ -1410,7 +1410,7 @@ class Node(Svc, Freezer, Scheduler):
         except ImportError:
             import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
-        config.read("/opt/opensvc/etc/node.conf")
+        config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         password = config.get("node", "uuid")
         return username, password
 
