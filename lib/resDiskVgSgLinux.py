@@ -1,6 +1,6 @@
-Res = __import__("resVgHP-UX")
+Res = __import__("resDiskVgLinux")
 
-class Vg(Res.Vg):
+class Disk(Res.Disk):
 
     def start(self):
         return 0

@@ -7,8 +7,8 @@ import rcStatus
 import rcExceptions as exc
 from rcGlobalEnv import rcEnv
 
-class Dg(Res.Resource):
-    """ basic Dg resource, must be extend for LVM / Veritas / ZFS
+class Disk(Res.Resource):
+    """ basic disk resource, must be extended for LVM, Veritas, ZFS, ...
     """
     def __init__(self,
                  rid=None,
@@ -80,11 +80,11 @@ class Dg(Res.Resource):
         return d
 
 if __name__ == "__main__":
-    for c in (Dg,) :
+    for c in (Disk,) :
         help(c)
 
-    print("""d=Dg("aGenericDg")""")
-    d=Dg("aGenericDg")
+    print("""d=Disk("aGenericDisk")""")
+    d=Disk("aGenericDisk")
     print("show d", d)
     print("""d.do_action("start")""")
     d.do_action("start")

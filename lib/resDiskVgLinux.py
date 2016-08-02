@@ -1,13 +1,13 @@
 import re
 import os
 import rcExceptions as ex
-import resDg
+import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
 from rcUtilities import which, justcall
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -21,7 +21,7 @@ class Vg(resDg.Dg):
                  subset=None):
         self.label = "vg "+name
         self.tag = rcEnv.nodename
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
@@ -241,7 +241,7 @@ class Vg(resDg.Dg):
         return self.disks
 
     def provision(self):
-        m = __import__("provVgLinux")
-        prov = getattr(m, "ProvisioningVg")(self)
+        m = __import__("provDiskVgLinux")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 

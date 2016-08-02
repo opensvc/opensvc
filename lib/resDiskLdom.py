@@ -1,11 +1,11 @@
 import os
 import rcExceptions as ex
 import rcStatus
-resVg = __import__("resDg")
+m = __import__("resDisk")
 from subprocess import *
 import re
 
-class Vg(resVg.Dg):
+class Disk(m.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -19,7 +19,7 @@ class Vg(resVg.Dg):
                  subset=None):
         self.label = "vmdg "+str(name)
         self.container_id = container_id
-        resVg.Dg.__init__(self,
+        m.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',

@@ -124,8 +124,8 @@ class SvcVcs(svc.Svc):
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'lv#vcs%d'%self.n_lv
-        m = __import__("resLvVcs"+rcEnv.sysname)
-        r = m.Lv(rid, vgname, lvname, disabled=disabled, monitor=monitor)
+        m = __import__("resDiskLvVcs"+rcEnv.sysname)
+        r = m.Disk(rid, vgname, lvname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -134,8 +134,8 @@ class SvcVcs(svc.Svc):
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'vg#vcs%d'%self.n_vg
-        m = __import__("resVgVcs"+rcEnv.sysname)
-        r = m.Vg(rid, vgname, disabled=disabled, monitor=monitor)
+        m = __import__("resDiskVgVcs"+rcEnv.sysname)
+        r = m.Disk(rid, vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -144,8 +144,8 @@ class SvcVcs(svc.Svc):
         disabled = True if self.get_res_val(name, 'Enabled') == "0" else False
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'vg#vcs%d'%self.n_vg
-        m = __import__("resVgVcs"+rcEnv.sysname)
-        r = m.Vg(rid, vgname, disabled=disabled, monitor=monitor)
+        m = __import__("resDiskVgVcs"+rcEnv.sysname)
+        r = m.Disk(rid, vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 

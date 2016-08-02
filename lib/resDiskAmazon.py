@@ -1,13 +1,13 @@
-import resDg
+import resDisk
 import os
 import glob
 import time
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import *
-from resAmazon import Amazon
+from rcAmazon import Amazon
 
-class Vg(resDg.Dg, Amazon):
+class Disk(resDisk.Disk, Amazon):
     def __init__(self,
                  rid=None,
                  type="disk.vg",
@@ -22,7 +22,7 @@ class Vg(resDg.Dg, Amazon):
                  restart=0,
                  subset=None):
         
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
                           optional=optional,
@@ -249,7 +249,7 @@ class Vg(resDg.Dg, Amazon):
         return disks
 
     def provision(self):
-        m = __import__("provVgAmazon")
-        prov = getattr(m, "ProvisioningVg")(self)
+        m = __import__("provDiskAmazon")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 

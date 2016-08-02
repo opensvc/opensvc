@@ -83,7 +83,7 @@ class SvcRhcs(svc.Svc):
 
     def load_vg(self, e):
         """
-        r = m.Vg(rid, name)
+        r = m.Disk(rid, name)
         self += r
         r.monitor = True
         self.n_vg += 1

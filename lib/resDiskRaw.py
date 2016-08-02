@@ -1,4 +1,4 @@
-import resDg
+import resDisk
 import os
 import rcStatus
 import re
@@ -10,7 +10,7 @@ import glob
 import rcExceptions as ex
 from rcUtilities import which
 
-class Disk(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  devs=set([]),
@@ -27,7 +27,7 @@ class Disk(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = "raw"
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name="raw",
                           type='disk.raw',

@@ -1,8 +1,8 @@
-import resDg
+import resDisk
 import re
 from rcUtilities import qcall
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     """ basic Veritas Volume group resource
     """
     def __init__(self,
@@ -17,7 +17,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = "vg "+str(name)
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
@@ -113,14 +113,3 @@ class Vg(resDg.Dg):
 
         return disks
 
-if __name__ == "__main__":
-    for c in (Pool,) :
-        help(c)
-
-    print("""p=Vg("vzone1vg")""")
-    p=Pool("vzone1vg")
-    print("show p", p)
-    print("""p.do_action("start")""")
-    p.do_action("start")
-    print("""p.do_action("stop")""")
-    p.do_action("stop")

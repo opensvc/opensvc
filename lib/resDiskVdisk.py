@@ -6,7 +6,7 @@ import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
-class Vdisk(Res.Resource):
+class Disk(Res.Resource):
     def __init__(self,
                  rid=None,
                  name=None,

@@ -1,4 +1,5 @@
 from provisioning import Provisioning
+from svcBuilder import conf_get_string_scope
 import os
 import json
 import rcExceptions as ex
@@ -6,33 +7,41 @@ from stat import *
 from rcUtilities import justcall
 import glob
 
-class ProvisioningVg(Provisioning):
+class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
-        self.pvs = r.svc.config.get(self.r.rid, 'pvs')
-        self.pvs = self.pvs.split()
-        try:
-            self.options = r.svc.config.get(self.r.rid, 'options').split()
-        except:
-            self.options = []
-        l = []
-        for pv in self.pvs:
-            l += glob.glob(pv)
-        self.pvs = l
 
     def provisioner(self):
         if self.r.has_it():
             self.r.log.info("already provisioned")
             return
 
+        self.pvs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "pvs")
+        self.pvs = self.pvs.split()
+        l = []
+        for pv in self.pvs:
+            _l = glob.glob(pv)
+            self.r.log.info("expand %s to %s" % (pv, ', '.join(_l)))
+            l += _l
+        self.pvs = l
+
         err = False
         for i, pv in enumerate(self.pvs):
+            pv = os.path.realpath(pv)
             if not os.path.exists(pv):
                 self.r.log.error("pv %s does not exist"%pv)
                 err |= True
             mode = os.stat(pv)[ST_MODE]
             if S_ISBLK(mode):
                 continue
+            elif S_ISREG(mode):
+                cmd = ['losetup', '-j', pv]
+                out, err, ret = justcall(cmd)
+                if ret != 0 or not out.startswith('/dev/loop'):
+                    self.r.log.error("pv %s a regular file but not a loop"%pv)
+                    err |= True
+                    continue
+                self.pvs[i] = out.split(':')[0]
             else:
                 self.r.log.error("pv %s is not a block device nor a loop file"%pv)
                 err |= True
@@ -40,23 +49,19 @@ class ProvisioningVg(Provisioning):
             raise ex.excError
 
         for pv in self.pvs:
-            pv = pv.replace('/disk/', '/rdisk/')
             cmd = ['pvcreate', '-f', pv]
             ret, out, err = self.r.vcall(cmd)
             if ret != 0:
                 raise ex.excError
 
-        pvs = []
-        for pv in self.pvs:
-            pvs.append(pv.replace('/rdisk/', '/disk/'))
-        cmd = ['vgcreate']
-        if len(self.options) > 0:
-            cmd += self.options
-        cmd += [self.r.name] + pvs
+        if len(self.pvs) == 0:
+            raise ex.excError("no pvs specified")
+
+        cmd = ['vgcreate', self.r.name] + self.pvs
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-        self.remove_keywords(["pvs", "options"])
+        self.remove_keywords(["pvs"])
         self.r.log.info("provisioned")
         return True

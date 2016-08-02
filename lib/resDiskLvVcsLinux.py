@@ -2,7 +2,7 @@ import resources as Res
 import rcStatus
 import rcExceptions as ex
 
-class Lv(Res.Resource):
+class Disk(Res.Resource):
     def __init__(self,
                  rid=None,
                  vgname=None,

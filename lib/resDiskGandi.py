@@ -1,4 +1,4 @@
-import resDg
+import resDisk
 import os
 import rcStatus
 import re
@@ -8,7 +8,7 @@ import stat
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -25,7 +25,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = "gandi volume %s"%str(name)
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name="gandi",
                           type='disk.gandi',

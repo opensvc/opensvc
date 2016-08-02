@@ -23,12 +23,12 @@ class ProvisioningFs(Provisioning):
 
     def provision_dev(self):
         if rcEnv.sysname == 'Linux':
-            p = __import__("provLvLinux")
+            p = __import__("provDiskLvLinux")
         elif rcEnv.sysname == 'HP-UX':
-            p = __import__("provLvHP-UX")
+            p = __import__("provDiskLvHP-UX")
         else:
             return
-        p.ProvisioningLv(self.r).provision_lv()
+        p.ProvisioningDisk(self.r).provisioner()
            
     def provisioner_fs(self):
         for i in ('dev', 'mnt'):

@@ -1,4 +1,4 @@
-import resDg
+import resDisk
 import os
 import json
 import rcStatus
@@ -6,7 +6,7 @@ import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import justcall
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  type="disk.gce",
@@ -20,7 +20,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
                           optional=optional,
@@ -186,7 +186,7 @@ class Vg(resDg.Dg):
         return set([d["deviceName"] for d in attached if d["name"] in self.names])
 
     def provision(self):
-        m = __import__("provVgGce")
-        prov = getattr(m, "ProvisioningVg")(self)
+        m = __import__("provDiskGce")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 

@@ -1,12 +1,12 @@
 from rcGlobalEnv import rcEnv
-import resDg
+import resDisk
 from rcUtilities import justcall
 import os
 import rcExceptions as ex
 
 import re
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -19,7 +19,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = 'fdmn ' + name
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
@@ -112,5 +112,5 @@ class Vg(resDg.Dg):
         return self.disks
 
 if __name__ == "__main__":
-    p=Vg(name="dom1")
+    p=Disk(name="dom1")
     print p._disklist()

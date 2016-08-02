@@ -5,7 +5,7 @@ from svcBuilder import conf_get_string_scope, conf_get_int_scope
 from rcUtilities import convert_size
 from subprocess import *
 
-class ProvisioningMd(Provisioning):
+class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

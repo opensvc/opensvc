@@ -3,7 +3,7 @@ import os
 import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-from resAmazon import Amazon
+from rcAmazon import Amazon
 from rcUtilities import getaddr
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)

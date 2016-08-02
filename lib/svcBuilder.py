@@ -609,8 +609,8 @@ def add_md(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
-    mod = __import__('resVgMdLinux')
-    r = mod.Md(**kwargs)
+    m = __import__('resDiskMdLinux')
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -661,8 +661,8 @@ def add_vdisk(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
-    vdisk = __import__('resVdisk')
-    r = vdisk.Vdisk(**kwargs)
+    m = __import__('resDiskVdisk')
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -818,9 +818,9 @@ def add_disk_gce(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
 
-    vg = __import__('resVgGce')
+    m = __import__('resDiskGce')
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
@@ -841,9 +841,9 @@ def add_disk_amazon(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
 
-    vg = __import__('resVgAmazon')
+    m = __import__('resDiskAmazon')
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
@@ -880,12 +880,12 @@ def add_rados(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        vg = __import__('resVgRados'+rcEnv.sysname)
+        m = __import__('resDiskRados'+rcEnv.sysname)
     except ImportError:
-        svc.log.error("vg type rados is not implemented")
+        svc.log.error("disk type rados is not implemented")
         return
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
@@ -896,14 +896,14 @@ def add_rados(svc, conf, s):
     kwargs["rid"] = kwargs["rid"]+"lock"
     kwargs["lock"] = lock
     kwargs["lock_shared_tag"] = lock_shared_tag
-    r = vg.VgLock(**kwargs)
+    r = m.DiskLock(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
 
 def add_raw(svc, conf, s):
     kwargs = {}
-    _type = "Raw"+rcEnv.sysname
+    disk_type = "Raw"+rcEnv.sysname
     try:
         zone = conf_get_string_scope(svc, conf, s, 'zone')
     except:
@@ -950,9 +950,9 @@ def add_raw(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        m = __import__('resDisk'+_type)
+        m = __import__('resDisk'+disk_type)
     except ImportError:
-        svc.log.error("disk type %s driver is not implemented"%_type)
+        svc.log.error("disk type %s driver is not implemented"%disk_type)
         return
 
     r = m.Disk(**kwargs)
@@ -966,7 +966,7 @@ def add_raw(svc, conf, s):
     add_scsireserv(svc, r, conf, s)
 
 def add_gandi(svc, conf, s):
-    vgtype = "Gandi"
+    disk_type = "Gandi"
     kwargs = {}
     try:
         kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
@@ -1005,58 +1005,58 @@ def add_gandi(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        vg = __import__('resVg'+vgtype)
+        m = __import__('resDisk'+disk_type)
     except ImportError:
-        svc.log.error("vg type %s is not implemented"%vgtype)
+        svc.log.error("disk type %s is not implemented"%disk_type)
         return
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_vg_compat(svc, conf, s):
+def add_disk_compat(svc, conf, s):
     try:
-        vgtype = conf_get_string_scope(svc, conf, s, 'type')
-        if len(vgtype) >= 2:
-            vgtype = vgtype[0].upper() + vgtype[1:].lower()
+        disk_type = conf_get_string_scope(svc, conf, s, 'type')
+        if len(disk_type) >= 2:
+            disk_type = disk_type[0].upper() + disk_type[1:].lower()
     except ex.OptNotFound:
-        vgtype = rcEnv.sysname
+        disk_type = rcEnv.sysname
 
-    if vgtype == 'Drbd':
+    if disk_type == 'Drbd':
         add_drbd(svc, conf, s)
         return
-    if vgtype == 'Vdisk':
+    if disk_type == 'Vdisk':
         add_vdisk(svc, conf, s)
         return
-    if vgtype == 'Vmdg':
+    if disk_type == 'Vmdg':
         add_vmdg(svc, conf, s)
         return
-    if vgtype == 'Pool':
+    if disk_type == 'Pool':
         add_pool(svc, conf, s)
         return
-    if vgtype == 'Loop':
+    if disk_type == 'Loop':
         add_loop(svc, conf, s)
         return
-    if vgtype == 'Md':
+    if disk_type == 'Md':
         add_md(svc, conf, s)
         return
-    if vgtype == 'Gce':
+    if disk_type == 'Gce':
         add_disk_gce(svc, conf, s)
         return
-    if vgtype == 'Amazon':
+    if disk_type == 'Amazon':
         add_disk_amazon(svc, conf, s)
         return
-    if vgtype == 'Rados':
+    if disk_type == 'Rados':
         add_rados(svc, conf, s)
         return
-    if vgtype == 'Raw':
+    if disk_type == 'Raw':
         add_raw(svc, conf, s)
         return
-    if vgtype == 'Gandi':
+    if disk_type == 'Gandi':
         add_gandi(svc, conf, s)
         return
-    if vgtype == 'Veritas':
+    if disk_type == 'Veritas':
         add_veritas(svc, conf, s)
         return
 
@@ -1065,6 +1065,7 @@ def add_vg_compat(svc, conf, s):
 def add_veritas(svc, conf, s):
     kwargs = {}
     try:
+        # deprecated keyword 'vgname'
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
     except ex.OptNotFound:
         pass
@@ -1084,24 +1085,24 @@ def add_veritas(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        vg = __import__('resVgVeritas')
+        m = __import__('resDiskVeritas')
     except ImportError:
-        svc.log.error("vg type veritas is not implemented")
+        svc.log.error("disk type veritas is not implemented")
         return
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
 def add_vg(svc, conf, s):
     try:
-        add_vg_compat(svc, conf, s)
+        add_disk_compat(svc, conf, s)
         return
     except ex.OptNotFound:
         pass
 
-    vgtype = rcEnv.sysname
+    disk_type = rcEnv.sysname
     kwargs = {}
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
@@ -1127,66 +1128,66 @@ def add_vg(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        vg = __import__('resVg'+vgtype)
+        m = __import__('resDiskVg'+disk_type)
     except ImportError:
-        svc.log.error("vg type %s is not implemented"%vgtype)
+        svc.log.error("disk type %s is not implemented"%disk_type)
         return
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
 def add_disk(svc, conf, s):
-    """Parse the configuration file and add a vg object for each [vg#n]
-    section. Vg objects are stored in a list in the service object.
+    """Parse the configuration file and add a disk object for each [disk#n]
+    section. Disk objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        vgtype = conf_get_string_scope(svc, conf, s, 'type')
-        if len(vgtype) >= 2:
-            vgtype = vgtype[0].upper() + vgtype[1:].lower()
+        disk_type = conf_get_string_scope(svc, conf, s, 'type')
+        if len(disk_type) >= 2:
+            disk_type = disk_type[0].upper() + disk_type[1:].lower()
     except ex.OptNotFound:
-        vgtype = rcEnv.sysname
+        disk_type = rcEnv.sysname
 
-    if vgtype == 'Drbd':
+    if disk_type == 'Drbd':
         add_drbd(svc, conf, s)
         return
-    if vgtype == 'Vdisk':
+    if disk_type == 'Vdisk':
         add_vdisk(svc, conf, s)
         return
-    if vgtype == 'Vmdg':
+    if disk_type == 'Vmdg':
         add_vmdg(svc, conf, s)
         return
-    if vgtype == 'Pool':
+    if disk_type == 'Pool':
         add_pool(svc, conf, s)
         return
-    if vgtype == 'Loop':
+    if disk_type == 'Loop':
         add_loop(svc, conf, s)
         return
-    if vgtype == 'Md':
+    if disk_type == 'Md':
         add_md(svc, conf, s)
         return
-    if vgtype == 'Gce':
+    if disk_type == 'Gce':
         add_disk_gce(svc, conf, s)
         return
-    if vgtype == 'Amazon':
+    if disk_type == 'Amazon':
         add_disk_amazon(svc, conf, s)
         return
-    if vgtype == 'Rados':
+    if disk_type == 'Rados':
         add_rados(svc, conf, s)
         return
-    if vgtype == 'Raw':
+    if disk_type == 'Raw':
         add_raw(svc, conf, s)
         return
-    if vgtype == 'Gandi':
+    if disk_type == 'Gandi':
         add_gandi(svc, conf, s)
         return
-    if vgtype == 'Veritas':
+    if disk_type == 'Veritas':
         add_veritas(svc, conf, s)
         return
-    if vgtype == 'Lvm' or vgtype == rcEnv.sysname:
+    if disk_type == 'Lvm' or disk_type == 'Vg' disk_type == rcEnv.sysname:
         add_vg(svc, conf, s)
         return
 
@@ -1210,7 +1211,7 @@ def add_vmdg(svc, conf, s):
         return
 
     if container_type == 'ldom':
-        vg = __import__('resVgLdom')
+        m = __import__('resDiskLdom')
     else:
         return
 
@@ -1223,7 +1224,7 @@ def add_vmdg(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
 
-    r = vg.Vg(**kwargs)
+    r = m.Disk(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1245,7 +1246,7 @@ def add_pool(svc, conf, s):
     except ex.OptNotFound:
         zone = None
 
-    pool = __import__('resVgZfs')
+    m = __import__('resDiskZfs')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)
@@ -1256,7 +1257,7 @@ def add_pool(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
 
-    r = pool.Pool(**kwargs)
+    r = m.Disk(**kwargs)
 
     if zone is not None:
         r.tags.add('zone')
@@ -1294,7 +1295,7 @@ def add_share_nfs(svc, conf, s):
         return
 
     try:
-        share = __import__('resShareNfs'+rcEnv.sysname)
+        m = __import__('resShareNfs'+rcEnv.sysname)
     except ImportError:
         svc.log.error("resShareNfs%s is not implemented"%rcEnv.sysname)
         return
@@ -1308,7 +1309,7 @@ def add_share_nfs(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
 
-    r = share.Share(**kwargs)
+    r = m.Share(**kwargs)
 
     add_triggers(svc, r, conf, s)
     svc += r

@@ -6,11 +6,11 @@ import os
 import rcExceptions as ex
 import time
 
-class ProvisioningLv(Provisioning):
+class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 
-    def provision_lv(self):
+    def provisioner(self):
         if not which('vgdisplay'):
             self.r.log.error("vgdisplay command not found")
             raise ex.excError

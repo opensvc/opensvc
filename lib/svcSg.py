@@ -212,13 +212,13 @@ class SvcSg(svc.Svc):
             type = "VxVm"
         n = self.n_vg
         rid = 'vg#sg%d'%n
-        modname = "resVg"+type+"Sg"+rcEnv.sysname
+        modname = "resDiskVg"+type+"Sg"+rcEnv.sysname
         try:
             m = __import__(modname)
         except ImportError:
             self.log.error("module %s is not implemented"%modname)
             return
-        r = m.Vg(rid, name)
+        r = m.Disk(rid, name)
         if 'service' in self.cmviewcl:
            for data in self.cmviewcl['service'].values():
                if 'command' not in data:

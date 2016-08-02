@@ -3,7 +3,7 @@ import rcExceptions as ex
 from rcUtilities import convert_size
 from svcBuilder import conf_get_string_scope, conf_get_int_scope
 
-class ProvisioningVg(Provisioning):
+class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

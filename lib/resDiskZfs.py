@@ -1,5 +1,5 @@
 from rcGlobalEnv import rcEnv
-import resDg
+import resDisk
 from rcUtilities import qcall
 import os
 import rcExceptions as ex
@@ -7,7 +7,7 @@ import glob
 
 import re
 
-class Pool(resDg.Dg):
+class Disk(resDisk.Disk):
     """ basic pool resource
     """
     def __init__(self,
@@ -22,7 +22,7 @@ class Pool(resDg.Dg):
                  restart=0,
                  subset=None):
         self.label = 'pool ' + name
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.zpool',
@@ -176,12 +176,11 @@ class Pool(resDg.Dg):
         return self.disks
 
 if __name__ == "__main__":
-    for c in (Pool,) :
-        help(c)
+    help(Disk)
 
     # return cache if initialized
-    print("""p=Pool("svczfs1")""")
-    p=Pool("svczfs1")
+    print("""p=Disk("svczfs1")""")
+    p=Disk("svczfs1")
     print("show p", p)
     print("""p.do_action("start")""")
     p.do_action("start")

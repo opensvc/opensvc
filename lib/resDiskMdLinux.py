@@ -3,14 +3,14 @@ import os
 import glob
 import time
 import rcExceptions as ex
-import resDg
+import resDisk
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
 from rcUtilities import which, justcall
 
-class Md(resDg.Dg):
+class Disk(resDisk.Disk):
     startup_timeout = 10
 
     def __init__(self,
@@ -28,7 +28,7 @@ class Md(resDg.Dg):
         self.uuid = uuid
         self.shared = shared
         self.mdadm = "/sbin/mdadm"
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=uuid,
                           type='disk.md',
@@ -176,7 +176,7 @@ class Md(resDg.Dg):
         return False
 
     def _status(self, verbose=False):
-        s = resDg.Dg._status(self, verbose=verbose)
+        s = resDisk.Disk._status(self, verbose=verbose)
         if s in (rcStatus.STDBY_DOWN, rcStatus.DOWN):
              if self.down_state_alerts() == rcStatus.WARN:
                  return rcStatus.WARN
@@ -272,7 +272,7 @@ class Md(resDg.Dg):
         return self.disks
 
     def provision(self):
-        m = __import__("provVgMdLinux")
-        prov = getattr(m, "ProvisioningMd")(self)
+        m = __import__("provDiskMdLinux")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 

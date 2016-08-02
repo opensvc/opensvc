@@ -1,8 +1,8 @@
-Res = __import__("resVgLinux")
+Res = __import__("resDiskVgLinux")
 import rcStatus
 import rcExceptions as ex
 
-class Vg(Res.Vg):
+class Disk(Res.Disk):
 
     def start(self):
         pass

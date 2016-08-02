@@ -1,12 +1,12 @@
 import re
 import os
 import rcExceptions as ex
-import resDg
+import resDisk
 from subprocess import *
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -21,7 +21,7 @@ class Vg(resDg.Dg):
                  subset=None):
         self.label = "vg "+name
         self.dsf = dsf
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
@@ -373,8 +373,8 @@ class Vg(resDg.Dg):
         lock.unlock(self.lockfd)
 
     def provision(self):
-        m = __import__("provVgHP-UX")
-        prov = getattr(m, "ProvisioningVg")(self)
+        m = __import__("provDiskVgHP-UX")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 
 

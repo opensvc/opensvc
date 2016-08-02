@@ -1,5 +1,5 @@
 import rcExceptions as ex
-import resDg
+import resDisk
 import json
 import os
 import logging
@@ -11,7 +11,7 @@ from subprocess import *
 
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -26,7 +26,7 @@ class Vg(resDg.Dg):
                  subset=None):
         self.label = "vg "+name
         self.dsf = dsf
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',

@@ -1,4 +1,4 @@
-import resDg
+import resDisk
 import os
 import rcStatus
 import rcExceptions as ex
@@ -6,7 +6,7 @@ import json
 from rcGlobalEnv import *
 from rcUtilities import justcall
 
-class Vg(resDg.Dg):
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  type="disk.vg",
@@ -21,7 +21,7 @@ class Vg(resDg.Dg):
                  restart=0,
                  subset=None):
         
-        resDg.Dg.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
                           optional=optional,
@@ -188,11 +188,11 @@ class Vg(resDg.Dg):
         return l
 
     def provision(self):
-        m = __import__("provVgRadosLinux")
-        prov = getattr(m, "ProvisioningVg")(self)
+        m = __import__("provDiskRadosLinux")
+        prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 
-class VgLock(Vg):
+class DiskLock(Disk):
     def __init__(self,
                  rid=None,
                  type="disk.lock",
@@ -212,7 +212,7 @@ class VgLock(Vg):
         self.lock = lock
         self.lock_shared_tag = lock_shared_tag
 
-        Vg.__init__(self,
+        Disk.__init__(self,
                     rid=rid,
                     type=type,
                     images=images,
@@ -231,7 +231,7 @@ class VgLock(Vg):
 
 
     def fmt_label(self):
-        return str(self.lock) + " lock on " + Vg.fmt_label(self)
+        return str(self.lock) + " lock on " + Disk.fmt_label(self)
 
     def locklist(self, image):
         cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]

@@ -2,13 +2,13 @@ import re
 import os
 import rcExceptions as ex
 import rcStatus
-resVg = __import__("resVgHP-UX")
+resVg = __import__("resDiskVgHP-UX")
 from subprocess import *
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 from subprocess import *
 
-class Vg(resVg.Vg):
+class Disk(resVg.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -22,7 +22,7 @@ class Vg(resVg.Vg):
                  subset=None):
         self.label = "vmdg "+str(name)
         self.container_name = container_name
-        resVg.Vg.__init__(self,
+        resVg.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
