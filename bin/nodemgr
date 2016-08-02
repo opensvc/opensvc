@@ -119,7 +119,7 @@ def do_symcli_db_file(symcli_db_file):
         return
     os.environ['SYMCLI_DB_FILE'] = symcli_db_file
     os.environ['SYMCLI_OFFLINE'] = '1'
-    
+
 do_symcli_db_file(options.symcli_db_file)
 
 if len(args) is 0:
