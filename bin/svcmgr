@@ -222,19 +222,7 @@ if cmd == 'svcmgr':
     parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
               help="the envfile to use when installing a service")
 
-if cmd == 'allservices':
-    pass
-elif cmd == 'allupservices':
-    build_kwargs["status"] = [rcStatus.UP, rcStatus.WARN]
-elif cmd == 'alldownservices':
-    build_kwargs["status"] = [rcStatus.DOWN]
-elif cmd == 'allprimaryservices':
-    build_kwargs["onlyprimary"] = True
-elif cmd == 'allsecondaryservices':
-    build_kwargs["onlysecondary"] = True
-elif cmd == 'svcmgr':
-    pass
-else:
+if cmd != 'svcmgr':
     svcname = cmd.split('.')
     if len(svcname) > 1 and svcname[-1] == 'cluster':
         cluster = True
@@ -279,23 +267,23 @@ else:
     build_kwargs["minimal"] = False
 
 
-if len(set(["svcnames", "allupservices", "alldownservices", "status", "allprimaryservices", "allsecondaryservices"]) & set(build_kwargs.keys())) == 0:
+if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
     if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
         build_kwargs["svcnames"] = options.parm_svcs.split(',')
 
     if hasattr(options, "parm_status") and options.parm_status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.parm_status.split(",")]
 
-    if hasattr(options, "parm_primary") and options.parm_primary is not None and \
-       hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-        node.close()
-        parser.error("--onlyprimary and --onlysecondary are exclusive")
+if hasattr(options, "parm_primary") and options.parm_primary is not None and \
+   hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+    node.close()
+    parser.error("--onlyprimary and --onlysecondary are exclusive")
 
-    if hasattr(options, "parm_primary") and options.parm_primary is not None:
-        build_kwargs["onlyprimary"] = options.parm_primary
+if hasattr(options, "parm_primary") and options.parm_primary is not None:
+    build_kwargs["onlyprimary"] = options.parm_primary
 
-    if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-        build_kwargs["onlysecondary"] = options.parm_secondary
+if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+    build_kwargs["onlysecondary"] = options.parm_secondary
 
 if action not in ("create", "install"):
     try:
@@ -312,11 +300,6 @@ elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") a
 
 if cmd == 'svcmgr' and len(svcnames) == 0:
     sys.stderr.write("""No service specified. Try:
- allservices
- allupservices
- alldownservices
- allprimaryservices
- allsecondaryservices
  svcmgr -s <svcname>[,<svcname>]
  svcmgr --status <status>[,<status>]
  <svcname>
