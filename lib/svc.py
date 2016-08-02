@@ -163,13 +163,14 @@ class Svc(Resource, Scheduler):
           'push_schedule': '00:00-06:00@361',
           'sync_schedule': '04:00-06:00@121',
           'comp_schedule': '00:00-06:00@361',
-          'mon_schedule': '@9',
+          'status_schedule': '@9',
+          'monitor_schedule': '@1',
           'no_schedule': '',
         }
         self.scheduler_actions = {
          "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
          "push_env": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_env", schedule_option="push_schedule"),
-         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="mon_schedule"),
+         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="status_schedule"),
         }
 
     def __cmp__(self, other):
@@ -193,6 +194,9 @@ class Svc(Resource, Scheduler):
                 traceback.print_exc()
 
     def post_build(self):
+        if self.ha and not "flex" in self.clustertype:
+            self.scheduler_actions["resource_monitor_auto"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_resource_monitor", schedule_option="monitor_schedule")
+
         syncs = []
         for r in self.get_resources("sync"):
             syncs += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_syncall_"+r.rid, schedule_option="sync_schedule")]
@@ -927,6 +931,11 @@ class Svc(Resource, Scheduler):
                 else:
                     rset_status[rs.type] = rcStatus._merge(rset_status[rs.type], rs.status())
         return rset_status
+
+    def resource_monitor_auto(self):
+        if self.skip_action("resource_monitor_auto"):
+            return
+        self.resource_monitor()
 
     def resource_monitor(self):
         self.options.refresh = True

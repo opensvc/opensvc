@@ -10,7 +10,7 @@ import random
 from rcGlobalEnv import rcEnv
 
 sched_fmt = "[%s] %-45s %s"
-print_sched_fmt = "%-20s  %-21s  %-24s  %s"
+print_sched_fmt = "%-21s  %-21s  %-24s  %s"
 
 def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     if os.fork() > 0:

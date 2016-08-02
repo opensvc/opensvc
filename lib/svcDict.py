@@ -234,16 +234,28 @@ class KeywordRollback(Keyword):
                   text="If set to False, the default rollback on action error is inhibited, leaving the service in its half-started state."
                 )
 
-class KeywordMonSchedule(Keyword):
+class KeywordStatusSchedule(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="mon_schedule",
+                  keyword="status_schedule",
                   required=False,
                   order=11,
                   default="@10",
                   text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
+class KeywordMonitorSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="monitor_schedule",
+                  required=False,
+                  order=11,
+                  default="@1",
+                  text="The service resource monitor schedule. See usr/share/doc/template.node.conf for the schedule syntax."
                 )
 
 class KeywordPushSchedule(Keyword):
@@ -3485,7 +3497,8 @@ class KeyDict(KeywordStore):
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()
-        self += KeywordMonSchedule()
+        self += KeywordStatusSchedule()
+        self += KeywordMonitorSchedule()
         self += KeywordPushSchedule()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
