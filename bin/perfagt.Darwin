@@ -5,7 +5,7 @@ import sys
 import datetime
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
+sys.path = [os.path.join('usr', 'share', 'opensvc', 'lib'), os.path.join(pathsvc, 'lib')] + sys.path
 
 import node
 from rcUtilities import justcall

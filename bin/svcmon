@@ -11,7 +11,7 @@ import platform
 #
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 pathetc = os.path.join(pathsvc, 'etc')
-sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
+sys.path = [os.path.join('usr', 'share', 'opensvc', 'lib'), os.path.join(pathsvc, 'lib')] + sys.path
 prog = os.path.basename(__file__)
 
 import svcBuilder

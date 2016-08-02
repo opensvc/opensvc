@@ -6,7 +6,7 @@ import datetime
 from subprocess import *
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(pathsvc, 'lib'))
+sys.path.append(os.path.join('usr', 'share', 'opensvc', 'lib'), os.path.join(pathsvc, 'lib'))
 
 import node
 from rcUtilities import justcall, is_exe
