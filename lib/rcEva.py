@@ -4,11 +4,7 @@ from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
 import os
 import ConfigParser
-from ecGlobalEnv import rcEnv
-
-pathlib = os.path.dirname(__file__)
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
+from rcGlobalEnv import rcEnv
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
@@ -18,7 +14,7 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
             sssubin = os.path.join(rcEnv.pathbin, "sssu")
         else:
             raise ex.excError("sssu command not found. set 'bin' in auth.conf section.")
-    os.chdir(pathtmp)
+    os.chdir(rcEnv.pathtmp)
     _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
     if array is not None:
@@ -42,7 +38,7 @@ class Evas(object):
         else:
             self.filtering = False
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

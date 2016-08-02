@@ -37,11 +37,10 @@ import rcExceptions as ex
 hostId = __import__('hostid'+rcEnv.sysname)
 hostid = hostId.hostid()
 rcEnv.warned = False
-pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 import logging
 import logging.handlers
-logfile = os.path.join(pathosvc, 'log', 'xmlrpc.log')
+logfile = os.path.join(rcEnv.pathlog, 'xmlrpc.log')
 fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
                                                    maxBytes=5242880,
@@ -148,7 +147,6 @@ class Collector(object):
             import ConfigParser
         except ImportError:
             import configparser as ConfigParser
-        pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
         config = ConfigParser.RawConfigParser()
         config.read(rcEnv.nodeconf)
         if config.has_option('node', 'dbopensvc'):

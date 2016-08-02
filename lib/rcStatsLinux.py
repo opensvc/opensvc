@@ -186,13 +186,12 @@ class StatsProvider(rcStats.StatsProvider):
         return cols, lines
 
     def fs_u(self, d, day, start, end):
-        pathvar = os.path.join(os.path.dirname(__file__), '..', 'var')
         now = datetime.datetime.now()
         _start = datetime.datetime.strptime(start, "%H:%M:%S")
         _start = _start.hour * 3600 + _start.minute * 60 + _start.second
         _end = datetime.datetime.strptime(end, "%H:%M:%S")
         _end = _end.hour * 3600 + _end.minute * 60 + _end.second
-        f = os.path.join(pathvar, 'stats_fs_u.%s' % day.lstrip("0"))
+        f = os.path.join(rcEnv.pathvar, 'stats_fs_u.%s' % day.lstrip("0"))
         cols = ['date',
                 'nodename',
                 'mntpt',

@@ -153,6 +153,7 @@ class rcEnv:
         pathlog = '/var/log/opensvc'
         pathtmp = '/var/tmp/opensvc'
         pathvar = '/var/lib/opensvc'
+        pathdoc = '/usr/share/doc/opensvc'
         pathlock = '/var/lib/opensvc/lock'
         pathcron = '/usr/share/opensvc'
         postinstall = '/usr/share/opensvc/postinstall'
@@ -163,6 +164,7 @@ class rcEnv:
         pathlog = os.path.join(pathsvc, 'log')
         pathtmp = os.path.join(pathsvc, 'tmp')
         pathvar = os.path.join(pathsvc, 'var')
+        pathdoc = os.path.join(pathsvc, 'usr', 'share', 'doc')
         pathlock = os.path.join(pathvar, 'lock')
         pathcron = pathbin
         postinstall = os.path.join(pathbin, 'postinstall')

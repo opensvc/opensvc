@@ -14,7 +14,7 @@ class Ovm(object):
             self.log = logging.getLogger('OVM')
 
         import ConfigParser
-        cf = os.path.join(os.path.dirname(__file__), '..', 'etc', "auth.conf")
+        cf = rcEnv.authconf
         self.conf = ConfigParser.RawConfigParser()
         self.conf.read(cf)
         if not self.conf.has_section("ovm"):

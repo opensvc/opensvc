@@ -15,11 +15,9 @@ except:
 from rcUtilities import justcall
 import rcExceptions as ex
 
-pathosvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-
 import logging
 import logging.handlers
-logfile = os.path.join(pathosvc, 'log', 'cmdworker.log')
+logfile = os.path.join(rcEnv.pathlog, 'cmdworker.log')
 fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
                                                    maxBytes=5242880,

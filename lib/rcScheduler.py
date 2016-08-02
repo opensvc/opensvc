@@ -776,7 +776,7 @@ class Scheduler(object):
         return True
 
     def get_timestamp_f(self, fname):
-        timestamp_f = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'var', fname))
+        timestamp_f = os.path.realpath(os.path.join(rcEnv.pathvar, fname))
         return timestamp_f
 
     def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):

@@ -1,11 +1,12 @@
 import os
 import glob
+from rcGlobalEnv import rcEnv
 
 def dummy():
     return
 
 class Freezer:
-    flag_dir = os.path.join(os.path.dirname(__file__), '..', 'var')
+    flag_dir = rcEnv.pathvar
     base_flag = os.path.join(flag_dir, 'FROZEN')
     flag = base_flag
 
@@ -27,7 +28,7 @@ class Freezer:
     def __init__(self, name=''):
         if len(name) == 0:
             pass
-        elif not os.path.exists(os.path.join(os.path.dirname(__file__), '..', 'etc', name)):
+        elif not os.path.exists(os.path.join(rcEnv.pathetc, name)):
             self.freeze = dummy
             self.thaw = dummy
             self.frozen = dummy

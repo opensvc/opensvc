@@ -6,10 +6,6 @@ import json
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 
-pathlib = os.path.dirname(__file__)
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-
 requests.packages.urllib3.disable_warnings()
 verify = False
 
@@ -23,7 +19,7 @@ class Freenass(object):
         else:
             self.filtering = False
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
