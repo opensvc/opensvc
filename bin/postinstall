@@ -730,6 +730,8 @@ def convert_svclinks():
 def move_var_files_in_subdirs():
     for fpath in glob.glob(os.path.join(pathvar, "last_*")):
         dst = os.path.join(pathvar, "node")
+        if not os.path.exists(dst):
+            os.makedirs(dst)
         fname = os.path.basename(fpath)
         new_fpath = os.path.join(dst, fname)
         logit("move %s to %s" % (fpath, new_fpath))
@@ -739,6 +741,8 @@ def move_var_files_in_subdirs():
         fname = os.path.basename(fpath)
         svcname = fname.split("_last_")[0]
         dst = os.path.join(pathvar, svcname)
+        if not os.path.exists(dst):
+            os.makedirs(dst)
         fname = fname.replace(svcname+"_", "")
         new_fpath = os.path.join(dst, fname)
         logit("move %s to %s" % (fpath, new_fpath))
@@ -747,6 +751,8 @@ def move_var_files_in_subdirs():
     for fpath in glob.glob(os.path.join(pathvar, "*.push")):
         svcname = os.path.basename(fpath).split(".push")[0]
         dst = os.path.join(pathvar, svcname)
+        if not os.path.exists(dst):
+            os.makedirs(dst)
         fname = "last_pushed_env"
         new_fpath = os.path.join(dst, fname)
         logit("move %s to %s" % (fpath, new_fpath))
