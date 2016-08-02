@@ -78,6 +78,7 @@ class Node(Svc, Freezer, Scheduler):
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
+            'cron': 'execute a node scheduler run and a service scheduler run for each installed service',
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
             'scheduler': 'run the node task scheduler',
@@ -1539,6 +1540,13 @@ class Node(Svc, Freezer, Scheduler):
                 resource.setrlimit(resource.RLIMIT_NOFILE, (n, vg))
         except:
             pass
+
+    def cron(self):
+        self.scheduler()
+
+        self.build_services()
+        for s in self.svcs:
+            s.scheduler()
 
 
 if __name__ == "__main__" :

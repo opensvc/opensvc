@@ -195,13 +195,14 @@ def install_cron_unix():
     """
 
     agt = os.path.join(pathbin, 'perfagt.'+sysname)
+    nodemgr = os.path.join(pathbin, 'nodemgr')
     logit("perfagt path <%s>"%agt)
     ce = [{
            'sched': "0,10,20,30,40,50 * * * *",
            'reset_sched': True,
            'user': "",
-           'cmd': "[ -x /opt/opensvc/bin/cron/opensvc ] && /opt/opensvc/bin/cron/opensvc >/dev/null 2>&1",
-           'marker': '/opt/opensvc/bin/cron/opensvc',
+           'cmd': "[ -x "+nodemgr+" ] && "+nodemgr+" cron >/dev/null 2>&1",
+           'marker': nodemgr + ' cron',
            'ok': False
     },{
            'sched': "0,10,20,30,40,50 * * * *",
@@ -211,7 +212,7 @@ def install_cron_unix():
            'marker': agt,
            'ok': False
     }]
-    remove_entries = ['bin/nodemgr compliance check', 'bin/svcmon ']
+    remove_entries = ['bin/nodemgr compliance check', 'bin/svcmon ', 'bin/cron/opensvc']
 
     purge = []
     root_crontab = False
