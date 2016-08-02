@@ -11,9 +11,9 @@ import json
 class SysReport(object):
     def __init__(self, node=None):
         self.todo = [
-          ('INC', '/opt/opensvc/etc/node.conf'),
-          ('INC', '/opt/opensvc/etc/*env'),
-          ('INC', '/opt/opensvc/etc/sysreport.conf.d'),
+          ('INC', os.path.join(rcEnv.pathetc, 'node.conf')),
+          ('INC', os.path.join(rcEnv.pathetc, '*.env')),
+          ('INC', os.path.join(rcEnv.pathetc, 'sysreport.conf.d')),
         ]
 
         self.changed = []
