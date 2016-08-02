@@ -4,13 +4,10 @@ import rcExceptions as ex
 import os
 import ConfigParser
 import uuid
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 def dcscmd(cmd, manager, username, password, dcs=None, conn=None):
     if conn is None:
@@ -46,7 +43,7 @@ class Dcss(object):
         else:
             self.filtering = False
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

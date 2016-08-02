@@ -3,13 +3,10 @@ import rcExceptions as ex
 import os
 import ConfigParser
 import telnetlib
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 def brocadetelnetcmd(cmd, switch, username, password):
     tn = telnetlib.Telnet(switch)
@@ -52,7 +49,7 @@ class Brocades(object):
             self.filtering = True
         else:
             self.filtering = False
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

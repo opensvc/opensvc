@@ -4,6 +4,7 @@ import rcExceptions as ex
 import snap
 import rcAdvfs
 from rcMountsOSF1 import Mounts
+from rcGlobalEnv import rcEnv
 
 class Snap(snap.Snap):
     """Defines a snap object with ZFS
@@ -24,7 +25,7 @@ class Snap(snap.Snap):
             raise ex.syncNotSnapable
         clonefset = fset +'@osvc_sync'
         mountPoint = m.mountPoint
-        snapMountPoint = '/opt/opensvc/tmp/clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mountPoint)
+        snapMountPoint = os.path.join(rcEnv.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mountPoint))
         snapMountPoint = os.path.normpath(snapMountPoint)
         if not os.path.exists(snapMountPoint):
             try:

@@ -4,6 +4,7 @@ from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
 import os
 import ConfigParser
+from ecGlobalEnv import rcEnv
 
 pathlib = os.path.dirname(__file__)
 pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
@@ -13,8 +14,8 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
         if which("sssu"):
             sssubin = "sssu"
-        elif os.path.exists("/opt/opensvc/bin/sssu"):
-            sssubin = "/opt/opensvc/bin/sssu"
+        elif os.path.exists(os.path.join(rcEnv.pathbin, "sssu")):
+            sssubin = os.path.join(rcEnv.pathbin, "sssu")
         else:
             raise ex.excError("sssu command not found. set 'bin' in auth.conf section.")
     os.chdir(pathtmp)

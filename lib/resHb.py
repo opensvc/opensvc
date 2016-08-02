@@ -9,8 +9,8 @@ class Hb(Res.Resource):
     """
     def cluster_files(self):
         svcfile = os.path.join(rcEnv.pathetc, self.svc.svcname)
-        svcmgr = os.path.join('..', 'bin', 'svcmgr')
-        svcmgr_real = os.path.join(rcEnv.pathbin, 'svcmgr')
+        svcmgr = rcEnv.svcmgr
+        svcmgr_real = os.path.join(svcmgr)
         cluster_f = '.'.join((svcfile, 'cluster'))
         stonith_f = '.'.join((svcfile, 'stonith'))
 

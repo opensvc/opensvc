@@ -8,7 +8,7 @@ class ProvisioningLxc(Provisioning):
 lxc.utsname = %(vm_name)s
 lxc.tty = 4
 lxc.pts = 1024
-lxc.console = /opt/opensvc/log/%(vm_name)s.console.log
+lxc.console = /var/log/opensvc/%(vm_name)s.console.log
 
 lxc.rootfs = %(rootfs)s
 lxc.cgroup.devices.deny = a
@@ -97,7 +97,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.r.log.info("container is already created")
             return
         name = self.setup_lxc_config()
-        with open("/opt/opensvc/log/%s.console.log"%self.vm_name, "a+") as f:
+        with open(os.path.join(rcEnv.pathlog, "%s.console.log"%self.vm_name), "a+") as f:
             f.write("")
         cmd = ['lxc-create', '-n', self.vm_name, '-f', self.config]
         (ret, out, err) = self.r.vcall(cmd)

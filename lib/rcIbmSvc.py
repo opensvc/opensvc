@@ -2,13 +2,10 @@ from rcUtilities import justcall, which
 import rcExceptions as ex
 import os
 import ConfigParser
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 def rcmd(cmd, manager, username, key):
     _cmd = ['ssh', '-i', key, '@'.join((username, manager))]
@@ -29,7 +26,7 @@ class IbmSvcs(object):
             self.filtering = False
         self.arrays = []
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

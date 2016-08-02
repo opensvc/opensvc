@@ -56,7 +56,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
 
     def get_remote_images(self, node):
         ruser = self.svc.node.get_ruser(node)
-        cmd = rcEnv.rsh.split()+['-l', ruser, node, '--', '/opt/opensvc/bin/svcmgr', '-s', self.svc.svcname, "docker", "images", "-a"]
+        cmd = rcEnv.rsh.split()+['-l', ruser, node, '--', rcEnv.svcmgr, '-s', self.svc.svcname, "docker", "images", "-a"]
         out, err, ret = justcall(cmd)
         images = []
         for line in out.split('\n'):
@@ -135,8 +135,8 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
 
     def save_load(self, node, image):
         ruser = self.svc.node.get_ruser(node)
-        save_cmd = ["/opt/opensvc/bin/svcmgr", "-s", self.svc.svcname, "docker", "save", self.image_id_name[image]]
-        load_cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', "/opt/opensvc/bin/svcmgr", "-s", self.svc.svcname, "docker", "load"]
+        save_cmd = [rcEnv.svcmgr, "-s", self.svc.svcname, "docker", "save", self.image_id_name[image]]
+        load_cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', rcEnv.svcmgr, "-s", self.svc.svcname, "docker", "load"]
         self.log.info(' '.join(save_cmd) + " | " + ' '.join(load_cmd))
         p1 = Popen(save_cmd, stdout=PIPE)
         p2 = Popen(load_cmd, stdin=p1.stdout, stdout=PIPE)

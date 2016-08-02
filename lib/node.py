@@ -57,8 +57,6 @@ class Node(Svc, Freezer, Scheduler):
         self.ex_monitor_action_exit_code = 251
         self.auth_config = None
         self.nodename = socket.gethostname().lower()
-        self.authconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'auth.conf'))
-        self.nodeconf = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf'))
         self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
         self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
@@ -325,14 +323,14 @@ class Node(Svc, Freezer, Scheduler):
             if '#sync#' in s:
                 self.config.remove_section(s)
         try:
-            fp = open(self.nodeconf, 'w')
+            fp = open(rcEnv.nodeconf, 'w')
             self.config.write(fp)
             fp.close()
         except:
-            print("failed to write new %s"%self.nodeconf, file=sys.stderr)
+            print("failed to write new %s"%rcEnv.nodeconf, file=sys.stderr)
             raise Exception()
         try:
-            os.chmod(self.nodeconf, 0600)
+            os.chmod(rcEnv.nodeconf, 0600)
         except:
             pass
         self.load_config()
@@ -343,13 +341,13 @@ class Node(Svc, Freezer, Scheduler):
 
     def load_config(self):
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
-        self.config.read(self.nodeconf)
+        self.config.read(rcEnv.nodeconf)
 
     def load_auth_config(self):
         if self.auth_config is not None:
             return
         self.auth_config = ConfigParser.ConfigParser()
-        self.auth_config.read(self.authconf)
+        self.auth_config.read(rcEnv.authconf)
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
@@ -1156,16 +1154,10 @@ class Node(Svc, Freezer, Scheduler):
             self.collector.call('collector_update_action_queue', data)
 
     def dequeue_action(self, action):
-        if rcEnv.sysname == "Windows":
-            nodemgr = os.path.join(rcEnv.pathsvc, "nodemgr.cmd")
-            svcmgr = os.path.join(rcEnv.pathsvc, "svcmgr.cmd")
-        else:
-            nodemgr = os.path.join(rcEnv.pathbin, "nodemgr")
-            svcmgr = os.path.join(rcEnv.pathbin, "svcmgr")
         if action.get("svcname") is None or action.get("svcname") == "":
-            cmd = [nodemgr]
+            cmd = [rcEnv.nodemgr]
         else:
-            cmd = [svcmgr, "-s", action.get("svcname")]
+            cmd = [rcEnv.svcmgr, "-s", action.get("svcname")]
         import shlex
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
@@ -1236,7 +1228,7 @@ class Node(Svc, Freezer, Scheduler):
             return
 
         if not s.startswith("cloud#"):
-            raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%self.nodeconf)
+            raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%rcEnv.nodeconf)
 
         if hasattr(self, "clouds") and s in self.clouds:
             return self.clouds[s]
@@ -1244,7 +1236,7 @@ class Node(Svc, Freezer, Scheduler):
         try:
             cloud_type = self.config.get(s, 'type')
         except:
-            raise ex.excInitError("type option is mandatory in cloud section in %s"%self.nodeconf)
+            raise ex.excInitError("type option is mandatory in cloud section in %s"%rcEnv.nodeconf)
 
         # noop if already loaded
         self.load_auth_config()
@@ -1253,10 +1245,10 @@ class Node(Svc, Freezer, Scheduler):
             for key, val in self.auth_config.items(s):
                 auth_dict[key] = val
         except:
-            raise ex.excInitError("%s must have a '%s' section"%(self.authconf, s))
+            raise ex.excInitError("%s must have a '%s' section"%(rcEnv.authconf, s))
 
         if len(cloud_type) == 0:
-            raise ex.excInitError("invalid cloud type in %s"%self.nodeconf)
+            raise ex.excInitError("invalid cloud type in %s"%rcEnv.nodeconf)
 
         mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
 
@@ -1322,7 +1314,7 @@ class Node(Svc, Freezer, Scheduler):
 
         d = env.rstrip('.env')+'.dir'
         s = env.rstrip('.env')+'.d'
-        x = os.path.join(rcEnv.pathbin, "svcmgr")
+        x = rcEnv.svcmgr
         b = env.rstrip('.env')
         try:
             os.makedirs(d)
@@ -1510,7 +1502,7 @@ class Node(Svc, Freezer, Scheduler):
 
         # install svcmgr link
         ls = os.path.join(rcEnv.pathetc, svcname)
-        s = os.path.join(rcEnv.pathbin, 'svcmgr')
+        s = rcEnv.svcmgr
         if not os.path.exists(ls):
             os.symlink(s, ls)
         elif os.path.realpath(s) != os.path.realpath(ls):

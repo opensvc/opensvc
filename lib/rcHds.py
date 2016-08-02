@@ -3,11 +3,6 @@ import rcExceptions as ex
 import os
 import ConfigParser
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-
 def _cmd(cmd, url, username, password, serial, bin):
     if which(bin) is None:
         print("Can not find %s"%bin)
@@ -33,7 +28,7 @@ class Hdss(object):
             self.filtering = False
         self.index = 0
 
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

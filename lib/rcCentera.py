@@ -5,13 +5,10 @@ import ConfigParser
 from subprocess import *
 from rcUtilities import which
 import tempfile
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 class Centeras(object):
     def __init__(self, objects=[]):
@@ -22,7 +19,7 @@ class Centeras(object):
             self.filtering = False
         self.arrays = []
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
@@ -87,7 +84,7 @@ class Centera(object):
         return out, err
 
     def get_discover(self):
-        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=pathtmp)
+        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=rcEnv.pathtmp)
         tmp_fpath = f.name
         f.close()
         buff = "monitorDiscoverToFile %s" % tmp_fpath

@@ -3,13 +3,10 @@ import os
 import rcExceptions as ex
 import ConfigParser
 from subprocess import *
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 class Netapps(object):
     def __init__(self, objects=[]):
@@ -20,7 +17,7 @@ class Netapps(object):
             self.filtering = False
         self.arrays = []
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

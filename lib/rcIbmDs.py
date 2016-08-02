@@ -4,14 +4,10 @@ import ConfigParser
 import tempfile
 import sys
 from subprocess import *
+from rcGlobalEnv import rcEnv
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-pathvar = os.path.realpath(os.path.join(pathlib, '..', 'var'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
     if len(hmc1) != 0:
@@ -48,7 +44,7 @@ class IbmDss(object):
             self.filtering = False
         self.arrays = []
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
+        cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
@@ -60,7 +56,7 @@ class IbmDss(object):
                 continue
             if self.filtering and not s in self.objects:
                 continue
-            pwfile = os.path.join(pathvar, s+'.pwfile')
+            pwfile = os.path.join(rcEnv.pathvar, s+'.pwfile')
             if not os.path.exists(pwfile):
                 raise ex.excError("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
 

@@ -1,7 +1,7 @@
 import os
 import sys
 import re
-from rcGlobalEnv import *
+from rcGlobalEnv import rcEnv
 import logging
 import rcExceptions as ex
 
@@ -11,9 +11,8 @@ except ImportError:
     import configparser as ConfigParser
 
 def node_get_hostmode():
-    nodeconf = os.path.join(os.path.dirname(__file__), '..', 'etc', 'node.conf')
     config = ConfigParser.RawConfigParser()
-    config.read(nodeconf)
+    config.read(rcEnv.nodeconf)
     if config.has_section('node'):
         if config.has_option('node', 'host_mode'):
             return config.get('node', 'host_mode')

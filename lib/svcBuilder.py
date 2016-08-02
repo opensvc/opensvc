@@ -3500,8 +3500,7 @@ def build(name, minimal=False, svcconf=None):
 def is_service(f):
     if os.name == 'nt':
         return True
-    svcmgr = os.path.join(rcEnv.pathbin, 'svcmgr')
-    if os.path.realpath(f) != os.path.realpath(svcmgr):
+    if os.path.realpath(f) != os.path.realpath(rcEnv.svcmgr):
         return False
     if not os.path.exists(f + '.env'):
         return False
@@ -3670,7 +3669,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
     if not os.path.exists(svcinitdir):
         os.makedirs(svcinitdir)
     fix_app_link(svcname)
-    fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    fix_exe_link(rcEnv.svcmgr, svcname)
     return {"ret": 0, "rid": sections.keys()}
 
 def update(svcname, resources=[], interactive=False, provision=False):
@@ -3777,7 +3776,7 @@ def update(svcname, resources=[], interactive=False, provision=False):
     conf.write(f)
 
     fix_app_link(svcname)
-    fix_exe_link(os.path.join('..', 'bin', 'svcmgr'), svcname)
+    fix_exe_link(rcEnv.svcmgr, svcname)
     return {"ret": 0, "rid": rid}
 
 def fix_app_link(svcname):

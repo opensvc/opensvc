@@ -111,7 +111,7 @@ class Sync(Res.Resource, Scheduler):
             raise ex.excError
 
         ruser = self.svc.node.get_ruser(node)
-        rcmd = [os.path.join(rcEnv.pathbin, 'nodemgr'), 'get', '--param', 'node.host_mode']
+        rcmd = [rcEnv.nodemgr, 'get', '--param', 'node.host_mode']
         if ruser != "root":
             rcmd = ['sudo'] + rcmd
 

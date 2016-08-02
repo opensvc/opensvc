@@ -1,5 +1,3 @@
-#!/opt/opensvc/bin/python
-
 import os
 import time
 import rcExceptions as ex
@@ -135,8 +133,6 @@ if __name__ == "__main__":
     import optparse
     import time
     import sys
-    pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    sys.path = [os.path.join(pathsvc, 'lib')] + sys.path
 
     parser = optparse.OptionParser()
     parser.add_option("-f", "--file", default="", action="store", dest="file",

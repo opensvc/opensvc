@@ -7,12 +7,8 @@ import time
 import urllib
 import urllib2
 
-pathlib = os.path.dirname(__file__)
-pathbin = os.path.realpath(os.path.join(pathlib, '..', 'bin'))
-pathetc = os.path.realpath(os.path.join(pathlib, '..', 'etc'))
-pathtmp = os.path.realpath(os.path.join(pathlib, '..', 'tmp'))
-if pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+pathbin
+if rcEnv.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.pathbin
 
 def reformat(s):
     lines = s.split('\n')
@@ -128,11 +124,10 @@ class Hp3pars(object):
             self.filtering = False
         self.arrays = []
         self.index = 0
-        cf = os.path.join(pathetc, "auth.conf")
-        if not os.path.exists(cf):
+        if not os.path.exists(rcEnv.authconf):
             return
         conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
+        conf.read(rcEnv.authconf)
         m = {}
 
         for s in conf.sections():
@@ -217,8 +212,6 @@ class Hp3par(object):
             import ConfigParser
         except ImportError:
             import configparser as ConfigParser
-        pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
-        nodeconf = os.path.join(pathetc, 'node.conf')
         config = ConfigParser.RawConfigParser()
         config.read(nodeconf)
         try:

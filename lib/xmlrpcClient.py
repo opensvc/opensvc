@@ -149,9 +149,8 @@ class Collector(object):
         except ImportError:
             import configparser as ConfigParser
         pathetc = os.path.join(os.path.dirname(__file__), '..', 'etc')
-        nodeconf = os.path.join(pathetc, 'node.conf')
         config = ConfigParser.RawConfigParser()
-        config.read(nodeconf)
+        config.read(rcEnv.nodeconf)
         if config.has_option('node', 'dbopensvc'):
             rcEnv.dbopensvc = config.get('node', 'dbopensvc')
             try:

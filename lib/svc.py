@@ -1100,7 +1100,7 @@ class Svc(Resource, Scheduler):
             options.append('--subsets')
             options.append(self.options.parm_subsets)
 
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname] + options + cmd
+        cmd = [rcEnv.svcmgr, '-s', self.svcname] + options + cmd
 
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
@@ -2871,7 +2871,7 @@ class Svc(Resource, Scheduler):
             self.config.write(fp)
             fp.close()
         except:
-            print("failed to write new %s"%self.nodeconf, file=sys.stderr)
+            print("failed to write new %s"%self.pathenv, file=sys.stderr)
             raise ex.excError()
 
     def load_config(self):

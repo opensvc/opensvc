@@ -28,11 +28,6 @@ import servicemanager
 import datetime
 from subprocess import *
 
-pathsvc = os.path.join(os.path.dirname(__file__), '..')
-nodemgr = os.path.join(pathsvc, "nodemgr.cmd")
-svcmon = os.path.join(pathsvc, "svcmon.cmd")
-cron = os.path.join(pathsvc, "cron.cmd")
-
 import sys
 from rcListener import listener
 
@@ -79,12 +74,12 @@ class OsvcSched(win32serviceutil.ServiceFramework):
             self.next_task10 = now + datetime.timedelta(minutes=10)
 
     def run_task10(self):
-        cmd = [svcmon, "--updatedb"]
+        cmd = [rcEnv.svcmon, "--updatedb"]
         servicemanager.LogInfoMsg("run %s" % ' '.join(cmd))
         p = Popen(cmd, stdout=None, stderr=None, stdin=None)
         p.communicate()
         servicemanager.LogInfoMsg("run internal scheduler")
-        cmd = [cron]
+        cmd = [rcEnv.cron]
         p = Popen(cmd, stdout=None, stderr=None, stdin=None)
         p.communicate()
 

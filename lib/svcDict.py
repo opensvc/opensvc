@@ -291,7 +291,7 @@ class KeywordDockerDataDir(Keyword):
                   at=True,
                   required=False,
                   order=12,
-                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is /opt/opensvc/var/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
+                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is <pathvar>/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
                   example="/srv/svc1/data/docker"
                 )
 
@@ -925,7 +925,7 @@ class KeywordSyncInterval(KeywordInteger):
                   keyword="sync_interval",
                   order=26,
                   default=121,
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in /opt/opensvc/var/sync/[service]![dst]"
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
                 )
 
 class KeywordSyncMaxDelay(KeywordInteger):

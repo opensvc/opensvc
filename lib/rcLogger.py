@@ -3,7 +3,7 @@ import os
 import errno
 import logging
 import logging.handlers
-from rcGlobalEnv import *
+from rcGlobalEnv import rcEnv
 from subprocess import *
 
 min_name_len = 8
@@ -84,7 +84,7 @@ def initLogger(name):
         import configparser as ConfigParser
     config = ConfigParser.RawConfigParser({})
     try:
-        config.read("/opt/opensvc/etc/node.conf")
+        config.read(rcEnv.nodeconf)
     except:
         pass
     try:
