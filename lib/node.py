@@ -65,6 +65,7 @@ class Node(Svc, Freezer, Scheduler):
           'push_schedule': '00:00-06:00@361 mon-sun',
           'sync_schedule': '04:00-06:00@121 mon-sun',
           'comp_schedule': '02:00-06:00@241 sun',
+          'collect_stats_schedule': '@10',
           'no_schedule': '',
         }
         self.svcs = None
@@ -93,6 +94,7 @@ class Node(Svc, Freezer, Scheduler):
             'rotate_root_pw': "set a new root password and store it in the collector",
             'print_schedule': "print the node tasks schedule",
             'wol': "forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments",
+            'collect_stats': "write in local files metrics not found in the standard metrics collector. these files will be fed to the collector by the 'pushstat' action.",
           },
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
@@ -199,6 +201,7 @@ class Node(Svc, Freezer, Scheduler):
 	 "checks": SchedOpts("checks"),
 	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
 	 "pushstats": SchedOpts("stats"),
+	 "collect_stats": SchedOpts("stats_collection", schedule_option="collect_stats_schedule"),
 	 "pushpkg": SchedOpts("packages"),
 	 "pushpatch": SchedOpts("patches"),
 	 "pushasset": SchedOpts("asset"),
@@ -460,6 +463,19 @@ class Node(Svc, Freezer, Scheduler):
             objects = ["magix123456"]
             print(e)
         return objects
+
+    def collect_stats(self):
+        if self.skip_action("collect_stats"):
+            return
+        self.task_collect_stats()
+
+    @scheduler_fork
+    def collect_stats(self):
+        try:
+            m = __import__("rcStatsCollect"+rcEnv.sysname)
+        except ImportError:
+            return
+        m.collect(self)
 
     def pushstats(self):
         # set stats range to push to "last pushstat => now"

@@ -204,13 +204,6 @@ def install_cron_unix():
            'cmd': "[ -x "+nodemgr+" ] && "+nodemgr+" schedulers >/dev/null 2>&1",
            'marker': nodemgr + ' schedulers',
            'ok': False
-    },{
-           'sched': "0,10,20,30,40,50 * * * *",
-           'reset_sched': False,
-           'user': "",
-           'cmd': "[ -x %s ] && %s >/dev/null 2>&1"%(agt,agt),
-           'marker': agt,
-           'ok': False
     }]
     remove_entries = [
       'bin/nodemgr compliance check',
@@ -219,6 +212,7 @@ def install_cron_unix():
       'svcmgr resource monitor',
       'svcmgr resource_monitor',
       'nodemgr cron',
+      agt,
     ]
 
     purge = []
@@ -251,7 +245,6 @@ def install_cron_unix():
                 if root_crontab == '/etc/cron.d/opensvc':
                     logit("assigning root:root as crontab owner")
                     ce[0]['user'] = "root"
-                    ce[1]['user'] = "root"
             elif os.path.exists(loc):
                 logit("adding <%s> to purge table"%loc)
                 purge.append(loc)
@@ -262,12 +255,6 @@ def install_cron_unix():
 
     ce[0]['full'] = ' '.join([ce[0]['sched'], ce[0]['user'], ce[0]['cmd']])
     logit("osvcagt crontab entry <%s>"%ce[0]['full'])
-
-    if os.path.exists(agt):
-        ce[1]['full'] = ' '.join([ce[1]['sched'], ce[1]['user'], ce[1]['cmd']])
-    else:
-        ce[1]['full'] = None
-    logit("perfagt crontab entry <%s>"%ce[1]['full'])
 
     new = False
     if os.path.exists(root_crontab):
