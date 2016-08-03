@@ -195,7 +195,7 @@ class Svc(Resource, Scheduler):
 
     def post_build(self):
         if self.ha and not "flex" in self.clustertype:
-            self.scheduler_actions["resource_monitor_auto"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_resource_monitor", schedule_option="monitor_schedule")
+            self.scheduler_actions["resource_monitor"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_resource_monitor", schedule_option="monitor_schedule")
 
         syncs = []
         for r in self.get_resources("sync"):
@@ -468,7 +468,7 @@ class Svc(Resource, Scheduler):
           "presync",
           "postsync",
           "freezestop",
-          "resource_monitor"
+          "resource_monitor",
         ]
         list_actions_no_post_action = list_actions_no_pre_action
 
@@ -932,12 +932,13 @@ class Svc(Resource, Scheduler):
                     rset_status[rs.type] = rcStatus._merge(rset_status[rs.type], rs.status())
         return rset_status
 
-    def resource_monitor_auto(self):
-        if self.skip_action("resource_monitor_auto"):
-            return
-        self.resource_monitor()
-
     def resource_monitor(self):
+        if self.skip_action("resource_monitor"):
+            return
+        self.task_resource_monitor()
+
+    @scheduler_fork
+    def task_resource_monitor(self):
         self.options.refresh = True
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
