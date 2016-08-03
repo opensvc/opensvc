@@ -779,8 +779,15 @@ class Scheduler(object):
         timestamp_f = os.path.realpath(os.path.join(rcEnv.pathvar, fname))
         return timestamp_f
 
+    def is_croned(self):
+        if self.options.cron or (hasattr(self, "cron") and self.cron):
+            return True
+        return False
+
     def skip_action(self, action, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
         if action not in self.scheduler_actions:
+            if not self.is_croned():
+                return False
             return {"count": 0, "keep": [], "skip": []}
         if type(self.scheduler_actions[action]) == list:
             data = {"count": 0, "keep": [], "skip": []}
@@ -819,8 +826,7 @@ class Scheduler(object):
                 s += "."+section
             return s
 
-        if not self.options.cron and \
-           (not hasattr(self, "cron") or not self.cron):
+        if not self.is_croned():
             # don't update the timestamp file
             return False
 
