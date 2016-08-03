@@ -19,3 +19,5 @@ lib/rcLocalEnv.py
 *.wixpdb
 *.msi
 nohup.out
+.project
+.pydevproject
