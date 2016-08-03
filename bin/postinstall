@@ -23,11 +23,38 @@ except:
     import platform
     sysname, nodename, x, x, machine, x = platform.uname()
 
-try:
-    pathbin = os.path.dirname(__file__)
-except NameError:
-    # old python version do not support __file__
-    pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
+postinstall_d = sys.path[0]
+if '/catalog/' in postinstall_d:
+    # hpux packaging subsystem executes the postinstall from dir
+    # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
+    postinstall_d = "/usr/share/opensvc"
+    lsb = True
+elif postinstall_d == "/usr/share/opensvc":
+    lsb = True
+else:
+    # windows install or unix execution from a non-lsb tree (ex: /opt/opensvc/)
+    lsb = False
+
+if lsb:
+    pathbin = "/usr/bin"
+    pathsvc = None
+    pathetc = "/etc/opensvc"
+    pathvar = "/var/lib/opensvc"
+    pathtmp = "/var/tmp/opensvc"
+    pathlib = "/usr/share/opensvc/lib"
+    pathlog = "/var/log/opensvc"
+    pathusr = None
+    pathini = "/usr/share/opensvc/init"
+else:
+    pathbin = postinstall_d
+    pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
+    pathetc = os.path.join(pathsvc, 'etc')
+    pathvar = os.path.join(pathsvc, 'var')
+    pathtmp = os.path.join(pathsvc, 'tmp')
+    pathlib = os.path.join(pathsvc, 'lib')
+    pathlog = os.path.join(pathsvc, 'log')
+    pathusr = os.path.join(pathsvc, 'usr')
+    pathini = os.path.join(pathsvc, 'bin', 'init')
 
 def make_sure_path_exists(path):
     try:
@@ -35,22 +62,6 @@ def make_sure_path_exists(path):
     except OSError, exception:
         if exception.errno != errno.EEXIST:
             raise
-
-pathbin = os.path.realpath(pathbin)
-if not pathbin.rstrip(os.sep).endswith('bin'):
-    # hpux executes the postinstall from dir
-    # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
-    pathbin = os.path.join(os.sep, 'opt', 'opensvc', 'bin')
-pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
-pathbin = os.path.join(pathsvc, 'bin')
-pathetc = os.path.join(pathsvc, 'etc')
-pathvar = os.path.join(pathsvc, 'var')
-pathtmp = os.path.join(pathsvc, 'tmp')
-pathlib = os.path.join(pathsvc, 'lib')
-pathlog = os.path.join(pathsvc, 'log')
-pathusr = os.path.join(pathsvc, 'usr')
-
-make_sure_path_exists(pathlog)
 
 def logit(msg,stdout=False,stderr=False):
     curframe = inspect.currentframe()
@@ -71,6 +82,7 @@ def logit(msg,stdout=False,stderr=False):
     if stderr:
         print >>sys.stderr, "error ==> " + msg
 
+make_sure_path_exists(pathlog)
 logit("\nStarting OpenSVC postinstall\n",stdout=True)
 
 SolarisRootRelocate = False
@@ -367,7 +379,7 @@ def activate_systemd(launcher):
     systemdsvc = 'opensvc-agent.service'
     
     # populate systemd tree with opensvc unit file
-    src = os.path.join(pathbin, 'systemd.opensvc-agent.service')
+    src = os.path.join(pathini, 'systemd.opensvc-agent.service')
     dst = os.path.join('/etc/systemd/system/', systemdsvc)
     logit("installing systemd unit file",stdout=True)
     try:
@@ -377,7 +389,7 @@ def activate_systemd(launcher):
         logit("issue met while trying to install systemd unit file",stderr=True)
     
     # add symlink to resolve systemd service call
-    systemd_call = '/opt/opensvc/bin/opensvc.init'
+    systemd_call = os.path.join(pathini, "opensvc.init")
     if not os.path.islink(systemd_call):
         if os.path.exists(systemd_call):
             logit("removing %s"%systemd_call)
@@ -387,7 +399,7 @@ def activate_systemd(launcher):
         try:
             os.symlink(launcher, systemd_call)
         except:
-            logit("issue met while trying to create opensvc.init symlink",stderr=True)
+            logit("issue met while trying to create %s symlink" % system_call,stderr=True)
 
     # reload systemd configuration
     logit("reloading systemd configuration",stdout=True)
@@ -565,7 +577,7 @@ def install_rc():
     if os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.debian'
+        src = os.path.join(pathini, 'opensvc.init.debian')
         if systemd_mgmt():
             logit("debian with systemd")
             copyrc = False
@@ -576,7 +588,7 @@ def install_rc():
     elif os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.suse'
+        src = os.path.join(pathini, 'opensvc.init.suse')
         if systemd_mgmt():
             logit("SuSE with systemd")
             copyrc = False
@@ -586,7 +598,7 @@ def install_rc():
             activate = activate_redhat       
     elif os.path.exists('/etc/redhat-release'):
         params = '/etc/sysconfig/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.redhat'
+        src = os.path.join(pathini, 'opensvc.init.redhat')
         try:
             f = open('/etc/redhat-release', 'r')
             buff = f.read()
@@ -608,35 +620,35 @@ def install_rc():
 
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.hpux'
+        src = os.path.join(pathini, 'opensvc.init.hpux')
         activate = activate_hpux
     elif sysname == "SunOS":
 	if SolarisRootRelocate is True:
             rc = os.environ["PKG_INSTALL_ROOT"] + '/etc/init.d/opensvc'
             params = os.environ["PKG_INSTALL_ROOT"] + '/etc/default/opensvc'
-            src = os.environ["PKG_INSTALL_ROOT"] + '/opt/opensvc/bin/opensvc.init.SunOS'
+            src = os.environ["PKG_INSTALL_ROOT"] + os.path.join(pathini, 'opensvc.init.SunOS')
         else:
             rc = '/etc/init.d/opensvc'
             params = '/etc/default/opensvc'
-            src = '/opt/opensvc/bin/opensvc.init.SunOS'
+            src = os.path.join(pathini, 'opensvc.init.SunOS')
         activate = activate_SunOS
     elif sysname == "OSF1":
         rc = '/sbin/init.d/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.OSF1'
+        src = os.path.join(pathini, 'opensvc.init.OSF1')
         activate = activate_OSF1
     elif sysname == "FreeBSD":
         rc = '/etc/rc.d/opensvc'
         params = '/etc/defaults/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.FreeBSD'
+        src = os.path.join(pathini, 'opensvc.init.FreeBSD')
         activate = activate_FreeBSD
     elif sysname == "AIX":
         rc = '/etc/rc.d/init.d/opensvc'
-        src = '/opt/opensvc/bin/opensvc.init.AIX'
+        src = os.path.join(pathini, 'opensvc.init.AIX')
         activate = activate_AIX
     elif sysname == "Darwin":
         rc = '/Library/LaunchDaemons/com.opensvc.svcmgr.plist'
         params = '/etc/defaults/opensvc'
-        src = '/opt/opensvc/bin/darwin.com.opensvc.svcmgr.plist'
+        src = os.path.join(pathini, 'darwin.com.opensvc.svcmgr.plist')
         activate = activate_Darwin
     elif sysname == 'Windows':
         return False
@@ -684,22 +696,21 @@ def gen_keys():
     except:
         logit("Error while trying to generate ssh keys")
 
-def missing_dir(sub):
+def missing_dir(pathd):
     logit("begin")
-    pathd = os.path.join(pathsvc, sub)
     if not os.path.exists(pathd):
             logit("create dir %s"%pathd,stdout=True)
 	    os.makedirs(pathd, 0755)
 
 def missing_dirs():
     logit("begin")
-    missing_dir('log')
-    missing_dir('tmp')
-    missing_dir('var')
+    missing_dir(pathlog)
+    missing_dir(pathtmp)
+    missing_dir(pathvar)
 
 def convert_svclinks():
     logit("begin")
-    missing_dir('etc')
+    missing_dir(pathetc)
     svcmgr = os.path.join('..', 'bin', 'svcmgr')
     if not os.path.exists(svcmgr):
 	logit("%s does not exist"%svcmgr)
@@ -840,6 +851,8 @@ def install_etc_path():
 
 def install_profile():
     logit("begin")
+    if lsb:
+        return
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
     buff = "if ! echo ${PATH} | grep -q "+pathetc+"; then"+"\n"
@@ -864,6 +877,8 @@ def install_profile():
 
 def install_bash_completion():
     logit("begin")
+    if pathsvc is None:
+        return
     src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
@@ -1072,6 +1087,8 @@ def chmod_directories():
 	logit("skip : unsupported on Windows")
         return
     for d in (pathbin, pathlib, pathusr):
+        if d is None:
+            continue
         for dirname, dirnames, filenames in os.walk(d):
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
@@ -1101,6 +1118,8 @@ def dump_install_content():
         logit("os.walk not available")
         return
     for d in (pathbin, pathlib, pathusr):
+        if d is None:
+            continue
         for dirname, dirnames, filenames in os.walk(d):
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
