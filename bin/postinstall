@@ -711,11 +711,11 @@ def missing_dirs():
 def convert_svclinks():
     logit("begin")
     missing_dir(pathetc)
-    svcmgr = os.path.join('..', 'bin', 'svcmgr')
+    svcmgr = os.path.join(pathbin, 'svcmgr')
     if not os.path.exists(svcmgr):
 	logit("%s does not exist"%svcmgr)
         return 1
-    rcService = os.path.realpath(os.path.join(os.sep, 'opt', 'opensvc', 'bin', 'rcService'))
+    rcService = os.path.realpath(os.path.join(pathbin, 'rcService'))
     if not os.path.exists(rcService):
 	logit("%s does not exist"%rcService)
         return 1
