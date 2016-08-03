@@ -201,8 +201,8 @@ def install_cron_unix():
            'sched': "* * * * *",
            'reset_sched': True,
            'user': "",
-           'cmd': "[ -x "+nodemgr+" ] && "+nodemgr+" cron >/dev/null 2>&1",
-           'marker': nodemgr + ' cron',
+           'cmd': "[ -x "+nodemgr+" ] && "+nodemgr+" schedulers >/dev/null 2>&1",
+           'marker': nodemgr + ' schedulers',
            'ok': False
     },{
            'sched': "0,10,20,30,40,50 * * * *",
@@ -218,6 +218,7 @@ def install_cron_unix():
       'bin/cron/opensvc',
       'svcmgr resource monitor',
       'svcmgr resource_monitor',
+      'nodemgr cron',
     ]
 
     purge = []

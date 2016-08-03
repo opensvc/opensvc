@@ -78,10 +78,10 @@ class Node(Svc, Freezer, Scheduler):
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
-            'cron': 'execute a node scheduler run and a service scheduler run for each installed service',
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
             'scheduler': 'run the node task scheduler',
+            'schedulers': 'execute a run of the node and services schedulers. this action is installed in the system scheduler',
             'schedule_reboot_status': 'tell if the node is scheduled for reboot',
             'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
             'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
@@ -1541,7 +1541,7 @@ class Node(Svc, Freezer, Scheduler):
         except:
             pass
 
-    def cron(self):
+    def schedulers(self):
         self.scheduler()
 
         self.build_services()
