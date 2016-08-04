@@ -26,6 +26,7 @@ class Module(object):
         self.moduleset = moduleset
         self.executable = None
         self.autofix = autofix
+        self.python_link_d = os.path.dirname(sys.executable)
 
         dl = os.listdir(comp_dir)
         match = []
@@ -92,9 +93,18 @@ class Module(object):
             vals.append("")
         self.context.action_log_vals.append(vals)
 
+    def set_python_link_dir_in_path(self):
+        if self.python_link_d == sys.path[0]:
+            return
+        if "PATH" in os.environ:
+            os.environ["PATH"] = self.python_link_d + ":" + os.environ["PATH"]
+        else:
+            os.environ["PATH"] = self.python_link_d
+
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
+        self.set_python_link_dir_in_path()
         for rule in self.ruleset.values():
             if (rule["filter"] != "explicit attachment via moduleset" and \
                 "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \
