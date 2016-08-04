@@ -43,31 +43,52 @@ function prepare_chroot {
 	# prepare skeleton (data.tar.gz)
 	#
 	echo $CHROOT | grep noarch >/dev/null 2>&1 && $SUDO rm -rf $CHROOT
-	mkdir -p $CHROOT/opt/opensvc/etc || return 1
-	mkdir -p $CHROOT/opt/opensvc/var || return 1
-	mkdir -p $CHROOT/opt/opensvc/log || return 1
-	mkdir -p $CHROOT/opt/opensvc/tmp || return 1
-	mkdir -p $CHROOT/opt/opensvc/var/cache || return 1
+
+	mkdir -p $CHROOT/opt/opensvc
 
 	# install tracked files
 	cd $OSVC || return 1
 	git archive --format=tar HEAD | ( cd $CHROOT/opt/opensvc && tar xf - )
-	rm -rf $CHROOT/opt/opensvc/bin/pkg
-	rm -f $CHROOT/opt/opensvc/*.cmd
-	rm -f $CHROOT/opt/opensvc/.gitignore
 
+	# install version.py
 	echo "version = \"$VERSION-$RELEASE\"" | tee $CHROOT/opt/opensvc/lib/version.py || return 1
 
+	# compress docs
 	cd $CHROOT/opt/opensvc/usr/share/doc
 	for f in $(echo template*env)
 	do
 		echo "gzip $f"
 		gzip $f
 	done
-	cd $OSVC
 
-	$SUDO chown -R 0:0 $CHROOT/opt/opensvc || return 1
-	$SUDO chmod -R og-w $CHROOT/opt/opensvc || return 1
+	# purge unwanted files
+	rm -rf $CHROOT/opt/opensvc/bin/pkg
+	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
+
+	# move files to LSB locations
+	mkdir -p $CHROOT/usr/bin
+	mkdir -p $CHROOT/etc/opensvc
+	mkdir -p $CHROOT/var/log/opensvc
+	mkdir -p $CHROOT/var/tmp/opensvc
+	mkdir -p $CHROOT/var/lib/opensvc/cache
+	mkdir -p $CHROOT/usr/lib/opensvc
+	mkdir -p $CHROOT/usr/share/doc/opensvc
+	mkdir -p $CHROOT/etc/bash_completion.d
+	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/lib/opensvc/
+	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/lib/opensvc/
+	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
+	mv $CHROOT/opt/opensvc/usr/share/doc/* $CHROOT/usr/share/doc/opensvc/
+	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
+	ln -sf /usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
+	ln -sf /usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
+	ln -sf /usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon
+
+	# purge unwanted files
+	rm -rf $CHROOT/opt/opensvc
+
+	cd $OSVC
+	$SUDO chown -R 0:0 $CHROOT/* || return 1
+
 	return 0
 }
 

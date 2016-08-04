@@ -20,7 +20,7 @@ Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
 BuildRoot: $CHROOT
-Provides: /opt/opensvc/bin/python
+Provides: opensvc
 AutoReqProv: no
 %define _source_filedigest_algorithm 1
 %define _binary_filedigest_algorithm 1
@@ -28,19 +28,28 @@ AutoReqProv: no
 %define _binary_payload w9.gzdio
 
 %description
-These are the tools to drive OpenSVC services
+Mono and multi-node services management tools
 %post
-/opt/opensvc/bin/postinstall
+/usr/lib/opensvc/bin/postinstall
 %files
-%docdir /opt/opensvc/usr/share
+%docdir /usr/share/doc/opensvc
 %defattr(-,root,root)
-%attr(0755,root,root) /opt/opensvc/bin
-/opt/opensvc/lib
-/opt/opensvc/etc
-/opt/opensvc/log
-/opt/opensvc/tmp
-/opt/opensvc/var
-/opt/opensvc/usr
+%attr(0755,root,root) /usr/lib/opensvc/bin/opensvc
+%attr(0755,root,root) /usr/lib/opensvc/bin/postinstall
+%attr(0755,root,root) /usr/lib/opensvc/bin/init
+/usr/lib/opensvc/lib
+/usr/share/doc/opensvc
+/etc/opensvc
+/var/log/opensvc
+/var/tmp/opensvc
+/var/lib/opensvc
+/etc/bash_completion.d/opensvc
+/usr/lib/opensvc/bin/nodemgr
+/usr/lib/opensvc/bin/svcmgr
+/usr/lib/opensvc/bin/svcmon
+/usr/bin/nodemgr
+/usr/bin/svcmgr
+/usr/bin/svcmon
 
 #%changelog
 #\$(changelog)

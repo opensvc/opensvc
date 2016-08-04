@@ -14,7 +14,7 @@ EOF
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh
-/opt/opensvc/bin/postinstall
+/usr/lib/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
 
@@ -29,11 +29,11 @@ Pre-Depends:
 Recommends: sg3-utils
 Suggests: 
 Installed-Size: 50
-Maintainer: Christophe Varoqui [christophe.varoqui@opensvc.com]
+Maintainer: OpenSVC [support@opensvc.com]
 Conflicts: 
 Replaces: 
 Provides: opensvc
-Description: tools to drive OpenSVC services
+Description: Mono and multi-node services management tools
 EOF
 
 dpkg-deb -Zgzip -b $CHROOT || exit 1
