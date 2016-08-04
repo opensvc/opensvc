@@ -27,25 +27,29 @@ else:
     lsb = False
 
 if lsb:
-    pathbin = "/usr/bin"
+    pathsbin = "/usr/bin"
     pathsvc = None
     pathetc = "/etc/opensvc"
     pathvar = "/var/lib/opensvc"
+    pathlck = '/var/lib/opensvc/lock'
     pathtmp = "/var/tmp/opensvc"
-    pathlib = "/usr/share/opensvc/lib"
     pathlog = "/var/log/opensvc"
+    pathbin = "/usr/lib/opensvc/bin"
+    pathlib = "/usr/lib/opensvc/lib"
+    pathini = "/usr/lib/opensvc/bin/init"
     pathusr = None
-    pathini = "/usr/share/opensvc/init"
 else:
-    pathbin = postinstall_d
-    pathsvc = os.path.realpath(os.path.join(pathbin, '..'))
+    pathsbin = postinstall_d
+    pathsvc = os.path.realpath(os.path.join(pathsbin, '..'))
     pathetc = os.path.join(pathsvc, 'etc')
     pathvar = os.path.join(pathsvc, 'var')
+    pathlck = os.path.join(pathvar, 'lock')
     pathtmp = os.path.join(pathsvc, 'tmp')
-    pathlib = os.path.join(pathsvc, 'lib')
     pathlog = os.path.join(pathsvc, 'log')
-    pathusr = os.path.join(pathsvc, 'usr')
+    pathbin = postinstall_d
+    pathlib = os.path.join(pathsvc, 'lib')
     pathini = os.path.join(pathsvc, 'bin', 'init')
+    pathusr = os.path.join(pathsvc, 'usr')
 
 def make_sure_path_exists(path):
     try:
@@ -81,7 +85,18 @@ if sysname == 'SunOS' and "PKG_INSTALL_ROOT" in os.environ and os.environ['PKG_I
      logit("SunOS PKG_INSTALL_ROOT <%s>"%(os.environ['PKG_INSTALL_ROOT']))
      SolarisRootRelocate = True
 
-variables = {"pathsvc":pathsvc, "pathbin":pathbin, "pathetc":pathetc, "pathvar":pathvar, "pathtmp":pathtmp, "pathlib":pathlib, "pathlog":pathlog, "pathusr":pathusr, "SolarisRootRelocate":SolarisRootRelocate}
+variables = {
+  "pathsvc": pathsvc,
+  "pathsbin": pathsbin,
+  "pathbin": pathbin,
+  "pathetc": pathetc,
+  "pathvar": pathvar,
+  "pathtmp": pathtmp,
+  "pathlib": pathlib,
+  "pathlog": pathlog,
+  "pathusr": pathusr,
+  "SolarisRootRelocate": SolarisRootRelocate
+}
 for key in variables:
     logit("var %s <%s>"%(key,variables[key]))
 
@@ -174,9 +189,7 @@ def install_cron_unix():
     """install opensvc cron jobs
     """
 
-    agt = os.path.join(pathbin, 'perfagt.'+sysname)
-    nodemgr = os.path.join(pathbin, 'nodemgr')
-    logit("perfagt path <%s>"%agt)
+    nodemgr = os.path.join(pathsbin, 'nodemgr')
     ce = [{
            'sched': "* * * * *",
            'reset_sched': True,
@@ -192,7 +205,7 @@ def install_cron_unix():
       'svcmgr resource monitor',
       'svcmgr resource_monitor',
       'nodemgr cron',
-      agt,
+      'perfagt.'+sysname,
     ]
 
     purge = []
@@ -687,11 +700,13 @@ def missing_dirs():
     missing_dir(pathlog)
     missing_dir(pathtmp)
     missing_dir(pathvar)
+    missing_dir(pathetc)
+    missing_dir(pathlck)
 
 def convert_svclinks():
     logit("begin")
     missing_dir(pathetc)
-    svcmgr = os.path.join(pathbin, 'svcmgr')
+    svcmgr = os.path.join(pathsbin, 'svcmgr')
     if not os.path.exists(svcmgr):
 	logit("%s does not exist"%svcmgr)
         return 1
@@ -831,15 +846,13 @@ def install_etc_path():
 
 def install_profile():
     logit("begin")
-    if lsb:
-        return
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
     buff = "if ! echo ${PATH} | grep -q "+pathetc+"; then"+"\n"
     buff = buff+"    PATH=${PATH}:"+pathetc+"\n"
     buff = buff+"fi\n\n"
-    buff = buff+"if ! echo ${PATH} | grep -q "+pathbin+"; then"+"\n"
-    buff = buff+"    PATH=${PATH}:"+pathbin+"\n"
+    buff = buff+"if ! echo ${PATH} | grep -qw "+pathsbin+"; then"+"\n"
+    buff = buff+"    PATH=${PATH}:"+pathsbin+"\n"
     buff = buff+"fi\n"
     if not os.path.exists(prof_d):
         logit("no profile directory found")
@@ -932,7 +945,7 @@ def move_host_mode():
     logit("begin")
     hm = os.path.join(pathvar, 'host_mode')
     cf = os.path.join(pathetc, 'node.conf')
-    nodemgr = os.path.join(pathbin, 'nodemgr')
+    nodemgr = os.path.join(pathsbin, 'nodemgr')
     if not os.path.exists(hm):
         logit("file %s does not exist"%hm)
         return

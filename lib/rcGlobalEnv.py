@@ -156,7 +156,7 @@ class rcEnv:
         pathdoc = '/usr/share/doc/opensvc'
         pathlock = '/var/lib/opensvc/lock'
         pathcron = '/usr/share/opensvc'
-        postinstall = '/usr/share/opensvc/postinstall'
+        postinstall = '/usr/lib/opensvc/bin/postinstall'
     else:
         pathsvc = os.path.realpath(os.path.join(pathlib, '..'))
         pathbin = os.path.join(pathsvc, 'bin')
