@@ -5,7 +5,7 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
 PSF=opensvc.psf
 DEPOT=opensvc-$VERSION-$RELEASE.depot
-REMOTEHOST=${1:-s64lmwbicb6.dsit.sncf.fr}
+REMOTEHOST=${1:-depot.opensvc.com}
 
 prepare_chroot || exit 1
 
@@ -33,7 +33,7 @@ product
     title        Commands (management utilities)
     revision     1.0
     prerequisite Python.PYTHON-RUN
-    postinstall  /tmp/$CHROOT_BN/opt/opensvc/bin/postinstall
+    postinstall  /tmp/$CHROOT_BN/usr/lib/opensvc/bin/postinstall
     file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN=/
     file         *
