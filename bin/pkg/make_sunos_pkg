@@ -5,7 +5,7 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $0);pwd)"
 
 PKGNAME=opensvc
 ARCH=${ARCH:-all}
-BASE=/opt/opensvc
+BASE=/
 IPSREV=$(echo $RELEASE|sed s/\.//)
 P=${PKGNAME}-$VERSION-$RELEASE.SunOS.pkg
 IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
@@ -138,7 +138,7 @@ cd $REPODIR
 cat > $REPODIR/postinstall <<EOF
 #!/sbin/sh
 
-su root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=\${PKG_INSTALL_ROOT}/opt/opensvc/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/bin/postinstall"
+su root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=\${PKG_INSTALL_ROOT}/opt/opensvc/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/lib/opensvc/bin/postinstall"
 EOF
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
