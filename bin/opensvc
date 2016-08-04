@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# variables users can override in the defaults file
+OSVC_ROOT_PATH="/usr/lib/opensvc"
+OSVC_PYTHON="python"
+OSVC_PYTHON_ARGS=""
+
+if [ -e "/etc/defaults/opensvc" ]
+then
+	# FreeBSD, Darwin
+	. "/etc/defaults/opensvc"
+elif [ -e "/etc/default/opensvc" ]
+then
+	# Debian-like, AIX, Tru64, SunOS and HP-UX
+	. "/etc/default/opensvc"
+elif [ -e "/etc/sysconfig/opensvc" ]
+then
+	# Red Hat-like
+	. "/etc/sysconfig/opensvc"
+fi
+
+BASENAME=`basename $0`
+if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon" ]
+then
+	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
+else
+	# exec from a service link: add the the --service parameter
+	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
+	BIN_ARGS="--service $BASENAME"
+fi
+
+"$OSVC_PYTHON" $OSVC_PYTHON_ARGS "$BIN" $BIN_ARGS "$@"
+

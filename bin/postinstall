@@ -8,15 +8,6 @@ import sys
 import tempfile
 import inspect
 
-python_names = ['python2.7', 'python2.6']
-python_paths = []
-python_paths += glob.glob("/opt/python-2.7.*/bin/python2.7")
-python_paths += glob.glob("/opt/python-2.6.*/bin/python2.6")
-python_paths += [
-  os.path.join(os.sep, "opt", "python-2.6.4", "bin", "python"),
-  os.path.join(os.sep, "usr", "local", "bin", "python2.6")
-]
-
 try:
     sysname, nodename, x, x, machine = os.uname()
 except:
@@ -93,29 +84,6 @@ if sysname == 'SunOS' and "PKG_INSTALL_ROOT" in os.environ and os.environ['PKG_I
 variables = {"pathsvc":pathsvc, "pathbin":pathbin, "pathetc":pathetc, "pathvar":pathvar, "pathtmp":pathtmp, "pathlib":pathlib, "pathlog":pathlog, "pathusr":pathusr, "SolarisRootRelocate":SolarisRootRelocate}
 for key in variables:
     logit("var %s <%s>"%(key,variables[key]))
-
-def python_path():
-    logit("begin")
-    wrapper = os.path.join(pathbin, "python.wrapper")
-    if os.path.exists(wrapper):
-        return wrapper
-    for n in python_names:
-        p = _python_path(n)
-        if p is not None:
-            return p
-    for p in python_paths:
-        if os.path.exists(p):
-            return p
-
-def _python_path(python_exe):
-    logit("begin")
-    for path in os.environ["PATH"].split(os.pathsep):
-        exe_file = os.path.join(path, python_exe)
-        logit("python exe <%s>"%exe_file)
-        if os.path.exists(exe_file) and os.access(exe_file, os.X_OK):
-            logit("returning <%s>"%exe_file)
-            return exe_file
-    return None
 
 def install_cron():
     logit("begin")
@@ -948,15 +916,6 @@ def install_pythonlink_windows():
     f.write(content)
     f.close()
 		
-def install_pythonlink_unix():
-    logit("begin")
-    p = python_path()
-    if p is None:
-        logit("could not find a valid python installation",stderr=True)
-        sys.exit(1)
-    target = os.path.join(pathbin, 'python')
-    return install_link(source=p, target=target)
-
 def move_host_mode():
     logit("begin")
     hm = os.path.join(pathvar, 'host_mode')
@@ -1129,7 +1088,6 @@ def dump_install_content():
                 log_file_info(filepath)
 
 try:
-    install_pythonlink()
     move_var_files_in_subdirs()
     move_usr_to_opt()
     missing_dirs()

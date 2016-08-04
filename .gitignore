@@ -11,7 +11,6 @@ bin/python
 lib/version.py
 bin/pkg/release_*
 bin/pkg/winbuilder/wxs/opensvcfiles.wxs
-bin/python
 .hg/
 .hgignore
 lib/rcLocalEnv.py
@@ -21,3 +20,4 @@ lib/rcLocalEnv.py
 nohup.out
 .project
 .pydevproject
+bin/init/opensvc.init
