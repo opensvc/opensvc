@@ -11,12 +11,16 @@ then
 	. "/etc/defaults/opensvc"
 elif [ -e "/etc/default/opensvc" ]
 then
-	# Debian-like, AIX, Tru64, SunOS and HP-UX
+	# Debian-like, Tru64, SunOS and HP-UX
 	. "/etc/default/opensvc"
 elif [ -e "/etc/sysconfig/opensvc" ]
 then
 	# Red Hat-like
 	. "/etc/sysconfig/opensvc"
+elif [ -e "/etc/rc.config.d/opensvc" ]
+then
+	# AIX
+	. "/etc/rc.config.d/opensvc"
 fi
 
 BASENAME=`basename $0`
