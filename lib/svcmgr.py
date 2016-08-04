@@ -6,9 +6,6 @@ import optparse
 #
 # add project lib to path
 #
-pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-pathetc = os.path.join(pathsvc, 'etc')
-sys.path = [os.path.join('usr', 'share', 'opensvc', 'lib'), os.path.join(pathsvc, 'lib')] + sys.path
 prog = os.path.basename(__file__)
 action = None
 _args = None
@@ -18,6 +15,7 @@ import rcStatus
 import rcOptParser
 import rcExceptions as ex
 from rcUtilities import ximport
+from rcGlobalEnv import rcEnv
 node_mod = ximport('node')
 
 build_err = False
@@ -63,18 +61,14 @@ def install_service(svcnames, src_env):
 def _install_service(svcname, src_env):
     import shutil
 
-    pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    pathetc = os.path.join(pathsvc, 'etc')
-    pathbin = os.path.join(pathsvc, 'bin')
-
     # install env file in etc/
     src_env = os.path.realpath(src_env)
-    dst_env = os.path.join(pathetc, svcname+'.env')
+    dst_env = os.path.join(rcEnv.pathetc, svcname+'.env')
     if dst_env != src_env:
         shutil.copy2(src_env, dst_env)
 
     # install .dir
-    d = os.path.join(pathetc, svcname+'.dir')
+    d = os.path.join(rcEnv.pathetc, svcname+'.dir')
     if not os.path.exists(d):
         os.makedirs(d)
 
@@ -84,7 +78,7 @@ def _install_service(svcname, src_env):
         return
 
     # install .d
-    ld = os.path.join(pathetc, svcname+'.d')
+    ld = os.path.join(rcEnv.pathetc, svcname+'.d')
     if not os.path.exists(ld):
         os.symlink(d, ld)
     elif not os.path.exists(ld+os.sep):
@@ -93,8 +87,8 @@ def _install_service(svcname, src_env):
         os.symlink(d, ld)
 
     # install svcmgr link
-    ls = os.path.join(pathetc, svcname)
-    s = os.path.join(pathbin, 'svcmgr')
+    ls = os.path.join(rcEnv.pathetc, svcname)
+    s = os.path.join(rcEnv.pathbin, 'svcmgr')
     if not os.path.exists(ls):
         os.symlink(s, ls)
     elif os.path.realpath(s) != os.path.realpath(ls):
