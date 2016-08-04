@@ -3,14 +3,18 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 export PATH
 
-if [ -r /etc/rc.config.d/opensvc ] ; then 
-    . /etc/rc.config.d/opensvc
-fi
+DEFAULTS="/etc/rc.config.d/opensvc"
+OSVC_BOOT_OPTS="--parallel"
+OSVC_ROOT_PATH="/usr/lib/opensvc"
 
-osvc_path=/opt/opensvc/bin
-osvc_opts="--parallel"
-allservices=${osvc_path}/allservices
-agt=${osvc_path}/perfagt.`uname -s`
+# Include opensvc defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
+# Compat
+[ -n "$osvc_opts" ] && OSVC_BOOT_OPTS=${osvc_opts}
+[ -n "$osvc_background" ] && OSVC_BACKGROUND=${osvc_background}
+
+allservices=${OSVC_ROOT_PATH}/bin/svcmgr
 
 case $1 in
 start_msg)
@@ -24,14 +28,12 @@ start)
 	else
 		exit 0
 	fi
-	if [ -x $agt ] ; then
-		$agt
-	fi
-        ${osvc_path}/nodemgr pushasset
-	[ "${osvc_background}" == "true" ] && {
-		${allservices} ${osvc_opts} boot &
+	${OSVC_ROOT_PATH}/bin/nodemgr collect stats
+        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
+	[ "${OSVC_BACKGROUND}" == "true" ] && {
+		${allservices} ${OSVC_BOOT_OPTS} boot &
 	} || {
-		${allservices} ${osvc_opts} boot
+		${allservices} ${OSVC_BOOT_OPTS} boot
 	}
 	;;
 stop_msg)
@@ -41,10 +43,10 @@ stop_msg)
 	;;
 stop)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
-		echo "Starting opensvc services"
+		echo "Shutting down opensvc services"
 	else
 		exit 0
 	fi
-	${allservices} ${osvc_opts} shutdown
+	${allservices} ${OSVC_BOOT_OPTS} shutdown
 	;;
 esac

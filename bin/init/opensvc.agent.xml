@@ -15,15 +15,15 @@
       <dependency name='opensvc_d_postinstall' grouping='require_all' restart_on='none' type='service'>
         <service_fmri value='svc:/site/application/opensvc:postinstall'/>
       </dependency>
-      <exec_method name='start' type='method' exec='/opt/opensvc/bin/opensvc.init.SunOS start' timeout_seconds='0'/>
-      <exec_method name='stop' type='method' exec='/opt/opensvc/bin/opensvc.init.SunOS stop' timeout_seconds='0'/>
+      <exec_method name='start' type='method' exec='/usr/lib/opensvc/bin/opensvc.init.SunOS start' timeout_seconds='0'/>
+      <exec_method name='stop' type='method' exec='/usr/lib/opensvc/bin/opensvc.init.SunOS stop' timeout_seconds='0'/>
       <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
       <property_group name='boot' type='application'>
         <propval name='firstrun' type='astring' value='done'/>
       </property_group>
     </instance>
     <instance name='postinstall' enabled='true'>
-      <exec_method name='start' type='method' exec='/opt/opensvc/bin/postinstall' timeout_seconds='60'/>
+      <exec_method name='start' type='method' exec='/usr/lib/opensvc/bin/postinstall' timeout_seconds='60'/>
       <exec_method name='stop' type='method' exec=':true' timeout_seconds='60'/>
       <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
     </instance>

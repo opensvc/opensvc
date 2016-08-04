@@ -9,29 +9,34 @@
 PATH=/usr/bin:/usr/sbin:$PATH
 
 DEFAULTS="/etc/defaults/opensvc"
+OSVC_BOOT_OPTS="--parallel"
+OSVC_ROOT_PATH="/usr/lib/opensvc"
 
 # Include opensvc defaults if available
 [ -r "$DEFAULTS" ] && . "$DEFAULTS"
 
-osvc_path=/opt/opensvc/bin
-osvc_opts=${osvc_opts:---parallel}
-allservices=${osvc_path}/allservices
+# Compat
+[ -n "$osvc_opts" ] && OSVC_BOOT_OPTS=${osvc_opts}
+[ -n "$osvc_background" ] && OSVC_BACKGROUND=${osvc_background}
+
+allservices=${OSVC_ROOT_PATH}/bin/svcmgr
 
 case $1 in
 start)
         ipconfig waitall
         echo "OpenSVC : Pushing node information"
-        ${osvc_path}/nodemgr pushasset
+	${OSVC_ROOT_PATH}/bin/nodemgr pushasset
         echo
         echo "OpenSVC : Starting Services"
-	[ "${osvc_background}" == "true" ] && {
-		${allservices} ${osvc_opts} boot &
+	[ "${OSVC_BACKGROUND}" == "true" ] && {
+		${allservices} ${OSVC_BOOT_OPTS} boot &
 	} || {
-		${allservices} ${osvc_opts} boot
+		${allservices} ${OSVC_BOOT_OPTS} boot
 	}
 	;;
 stop)
-        echo "OpenSVC : Stopping Services"
-	${allservices} ${osvc_opts} shutdown
+	echo "OpenSVC : Stopping Services"
+	${allservices} ${OSVC_BOOT_OPTS} shutdown
 	;;
 esac
+
