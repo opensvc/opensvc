@@ -1,4 +1,4 @@
-#!/opt/opensvc/bin/python
+#!/usr/bin/env python
 data = {
   "default_prefix": "OSVC_COMP_ZPOOL_",
   "example_value": """ 

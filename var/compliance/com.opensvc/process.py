@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/usr/bin/env python
 
 data = {
   "default_prefix": "OSVC_COMP_PROC_",

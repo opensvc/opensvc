@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/usr/bin/env python
 
 """
 The ENV variable format is json-serialized [list of dict]:

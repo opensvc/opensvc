@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/usr/bin/env python
 """ 
 [{"service": "foo", "level": "2345", "state": "on"},
  {"service": "foo", "level": "016", "state": "off"},

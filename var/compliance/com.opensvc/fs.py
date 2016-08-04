@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/usr/bin/env python
 """ 
 Verify file content. The collector provides the format with
 wildcards. The module replace the wildcards with contextual

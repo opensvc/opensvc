@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/opensvc/bin/python
+#!/usr/bin/env python
 """ 
 Same as files compliance object, but verifies the sudoers
 declaration syntax using visudo in check mode.
