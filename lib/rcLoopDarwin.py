@@ -5,7 +5,6 @@ import plistlib
 from rcGlobalEnv import *
 from rcUtilities import call, which
 import rcStatus
-import resLoop as Res
 import rcExceptions as ex
 
 def file_to_loop(f):
