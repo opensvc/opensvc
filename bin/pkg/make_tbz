@@ -39,7 +39,7 @@ NO_BUILD=      yes
 
 do-install:
 	\${CP} -a \${WRKSRC}/* \${PREFIX}/
-	\${PREFIX}/opt/opensvc/bin/postinstall
+	\${PREFIX}/usr/lib/opensvc/bin/postinstall
 
 .include <bsd.port.mk>
 

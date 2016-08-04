@@ -1,12 +1,14 @@
 from __future__ import print_function
 import os
+import sys
 import tarfile
+from rcGlobalEnv import rcEnv
 
 repo_subdir = "tar"
 
 def update(fpath):
     oldpath = os.getcwd()
-    os.chdir(os.path.join(os.sep, "opt"))
+    os.chdir("/"))
     tar = tarfile.open(fpath)
     try:
         tar.extractall()
@@ -23,5 +25,5 @@ def update(fpath):
     except:
         pass
 
-    cmd = '/opt/opensvc/bin/python /opt/opensvc/bin/postinstall'
+    cmd = sys.executable + ' ' + rcEnv.postinstall
     return os.system(cmd)

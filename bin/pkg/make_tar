@@ -9,6 +9,6 @@ CHROOT=$CHROOT/opensvc-$VERSION.$RELEASE
 prepare_chroot || exit 1
 
 echo "create $(readlink -f $TAR)"
-sudo tar cf $TAR --owner=0 --group=0 -C $CHROOT/opt/ opensvc || exit 1
+sudo tar cf $TAR --owner=0 --group=0 -C $CHROOT/ . || exit 1
 
 [ -x $PATH_SCRIPT/release_tar ] && $PATH_SCRIPT/release_tar $TAR
