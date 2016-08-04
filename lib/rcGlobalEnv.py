@@ -147,7 +147,7 @@ class rcEnv:
     dbcompliance = "None"
 
     pathlib = os.path.realpath(os.path.dirname(__file__))
-    if pathlib.startswith('/usr/share'):
+    if pathlib.startswith('/usr/lib/opensvc'):
         pathbin = '/usr/bin'
         pathetc = '/etc/opensvc'
         pathlog = '/var/log/opensvc'
