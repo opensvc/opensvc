@@ -1146,13 +1146,19 @@ def convert_to_lsb():
         else:
             shutil.copy(p, pathetc)
     for p in glob.glob("/opt/opensvc/var/*"):
+        if os.path.basename(p) == "btrfs":
+            continue
         logit("migrate " + p)
         bp = os.path.basename(p)
         dst = os.path.join(pathvar, bp)
         if os.path.exists(dst):
             continue
         if os.path.isdir(p):
-            shutil.copytree(p, dst, symlinks=True)
+            try:
+                shutil.copytree(p, dst, symlinks=True)
+            except:
+                # best effort for var
+                pass
         else:
             shutil.copy(p, pathvar)
 
