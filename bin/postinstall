@@ -18,9 +18,9 @@ postinstall_d = sys.path[0]
 if '/catalog/' in postinstall_d:
     # hpux packaging subsystem executes the postinstall from dir
     # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
-    postinstall_d = "/usr/share/opensvc"
+    postinstall_d = "/usr/lib/opensvc/bin"
     lsb = True
-elif postinstall_d == "/usr/share/opensvc":
+elif postinstall_d == "/usr/lib/opensvc/bin":
     lsb = True
 else:
     # windows install or unix execution from a non-lsb tree (ex: /opt/opensvc/)
@@ -1112,6 +1112,50 @@ def dump_install_content():
                 filepath = os.path.join(dirname, filename)
                 log_file_info(filepath)
 
+def convert_to_lsb():
+    logit("begin")
+    if sysname == 'Windows':
+        logit("skip : unsupported on Windows")
+        return
+    if len(glob.glob(pathetc+"/*")) > 0:
+        logit("skip : skip convert to lsb because /etc/opensvc/ is not empty")
+        return
+    if not os.path.exists("/opt/opensvc"):
+        logit("skip : skip convert to lsb because /opt/opensvc/ does not exist")
+        return
+    for p in glob.glob("/opt/opensvc/etc/*conf") + glob.glob("/opt/opensvc/etc/sssu") + glob.glob("/opt/opensvc/etc/*pem") + glob.glob("/opt/opensvc/etc/*pub"):
+        logit("migrate " + p)
+        shutil.copy(p, pathetc)
+    for p in glob.glob("/opt/opensvc/etc/*.env"):
+        logit("migrate " + p)
+        svcname = os.path.basename(p)[:-4]
+        shutil.copy(os.path.realpath(p), pathetc)
+        os.symlink("/usr/bin/svcmgr", os.path.join(pathetc, svcname))
+    for p in glob.glob("/opt/opensvc/etc/*.dir"):
+        bp = os.path.basename(p)
+        svcname = bp[:-4]
+        dst = os.path.join(pathetc, bp)
+        logit("migrate " + p)
+        shutil.copytree(p, dst, symlinks=True)
+    for p in glob.glob("/opt/opensvc/etc/*.d"):
+        logit("migrate " + p)
+        if os.path.isdir(p):
+            bp = os.path.basename(p)
+            dst = os.path.join(pathetc, bp)
+            shutil.copytree(p, dst, symlinks=True)
+        else:
+            shutil.copy(p, pathetc)
+    for p in glob.glob("/opt/opensvc/var/*"):
+        logit("migrate " + p)
+        bp = os.path.basename(p)
+        dst = os.path.join(pathvar, bp)
+        if os.path.exists(dst):
+            continue
+        if os.path.isdir(p):
+            shutil.copytree(p, dst, symlinks=True)
+        else:
+            shutil.copy(p, pathvar)
+
 try:
     move_var_files_in_subdirs()
     move_usr_to_opt()
@@ -1127,6 +1171,7 @@ try:
     nodeconf_params()
     purge_collector_api_cache()
     chmod_directories()
+    convert_to_lsb()
     dump_install_content()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
 except:
