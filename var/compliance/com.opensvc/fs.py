@@ -434,7 +434,7 @@ class CompFs(object):
         return getattr(self, 'fix_fs_fmt_'+self.sysname)(fs)
 
     def get_res_item(self, rid, item):
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'get', '--param', '.'.join((rid, item))]
+        cmd = ['svcmgr', '-s', self.svcname, 'get', '--param', '.'.join((rid, item))]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -454,7 +454,7 @@ class CompFs(object):
     def get_fs_rids(self, refresh=False):
         if not refresh and hasattr(self, 'rids'):
             return self.rids
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_status']
+        cmd = ['svcmgr', '-s', self.svcname, 'json_status']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         for line in out.split('\n'):
@@ -541,14 +541,14 @@ class CompFs(object):
     def fix_fs_svc(self, fs):
         if not self.osvc_service or self.check_fs_svc(fs, False) == 0:
             return 0
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'get', '--param', 'DEFAULT.encapnodes']
+        cmd = ['svcmgr', '-s', self.svcname, 'get', '--param', 'DEFAULT.encapnodes']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if self.nodename in out.strip().split():
             tags = "encap"
         else:
             tags = ''
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'update', '--resource',
+        cmd = ['svcmgr', '-s', self.svcname, 'update', '--resource',
                '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mnt_opt": "%s", "tags": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'], tags)]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -581,11 +581,11 @@ class CompFs(object):
         if rid is None:
             print >>sys.stderr, "fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname)
             return 1
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'mount', '--cluster']
+        cmd = ['svcmgr', '-s', self.svcname, '--rid', rid, 'mount', '--cluster']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0 and "unsupported action" in err:
-            cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, '--rid', rid, 'startfs', '--cluster']
+            cmd = ['svcmgr', '-s', self.svcname, '--rid', rid, 'startfs', '--cluster']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
         print ' '.join(cmd)

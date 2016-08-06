@@ -167,7 +167,10 @@ class CompObject(object):
         except ImportError:
             import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
-        config.read("/opt/opensvc/etc/node.conf")
+        if os.path.realpath(__file__).startswith("/opt/opensvc"):
+            config.read("/opt/opensvc/etc/node.conf")
+        else:
+            config.read("/etc/opensvc/node.conf")
         data = {}
         data["username"] = nodename
         data["password"] = config.get("node", "uuid")

@@ -85,7 +85,7 @@ class NodeConf(CompObject):
         return RET_OK
 
     def unset_val(self, keyname):
-        cmd = ['/opt/opensvc/bin/nodemgr', 'unset', '--param', keyname]
+        cmd = ['nodemgr', 'unset', '--param', keyname]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
@@ -94,14 +94,14 @@ class NodeConf(CompObject):
     def set_val(self, keyname, target):
         if type(target) == int:
             target = str(target)
-        cmd = ['/opt/opensvc/bin/nodemgr', 'set', '--param', keyname, '--value', target]
+        cmd = ['nodemgr', 'set', '--param', keyname, '--value', target]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return p.returncode
 
     def get_val(self, keyname):
-        cmd = ['/opt/opensvc/bin/nodemgr', 'get', '--param', keyname]
+        cmd = ['nodemgr', 'get', '--param', keyname]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:

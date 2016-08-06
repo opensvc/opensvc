@@ -703,7 +703,7 @@ class CompVuln(CompObject):
         return r
 
     def pushpkg(self):
-        bin = '/opt/opensvc/bin/nodemgr'
+        bin = 'nodemgr'
         if which(bin) is None:
             return
         cmd = [bin, 'pushpkg']

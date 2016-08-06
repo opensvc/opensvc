@@ -2,7 +2,7 @@
 
 data = {
   "default_prefix": "OSVC_COMP_CRON_ENTRY_",
-  "example_value": "add:osvc:* * * * *:/opt/opensvc/bin/cron/opensvc:/etc/cron.d/opensvc",
+  "example_value": "add:osvc:* * * * *:/path/to/mycron:/etc/cron.d/opensvc",
   "description": """* Add and Remove cron entries
 * Support arbitrary con file location
 """,

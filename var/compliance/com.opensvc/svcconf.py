@@ -122,7 +122,7 @@ class SvcConf(CompObject):
     def get_env_file(self, refresh=False):
        if not refresh:
            return self.svcenv
-       cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'json_env']
+       cmd = ['svcmgr', '-s', self.svcname, 'json_env']
        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
        out, err = p.communicate()
        self.svcenv = json.loads(out)
@@ -134,7 +134,7 @@ class SvcConf(CompObject):
     def set_val(self, keyname, target):
         if type(target) == int:
             target = str(target)
-        cmd = ['/opt/opensvc/bin/svcmgr', '-s', self.svcname, 'set', '--param', keyname, '--value', target]
+        cmd = ['svcmgr', '-s', self.svcname, 'set', '--param', keyname, '--value', target]
         print ' '.join(cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
