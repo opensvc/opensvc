@@ -68,8 +68,8 @@ function prepare_chroot {
 	cd $CHROOT/opt/opensvc/usr/share/doc
 	for f in $(echo template*env)
 	do
-		echo "gzip $f"
-		gzip $f
+		echo "gzip -n $f"
+		gzip -n $f
 	done
 
 	# purge unwanted files
@@ -81,7 +81,6 @@ function prepare_chroot {
 	mkdir -p $CHROOT/usr/bin
 	mkdir -p $CHROOT/etc/opensvc
 	mkdir -p $CHROOT/var/log/opensvc
-	mkdir -p $CHROOT/var/tmp/opensvc
 	mkdir -p $CHROOT/var/lib/opensvc/cache
 	mkdir -p $CHROOT/usr/share/opensvc
 	mkdir -p $CHROOT/usr/share/doc/opensvc
@@ -91,9 +90,9 @@ function prepare_chroot {
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $CHROOT/usr/share/doc/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
-	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
-	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
-	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon
+	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
+	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
+	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon
 
 	# purge unwanted files
 	rm -rf $CHROOT/opt/opensvc

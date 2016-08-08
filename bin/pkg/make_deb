@@ -4,7 +4,18 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
 DEB=opensvc-$VERSION-$RELEASE.noarch.deb
 
+function changelog {
+	git log -n 100 --pretty=format:"opensvc (__V__) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %ad%n" | \
+        awk -v BRANCH=$BRANCH 'BEGIN{cmd="git describe --tags " BRANCH ; cmd | getline rev; split(rev, a, "-"); rev=a[2]}{if (rev<0){exit};if (/__V__/){sub(/__V__/, a[1] "-" rev, $0); print $0; rev=rev-1} else {print}}'
+}
+
 prepare_chroot || exit 1
+
+# upstream changelog
+changelog | gzip -c -9 -n | $SUDO tee $CHROOT/usr/share/doc/opensvc/changelog.gz >/dev/null
+
+# debian packager changelog
+echo | gzip -c -9 -n | $SUDO tee $CHROOT/usr/share/doc/opensvc/changelog.Debian.gz >/dev/null
 
 # prepare control.tar.gz
 mkdir -p $CHROOT/DEBIAN || exit 1
@@ -14,7 +25,7 @@ cat - <<-EOF >$CHROOT/DEBIAN/conffiles
 EOF
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
-#!/bin/sh
+#!/bin/sh -e
 /usr/share/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
@@ -30,16 +41,19 @@ Pre-Depends:
 Recommends: sg3-utils
 Suggests: 
 Installed-Size: 50
-Maintainer: OpenSVC [support@opensvc.com]
+Maintainer: OpenSVC <support@opensvc.com>
 Conflicts: 
 Replaces: 
 Provides: opensvc
 Description: $SUMMARY
- $(echo $DESCRIPTION)
 EOF
+
+echo "$DESCRIPTION" | sed -e "s/^/ /" >>$CHROOT/DEBIAN/control
 
 $SUDO chown -R root:root $CHROOT/DEBIAN
 
 dpkg-deb -Zgzip -b $CHROOT || exit 1
+
+lintian $CHROOT/../$DEB
 
 [ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $CHROOT/../$DEB
