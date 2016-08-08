@@ -20,7 +20,7 @@ product
   title          opensvc
   revision       $VERSION-$RELEASE
   category       system_management
-  description    tools to drive OpenSVC services
+  description    $SUMMARY
   copyright      Opensvc SARL
   architecture   HP-UX_10.20_700/800
   machine_type   *

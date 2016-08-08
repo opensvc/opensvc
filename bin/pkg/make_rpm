@@ -13,7 +13,7 @@ SPEC=$SPEC_D/opensvc.spec
 }
 
 cat - <<-EOF >$SPEC
-Summary: OpenSVC node tools
+Summary: $SUMMARY
 Name: opensvc
 Version: $VERSION
 Release: $RELEASE
@@ -28,7 +28,8 @@ AutoReqProv: no
 %define _binary_payload w9.gzdio
 
 %description
-Mono and multi-node services management tools
+$DESCRIPTION
+
 %post
 /usr/lib/opensvc/bin/postinstall
 %files

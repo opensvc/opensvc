@@ -27,7 +27,7 @@ CATEGORIES=    sysutils
 MASTER_SITES=  http://repo.opensvc.com/tgz
 
 MAINTAINER=    admin@opensvc.com
-COMMENT=       OpenSVC service manager
+COMMENT=       $SUMMARY
 
 #MAN1=          svcmgr.3
 #MANCOMPRESSED= yes
@@ -46,15 +46,7 @@ do-install:
 EOF
 
 cat - <<-EOF >pkg-descr
-OpenSVC is a 'service' manager, as in clustered service manager, designed for real-world heterogeneous datacenters and large-scale operations like disaster recovery.
-
-Services are collections of resources (virtual machine, ip, disk groups, filesystems, file synchronizations, and application launchers).
-
-Services can be started, stopped and queried for status, providing a consistent command set for wildly different service integration types.
-
-Service configurations, status and logs are pushed to a central database coupled to a web front-end (collector).
-
-Services can be administered using the stand-alone GPLv2 software stack deployed on the nodes (nodeware), or through the web-front end.
+$DESCRIPTION
 
 WWW: http://www.opensvc.com/
 EOF

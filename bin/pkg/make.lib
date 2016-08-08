@@ -1,3 +1,6 @@
+SUMMARY="OpenSVC automation and configuration management agent"
+DESCRIPTION="The OpenSVC agent provisions, starts, stops, monitors and relocates applications described as OpenSVC services. It centralizes nodes discovery and handles nodes and services configuration management. It tracks system configuration changes."
+
 function changelog {
         git log --pretty=format:"* %ad - %ae%n- %s" | sed -e "s/ [0-9]*:[0-9]*:[0-9]*//" -e "s/ +[0-9]* -/ -/"
 }

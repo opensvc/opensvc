@@ -65,7 +65,7 @@ cat - <<-EOF >$XMLDISTRIB
         id="com.opensvc.agent"
         visible="false"
         title="OpenSVC Agent daemon"
-        description="These are the tools to drive OpenSVC services"
+        description="$SUMMARY"
         start_selected="true">
       <pkg-ref id="com.opensvc.agent"/>
     </choice>

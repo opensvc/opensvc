@@ -144,7 +144,7 @@ EOF
 echo "----- Creating $PKGNAME build-$RELEASE ..."
 create_pkg -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
 
-opensvc Service Manager for logical servers v${VERSION}-$RELEASE
+$SUMMARY
 $ARCH
 $VERSION,REV=$RELEASE
 

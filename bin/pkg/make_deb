@@ -33,7 +33,8 @@ Maintainer: OpenSVC [support@opensvc.com]
 Conflicts: 
 Replaces: 
 Provides: opensvc
-Description: Mono and multi-node services management tools
+Description: $SUMMARY
+ $DESCRIPTION
 EOF
 
 dpkg-deb -Zgzip -b $CHROOT || exit 1
