@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 
@@ -19,4 +21,7 @@ def which(program):
         if is_exe(exe_file):
             return exe_file
     return None
+
+if __name__ == "__main__":
+    print >>sys.stderr, "this file is for import into compliance objects"
 

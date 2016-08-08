@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import os
 import re
@@ -339,4 +341,7 @@ def main(co):
         sys.exit(RET_ERR)
 
     sys.exit(RET)
+
+if __name__ == "__main__":
+    print >>sys.stderr, "this file is for import into compliance objects"
 

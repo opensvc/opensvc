@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from subprocess import *
 import os
 import sys
@@ -246,3 +248,4 @@ if __name__ == "__main__":
     o = SysVInit()
     print o
     print 'xfs@rc3 =', o.get_state('xfs', 3)
+
