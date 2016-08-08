@@ -4,6 +4,8 @@ described as OpenSVC services. It centralizes nodes discovery and handles
 nodes and services configuration management. It tracks system configuration
 changes."
 
+umask 022
+
 function changelog {
 	git log -n 100 --pretty=format:"* %ad %an <%ae>%n- %s" | \
 	# strip tz
@@ -98,6 +100,7 @@ function prepare_chroot {
 
 	cd $OSVC
 	$SUDO chown -Rh 0:0 $CHROOT/* || return 1
+	$SUDO find $CHROOT -type d -exec $SUDO chmod 755 {} \; || return 1
 
 	return 0
 }

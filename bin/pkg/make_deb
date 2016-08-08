@@ -10,6 +10,7 @@ prepare_chroot || exit 1
 mkdir -p $CHROOT/DEBIAN || exit 1
 
 cat - <<-EOF >$CHROOT/DEBIAN/conffiles
+/etc/bash_completion.d/opensvc
 EOF
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
@@ -21,10 +22,10 @@ chmod 755 $CHROOT/DEBIAN/postinst
 cat - <<-EOF >$CHROOT/DEBIAN/control
 Package: opensvc
 Version: $VERSION-$RELEASE
-Section: system 
+Section: admin 
 Priority: optional
 Architecture: all
-Essential: no
+Depends: python
 Pre-Depends: 
 Recommends: sg3-utils
 Suggests: 
@@ -36,6 +37,8 @@ Provides: opensvc
 Description: $SUMMARY
  $(echo $DESCRIPTION)
 EOF
+
+$SUDO chown -R root:root $CHROOT/DEBIAN
 
 dpkg-deb -Zgzip -b $CHROOT || exit 1
 
