@@ -2,7 +2,7 @@ from __future__ import print_function
 from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
-from rcGlobalEnv import rcEnv
+from rcGlobalEnv import rcEnv, get_osvc_paths
 from rcUtilities import justcall
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
@@ -1110,7 +1110,8 @@ class Svc(Resource, Scheduler):
             options.append('--subsets')
             options.append(self.options.parm_subsets)
 
-        cmd = [rcEnv.svcmgr, '-s', self.svcname] + options + cmd
+        paths = get_osvc_paths(osvc_root_path=container.osvc_root_path, sysname=container.guestos)
+        cmd = [paths.svcmgr, '-s', self.svcname] + options + cmd
 
         if container is not None and hasattr(container, "rcmd"):
             out, err, ret = container.rcmd(cmd)
@@ -2313,17 +2314,21 @@ class Svc(Resource, Scheduler):
             out, err, ret = self._encap_cmd(cmd, r)
         except ex.excError:
             ret = 1
+
+        paths = get_osvc_paths(osvc_root_path=r.osvc_root_path, sysname=r.guestos)
+        encap_pathenv = os.path.join(paths.pathetc, os.path.basename(self.pathenv))
+
         if ret == 0:
             encap_mtime = int(float(out.strip()))
             local_mtime = int(os.stat(self.pathenv).st_mtime)
             if encap_mtime > local_mtime:
                 if hasattr(r, 'rcp_from'):
-                    out, err, ret = r.rcp_from(self.pathenv, rcEnv.pathetc+'/')
+                    out, err, ret = r.rcp_from(encap_pathenv, rcEnv.pathetc+'/')
                 else:
-                    cmd = rcEnv.rcp.split() + [r.name+':'+self.pathenv, rcEnv.pathetc+'/']
+                    cmd = rcEnv.rcp.split() + [r.name+':'+encap_pathenv, rcEnv.pathetc+'/']
                     out, err, ret = justcall(cmd)
                 os.utime(self.pathenv, (encap_mtime, encap_mtime))
-                print("fetch %s from %s ..."%(self.pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+                print("fetch %s from %s ..."%(encap_pathenv, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
                 if ret != 0:
                     raise ex.excError()
                 return
@@ -2331,9 +2336,9 @@ class Svc(Resource, Scheduler):
                 return
 
         if hasattr(r, 'rcp'):
-            out, err, ret = r.rcp(self.pathenv, rcEnv.pathetc+'/')
+            out, err, ret = r.rcp(self.pathenv, encap_pathenv)
         else:
-            cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+rcEnv.pathetc+'/']
+            cmd = rcEnv.rcp.split() + [self.pathenv, r.name+':'+encap_pathenv]
             out, err, ret = justcall(cmd)
         self.log.handlers[1].setLevel(logging.CRITICAL)
         if ret != 0:
@@ -2342,7 +2347,7 @@ class Svc(Resource, Scheduler):
             raise ex.excError()
         self.log.info("send %s to %s" % (self.pathenv, r.name))
 
-        cmd = ['install', '--envfile', self.pathenv]
+        cmd = ['install', '--envfile', encap_pathenv]
         out, err, ret = self._encap_cmd(cmd, container=r)
         if ret != 0:
             self.log.error("failed to install %s slave service" % r.name)

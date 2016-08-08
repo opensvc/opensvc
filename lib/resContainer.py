@@ -22,6 +22,7 @@ class Container(Res.Resource):
                  monitor=False,
                  restart=0,
                  subset=None,
+                 osvc_root_path=None,
                  tags=set([]),
                  always_on=set([])):
         Res.Resource.__init__(self,
@@ -33,6 +34,7 @@ class Container(Res.Resource):
                               restart=restart,
                               subset=subset,
                               tags=tags)
+        self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name

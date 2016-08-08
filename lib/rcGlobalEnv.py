@@ -13,6 +13,60 @@ import os
 import platform
 import socket
 
+class Storage(object):
+    pass
+
+def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
+    o = Storage()
+
+    if osvc_root_path:
+        o.pathsvc = osvc_root_path
+    elif detect:
+        o.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    else:
+        o.pathsvc = '/usr/lib/opensvc'
+
+    if o.pathsvc == '/usr/lib/opensvc':
+        o.pathlib = '/usr/lib/opensvc/lib'
+        o.pathbin = '/usr/bin'
+        o.pathetc = '/etc/opensvc'
+        o.pathlog = '/var/log/opensvc'
+        o.pathtmp = '/var/tmp/opensvc'
+        o.pathvar = '/var/lib/opensvc'
+        o.pathdoc = '/usr/share/doc/opensvc'
+        o.pathlock = '/var/lib/opensvc/lock'
+        o.pathcron = '/usr/share/opensvc'
+        o.postinstall = '/usr/lib/opensvc/bin/postinstall'
+    else:
+        o.pathlib = os.path.join(o.pathsvc, 'lib')
+        o.pathbin = os.path.join(o.pathsvc, 'bin')
+        o.pathetc = os.path.join(o.pathsvc, 'etc')
+        o.pathlog = os.path.join(o.pathsvc, 'log')
+        o.pathtmp = os.path.join(o.pathsvc, 'tmp')
+        o.pathvar = os.path.join(o.pathsvc, 'var')
+        o.pathdoc = os.path.join(o.pathsvc, 'usr', 'share', 'doc')
+        o.pathlock = os.path.join(o.pathvar, 'lock')
+        o.pathcron = o.pathbin
+        o.postinstall = os.path.join(o.pathbin, 'postinstall')
+
+    if str(sysname).lower() == "windows":
+        o.svcmgr = os.path.join(o.pathsvc, "svcmgr.cmd")
+        o.nodemgr = os.path.join(o.pathsvc, "nodemgr.cmd")
+        o.svcmon = os.path.join(o.pathsvc, "svcmon.cmd")
+        o.cron = os.path.join(o.pathsvc, "cron.cmd")
+    else:
+        o.svcmgr = os.path.join(o.pathbin, "svcmgr")
+        o.nodemgr = os.path.join(o.pathbin, "nodemgr")
+        o.svcmon = os.path.join(o.pathbin, "svcmon")
+        o.cron = os.path.join(o.pathcron, "cron")
+
+    o.nodeconf = os.path.join(o.pathetc, "node.conf")
+    o.authconf = os.path.join(o.pathetc, "auth.conf")
+
+    o.drp_path = os.path.join(o.pathvar, "cache")
+
+    return o
+
 class rcEnv:
     """Class to store globals
     """
@@ -145,43 +199,23 @@ class rcEnv:
 
     dbopensvc = "None"
     dbcompliance = "None"
-
-    pathlib = os.path.realpath(os.path.dirname(__file__))
-    if pathlib.startswith('/usr/lib/opensvc'):
-        pathbin = '/usr/bin'
-        pathetc = '/etc/opensvc'
-        pathlog = '/var/log/opensvc'
-        pathtmp = '/var/tmp/opensvc'
-        pathvar = '/var/lib/opensvc'
-        pathdoc = '/usr/share/doc/opensvc'
-        pathlock = '/var/lib/opensvc/lock'
-        pathcron = '/usr/share/opensvc'
-        postinstall = '/usr/lib/opensvc/bin/postinstall'
-    else:
-        pathsvc = os.path.realpath(os.path.join(pathlib, '..'))
-        pathbin = os.path.join(pathsvc, 'bin')
-        pathetc = os.path.join(pathsvc, 'etc')
-        pathlog = os.path.join(pathsvc, 'log')
-        pathtmp = os.path.join(pathsvc, 'tmp')
-        pathvar = os.path.join(pathsvc, 'var')
-        pathdoc = os.path.join(pathsvc, 'usr', 'share', 'doc')
-        pathlock = os.path.join(pathvar, 'lock')
-        pathcron = pathbin
-        postinstall = os.path.join(pathbin, 'postinstall')
-
-    if sysname == "Windows":
-        svcmgr = os.path.join(pathsvc, "svcmgr.cmd")
-        nodemgr = os.path.join(pathsvc, "nodemgr.cmd")
-        svcmon = os.path.join(pathsvc, "svcmon.cmd")
-        cron = os.path.join(pathsvc, "cron.cmd")
-    else:
-        svcmgr = os.path.join(pathbin, "svcmgr")
-        nodemgr = os.path.join(pathbin, "nodemgr")
-        svcmon = os.path.join(pathbin, "svcmon")
-        cron = os.path.join(pathcron, "cron")
-
-    nodeconf = os.path.join(pathetc, "node.conf")
-    authconf = os.path.join(pathetc, "auth.conf")
-
-    drp_path = os.path.join(pathvar, "cache")
+    paths = get_osvc_paths(sysname=sysname, detect=True)
+    pathsvc = paths.pathsvc
+    pathlib = paths.pathlib
+    pathbin = paths.pathbin
+    pathetc = paths.pathetc
+    pathlog = paths.pathlog
+    pathtmp = paths.pathtmp
+    pathvar = paths.pathvar
+    pathdoc = paths.pathdoc
+    pathlock = paths.pathlock
+    pathcron = paths.pathcron
+    postinstall = paths.postinstall
+    svcmgr = paths.svcmgr
+    svcmon = paths.svcmon
+    nodemgr = paths.nodemgr
+    cron = paths.cron
+    nodeconf = paths.nodeconf
+    authconf = paths.authconf
+    drp_path = paths.drp_path
 

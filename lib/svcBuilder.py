@@ -188,6 +188,15 @@ def get_subset(conf, section, svc):
         return
     return
 
+def get_osvc_root_path(conf, section, svc):
+    if not conf.has_section(section):
+        return
+    try:
+        return conf_get_string_scope(svc, conf, section, 'osvc_root_path')
+    except ex.OptNotFound:
+        return
+    return
+
 def get_restart(conf, section, svc):
     if not conf.has_section(section):
         if conf.has_option('DEFAULT', 'restart'):
@@ -1479,6 +1488,7 @@ def add_containers_esx(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Esx(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1508,6 +1518,7 @@ def add_containers_hpvm(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.HpVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1537,6 +1548,7 @@ def add_containers_ldom(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Ldom(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1566,6 +1578,7 @@ def add_containers_vbox(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Vbox(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1596,6 +1609,7 @@ def add_containers_xen(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Xen(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1631,6 +1645,7 @@ def add_containers_zone(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Zone(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1674,6 +1689,7 @@ def add_containers_vcloud(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1732,6 +1748,7 @@ def add_containers_amazon(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1784,6 +1801,7 @@ def add_containers_openstack(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1813,6 +1831,7 @@ def add_containers_vz(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Vz(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1844,6 +1863,7 @@ def add_containers_kvm(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Kvm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1874,6 +1894,7 @@ def add_containers_srp(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Srp(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1909,6 +1930,7 @@ def add_containers_lxc(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Lxc(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1950,6 +1972,7 @@ def add_containers_docker(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Docker(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -1987,6 +2010,7 @@ def add_containers_ovm(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Ovm(**kwargs)
     add_triggers(svc, r, conf, s)
@@ -2029,6 +2053,7 @@ def add_containers_jail(svc, conf, s):
     kwargs['optional'] = get_optional(conf, s, svc)
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Jail(**kwargs)
     add_triggers(svc, r, conf, s)

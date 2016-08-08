@@ -149,6 +149,7 @@ class Vz(resContainer.Container):
                  monitor=False,
                  restart=0,
                  subset=None,
+                 osvc_root_path=None,
                  tags=set([]),
                  always_on=set([])):
         resContainer.Container.__init__(self,
@@ -162,6 +163,7 @@ class Vz(resContainer.Container):
                                         restart=restart,
                                         tags=tags,
                                         subset=subset,
+                                        osvc_root_path=osvc_root_path,
                                         always_on=always_on)
         self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
         self.runmethod = ['vzctl', 'exec', name]

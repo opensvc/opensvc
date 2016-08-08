@@ -291,6 +291,7 @@ class Lxc(resContainer.Container):
                  monitor=False,
                  restart=0,
                  subset=None,
+                 osvc_root_path=None,
                  tags=set([]),
                  always_on=set([])):
         resContainer.Container.__init__(self,
@@ -303,6 +304,7 @@ class Lxc(resContainer.Container):
                                         monitor=monitor,
                                         restart=restart,
                                         subset=subset,
+                                        osvc_root_path=osvc_root_path,
                                         tags=tags,
                                         always_on=always_on)
 

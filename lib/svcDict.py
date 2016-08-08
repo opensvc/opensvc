@@ -568,6 +568,18 @@ class KeywordVmName(Keyword):
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
+class KeywordOsvcRootPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="osvc_root_path",
+                  order=2,
+                  rtype=rcEnv.vt_supported,
+                  example="/opt/opensvc",
+                  text="If the OpenSVC agent is installed via package in the container, this parameter must not be set or set to 'None'. Else the value can be set to the fullpath hosting the agent installed from sources."
+                )
+
 class KeywordGuestos(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3677,6 +3689,7 @@ class KeyDict(KeywordStore):
         self += KeywordContainerType()
         self += KeywordContainerZoneDeleteOnStop()
         self += KeywordVmName()
+        self += KeywordOsvcRootPath()
         self += KeywordGuestos()
         self += KeywordRootfs()
         self += KeywordLxcCf()
