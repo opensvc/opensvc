@@ -6,7 +6,7 @@
 	<string>com.opensvc.svcmgr</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/usr/lib/opensvc/bin/init/opensvc.init.Darwin</string>
+		<string>/usr/share/opensvc/bin/init/opensvc.init.Darwin</string>
 		<string>start</string>
 	</array>
 	<key>RunAtLoad</key>

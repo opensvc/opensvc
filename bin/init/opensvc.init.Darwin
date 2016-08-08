@@ -10,7 +10,7 @@ PATH=/usr/bin:/usr/sbin:$PATH
 
 DEFAULTS="/etc/defaults/opensvc"
 OSVC_BOOT_OPTS="--parallel"
-OSVC_ROOT_PATH="/usr/lib/opensvc"
+OSVC_ROOT_PATH="/usr/share/opensvc"
 
 # Include opensvc defaults if available
 [ -r "$DEFAULTS" ] && . "$DEFAULTS"

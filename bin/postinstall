@@ -18,9 +18,9 @@ postinstall_d = sys.path[0]
 if '/catalog/' in postinstall_d:
     # hpux packaging subsystem executes the postinstall from dir
     # /var/tmp/XXXXXXXXX/catalog/opensvc/commands/
-    postinstall_d = "/usr/lib/opensvc/bin"
+    postinstall_d = "/usr/share/opensvc/bin"
     lsb = True
-elif postinstall_d == "/usr/lib/opensvc/bin":
+elif postinstall_d == "/usr/share/opensvc/bin":
     lsb = True
 else:
     # windows install or unix execution from a non-lsb tree (ex: /opt/opensvc/)
@@ -34,9 +34,9 @@ if lsb:
     pathlck = '/var/lib/opensvc/lock'
     pathtmp = "/var/tmp/opensvc"
     pathlog = "/var/log/opensvc"
-    pathbin = "/usr/lib/opensvc/bin"
-    pathlib = "/usr/lib/opensvc/lib"
-    pathini = "/usr/lib/opensvc/bin/init"
+    pathbin = "/usr/share/opensvc/bin"
+    pathlib = "/usr/share/opensvc/lib"
+    pathini = "/usr/share/opensvc/bin/init"
     pathusr = None
 else:
     pathsbin = postinstall_d

@@ -14,7 +14,7 @@ EOF
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh
-/usr/lib/opensvc/bin/postinstall
+/usr/share/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
 

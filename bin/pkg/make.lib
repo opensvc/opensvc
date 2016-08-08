@@ -81,17 +81,17 @@ function prepare_chroot {
 	mkdir -p $CHROOT/var/log/opensvc
 	mkdir -p $CHROOT/var/tmp/opensvc
 	mkdir -p $CHROOT/var/lib/opensvc/cache
-	mkdir -p $CHROOT/usr/lib/opensvc
+	mkdir -p $CHROOT/usr/share/opensvc
 	mkdir -p $CHROOT/usr/share/doc/opensvc
 	mkdir -p $CHROOT/etc/bash_completion.d
-	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/lib/opensvc/
-	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/lib/opensvc/
+	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/share/opensvc/
+	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $CHROOT/usr/share/doc/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
-	ln -sf ../../usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
-	ln -sf ../../usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
-	ln -sf ../../usr/lib/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon
+	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
+	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
+	ln -sf ../../usr/share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon
 
 	# purge unwanted files
 	rm -rf $CHROOT/opt/opensvc

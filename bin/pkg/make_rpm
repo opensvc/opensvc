@@ -17,6 +17,7 @@ CHANGELOG=$(changelog)
 cat - <<-EOF >$SPEC
 Summary: $SUMMARY
 Name: opensvc
+Packager: OpenSVC
 URL: http://www.opensvc.com
 Version: $VERSION
 Release: $RELEASE
@@ -36,7 +37,7 @@ AutoReqProv: no
 $DESCRIPTION
 
 %post
-/usr/bin/python %{_libdir}/opensvc/bin/postinstall
+/usr/bin/python %{_datarootdir}/opensvc/bin/postinstall
 
 %files
 %docdir %{_docdir}/opensvc
@@ -45,25 +46,25 @@ $DESCRIPTION
 %config(noreplace) %{_sysconfdir}/opensvc
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc
-%{_libdir}/opensvc/lib
+%{_datarootdir}/opensvc/lib
 %attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.AIX
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.Darwin
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.debian
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.FreeBSD
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.hpux
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.OSF1
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.redhat
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.SunOS
-%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.suse
-%{_libdir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
-%{_libdir}/opensvc/bin/init/systemd.opensvc-agent.service
-%{_libdir}/opensvc/bin/init/opensvc.agent.xml
-%{_libdir}/opensvc/bin/nodemgr
-%{_libdir}/opensvc/bin/svcmgr
-%{_libdir}/opensvc/bin/svcmon
-%attr(0755,-,-) %{_libdir}/opensvc/bin/opensvc
-%attr(0755,-,-) %{_libdir}/opensvc/bin/postinstall
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.AIX
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.Darwin
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.debian
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.FreeBSD
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.hpux
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.OSF1
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.redhat
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.SunOS
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.suse
+%{_datarootdir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
+%{_datarootdir}/opensvc/bin/init/systemd.opensvc-agent.service
+%{_datarootdir}/opensvc/bin/init/opensvc.agent.xml
+%{_datarootdir}/opensvc/bin/nodemgr
+%{_datarootdir}/opensvc/bin/svcmgr
+%{_datarootdir}/opensvc/bin/svcmon
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/opensvc
+%attr(0755,-,-) %{_datarootdir}/opensvc/bin/postinstall
 %{_bindir}/nodemgr
 %{_bindir}/svcmgr
 %{_bindir}/svcmon
@@ -75,6 +76,7 @@ EOF
 
 cat $SPEC
 sudo rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
+#GNUPGHOME=~/.gpg sudo rpmsign --addsign $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
 rpmlint $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
 
 [ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm

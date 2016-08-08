@@ -33,7 +33,7 @@ product
     title        Commands (management utilities)
     revision     1.0
     prerequisite Python.PYTHON-RUN
-    postinstall  /tmp/$CHROOT_BN/usr/lib/opensvc/bin/postinstall
+    postinstall  /tmp/$CHROOT_BN/usr/share/opensvc/bin/postinstall
     file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN=/
     file         *

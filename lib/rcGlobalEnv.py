@@ -24,10 +24,10 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     elif detect:
         o.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
     else:
-        o.pathsvc = '/usr/lib/opensvc'
+        o.pathsvc = '/usr/share/opensvc'
 
-    if o.pathsvc == '/usr/lib/opensvc':
-        o.pathlib = '/usr/lib/opensvc/lib'
+    if o.pathsvc == '/usr/share/opensvc':
+        o.pathlib = '/usr/share/opensvc/lib'
         o.pathbin = '/usr/bin'
         o.pathetc = '/etc/opensvc'
         o.pathlog = '/var/log/opensvc'
@@ -36,7 +36,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.pathdoc = '/usr/share/doc/opensvc'
         o.pathlock = '/var/lib/opensvc/lock'
         o.pathcron = '/usr/share/opensvc'
-        o.postinstall = '/usr/lib/opensvc/bin/postinstall'
+        o.postinstall = '/usr/share/opensvc/bin/postinstall'
     else:
         o.pathlib = os.path.join(o.pathsvc, 'lib')
         o.pathbin = os.path.join(o.pathsvc, 'bin')
