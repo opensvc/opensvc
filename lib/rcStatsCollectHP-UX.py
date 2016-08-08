@@ -1,5 +1,3 @@
-#!/opt/opensvc/bin/python
-
 import os
 import sys
 import datetime
