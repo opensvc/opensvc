@@ -12,15 +12,20 @@ SPEC=$SPEC_D/opensvc.spec
 	mkdir -p $SPEC_D || exit 1
 }
 
+CHANGELOG=$(changelog)
+
 cat - <<-EOF >$SPEC
 Summary: $SUMMARY
 Name: opensvc
+URL: http://www.opensvc.com
 Version: $VERSION
 Release: $RELEASE
 License: GPLv2
 Group: Administration/Tools
 BuildRoot: $CHROOT
-Provides: opensvc
+Provides: /usr/bin/nodemgr
+Provides: /usr/bin/svcmgr
+Provides: /usr/bin/svcmon
 AutoReqProv: no
 %define _source_filedigest_algorithm 1
 %define _binary_filedigest_algorithm 1
@@ -31,31 +36,45 @@ AutoReqProv: no
 $DESCRIPTION
 
 %post
-/usr/lib/opensvc/bin/postinstall
-%files
-%docdir /usr/share/doc/opensvc
-%defattr(-,root,root)
-%attr(0755,root,root) /usr/lib/opensvc/bin/opensvc
-%attr(0755,root,root) /usr/lib/opensvc/bin/postinstall
-%attr(0755,root,root) /usr/lib/opensvc/bin/init
-/usr/lib/opensvc/lib
-/usr/share/doc/opensvc
-/etc/opensvc
-/var/log/opensvc
-/var/tmp/opensvc
-/var/lib/opensvc
-/etc/bash_completion.d/opensvc
-/usr/lib/opensvc/bin/nodemgr
-/usr/lib/opensvc/bin/svcmgr
-/usr/lib/opensvc/bin/svcmon
-/usr/bin/nodemgr
-/usr/bin/svcmgr
-/usr/bin/svcmon
+/usr/bin/python %{_libdir}/opensvc/bin/postinstall
 
-#%changelog
-#\$(changelog)
+%files
+%docdir %{_docdir}/opensvc
+%defattr(0644,root,root,0755)
+%{_docdir}/opensvc
+%config(noreplace) %{_sysconfdir}/opensvc
+%config(noreplace) %{_sysconfdir}/bash_completion.d
+%{_localstatedir}/log/opensvc
+%{_libdir}/opensvc/lib
+%attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.AIX
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.Darwin
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.debian
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.FreeBSD
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.hpux
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.OSF1
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.redhat
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.SunOS
+%attr(0755,-,-) %{_libdir}/opensvc/bin/init/opensvc.init.suse
+%{_libdir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
+%{_libdir}/opensvc/bin/init/systemd.opensvc-agent.service
+%{_libdir}/opensvc/bin/init/opensvc.agent.xml
+%{_libdir}/opensvc/bin/nodemgr
+%{_libdir}/opensvc/bin/svcmgr
+%{_libdir}/opensvc/bin/svcmon
+%attr(0755,-,-) %{_libdir}/opensvc/bin/opensvc
+%attr(0755,-,-) %{_libdir}/opensvc/bin/postinstall
+%{_bindir}/nodemgr
+%{_bindir}/svcmgr
+%{_bindir}/svcmon
+
+%changelog
+$CHANGELOG
+
 EOF
 
+cat $SPEC
 sudo rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
+rpmlint $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
 
 [ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
