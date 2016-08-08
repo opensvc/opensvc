@@ -890,10 +890,21 @@ class KeywordDrpnodes(Keyword):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="drpnodes",
+                  keyword="nodes",
                   order=21,
                   text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
                   example="node1 node2"
+                )
+
+class KeywordEncapnodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="encapnodes",
+                  order=21,
+                  text="The list of containers handled by this service and with an OpenSVC agent installed to handle the encapsulated resources. With this parameter set, parameters can be scoped with the @encapnodes suffix.",
+                  example="vm1 vm2"
                 )
 
 class KeywordApp(Keyword):
@@ -3521,6 +3532,7 @@ class KeyDict(KeywordStore):
         self += KeywordAutostartNode()
         self += KeywordDrpnode()
         self += KeywordDrpnodes()
+        self += KeywordEncapnodes()
         self += KeywordApp()
         self += KeywordComment()
         self += KeywordScsireserv()
