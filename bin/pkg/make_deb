@@ -34,7 +34,7 @@ Conflicts:
 Replaces: 
 Provides: opensvc
 Description: $SUMMARY
- $DESCRIPTION
+ $(echo $DESCRIPTION)
 EOF
 
 dpkg-deb -Zgzip -b $CHROOT || exit 1
