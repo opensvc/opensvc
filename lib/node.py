@@ -291,7 +291,7 @@ class Node(Svc, Freezer, Scheduler):
             else:
                 n = 1
             if len(self.svcs) != n:
-                raise ex.excError("building error")
+                raise ex.excError("%d services validated out of %d" % (len(self.svcs), n))
 
 
     def close(self):
