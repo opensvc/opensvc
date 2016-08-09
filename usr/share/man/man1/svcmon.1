@@ -1,0 +1,39 @@
+.TH SVCMON 1 2016\-08\-09
+.SH NAME
+svcmon - OpenSVC agent's services instances status requesting command.
+.SH SYNOPSIS
+.B svcmon
+[ \fIOPTIONS\fP ]
+.SH DESCRIPTION
+In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \fBsvcmon\fP program prints the digested instances status of the services running on the local node.
+.SH OPTIONS
+.TP
+.B --version
+show program's version number and exit
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --service=PARM_SVCS
+comma-separated list of service to display status of
+.TP
+.B --refresh
+do not use resource status cache
+.TP
+.B --updatedb
+update resource status in central database
+.TP
+.B --verbose
+display per-resource status for each selected service
+.TP
+.B --maxdelaydb=DELAY
+introduce a random delay before pushing to database to level the load on the collector
+.TP
+.B --debug
+debug mode
+.SH SEE ALSO
+.BR nodemgr (1)
+.BR svcmgr (1)
+.BR svcmon (1)
+.SH AUTHORS
+OpenSVC is developped and maintained by the OpenSVC company.

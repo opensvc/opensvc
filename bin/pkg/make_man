@@ -1,0 +1,165 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import optparse
+import datetime
+import re
+
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+pathlib = os.path.join(pathsvc, "lib")
+pathman = os.path.join(pathsvc, "usr", "share", "man", "man1")
+
+sys.path = [pathlib] + sys.path
+
+class ManPageFormatter(optparse.HelpFormatter):
+    def __init__(self, indent_increment=2, max_help_position=24,
+             width=None, short_first=1):
+        """CONSTRUCTOR. UNFORTUNATELY HELPFORMATTER IS NO NEW-STYLE CLASS."""
+        optparse.HelpFormatter.__init__(self, indent_increment,
+                                        max_help_position, width, short_first)
+        self._today = datetime.date.today()
+ 
+    def _markup(self, txt):
+        """PREPARES TXT TO BE USED IN MAN PAGES."""
+        #return txt.replace('-', '\\-')
+        return txt
+ 
+    def format_usage(self, usage):
+        """FORMAT THE USAGE/SYNOPSIS LINE."""
+        return self._markup(usage)
+ 
+    def format_heading(self, heading):
+        """FORMAT A HEADING.  IF LEVEL IS 0 RETURN AN EMPTY STRING. THIS USUALLY IS THE STRING "OPTIONS".  """
+        if self.level == 0:
+            return ''
+        return '.TP\n%s\n' % self._markup(heading.upper())
+ 
+    def format_option(self, option):
+        """FORMAT A SINGLE OPTION.
+        THE BASE CLASS TAKES CARE TO REPLACE CUSTOM OPTPARSE VALUES.
+        """
+        result = []
+        opts = self.option_strings[option]
+        result.append('.TP\n.B %s\n' % self._markup(opts))
+        if option.help:
+            help_text = '%s\n' % self._markup(self.expand_default(option))
+            result.append(help_text)
+        return ''.join(result)
+
+    def _write_header(self, appname, synopsis=None, desc=None, long_desc=None):
+        # title
+        ret = []
+        ret.append('.TH %s 1 %s\n' % (self._markup(appname.upper()), self._today.strftime('%Y\\-%m\\-%d')))
+
+        # NAME section
+        if desc:
+            name = self._markup('%s - %s' % (self._markup(appname),
+                                             desc.splitlines()[0]))
+        else:
+            name = self._markup(appname)
+        ret.append('.SH NAME\n%s\n' % name)
+
+        # SYNOPSIS section
+        l = synopsis.split("\n")
+        synopsis = l[0]
+        synopsis = synopsis.replace('%s ' % appname, '', 1)
+
+        # underline COMMAND and OPTIONS
+        synopsis = re.sub(r'([\s^])(COMMAND)([\s$])', lambda pat: pat.group(1)+"\\fI"+pat.group(2)+"\\fP"+pat.group(3), synopsis)
+        synopsis = re.sub(r'([\s^])(OPTIONS)([\s$])', lambda pat: pat.group(1)+"\\fI"+pat.group(2)+"\\fP"+pat.group(3), synopsis)
+
+        ret.append('.SH SYNOPSIS\n.B %s\n%s\n' % (self._markup(appname),
+                                                  synopsis))
+
+        # DESCRIPTION section
+        if long_desc:
+            ret.append('.SH DESCRIPTION\n%s\n' % self._markup(long_desc))
+
+        # COMMANDS section
+        commands = "\n".join(l[1:])
+        # highlight actions
+        commands = re.sub(r'^  (?!.*?  )(.*)$', lambda pat: "  \\fB"+pat.group(1)+"\\fP", commands, flags=re.MULTILINE)
+        commands = re.sub(r'^  ([\w ]+)  ', lambda pat: "  \\fB"+pat.group(1)+"\\fP  ", commands, flags=re.MULTILINE)
+        # highlight sections
+        commands = re.sub(r'^(\w.+)\n(-+)', lambda pat: "\\fR"+pat.group(1).upper()+"\\fP", commands, flags=re.MULTILINE)
+
+        if len(commands) > 0:
+            ret.append('.SH COMMANDS\n%s\n' % commands)
+
+        ret.append('.SH OPTIONS\n')
+
+        return ''.join(ret)
+
+    def _write_footer(self):
+        s = ""
+        s += ".SH SEE ALSO\n"
+        s += ".BR nodemgr (1)\n"
+        s += ".BR svcmgr (1)\n"
+        s += ".BR svcmon (1)\n"
+        s += ".SH AUTHORS\n"
+        s += "OpenSVC is developped and maintained by the OpenSVC company.\n"
+        return s
+
+def do_svcmgr():
+    prog = "svcmgr"
+    desc = """OpenSVC agent's services instances management command."""
+    long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmgr\\fP program provides commands to provision, configure, stop, start and replicate services instances on the local node."""
+
+    import svcmgr
+    parser = svcmgr.parser
+    parser.formatter = ManPageFormatter()
+    parser.formatter.set_parser(parser)
+    synopsis = parser.get_usage()
+    l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
+    l += parser.format_option_help()
+    l += parser.formatter._write_footer()
+    fname = prog + ".1"
+    fpath = os.path.join(pathman, fname)
+    print "writing", fpath
+    with open(fpath, "w") as f:
+        f.write(l)
+
+def do_nodemgr():
+    prog = "nodemgr"
+    desc = """OpenSVC agent's node management command."""
+    long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBnodemgr\\fP program provides commands to configure and execute all the agent functions that interact with the node."""
+
+    import nodemgr
+    parser = nodemgr.parser
+    parser.formatter = ManPageFormatter()
+    parser.formatter.set_parser(parser)
+    synopsis = parser.get_usage()
+    l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
+    l += parser.format_option_help()
+    l += parser.formatter._write_footer()
+    fname = prog + ".1"
+    fpath = os.path.join(pathman, fname)
+    print "writing", fpath
+    with open(fpath, "w") as f:
+        f.write(l)
+
+def do_svcmon():
+    prog = "svcmon"
+    desc = """OpenSVC agent's services instances status requesting command."""
+    long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmon\\fP program prints the digested instances status of the services running on the local node."""
+
+    import svcmon
+    parser = svcmon.parser
+    svcmon.parser.formatter = ManPageFormatter()
+    parser.formatter.set_parser(parser)
+    synopsis = parser.get_usage()
+    l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
+    l += parser.format_option_help()
+    l += parser.formatter._write_footer()
+    fname = prog + ".1"
+    fpath = os.path.join(pathman, fname)
+    print "writing", fpath
+    with open(fpath, "w") as f:
+        f.write(l)
+
+if __name__ == "__main__":
+    do_svcmgr()
+    do_nodemgr()
+    do_svcmon()
+

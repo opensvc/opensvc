@@ -5,7 +5,7 @@ import optparse
 #
 # add project lib to path
 #
-prog = os.path.basename(__file__)
+prog = "nodemgr"
 
 import rcExceptions as ex
 from rcGlobalEnv import *
@@ -23,7 +23,7 @@ except:
 n = node_mod.Node()
 
 __ver = prog + " version " + version
-__usage = "%prog [options] command\n\n"
+__usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
@@ -115,34 +115,38 @@ def do_symcli_db_file(symcli_db_file):
     os.environ['SYMCLI_DB_FILE'] = symcli_db_file
     os.environ['SYMCLI_OFFLINE'] = '1'
 
-do_symcli_db_file(options.symcli_db_file)
-
-if len(args) is 0:
-    n.close()
-    parser.error("Missing action")
-action = '_'.join(args)
-if not action in n.supported_actions():
-    n.close()
-    parser.set_usage(__usage + n.format_desc(action))
-    parser.error("unsupported action: %s"%action)
-
 def _exit(r):
     n.close()
     sys.exit(r)
 
-err = 0
-try:
-    err = n.action(action)
-except KeyboardInterrupt:
-    sys.stderr.write("Keybord Interrupt\n")
-    err = 1
-except ex.excError:
-    import traceback
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    sys.stderr.write(str(exc_value)+'\n')
-    err = 1
-except:
-    raise
-    err = 1
+def main():
+    do_symcli_db_file(options.symcli_db_file)
 
-_exit(err)
+    if len(args) is 0:
+        n.close()
+        parser.error("Missing action")
+    action = '_'.join(args)
+    if not action in n.supported_actions():
+        n.close()
+        parser.set_usage(__usage + n.format_desc(action))
+        parser.error("unsupported action: %s"%action)
+
+    err = 0
+    try:
+        err = n.action(action)
+    except KeyboardInterrupt:
+        sys.stderr.write("Keybord Interrupt\n")
+        err = 1
+    except ex.excError:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        sys.stderr.write(str(exc_value)+'\n')
+        err = 1
+    except:
+        raise
+        err = 1
+    return err
+
+if __name__ == "__main__":
+    r = main()
+    _exit(r)

@@ -6,9 +6,7 @@ import optparse
 #
 # add project lib to path
 #
-prog = os.path.basename(__file__)
-action = None
-_args = None
+prog = "svcmgr"
 
 import svcBuilder
 import rcStatus
@@ -97,7 +95,7 @@ def _install_service(svcname, src_env):
 
 
 __ver = prog + " version " + version
-__usage = "%prog <command> [options]\n\n"
+__usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
@@ -197,9 +195,6 @@ parser.add_option("--like", default="%",
                   help="a sql like filtering expression. leading and trailing wildcards are automatically set.")
 
 
-build_kwargs = {}
-cluster = False
-svcnames = []
 cmd = os.path.basename(__file__)
 
 if cmd in ('svcmgr', 'svcmgr.py'):
@@ -214,170 +209,183 @@ if cmd in ('svcmgr', 'svcmgr.py'):
     parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
               help="the envfile to use when installing a service")
 
-if cmd not in ('svcmgr', 'svcmgr.py'):
-    svcname = cmd.split('.')
-    if len(svcname) > 1 and svcname[-1] == 'cluster':
-        cluster = True
-        svcname = ".".join(svcname[:-1])
-    elif len(svcname) > 1 and svcname[-1] == 'stonith':
-        cluster = True
-        svcname = ".".join(svcname[:-1])
-        _args = ["stonith"]
+def main():
+    action = None
+    _args = None
+    cluster = False
+    build_kwargs = {}
+    svcnames = []
+
+    if cmd not in ('svcmgr', 'svcmgr.py'):
+        svcname = cmd.split('.')
+        if len(svcname) > 1 and svcname[-1] == 'cluster':
+            cluster = True
+            svcname = ".".join(svcname[:-1])
+        elif len(svcname) > 1 and svcname[-1] == 'stonith':
+            cluster = True
+            svcname = ".".join(svcname[:-1])
+            _args = ["stonith"]
+        else:
+            svcname = cmd
+        build_kwargs["svcnames"] = svcname
+
+    docker_argv = None
+    if len(sys.argv) > 1 and 'docker' in sys.argv:
+        pos = sys.argv.index('docker')
+        if len(sys.argv) > pos + 1:
+            docker_argv = sys.argv[pos+1:]
+        else:
+            docker_argv = []
+        sys.argv = sys.argv[:pos+1]
+
+    (options, args) = parser.parse_args()
+
+    if _args is not None:
+        args = _args
+
+    if len(args) is 0:
+        node.close()
+        parser.set_usage(__usage + rcOptParser.format_desc(action=["start", "stop", "print_status"])+"\n\nOptions:\n  -h, --help       Display more actions and options\n")
+        parser.error("Missing action")
+
+    if action is None:
+        action = '_'.join(args)
+
+    if not action in rcOptParser.supported_actions():
+        node.close()
+        parser.set_usage(__usage + rcOptParser.format_desc(action=action))
+        parser.error("unsupported action")
+
+    if action in ("get", "set", "unset", "delete"):
+        build_kwargs["minimal"] = True
     else:
-        svcname = cmd
-    build_kwargs["svcnames"] = svcname
-
-docker_argv = None
-if len(sys.argv) > 1 and 'docker' in sys.argv:
-    pos = sys.argv.index('docker')
-    if len(sys.argv) > pos + 1:
-        docker_argv = sys.argv[pos+1:]
-    else:
-        docker_argv = []
-    sys.argv = sys.argv[:pos+1]
-
-(options, args) = parser.parse_args()
-if _args is not None:
-    args = _args
-
-if len(args) is 0:
-    node.close()
-    parser.set_usage(__usage + rcOptParser.format_desc(action=["start", "stop", "print_status"])+"\n\nOptions:\n  -h, --help       Display more actions and options\n")
-    parser.error("Missing action")
-
-if action is None:
-    action = '_'.join(args)
-
-if not action in rcOptParser.supported_actions():
-    node.close()
-    parser.set_usage(__usage + rcOptParser.format_desc(action=action))
-    parser.error("unsupported action")
-
-if action in ("get", "set", "unset", "delete"):
-    build_kwargs["minimal"] = True
-else:
-    build_kwargs["minimal"] = False
+        build_kwargs["minimal"] = False
 
 
-if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
-    if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-        build_kwargs["svcnames"] = options.parm_svcs.split(',')
+    if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
+        if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+            build_kwargs["svcnames"] = options.parm_svcs.split(',')
 
     if hasattr(options, "parm_status") and options.parm_status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.parm_status.split(",")]
 
-if hasattr(options, "parm_primary") and options.parm_primary is not None and \
-   hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-    node.close()
-    parser.error("--onlyprimary and --onlysecondary are exclusive")
+    if hasattr(options, "parm_primary") and options.parm_primary is not None and \
+       hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+        node.close()
+        parser.error("--onlyprimary and --onlysecondary are exclusive")
 
-if hasattr(options, "parm_primary") and options.parm_primary is not None:
-    build_kwargs["onlyprimary"] = options.parm_primary
+    if hasattr(options, "parm_primary") and options.parm_primary is not None:
+        build_kwargs["onlyprimary"] = options.parm_primary
 
-if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-    build_kwargs["onlysecondary"] = options.parm_secondary
+    if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+        build_kwargs["onlysecondary"] = options.parm_secondary
 
-if action not in ("create", "install"):
-    try:
-        node.build_services(**build_kwargs)
-    except ex.excError as e:
-        if not action in ("pull"):
-            print("build error:", e)
-            build_err = True
+    if action not in ("create", "install"):
+        try:
+            node.build_services(**build_kwargs)
+        except ex.excError as e:
+            if not action in ("pull"):
+                print("build error:", e)
+                build_err = True
 
-if node.svcs is not None and len(node.svcs) > 0:
-    svcnames = map(lambda x: x.svcname, node.svcs)
-elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-    svcnames = options.parm_svcs.split(',')
+    if node.svcs is not None and len(node.svcs) > 0:
+        svcnames = map(lambda x: x.svcname, node.svcs)
+    elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+        svcnames = options.parm_svcs.split(',')
 
-if cmd in ('svcmgr', 'svcmgr.py') and len(svcnames) == 0:
-    sys.stderr.write("""No service specified. Try:
+    if cmd in ('svcmgr', 'svcmgr.py') and len(svcnames) == 0:
+        sys.stderr.write("""No service specified. Try:
  svcmgr -s <svcname>[,<svcname>]
  svcmgr --status <status>[,<status>]
  <svcname>
 """)
-    _exit(1)
+        return 1
 
-if action == 'pull' and (node.svcs is None or len(node.svcs) == 0):
-    r = pull_service(svcnames)
-    sys.exit(r)
+    if action == 'pull' and (node.svcs is None or len(node.svcs) == 0):
+        r = pull_service(svcnames)
+        return r
 
-if action == 'install':
-    r = install_service(svcnames, options.param_envfile)
+    if action == 'install':
+        r = install_service(svcnames, options.param_envfile)
 
-if hasattr(options, "parm_rid") and options.parm_rid is not None:
-   rid = options.parm_rid.split(',')
-else:
-   rid = []
-
-if options.slave is not None:
-   slave = options.slave.split(',')
-else:
-   slave = None
-
-if options.parm_tags is not None:
-   tags = options.parm_tags.replace("+", ",+").split(',')
-else:
-   tags = []
-
-if options.parm_subsets is not None:
-   subsets = options.parm_subsets.split(',')
-else:
-   subsets = []
-
-if action in ['create', 'update', 'install']:
-    if action in ['create', 'update']:
-        data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+    if hasattr(options, "parm_rid") and options.parm_rid is not None:
+        rid = options.parm_rid.split(',')
     else:
-        data = {"rid": [], "ret": 0}
-    if options.provision:
-        # if the user want to provision a resource defined through env editing, he
-        # will set --rid <rid> or --tag or --subset to point the update command to it
-        rid += data.get("rid", [])
+        rid = []
 
-        # force a refresh of node.svcs
-        # don't push to the collector yet
-        del(node.svcs)
-        node.svcs = None
-        try:
-            node.build_services(svcnames=svcnames, autopush=False, minimal=build_kwargs["minimal"])
-        except ex.excError as e:
-            print("build error:", e, file=sys.stderr)
-            build_err = True
-
-        if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
-            node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
-    _exit(data["ret"])
-
-node.options.parallel = options.parallel
-node.options.waitlock = options.parm_waitlock
-
-node.set_rlimit()
-
-for s in node.svcs:
-    s.options = options
-    s.force = options.force
-    s.remote = options.remote
-    s.cron = options.cron
-    s.options.slaves = options.slaves
-    s.options.slave = slave
-    s.options.master = options.master
-    s.options.recover = options.recover
-    s.options.discard = options.discard
-    if cluster:
-        s.cluster = cluster
+    if options.slave is not None:
+        slave = options.slave.split(',')
     else:
-        s.cluster = options.cluster
-    s.destination_node = options.parm_destination_node
-    if docker_argv is not None:
-        s.docker_argv = docker_argv
+        slave = None
 
-err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
+    if options.parm_tags is not None:
+        tags = options.parm_tags.replace("+", ",+").split(',')
+    else:
+        tags = []
 
-try:
-    import logging
-    logging.shutdown()
-except:
-    pass
+    if options.parm_subsets is not None:
+        subsets = options.parm_subsets.split(',')
+    else:
+        subsets = []
 
-_exit(err)
+    if action in ['create', 'update', 'install']:
+        if action in ['create', 'update']:
+            data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
+        else:
+            data = {"rid": [], "ret": 0}
+        if options.provision:
+            # if the user want to provision a resource defined through env editing, he
+            # will set --rid <rid> or --tag or --subset to point the update command to it
+            rid += data.get("rid", [])
+
+            # force a refresh of node.svcs
+            # don't push to the collector yet
+            del(node.svcs)
+            node.svcs = None
+            try:
+                node.build_services(svcnames=svcnames, autopush=False, minimal=build_kwargs["minimal"])
+            except ex.excError as e:
+                print("build error:", e, file=sys.stderr)
+                build_err = True
+
+            if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
+                node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
+        return data["ret"]
+
+    node.options.parallel = options.parallel
+    node.options.waitlock = options.parm_waitlock
+
+    node.set_rlimit()
+
+    for s in node.svcs:
+        s.options = options
+        s.force = options.force
+        s.remote = options.remote
+        s.cron = options.cron
+        s.options.slaves = options.slaves
+        s.options.slave = slave
+        s.options.master = options.master
+        s.options.recover = options.recover
+        s.options.discard = options.discard
+        if cluster:
+            s.cluster = cluster
+        else:
+            s.cluster = options.cluster
+        s.destination_node = options.parm_destination_node
+        if docker_argv is not None:
+            s.docker_argv = docker_argv
+
+    err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
+
+    try:
+        import logging
+        logging.shutdown()
+    except:
+        pass
+
+    return err
+
+if __name__ == "__main__":
+    r = main()
+    _exit(r)
+

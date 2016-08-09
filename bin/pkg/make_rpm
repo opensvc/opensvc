@@ -43,6 +43,7 @@ $DESCRIPTION
 %docdir %{_docdir}/opensvc
 %defattr(0644,root,root,0755)
 %{_docdir}/opensvc
+%{_mandir}/man1
 %config(noreplace) %{_sysconfdir}/opensvc
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc

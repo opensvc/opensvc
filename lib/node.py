@@ -404,8 +404,8 @@ class Node(Svc, Freezer, Scheduler):
                         continue
                 elif not hasattr(self, a):
                     continue
-                fancya = a.replace('_', ' ')
-                if len(a) < 16:
+                fancya = "nodemgr " + a.replace('_', ' ')
+                if len(fancya) < 15:
                     text = "  %-16s %s\n"%(fancya, self.action_desc[s][a])
                     desc += wrapper.fill(text)
                 else:

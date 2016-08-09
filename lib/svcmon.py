@@ -7,7 +7,7 @@ import platform
 #
 # add project lib to path
 #
-prog = os.path.basename(__file__)
+prog = "svcmon"
 
 import svcBuilder
 import rcExceptions as ex
@@ -18,14 +18,14 @@ from rcStatus import colorize
 
 sysname, nodename, x, x, machine, x = platform.uname()
 
-if sysname == "Windows":                                                                                                                              
-    mp = False                                                                                                                                        
-else:                                                                                                                                                 
-    try:                                                                                                                                              
-        from multiprocessing import Process, Queue, Lock                                                                                              
-        mp = True                                                                                                                                     
-    except:                                                                                                                                           
-        mp = False                                                                                                                                    
+if sysname == "Windows":
+    mp = False
+else:
+    try:
+        from multiprocessing import Process, Queue, Lock
+        mp = True
+    except:
+        mp = False
 
 try:
     from version import version
@@ -175,7 +175,7 @@ def svcmon_normal(svcs, upddb=False):
             svc.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
 
 __ver = prog + " version " + version
-__usage = "%prog [options]\n\nDisplay services status"
+__usage = prog + " [ OPTIONS ]\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--service", default="", action="store", dest="parm_svcs",
                   help="comma-separated list of service to display status of")
@@ -192,47 +192,54 @@ parser.add_option("--debug", default=False, action="store_true", dest="debug",
 
 (options, args) = parser.parse_args()
 
-if options.upddb:
-    lockf = 'svcmon.lock'
-    try:
-        lockfd = monlock(fname=lockf)
-    except ex.excError:
-        sys.exit(1)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
- 
 node = node.Node()
 
-if len(options.parm_svcs) > 0:
-    node.build_services(svcnames=options.parm_svcs.split(','))
-else:
-    node.build_services()
+def main():
+    if options.upddb:
+        lockf = 'svcmon.lock'
+        try:
+            lockfd = monlock(fname=lockf)
+        except ex.excError:
+            return 1
+        except:
+            import traceback
+            traceback.print_exc()
+            return 1
+ 
 
-node.set_rlimit()
+    if len(options.parm_svcs) > 0:
+        node.build_services(svcnames=options.parm_svcs.split(','))
+    else:
+        node.build_services()
 
-for s in node.svcs:
-    s.options.debug = options.debug
-    s.options.refresh = options.upddb
-    if options.refresh:
-        s.options.refresh = options.refresh
+    node.set_rlimit()
 
-if options.verbose:
-    svcmon_verbose(node.svcs)
-else:
-    svcmon_normal(node.svcs, options.upddb)
+    for s in node.svcs:
+        s.options.debug = options.debug
+        s.options.refresh = options.upddb
+        if options.refresh:
+            s.options.refresh = options.refresh
 
-node.close()
+    if options.verbose:
+        svcmon_verbose(node.svcs)
+    else:
+        svcmon_normal(node.svcs, options.upddb)
 
-if options.upddb:
-    try:
-        monunlock(lockfd)
-    except ex.excError:
-        sys.exit(1)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    node.close()
 
-sys.exit(0)
+    if options.upddb:
+        try:
+            monunlock(lockfd)
+        except ex.excError:
+            return 1
+        except:
+            import traceback
+            traceback.print_exc()
+            return 1
+
+    return 0
+
+if __name__ == "__main__":
+    r = main()
+    sys.exit(r)
+

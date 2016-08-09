@@ -68,7 +68,13 @@ function prepare_chroot {
 	cd $CHROOT/opt/opensvc/usr/share/doc
 	for f in $(echo template*env)
 	do
-		echo "gzip -n $f"
+		echo "gzip -9 -n $f"
+		gzip -n $f
+	done
+	cd $CHROOT/opt/opensvc/usr/share/man/man1
+	for f in $(echo *.1)
+	do
+		echo "gzip -9 -n $f"
 		gzip -n $f
 	done
 
@@ -84,11 +90,13 @@ function prepare_chroot {
 	mkdir -p $CHROOT/var/lib/opensvc/cache
 	mkdir -p $CHROOT/usr/share/opensvc
 	mkdir -p $CHROOT/usr/share/doc/opensvc
+	mkdir -p $CHROOT/usr/share/man/man1
 	mkdir -p $CHROOT/etc/bash_completion.d
 	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $CHROOT/usr/share/doc/opensvc/
+	mv $CHROOT/opt/opensvc/usr/share/man/man1/* $CHROOT/usr/share/man/man1/
 	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr

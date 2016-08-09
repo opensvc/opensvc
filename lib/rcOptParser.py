@@ -178,8 +178,8 @@ def format_desc(svc=False, action=None):
         for a in valid_actions:
             if svc and not hasattr(svc, a):
                 continue
-            fancya = a.replace('_', ' ')
-            if len(a) < 16:
+            fancya = "svcmgr " + a.replace('_', ' ')
+            if len(fancya) < 15:
                 text = "  %-16s %s\n"%(fancya, action_desc[s][a])
                 desc += wrapper.fill(text)
             else:

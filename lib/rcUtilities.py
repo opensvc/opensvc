@@ -26,9 +26,11 @@ def check_privs():
     if os.name == 'nt':
         return
     if os.getuid() != 0:
-        print('Insufficient privileges. Try:\n sudo ' + ' '.join(sys.argv))
+        import copy
+        l = copy.copy(sys.argv)
+        l[0] = os.path.basename(l[0]).replace(".py", "")
+        print('Insufficient privileges. Try:\n sudo ' + ' '.join(l))
         sys.exit(1)
-
 
 def banner(text, ch='=', length=78):
     spaced_text = ' %s ' % text

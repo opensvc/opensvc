@@ -1,0 +1,573 @@
+.TH SVCMGR 1 2016\-08\-09
+.SH NAME
+svcmgr - OpenSVC agent's services instances management command.
+.SH SYNOPSIS
+.B svcmgr
+[ \fIOPTIONS\fP ] COMMAND
+.SH DESCRIPTION
+In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \fBsvcmgr\fP program provides commands to provision, configure, stop, start and replicate services instances on the local node.
+.SH COMMANDS
+
+\fRCOLLECTOR MANAGEMENT\fP
+
+  \fBsvcmgr collector ack action\fP
+  \fB               \fP  acknowledge an action error on the service. an
+  \fB               \fP  acknowlegment can be completed by --author (defaults to
+  \fB               \fP  root@nodename) and --comment
+
+  \fBsvcmgr collector ack unavailability\fP
+  \fB               \fP  acknowledge an unavailability period. the period is
+  \fB               \fP  specified by --begin/--end or --begin/--duration. omitting
+  \fB               \fP  --begin defaults to now. an acknowlegment can be completed
+  \fB               \fP  by --author (defaults to root@nodename), --account (default
+  \fB               \fP  to 1) and --comment
+
+  \fBsvcmgr collector alerts\fP
+  \fB               \fP  display service alerts
+
+  \fBsvcmgr collector asset\fP
+  \fB               \fP  display asset information known to the collector
+
+  \fBsvcmgr collector checks\fP
+  \fB               \fP  display service checks
+
+  \fBsvcmgr collector create tag\fP
+  \fB               \fP  create a new tag
+
+  \fBsvcmgr collector disks\fP
+  \fB               \fP  display service disks
+
+  \fBsvcmgr collector events\fP
+  \fB               \fP  display service events during the period specified by
+  \fB               \fP  --begin/--end. --end defaults to now. --begin defaults to 7
+  \fB               \fP  days ago
+
+  \fBsvcmgr collector json alerts\fP
+  \fB               \fP  same as "collector alerts", output in JSON
+
+  \fBsvcmgr collector json asset\fP
+  \fB               \fP  display asset information known to the collector, output in
+  \fB               \fP  JSON
+
+  \fBsvcmgr collector json checks\fP
+  \fB               \fP  same as "collector checks", output in JSON
+
+  \fBsvcmgr collector json disks\fP
+  \fB               \fP  same as "collector disks", output in JSON
+
+  \fBsvcmgr collector json events\fP
+  \fB               \fP  same as "collector events", output in JSON
+
+  \fBsvcmgr collector json list actions\fP
+  \fB               \fP  same as "collector list actions", output in JSON
+
+  \fBsvcmgr collector json list unavailability ack\fP
+  \fB               \fP  same as "collector list unavailability ack", output in JSON
+
+  \fBsvcmgr collector json networks\fP
+  \fB               \fP  display network information known to the collector for each
+  \fB               \fP  service ip, output in JSON
+
+  \fBsvcmgr collector json show actions\fP
+  \fB               \fP  same as "collector show actions", output in JSON
+
+  \fBsvcmgr collector json status\fP
+  \fB               \fP  same as "collector status", output in JSON
+
+  \fBsvcmgr collector list actions\fP
+  \fB               \fP  list actions on the service, whatever the node, during the
+  \fB               \fP  period specified by --begin/--end. --end defaults to now.
+  \fB               \fP  --begin defaults to 7 days ago
+
+  \fBsvcmgr collector list tags\fP
+  \fB               \fP  list all available tags. use --like to filter the output.
+
+  \fBsvcmgr collector list unavailability ack\fP
+  \fB               \fP  list acknowledged periods for the service. the periods can
+  \fB               \fP  be filtered by --begin/--end. omitting --end defaults to
+  \fB               \fP  now. the wildcartd for --comment and --author is %
+
+  \fBsvcmgr collector networks\fP
+  \fB               \fP  display network information known to the collector for each
+  \fB               \fP  service ip
+
+  \fBsvcmgr collector show actions\fP
+  \fB               \fP  show actions detailled log. a single action is specified by
+  \fB               \fP  --id. a range is specified by --begin/--end dates. --end
+  \fB               \fP  defaults to now. --begin defaults to 7 days ago
+
+  \fBsvcmgr collector show tags\fP
+  \fB               \fP  list all service tags
+
+  \fBsvcmgr collector status\fP
+  \fB               \fP  display service status on all nodes, according to the
+  \fB               \fP  collector.
+
+  \fBsvcmgr collector tag\fP
+  \fB               \fP  set a service tag (pointed by --tag)
+
+  \fBsvcmgr collector untag\fP
+  \fB               \fP  unset a service tag (pointed by --tag)
+
+\fRCOMPLIANCE\fP
+
+  \fBsvcmgr compliance attach\fP
+  \fB               \fP  attach ruleset specified by --ruleset and/or moduleset
+  \fB               \fP  specified by --moduleset to this service
+
+  \fBsvcmgr compliance attach moduleset\fP
+  \fB               \fP  attach moduleset specified by --moduleset to this service
+
+  \fBsvcmgr compliance attach ruleset\fP
+  \fB               \fP  attach ruleset specified by --ruleset to this service
+
+  \fBsvcmgr compliance check\fP
+  \fB               \fP  run compliance checks. --ruleset <md5> instruct the
+  \fB               \fP  collector to provide an historical ruleset.
+
+  \fBsvcmgr compliance detach\fP
+  \fB               \fP  detach ruleset specified by --ruleset and/or moduleset
+  \fB               \fP  specified by --moduleset from this service
+
+  \fBsvcmgr compliance detach moduleset\fP
+  \fB               \fP  detach moduleset specified by --moduleset from this service
+
+  \fBsvcmgr compliance detach ruleset\fP
+  \fB               \fP  detach ruleset specified by --ruleset from this service
+
+  \fBsvcmgr compliance env\fP
+  \fB               \fP  show the compliance modules environment variables.
+
+  \fBsvcmgr compliance fix\fP
+  \fB               \fP  run compliance fixes. --ruleset <md5> instruct the
+  \fB               \fP  collector to provide an historical ruleset.
+
+  \fBsvcmgr compliance fixable\fP
+  \fB               \fP  verify compliance fixes prerequisites. --ruleset <md5>
+  \fB               \fP  instruct the collector to provide an historical ruleset.
+
+  \fBsvcmgr compliance list moduleset\fP
+  \fB               \fP  list available compliance modulesets. --moduleset f% limit
+  \fB               \fP  the scope to modulesets matching the f% pattern.
+
+  \fBsvcmgr compliance list ruleset\fP
+  \fB               \fP  list available compliance rulesets. --ruleset f% limit the
+  \fB               \fP  scope to rulesets matching the f% pattern.
+
+  \fBsvcmgr compliance show moduleset\fP
+  \fB               \fP  show compliance rules applying to this service
+
+  \fBsvcmgr compliance show ruleset\fP
+  \fB               \fP  show compliance rules applying to this node
+
+  \fBsvcmgr compliance show status\fP
+  \fB               \fP  show compliance modules status
+
+\fRSERVICE ACTIONS\fP
+
+  \fBsvcmgr boot    \fP  start a service if executed on the primary node (or one of
+  \fB               \fP  the primary nodes in case of a flex service), startstandby
+  \fB               \fP  if not
+
+  \fBsvcmgr disable \fP  disable resources passed through --rid in services passed
+  \fB               \fP  through --service. Specifying no resource disables the
+  \fB               \fP  whole service.
+
+  \fBsvcmgr docker  \fP  wrap the docker client command, setting automatically the
+  \fB               \fP  socket parameter to join the service-private docker daemon.
+  \fB               \fP  The %images% and %instances% words in the wrapped command
+  \fB               \fP  are replaced by, respectively, the set of docker instance
+  \fB               \fP  names and images for container resources passing the
+  \fB               \fP  --tags, --rid and --subsets filters. This is useful to
+  \fB               \fP  remove all instances of a service or all instances of
+  \fB               \fP  resources with a tag like "frontend". Note the opensvc
+  \fB               \fP  filters must be positioned before the docker command in the
+  \fB               \fP  arguments list.
+
+  \fBsvcmgr enable  \fP  enable resources passed through --rid in services passed
+  \fB               \fP  through --service. Specifying no resource enables the whole
+  \fB               \fP  service.
+
+  \fBsvcmgr freeze  \fP  set up a flag to block actions on this service
+
+  \fBsvcmgr frozen  \fP  report on the current blocking of actions on this service
+
+  \fBsvcmgr json devlist\fP
+  \fB               \fP  provide the service device list in json format, for use by
+  \fB               \fP  tier tools
+
+  \fBsvcmgr json disklist\fP
+  \fB               \fP  provide the service disk list in json format, for use by
+  \fB               \fP  tier tools
+
+  \fBsvcmgr json status\fP
+  \fB               \fP  provide the resource and aggregated status in json format,
+  \fB               \fP  for use by tier tools
+
+  \fBsvcmgr migrate \fP  live migrate the service to the remote node. --to <node>
+  \fB               \fP  specify the remote node to migrate the service to.
+
+  \fBsvcmgr pg freeze\fP
+  \fB               \fP  freeze the tasks of a process group
+
+  \fBsvcmgr pg kill \fP  kill the tasks of a process group
+
+  \fBsvcmgr pg thaw \fP  thaw the tasks of a process group
+
+  \fBsvcmgr postsync\fP
+  \fB               \fP  make use of files received from master nodes in var
+
+  \fBsvcmgr presync \fP  update var files associated to resources
+
+  \fBsvcmgr print devlist\fP
+  \fB               \fP  print service device list
+
+  \fBsvcmgr print disklist\fP
+  \fB               \fP  print service disk list
+
+  \fBsvcmgr print env mtime\fP
+  \fB               \fP  display service env file modification time
+
+  \fBsvcmgr print resource status\fP
+  \fB               \fP  display a specific service resource status, pointed by
+  \fB               \fP  --rid
+
+  \fBsvcmgr print schedule\fP
+  \fB               \fP  print the service tasks schedule
+
+  \fBsvcmgr print status\fP
+  \fB               \fP  display service resource status
+
+  \fBsvcmgr provision\fP
+  \fB               \fP  provision and start the service
+
+  \fBsvcmgr prstart \fP  reserve scsi disks held by this service
+
+  \fBsvcmgr prstatus\fP
+  \fB               \fP  report status of reservations on scsi disks held by this
+  \fB               \fP  service
+
+  \fBsvcmgr prstop  \fP  release scsi disks held by this service
+
+  \fBsvcmgr pull    \fP  pull a service configuration from the collector
+
+  \fBsvcmgr push    \fP  push service configuration to the collector
+
+  \fBsvcmgr push appinfo\fP
+  \fB               \fP  push service application launchers appinfo key/value pairs
+  \fB               \fP  to database
+
+  \fBsvcmgr push service status\fP
+  \fB               \fP  push service and its resources status to database
+
+  \fBsvcmgr resource monitor\fP
+  \fB               \fP  detect monitored resource failures and trigger
+  \fB               \fP  monitor_action
+
+  \fBsvcmgr restart \fP  combo action, chaining stop-start
+
+  \fBsvcmgr resync  \fP  combo action, chaining stop-sync_resync-start
+
+  \fBsvcmgr scheduler\fP
+  \fB               \fP  run the service task scheduler
+
+  \fBsvcmgr shutdown\fP
+  \fB               \fP  stop a service, disabling the background database logging
+
+  \fBsvcmgr start   \fP  start all service resources
+
+  \fBsvcmgr startapp\fP
+  \fB               \fP  execute service application startup script
+
+  \fBsvcmgr startcontainer\fP
+  \fB               \fP  start the container resource
+
+  \fBsvcmgr startdisk\fP
+  \fB               \fP  combo action, activating standby disks, taking
+  \fB               \fP  reservations, starting loopback devices and volume groups
+
+  \fBsvcmgr startfs \fP  prepare devices, logical volumes, mount service
+  \fB               \fP  filesystems, bootstrap containers
+
+  \fBsvcmgr startip \fP  configure service ip addresses
+
+  \fBsvcmgr startloop\fP
+  \fB               \fP  attach loop resources of this service
+
+  \fBsvcmgr startpool\fP
+  \fB               \fP  activate zpool resources of this service
+
+  \fBsvcmgr startshare\fP
+  \fB               \fP  start network shares
+
+  \fBsvcmgr startstandby\fP
+  \fB               \fP  start service resources flagged always on
+
+  \fBsvcmgr startvg \fP  activate/import volume group resources of this service
+
+  \fBsvcmgr status  \fP  return service overall status code
+
+  \fBsvcmgr stonith \fP  command provided to the heartbeat daemon to fence peer node
+  \fB               \fP  in case of split brain
+
+  \fBsvcmgr stop    \fP  stop all service resources not flagged always on. With
+  \fB               \fP  --force, stop all service resources, even those flagged
+  \fB               \fP  always on.
+
+  \fBsvcmgr stopapp \fP  execute service application stop script
+
+  \fBsvcmgr stopcontainer\fP
+  \fB               \fP  stop the container resource
+
+  \fBsvcmgr stopdisk\fP
+  \fB               \fP  combo action, stopping volume groups and loopback devices,
+  \fB               \fP  droping reservations, disabling standby disks
+
+  \fBsvcmgr stopfs  \fP  shutdown container, umount service filesystems, deactivate
+  \fB               \fP  logical volumes
+
+  \fBsvcmgr stopip  \fP  unconfigure service ip addresses
+
+  \fBsvcmgr stoploop\fP
+  \fB               \fP  detach loop resources of this service
+
+  \fBsvcmgr stoppool\fP
+  \fB               \fP  deactivate zpool resources of this service
+
+  \fBsvcmgr stopshare\fP
+  \fB               \fP  stop network shares
+
+  \fBsvcmgr stopvg  \fP  deactivate/deport volume group resources of this service
+
+  \fBsvcmgr switch  \fP  stop the service on the local node and start on the remote
+  \fB               \fP  node. --to <node> specify the remote node to switch the
+  \fB               \fP  service to.
+
+  \fBsvcmgr sync all\fP
+  \fB               \fP  combo action, chaining sync_nodes-sync_drp-sync_update.
+
+  \fBsvcmgr sync break\fP
+  \fB               \fP  split a storage hardware-assisted disk synchronization
+
+  \fBsvcmgr sync drp\fP
+  \fB               \fP  send to drp nodes the service config files and additional
+  \fB               \fP  files described in the config file.
+
+  \fBsvcmgr sync establish\fP
+  \fB               \fP  establish a EMC SRDF storage hardware-assisted disk
+  \fB               \fP  synchronization
+
+  \fBsvcmgr sync full\fP
+  \fB               \fP  trigger a full copy of the volume to its target
+
+  \fBsvcmgr sync nodes\fP
+  \fB               \fP  send to peer nodes the service config files and additional
+  \fB               \fP  files described in the config file.
+
+  \fBsvcmgr sync quiesce\fP
+  \fB               \fP  trigger a storage hardware-assisted disk synchronization
+
+  \fBsvcmgr sync restore\fP
+  \fB               \fP  trigger a restore of the sync resources data to their
+  \fB               \fP  target path (DANGEROUS: make sure you understand before
+  \fB               \fP  running this action).
+
+  \fBsvcmgr sync resume\fP
+  \fB               \fP  re-establish a broken storage hardware-assisted
+  \fB               \fP  synchronization
+
+  \fBsvcmgr sync resync\fP
+  \fB               \fP  like sync_update, but not triggered by the scheduler (thus
+  \fB               \fP  adapted for clone/snap operations)
+
+  \fBsvcmgr sync revert\fP
+  \fB               \fP  revert to the pre-failover data (looses current data)
+
+  \fBsvcmgr sync split\fP
+  \fB               \fP  split a EMC SRDF storage hardware-assisted disk
+  \fB               \fP  synchronization
+
+  \fBsvcmgr sync update\fP
+  \fB               \fP  trigger a one-time resync of the volume to its target
+
+  \fBsvcmgr sync verify\fP
+  \fB               \fP  trigger a one-time checksum-based verify of the volume and
+  \fB               \fP  its target
+
+  \fBsvcmgr thaw    \fP  remove the flag to unblock actions on this service
+
+\fRSERVICE CONFIGURATION\fP
+
+  \fBsvcmgr create  \fP  create a new service configuration file. --interactive
+  \fB               \fP  triggers the interactive mode
+
+  \fBsvcmgr delete  \fP  delete the service instance on the local node if no --rid
+  \fB               \fP  is specified, or delete the resources pointed by --rid in
+  \fB               \fP  services passed through --service
+
+  \fBsvcmgr edit config\fP
+  \fB               \fP  edit service configuration
+
+  \fBsvcmgr get     \fP  get the value of the node configuration parameter pointed
+  \fB               \fP  by --param
+
+  \fBsvcmgr install \fP  install a service using the configuration file pointed by
+  \fB               \fP  --envfile. used by master services when pushing the envfile
+  \fB               \fP  to their slave.
+
+  \fBsvcmgr json config\fP
+  \fB               \fP  provide the service configuration in json format, for use
+  \fB               \fP  by tier tools
+
+  \fBsvcmgr print config\fP
+  \fB               \fP  display service current configuration
+
+  \fBsvcmgr set     \fP  set a service configuration parameter (pointed by --param)
+  \fB               \fP  value (pointed by --value)
+
+  \fBsvcmgr unset   \fP  unset a node configuration parameter pointed by --param
+
+  \fBsvcmgr update  \fP  update definitions in an existing service configuration
+  \fB               \fP  file
+
+  \fBsvcmgr validate config\fP
+  \fB               \fP  check the sections and parameters are valid.
+.SH OPTIONS
+.TP
+.B --version
+show program's version number and exit
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --debug
+debug mode
+.TP
+.B --recover
+Recover the stashed erroneous configuration file in a 'edit config' command
+.TP
+.B --discard
+Discard the stashed erroneous configuration file in a 'edit config' command
+.TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-sperated, slaves
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B -i, --interactive
+prompt user for a choice instead of going for defaults or failing
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --resource=RESOURCE
+a resource definition in json dictionary format fed to create or update
+.TP
+.B --provision
+provision the service in addition to env file creation. defaults to False.
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B --to=PARM_DESTINATION_NODE
+remote node to start or migrate the service to
+.TP
+.B --show-disabled
+tell print|json status action to include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
+.TP
+.B --hide-disabled
+tell print|json status action to not include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
+.TP
+.B --attach
+attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset=RULESET
+compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset-date=RULESET_DATE
+compliance, use rulesets valid on specified date
+.TP
+.B --param=PARAM
+point a service configuration parameter for the 'get' and 'set' actions
+.TP
+.B --value=VALUE
+set a service configuration parameter value for the 'set --param' action
+.TP
+.B --duration=DURATION
+a duration expressed in minutes. used with the 'collector ack unavailability' action
+.TP
+.B --account
+decides that the unavailabity period should be deduced from the service availability anyway. used with the 'collector ack unavailability' action
+.TP
+.B --begin=BEGIN
+a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+.TP
+.B --end=END
+a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+.TP
+.B --comment=COMMENT
+a comment to log when used with the 'collector ack unavailability' action
+.TP
+.B --author=AUTHOR
+the acker name to log when used with the 'collector ack unavailability' action
+.TP
+.B --id=ID
+specify an id to act on
+.TP
+.B --table
+use table representation of collector data instead of the default itemized list of objects and properties
+.TP
+.B --refresh
+drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
+.TP
+.B --tag=TAG
+a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+.TP
+.B --like=LIKE
+a sql like filtering expression. leading and trailing wildcards are automatically set.
+.SH SEE ALSO
+.BR nodemgr (1)
+.BR svcmgr (1)
+.BR svcmon (1)
+.SH AUTHORS
+OpenSVC is developped and maintained by the OpenSVC company.
