@@ -3758,7 +3758,7 @@ def update(svcname, resources=[], interactive=False, provision=False):
             else:
                 sections[section] = d
             is_resource = True
-        elif 'rtype' in d and r["rtype"] != "DEFAULT":
+        elif 'rtype' in d and d["rtype"] != "DEFAULT":
             # new resource allocation, auto-allocated rid index
             if d['rtype'] in rtypes:
                 ridx = 1
