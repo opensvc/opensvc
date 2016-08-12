@@ -28,7 +28,7 @@ if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon"
 then
 	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
 else
-	# exec from a service link: add the the --service parameter
+	# exec from a service link: add the --service parameter
 	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
 	BIN_ARGS="--service $BASENAME"
 fi
