@@ -31,7 +31,7 @@ case $BASENAME in
 	BASENAME=`echo $BASENAME | sed -e "s/.cluster$//"`
 	;;
 *.stonith)
-	BIN_ARGS="$BIN_ARGS stonith"
+	BIN_ARGS="$BIN_ARGS stonith --cluster"
 	BASENAME=`echo $BASENAME | sed -e "s/.stonith$//"`
 	;;
 esac
