@@ -24,13 +24,25 @@ then
 fi
 
 BASENAME=`basename $0`
+
+case $BASENAME in
+*.cluster)
+	BIN_ARGS="$BIN_ARGS --cluster"
+	BASENAME=`echo $BASENAME | sed -e "s/.cluster$//"`
+	;;
+*.stonith)
+	BIN_ARGS="$BIN_ARGS stonith"
+	BASENAME=`echo $BASENAME | sed -e "s/.stonith$//"`
+	;;
+esac
+
 if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon" ]
 then
 	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
 else
 	# exec from a service link: add the the --service parameter
 	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
-	BIN_ARGS="--service $BASENAME"
+	BIN_ARGS="$BIN_ARGS --service $BASENAME"
 fi
 
 "$OSVC_PYTHON" $OSVC_PYTHON_ARGS "$BIN" $BIN_ARGS "$@"

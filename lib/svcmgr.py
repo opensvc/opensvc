@@ -216,19 +216,6 @@ def main():
     build_kwargs = {}
     svcnames = []
 
-    if cmd not in ('svcmgr', 'svcmgr.py'):
-        svcname = cmd.split('.')
-        if len(svcname) > 1 and svcname[-1] == 'cluster':
-            cluster = True
-            svcname = ".".join(svcname[:-1])
-        elif len(svcname) > 1 and svcname[-1] == 'stonith':
-            cluster = True
-            svcname = ".".join(svcname[:-1])
-            _args = ["stonith"]
-        else:
-            svcname = cmd
-        build_kwargs["svcnames"] = svcname
-
     docker_argv = None
     if len(sys.argv) > 1 and 'docker' in sys.argv:
         pos = sys.argv.index('docker')
