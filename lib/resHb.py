@@ -10,14 +10,13 @@ class Hb(Res.Resource):
     def cluster_files(self):
         svcfile = os.path.join(rcEnv.pathetc, self.svc.svcname)
         svcmgr = rcEnv.svcmgr
-        svcmgr_real = os.path.join(svcmgr)
         cluster_f = '.'.join((svcfile, 'cluster'))
         stonith_f = '.'.join((svcfile, 'stonith'))
 
         for f in (cluster_f, stonith_f):
             if os.path.islink(f):
                 if os.path.exists(f):
-                    if os.path.realpath(f) == svcmgr_real:
+                    if os.readlink(f) == svcmgr:
                         self.log.debug("%s: symlink ok."%f)
                         pass
                     else:
