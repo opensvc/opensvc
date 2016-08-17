@@ -15,6 +15,9 @@ from distutils.version import LooseVersion as V
 os.environ['LANG'] = 'C'
 
 class DockerLib(object):
+    def __init__(self, docker_exe=None):
+        if docker_exe:
+            self.docker_exe_init = docker_exe
 
     def get_ps(self, refresh=False):
         if not refresh and hasattr(self.svc, "cache_docker_ps"):
@@ -398,7 +401,11 @@ class DockerLib(object):
             self.docker_cmd += ['-H', self.docker_socket]
 
     def docker_exe(self):
-        if which("docker.io"):
+        if hasattr(self, "docker_exe_init") and which(self.docker_exe_init):
+            return self.docker_exe_init
+        elif hasattr(self, "svc") and hasattr(self.svc, "docker_exe") and which(self.svc.docker_exe):
+            return self.svc.docker_exe
+        elif which("docker.io"):
             return "docker.io"
         elif which("docker"):
             return "docker"

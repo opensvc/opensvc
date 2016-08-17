@@ -294,6 +294,19 @@ class KeywordDrpFlexPrimary(Keyword):
                   text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not prd nodes)."
                 )
 
+class KeywordDockerExe(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_exe",
+                  at=True,
+                  required=False,
+                  order=12,
+                  text="If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker executable.",
+                  example="/usr/bin/docker-1.8"
+                )
+
 class KeywordDockerDataDir(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3510,6 +3523,7 @@ class KeyDict(KeywordStore):
         self += KeywordPrKey()
         self += KeywordPkgName()
         self += KeywordDockerDaemonPrivate()
+        self += KeywordDockerExe()
         self += KeywordDockerDataDir()
         self += KeywordDockerDaemonArgs()
         self += KeywordAntiAffinity()

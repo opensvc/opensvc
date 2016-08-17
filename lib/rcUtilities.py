@@ -44,6 +44,8 @@ def is_exe(fpath):
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
 def which(program):
+    if program is None:
+        return
     def ext_candidates(fpath):
         yield fpath
         for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
@@ -60,7 +62,7 @@ def which(program):
                 if is_exe(candidate):
                     return candidate
 
-    return None
+    return
 
 def justcall(argv=['/bin/false']):
     """subprosses call argv, return (stdout,stderr,returncode)
