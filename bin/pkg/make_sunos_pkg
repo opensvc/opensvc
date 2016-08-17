@@ -138,7 +138,7 @@ cd $REPODIR
 cat > $REPODIR/postinstall <<EOF
 #!/sbin/sh
 
-su root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=\${PKG_INSTALL_ROOT}/opt/opensvc/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
+su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
 EOF
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
