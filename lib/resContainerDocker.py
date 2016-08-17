@@ -113,6 +113,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             self.log.info("skip boot: this container will be booted by the flex primary node, or through a start action from any flex node")
             return
         resContainer.Container.start(self)
+        self.get_running_instance_ids(refresh=True)
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def container_stop(self):
@@ -125,6 +126,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             return
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
+        self.get_running_instance_ids(refresh=True)
         self.docker_stop()
 
     def info(self):
