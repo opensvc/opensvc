@@ -246,7 +246,7 @@ class ProvisioningZone(Provisioning):
     def create_zone2clone(self):
         if os.path.exists(self.r.zonepath):
             try:
-                os.chmod(self.r.zonepath, 0700)
+                os.chmod(self.r.zonepath, 0o0700)
             except:
                 pass
         if self.osver >= 11.0:

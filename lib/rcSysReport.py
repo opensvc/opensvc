@@ -56,7 +56,7 @@ class SysReport(object):
         mode = s[ST_MODE]
         if mode != 16768:
             print("set dir", fpath, "mode to 0600")
-            os.chmod(fpath, 0600)
+            os.chmod(fpath, 0o0600)
 
     def init_collect_d_ownership(self, fpath):
         s = os.stat(fpath)

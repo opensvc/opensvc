@@ -334,7 +334,7 @@ class Node(Svc, Freezer, Scheduler):
             print("failed to write new %s"%rcEnv.nodeconf, file=sys.stderr)
             raise Exception()
         try:
-            os.chmod(rcEnv.nodeconf, 0600)
+            os.chmod(rcEnv.nodeconf, 0o0600)
         except:
             pass
         self.load_config()
