@@ -408,7 +408,7 @@ class Svc(Resource, Scheduler):
                      rsets[rs_base_type] = type(rs)(type=rs_base_type)
                      rsets[rs_base_type].svc = self
                  rsets[rs_base_type] += rs
-         rsets = rsets.values()
+         rsets = list(rsets.values())
          rsets.sort()
          return rsets
 
