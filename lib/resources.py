@@ -78,11 +78,11 @@ class Resource(object):
         if self.disabled : output+=" disa="+str(self.disabled)
         return output
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         """resources needed to be started or stopped in a specific order
         should redefine that.
         """
-        return cmp(self.rid, other.rid)
+        return self.rid < other.rid
 
     def print_exc(self):
         import traceback
@@ -560,8 +560,8 @@ class ResourceSet(Resource):
         for r in resources:
             self += r
 
-    def __cmp__(self, other):
-        return cmp(self.type, other.type)
+    def __lt__(self, other):
+        return self.type < other.type
 
     def __iadd__(self,r):
         """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
