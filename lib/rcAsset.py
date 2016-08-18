@@ -755,7 +755,7 @@ class Asset(object):
         self.data['host_mode'] = self.get_host_mode()
         self.data['enclosure'] = self.get_enclosure()
         self.data['listener_port'] = self.get_listener_port()
-	connect_to = self.get_connect_to()
+        connect_to = self.get_connect_to()
         if connect_to is not None:
             self.data['connect_to'] = connect_to
         last_boot = self.get_last_boot()

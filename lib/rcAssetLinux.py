@@ -352,7 +352,7 @@ class Asset(rcAsset.Asset):
         return 'Unknown'
 
     def _get_serial_2(self):
-	""" Dell poweredge 2500 are known to be in this case
+        """ Dell poweredge 2500 are known to be in this case
         """
         try:
             i = self.dmidecode.index('Chassis Information')

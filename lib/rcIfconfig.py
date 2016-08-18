@@ -87,11 +87,11 @@ class ifconfig(object):
         return l
 
     def __str__(self):
-	s = ""
+        s = ""
         for intf in self.intf:
             s += str(intf)
-	s += "\nmcast: " + str(self.mcast_data)
-	return s
+        s += "\nmcast: " + str(self.mcast_data)
+        return s
 
     def __init__(self, mcast=False):
         self.intf = []
@@ -118,7 +118,7 @@ class ifconfig(object):
             stacked_intf = self.has_param("ipaddr", addr)
         if stacked_intf is not None:
             if dev not in stacked_intf.name:
-		base_intf = self.has_param("name", dev)
+                base_intf = self.has_param("name", dev)
                 if base_intf and hasattr(base_intf, "groupname"):
                     alt_intfs = [ i for i in self.get_matching_interfaces("groupname", base_intf.groupname) if i.name != base_intf.name and stacked_intf.name.startswith(i.name+":")]
                     if len(alt_intfs) == 1:

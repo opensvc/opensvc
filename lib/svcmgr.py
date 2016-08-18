@@ -97,8 +97,7 @@ def _install_service(svcname, src_env):
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
-parser.add_option("--debug", default=False,
-		  action="store_true", dest="debug",
+parser.add_option("--debug", default=False, action="store_true", dest="debug",
                   help="debug mode")
 parser.add_option("--recover", default=False, action="store_true", dest="recover",
                   help="Recover the stashed erroneous configuration file in a 'edit config' command")

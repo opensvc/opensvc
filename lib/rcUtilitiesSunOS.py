@@ -38,15 +38,15 @@ def get_solaris_version():
         return self.undef
     try:
         base, osver = lines[0].split('.')
-	osver = int(osver)
+        osver = int(osver)
     except:
         osver = 0
 
     if osver >= '11':
-	cmd = ['uname', '-v']
-	out, err, ret = justcall(cmd)
-	if ret == 0:
+        cmd = ['uname', '-v']
+        out, err, ret = justcall(cmd)
+        if ret == 0:
             lines = out.split('\n')
-	    osver = lines[0]
+            osver = lines[0]
 
     return float(osver)

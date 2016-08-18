@@ -197,7 +197,7 @@ class Node(Svc, Freezer, Scheduler):
         self.os = rcos.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
-	self.scheduler_actions = {
+        self.scheduler_actions = {
 	 "checks": SchedOpts("checks"),
 	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
 	 "pushstats": SchedOpts("stats"),
@@ -1350,7 +1350,7 @@ class Node(Svc, Freezer, Scheduler):
         err = 0
         if self.options.parallel:
             from multiprocessing import Process
-	    if rcEnv.sysname == "Windows":
+            if rcEnv.sysname == "Windows":
                 from multiprocessing import set_executable
                 set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             p = {}
@@ -1552,7 +1552,7 @@ class Node(Svc, Freezer, Scheduler):
             import resource
             (vs, vg) = resource.getrlimit(resource.RLIMIT_NOFILE)
             if vs < n:
-		self.log.debug("raise nofile resource from %d limit to %d" % (vs, n))
+                self.log.debug("raise nofile resource from %d limit to %d" % (vs, n))
                 resource.setrlimit(resource.RLIMIT_NOFILE, (n, vg))
         except:
             pass

@@ -40,7 +40,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 if "@if" in ifname:
                     ifkname = ifname[ifname.index("@if"):]
                     ifname = ifname[:ifname.index("@if")]
-		else:
+                else:
                     ifkname = None
                 i = rcIfconfig.interface(ifname)
                 i.ifkname = ifkname

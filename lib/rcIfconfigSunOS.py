@@ -35,8 +35,8 @@ class ifconfig(rcIfconfig.ifconfig):
             return data
         lines = lines[i+1:]
         for i, line in enumerate(lines):
-	    if len(line) == 0:
-	        break
+            if len(line) == 0:
+                break
             try:
                 intf, addr, refcnt = line.split()
             except:
@@ -45,8 +45,8 @@ class ifconfig(rcIfconfig.ifconfig):
                 data[intf] = [addr]
             else:
                 data[intf] += [addr]
-	if len(lines) <= i + 1:
-	    return data
+        if len(lines) <= i + 1:
+            return data
         lines = lines[i+1:]
         for i, line in enumerate(lines):
             if line.startswith('--'):
@@ -58,8 +58,8 @@ class ifconfig(rcIfconfig.ifconfig):
             return data
         lines = lines[i+1:]
         for i, line in enumerate(lines):
-	    if len(line) == 0:
-	        break
+            if len(line) == 0:
+                break
             try:
                 intf, addr, refcnt = line.split()
             except:

@@ -34,11 +34,11 @@ def update(fpath):
     file = '/var/sadm/install/gz-only-packages'
     GlobalOnly = False
     if os.path.isfile(file):
-	f = open(file)
-	for line in f:
-	    if line.startswith("opensvc"):
-		print("OpenSVC package was previously installed with pkgadd -G\n")
-		GlobalOnly = True
+        f = open(file)
+        for line in f:
+            if line.startswith("opensvc"):
+                print("OpenSVC package was previously installed with pkgadd -G\n")
+                GlobalOnly = True
 
     cmd = ['pkgrm', '-n', 'opensvc']
     print(' '.join(cmd))
@@ -50,10 +50,10 @@ def update(fpath):
     if osver < 10.0:
         opts = ''
     else:
-	if GlobalOnly is True:
+        if GlobalOnly is True:
             opts = '-G'
         else:
-	    opts = ''
+            opts = ''
     admin = gen_adminfile()
     opts += " -a %s " % admin
     cmd = 'pkgadd %s -d %s all' % (opts, fpath)

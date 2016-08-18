@@ -40,36 +40,36 @@ class Nec(object):
         self.get_bin('sc_unlink_bin', ['iSMsc_unlink'])
 
     def view_cmd(self, cmd, on_array=True):
-	self.get_view_bin()
+        self.get_view_bin()
         cmd = [self.view_bin] + cmd
         if on_array:
             cmd += [self.name]
         return justcall(cmd)
 
     def sc_query_cmd(self, cmd):
-	self.get_sc_query_bin()
+        self.get_sc_query_bin()
         cmd = [self.sc_query_bin] + cmd
         return justcall(cmd)
 
     def sc_linkinfo_cmd(self, cmd):
-	self.get_sc_linkinfo_bin()
+        self.get_sc_linkinfo_bin()
         cmd = [self.sc_linkinfo_bin] + cmd
         return justcall(cmd)
 
     def sc_unlink_cmd(self, cmd):
-	self.get_sc_unlink_bin()
+        self.get_sc_unlink_bin()
         cmd = [self.sc_unlink_bin] + cmd
         self.log.info(' '.join(cmd))
         return justcall(cmd)
 
     def sc_link_cmd(self, cmd):
-	self.get_sc_link_bin()
+        self.get_sc_link_bin()
         cmd = [self.sc_link_bin] + cmd
         self.log.info(' '.join(cmd))
         return justcall(cmd)
 
     def sc_create_cmd(self, cmd):
-	self.get_sc_create_bin()
+        self.get_sc_create_bin()
         cmd = [self.sc_create_bin] + cmd
         self.log.info(' '.join(cmd))
         return justcall(cmd)

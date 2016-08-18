@@ -409,17 +409,17 @@ class Rsync(resSync.Sync):
 
     def get_options(self):
         if which("rsync") is None:
-	    raise ex.excError("rsync not found")
-	baseopts = '-HAXpogDtrlvx'
+            raise ex.excError("rsync not found")
+        baseopts = '-HAXpogDtrlvx'
         cmd = ['rsync', '--version']
         out, err, ret = justcall(cmd)
         if ret != 0:
-	    raise ex.excError("can not determine rsync capabilities")
+            raise ex.excError("can not determine rsync capabilities")
 
-	if 'no xattrs' in out:
-	    baseopts = baseopts.replace('X', '')
-	if 'no ACLs' in out:
-	    baseopts = baseopts.replace('A', '')
+        if 'no xattrs' in out:
+            baseopts = baseopts.replace('X', '')
+        if 'no ACLs' in out:
+            baseopts = baseopts.replace('A', '')
 
         options = [baseopts, '--stats', '--delete', '--force', '--timeout='+str(self.timeout)] + self.options
         return options

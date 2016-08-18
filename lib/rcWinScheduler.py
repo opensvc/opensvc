@@ -46,7 +46,7 @@ class OsvcSched(win32serviceutil.ServiceFramework):
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-	sys.stop_listener = True
+        sys.stop_listener = True
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):

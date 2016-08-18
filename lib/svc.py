@@ -708,7 +708,7 @@ class Svc(Resource, Scheduler):
 
         l = []
         cr = {}
-	for r in avail_resources:
+        for r in avail_resources:
             rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
             l.append((rid, status, label, log, monitor, disable, optional, encap))
             if rid.startswith("container") and rid in encap_res_status:
@@ -2027,8 +2027,8 @@ class Svc(Resource, Scheduler):
             sync = True
 
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
-	if self.log.isEnabledFor(logging.DEBUG):
-	    rcmd += ['--debug']
+        if self.log.isEnabledFor(logging.DEBUG):
+            rcmd += ['--debug']
         if self.cluster:
             rcmd += ['--cluster']
         if self.cron:
@@ -2768,10 +2768,10 @@ class Svc(Resource, Scheduler):
     def rollback_handler(self, action):
         if 'start' not in action:
             return
-	if self.options.disable_rollback:
+        if self.options.disable_rollback:
             self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
             return
-	if self.disable_rollback:
+        if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
             return
         rids = [r.rid for r in self.get_resources() if r.can_rollback]

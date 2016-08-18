@@ -5,8 +5,8 @@ import wmi
 
 class ifconfig(rcIfconfig.ifconfig):
     def parse(self, intf, intf_cf):
-	if intf_cf.IPAddress is None:
-	    return
+        if intf_cf.IPAddress is None:
+            return
         i = rcIfconfig.interface(intf.NetConnectionID)
         self.intf.append(i)
 
@@ -30,12 +30,12 @@ class ifconfig(rcIfconfig.ifconfig):
         i.flag_loopback = False
 
         for idx, ip in enumerate(intf_cf.IPAddress):
-	    if ":" in ip:
-	        i.ip6addr.append(ip)
-	        i.ip6mask.append(intf_cf.IPsubnet[idx])
-	    else:
-	        i.ipaddr.append(ip)
-	        i.mask.append(intf_cf.IPsubnet[idx])
+            if ":" in ip:
+                i.ip6addr.append(ip)
+                i.ip6mask.append(intf_cf.IPsubnet[idx])
+            else:
+                i.ipaddr.append(ip)
+                i.mask.append(intf_cf.IPsubnet[idx])
 
     def __init__(self, mcast=False):
         self.wmi = wmi.WMI()

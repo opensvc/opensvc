@@ -77,9 +77,9 @@ def lock_nowait(lockfile=None):
         pass
 
     try:
-	flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
-	if rcEnv.sysname != 'Windows':
-	    flags |= os.O_SYNC
+        flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+        if rcEnv.sysname != 'Windows':
+            flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as e:
         raise lockCreateError()

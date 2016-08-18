@@ -27,7 +27,7 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError("gce disk name %s in %s: missing the 'size' parameter" % (name, self.r.rid))
         size = str(convert_size(size, _to="MB"))+'MB'
 
-	cmd = ["gcloud", "compute", "disks", "create", "-q",
+        cmd = ["gcloud", "compute", "disks", "create", "-q",
                name,
                "--size", size,
                "--zone", self.r.gce_zone]

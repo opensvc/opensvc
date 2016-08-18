@@ -29,7 +29,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.w = wmi.WMI()
-	self.cpuinfo = self.w.Win32_Processor()
+        self.cpuinfo = self.w.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
@@ -86,17 +86,17 @@ class Asset(rcAsset.Asset):
     def _get_cpu_cores(self):
         n = 0
         for p in self.cpuinfo:
-	    try:
+            try:
                 cores = p.NumberOfCores
-	    except:
+            except:
                 cores = 1
             n += cores
         return str(n)
 
     def _get_cpu_dies(self):
-	s = set([])
+        s = set([])
         for p in self.cpuinfo:
-	    s.add(p.SocketDesignation)
+            s.add(p.SocketDesignation)
         n = len(s)
         return str(n)
 

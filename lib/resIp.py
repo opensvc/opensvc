@@ -122,7 +122,7 @@ class Ip(Res.Resource):
         self.abort_start_done = True
         if 'nonrouted' in self.tags or 'noaction' in self.tags:
             return False
-	if not hasattr(self, "addr"):
+        if not hasattr(self, "addr"):
             return False
         if self.check_ping() and not self.is_up():
             return True

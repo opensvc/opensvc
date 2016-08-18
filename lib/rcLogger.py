@@ -118,9 +118,9 @@ def initLogger(name):
     except Exception as e:
         if e.errno == errno.ENOTSOCK:
             # solaris /dev/log is a stream device
-	    sysloghandler = LoggerHandler(facility=facility)
+            sysloghandler = LoggerHandler(facility=facility)
         else:
-	    sysloghandler = None
+            sysloghandler = None
     if sysloghandler:
         sysloghandler.setFormatter(syslogformatter)
         log.addHandler(sysloghandler)
