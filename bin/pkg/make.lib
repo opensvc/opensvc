@@ -1,7 +1,7 @@
 SUMMARY="Automation and configuration management agent"
-DESCRIPTION="The agent provisions, starts, stops, monitors and relocates applications
-described as OpenSVC services. It centralizes nodes discovery and handles
-nodes and services configuration management. It tracks system configuration
+DESCRIPTION="The agent provisions, starts, stops, monitors and relocates applications \
+described as OpenSVC services. It centralizes nodes discovery and handles \
+nodes and services configuration management. It tracks system configuration \
 changes."
 
 umask 022
