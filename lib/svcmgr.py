@@ -276,7 +276,7 @@ def main():
                 build_err = True
 
     if node.svcs is not None and len(node.svcs) > 0:
-        svcnames = map(lambda x: x.svcname, node.svcs)
+        svcnames = list(map(lambda x: x.svcname, node.svcs))
     elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
         svcnames = options.parm_svcs.split(',')
 
