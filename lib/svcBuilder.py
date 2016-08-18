@@ -3013,7 +3013,7 @@ def add_apps_sysv(svc, conf):
     def get_next_rid():
         rid_index = 0
         _rid = "app#%d" % rid_index
-        while _rid in svc.resources_by_id.keys() + allocated:
+        while _rid in list(svc.resources_by_id.keys()) + allocated:
             rid_index += 1
             _rid = "app#%d" % rid_index
         allocated.append(_rid)
