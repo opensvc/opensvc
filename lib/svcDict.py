@@ -41,12 +41,8 @@ class Keyword(object):
         self.example = example
         self.provisioning = provisioning
 
-    def __cmp__(self, o):
-        if o.order > self.order:
-            return -1
-        elif o.order == self.order:
-            return 0
-        return 1
+    def __lt__(self, o):
+        return self.order < o.order
 
     def template(self):
         wrapper = TextWrapper(subsequent_indent="#%15s"%"", width=78)
