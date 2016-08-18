@@ -180,7 +180,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if p.returncode != 0:
             return {}
         mp_h = {}
-        for line in out.split('\n'):
+        for line in out.decode().splitlines():
             l = line.split()
             if len(l) == 0:
                 continue
@@ -285,7 +285,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for s in out.split():
+        for s in out.decode().split():
             d.set_devpath("/dev/"+s)
 
     def get_lv_linear(self):
@@ -299,7 +299,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return self.lv_linear
-        for line in out.split('\n'):
+        for line in out.decode().splitlines():
             l = line.split(':')
             if len(l) < 2:
                 continue
@@ -333,7 +333,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for line in out.split("\n"):
+        for line in out.decode().splitlines():
             if not line.startswith("/"):
                 continue
             l = line.split()
