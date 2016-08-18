@@ -240,6 +240,7 @@ def main():
 
     if not action in rcOptParser.supported_actions():
         node.close()
+        node.log.error("invalid service action: %s" % str(action))
         parser.set_usage(__usage + rcOptParser.format_desc(action=action))
         parser.error("unsupported action")
 

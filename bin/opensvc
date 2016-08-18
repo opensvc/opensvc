@@ -27,11 +27,12 @@ BASENAME=`basename $0`
 
 case $BASENAME in
 *.cluster)
-	BIN_ARGS="$BIN_ARGS --cluster"
+	BIN_ARGS="--cluster"
 	BASENAME=`echo $BASENAME|sed -e "s/.cluster$//"`
 	;;
 *.stonith)
-	BIN_ARGS="$BIN_ARGS stonith --cluster"
+	set --
+	BIN_ARGS="stonith --cluster"
 	BASENAME=`echo $BASENAME|sed -e "s/.stonith$//"`
 	;;
 esac
