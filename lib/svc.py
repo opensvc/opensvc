@@ -173,10 +173,10 @@ class Svc(Resource, Scheduler):
          "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="status_schedule"),
         }
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         """order by service name
         """
-        return cmp(self.svcname, other.svcname)
+        return self.svcname < other.svcname
 
     def scheduler(self):
         self.cron = True
@@ -499,7 +499,7 @@ class Svc(Resource, Scheduler):
             reverse = True
         else:
             reverse = False
-        sets = sorted(sets, lambda x, y: cmp(x.type, y.type), reverse=reverse)
+        sets = sorted(sets, key=lambda x: x.type, reverse=reverse)
 
         for r in sets:
             if action in list_actions_no_pre_action or r.skip:
