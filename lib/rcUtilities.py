@@ -12,6 +12,17 @@ if os.name == 'nt':
 else:
     close_fds = True
 
+def is_string(s):
+    """ python[23] compatible
+    """
+    if sys.version_info[0] == 2:
+        l = (str, unicode)
+    else:
+        l = (str)
+    if isinstance(s, l):
+        return True
+    return False
+
 def ximport(base):
     mod = base + rcEnv.sysname
     try:
