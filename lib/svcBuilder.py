@@ -3542,7 +3542,7 @@ def list_services():
         os.makedirs(rcEnv.pathetc)
 
     s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-    s = map(lambda x: os.path.basename(x).replace('.env',''), s)
+    s = list(map(lambda x: os.path.basename(x).replace('.env',''), s))
 
     l = []
     for name in s:
