@@ -34,7 +34,7 @@ AutoReqProv: no
 %define _binary_payload w9.gzdio
 
 %description
-$DESCRIPTION
+$(echo ${DESCRIPTION}|fold -s)
 
 %post
 /usr/bin/python %{_datarootdir}/opensvc/bin/postinstall
