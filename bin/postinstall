@@ -1139,7 +1139,12 @@ def convert_to_lsb():
         shutil.copytree(p, dst, symlinks=True)
     for p in glob.glob("/opt/opensvc/etc/*.d"):
         logit("migrate " + p)
-        if os.path.isdir(p):
+        if os.path.islink(p):
+            bp = os.path.basename(p)
+            linkto = os.readlink(p)
+            dst = os.path.join(pathetc, bp)
+            os.symlink(linkto, dst)
+        elif os.path.isdir(p):
             bp = os.path.basename(p)
             dst = os.path.join(pathetc, bp)
             shutil.copytree(p, dst, symlinks=True)
