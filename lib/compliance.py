@@ -78,7 +78,11 @@ class Module(object):
 
 
     def strip_unprintable(self, s):
-        return regex.sub('', s).decode('utf8', 'ignore')
+        s = regex.sub('', s)
+        if sys.version_info[0] >= 3:
+            return s
+        else:
+            return s.decode('utf8', 'ignore')
 
     def log_action(self, out, ret, action):
         vals = [rcEnv.nodename,
@@ -410,9 +414,8 @@ class Compliance(object):
             except ex.excInitError as e:
                 print(e, file=sys.stderr)
 
-        self.ordered_module = self.module_o.keys()
-        self.ordered_module.sort(lambda x, y: cmp(self.module_o[x].ordering,
-                                                  self.module_o[y].ordering))
+        self.ordered_module = list(self.module_o.keys())
+        self.ordered_module.sort(key=lambda x: self.module_o[x].ordering)
 
     def __str__(self):
         print(banner('run context'))
@@ -435,6 +438,8 @@ class Compliance(object):
                 val = json.dumps(tmp)
             except Exception as e:
                 pass
+            if sys.version_info[0] < 3:
+                val = val.encode("utf-8")
         else:
             val = str(val)
         return val

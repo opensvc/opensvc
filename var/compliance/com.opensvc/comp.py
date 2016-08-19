@@ -59,8 +59,8 @@ class CompObject(object):
         self.__init__(**self.example_kwargs)
         self.prefix = "OSVC_COMP_CO_TEST"
         for k, v in self.example_env.items():
-            os.environ[k] = v
-        os.environ[self.prefix] = self.example_value
+            self.set_env(k, v)
+        self.set_env(self.prefix, self.example_value)
         return self.check()
 
     def info(self):
@@ -88,26 +88,54 @@ class CompObject(object):
     def set_prefix(self, prefix):
         self.prefix = prefix.upper()
 
+    def set_env(self, k, v):
+        if sys.version_info[0] < 3:
+            v = v.decode("utf-8")
+        os.environ[k] = v
+
+    def get_env(self, k):
+        s = os.environ[k]
+        if sys.version_info[0] < 3:
+            s = s.encode("utf-8")
+        return s
+
     def get_rules_raw(self):
         rules = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            s = self.subst(os.environ[k])
+            s = self.subst(self.get_env(k))
             rules += [s]
         if len(rules) == 0:
             raise NotApplicable("no rules (%s)" % self.prefix)
         return rules
 
+    def encode_data(self, data):
+        if sys.version_info[0] > 2:
+            return data
+        if type(data) == dict:
+            for k in data:
+                if isinstance(data[k], (str, unicode)):
+                    data[k] = data[k].encode("utf-8")
+                elif isinstance(data[k], (list, dict)):
+                    data[k] = self.encode_data(data[k])
+        elif type(data) == list:
+            for i, v in enumerate(data):
+                if isinstance(v, (str, unicode)):
+                    data[i] = v.encode("utf-8")
+                elif isinstance(data[i], (list, dict)):
+                    data[i] = self.encode_data(data[i])
+        return data
+
     def get_rules(self):
-        return [v[1] for v in self.get_rule_items()]
+        return [self.encode_data(v[1]) for v in self.get_rule_items()]
 
     def get_rule_items(self):
         rules = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            s = self.subst(os.environ[k])
+            s = self.subst(self.get_env(k))
             try:
                 data = json.loads(s)
             except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to rules list'
+                print >>sys.stderr, 'failed to concatenate', self.get_env(k), 'to rules list'
             if type(data) == list:
                 for d in data:
                     rules += [(k, d)]
@@ -142,9 +170,9 @@ class CompObject(object):
             for m in matches:
                 s = m.strip("%").upper().replace('ENV:', '')
                 if s in os.environ:
-                    _v = os.environ[s]
+                    _v = self.get_env(s)
                 elif 'OSVC_COMP_'+s in os.environ:
-                    _v = os.environ['OSVC_COMP_'+s]
+                    _v = self.get_env('OSVC_COMP_'+s)
                 else:
                     _v = ""
                     raise NotApplicable()
