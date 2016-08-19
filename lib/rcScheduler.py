@@ -8,6 +8,7 @@ import time
 import random
 
 from rcGlobalEnv import rcEnv
+from rcUtilities import is_string
 
 sched_fmt = "[%s] %-45s %s"
 print_sched_fmt = "%-21s  %-21s  %-24s  %s"
@@ -384,7 +385,7 @@ class Scheduler(object):
         try:
             periods = json.loads(period_s)
             l = []
-            if type(periods[0]) in (str, unicode):
+            if is_string(periods[0]):
                 periods = [periods]
             for p in periods:
                 l.append("%s-%s@%s" % (p[0], p[1], interval_s))
@@ -696,7 +697,7 @@ class Scheduler(object):
             schedules = json.loads(schedules)
         except:
             pass
-        if type(schedules) in (str, unicode):
+        if is_string(schedules):
             schedules = [schedules]
 
         data = []

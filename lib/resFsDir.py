@@ -3,6 +3,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
+from rcUtilities import is_string
 import pwd
 import grp
 import stat
@@ -44,14 +45,14 @@ class FsDir(Res.Resource):
         self.create()
 
     def get_gid(self):
-        if isinstance(self.group, (str, unicode)):
+        if is_string(self.group):
             info = grp.getgrnam(self.group)
             self.gid = info[2]
         else:
             self.gid = int(self.group)
 
     def get_uid(self):
-        if isinstance(self.user, (str, unicode)):
+        if is_string(self.user):
             info = pwd.getpwnam(self.user)
             self.uid = info[2]
         else:

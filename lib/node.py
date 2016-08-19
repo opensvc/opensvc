@@ -17,8 +17,16 @@ import rcExceptions as ex
 from subprocess import *
 from rcScheduler import *
 
+if sys.version_info[0] >= 3:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
+else:
+    from urllib2 import Request, urlopen
+    from urllib2 import HTTPError
+    from urllib import urlencode
+
 try:
-    import urllib2
     import base64
 except:
     pass
@@ -188,7 +196,7 @@ class Node(Svc, Freezer, Scheduler):
             'collector_create_tag': 'create a new tag',
           },
         }
-        self.collector = xmlrpcClient.Collector()
+        self.collector = xmlrpcClient.Collector(node=self)
         self.cmdworker = rcCommandWorker.CommandWorker()
         try:
             rcos = __import__('rcOs'+rcEnv.sysname)
@@ -344,14 +352,25 @@ class Node(Svc, Freezer, Scheduler):
             s.purge_status_last()
 
     def load_config(self):
+        import codecs
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
-        self.config.read(rcEnv.nodeconf)
+        with codecs.open(rcEnv.nodeconf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                self.config.read_file(f)
+            else:
+                self.config.readfp(f)
 
     def load_auth_config(self):
         if self.auth_config is not None:
             return
+        import codecs
         self.auth_config = ConfigParser.ConfigParser()
-        self.auth_config.read(rcEnv.authconf)
+        with codecs.open(rcEnv.authconf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                self.config.read_file(f)
+            else:
+                self.config.readfp(f)
+
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
@@ -1164,8 +1183,8 @@ class Node(Svc, Freezer, Scheduler):
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
-            out = regex.sub('', out).decode('utf8', 'ignore')
-            err = regex.sub('', err).decode('utf8', 'ignore')
+            out = regex.sub('', out)
+            err = regex.sub('', err)
             data.append((action.get('id'), ret, out, err))
         if len(actions) > 0:
             self.collector.call('collector_update_action_queue', data)
@@ -1176,11 +1195,11 @@ class Node(Svc, Freezer, Scheduler):
         else:
             cmd = [rcEnv.svcmgr, "-s", action.get("svcname")]
         import shlex
+        from rcUtilities import justcall
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        return p.returncode, out, err
+        out, err, ret = justcall(cmd)
+        return ret, out, err
 
     def rotate_root_pw(self):
         pw = self.genpw()
@@ -1442,8 +1461,13 @@ class Node(Svc, Freezer, Scheduler):
     def collector_request(self, path):
         api = self.collector_api()
         url = api["url"]
-        request = urllib2.Request(url+path)
-        base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
+        request = Request(url+path)
+        auth_string = '%s:%s' % (api["username"], api["password"])
+        if sys.version_info[0] >= 3:
+            base64string = base64.encodestring(auth_string.encode()).decode()
+        else:
+            base64string = base64.encodestring(auth_string)
+        base64string = base64string.replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
@@ -1454,12 +1478,12 @@ class Node(Svc, Freezer, Scheduler):
         return self.collector_rest_request(path, data)
 
     def urlretrieve(self, url, fpath):
-        request = urllib2.Request(url)
+        request = Request(url)
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
-        f = urllib2.urlopen(request, **kwargs)
+        f = urlopen(request, **kwargs)
         with open(fpath, 'wb') as df:
             for chunk in iter(lambda: f.read(4096), b""):
                 df.write(chunk)
@@ -1471,14 +1495,14 @@ class Node(Svc, Freezer, Scheduler):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         if data:
             import urllib
-            request.add_data(urllib.urlencode(data))
+            request.add_data(urlencode(data))
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ex.excError(err)
@@ -1486,7 +1510,7 @@ class Node(Svc, Freezer, Scheduler):
                 pass
             raise e
         import json
-        data = json.loads(f.read())
+        data = json.loads(f.read().decode("utf-8"))
         f.close()
         return data
 
@@ -1500,8 +1524,8 @@ class Node(Svc, Freezer, Scheduler):
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ex.excError(err)

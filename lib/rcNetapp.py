@@ -4,6 +4,7 @@ import rcExceptions as ex
 import ConfigParser
 from subprocess import *
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 
 if rcEnv.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.pathbin
@@ -76,8 +77,7 @@ class Netapp(object):
 
     def rcmd(self, cmd):
         cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-i", self.key, self.username+"@"+self.server, cmd]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
+        out, err, ret = justcall(cmd)
         return out, err
 
     def get_aggr_show_space(self):

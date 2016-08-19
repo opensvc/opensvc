@@ -143,31 +143,24 @@ class Collector(object):
         return transport, host, port, app
 
     def setNodeEnv(self):
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
-        config = ConfigParser.RawConfigParser()
-        config.read(rcEnv.nodeconf)
-        if config.has_option('node', 'dbopensvc'):
-            rcEnv.dbopensvc = config.get('node', 'dbopensvc')
+        if self.node.config.has_option('node', 'dbopensvc'):
+            rcEnv.dbopensvc = self.node.config.get('node', 'dbopensvc')
             try:
                 rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = self.split_url(rcEnv.dbopensvc)
             except:
                 self.log.error("malformed dbopensvc url: %s"%rcEnv.dbopensvc)
-        if config.has_option('node', 'dbcompliance'):
-            rcEnv.dbcompliance = config.get('node', 'dbcompliance')
+        if self.node.config.has_option('node', 'dbcompliance'):
+            rcEnv.dbcompliance = self.node.config.get('node', 'dbcompliance')
             try:
                 rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(rcEnv.dbcompliance)
             except:
                 self.log.error("malformed dbcompliance url: %s"%rcEnv.dbcompliance)
         else:
             rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = None, None, None, None
-        if config.has_option('node', 'uuid'):
-            rcEnv.uuid = config.get('node', 'uuid')
+        if self.node.config.has_option('node', 'uuid'):
+            rcEnv.uuid = self.node.config.get('node', 'uuid')
         else:
             rcEnv.uuid = ""
-        del(config)
 
     def submit(self, fn, *args, **kwargs):
         self.init_worker()
@@ -200,7 +193,8 @@ class Collector(object):
             return
         return do_call(fn, args, kwargs, self.log, self, mode="synchronous")
 
-    def __init__(self, worker=False):
+    def __init__(self, worker=False, node=None):
+        self.node = node
         self.proxy = None
         self.proxy_methods = []
         self.comp_proxy = None
@@ -987,7 +981,7 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.insert_generic(*args)
 
-        args = [d.keys(), d.values()]
+        args = [list(d.keys()), list(d.values())]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         if node.options.syncrpc:

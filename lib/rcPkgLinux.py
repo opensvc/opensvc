@@ -33,7 +33,7 @@ def listpkg_deb():
     (ret, out, err) = call(cmd, errlog=False, cache=True)
     lines = []
     arch = ""
-    for line in out.split('\n'):
+    for line in out.splitlines():
         l = line.split()
         if len(l) < 4:
             continue
