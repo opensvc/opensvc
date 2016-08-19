@@ -433,8 +433,8 @@ class Compliance(object):
             try:
                 tmp = json.loads(val)
                 val = json.dumps(tmp)
-            except:
-                val = repr(val)[2:-1]
+            except Exception as e:
+                pass
         else:
             val = str(val)
         return val
