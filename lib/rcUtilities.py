@@ -85,7 +85,10 @@ def justcall(argv=['/bin/false']):
     if sys.version_info[0] < 3:
         return stdout, stderr, process.returncode
     else:
-        return str(stdout, "ascii"), str(stderr, "ascii"), process.returncode
+        try:
+            return str(stdout, "utf-8"), str(stderr, "utf-8"), process.returncode
+        except:
+            return str(stdout, "ascii"), str(stderr, "ascii"), process.returncode
 
 def empty_string(buff):
     b = buff.strip(' ').strip('\n')
@@ -142,7 +145,10 @@ def call(argv=['/bin/false'],
         process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
         buff = process.communicate()
         if sys.version_info[0] >= 3:
-            buff = tuple(map(lambda x: str(x, "ascii"), buff))
+            try:
+                buff = tuple(map(lambda x: str(x, "utf-8"), buff))
+            except:
+                buff = tuple(map(lambda x: str(x, "ascii"), buff))
         ret = process.returncode
         if ret == 0:
             log.debug("store '%s' output in cache"%cmd)
