@@ -6,7 +6,6 @@ from rcGlobalEnv import rcEnv, get_osvc_paths
 from rcUtilities import justcall
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
-import xmlrpcClient
 import sys
 import os
 import signal
