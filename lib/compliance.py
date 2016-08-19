@@ -97,18 +97,22 @@ class Module(object):
             vals.append("")
         self.context.action_log_vals.append(vals)
 
-    def set_python_link_dir_in_path(self):
+    def set_env_path(self):
         if self.python_link_d == sys.path[0]:
+            return
+        if rcEnv.sysname == "Windows":
             return
         if "PATH" in os.environ:
             os.environ["PATH"] = self.python_link_d + ":" + os.environ["PATH"]
         else:
             os.environ["PATH"] = self.python_link_d
+        if rcEnv.pathbin != "/usr/bin":
+            os.environ["PATH"] = os.environ["PATH"] + ":" + rcEnv.pathbin
 
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
-        self.set_python_link_dir_in_path()
+        self.set_env_path()
         for rule in self.ruleset.values():
             if (rule["filter"] != "explicit attachment via moduleset" and \
                 "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \
