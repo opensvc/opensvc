@@ -196,7 +196,7 @@ class Node(Svc, Freezer, Scheduler):
             'collector_create_tag': 'create a new tag',
           },
         }
-        self.collector = xmlrpcClient.Collector()
+        self.collector = xmlrpcClient.Collector(node=self)
         self.cmdworker = rcCommandWorker.CommandWorker()
         try:
             rcos = __import__('rcOs'+rcEnv.sysname)
@@ -352,14 +352,25 @@ class Node(Svc, Freezer, Scheduler):
             s.purge_status_last()
 
     def load_config(self):
+        import codecs
         self.config = ConfigParser.RawConfigParser(self.config_defaults)
-        self.config.read(rcEnv.nodeconf)
+        with codecs.open(rcEnv.nodeconf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                self.config.read_file(f)
+            else:
+                self.config.readfp(f)
 
     def load_auth_config(self):
         if self.auth_config is not None:
             return
+        import codecs
         self.auth_config = ConfigParser.ConfigParser()
-        self.auth_config.read(rcEnv.authconf)
+        with codecs.open(rcEnv.authconf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                self.config.read_file(f)
+            else:
+                self.config.readfp(f)
+
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
@@ -1172,8 +1183,8 @@ class Node(Svc, Freezer, Scheduler):
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
-            out = regex.sub('', out).decode('utf8', 'ignore')
-            err = regex.sub('', err).decode('utf8', 'ignore')
+            out = regex.sub('', out)
+            err = regex.sub('', err)
             data.append((action.get('id'), ret, out, err))
         if len(actions) > 0:
             self.collector.call('collector_update_action_queue', data)
@@ -1184,11 +1195,11 @@ class Node(Svc, Freezer, Scheduler):
         else:
             cmd = [rcEnv.svcmgr, "-s", action.get("svcname")]
         import shlex
+        from rcUtilities import justcall
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        return p.returncode, out, err
+        out, err, ret = justcall(cmd)
+        return ret, out, err
 
     def rotate_root_pw(self):
         pw = self.genpw()
