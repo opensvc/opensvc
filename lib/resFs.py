@@ -179,8 +179,14 @@ class Mount(Res.Resource):
 
     def provision(self):
         t = self.fsType[0].upper()+self.fsType[1:].lower()
-        m = __import__("provFs"+t)
-        prov = getattr(m, "ProvisioningFs"+t)(self)
+        try:
+            m = __import__("provFs"+t)
+        except ImportError as e:
+            m = __import__("provFs")
+        if hasattr(m, "ProvisioningFs"+t):
+            prov = getattr(m, "ProvisioningFs"+t)(self)
+        else:
+            prov = getattr(m, "ProvisioningFs")(self)
         prov.provisioner()
 
 if __name__ == "__main__":

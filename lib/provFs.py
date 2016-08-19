@@ -14,6 +14,8 @@ class ProvisioningFs(Provisioning):
         self.section = dict(r.svc.config.items(r.rid))
 
     def check_fs(self):
+        if not hasattr(self, "info"):
+            return True
         cmd = self.info + [self.mkfs_dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
@@ -39,7 +41,7 @@ class ProvisioningFs(Provisioning):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
 
-        if not os.path.exists(self.dev):
+        if not os.path.exists(self.dev) and self.r.fsType not in self.r.netfs:
             self.r.log.info("dev %s does not exist. create a logical volume"%self.dev)
             self.provision_dev()
 
@@ -53,6 +55,8 @@ class ProvisioningFs(Provisioning):
                return
 
         if not self.check_fs():
+            if not hasattr(self, "mkfs"):
+                raise ex.excError("no mkfs method implemented")
             cmd = self.mkfs + [self.mkfs_dev]
             (ret, out, err) = self.r.vcall(cmd)
             if ret != 0:
