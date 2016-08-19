@@ -6,6 +6,7 @@ import pwd
 import grp
 import stat
 from rcGlobalEnv import rcEnv
+from rcUtilities import is_string
 import rcExceptions as ex
 
 class Disk(resDisk.Disk):
@@ -64,7 +65,7 @@ class Disk(resDisk.Disk):
 
     def get_uid(self):
         self.uid = self.user
-        if isinstance(self.uid, (str, unicode)):
+        if is_string(self.uid):
             try:
                 info=pwd.getpwnam(self.uid)
                 self.uid = info[2]
@@ -73,7 +74,7 @@ class Disk(resDisk.Disk):
 
     def get_gid(self):
         self.gid = self.group
-        if isinstance(self.gid, (str, unicode)):
+        if is_string(self.gid):
             try:
                 info=grp.getgrnam(self.gid)
                 self.gid = info[2]

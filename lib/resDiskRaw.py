@@ -8,7 +8,7 @@ import stat
 import sys
 import glob
 import rcExceptions as ex
-from rcUtilities import which
+from rcUtilities import which, is_string
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -45,11 +45,6 @@ class Disk(resDisk.Disk):
         self.group = group
         self.perm = perm
         self.create_char_devices = create_char_devices
-
-        if sys.version_info[0] < 3:
-            self.str_types = (str, unicode)
-        else:
-            self.str_types = (str)
 
         self.get_uid()
         self.get_gid()
@@ -136,7 +131,7 @@ class Disk(resDisk.Disk):
 
     def get_uid(self):
         self.uid = self.user
-        if isinstance(self.uid, self.str_types):
+        if is_string(self.uid):
             try:
                 info=pwd.getpwnam(self.uid)
                 self.uid = info[2]
@@ -145,7 +140,7 @@ class Disk(resDisk.Disk):
 
     def get_gid(self):
         self.gid = self.group
-        if isinstance(self.gid, self.str_types):
+        if is_string(self.gid):
             try:
                 info=grp.getgrnam(self.gid)
                 self.gid = info[2]
