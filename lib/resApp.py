@@ -91,7 +91,7 @@ class RsetApps(Res.ResourceSet):
         l = [r for r in resources if hasattr(r, attr)]
         if len(l) != len(resources):
             attr = 'rid'
-        resources.sort(lambda x, y: cmp(getattr(x, attr), getattr(y, attr)))
+        resources.sort(key=lambda x: getattr(x, attr))
         return resources
 
 
@@ -130,12 +130,12 @@ class App(Res.Resource):
 
         self.script_exec = True
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if other.start_seq is None:
             return 1
         if self.start_seq is None:
             return 0
-        return cmp(self.start_seq, other.start_seq)
+        return self.start_seq < other.start_seq
 
     def validate_on_action(self):
         self.validate_script_path()
