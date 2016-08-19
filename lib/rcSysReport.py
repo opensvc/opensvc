@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import sys
 import shutil
 import glob
 from rcGlobalEnv import rcEnv
@@ -222,6 +223,8 @@ class SysReport(object):
         cmd_d = os.path.join(self.collect_cmd_d, fname)
         p = Popen(l, stdout=PIPE, stderr=STDOUT, close_fds=True)
         out, err = p.communicate()
+        if sys.version_info[0] >= 3:
+            out = out.decode("utf-8")
         self.write(os.path.join(cmd_d), out)
 
     def get_stat(self, fpath):
@@ -288,6 +291,9 @@ class SysReport(object):
         except IOError:
             # in doubt, send ... git will know better on the collector
             self.changed.append(dst_f)
+        except UnicodeDecodeError:
+            # binary file: skip
+            pass
         shutil.copy2(fpath, dst_f)
         self.full.append(dst_f)
 
