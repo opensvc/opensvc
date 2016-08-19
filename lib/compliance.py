@@ -7,7 +7,7 @@ import datetime
 import json
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner
+from rcUtilities import is_exe, justcall, banner, is_string
 from subprocess import *
 from rcPrintTable import print_table
 from rcStatus import color, _colorize
@@ -429,7 +429,7 @@ class Compliance(object):
         return var
 
     def format_rule_val(self, val):
-        if isinstance(val, unicode):
+        if is_string(val):
             try:
                 tmp = json.loads(val)
                 val = json.dumps(tmp)
