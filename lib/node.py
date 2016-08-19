@@ -1480,9 +1480,11 @@ class Node(Svc, Freezer, Scheduler):
     def urlretrieve(self, url, fpath):
         request = Request(url)
         kwargs = {}
-        if sys.hexversion >= 0x02070900:
+        try:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
+        except:
+            pass
         f = urlopen(request, **kwargs)
         with open(fpath, 'wb') as df:
             for chunk in iter(lambda: f.read(4096), b""):
@@ -1497,9 +1499,11 @@ class Node(Svc, Freezer, Scheduler):
             import urllib
             request.add_data(urlencode(data))
         kwargs = {}
-        if sys.hexversion >= 0x02070900:
+        try:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
+        except:
+            pass
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
@@ -1520,9 +1524,11 @@ class Node(Svc, Freezer, Scheduler):
         if api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         kwargs = {}
-        if sys.hexversion >= 0x02070900:
+        try:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
+        except:
+            pass
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:

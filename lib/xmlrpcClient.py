@@ -4,9 +4,11 @@ import sys
 socket.setdefaulttimeout(180)
 
 kwargs = {}
-if sys.hexversion >= 0x02070900:
+try:
     import ssl
     kwargs["context"] = ssl._create_unverified_context()
+except:
+    pass
 
 try:
     import xmlrpclib
