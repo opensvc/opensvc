@@ -152,7 +152,7 @@ def check_ping(addr, timeout=5, count=1):
                  '-W', repr(timeout),
                  '-w', repr(timeout),
                  addr]
-    out, err,ret = justcall(cmd)
+    out, err, ret = justcall(cmd)
     if ret == 0:
         return True
     return False

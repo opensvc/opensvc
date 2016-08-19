@@ -27,8 +27,7 @@ ip addr:
 
 class ifconfig(rcIfconfig.ifconfig):
     def parse_ip(self, out):
-        out = str(out)
-        for line in out.split("\n"):
+        for line in out.splitlines():
             if len(line) == 0:
                 continue
             if line[0] != " ":
@@ -202,15 +201,15 @@ class ifconfig(rcIfconfig.ifconfig):
     def get_mcast(self):
         if which('netstat'):
             cmd = ['netstat', '-gn']
-            out = Popen(cmd, stdout=PIPE).communicate()[0]
+            out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
             return self.parse_mcast_netstat(out)
         elif which('ip'):
             cmd = ['ip', 'maddr']
-            out = Popen(cmd, stdout=PIPE).communicate()[0]
+            out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
             return self.parse_mcast_ip(out)
 
     def parse_mcast_netstat(self, out):
-        lines = out.split('\n')
+        lines = out.splitlines()
         found = False
         data = {}
         for i, line in enumerate(lines):
@@ -234,7 +233,7 @@ class ifconfig(rcIfconfig.ifconfig):
         return data
 
     def parse_mcast_ip(self, out):
-        lines = out.split('\n')
+        lines = out.splitlines()
         found = False
         data = {}
         for line in lines:
@@ -263,10 +262,10 @@ class ifconfig(rcIfconfig.ifconfig):
         if ip_out:
             self.parse_ip(ip_out)
         elif which('ip'):
-            out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0]
+            out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0].decode()
             self.parse_ip(out)
         else:
-            out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+            out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0].decode()
             self.parse_ifconfig(out)
 
 if __name__ == "__main__":

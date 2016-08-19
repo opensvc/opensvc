@@ -84,7 +84,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             out, err = p.communicate()
             if p.returncode != 0:
                 return None
-            self.multipath_l = out.split('\n')
+            self.multipath_l = out.decode().splitlines()
         for line in self.multipath_l:
             if not line.startswith(map):
                 continue
@@ -111,7 +111,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return self.wwid_h
-        for line in out.split('\n'):
+        for line in out.decode().splitlines():
             if 'dm-' not in line:
                 continue
             devname = line[line.index('dm-'):].split()[0]
@@ -139,7 +139,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return {}
-        lines = out.split('\n')
+        lines = out.decode().splitlines()
         if len(lines) < 1:
             return {}
         dev = None
@@ -220,7 +220,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for line in out.split('\n'):
+        for line in out.decode().splitlines():
             l = line.split()
             if len(l) == 0:
                 continue
@@ -240,7 +240,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for line in out.split('\n'):
+        for line in out.decode().splitlines():
             l = line.split()
             if len(l) < 5:
                 continue
@@ -377,7 +377,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if p.returncode != 0:
             return
         from xml.etree import ElementTree as etree
-        tree = etree.fromstring(out)
+        tree = etree.fromstring(out.decode())
         for res in tree.getiterator('resource'):
             for host in res.findall('host'):
                 if host.attrib['name'] != rcEnv.nodename:
@@ -495,7 +495,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for line in out.split("\n"):
+        for line in out.decode().splitlines():
             if line.startswith('/dev/dm-'):
                 continue
             elif line.startswith("Disk "):
