@@ -17,8 +17,16 @@ import rcExceptions as ex
 from subprocess import *
 from rcScheduler import *
 
+if sys.version_info[0] >= 3:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
+else:
+    from urllib2 import Request, urlopen
+    from urllib2 import HTTPError
+    from urllib import urlencode
+
 try:
-    import urllib2
     import base64
 except:
     pass
@@ -1442,8 +1450,13 @@ class Node(Svc, Freezer, Scheduler):
     def collector_request(self, path):
         api = self.collector_api()
         url = api["url"]
-        request = urllib2.Request(url+path)
-        base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
+        request = Request(url+path)
+        auth_string = '%s:%s' % (api["username"], api["password"])
+        if sys.version_info[0] >= 3:
+            base64string = base64.encodestring(auth_string.encode()).decode()
+        else:
+            base64string = base64.encodestring(auth_string)
+        base64string = base64string.replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
@@ -1454,12 +1467,12 @@ class Node(Svc, Freezer, Scheduler):
         return self.collector_rest_request(path, data)
 
     def urlretrieve(self, url, fpath):
-        request = urllib2.Request(url)
+        request = Request(url)
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
-        f = urllib2.urlopen(request, **kwargs)
+        f = urlopen(request, **kwargs)
         with open(fpath, 'wb') as df:
             for chunk in iter(lambda: f.read(4096), b""):
                 df.write(chunk)
@@ -1471,14 +1484,14 @@ class Node(Svc, Freezer, Scheduler):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         if data:
             import urllib
-            request.add_data(urllib.urlencode(data))
+            request.add_data(urlencode(data))
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ex.excError(err)
@@ -1486,7 +1499,7 @@ class Node(Svc, Freezer, Scheduler):
                 pass
             raise e
         import json
-        data = json.loads(f.read())
+        data = json.loads(f.read().decode("utf-8"))
         f.close()
         return data
 
@@ -1500,8 +1513,8 @@ class Node(Svc, Freezer, Scheduler):
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ex.excError(err)
