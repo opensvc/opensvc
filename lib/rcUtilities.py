@@ -233,7 +233,7 @@ def printplus(obj):
     # Dict
     if isinstance(obj, dict):
         for k, v in sorted(obj.items()):
-            print(u'{0}: {1}'.format(k, v))
+            print("%s: %s" % (str(k), str(v)))
 
     # List or tuple
     elif isinstance(obj, list) or isinstance(obj, tuple):
