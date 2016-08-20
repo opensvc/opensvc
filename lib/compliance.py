@@ -112,6 +112,12 @@ class Module(object):
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
+        os.environ.update({
+          "OSVC_PATH_ETC": rcEnv.pathetc,
+          "OSVC_PATH_VAR": rcEnv.pathvar,
+          "OSVC_PATH_TMP": rcEnv.pathtmp,
+          "OSVC_PATH_LOG": rcEnv.pathlog,
+        })
         self.set_env_path()
         for rule in self.ruleset.values():
             if (rule["filter"] != "explicit attachment via moduleset" and \
