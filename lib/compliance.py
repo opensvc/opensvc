@@ -116,6 +116,7 @@ class Module(object):
           "OSVC_PYTHON": sys.executable,
           "OSVC_PATH_ETC": rcEnv.pathetc,
           "OSVC_PATH_VAR": rcEnv.pathvar,
+          "OSVC_PATH_COMP": rcEnv.pathcomp,
           "OSVC_PATH_TMP": rcEnv.pathtmp,
           "OSVC_PATH_LOG": rcEnv.pathlog,
         })

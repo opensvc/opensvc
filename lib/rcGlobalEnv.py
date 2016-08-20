@@ -63,6 +63,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.nodeconf = os.path.join(o.pathetc, "node.conf")
     o.authconf = os.path.join(o.pathetc, "auth.conf")
 
+    o.pathcomp = os.path.join(o.pathvar, "compliance")
     o.drp_path = os.path.join(o.pathvar, "cache")
 
     return o
@@ -217,5 +218,6 @@ class rcEnv:
     cron = paths.cron
     nodeconf = paths.nodeconf
     authconf = paths.authconf
+    pathcomp = paths.pathcomp
     drp_path = paths.drp_path
 
