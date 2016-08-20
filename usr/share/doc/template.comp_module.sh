@@ -1,7 +1,6 @@
 #!/bin/bash
 
-PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
-PATH_LIB=$PATH_SCRIPT/com.opensvc
+PATH_LIB=$OSVC_PATH_COMP/com.opensvc
 PREFIX=OSVC_COMP_FOO
 
 typeset -i r=0
