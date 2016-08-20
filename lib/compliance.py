@@ -113,6 +113,7 @@ class Module(object):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
         os.environ.update({
+          "OSVC_PYTHON": sys.executable,
           "OSVC_PATH_ETC": rcEnv.pathetc,
           "OSVC_PATH_VAR": rcEnv.pathvar,
           "OSVC_PATH_TMP": rcEnv.pathtmp,
