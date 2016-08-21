@@ -351,26 +351,25 @@ class Node(Svc, Freezer, Scheduler):
         for s in self.svcs:
             s.purge_status_last()
 
-    def load_config(self):
+    def read_cf(self, fpath, defaults={}):
         import codecs
-        self.config = ConfigParser.RawConfigParser(self.config_defaults)
-        with codecs.open(rcEnv.nodeconf, "r", "utf8") as f:
+        config = ConfigParser.RawConfigParser(defaults)
+        if not os.path.exists(fpath):
+            return config
+        with codecs.open(fpath, "r", "utf8") as f:
             if sys.version_info[0] >= 3:
-                self.config.read_file(f)
+                config.read_file(f)
             else:
-                self.config.readfp(f)
+                config.readfp(f)
+        return config
+
+    def load_config(self):
+        self.config = self.read_cf(rcEnv.nodeconf, self.config_defaults)
 
     def load_auth_config(self):
         if self.auth_config is not None:
             return
-        import codecs
-        self.auth_config = ConfigParser.ConfigParser()
-        with codecs.open(rcEnv.authconf, "r", "utf8") as f:
-            if sys.version_info[0] >= 3:
-                self.config.read_file(f)
-            else:
-                self.config.readfp(f)
-
+        self.auth_config = self.read_cf(rcEnv.authconf)
 
     def setup_sync_outdated(self):
         """ return True if one env file has changed in the last 10'
