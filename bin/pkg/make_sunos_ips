@@ -1,0 +1,115 @@
+#!/bin/ksh -p
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $0);pwd)"
+. $PATH_SCRIPT/make.lib
+
+PKGNAME=opensvc
+ARCH=${ARCH:-all}
+BASE=/
+IPSREV=$(echo $RELEASE|sed s/\.//)
+P=${PKGNAME}-$VERSION-$RELEASE.SunOS.pkg
+IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
+REPODIR=$(cd $(dirname $0);pwd)
+export REPODIR
+PATH=/usr/gnu/bin:/usr/local/bin:$PWD:$PATH:/opt/sfw/bin
+
+LANG=C
+export LANG
+
+function release_date_ips {
+    date --universal +%Y%m%dT%H%M%SZ
+}
+
+
+prepare_chroot || exit 1
+
+cd $REPODIR 
+
+mkdir -p $CHROOT/lib/svc/manifest/application
+cp $CHROOT/usr/share/opensvc/bin/init/opensvc.agent.xml $CHROOT/lib/svc/manifest/application/
+
+# solaris bash completion is located in /etc/bash/bash_completion.d
+mkdir -p $CHROOT/etc/bash
+mv $CHROOT/etc/bash_completion.d $CHROOT/etc/bash/
+
+STEP=0
+LAST=opensvc-agent.p5m.gen.$STEP
+pkgsend generate $CHROOT | pkgfmt > /var/tmp/$LAST
+mv /var/tmp/$LAST $CHROOT/
+
+echo "----- STEP $STEP > generating opensvc-agent.mog file -----"
+OSVCMOG=$CHROOT/opensvc-agent.mog
+
+MYDATE=`release_date_ips`
+echo "set name=pkg.fmri value=pkg://opensvc.com/site/application/opensvc@$VERSION,5.11-$RELEASE:$MYDATE" > $OSVCMOG
+echo "set name=pkg.summary value=\"${SUMMARY}\"" >> $OSVCMOG
+echo "set name=pkg.human-version value=\"${VERSION}-$RELEASE\"" >> $OSVCMOG
+echo "set name=pkg.description value=\"${DESCRIPTION}\"" >> $OSVCMOG
+echo "set name=variant.arch value=sparc value=i386" >> $OSVCMOG
+echo "set name=info.classification value=\"org.opensolaris.category.2008:System/Administration and Configuration\"" >> $OSVCMOG
+echo "set name=license value=GPLv2" >> $OSVCMOG
+
+cd $CHROOT
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > removing well known system directories from manifest -----"
+
+cat $LAST > $NEW
+sed -i '/^dir  path=lib owner=/d' $NEW
+sed -i '/^dir  path=lib\/svc owner=/d' $NEW
+sed -i '/^dir  path=lib\/svc\/manifest owner=/d' $NEW
+sed -i '/^dir  path=lib\/svc\/manifest\/application owner=/d' $NEW
+sed -i '/^dir  path=bin owner=/d' $NEW
+sed -i '/^dir  path=opt owner=/d' $NEW
+sed -i '/^dir  path=usr owner=/d' $NEW
+sed -i '/^dir  path=usr\/share owner=/d' $NEW
+sed -i '/^dir  path=usr\/bin owner=/d' $NEW
+sed -i '/^dir  path=usr\/share\/doc owner=/d' $NEW
+sed -i '/^dir  path=usr\/share\/man owner=/d' $NEW
+sed -i '/^dir  path=usr\/share\/man\/man1 owner=/d' $NEW
+sed -i '/^dir  path=var owner=/d' $NEW
+sed -i '/^dir  path=var\/log owner=/d' $NEW
+sed -i '/^dir  path=var\/lib owner=/d' $NEW
+sed -i '/^dir  path=etc owner=/d' $NEW
+
+
+LAST=$NEW
+
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > merging mog and manifest file -----"
+pkgmogrify $LAST opensvc-agent.mog | pkgfmt > $NEW
+LAST=$NEW
+
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > adding manifest-import fmri restart -----"
+echo '<transform file path=(var|lib)/svc/manifest/.*\.xml$ -> default restart_fmri svc:/system/manifest-import:default>' > $NEW.transform
+pkgmogrify $LAST $NEW.transform | pkgfmt > $NEW
+LAST=$NEW
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > building dependencies -----"
+pkgdepend generate -md $PWD $LAST > $NEW 2> deps.resolve.log
+# lots of unresolved dependencies
+pkgdepend resolve -m $NEW >> deps.resolve.log 2>&1
+LAST=$NEW
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > removing unwanted (unresolved) dependencies -----"
+cat $LAST | grep -v '_TBD' > $NEW
+LAST=$NEW
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > running pkglint on generated file -----"
+pkglint $LAST
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > building local IPS repository -----"
+pkgrepo create $PWD/repository
+pkgrepo -s $PWD/repository set publisher/prefix=opensvc.com
+
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > building IPS package into $PWD/repository -----"
+pkgsend -s $PWD/repository/ publish -d $PWD $LAST
+
+[ -x $REPODIR/release_sunos_ips ] && $REPODIR/release_sunos_ips /tmp/$P $IPSP
