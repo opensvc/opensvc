@@ -29,13 +29,9 @@ class check(checks.check):
         os.chdir(rcEnv.pathtmp)
         logs = [os.path.join(rcEnv.pathtmp, 'sas2ircu.log')]
         for log in logs:
-            try:
-                os.unlink(log)
-            except OSError as e:
-                if e.errno == 2:
-                    pass
-                else:
-                    raise
+            if not os.path.exists(log):
+                continue
+            os.unlink(log)
         cmd = [sas2ircu, 'LIST']
         out, err, ret = justcall(cmd)
         if ret != 0:

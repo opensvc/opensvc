@@ -34,13 +34,9 @@ class check(checks.check):
                 os.path.join(rcEnv.pathtmp, 'MegaCli.log'),
                 os.path.join(rcEnv.pathtmp, 'MegaRaid.log')]
         for log in logs:
-            try:
-                os.unlink(log)
-            except OSError as e:
-                if e.errno == 2:
-                    pass
-                else:
-                    raise
+            if not os.path.exists(log):
+                continue
+            os.unlink(log)
         cmd = [megacli, '-LdPdInfo', '-aALL']
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -82,13 +78,9 @@ class check(checks.check):
                 os.path.join(rcEnv.pathtmp, 'MegaCli.log'),
                 os.path.join(rcEnv.pathtmp, 'MegaRaid.log')]
         for log in logs:
-            try:
-                os.unlink(log)
-            except OSError as e:
-                if e.errno == 2:
-                    pass
-                else:
-                    raise
+            if not os.path.exists(log):
+                continue
+            os.unlink(log)
         cmd = [megacli, '-AdpBbuCmd', '-GetBbuStatus', '-aALL']
         out, err, ret = justcall(cmd)
         if ret != 0:
