@@ -15,8 +15,8 @@
       <dependency name='opensvc_d_postinstall' grouping='require_all' restart_on='none' type='service'>
         <service_fmri value='svc:/site/application/opensvc:postinstall'/>
       </dependency>
-      <exec_method name='start' type='method' exec='/usr/share/opensvc/bin/opensvc.init.SunOS start' timeout_seconds='0'/>
-      <exec_method name='stop' type='method' exec='/usr/share/opensvc/bin/opensvc.init.SunOS stop' timeout_seconds='0'/>
+      <exec_method name='start' type='method' exec='/usr/share/opensvc/bin/init/opensvc.init.SunOS start' timeout_seconds='0'/>
+      <exec_method name='stop' type='method' exec='/usr/share/opensvc/bin/init/opensvc.init.SunOS stop' timeout_seconds='0'/>
       <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
       <property_group name='boot' type='application'>
         <propval name='firstrun' type='astring' value='done'/>
@@ -29,10 +29,10 @@
     </instance>
     <template>
       <common_name>
-        <loctext xml:lang='C'>OpenSVC Agent</loctext>
+        <loctext xml:lang='C'>OpenSVC agent</loctext>
       </common_name>
       <description>
-        <loctext xml:lang='C'>OpenSVC Agent software stack</loctext>
+        <loctext xml:lang='C'>OpenSVC automation and configuration management agent</loctext>
       </description>
     </template>
   </service>
