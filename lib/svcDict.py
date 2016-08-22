@@ -1962,7 +1962,7 @@ class KeywordDiskType(Keyword):
                   order=9,
                   required=False,
                   default="vg",
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
+                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -2295,24 +2295,24 @@ class KeywordDiskPvs(Keyword):
                   provisioning=True
                 )
 
-class KeywordPoolName(Keyword):
+class KeywordZPoolName(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="pool",
+                  rtype=["zpool", "pool"],
                   keyword="name",
                   order=10,
                   at=True,
                   text="The name of the zfs pool"
                 )
 
-class KeywordPoolPoolname(Keyword):
+class KeywordZPoolPoolname(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="pool",
+                  rtype=["zpool", "pool"],
                   keyword="poolname",
                   order=10,
                   at=True,
@@ -3668,8 +3668,8 @@ class KeyDict(KeywordStore):
         self += KeywordDiskOptions()
         self += KeywordDiskScsireserv()
         self += KeywordDiskPvs()
-        self += KeywordPoolName()
-        self += KeywordPoolPoolname()
+        self += KeywordZPoolName()
+        self += KeywordZPoolPoolname()
         self += KeywordVmdgContainerid()
         self += KeywordDiskDrbdRes()
         self += KeywordFsType()

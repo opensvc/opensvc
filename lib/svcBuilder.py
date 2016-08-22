@@ -378,7 +378,7 @@ def get_sync_args(conf, s, svc):
 
 def add_resources(restype, svc, conf):
     for s in conf.sections():
-        if restype in ("disk", "vg", "pool") and re.match(restype+'#.+pr', s, re.I) is not None:
+        if restype in ("disk", "vg", "zpool", "pool") and re.match(restype+'#.+pr', s, re.I) is not None:
             # persistent reserv resource are declared by their peer resource:
             # don't add them from here
             continue
@@ -1030,7 +1030,10 @@ def add_disk_compat(svc, conf, s):
         add_vmdg(svc, conf, s)
         return
     if disk_type == 'Pool':
-        add_pool(svc, conf, s)
+        add_zpool(svc, conf, s)
+        return
+    if disk_type == 'Zpool':
+        add_zpool(svc, conf, s)
         return
     if disk_type == 'Loop':
         add_loop(svc, conf, s)
@@ -1158,7 +1161,10 @@ def add_disk(svc, conf, s):
         add_vmdg(svc, conf, s)
         return
     if disk_type == 'Pool':
-        add_pool(svc, conf, s)
+        add_zpool(svc, conf, s)
+        return
+    if disk_type == 'Zpool':
+        add_zpool(svc, conf, s)
         return
     if disk_type == 'Loop':
         add_loop(svc, conf, s)
@@ -1226,8 +1232,8 @@ def add_vmdg(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_pool(svc, conf, s):
-    """Parse the configuration file and add a pool object for each [pool#n]
+def add_zpool(svc, conf, s):
+    """Parse the configuration file and add a zpool object for each disk.zpool
     section. Pools objects are stored in a list in the service object.
     """
     kwargs = {}
