@@ -109,7 +109,7 @@ class Disk(resDisk.Disk):
         except:
             self.log.error('%s can not stat file'%rdev)
             return False
-        perm = str(perm).lstrip("0")
+        perm = str(perm).lstrip("0o").lstrip("0")
         if perm != str(self.perm):
             if verbose:
                 self.status_log('%s perm should be %s but is %s'%(rdev, str(self.perm), perm))

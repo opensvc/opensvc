@@ -102,7 +102,7 @@ class FsDir(Res.Resource):
         if not os.path.exists(self.path):
             return True
         perm = oct(stat.S_IMODE(os.stat(self.path).st_mode))
-        perm = str(perm).lstrip("0")
+        perm = str(perm).lstrip("0o").lstrip("0")
         if perm != str(self.perm):
             self.status_log('perm should be %s but is %s'%(str(self.perm), perm))
             return False
