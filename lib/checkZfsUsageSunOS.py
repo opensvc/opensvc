@@ -1,5 +1,5 @@
 import checks
-from rcUtilities import justcall
+from rcUtilities import justcall, which
 
 class check(checks.check):
     def __init__(self, svcs=[]):
@@ -29,6 +29,8 @@ class check(checks.check):
     def get_zonepath(self, name):
         if name in self.zpcache:
             return self.zpcache[name]
+        if which("zonecfg") is None:
+            return
         cmd = ['zonecfg', '-z', name, 'info', 'zonepath']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
@@ -46,7 +48,7 @@ class check(checks.check):
                             return svc.svcname
             for rs in svc.get_res_sets('fs'):
                 for r in rs.resources:
-                    if r.device == name:
+                    if hasattr(r, "device") and r.device == name:
                         return svc.svcname
         return ''
 
