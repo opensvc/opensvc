@@ -16,6 +16,11 @@ import datetime
 import node
 from rcScheduler import *
 
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
 def signal_handler(signum, frame):
     raise ex.excSignal
 
@@ -612,7 +617,7 @@ class Svc(Resource, Scheduler):
         config = self.config
 
         defaults = config.defaults()
-        for key in defaults.iterkeys():
+        for key in defaults.keys():
             tmp[key] = defaults[key]
 
         svcenv['DEFAULT'] = tmp
@@ -2889,7 +2894,6 @@ class Svc(Resource, Scheduler):
             raise ex.excError()
 
     def load_config(self):
-        import ConfigParser
         self.config = ConfigParser.RawConfigParser()
         self.config.read(self.pathenv)
 
@@ -3185,7 +3189,6 @@ class Svc(Resource, Scheduler):
         if path is None:
             config = self.config
         else:
-            import ConfigParser
             config = ConfigParser.RawConfigParser()
             config.read(path)
 
