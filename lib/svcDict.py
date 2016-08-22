@@ -23,6 +23,7 @@ class Keyword(object):
                  depends=[],
                  text="",
                  example="foo",
+                 deprecated=False,
                  provisioning=False):
         self.section = section
         self.keyword = keyword
@@ -40,11 +41,15 @@ class Keyword(object):
         self.text = text
         self.example = example
         self.provisioning = provisioning
+        self.deprecated = deprecated
 
     def __lt__(self, o):
         return self.order < o.order
 
     def template(self):
+        if self.deprecated:
+            return ''
+
         wrapper = TextWrapper(subsequent_indent="#%15s"%"", width=78)
 
         depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
@@ -82,6 +87,9 @@ class Keyword(object):
         return s
 
     def __str__(self):
+        if self.deprecated:
+            return ''
+
         wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
 
         depends = ""
@@ -99,14 +107,15 @@ class Keyword(object):
 
         s = ''
         s += "------------------------------------------------------------------------------\n"
-        s += "section:       %s\n"%self.section
-        s += "keyword:       %s\n"%self.keyword
+        s += "section:        %s\n"%self.section
+        s += "keyword:        %s\n"%self.keyword
         s += "------------------------------------------------------------------------------\n"
-        s += "  required:    %s\n"%str(self.required)
-        s += "  default:     %s\n"%str(self.default)
-        s += "  candidates:  %s\n"%candidates
-        s += "  depends:     %s\n"%depends
-        s += "  scopable:    %s\n"%str(self.at)
+        s += "  required:     %s\n"%str(self.required)
+        s += "  provisioning: %s\n"%str(self.provisioning)
+        s += "  default:      %s\n"%str(self.default)
+        s += "  candidates:   %s\n"%candidates
+        s += "  depends:      %s\n"%depends
+        s += "  scopable:     %s\n"%str(self.at)
         if self.text:
             s += wrapper.fill("  help:        "+self.text)
         if self.at:
@@ -117,6 +126,9 @@ class Keyword(object):
         return s
 
     def form(self, d):
+        if self.deprecated:
+            return
+
         # skip this form if dependencies are not met
         for d_keyword, d_value in self.depends:
             if d_keyword not in d:
@@ -1514,7 +1526,8 @@ class KeywordSyncRsyncExclude(Keyword):
                   section="sync",
                   keyword="exclude",
                   rtype="rsync",
-                  text="!deprecated!. A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
+                  deprecated=True,
+                  text="A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
                 )
 
 class KeywordSyncRsyncOptions(Keyword):
@@ -2282,6 +2295,18 @@ class KeywordDiskPvs(Keyword):
                   provisioning=True
                 )
 
+class KeywordPoolName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="pool",
+                  keyword="name",
+                  order=10,
+                  at=True,
+                  text="The name of the zfs pool"
+                )
+
 class KeywordPoolPoolname(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2291,6 +2316,7 @@ class KeywordPoolPoolname(Keyword):
                   keyword="poolname",
                   order=10,
                   at=True,
+                  deprecated=True,
                   text="The name of the zfs pool"
                 )
 
@@ -3642,6 +3668,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskOptions()
         self += KeywordDiskScsireserv()
         self += KeywordDiskPvs()
+        self += KeywordPoolName()
         self += KeywordPoolPoolname()
         self += KeywordVmdgContainerid()
         self += KeywordDiskDrbdRes()

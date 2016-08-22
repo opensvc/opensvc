@@ -1235,7 +1235,15 @@ def add_pool(svc, conf, s):
     try:
         kwargs['name'] = conf_get_string_scope(svc, conf, s, 'poolname')
     except ex.OptNotFound:
-        svc.log.error("poolname must be set in section %s"%s)
+        pass
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        pass
+
+    if "name" not in kwargs:
+        svc.log.error("name must be set in section %s"%s)
         return
 
     try:
