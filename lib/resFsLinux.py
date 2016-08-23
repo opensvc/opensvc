@@ -7,42 +7,7 @@ from rcGlobalEnv import rcEnv
 from rcLoopLinux import file_to_loop
 import rcExceptions as ex
 from stat import *
-
-def try_umount(self, mnt=None):
-    if mnt is None:
-        mnt = self.mountPoint
-    cmd = ['umount', mnt]
-    (ret, out, err) = self.vcall(cmd, err_to_warn=True)
-    if ret == 0:
-        return 0
-
-    if "not mounted" in err:
-        return 0
-
-    """ don't try to kill process using the source of a
-        protected bind mount
-    """
-    if protected_mount(mnt):
-        return 1
-
-    """ best effort kill of all processes that might block
-        the umount operation. The priority is given to mass
-        action reliability, ie don't contest oprator's will
-    """
-    cmd = ['sync']
-    (ret, out, err) = self.vcall(cmd)
-
-    for i in range(4):
-        cmd = ['fuser', '-kmv', mnt]
-        (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        self.log.info('umount %s'%mnt)
-        cmd = ['umount', mnt]
-        ret = qcall(cmd)
-        if ret == 0:
-            break
-
-    return ret
-
+from rcZfs import zfs_getprop, zfs_setprop
 
 class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
@@ -91,6 +56,45 @@ class Mount(Res.Mount):
             'ext4': {'bin': 'e2fsck', 'cmd': ['e2fsck', '-p', self.device], 'allowed_ret': [0, 1, 32, 33]},
         }
         self.loopdevice = None
+
+    def try_umount(self, mnt=None):
+        if self.fsType == "zfs":
+            self.umount_zfs()
+            return 0
+
+        if mnt is None:
+            mnt = self.mountPoint
+        cmd = ['umount', mnt]
+        (ret, out, err) = self.vcall(cmd, err_to_warn=True)
+        if ret == 0:
+            return 0
+    
+        if "not mounted" in err:
+            return 0
+    
+        """ don't try to kill process using the source of a
+            protected bind mount
+        """
+        if protected_mount(mnt):
+            return 1
+    
+        """ best effort kill of all processes that might block
+            the umount operation. The priority is given to mass
+            action reliability, ie don't contest oprator's will
+        """
+        cmd = ['sync']
+        (ret, out, err) = self.vcall(cmd)
+    
+        for i in range(4):
+            cmd = ['fuser', '-kmv', mnt]
+            (ret, out, err) = self.vcall(cmd, err_to_info=True)
+            self.log.info('umount %s'%mnt)
+            cmd = ['umount', mnt]
+            ret = qcall(cmd)
+            if ret == 0:
+                break
+    
+        return ret
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
@@ -311,6 +315,8 @@ class Mount(Res.Mount):
         return set([dev])
 
     def can_check_writable(self):
+        if self.fsType == "zfs":
+            return self.can_check_zfs_writable()
         if len(self.mplist()) > 0:
             self.log.debug("a multipath under fs has queueing enabled and no active path")
             return False
@@ -338,6 +344,9 @@ class Mount(Res.Mount):
             except:
                 self.log.debug("can not stat %s" % self.device)
                 return False
+ 
+        if self.fsType == "zfs":
+            self.check_zfs_canmount()
 
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%
@@ -354,24 +363,73 @@ class Mount(Res.Mount):
                 os.makedirs(self.mountPoint, 0o755)
             except Exception as e:
                 raise ex.excError(str(e))
+
+        if self.fsType == "zfs":
+            self.mount_zfs()
+        else:
+            self.mount_generic()
+
+        self.Mounts = None
+        self.can_rollback = True
+
+    def can_check_zfs_writable(self):
+        pool = self.device.split("/")[0]
+        cmd = ["zpool", "status", pool]
+        out, err, ret = justcall(cmd)
+        if "state: SUSPENDED" in out:
+            self.status_log("pool %s is suspended")
+            return False
+        return True
+
+    def check_zfs_canmount(self):
+        if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
+            self.log.info("fs(%s %s) should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.device, self.mountPoint, self.device))
+
+    def umount_zfs(self):
+        ret, out, err = self.vcall(['zfs', 'umount', self.device ], err_to_info=True)
+        if ret != 0 :
+            ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ], err_to_info=True)
+            if ret != 0 :
+                raise ex.excError
+
+    def mount_zfs(self):
+        if 'encap' not in self.tags and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
+            if zfs_setprop(self.device, 'zoned', 'off'):
+                raise ex.excError
+        if zfs_getprop(self.device, 'mountpoint') != self.mountPoint:
+            if not zfs_setprop(self.device, 'mountpoint', self.mountPoint):
+                raise ex.excError
+
+        try:
+            os.unlink(self.mountPoint+"/.opensvc")
+        except:
+            pass
+        ret, out, err = self.vcall(['zfs', 'mount', self.device ])
+        if ret != 0:
+            ret, out, err = self.vcall(['zfs', 'mount', '-O', self.device ])
+            if ret != 0:
+                raise ex.excError
+
+    def mount_generic(self):
         if self.fsType != "":
             fstype = ['-t', self.fsType]
         else:
             fstype = []
+
         if self.mntOpt != "":
             mntopt = ['-o', self.mntOpt]
         else:
             mntopt = []
+
         if self.loopdevice is None:
             device = self.device
         else:
             device = self.loopdevice
+
         cmd = ['mount']+fstype+mntopt+[device, self.mountPoint]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        self.Mounts = None
-        self.can_rollback = True
 
     def kill_users(self):
         import glob
@@ -415,7 +473,7 @@ class Mount(Res.Mount):
         self.remove_holders()
         self.remove_deeper_mounts()
         for i in range(3):
-            ret = try_umount(self)
+            ret = self.try_umount()
             if ret == 0: break
         if ret != 0:
             raise ex.excError('failed to umount %s'%self.mountPoint)
@@ -452,7 +510,7 @@ class Mount(Res.Mount):
             _mnt_realpath = os.path.realpath(m.mnt)
             if _mnt_realpath != mnt_realpath and \
                _mnt_realpath.startswith(mnt_realpath):
-                ret = try_umount(self, _mnt_realpath)
+                ret = self.try_umount(_mnt_realpath)
                 if ret != 0:
                     break
 
