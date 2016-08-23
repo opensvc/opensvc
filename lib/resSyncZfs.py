@@ -35,7 +35,7 @@ class SyncZfs(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        self.label = "zfs of %s to %s"%(src, target)
+        self.label = "zfs of %s to %s"%(src, ",".join(target))
         self.target = target
         self.sender = sender
         self.recursive = recursive
