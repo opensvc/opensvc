@@ -46,7 +46,7 @@ class CompGroupMembership(CompObject):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1']:
-            print >>sys.stderr, 'group_membership: compliance object not supported on', self.sysname
+            perror('group_membership: compliance object not supported on', self.sysname)
             raise NotApplicable
 
         self.groups = {}
@@ -107,10 +107,10 @@ class CompGroupMembership(CompObject):
 
     def add_member(self, group, user):
         if 0 != self._check_member_accnt(user):
-            print >>sys.stderr, 'group', group+':', 'cannot add inexistant user "%s"'%user
+            perror('group', group+':', 'cannot add inexistant user "%s"'%user)
             return RET_ERR
         if self.get_primary_group(user) == group:
-            print "group %s is already the primary group of user %s: skip declaration as a secondary group (you may want to change your rule)" % (group, user)
+            pinfo("group %s is already the primary group of user %s: skip declaration as a secondary group (you may want to change your rule)" % (group, user))
             return RET_OK
         ag = self.member_of(user)
         g = ag | set([group])
@@ -119,7 +119,7 @@ class CompGroupMembership(CompObject):
 
     def fix_member(self, g, user):
         cmd = ['usermod', '-G', g, user]
-        print "group_membership:", ' '.join(cmd)
+        pinfo("group_membership:", ' '.join(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -141,7 +141,7 @@ class CompGroupMembership(CompObject):
         if item == 'members':
             return self.fix_members(group, target)
         else:
-            print >>sys.stderr, "group_membership:", 'no fix implemented for', item
+            perror("group_membership:", 'no fix implemented for', item)
             return RET_ERR
 
     def _check_member_accnt(self, user):
@@ -162,7 +162,7 @@ class CompGroupMembership(CompObject):
             if rc != 0:
                 r |= RET_ERR
                 if verbose:
-                    print >>sys.stderr, 'group', group, '%s member "%s" does not exist'%(which, user)
+                    perror('group', group, '%s member "%s" does not exist'%(which, user))
         return r
 
     def filter_target(self, group, target):
@@ -174,7 +174,7 @@ class CompGroupMembership(CompObject):
             new_target.append(user)
         discarded = set(target)-set(new_target)
         if len(discarded) > 0:
-            print "group %s members discarded: %s, as they already use this group as primary (you may want to change your rule)" % (group, ', '.join(discarded))
+            pinfo("group %s members discarded: %s, as they already use this group as primary (you may want to change your rule)" % (group, ', '.join(discarded)))
         return new_target
                 
     def check_item(self, group, item, target, current, verbose=False):
@@ -187,11 +187,11 @@ class CompGroupMembership(CompObject):
         target = self.filter_target(group, target)
         if set(target) <= set(current):
             if verbose:
-                print 'group', group, item+':', ', '.join(current)
+                pinfo('group', group, item+':', ', '.join(current))
             return r
         else:
             if verbose:
-                print >>sys.stderr, 'group', group, item+':', ', '.join(current), '| target:', ', '.join(target)
+                perror('group', group, item+':', ', '.join(current), '| target:', ', '.join(target))
             return r|RET_ERR
 
     def check_group(self, group, props):
@@ -199,7 +199,7 @@ class CompGroupMembership(CompObject):
         try:
             groupinfo = grp.getgrnam(group)
         except KeyError:
-            print 'group', group, 'does not exist'
+            pinfo('group', group, 'does not exist')
             return RET_OK
         for prop in self.grt:
             if prop in props:
@@ -211,7 +211,7 @@ class CompGroupMembership(CompObject):
         try:
             groupinfo = grp.getgrnam(group)
         except KeyError:
-            print 'group', group, 'does not exist'
+            pinfo('group', group, 'does not exist')
             return RET_OK
         for prop in self.grt:
             if prop in props and \

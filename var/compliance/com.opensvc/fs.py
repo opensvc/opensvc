@@ -61,7 +61,7 @@ class CompFs(object):
             try:
                 self.fs += self.add_fs(os.environ[k])
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', os.environ[k]
+                perror('failed to parse variable', os.environ[k])
 
         if len(self.fs) == 0:
             raise NotApplicable()
@@ -77,19 +77,20 @@ class CompFs(object):
 
     def vglist_Linux(self):
         if not which("vgs"):
-            print >>sys.stderr, 'vgs command not found'
+            perror('vgs command not found')
             raise ComplianceError()
         cmd = ['vgs', '-o', 'vg_name', '--noheadings']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'failed to list volume groups'
+            perror('failed to list volume groups')
             raise ComplianceError()
+        out = bdecode(out)
         self.vg = out.split()
 
     def vglist(self):
         if not hasattr(self, 'vglist_'+self.sysname):
-            print >>sys.stderr, self.sysname, 'not supported'
+            perror(self.sysname, 'not supported')
             raise NotApplicable()
         getattr(self, 'vglist_'+self.sysname)()
         
@@ -110,7 +111,7 @@ class CompFs(object):
             elif 'OSVC_COMP_'+s in os.environ:
                 _v = os.environ['OSVC_COMP_'+s]
             else:
-                print >>sys.stderr, s, 'is not an env variable'
+                perror(s, 'is not an env variable')
                 raise NotApplicable()
             v = v.replace(m, _v)
         return v.strip()
@@ -129,26 +130,26 @@ class CompFs(object):
             return l
 
         if type(d) != dict:
-            print >>sys.stderr, "not a dict:", d
+            perror("not a dict:", d)
             return l
 
         if 'dev' not in d:
-            print >>sys.stderr, 'dev should be in the dict:', d
+            perror('dev should be in the dict:', d)
             return l
         if 'mnt' not in d:
-            print >>sys.stderr, 'mnt should be in the dict:', d
+            perror('mnt should be in the dict:', d)
             return l
         if 'size' not in d:
-            print >>sys.stderr, 'size should be in the dict:', d
+            perror('size should be in the dict:', d)
             return l
         if 'vg' not in d:
-            print >>sys.stderr, 'vg should be in the dict:', d
+            perror('vg should be in the dict:', d)
             return l
         if 'type' not in d:
-            print >>sys.stderr, 'type should be in the dict:', d
+            perror('type should be in the dict:', d)
             return l
         if 'opts' not in d:
-            print >>sys.stderr, 'opts should be in the dict:', d
+            perror('opts should be in the dict:', d)
             return l
         if type(d['vg']) != list:
             d['vg'] = [d['vg']]
@@ -204,35 +205,35 @@ class CompFs(object):
                 d['prefvg_idx'] = i
                 # return capitalized vg name
                 return self.vg[lc_existing_vg.index(vg)]
-        print >>sys.stderr, "no candidate vg is available on this node for dev %s"%d['dev']
+        perror("no candidate vg is available on this node for dev %s"%d['dev'])
         raise NotApplicable()
 
     def check_fs_mnt(self, fs, verbose=False):
         if not os.path.exists(fs['mnt']):
             if verbose:
-                print >>sys.stderr, "mount point", fs['mnt'], "does not exist"
+                perror("mount point", fs['mnt'], "does not exist")
             return 1
         if verbose:
-            print "mount point", fs['mnt'], "exists"
+            pinfo("mount point", fs['mnt'], "exists")
         return 0
 
     def check_fs_dev_exists(self, fs, verbose=False):
         if not os.path.exists(fs['devpath']):
             if verbose:
-                print >>sys.stderr, "device", fs['devpath'], "does not exist"
+                perror("device", fs['devpath'], "does not exist")
             return 1
         if verbose:
-            print "device", fs['devpath'], "exists"
+            pinfo("device", fs['devpath'], "exists")
         return 0
 
     def check_fs_dev_stat(self, fs, verbose=False):
         mode = os.stat(fs['devpath'])[ST_MODE]
         if not S_ISBLK(mode):
             if verbose:
-                print >>sys.stderr, "device", fs['devpath'], "is not a block device"
+                perror("device", fs['devpath'], "is not a block device")
             return 1
         if verbose:
-            print "device", fs['devpath'], "is a block device"
+            pinfo("device", fs['devpath'], "is a block device")
         return 0
 
     def find_vg_rid(self, vgname):
@@ -267,13 +268,13 @@ class CompFs(object):
         if self.check_fs_dev(fs, False) == 0:
             return 0
         if self.check_fs_dev_exists(fs, False) == 0:
-            print >>sys.stderr, "device", fs['devpath'], "already exists. won't fix."
+            perror("device", fs['devpath'], "already exists. won't fix.")
             return 1
         return self.createlv(fs)
 
     def createlv(self, fs):
         if not hasattr(self, 'createlv_'+self.sysname):
-            print >>sys.stderr, self.sysname, 'not supported'
+            perror(self.sysname, 'not supported')
             raise NotApplicable()
         return getattr(self, 'createlv_'+self.sysname)(fs)
 
@@ -290,19 +291,21 @@ class CompFs(object):
         elif unit == 'K':
             s = str(size//1024)
         else:
-            print >>sys.stderr, "unknown size unit in rule: %s (use T, G, M or K)"%s
+            perror("unknown size unit in rule: %s (use T, G, M or K)"%s)
             raise ComplianceError()
         return s
 
     def createlv_HPUX(self, fs):
         cmd = ['lvcreate', '-n', fs['dev'], '-L', fs['size'], fs['prefvg']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print err
+            pinfo(err)
         if p.returncode != 0:
             return 1
         return 0
@@ -310,13 +313,15 @@ class CompFs(object):
     def createlv_Linux(self, fs):
         os.environ["LVM_SUPPRESS_FD_WARNINGS"] = "1"
         cmd = ['lvcreate', '-n', fs['dev'], '-L', fs['size']+'M', fs['prefvg']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print err
+            pinfo(err)
         if p.returncode != 0:
             return 1
         return 0
@@ -324,7 +329,7 @@ class CompFs(object):
     def fix_fs_mnt(self, fs, verbose=False):
         if self.check_fs_mnt(fs, False) == 0:
             return 0
-        print "create", fs['mnt'], "mount point"
+        pinfo("create", fs['mnt'], "mount point")
         os.makedirs(fs['mnt'])
         return 0
 
@@ -332,58 +337,66 @@ class CompFs(object):
         cmd = ['fstyp', fs['devpath']]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p.returncode != 0 or "vxfs" not in out:
             if verbose:
-                print >>sys.stderr, fs['devpath'], "is not formatted"
+                perror(fs['devpath'], "is not formatted")
             return 1
         if verbose:
-            print fs['devpath'], "is correctly formatted"
+            pinfo(fs['devpath'], "is correctly formatted")
         return 0
 
     def check_fs_fmt_HPUX(self, fs, verbose=False):
         if fs['type'] == 'vxfs':
             return self.check_fs_fmt_HPUX_vxfs(fs, verbose)
-        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        perror("unsupported fs type: %s"%fs['type'])
         return 1
 
     def check_fs_fmt_Linux(self, fs, verbose=False):
         if fs['type'] in ('ext2', 'ext3', 'ext4'):
             return self.check_fs_fmt_Linux_ext(fs, verbose)
-        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        perror("unsupported fs type: %s"%fs['type'])
         return 1
 
     def check_fs_fmt_Linux_ext(self, fs, verbose=False):
         cmd = ['tune2fs', '-l', fs['devpath']]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p.returncode != 0:
             if verbose:
-                print >>sys.stderr, fs['devpath'], "is not formatted"
+                perror(fs['devpath'], "is not formatted")
             return 1
         if verbose:
-            print fs['devpath'], "is correctly formatted"
+            pinfo(fs['devpath'], "is correctly formatted")
         return 0
 
     def fix_fs_fmt_Linux_ext(self, fs):
         cmd = ['mkfs.'+fs['type'], '-q', '-b', '4096', fs['devpath']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print err
+            pinfo(err)
         if p.returncode != 0:
             return 1
 
         cmd = ['tune2fs', '-m', '0', '-c', '0', '-i', '0', fs['devpath']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print err
+            pinfo(err)
         if p.returncode != 0:
             return 1
 
@@ -392,24 +405,26 @@ class CompFs(object):
     def fix_fs_fmt_Linux(self, fs):
         if fs['type'] in ('ext2', 'ext3', 'ext4'):
             return self.fix_fs_fmt_Linux_ext(fs)
-        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        perror("unsupported fs type: %s"%fs['type'])
         return 1
 
     def check_fs_fmt(self, fs, verbose=False):
         if not hasattr(self, 'check_fs_fmt_'+self.sysname):
-            print >>sys.stderr, self.sysname, 'not supported'
+            perror(self.sysname, 'not supported')
             raise NotApplicable()
         return getattr(self, 'check_fs_fmt_'+self.sysname)(fs, verbose)
 
     def fix_fs_fmt_HPUX_vxfs(self, fs):
         cmd = ['newfs', '-F', 'vxfs', '-b', '8192', fs['rdevpath']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print err
+            pinfo(err)
         if p.returncode != 0:
             return 1
         return 0
@@ -417,11 +432,11 @@ class CompFs(object):
     def fix_fs_fmt_HPUX(self, fs):
         if fs['type'] == 'vxfs':
             return self.fix_fs_fmt_HPUX_vxfs(fs)
-        print >>sys.stderr, "unsupported fs type: %s"%fs['type']
+        perror("unsupported fs type: %s"%fs['type'])
         return 1
 
         if not hasattr(self, 'check_fs_fmt_'+self.sysname):
-            print >>sys.stderr, self.sysname, 'not supported'
+            perror(self.sysname, 'not supported')
             raise NotApplicable()
         return getattr(self, 'check_fs_fmt_'+self.sysname)(fs, verbose)
 
@@ -429,7 +444,7 @@ class CompFs(object):
         if self.check_fs_fmt(fs) == 0:
             return 0
         if not hasattr(self, 'fix_fs_fmt_'+self.sysname):
-            print >>sys.stderr, self.sysname, 'not supported'
+            perror(self.sysname, 'not supported')
             raise NotApplicable()
         return getattr(self, 'fix_fs_fmt_'+self.sysname)(fs)
 
@@ -437,8 +452,10 @@ class CompFs(object):
         cmd = ['svcmgr', '-s', self.svcname, 'get', '--param', '.'.join((rid, item))]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p.returncode != 0:
-            print >>sys.stderr, ' '.join(cmd), 'failed'
+            perror(' '.join(cmd), 'failed')
             return 1
         return out.strip()
  
@@ -457,7 +474,9 @@ class CompFs(object):
         cmd = ['svcmgr', '-s', self.svcname, 'json_status']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
-        for line in out.split('\n'):
+        out = bdecode(out)
+        err = bdecode(err)
+        for line in out.splitlines():
             if line.startswith('{'):
                 out = line
                 break
@@ -465,8 +484,8 @@ class CompFs(object):
             # json_status returns 0, even when it outs no data
             self.res_status = json.loads(out)['resources']
         except Exception as e:
-            print e
-            print out
+            pinfo(e)
+            pinfo(out)
             self.rids = []
             self.osvc_service = False
             return self.rids
@@ -496,17 +515,17 @@ class CompFs(object):
             if line == newline:
                 return 0
             if re.match(p, line) is not None:
-                print "remove '%s' from fstab"%line
+                pinfo("remove '%s' from fstab"%line)
                 del lines[i]
         lines.append(newline)
-        print "append '%s' to fstab"%newline
+        pinfo("append '%s' to fstab"%newline)
         try:
             with open("/etc/fstab", "w") as f:
                 f.write("\n".join(lines)+'\n')
         except:
-            print >>sys.stderr, "failed to rewrite fstab"
+            perror("failed to rewrite fstab")
             return 1
-        print "fstab rewritten"
+        pinfo("fstab rewritten")
         return 0
 
     def check_fs_local(self, fs, verbose=False):
@@ -517,10 +536,10 @@ class CompFs(object):
             buff = f.read()
         if re.search(p, buff) is not None:
             if verbose:
-                print "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
+                pinfo("%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath']))
                 return 0
         if verbose:
-            print >>sys.stderr, "%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath'])
+            perror("%s@%s resource correctly set in fstab"%(fs['mnt'], fs['devpath']))
         return 1
 
     def check_fs_svc(self, fs, verbose=False):
@@ -532,10 +551,10 @@ class CompFs(object):
         rid = self.find_rid(fs)
         if rid is None:
             if verbose:
-                print >>sys.stderr, "%s@%s resource not found in service %s"%(fs['mnt'], fs['devpath'], self.svcname)
+                perror("%s@%s resource not found in service %s"%(fs['mnt'], fs['devpath'], self.svcname))
             return 1
         if verbose:
-            print "%s@%s resource correctly set in service %s"%(fs['mnt'], fs['devpath'], self.svcname)
+            pinfo("%s@%s resource correctly set in service %s"%(fs['mnt'], fs['devpath'], self.svcname))
         return 0
             
     def fix_fs_svc(self, fs):
@@ -544,27 +563,31 @@ class CompFs(object):
         cmd = ['svcmgr', '-s', self.svcname, 'get', '--param', 'DEFAULT.encapnodes']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if self.nodename in out.strip().split():
             tags = "encap"
         else:
             tags = ''
         cmd = ['svcmgr', '-s', self.svcname, 'update', '--resource',
                '{"rtype": "fs", "mnt": "%s", "dev": "%s", "type": "%s", "mnt_opt": "%s", "tags": "%s"}'%(fs['mnt'], fs['devpath'], fs['type'], fs['opts'], tags)]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p.returncode != 0:
-            print >>sys.stderr, "unable to fetch %s json status"%self.svcname
+            perror("unable to fetch %s json status"%self.svcname)
             return 1
         return 0
 
     def check_fs_mounted(self, fs, verbose=False):
         if os.path.ismount(fs['mnt']):
             if verbose:
-                print fs['mnt'], "is mounted"
+                pinfo(fs['mnt'], "is mounted")
             return 0
         if verbose:
-            print >>sys.stderr, fs['mnt'], "is not mounted"
+            perror(fs['mnt'], "is not mounted")
         return 1
 
     def fix_fs_mounted(self, fs):
@@ -579,32 +602,36 @@ class CompFs(object):
         rids = self.get_fs_rids(refresh=True)
         rid = self.find_rid(fs)
         if rid is None:
-            print >>sys.stderr, "fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname)
+            perror("fs resource with mnt=%s not found in service %s"%(fs['mnt'], self.svcname))
             return 1
         cmd = ['svcmgr', '-s', self.svcname, '--rid', rid, 'mount', '--cluster']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p.returncode != 0 and "unsupported action" in err:
             cmd = ['svcmgr', '-s', self.svcname, '--rid', rid, 'startfs', '--cluster']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         if p.returncode != 0:
-            print >>sys.stderr, "unable to mount %s"%fs['mnt']
+            perror("unable to mount %s"%fs['mnt'])
             return 1
         return 0
 
     def fix_fs_mounted_local(self, fs):
         cmd = ['mount', fs['mnt']]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print >>sys.stderr, err
+            perror(err)
         if p.returncode != 0:
-            print >>sys.stderr, "unable to mount %s"%fs['mnt']
+            perror("unable to mount %s"%fs['mnt'])
             return 1
         return 0
 
@@ -653,8 +680,8 @@ if __name__ == "__main__":
     syntax = """syntax:
       %s PREFIX check|fixable|fix"""%sys.argv[0]
     if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
+        perror("wrong number of arguments")
+        perror(syntax)
         sys.exit(RET_ERR)
     try:
         o = CompFs(sys.argv[1])
@@ -665,8 +692,8 @@ if __name__ == "__main__":
         elif sys.argv[2] == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except NotApplicable:
         sys.exit(RET_NA)

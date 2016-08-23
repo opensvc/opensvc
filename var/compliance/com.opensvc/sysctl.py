@@ -93,7 +93,7 @@ class Sysctl(CompObject):
         self.need_reload = False
         self.cf = os.path.join(os.sep, "etc", "sysctl.conf")
         if not os.path.exists(self.cf):
-            print >>sys.stderr, self.cf, 'does not exist'
+            perror(self.cf, 'does not exist')
             raise NotApplicable()
 
         self.keys = []
@@ -111,7 +111,7 @@ class Sysctl(CompObject):
         return RET_OK
 
     def parse_val(self, val):
-        val = map(lambda x: x.strip(), val.strip().split())
+        val = list(map(lambda x: x.strip(), val.strip().split()))
         for i, e in enumerate(val):
             try:
                 val[i] = int(e)
@@ -126,7 +126,7 @@ class Sysctl(CompObject):
         if self.cache is None:
             self.cache = {}
 
-        for line in buff.split('\n'):
+        for line in buff.splitlines():
             line = line.strip()
             if line.startswith('#'):
                 continue
@@ -142,7 +142,7 @@ class Sysctl(CompObject):
         out, err = p.communicate()
         if p.returncode != 0:
             return None
-        l = out.split('=')
+        l = bdecode(out).split('=')
         if len(l) != 2:
             return None
         val = self.parse_val(l[1])
@@ -175,14 +175,14 @@ class Sysctl(CompObject):
             if key['key'] != keyname:
                 continue
             if done:
-                print "sysctl: remove redundant key %s"%keyname
+                pinfo("sysctl: remove redundant key %s"%keyname)
                 del lines[i]
                 continue
             val = self.parse_val(l[1])
             if target == val[index]:
                 done = True
                 continue
-            print "sysctl: set %s[%d] = %s"%(keyname, index, str(target))
+            pinfo("sysctl: set %s[%d] = %s"%(keyname, index, str(target)))
             val[index] = target
             lines[i] = "%s = %s"%(keyname, " ".join(map(str, val)))
             done = True
@@ -191,18 +191,18 @@ class Sysctl(CompObject):
             # if key is not in sysctl.conf, get the value from kernel
             val = self.get_live_key(key['key'])
             if val is None:
-                print >>sys.stderr, "key '%s' not found in live kernel parameters" % key['key']
+                perror("key '%s' not found in live kernel parameters" % key['key'])
                 return RET_ERR
             if target != val[index]:
                 val[index] = target
-            print "sysctl: set %s = %s"%(key['key'], " ".join(map(str, val)))
+            pinfo("sysctl: set %s = %s"%(key['key'], " ".join(map(str, val))))
             lines += ["%s = %s"%(key['key'], " ".join(map(str, val)))]
 
         try:
             with open(self.cf, 'w') as f:
                 f.write('\n'.join(lines))
         except:
-            print >>sys.stderr, "failed to write sysctl.conf"
+            perror("failed to write sysctl.conf")
             return RET_ERR
 
         return RET_OK
@@ -238,28 +238,28 @@ class Sysctl(CompObject):
 
         if current_value is None:
             if verbose:
-                print >>sys.stderr, "key '%s' not found in sysctl.conf"%keyname
+                perror("key '%s' not found in sysctl.conf"%keyname)
             return RET_ERR
 
         if op == "=" and str(current_value[i]) != str(target):
             if verbose:
-                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: %s"%(keyname, i, str(current_value[i]), str(target))
+                perror("sysctl err: %s[%d] = %s, target: %s"%(keyname, i, str(current_value[i]), str(target)))
             r |= RET_ERR
         elif op == ">=" and type(target) == int and current_value[i] < target:
             if verbose:
-                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: >= %s"%(keyname, i, str(current_value[i]), str(target))
+                perror("sysctl err: %s[%d] = %s, target: >= %s"%(keyname, i, str(current_value[i]), str(target)))
             r |= RET_ERR
         elif op == "<=" and type(target) == int and current_value[i] > target:
             if verbose:
-                print >>sys.stderr, "sysctl err: %s[%d] = %s, target: <= %s"%(keyname, i, str(current_value[i]), str(target))
+                perror("sysctl err: %s[%d] = %s, target: <= %s"%(keyname, i, str(current_value[i]), str(target)))
             r |= RET_ERR
         else:
             if verbose:
-                print "sysctl ok: %s[%d] = %s, on target"%(keyname, i, str(current_value[i]))
+                pinfo("sysctl ok: %s[%d] = %s, on target"%(keyname, i, str(current_value[i])))
 
         if r == RET_OK and current_live_value is not None and current_value != current_live_value:
             if verbose:
-                print >>sys.stderr, "sysctl err: %s on target in sysctl.conf but kernel value is different"%(keyname)
+                perror("sysctl err: %s on target in sysctl.conf but kernel value is different"%(keyname))
             self.need_reload = True
             r |= RET_ERR
 
@@ -273,11 +273,11 @@ class Sysctl(CompObject):
 
     def reload_sysctl(self):
         cmd = ['sysctl', '-e', '-p']
-        print "sysctl:", " ".join(cmd)
+        pinfo("sysctl:", " ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "reload failed"
+            perror("reload failed")
             return RET_ERR
         return RET_OK
 

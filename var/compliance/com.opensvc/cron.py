@@ -4,7 +4,7 @@ data = {
   "default_prefix": "OSVC_COMP_CRON_ENTRY_",
   "example_value": "add:osvc:* * * * *:/path/to/mycron:/etc/cron.d/opensvc",
   "description": """* Add and Remove cron entries
-* Support arbitrary con file location
+* Support arbitrary cron file location
 """,
 }
 
@@ -41,13 +41,13 @@ class CompCron(CompObject):
         for _ce in self.get_rules_raw():
                 e = _ce.split(':')
                 if len(e) < 5:
-                    print >>sys.stderr, "malformed variable %s. format: action:user:sched:cmd:[file]"%_ce
+                    perror("malformed variable %s. format: action:user:sched:cmd:[file]"%_ce)
                     continue
                 if e[0] not in ('add', 'del'):
-                    print >>sys.stderr, "unsupported action in variable %s. set 'add' or 'del'"%_ce
+                    perror("unsupported action in variable %s. set 'add' or 'del'"%_ce)
                     continue
                 if len(e[2].split()) != 5:
-                    print >>sys.stderr, "malformed schedule in variable %s"%_ce
+                    perror("malformed schedule in variable %s"%_ce)
                     continue
                 self.ce += [{
                         'var': _ce,
@@ -66,7 +66,7 @@ class CompCron(CompObject):
         """ Activate changes (actually only needed on HP-UX)
         """
         if '/var/spool/' in cron_file:
-            print "tell crond about the change"
+            pinfo("tell crond about the change")
             cmd = ['crontab', cron_file]
             process = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
             buff = process.communicate()
@@ -77,10 +77,10 @@ class CompCron(CompObject):
             try:
                 self._fixable_cron(e)
             except ComplianceError, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 r = RET_ERR
             except Unfixable, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 return r
         return r
 
@@ -93,10 +93,10 @@ class CompCron(CompObject):
                 elif e['action'] == 'del':
                     self._del_cron(e)
             except ComplianceError, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 r = RET_ERR
             except Unfixable, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 return r
         return r
 
@@ -106,10 +106,10 @@ class CompCron(CompObject):
             try:
                 self._check_cron(e)
             except ComplianceError, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 r = RET_ERR
             except Unfixable, e:
-                print >>sys.stderr, str(e)
+                perror(str(e))
                 return r
         return r
 
@@ -179,12 +179,12 @@ class CompCron(CompObject):
             lines = f.readlines()
             for line in lines:
                 if s == line[:-1]:
-                    print "delete entry '%s' from '%s'"%(s, cron_file)
+                    pinfo("delete entry '%s' from '%s'"%(s, cron_file))
                     continue
                 new.append(line)
 
         if len(new) == 0:
-            print 'deleted last entry of %s. delete file too.'%cron_file
+            pinfo('deleted last entry of %s. delete file too.'%cron_file)
             os.unlink(cron_file)
         else:
             with open(cron_file, 'w') as f:
@@ -216,7 +216,7 @@ class CompCron(CompObject):
         if not new:
             raise ComplianceError("problem preparing the new crontab '%s'"%cron_file)
 
-        print "add entry '%s' to '%s'"%(s, cron_file)
+        pinfo("add entry '%s' to '%s'"%(s, cron_file))
         with open(cron_file, 'w') as f:
             f.write(''.join(new))
         self.activate_cron(cron_file)

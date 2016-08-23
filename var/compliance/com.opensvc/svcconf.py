@@ -103,7 +103,7 @@ class SvcConf(CompObject):
         self.keys = []
 
         if "OSVC_COMP_SERVICES_SVCNAME" not in os.environ:
-            print "SERVICES_SVCNAME is not set"
+            pinfo("SERVICES_SVCNAME is not set")
             raise NotApplicable()
 
         self.svcname = os.environ['OSVC_COMP_SERVICES_SVCNAME']
@@ -113,7 +113,7 @@ class SvcConf(CompObject):
         try:
             self.get_env_file(refresh=True)
         except Exception as e:
-            print >>sys.stderr, "unable to load service configuration:", str(e)
+            perror("unable to load service configuration:", str(e))
             raise ComplianceError()
 
         self.sanitize_keys()
@@ -125,6 +125,7 @@ class SvcConf(CompObject):
        cmd = ['svcmgr', '-s', self.svcname, 'json_env']
        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
        out, err = p.communicate()
+       out = bdecode(out)
        self.svcenv = json.loads(out)
        return self.svcenv
 
@@ -135,7 +136,7 @@ class SvcConf(CompObject):
         if type(target) == int:
             target = str(target)
         cmd = ['svcmgr', '-s', self.svcname, 'set', '--param', keyname, '--value', target]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return p.returncode
@@ -150,30 +151,30 @@ class SvcConf(CompObject):
         r = RET_OK
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s not set"%keyname
+                perror("%s not set"%keyname)
             r |= RET_ERR
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                    perror("%s=%s, target: %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                    perror("%s=%s value must be integer"%(keyname, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: <= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: >= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         return r
 
     def check_filter(self, section, filter):
@@ -198,7 +199,7 @@ class SvcConf(CompObject):
             _tail = filter[i:].lstrip("&&").lstrip("||")
 
         r = self._check_filter(section, _filter)
-        #print " _check_filter('%s', '%s') => %s" % (section, _filter, str(r))
+        #pinfo(" _check_filter('%s', '%s') => %s" % (section, _filter, str(r)))
 
         if op == "and":
             r &= self.check_filter(section, _tail)
@@ -212,13 +213,13 @@ class SvcConf(CompObject):
             return self._check_filter_reg(section, filter)
         elif "=" in filter:
             return self._check_filter_eq(section, filter)
-        print >>sys.stderr, "invalid filter syntax: %s" % filter
+        perror("invalid filter syntax: %s" % filter)
         return False
 
     def _check_filter_eq(self, section, filter):
         l = filter.split("=")
         if len(l) != 2:
-            print >>sys.stderr, "invalid filter syntax: %s" % filter
+            perror("invalid filter syntax: %s" % filter)
             return False
         key, val = l
         cur_val = self.svcenv[section].get(key)
@@ -231,7 +232,7 @@ class SvcConf(CompObject):
     def _check_filter_reg(self, section, filter):
         l = filter.split("~=")
         if len(l) != 2:
-            print >>sys.stderr, "invalid filter syntax: %s" % filter
+            perror("invalid filter syntax: %s" % filter)
             return False
         key, val = l
         val = val.strip("/")
@@ -259,7 +260,7 @@ class SvcConf(CompObject):
                 eligiblesections.append(section)
         for section in eligiblesections:
             if self.check_filter(section, filter):
-                #print "   =>", section, "matches filter"
+                #pinfo("   =>", section, "matches filter")
                 result.append(section)
         result.sort()
         return result
@@ -269,11 +270,11 @@ class SvcConf(CompObject):
         for key in self.keys:
             if 'key' not in key:
                 if verbose:
-                    print >>sys.stderr, "'key' not set in rule %s"%str(key)
+                    perror("'key' not set in rule %s"%str(key))
                 r |= RET_NA
             if 'value' not in key:
                 if verbose:
-                    print >>sys.stderr, "'value' not set in rule %s"%str(key)
+                    perror("'value' not set in rule %s"%str(key))
                 r |= RET_NA
             if 'op' not in key:
                 op = "="
@@ -282,7 +283,7 @@ class SvcConf(CompObject):
 
             if op not in ('>=', '<=', '='):
                 if verbose:
-                    print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
+                    perror("'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key))
                 r |= RET_NA
 
         if r is not RET_OK:
@@ -332,7 +333,7 @@ class SvcConf(CompObject):
 
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s key is not set"%keyname
+                perror("%s key is not set"%keyname)
             return RET_ERR
 
         return self._check_key(keyname, target, op, value, verbose)

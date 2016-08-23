@@ -112,17 +112,17 @@ class CompVuln(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', os.environ[k]
+                perror('failed to parse variable', os.environ[k])
 
         if len(self.packages) == 0:
             raise NotApplicable()
 
         if self.sysname not in ['Linux', 'HP-UX', 'AIX', 'SunOS']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
         if 'OSVC_COMP_NODES_OS_VENDOR' not in os.environ:
-            print >>sys.stderr, "OS_VENDOR is not set. Check your asset"
+            perror("OS_VENDOR is not set. Check your asset")
             raise NotApplicable()
 
         vendor = os.environ['OSVC_COMP_NODES_OS_VENDOR']
@@ -144,7 +144,7 @@ class CompVuln(CompObject):
             self.fix_all = None
         elif vendor in ['HP']:
             if self.uri is None:
-                print >>sys.stderr, "URI is not set"
+                perror("URI is not set")
                 raise NotApplicable()
             self.get_installed_packages = self.hp_get_installed_packages
             self.fix_pkg = self.hp_fix_pkg
@@ -161,7 +161,7 @@ class CompVuln(CompObject):
             self.fixable_pkg = self.sol_fixable_pkg
             self.fix_all = None
         else:
-            print >>sys.stderr, vendor, "not supported"
+            perror(vendor, "not supported")
             raise NotApplicable()
 
         self.installed_packages = self.get_installed_packages()
@@ -176,6 +176,7 @@ class CompVuln(CompObject):
         cmd = ["df", "-k", c]
         p = Popen(cmd, stdout=PIPE, stderr=None)
         out, err = p.communicate()
+        out = bdecode(out)
         for line in out.split():
             if "%" in line:
                 l = out.split()
@@ -198,7 +199,7 @@ class CompVuln(CompObject):
             free[self.get_free(c)] = c
         max = sorted(free.keys())[-1]
         self.tmpd = free[max]
-        print "selected %s as temp dir (%d KB free)" % (self.tmpd, max)
+        pinfo("selected %s as temp dir (%d KB free)" % (self.tmpd, max))
         return self.tmpd
 
     def download(self, pkg_name):
@@ -226,7 +227,7 @@ class CompVuln(CompObject):
         try:
             tar = tarfile.open(fname)
         except:
-            print "not a tarball"
+            pinfo("not a tarball")
             return fname
         try:
             tar.extractall()
@@ -248,7 +249,8 @@ class CompVuln(CompObject):
         out, err = p.communicate()
         if p.returncode != 0:
             return 0
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) == 0:
             return 0
         try:
@@ -263,15 +265,15 @@ class CompVuln(CompObject):
             return RET_NA
 
         if 'repo' not in pkg or len(pkg['repo']) == 0:
-            print >>sys.stderr, "no repo specified in the rule"
+            perror("no repo specified in the rule")
             return RET_NA
 
         pkg_url = pkg['repo']+"/"+pkg['pkgname']
-        print "download", pkg_url
+        pinfo("download", pkg_url)
         try:
             dname = self.download(pkg_url)
         except Exception as e:
-            print >>sys.stderr, e
+            perror(e)
             return RET_ERR
 
         if pkg["pkgname"] in self.installed_packages:
@@ -326,8 +328,9 @@ class CompVuln(CompObject):
         p = Popen(['pkginfo', '-l'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return {}
+        out = bdecode(out)
         return self.sol_parse_pkginfo(out)
 
     def sol_parse_pkginfo(self, out):
@@ -359,7 +362,7 @@ class CompVuln(CompObject):
                '-a', 'installp_flags=aFQY',
                '-a', 'filesets=%s'%pkg['pkgname']]
         s = " ".join(cmd)
-        print s
+        pinfo(s)
         r = os.system(s)
         if r != 0:
             return RET_ERR
@@ -375,8 +378,9 @@ class CompVuln(CompObject):
         p = Popen(['lslpp', '-L', '-c'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return {}
+        out = bdecode(out)
         return self.aix_parse_lslpp(out)
 
     def aix_parse_lslpp(self, out):
@@ -424,19 +428,20 @@ class CompVuln(CompObject):
         (out, err) = p.communicate()
         if p.returncode != 0:
             if "not found on host" in err:
-                print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+                perror('%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver']))
             else:
-                print >>sys.stderr, 'can not fetch available packages list'
+                perror('can not fetch available packages list')
             return RET_ERR
+        out = bdecode(out)
         l = self.hp_parse_swlist(out)
         if len(l) == 0:
-            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            perror('%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver']))
             return RET_ERR
         for v in map(lambda x: x[0], l.values()[0]):
             if V(v) > V(self.highest_avail_version):
                 self.highest_avail_version = v
         if V(self.highest_avail_version) < V(pkg['minver']):
-            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            perror('%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver']))
             return RET_ERR
         return RET_OK
 
@@ -444,8 +449,9 @@ class CompVuln(CompObject):
         p = Popen(['swlist', '-l', self.pkg_type], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return {}
+        out = bdecode(out)
         return self.hp_parse_swlist(out)
 
     def hp_parse_swlist(self, out):
@@ -466,10 +472,11 @@ class CompVuln(CompObject):
         p = Popen(['rpm', '-qa', '--qf', '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return {}
         l = {}
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             v = line.split(' ')
             if len(v) != 3:
                 continue
@@ -483,10 +490,11 @@ class CompVuln(CompObject):
         p = Popen(['dpkg', '-l'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return {}
         l = {}
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             if not line.startswith('ii'):
                 continue
             v = line.split()[1:3]
@@ -516,19 +524,20 @@ class CompVuln(CompObject):
         (out, err) = p.communicate()
         if p.returncode != 0:
             if "No matching Packages" in err:
-                print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+                perror('%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver']))
             else:
-                print >>sys.stderr, 'can not fetch available packages list'
+                perror('can not fetch available packages list')
             return RET_ERR
         highest_avail_version = "0"
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             l = line.split()
             if len(l) != 3:
                 continue
             if V(l[1]) > V(highest_avail_version):
                 highest_avail_version = l[1]
         if V(highest_avail_version) < V(pkg['minver']):
-            print >>sys.stderr, '%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver'])
+            perror('%s > %s not available in repositories'%(pkg['pkgname'], pkg['minver']))
             return RET_ERR
         return RET_OK
 
@@ -597,8 +606,8 @@ class CompVuln(CompObject):
         s = s.replace('hugemem', '')
         s = s.replace('smp', '')
         s = s.replace('PAE', '')
-	s = s.replace('.x86_64','')
-	s = s.replace('.i686','')
+        s = s.replace('.x86_64','')
+        s = s.replace('.i686','')
         return s
 
     def workaround_python_cmp(self, s):
@@ -613,19 +622,19 @@ class CompVuln(CompObject):
     def check_pkg(self, pkg, verbose=True):
         if not pkg["pkgname"] in self.installed_packages:
             if verbose:
-                print pkg["pkgname"], "is not installed (%s:not applicable)"%pkg["rule"]
+                pinfo(pkg["pkgname"], "is not installed (%s:not applicable)"%pkg["rule"])
             return RET_OK
 
         name = pkg["pkgname"]
 
         if name.startswith("kernel"):
             if self.tainted(pkg):
-                print name, "booted kernel is tainted", "(%s)"%pkg["rule"]
+                pinfo(name, "booted kernel is tainted", "(%s)"%pkg["rule"])
             kver = self.get_raw_kver()
             for i in ('xen', 'hugemem', 'smp', 'PAE'):
                 if kver.endswith(i) and name != "kernel-"+i:
                     if verbose:
-                        print name, "bypassed :", i, "kernel booted", "(%s:not applicable)"%pkg["rule"]
+                        pinfo(name, "bypassed :", i, "kernel booted", "(%s:not applicable)"%pkg["rule"])
                     return RET_OK
 
         r = RET_OK
@@ -653,31 +662,31 @@ class CompVuln(CompObject):
         if max == "0":
             # not installed
             if verbose:
-                print name, "is not installed (%s:not applicable)"%pkg["rule"]
+                pinfo(name, "is not installed (%s:not applicable)"%pkg["rule"])
             return RET_OK
 
         if name.startswith("kernel"):
             kver = self.get_kver()
             if len(ok) == 0:
                 if verbose:
-                    print >>sys.stderr, ', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], candidates)), 'installed and vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"]
+                    perror(', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], candidates)), 'installed and vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"])
                 return RET_ERR
             elif kver not in map(lambda x: x[1], ok):
                 if verbose:
-                    print >>sys.stderr, ', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), "installed and not vulnerable but vulnerable kernel", self.get_raw_kver(), "booted", "(%s:need reboot)"%pkg["rule"]
+                    perror(', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), "installed and not vulnerable but vulnerable kernel", self.get_raw_kver(), "booted", "(%s:need reboot)"%pkg["rule"])
                 raise LiveKernVulnerable()
             else:
                 if verbose:
-                    print "kernel", self.get_raw_kver(), "installed, booted and not vulnerable", "(%s:not vulnerable)"%pkg["rule"]
+                    pinfo("kernel", self.get_raw_kver(), "installed, booted and not vulnerable", "(%s:not vulnerable)"%pkg["rule"])
                 return RET_OK
 
         if len(ok) > 0:
             if verbose:
-                print "%s installed and not vulnerable (%s:not vulnerable)"%(', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), pkg["rule"])
+                pinfo("%s installed and not vulnerable (%s:not vulnerable)"%(', '.join(map(lambda x: x[0]+"-"+x[1]+"."+x[2], ok)), pkg["rule"]))
             return RET_OK
 
         if verbose:
-            print >>sys.stderr, 'package', name+"-"+vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"]
+            perror('package', name+"-"+vers, 'is vulnerable. upgrade to', pkg["minver"], "(%s:need upgrade)"%pkg["rule"])
         return RET_ERR
 
     def check(self):
@@ -694,7 +703,7 @@ class CompVuln(CompObject):
         r = 0
         for pkg in self.packages:
             if self.tainted(pkg):
-                print >>sys.stderr, name, "booted kernel is tainted. not safe to upgrade.", "(%s)"%pkg["rule"]
+                perror(name, "booted kernel is tainted. not safe to upgrade.", "(%s)"%pkg["rule"])
             r |= self.fix_pkg(pkg)
         if self.fix_all is not None and len(self.fix_list) > 0:
             self.fix_all()
@@ -707,7 +716,7 @@ class CompVuln(CompObject):
         if which(bin) is None:
             return
         cmd = [bin, 'pushpkg']
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd)
         p.communicate()
 

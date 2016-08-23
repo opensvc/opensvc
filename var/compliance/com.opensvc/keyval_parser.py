@@ -5,6 +5,10 @@ import sys
 import datetime
 import shutil
 
+sys.path.append(os.path.dirname(__file__))
+
+from comp import *
+
 class ParserError(Exception):
     pass
 
@@ -89,9 +93,9 @@ class Parser(object):
         try:
             shutil.copy(self.path, self.bkp)
         except Exception as e:
-            print e
+            perror(e)
             raise ParserError("failed to backup %s"%self.path)
-        print "%s backup up as %s" % (self.path, self.bkp)
+        pinfo("%s backup up as %s" % (self.path, self.bkp))
 
     def restore(self):
         if self.nocf:
@@ -100,7 +104,7 @@ class Parser(object):
             shutil.copy(self.bkp, self.path)
         except:
             raise ParserError("failed to restore %s"%self.path)
-        print "%s restored from %s" % (self.path, self.bkp)
+        pinfo("%s restored from %s" % (self.path, self.bkp))
 
 
     def write(self):
@@ -108,9 +112,9 @@ class Parser(object):
         try:
             with open(self.path, 'w') as f:
                 f.write(str(self))
-            print "%s rewritten"%self.path
+            pinfo("%s rewritten"%self.path)
         except Exception as e:
-            print >>sys.stderr, e
+            perror(e)
             self.restore()
             raise ParserError()
 
@@ -157,12 +161,12 @@ class Parser(object):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print >>sys.stderr, "wrong number of arguments"
+        perror("wrong number of arguments")
         sys.exit(1)
     o = Parser(sys.argv[1])
     o.get("Subsystem")
     o.set("Subsystem", "foo")
     o.unset("PermitRootLogin")
     o.backup()
-    print o
+    pinfo(o)
 

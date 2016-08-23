@@ -62,7 +62,7 @@ class CompPackages(CompObject):
         self.known_archs = ['i386', 'i586', 'i686', 'x86_64', 'noarch', '*']
 
         if self.sysname not in ['Linux', 'AIX', 'HP-UX', 'SunOS', 'FreeBSD']:
-            print >>sys.stderr, __file__, 'module not supported on', self.sysname
+            perror(__file__, 'module not supported on', self.sysname)
             raise NotApplicable()
 
         if 'OSVC_COMP_PACKAGES_PKG_TYPE' in os.environ and \
@@ -94,7 +94,7 @@ class CompPackages(CompObject):
         elif vendor in ['CentOS', 'Redhat', 'Red Hat'] or \
              (vendor == 'Oracle' and self.sysname == 'Linux'):
             if which("yum") is None:
-                print >>sys.stderr, "package manager not found (yum)"
+                perror("package manager not found (yum)")
                 raise ComplianceError()
             self.combo_fix = True
             self.get_installed_packages = self.rpm_get_installed_packages
@@ -102,14 +102,14 @@ class CompPackages(CompObject):
             self.pkg_del = self.yum_del_pkg
         elif vendor == "SuSE":
             if which("zypper") is None:
-                print >>sys.stderr, "package manager not found (zypper)"
+                perror("package manager not found (zypper)")
                 raise ComplianceError()
             self.get_installed_packages = self.rpm_get_installed_packages
             self.pkg_add = self.zyp_fix_pkg
             self.pkg_del = self.zyp_del_pkg
         elif vendor == "FreeBSD":
             if which("pkg") is None:
-                print >>sys.stderr, "package manager not found (pkg)"
+                perror("package manager not found (pkg)")
                 raise ComplianceError()
             self.get_installed_packages = self.freebsd_pkg_get_installed_packages
             self.pkg_add = self.freebsd_pkg_fix_pkg
@@ -119,7 +119,7 @@ class CompPackages(CompObject):
             self.pkg_add = self.aix_fix_pkg
             self.pkg_del = self.aix_del_pkg
             if self.uri is None:
-                print >>sys.stderr, "resource must be set"
+                perror("resource must be set")
                 raise NotApplicable()
         elif vendor in ['HP']:
             self.get_installed_packages = self.hp_get_installed_packages
@@ -130,7 +130,7 @@ class CompPackages(CompObject):
             self.pkg_add = self.sol_fix_pkg
             self.pkg_del = self.sol_del_pkg
         else:
-            print >>sys.stderr, vendor, "not supported"
+            perror(vendor, "not supported")
             raise NotApplicable()
 
         self.load_reloc()
@@ -186,6 +186,7 @@ zlib                                                               ALL  @@R:zlib
             cmd = ['nimclient', '-o', 'showres', '-a', 'resource=%s'%self.uri, '-a', 'installp_flags=L']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
+            err = bdecode(err)
             self.lpp_type = "installp"
             if "0042-175" in err:
                 # not a native installp lpp_source
@@ -193,7 +194,8 @@ zlib                                                               ALL  @@R:zlib
                 p = Popen(cmd, stdout=PIPE, stderr=PIPE)
                 out, err = p.communicate()
                 self.lpp_type = "rpm"
-            self.nimcache = out.split('\n')
+            out = bdecode(out)
+            self.nimcache = out.splitlines()
 
         l = []
         if self.lpp_type == "rpm":
@@ -244,14 +246,15 @@ zlib                                                               ALL  @@R:zlib
         out, err = p.communicate()
         if p.returncode != 0:
             if prefix != '-':
-                print >>sys.stderr, 'can not expand (cmd error)', pkgname, err
+                perror('can not expand (cmd error)', pkgname, err)
                 return []
             else:
                 return [pkgname]
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) < 2:
             if prefix != '-':
-                print >>sys.stderr, 'can not expand', pkgname
+                perror('can not expand', pkgname)
                 return []
             else:
                 return [pkgname]
@@ -302,14 +305,15 @@ zlib                                                               ALL  @@R:zlib
         out, err = p.communicate()
         if p.returncode != 0:
             if prefix != '-':
-                print >>sys.stderr, 'can not expand (cmd error)', pkgname, err
+                perror('can not expand (cmd error)', pkgname, err)
                 return []
             else:
                 return [pkgname]
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) < 2:
             if prefix != '-':
-                print >>sys.stderr, 'can not expand', pkgname
+                perror('can not expand', pkgname)
                 return []
             else:
                 return [pkgname]
@@ -331,10 +335,10 @@ zlib                                                               ALL  @@R:zlib
         for _pkgname, _version in sorted(l, key=lambda x: V(x[1]), reverse=True):
             pkgarch = _pkgname.split('.')[-1]
             if pkgarch not in ('i386', 'i586', 'i686', 'ia32'):
-                #print "add", _pkgname, "because", pkgarch, "not in ('i386', 'i586', 'i686', 'ia32')"
+                #pinfo("add", _pkgname, "because", pkgarch, "not in ('i386', 'i586', 'i686', 'ia32')")
                 ll.append(_pkgname)
             elif not ix86_added:
-                #print "add", _pkgname, "because", pkgarch, "not ix86_added"
+                #pinfo("add", _pkgname, "because", pkgarch, "not ix86_added")
                 ll.append(_pkgname)
                 ix86_added = True
         l = ll
@@ -372,7 +376,7 @@ zlib                                                               ALL  @@R:zlib
         return l
 
     def hp_del_pkg(self, pkg):
-        print >>sys.stderr, "TODO:", __fname__
+        perror("TODO:", __fname__)
         return RET_ERR
 
     def hp_fix_pkg(self, pkg):
@@ -382,13 +386,13 @@ zlib                                                               ALL  @@R:zlib
                '-x', 'allow_downdate=true',
                '-x', 'mount_all_filesystems=false',
                '-s', self.uri, pkg]
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print >>sys.stderr, err
+            perror(err)
         if p.returncode != 0:
             return RET_ERR
         return RET_OK
@@ -397,8 +401,9 @@ zlib                                                               ALL  @@R:zlib
         p = Popen(['swlist', '-l', self.pkg_type], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
+        out = bdecode(out)
         return self.hp_parse_swlist(out).keys()
 
     def get_free(self, c):
@@ -407,6 +412,7 @@ zlib                                                               ALL  @@R:zlib
         cmd = ["df", "-k", c]
         p = Popen(cmd, stdout=PIPE, stderr=None)
         out, err = p.communicate()
+        out = bdecode(out)
         for line in out.split():
             if "%" in line:
                 l = out.split()
@@ -429,7 +435,7 @@ zlib                                                               ALL  @@R:zlib
             free[self.get_free(c)] = c
         max = sorted(free.keys())[-1]
         self.tmpd = free[max]
-        print "selected %s as temp dir (%d KB free)" % (self.tmpd, max)
+        pinfo("selected %s as temp dir (%d KB free)" % (self.tmpd, max))
         return self.tmpd
 
     def download(self, pkg_name):
@@ -457,7 +463,7 @@ zlib                                                               ALL  @@R:zlib
         try:
             tar = tarfile.open(fname)
         except:
-            print "not a tarball"
+            pinfo("not a tarball")
             return fname
         try:
             tar.extractall()
@@ -479,7 +485,8 @@ zlib                                                               ALL  @@R:zlib
         out, err = p.communicate()
         if p.returncode != 0:
             return 0
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) == 0:
             return 0
         try:
@@ -492,10 +499,11 @@ zlib                                                               ALL  @@R:zlib
         p = Popen(['pkginfo', '-l'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
         l = []
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             v = line.split(':')
             if len(v) != 2:
                 continue
@@ -510,7 +518,7 @@ zlib                                                               ALL  @@R:zlib
             return RET_OK
         yes = os.path.dirname(__file__) + "/yes"
         cmd = '%s | pkgrm %s' % (yes, pkg)
-        print(cmd)
+        pinfo(cmd)
         r = os.system(cmd)
         if r != 0:
             return RET_ERR
@@ -519,18 +527,18 @@ zlib                                                               ALL  @@R:zlib
     def sol_fix_pkg(self, pkg):
         data = self.data[pkg]
         if 'repo' not in data or len(data['repo']) == 0:
-            print >>sys.stderr, "no repo specified in the rule"
+            perror("no repo specified in the rule")
             return RET_NA
 
         if data['repo'].endswith("/"):
             pkg_url = data['repo']+"/"+pkg
         else:
             pkg_url = data['repo']
-        print "download", pkg_url
+        pinfo("download", pkg_url)
         try:
             dname = self.download(pkg_url)
         except Exception as e:
-            print >>sys.stderr, e
+            perror(e)
             return RET_ERR
 
         if os.path.isfile(dname):
@@ -553,7 +561,7 @@ zlib                                                               ALL  @@R:zlib
             resp = "/dev/null"
         yes = os.path.dirname(__file__) + "/yes"
         cmd = '%s | pkgadd -r %s %s -d %s all' % (yes, resp, opts, d)
-        print(cmd)
+        pinfo(cmd)
         r = os.system(cmd)
 
         os.chdir("/")
@@ -566,13 +574,13 @@ zlib                                                               ALL  @@R:zlib
 
     def aix_del_pkg(self, pkg):
         cmd = ['installp', '-u', pkg]
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print >>sys.stderr, err
+            perror(err)
         if p.returncode != 0:
             return RET_ERR
         return RET_OK
@@ -583,7 +591,7 @@ zlib                                                               ALL  @@R:zlib
                '-a', 'installp_flags=Y',
                '-a', 'filesets=%s'%pkg]
         s = " ".join(cmd)
-        print s
+        pinfo(s)
         r = os.system(s)
         if r != 0:
             return RET_ERR
@@ -594,10 +602,11 @@ zlib                                                               ALL  @@R:zlib
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
         pkgs = []
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             l = line.split(':')
             if len(l) < 5:
                 continue
@@ -610,10 +619,11 @@ zlib                                                               ALL  @@R:zlib
         p = Popen(['pkg', 'info'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
         l = []
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             try:
                 i = line.index(" ")
                 line = line[:i]
@@ -627,18 +637,20 @@ zlib                                                               ALL  @@R:zlib
         p = Popen(['rpm', '-qa', '--qf', '%{NAME}.%{ARCH}\n'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
-        return out.split('\n')
+        out = bdecode(out)
+        return out.splitlines()
 
     def deb_get_installed_packages(self):
         p = Popen(['dpkg', '-l'], stdout=PIPE)
         (out, err) = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, 'can not fetch installed packages list'
+            perror('can not fetch installed packages list')
             return []
         l = []
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             if not line.startswith('ii'):
                 continue
             pkgname = line.split()[1]
@@ -648,45 +660,49 @@ zlib                                                               ALL  @@R:zlib
 
     def freebsd_pkg_del_pkg(self, pkg):
         cmd = ['pkg', 'remove', '-y', pkg]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
     def freebsd_pkg_fix_pkg(self, pkg):
         cmd = ['pkg', 'install', '-y', pkg]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
     def zyp_del_pkg(self, pkg):
         cmd = ['zypper', 'remove', '-y', pkg]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
     def zyp_fix_pkg(self, pkg):
         cmd = ['zypper', 'install', '-y', pkg]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
@@ -695,23 +711,25 @@ zlib                                                               ALL  @@R:zlib
             cmd = ['yum', '-y', 'remove'] + pkg
         else:
             cmd = ['yum', '-y', 'remove', pkg]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
     def yum_fix_pkg(self, pkg):
         cmd = ['yum', '-y', 'install'] + pkg
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print err
+                pinfo(err)
             return RET_ERR
         return RET_OK
 
@@ -769,19 +787,19 @@ zlib                                                               ALL  @@R:zlib
     def check_pkg_del(self, pkg, verbose=True):
         if pkg in self.installed_packages:
             if verbose:
-                print >>sys.stderr, 'package', pkg, 'is installed'
+                perror('package', pkg, 'is installed')
             return RET_ERR
         if verbose:
-            print 'package', pkg, 'is not installed'
+            pinfo('package', pkg, 'is not installed')
         return RET_OK
 
     def check_pkg_add(self, pkg, verbose=True):
         if not pkg in self.installed_packages:
             if verbose:
-                print >>sys.stderr, 'package', pkg, 'is not installed'
+                perror('package', pkg, 'is not installed')
             return RET_ERR
         if verbose:
-            print 'package', pkg, 'is installed'
+            pinfo('package', pkg, 'is installed')
         return RET_OK
 
     def check(self):

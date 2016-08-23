@@ -101,7 +101,7 @@ class CompProcess(CompObject):
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['Linux', 'AIX', 'SunOS', 'FreeBSD', 'Darwin', 'HP-UX']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
         if self.sysname == 'HP-UX' and 'UNIX95' not in os.environ:
@@ -121,9 +121,10 @@ class CompProcess(CompObject):
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "unable to fetch ps"
+            perror("unable to fetch ps")
             raise ComplianceError
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) < 2:
             return
         for line in lines[1:]:
@@ -143,9 +144,10 @@ class CompProcess(CompObject):
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "unable to fetch ps"
+            perror("unable to fetch ps")
             raise ComplianceError
-        lines = out.split('\n')
+        out = bdecode(out)
+        lines = out.splitlines()
         if len(lines) < 2:
             return
         for line in lines[1:]:
@@ -171,10 +173,10 @@ class CompProcess(CompObject):
 
     def _validate_process(self, process):
         if 'comm' not in process and 'args' not in process:
-            print >>sys.stderr, process, 'rule is malformed ... nor comm nor args key present'
+            perror(process, 'rule is malformed ... nor comm nor args key present')
             return RET_ERR
         if 'uid' in process and type(process['uid']) != int:
-            print >>sys.stderr, process, 'rule is malformed ... uid value must be integer'
+            perror(process, 'rule is malformed ... uid value must be integer')
             return RET_ERR
         return RET_OK
 
@@ -198,11 +200,11 @@ class CompProcess(CompObject):
         found = self.get_keys_args(args)
         if len(found) == 0:
             if verbose:
-                print >>sys.stderr, 'process with args', args, 'is not started ... should be'
+                perror('process with args', args, 'is not started ... should be')
             return RET_ERR
         else:
             if verbose:
-                print 'process with args', args, 'is started ... on target'
+                pinfo('process with args', args, 'is started ... on target')
         return RET_OK
 
     def check_present_comm(self, comm, verbose):
@@ -211,11 +213,11 @@ class CompProcess(CompObject):
         found = self.get_keys_comm(comm)
         if len(found) == 0:
             if verbose:
-                print >>sys.stderr, 'process with command', comm, 'is not started ... should be'
+                perror('process with command', comm, 'is not started ... should be')
             return RET_ERR
         else:
             if verbose:
-                print 'process with command', comm, 'is started ... on target'
+                pinfo('process with command', comm, 'is started ... on target')
         return RET_OK
 
     def check_present(self, process, verbose):
@@ -232,11 +234,11 @@ class CompProcess(CompObject):
         found = self.get_keys_comm(comm)
         if len(found) == 0:
            if verbose:
-               print 'process with command', comm, 'is not started ... on target'
+               pinfo('process with command', comm, 'is not started ... on target')
            return RET_OK
         else:
            if verbose:
-               print >>sys.stderr, 'process with command', comm, 'is started ... shoud be'
+               perror('process with command', comm, 'is started ... shoud be')
         return RET_ERR
 
     def check_not_present_args(self, args, verbose):
@@ -245,11 +247,11 @@ class CompProcess(CompObject):
         found = self.get_keys_args(args)
         if len(found) == 0:
            if verbose:
-               print 'process with args', args, 'is not started ... on target'
+               pinfo('process with args', args, 'is not started ... on target')
            return RET_OK
         else:
            if verbose:
-               print >>sys.stderr, 'process with args', args, 'is started ... shoud be'
+               perror('process with args', args, 'is started ... shoud be')
         return RET_ERR
 
     def check_not_present(self, process, verbose):
@@ -293,10 +295,10 @@ class CompProcess(CompObject):
                     continue
         if found:
             if verbose:
-                print 'process with command', comm, 'runs with uid', _uid, '... on target'
+                pinfo('process with command', comm, 'runs with uid', _uid, '... on target')
         else:
             if verbose:
-                print >>sys.stderr, 'process with command', comm, 'does not run with uid', _uid, '... should be'
+                perror('process with command', comm, 'does not run with uid', _uid, '... should be')
             return RET_ERR
         return RET_OK
 
@@ -312,10 +314,10 @@ class CompProcess(CompObject):
                     continue
         if found:
             if verbose:
-                print 'process with args', args, 'runs with uid', _uid, '... on target'
+                pinfo('process with args', args, 'runs with uid', _uid, '... on target')
         else:
             if verbose:
-                print >>sys.stderr, 'process with args', args, 'does not run with uid', _uid, '... should be'
+                perror('process with args', args, 'does not run with uid', _uid, '... should be')
             return RET_ERR
         return RET_OK
 
@@ -339,10 +341,10 @@ class CompProcess(CompObject):
                     continue
         if found:
             if verbose:
-                print 'process with command', comm, 'runs with user', _user, '... on target'
+                pinfo('process with command', comm, 'runs with user', _user, '... on target')
         else:
             if verbose:
-                print >>sys.stderr, 'process with command', comm, 'runs with user', _user, '... should run with user', user
+                perror('process with command', comm, 'runs with user', _user, '... should run with user', user)
             return RET_ERR
         return RET_OK
 
@@ -360,10 +362,10 @@ class CompProcess(CompObject):
                     continue
         if found:
             if verbose:
-                print 'process with args', args, 'runs with user', _user, '... on target'
+                pinfo('process with args', args, 'runs with user', _user, '... on target')
         else:
             if verbose:
-                print >>sys.stderr, 'process with args', args, 'runs with user', _user, '... should run with user', user
+                perror('process with args', args, 'runs with user', _user, '... should run with user', user)
             return RET_ERR
         return RET_OK
 
@@ -372,7 +374,7 @@ class CompProcess(CompObject):
             if self.check_present(process, verbose=False) == RET_OK:
                 if ('uid' in process and self.check_uid(process, process['uid'], verbose=False) == RET_ERR) or \
                    ('user' in process and self.check_user(process, process['user'], verbose=False) == RET_ERR):
-                    print >>sys.stderr, process, "runs with the wrong user. can't fix."
+                    perror(process, "runs with the wrong user. can't fix.")
                     return RET_ERR
                 return RET_OK
         elif process['state'] == 'off':
@@ -380,26 +382,28 @@ class CompProcess(CompObject):
                 return RET_OK
 
         if 'start' not in process or len(process['start'].strip()) == 0:
-            print >>sys.stderr, "undefined fix method for process", process['comm']
+            perror("undefined fix method for process", process['comm'])
             return RET_ERR
 
         v = process['start'].split(' ')
         if not which(v[0]):
-            print >>sys.stderr, "fix command", v[0], "is not present or not executable"
+            perror("fix command", v[0], "is not present or not executable")
             return RET_ERR
-        print 'exec:', process['start']
+        pinfo('exec:', process['start'])
         try:
             p = Popen(v, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
         except Exception as e:
-            print >>sys.stderr, e
+            perror(e)
             return RET_ERR
+        out = bdecode(out)
+        err = bdecode(err)
         if len(out) > 0:
-            print out
+            pinfo(out)
         if len(err) > 0:
-            print >>sys.stderr, err
+            perror(err)
         if p.returncode != 0:
-            print >>sys.stderr, "fix up command returned with error code", p.returncode
+            perror("fix up command returned with error code", p.returncode)
             return RET_ERR
         return RET_OK
 

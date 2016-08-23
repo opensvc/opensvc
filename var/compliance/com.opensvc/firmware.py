@@ -15,23 +15,23 @@ class CompFirmware(object):
         self.versions = {}
 
         if var not in os.environ:
-            print var, 'not found in environment'
+            pinfo(var, 'not found in environment')
             raise NotApplicable()
 
         try:
             self.target_versions = json.loads(os.environ[var])
         except:
-            print >>sys.stderr, var, 'mis-formatted variable:', os.environ[var]
+            perror(var, 'misformatted variable:', os.environ[var])
             raise NotApplicable()
         for key in self.target_versions:
             if type(self.target_versions[key]) != list:
                 continue
-            self.target_versions[key] = map(lambda x: str(x), self.target_versions[key])
+            self.target_versions[key] = list(map(lambda x: str(x), self.target_versions[key]))
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
 
         if self.sysname not in ['Linux']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
     def get_versions(self):
@@ -101,7 +101,8 @@ class CompFirmware(object):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             if line.startswith('version:'):
                 self.versions['lpfc'] = line.split()[1]
                 return
@@ -123,13 +124,14 @@ class CompFirmware(object):
             out, err = p.communicate()
             if p.returncode != 0:
                 raise
-            for line in out.split('\n'):
+            out = bdecode(out)
+            for line in out.splitlines():
                 if 'Version:' in line:
                     self.versions['server'] = line.split(':')[-1].strip()
                     return
             raise
         except:
-            print 'can not fetch bios version'
+            pinfo('can not fetch bios version')
             return
 
     def fixable(self):
@@ -140,21 +142,21 @@ class CompFirmware(object):
         r = RET_OK
         for key in self.target_versions:
             if key not in self.versions:
-                print >>sys.stderr, "TODO: get", key, "version"
+                perror("TODO: get", key, "version")
                 continue
             if type(self.versions[key]) not in (str, unicode):
-                print "no", key
+                pinfo("no", key)
                 continue
             if type(self.target_versions[key]) == list and \
                self.versions[key] not in self.target_versions[key]:
-                print >>sys.stderr, key, "version is %s, target %s"%(self.versions[key], ' or '.join(self.target_versions[key]))
+                perror(key, "version is %s, target %s"%(self.versions[key], ' or '.join(self.target_versions[key])))
                 r |= RET_ERR
             elif type(self.target_versions[key]) != list and \
                  self.versions[key] != self.target_versions[key]:
-                print >>sys.stderr, key, "version is %s, target %s"%(self.versions[key], self.target_versions[key])
+                perror(key, "version is %s, target %s"%(self.versions[key], self.target_versions[key]))
                 r |= RET_ERR
             else:
-                print key, "version is %s, on target"%self.versions[key]
+                pinfo(key, "version is %s, on target"%self.versions[key])
                 continue
         return r
 
@@ -165,8 +167,8 @@ if __name__ == "__main__":
     syntax = """syntax:
       %s TARGET check|fixable|fix"""%sys.argv[0]
     if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
+        perror("wrong number of arguments")
+        perror(syntax)
         sys.exit(RET_ERR)
     try:
         o = CompFirmware(sys.argv[1])
@@ -177,8 +179,8 @@ if __name__ == "__main__":
         elif sys.argv[2] == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except NotApplicable:
         sys.exit(RET_NA)

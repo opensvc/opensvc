@@ -23,14 +23,14 @@ class CompZprop(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', rule
+                perror('failed to parse variable', rule)
 
     def add_rule(self, d):
         allgood = True
         for k in ["name", "prop", "op", "value"]:
             if k not in d:
-                print >>sys.stderr, 'the', k, 'key should be in the dict:', d
-		allgood = False
+                perror('the', k, 'key should be in the dict:', d)
+                allgood = False
         if allgood:
             return [d]
         return []
@@ -41,7 +41,8 @@ class CompZprop(CompObject):
         out, err = p.communicate()
         if p.returncode != 0:
             return
-        l = [line for line in out.split("\n") if line != ""]
+        out = bdecode(out)
+        l = [line for line in out.splitlines() if line != ""]
         if len(l) != 2:
             return
         v1 = l[0].split()
@@ -92,12 +93,13 @@ class CompZprop(CompObject):
         target = d.get("value")
         name = d.get("name")
         cmd = [self.zbin, "set", prop+"="+target, name]
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            err = bdecode(err)
             if len(err) > 0:
-                print >>sys.stderr, err
+                perror(err)
             return RET_ERR
         return RET_OK
 
@@ -106,7 +108,7 @@ class CompZprop(CompObject):
         prop = d.get("prop")
         if v is None:
             if verbose:
-                print >>sys.stderr, "property", prop, "does not exist"
+                perror("property", prop, "does not exist")
             return RET_ERR
         current = v["VALUE"]
         op = d.get("op")
@@ -122,13 +124,13 @@ class CompZprop(CompObject):
         elif op == ">":
             r = self.check_gt(current, target)
         else:
-            print >>sys.stderr, "unsupported operator", op
+            perror("unsupported operator", op)
             return RET_ERR
         if verbose:
             if r == RET_OK:
-                print "property %s current value %s is %s %s. on target." % (prop, current, op, target)
+                pinfo("property %s current value %s is %s %s. on target." % (prop, current, op, target))
             else:
-                print "property %s current value %s is not %s %s." % (prop, current, op, target)
+                pinfo("property %s current value %s is not %s %s." % (prop, current, op, target))
         return r
 
     def check_zbin(self):
@@ -136,7 +138,7 @@ class CompZprop(CompObject):
 
     def check(self):
         if not self.check_zbin():
-            print self.zbin, "not found"
+            pinfo(self.zbin, "not found")
             return RET_NA
         r = 0
         for d in self.data:
@@ -145,7 +147,7 @@ class CompZprop(CompObject):
 
     def fix(self):
         if not self.check_zbin():
-            print self.zbin, "not found"
+            pinfo(self.zbin, "not found")
             return RET_NA
         r = 0
         for d in self.data:

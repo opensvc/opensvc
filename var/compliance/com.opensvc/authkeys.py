@@ -77,7 +77,6 @@ Inputs:
 import os
 import sys
 import pwd, grp
-import codecs
 import datetime
 import shutil
 from subprocess import *
@@ -105,17 +104,17 @@ class CompAuthKeys(CompObject):
 
     def sanitize(self, ak):
         if 'user' not in ak:
-            print >>sys.stderr, "no user set in rule"
+            perror("no user set in rule")
             return False
         if 'key' not in ak:
-            print >>sys.stderr, "no key set in rule"
+            perror("no key set in rule")
             return False
         if 'action' not in ak:
             ak['action'] = 'add'
         if 'authfile' not in ak:
             ak['authfile'] = self.default_authfile
         if ak['authfile'] not in ("authorized_keys", "authorized_keys2"):
-            print >>sys.stderr, "unsupported authfile:", ak['authfile'], "(default to", self.default_authfile+")"
+            perror("unsupported authfile:", ak['authfile'], "(default to", self.default_authfile+")")
             ak['authfile'] = self.default_authfile
         for key in ('user', 'key', 'action', 'authfile'):
             ak[key] = ak[key].strip()
@@ -128,27 +127,27 @@ class CompAuthKeys(CompObject):
         if len(key) < 50:
             s = key
         else:
-            s = "'"+key[0:17] + "..." + key[-30:]+"'"
-        return s.encode('utf8')
+            s = "'%s ... %s'" % (key[0:17], key[-30:])
+        return s
 
     def reload_sshd(self):
         cmd = ['ps', '-ef']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "can not find sshd process"
+            perror("can not find sshd process")
             return RET_ERR
-        lines = out.split('\n')
-        for line in lines:
+        out = bdecode(out)
+        for line in out.splitlines():
             if not line.endswith('sbin/sshd'):
                 continue
             l = line.split()
             pid = int(l[1])
             name = l[-1]
-            print "send sighup to pid %d (%s)" % (pid, name)
+            pinfo("send sighup to pid %d (%s)" % (pid, name))
             os.kill(pid, 1)
             return RET_OK
-        print >>sys.stderr, "can not find sshd process to signal"
+        perror("can not find sshd process to signal")
         return RET_ERR
 
     def get_sshd_config(self):
@@ -160,7 +159,8 @@ class CompAuthKeys(CompObject):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode == 0:
-            l = out.split('\n')
+            out = bdecode(out)
+            l = out.splitlines()
             if '/usr/local/sbin/sshd' in l:
                 cfs.append(os.path.join(os.sep, 'usr', 'local', 'etc', 'sshd_config'))
             if '/usr/sfw/sbin/sshd' in l:
@@ -177,7 +177,7 @@ class CompAuthKeys(CompObject):
                 break
         self.cache_sshd_config_f = cf
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return None
         return cf
 
@@ -188,13 +188,13 @@ class CompAuthKeys(CompObject):
         elif key == "authorized_keys2":
             key = "AuthorizedKeysFile"
         else:
-            print >>sys.stderr, "unknown key", key
+            perror("unknown key", key)
             return None
 
 
         cf = self.get_sshd_config()
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return None
         with open(cf, 'r') as f:
             buff = f.read()
@@ -212,7 +212,7 @@ class CompAuthKeys(CompObject):
             return self.cache_allowusers
         cf = self.get_sshd_config()
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return None
         with open(cf, 'r') as f:
             buff = f.read()
@@ -231,7 +231,7 @@ class CompAuthKeys(CompObject):
             return self.cache_allowgroups
         cf = self.get_sshd_config()
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return None
         with open(cf, 'r') as f:
             buff = f.read()
@@ -276,8 +276,9 @@ class CompAuthKeys(CompObject):
         for p in ps:
             if not os.path.exists(p):
                 continue
-            with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
-                self.installed_keys_d[user] += f.read().split('\n')
+            with open(p, 'r') as f:
+                self.installed_keys_d[user] += f.read().splitlines()
+        pinfo(self.installed_keys_d[user][-1])
         return self.installed_keys_d[user]
 
     def get_user_group(self, user):
@@ -299,10 +300,10 @@ class CompAuthKeys(CompObject):
         l = ["AllowUsers"] + au + [ak['user']]
         s = " ".join(l)
 
-        print "adding", ak['user'], "to currently allowed users"
+        pinfo("adding", ak['user'], "to currently allowed users")
         cf = self.get_sshd_config()
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return None
         with open(cf, 'r') as f:
             buff = f.read()
@@ -331,15 +332,15 @@ class CompAuthKeys(CompObject):
             return RET_OK
         ak['group'] = self.get_user_group(ak['user'])
         if ak['group'] is None:
-            print >>sys.stderr, "can not set AllowGroups in sshd_config: primary group of user %s not found" % ak['user']
+            perror("can not set AllowGroups in sshd_config: primary group of user %s not found" % ak['user'])
             return RET_ERR
         l = ["AllowGroups"] + ag + [ak['group']]
         s = " ".join(l)
 
-        print "adding", ak['group'], "to currently allowed groups"
+        pinfo("adding", ak['group'], "to currently allowed groups")
         cf = self.get_sshd_config()
         if cf is None:
-            print >>sys.stderr, "sshd_config not found"
+            perror("sshd_config not found")
             return RET_ERR
         with open(cf, 'r') as f:
             buff = f.read()
@@ -367,11 +368,11 @@ class CompAuthKeys(CompObject):
             return RET_OK
         elif ak['user'] in au:
             if verbose:
-                print ak['user'], "is correctly set in sshd AllowUsers"
+                pinfo(ak['user'], "is correctly set in sshd AllowUsers")
             r = RET_OK
         else:
             if verbose:
-                print >>sys.stderr, ak['user'], "is not set in sshd AllowUsers"
+                perror(ak['user'], "is not set in sshd AllowUsers")
             self.allowusers_fix_todo.append(ak['user'])
             r = RET_ERR
         return r
@@ -386,15 +387,15 @@ class CompAuthKeys(CompObject):
         ak['group'] = self.get_user_group(ak['user'])
         if ak['group'] is None:
             if verbose:
-                print >>sys.stderr, "can not determine primary group of user %s to add to AllowGroups" % ak['user']
+                perror("can not determine primary group of user %s to add to AllowGroups" % ak['user'])
             return RET_ERR
         elif ak['group'] in ag:
             if verbose:
-                print ak['group'], "is correctly set in sshd AllowGroups"
+                pinfo(ak['group'], "is correctly set in sshd AllowGroups")
             r = RET_OK
         else:
             if verbose:
-                print >>sys.stderr, ak['group'], "is not set in sshd AllowGroups"
+                perror(ak['group'], "is not set in sshd AllowGroups")
             self.allowgroups_fix_todo.append(ak['user'])
             r = RET_ERR
         return r
@@ -405,23 +406,23 @@ class CompAuthKeys(CompObject):
         if ak['action'] == 'add':
             if ak['key'] not in installed_keys:
                 if verbose:
-                    print >>sys.stderr, 'key', self.truncate_key(ak['key']), 'must be installed for user', ak['user']
+                    perror('key', self.truncate_key(ak['key']), 'must be installed for user', ak['user'])
                 r = RET_ERR
             else:
                 if verbose:
-                    print 'key', self.truncate_key(ak['key']), 'is correctly installed for user', ak['user']
+                    pinfo('key', self.truncate_key(ak['key']), 'is correctly installed for user', ak['user'])
                 r = RET_OK
         elif ak['action'] == 'del':
             if ak['key'] in installed_keys:
                 if verbose:
-                    print >>sys.stderr, 'key', self.truncate_key(ak['key']), 'must be uninstalled for user', ak['user']
+                    perror('key', self.truncate_key(ak['key']), 'must be uninstalled for user', ak['user'])
                 r = RET_ERR
             else:
                 if verbose:
-                    print 'key', self.truncate_key(ak['key']), 'is correctly not installed for user', ak['user']
+                    pinfo('key', self.truncate_key(ak['key']), 'is correctly not installed for user', ak['user'])
                 r = RET_OK
         else:
-            print >>sys.stderr, "unsupported action:", ak['action']
+            perror("unsupported action:", ak['action'])
             return RET_ERR
         return r
 
@@ -433,7 +434,7 @@ class CompAuthKeys(CompObject):
         elif ak['action'] == 'del':
             return self.del_authkey(ak)
         else:
-            print >>sys.stderr, "unsupported action:", ak['action']
+            perror("unsupported action:", ak['action'])
             return RET_ERR
 
     def add_authkey(self, ak):
@@ -443,42 +444,42 @@ class CompAuthKeys(CompObject):
         try:
             userinfo=pwd.getpwnam(ak['user'])
         except KeyError:
-            print >>sys.stderr, 'user', ak['user'], 'does not exist'
+            perror('user', ak['user'], 'does not exist')
             return RET_ERR
 
         p = self.get_authkey_file(ak['authfile'], ak['user'])
         if p is None:
-            print >>sys.stderr, "could not determine", ak['authfile'], "location"
+            perror("could not determine", ak['authfile'], "location")
             return RET_ERR
         base = os.path.dirname(p)
 
         if not os.path.exists(base):
-            os.makedirs(base, 0700)
-            print base, "created"
+            os.makedirs(base, 0o0700)
+            pinfo(base, "created")
             if p.startswith(os.path.expanduser('~'+ak['user'])):
                 os.chown(base, userinfo.pw_uid, userinfo.pw_gid)
-                print base, "ownership set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid)
+                pinfo(base, "ownership set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid))
 
         if not os.path.exists(p):
             with open(p, 'w') as f:
                 f.write("")
-                print p, "created"
-                os.chmod(p, 0600)
-                print p, "mode set to 0600"
+                pinfo(p, "created")
+                os.chmod(p, 0o0600)
+                pinfo(p, "mode set to 0600")
                 os.chown(p, userinfo.pw_uid, userinfo.pw_gid)
-                print p, "ownetship set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid)
+                pinfo(p, "ownetship set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid))
 
         with open(p, 'a') as f:
-            f.write(ak['key'].encode('utf8'))
+            f.write(ak['key'])
             if not ak['key'].endswith('\n'):
                 f.write('\n')
-            print 'key', self.truncate_key(ak['key']), 'installed for user', ak['user']
+            pinfo('key', self.truncate_key(ak['key']), 'installed for user', ak['user'])
 
         return RET_OK
 
     def del_authkey(self, ak):
         if self.check_authkey(ak, verbose=False) == RET_OK:
-            print 'key', self.truncate_key(ak['key']), 'is already not installed for user', ak['user']
+            pinfo('key', self.truncate_key(ak['key']), 'is already not installed for user', ak['user'])
             return RET_OK
 
         ps = self.get_authkey_files(ak['user'])
@@ -488,7 +489,7 @@ class CompAuthKeys(CompObject):
             if not os.path.exists(p):
                 continue
 
-            with codecs.open(p, 'r', encoding="utf8", errors="ignore") as f:
+            with open(p, 'r') as f:
                 l = f.read().split('\n')
 
             n = len(l)
@@ -502,8 +503,8 @@ class CompAuthKeys(CompObject):
                 continue
 
             with open(p, 'w') as f:
-                f.write('\n'.join(l).encode('utf8'))
-                print 'key', self.truncate_key(ak['key']), 'uninstalled for user', ak['user']
+                f.write('\n'.join(l))
+                pinfo('key', self.truncate_key(ak['key']), 'uninstalled for user', ak['user'])
 
         return RET_OK
 

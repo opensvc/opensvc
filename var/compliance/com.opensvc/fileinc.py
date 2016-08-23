@@ -116,7 +116,7 @@ class CompFileInc(CompObject):
             self.urlretrieve(url, tmpf)
             f.close()
         except Exception as e:
-             print >>sys.stderr, url, "download error:", e
+             perror(url, "download error:", e)
              return ''
         content = unicode(f.read())
         return self.parse_fmt(content)
@@ -129,21 +129,21 @@ class CompFileInc(CompObject):
             f = codecs.open(path, 'r', encoding="utf8", errors="ignore")
             out = f.read().rstrip('\n')
             f.close()
-        except IOError as (errno, strerror):
-            print "cannot read '%s', error=%d - %s" %(path, errno, strerror)
+        except IOError as e:
+            pinfo("cannot read '%s', error=%d - %s" %(path, e.errno, str(e)))
             raise
         except:
-            print >>sys.stderr, "Cannot open '%s', unexpected error: %s"%(path, sys.exc_info()[0])
+            perror("Cannot open '%s', unexpected error: %s"%(path, sys.exc_info()[0]))
             raise
         return out
 
     def add_rule(self, d):
         r = RET_OK
         if 'path' not in d:
-            print >>sys.stderr, "'path' should be defined:", d
+            perror("'path' should be defined:", d)
             r |= RET_ERR
         if 'fmt' in d and 'ref' in d:
-            print >>sys.stderr, "'fmt' and 'ref' are exclusive:", d
+            perror("'fmt' and 'ref' are exclusive:", d)
             r |= RET_ERR
         if 'path' in d:
             d['path'] = d['path'].strip()
@@ -159,7 +159,7 @@ class CompFileInc(CompObject):
             if fsz > MAXSZ:
                 self.ok[d['path']] = 0
                 self.files[d['path']] = ''
-                print >>sys.stderr, "file '%s' is too large [%.2f Mb] to fit" %(d['path'], fsz/(1024.*1024))
+                perror("file '%s' is too large [%.2f Mb] to fit" %(d['path'], fsz/(1024.*1024)))
                 r |= RET_ERR
             else:
                 try:
@@ -175,7 +175,7 @@ class CompFileInc(CompObject):
         elif 'ref' in d:
             c = self.parse_ref(d['ref'])
         else:
-            print >>sys.stderr, "'fmt' or 'ref' should be defined:", d
+            perror("'fmt' or 'ref' should be defined:", d)
             r |= RET_ERR
         c = c.strip()
         if re.match(d['check'], c) is not None or len(c) == 0:
@@ -190,7 +190,7 @@ class CompFileInc(CompObject):
         r = RET_OK
         for ck in self.checks:
             if not ck['valid']:
-                print >>sys.stderr, "rule error: '%s' does not match target content" % ck['check']
+                perror("rule error: '%s' does not match target content" % ck['check'])
                 r |= RET_ERR
                 continue
             if self.ok[ck['path']] != 1:
@@ -204,22 +204,22 @@ class CompFileInc(CompObject):
                 if re.match(ck['check'], line):
                     m += 1
                     if len(ck['add']) > 0 and line == ck['add']:
-                        print "line '%s' found in '%s'" %(line, ck['path'])
+                        pinfo("line '%s' found in '%s'" %(line, ck['path']))
                         ok += 1
                     if m > 1:
-                        print >>sys.stderr, "duplicate match of pattern '%s' in '%s'"%(ck['check'], ck['path'])
+                        perror("duplicate match of pattern '%s' in '%s'"%(ck['check'], ck['path']))
                         pr |= RET_ERR
             if len(ck['add']) == 0:
                 if m > 0:
-                    print >>sys.stderr, "pattern '%s' found in %s"%(ck['check'], ck['path'])
+                    perror("pattern '%s' found in %s"%(ck['check'], ck['path']))
                     pr |= RET_ERR
                 else:
-                    print "pattern '%s' not found in %s"%(ck['check'], ck['path'])
+                    pinfo("pattern '%s' not found in %s"%(ck['check'], ck['path']))
             elif ok == 0:
-                print >>sys.stderr, "line '%s' not found in %s"%(ck['add'], ck['path'])
+                perror("line '%s' not found in %s"%(ck['add'], ck['path']))
                 pr |= RET_ERR
             elif m == 0:
-                print >>sys.stderr, "pattern '%s' not found in %s"%(ck['check'], ck['path'])
+                perror("pattern '%s' not found in %s"%(ck['check'], ck['path']))
                 pr |= RET_ERR
             r |= pr
         return r
@@ -233,14 +233,14 @@ class CompFileInc(CompObject):
                 r |= RET_ERR
                 continue
             if not os.path.exists(path):
-                print >>sys.stderr, "'%s' will be created, please check owner and permissions" %path
+                perror("'%s' will be created, please check owner and permissions" %path)
             try:
                 f = codecs.open(path, 'w', encoding="utf8")
                 f.write(self.files[path])
                 f.close()
-                print "'%s' successfully rewritten" %path
+                pinfo("'%s' successfully rewritten" %path)
             except:
-                print >>sys.stderr, "failed to rewrite '%s'" %path
+                perror("failed to rewrite '%s'" %path)
                 r |= RET_ERR
         return r
 
@@ -248,7 +248,7 @@ class CompFileInc(CompObject):
         r = RET_OK
         for ck in self.checks:
             if not ck['valid']:
-                print >>sys.stderr, "rule error: '%s' does not match target content" % ck['check']
+                perror("rule error: '%s' does not match target content" % ck['check'])
                 r |= RET_ERR
                 continue
             if self.ok[ck['path']] != 1:
@@ -263,16 +263,16 @@ class CompFileInc(CompObject):
                     if m == 1:
                         if line != ck['add']:
                             # rewrite line
-                            print "rewrite %s:%d:'%s', new content: '%s'" %(ck['path'], i, line, ck['add'])
+                            pinfo("rewrite %s:%d:'%s', new content: '%s'" %(ck['path'], i, line, ck['add']))
                             lines[i] = ck['add']
                             need_rewrite = True
                     elif m > 1:
                         # purge dup
-                        print "remove duplicate line %s:%d:'%s'" %(ck['path'], i, line)
+                        pinfo("remove duplicate line %s:%d:'%s'" %(ck['path'], i, line))
                         lines[i] = ""
                         need_rewrite = True
             if m == 0 and len(ck['add']) > 0:
-                print "add line '%s' to %s"%(ck['add'], ck['path'])
+                pinfo("add line '%s' to %s"%(ck['add'], ck['path']))
                 lines.append(ck['add'])
                 need_rewrite = True
 

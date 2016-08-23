@@ -24,7 +24,7 @@ class CompBios(CompObject):
         self.rules = self.get_rules_raw()
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         if self.sysname not in ['Linux']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
     def get_bios_version_Linux(self):
@@ -43,12 +43,13 @@ class CompBios(CompObject):
             out, err = p.communicate()
             if p.returncode != 0:
                 raise
-            for line in out.split('\n'):
+            out = bdecode(out)
+            for line in out.splitlines():
                 if 'Version:' in line:
                     return line.split(':')[-1].strip()
             raise
         except:
-            print >>sys.stderr, 'can not fetch bios version'
+            perror('can not fetch bios version')
             return None
         return ver
 
@@ -66,9 +67,9 @@ class CompBios(CompObject):
 
     def _check(self, rule):
         if self.ver == rule:
-            print "bios version is %s, on target" % self.ver
+            pinfo("bios version is %s, on target" % self.ver)
             return RET_OK
-        print >>sys.stderr, "bios version is %s, target %s" % (self.ver, rule)
+        perror("bios version is %s, target %s" % (self.ver, rule))
         return RET_ERR
 
     def fix(self):

@@ -181,7 +181,7 @@ class CompUser(CompObject):
             self.initial_passwd = False
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
         if self.sysname == "FreeBSD":
@@ -229,7 +229,7 @@ class CompUser(CompObject):
 
     def fixable(self):
         if not which(self.usermod[0]):
-            print >>sys.stderr, self.usermod[0], "program not found"
+            perror(self.usermod[0], "program not found")
             return RET_ERR
         return RET_OK
 
@@ -244,7 +244,7 @@ class CompUser(CompObject):
         for line in buff.split('\n'):
             u = line.split(':')[0]
             if u in l:
-                print >>sys.stderr, "duplicate group %s in /etc/group. skip grpconv (grpconv bug workaround)"%u
+                perror("duplicate group %s in /etc/group. skip grpconv (grpconv bug workaround)"%u)
                 return
             l.append(u)
         p = Popen(['grpconv'])
@@ -261,7 +261,7 @@ class CompUser(CompObject):
     def fix_item(self, user, item, target):
         if item in ["password", "spassword"]:
             if self.initial_passwd:
-                print "skip", user, "password modification in initial_passwd mode"
+                pinfo("skip", user, "password modification in initial_passwd mode")
                 return RET_OK
             if target == "x":
                 return RET_OK
@@ -275,7 +275,7 @@ class CompUser(CompObject):
             cmd.append('-m')
         if self.sysname != "FreeBSD":
             cmd.append(user)
-        print list2cmdline(cmd)
+        pinfo(list2cmdline(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -289,19 +289,19 @@ class CompUser(CompObject):
     def check_item(self, user, item, target, current, verbose=False):
         if type(current) == int and current < 0:
             current += 4294967296
-        if type(current) == str and type(target) == unicode:
+        if sys.version_info[0] < 3 and type(current) == str and type(target) == unicode:
             current = unicode(current, errors="ignore")
         if target == current:
             if verbose:
-                print 'user', user, item+':', current
+                pinfo('user', user, item+':', current)
             return RET_OK
         elif "passw" in item and target == "!!" and current == "":
             if verbose:
-                print 'user', user, item+':', current
+                pinfo('user', user, item+':', current)
             return RET_OK
         else:
             if verbose:
-                print >>sys.stderr, 'user', user, item+':', current, 'target:', target
+                perror('user', user, item+':', current, 'target:', target)
             return RET_ERR
 
     def check_user_del(self, user, verbose=True):
@@ -310,10 +310,10 @@ class CompUser(CompObject):
             userinfo=pwd.getpwnam(user)
         except KeyError:
             if verbose:
-                print 'user', user, 'does not exist, on target'
+                pinfo('user', user, 'does not exist, on target')
             return RET_OK
         if verbose:
-            print >>sys.stderr, 'user', user, "exists, shouldn't"
+            perror('user', user, "exists, shouldn't")
         return RET_ERR
 
     def check_user(self, user, props, verbose=True):
@@ -325,11 +325,11 @@ class CompUser(CompObject):
         except KeyError:
             if self.try_create_user(props):
                 if verbose:
-                    print >>sys.stderr, 'user', user, 'does not exist'
+                    perror('user', user, 'does not exist')
                 return RET_ERR
             else:
                 if verbose:
-                    print >>sys.stderr, 'user', user, 'does not exist and not enough info to create it'
+                    perror('user', user, 'does not exist and not enough info to create it')
                 return RET_ERR
 
         for prop in self.pwt:
@@ -337,7 +337,7 @@ class CompUser(CompObject):
                 if prop == "password":
                     if self.initial_passwd:
                         if verbose:
-                            print "skip", user, "passwd checking in initial_passwd mode"
+                            pinfo("skip", user, "passwd checking in initial_passwd mode")
                         continue
                     if props[prop] == "x":
                         continue
@@ -354,7 +354,7 @@ class CompUser(CompObject):
         except KeyError:
             if "spassword" in props:
                 if verbose:
-                    print >>sys.stderr, user, "not declared in /etc/shadow"
+                    perror(user, "not declared in /etc/shadow")
                 r |= RET_ERR
             usersinfo = None
 
@@ -364,7 +364,7 @@ class CompUser(CompObject):
                     if prop == "spassword":
                         if self.initial_passwd:
                             if verbose:
-                                print "skip", user, "spasswd checking in initial_passwd mode"
+                                pinfo("skip", user, "spasswd checking in initial_passwd mode")
                             continue
                         if props[prop] == "x":
                             continue
@@ -387,7 +387,7 @@ class CompUser(CompObject):
             info=pwd.getpwnam(user)
             uid = info[2]
         except:
-            print >>sys.stderr, "user %s does not exist"%user
+            perror("user %s does not exist"%user)
             raise ComplianceError()
         return uid
 
@@ -395,14 +395,14 @@ class CompUser(CompObject):
         path = os.path.expanduser("~"+user)
         if not os.path.exists(path):
             if verbose:
-                print >>sys.stderr, path, "homedir does not exist"
+                perror(path, "homedir does not exist")
             return RET_ERR 
         tuid = self.get_uid(user)
         uid = os.stat(path).st_uid
         if uid != tuid:
-            if verbose: print >>sys.stderr, path, 'uid should be %s but is %s'%(str(tuid), str(uid))
+            if verbose: perror(path, 'uid should be %s but is %s'%(str(tuid), str(uid)))
             return RET_ERR
-        if verbose: print path, 'owner is', user
+        if verbose: pinfo(path, 'owner is', user)
         return RET_OK
 
     def fix_home_ownership(self, user):
@@ -413,7 +413,7 @@ class CompUser(CompObject):
         if not os.path.exists(path):
             if os.path.exists("/etc/skel"):
                 cmd = ['cp', '-R', '/etc/skel/', path]
-                print list2cmdline(cmd)
+                pinfo(list2cmdline(cmd))
                 p = Popen(cmd)
                 out, err = p.communicate()
                 r = p.returncode
@@ -421,7 +421,7 @@ class CompUser(CompObject):
                     return RET_ERR
 
                 cmd = ['chown', '-R', str(uid), path]
-                print list2cmdline(cmd)
+                pinfo(list2cmdline(cmd))
                 p = Popen(cmd)
                 out, err = p.communicate()
                 r = p.returncode
@@ -445,7 +445,7 @@ class CompUser(CompObject):
         else:
             unlock_opt = '-u'
         cmd = ["passwd", unlock_opt, user]
-        print list2cmdline(cmd)
+        pinfo(list2cmdline(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -471,7 +471,7 @@ class CompUser(CompObject):
                 cmd.append("-m")
         if self.sysname != "FreeBSD":
             cmd += [user]
-        print list2cmdline(cmd)
+        pinfo(list2cmdline(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -484,10 +484,10 @@ class CompUser(CompObject):
 
     def fix_user_del(self, user):
         if user in blacklist:
-            print >>sys.stderr, "delete", user, "... cowardly refusing"
+            perror("delete", user, "... cowardly refusing")
             return RET_ERR
         cmd = self.userdel + [user]
-        print list2cmdline(cmd)
+        pinfo(list2cmdline(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -506,7 +506,7 @@ class CompUser(CompObject):
             if self.try_create_user(props):
                 return self.create_user(user, props)
             else:
-                print 'user', user, 'does not exist and not enough info to create it'
+                pinfo('user', user, 'does not exist and not enough info to create it')
                 return RET_OK
 
         for prop in self.pwt:

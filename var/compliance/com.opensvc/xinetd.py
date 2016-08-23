@@ -49,7 +49,6 @@ import os
 import sys
 import json
 import pwd
-from subprocess import Popen, list2cmdline
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -62,7 +61,7 @@ class Xinetd(CompObject):
     def init(self):
         self.base = os.path.join(os.sep, "etc", "xinetd.d")
         if not os.path.exists(self.base):
-            print >>sys.stderr, self.base, 'does not exist'
+            perror(self.base, 'does not exist')
             raise NotApplicable()
 
         self.svcs = {}
@@ -112,7 +111,7 @@ class Xinetd(CompObject):
 
     def fix_item(self, svc, item, target):
         if item not in self.known_props:
-            print >>sys.stderr, 'xinetd service', svc, item+': unknown property in compliance rule'
+            perror('xinetd service', svc, item+': unknown property in compliance rule')
             return RET_ERR
         cf = self.get_svc(svc)
 
@@ -121,7 +120,7 @@ class Xinetd(CompObject):
 
         p = os.path.join(self.base, svc)
         if not os.path.exists(p):
-            print >>sys.stderr, p, "does not exist"
+            perror(p, "does not exist")
             return RET_ERR
 
         done = False
@@ -154,30 +153,30 @@ class Xinetd(CompObject):
                     break
 
         if not done:
-            print >>sys.stderr, "failed to set", item, "=", target, "in", p
+            perror("failed to set", item, "=", target, "in", p)
             return RET_ERR
 
         with open(p, 'w') as f:
             f.write("\n".join(buff))
 
-        print "set", item, "=", target, "in", p
+        pinfo("set", item, "=", target, "in", p)
         return RET_OK
 
     def check_item(self, svc, item, target, verbose=False):
         if item not in self.known_props:
-            print >>sys.stderr, 'xinetd service', svc, item+': unknown property in compliance rule'
+            perror('xinetd service', svc, item+': unknown property in compliance rule')
             return RET_ERR
         cf = self.get_svc(svc)
         if item in cf and target == cf[item]:
             if verbose:
-                print 'xinetd service', svc, item+':', cf[item]
+                pinfo('xinetd service', svc, item+':', cf[item])
             return RET_OK
         elif item in cf:
             if verbose:
-                print >>sys.stderr, 'xinetd service', svc, item+':', cf[item], 'target:', target
+                perror('xinetd service', svc, item+':', cf[item], 'target:', target)
         else:
             if verbose:
-                print >>sys.stderr, 'xinetd service', svc, item+': unset', 'target:', target
+                perror('xinetd service', svc, item+': unset', 'target:', target)
         return RET_ERR
 
     def check_svc(self, svc, props):

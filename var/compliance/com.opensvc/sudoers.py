@@ -32,12 +32,12 @@ class CompSudoers(CompFiles):
     def check_file_syntax(self, f, verbose=False):
         cmd = ['visudo', '-c', '-f', '-']
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate(input=f['fmt'])
+        out, err = p.communicate(input=bencode(f['fmt']))
         if p.returncode != 0:
             if verbose:
-                print >>sys.stderr, "target sudoers rules syntax error."
+                perror("target sudoers rules syntax error.")
             else:
-                print >>sys.stderr, "target sudoers rules syntax error. abort installation."
+                perror("target sudoers rules syntax error. abort installation.")
         return p.returncode
 
     def check(self):
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     syntax = """syntax:
       %s PREFIX check|fixable|fix"""%sys.argv[0]
     if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
+        perror("wrong number of arguments")
+        perror(syntax)
         sys.exit(RET_ERR)
     try:
         o = CompSudoers(sys.argv[1])
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         elif sys.argv[2] == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except ComplianceError:
         sys.exit(RET_ERR)

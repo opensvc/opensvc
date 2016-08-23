@@ -145,7 +145,7 @@ class CompGroup(CompObject):
             self.groupdel = ["groupdel"]
 
         if self.sysname not in ['SunOS', 'Linux', 'HP-UX', 'AIX', 'OSF1', 'FreeBSD']:
-            print >>sys.stderr, 'group: module not supported on', self.sysname
+            perror('group: module not supported on', self.sysname)
             raise NotApplicable
 
         self.groups = {}
@@ -180,7 +180,7 @@ class CompGroup(CompObject):
             cmd += self.fmt_opt(self.groupmod_p[item], str(target))
             if self.sysname != "FreeBSD":
                 cmd += [group]
-            print "group:", ' '.join(cmd)
+            pinfo("group:", ' '.join(cmd))
             p = Popen(cmd)
             out, err = p.communicate()
             r = p.returncode
@@ -189,7 +189,7 @@ class CompGroup(CompObject):
             else:
                 return RET_ERR
         else:
-            print >>sys.stderr, 'group: no fix implemented for', item
+            perror('group: no fix implemented for', item)
             return RET_ERR
 
     def check_item(self, group, item, target, current, verbose=False):
@@ -197,11 +197,11 @@ class CompGroup(CompObject):
             current += 4294967296
         if target == current:
             if verbose:
-                print 'group', group, item+':', current
+                pinfo('group', group, item+':', current)
             return RET_OK
         else:
             if verbose:
-                print >>sys.stderr, 'group', group, item+':', current, 'target:', target
+                perror('group', group, item+':', current, 'target:', target)
             return RET_ERR 
 
     def try_create_group(self, props):
@@ -219,9 +219,9 @@ class CompGroup(CompObject):
         try:
             groupinfo = grp.getgrnam(group)
         except KeyError:
-            print 'group', group, 'does not exist, on target'
+            pinfo('group', group, 'does not exist, on target')
             return RET_OK
-        print >>sys.stderr, 'group', group, "exists, shouldn't"
+        perror('group', group, "exists, shouldn't")
         return RET_ERR
 
     def check_group(self, group, props):
@@ -232,10 +232,10 @@ class CompGroup(CompObject):
             groupinfo = grp.getgrnam(group)
         except KeyError:
             if self.try_create_group(props):
-                print >>sys.stderr, 'group', group, 'does not exist'
+                perror('group', group, 'does not exist')
                 return RET_ERR
             else:
-                print 'group', group, 'does not exist and not enough info to create it'
+                pinfo('group', group, 'does not exist and not enough info to create it')
                 return RET_OK
         for prop in self.grt:
             if prop in props:
@@ -250,7 +250,7 @@ class CompGroup(CompObject):
             cmd += self.fmt_opt(self.groupmod_p[item], str(props[item]))
         if self.sysname != "FreeBSD":
             cmd += [group]
-        print "group:", ' '.join(cmd)
+        pinfo("group:", ' '.join(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -261,14 +261,14 @@ class CompGroup(CompObject):
 
     def fix_group_del(self, group):
         if group in blacklist:
-            print >>sys.stderr, "group", group, "... cowardly refusing to delete"
+            perror("group", group, "... cowardly refusing to delete")
             return RET_ERR
         try:
             groupinfo = grp.getgrnam(group)
         except KeyError:
             return RET_OK
         cmd = self.groupdel + [group]
-        print "group:", ' '.join(cmd)
+        pinfo("group:", ' '.join(cmd))
         p = Popen(cmd)
         out, err = p.communicate()
         r = p.returncode
@@ -287,7 +287,7 @@ class CompGroup(CompObject):
             if self.try_create_group(props):
                 return self.create_group(group, props)
             else:
-                print >>sys.stderr, 'group', group, 'does not exist'
+                perror('group', group, 'does not exist')
                 return RET_OK
         for prop in self.grt:
             if prop in props and \

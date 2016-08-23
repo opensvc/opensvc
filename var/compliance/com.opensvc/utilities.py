@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import sys
 
@@ -23,5 +24,5 @@ def which(program):
     return None
 
 if __name__ == "__main__":
-    print >>sys.stderr, "this file is for import into compliance objects"
+    print("this file is for import into compliance objects", file=sys.stderr)
 

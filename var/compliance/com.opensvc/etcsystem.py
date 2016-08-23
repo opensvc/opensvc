@@ -79,7 +79,7 @@ class EtcSystem(CompObject):
 
     def load_file(self, p):
         if not os.path.exists(p):
-            print >>sys.stderr, p, "does not exist"
+            perror(p, "does not exist")
             return
         with open(p, 'r') as f:
             buff = f.read()
@@ -111,19 +111,19 @@ class EtcSystem(CompObject):
     def set_val(self, keyname, target, op):
         newline = 'set %s = %s'%(keyname, str(target))
         if keyname not in self.data:
-            print "add '%s' to /etc/system"%newline
+            pinfo("add '%s' to /etc/system"%newline)
             self.lines.insert(-1, newline + " * added by opensvc")
         else:
             ok = 0
             for value, ref in self.data[keyname]:
                 r = self._check_key(keyname, target, op, value, ref, verbose=False)
                 if r == RET_ERR:
-                    print "comment out line %d: %s"%(ref, self.lines[ref])
+                    pinfo("comment out line %d: %s"%(ref, self.lines[ref]))
                     self.lines[ref] = '* '+self.lines[ref]+' * commented out by opensvc'
                 else:
                     ok += 1
             if ok == 0:
-                print "add '%s' to /etc/system"%newline
+                pinfo("add '%s' to /etc/system"%newline)
                 self.lines.insert(-1, newline + " * added by opensvc")
 
     def get_val(self, keyname):
@@ -135,40 +135,40 @@ class EtcSystem(CompObject):
         r = RET_OK
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s not set"%keyname
+                perror("%s not set"%keyname)
             r |= RET_ERR
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                    perror("%s=%s, target: %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                    perror("%s=%s value must be integer"%(keyname, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: <= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: >= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         return r
 
     def check_key(self, key, verbose=True):
         if 'key' not in key:
             if verbose:
-                print >>sys.stderr, "'key' not set in rule %s"%str(key)
+                perror("'key' not set in rule %s"%str(key))
             return RET_NA
         if 'value' not in key:
             if verbose:
-                print >>sys.stderr, "'value' not set in rule %s"%str(key)
+                perror("'value' not set in rule %s"%str(key))
             return RET_NA
         if 'op' not in key:
             op = "="
@@ -178,14 +178,14 @@ class EtcSystem(CompObject):
 
         if op not in ('>=', '<=', '='):
             if verbose:
-                print >>sys.stderr, "'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key)
+                perror("'value' list member 0 must be either '=', '>=' or '<=': %s"%str(key))
             return RET_NA
 
         keyname = key['key']
         data = self.get_val(keyname)
 
         if len(data) == 0:
-            print >>sys.stderr, "%s key is not set"%keyname
+            perror("%s key is not set"%keyname)
             return RET_ERR
 
         r = RET_OK
@@ -196,7 +196,7 @@ class EtcSystem(CompObject):
                 ok += 1
 
         if ok > 1:
-            print >>sys.stderr, "duplicate lines for key %s"%keyname
+            perror("duplicate lines for key %s"%keyname)
             r |= RET_ERR
         return r
 
@@ -220,13 +220,13 @@ class EtcSystem(CompObject):
                 import shutil
                 shutil.copy(self.cf, backup)
             except:
-                print >>sys.stderr, "failed to backup %s"%self.cf
+                perror("failed to backup %s"%self.cf)
                 return RET_ERR
             try:
                 with open(self.cf, 'w') as f:
                     f.write('\n'.join(self.lines))
             except:
-                print >>sys.stderr, "failed to write %s"%self.cf
+                perror("failed to write %s"%self.cf)
                 return RET_ERR
         return RET_OK
 

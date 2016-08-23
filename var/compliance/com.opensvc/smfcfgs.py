@@ -65,14 +65,14 @@ class SmfCfgS(object):
         self.osver = float(self.osn)
 
         if self.osver < 5.11:
-            print 'Only used on Solaris 11 and behond'
+            pinfo('Only used on Solaris 11 and behond')
             return
 
         for k in [ key for key in os.environ if key.startswith(self.prefix)]:
             try:
                 self.data += self.add_fmri(os.environ[k])
             except ValueError:
-                print >>sys.stderr, 'failed to parse variable', os.environ[k]
+                perror('failed to parse variable', os.environ[k])
 
         for f in self.data:
             s,p,t,v = self.get_fmri(f['fmri'], f['prop'])
@@ -81,7 +81,7 @@ class SmfCfgS(object):
             cre = False
             if p is None:
                 if f['create'] == 0:
-                    print >>sys.stderr, 'FMRI:%s, PROP:%s is absent and create is False' %(s,f['prop'])
+                    perror('FMRI:%s, PROP:%s is absent and create is False' %(s,f['prop']))
                     continue
                 else:
                     p = f['prop']
@@ -119,7 +119,7 @@ class SmfCfgS(object):
             elif 'OSVC_COMP_'+s in os.environ:
                 _v = os.environ['OSVC_COMP_'+s]
             else:
-                print >>sys.stderr, s, 'is not an env variable'
+                perror(s, 'is not an env variable')
                 raise NotApplicable()
             v = v.replace(m, _v)
         return v
@@ -138,25 +138,25 @@ class SmfCfgS(object):
             return l
 
         if type(d) != dict:
-            print >>sys.stderr, "not a dict:", d
+            perror("not a dict:", d)
             return l
 
         if 'fmri' not in d:
-            print >>sys.stderr, 'FMRI should be in the dict:', d
+            perror('FMRI should be in the dict:', d)
             RET = RET_ERR
             return l
         if 'prop' not in d:
-            print >>sys.stderr, 'prop should be in the dict:', d
+            perror('prop should be in the dict:', d)
             RET = RET_ERR
             return l
         if 'value' not in d:
-            print >>sys.stderr, 'value should be in the dict:', d
+            perror('value should be in the dict:', d)
             RET = RET_ERR
             return l
         if 'create' in d:
             if d['create'] == 1:
                 if not 'type' in d:
-                    print >>sys.stderr, 'create True[1] needs a type:', d
+                    perror('create True[1] needs a type:', d)
                     RET = RET_ERR
                     return l
         for k in ('fmri', 'prop', 'value', 'inorder', 'type', 'create', 'sleep'):
@@ -170,20 +170,22 @@ class SmfCfgS(object):
     def get_fmri(self, s, p):
         cmd = ['/usr/sbin/svccfg','-s', s, 'listprop', p]
         po = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out,err = po.communicate()
+        out, err = po.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if po.returncode != 0:
             if "doesn't match" in err:
-                print '%s is absent => IGNORED' %self.service
+                pinfo('%s is absent => IGNORED' %self.service)
                 return None,None,None,None
             else:
-                print >>sys.stderr, ' '.join(cmd)
+                perror(' '.join(cmd))
                 raise ComplianceError()
         if len(out) < 2:
                 return s,None,None,None
 
         x = out.strip('\n').split()
         if x[0] != p:
-            print >>sys.stderr, ' '.join([s, 'wanted:%s'%p, 'got:%s'%x[0]])
+            perror(' '.join([s, 'wanted:%s'%p, 'got:%s'%x[0]]))
             raise ComplianceError()
         return s,p,x[1],x[2:]
 
@@ -191,28 +193,28 @@ class SmfCfgS(object):
         r = RET_OK
         if self.smfs[s][p]['cre']:
             if verbose:
-                print >>sys.stderr, 'NOK: %s Prop %s shall be created' %(s,p)
+                perror('NOK: %s Prop %s shall be created' %(s,p))
             r |= RET_ERR
             if self.smfs[s][p]['typ'] == '' or self.smfs[s][p]['typ'] == None:
                 if verbose:
-                    print >>sys.stderr, 'NOK: %s type must be specified to create %s' %(s,p)
+                    perror('NOK: %s type must be specified to create %s' %(s,p))
         return r,self.smfs[s][p]['cre']
 
     def check_smf_prop_typ(self, s, p, verbose=True):
         r = RET_OK
         if self.smfs[s][p]['typ'] == '' or self.smfs[s][p]['typ'] == None:
             if verbose:
-                print '%s Prop %s type is not checked' %(s,p)
+                pinfo('%s Prop %s type is not checked' %(s,p))
         elif self.smfs[s][p]['typ'] != self.smfs[s][p]['rtyp']:
             if verbose:
-                print >>sys.stderr, 'NOK: %s Prop %s type Do Not match, got:%s, expected:%s' %(s,p,self.smfs[s][p]['rtyp'],self.smfs[s][p]['typ'])
+                perror('NOK: %s Prop %s type Do Not match, got:%s, expected:%s' %(s,p,self.smfs[s][p]['rtyp'],self.smfs[s][p]['typ']))
             r |= RET_ERR
         else:
             if verbose:
-                print '%s Prop %s type %s is OK' %(s,p,self.smfs[s][p]['typ'])
+                pinfo('%s Prop %s type %s is OK' %(s,p,self.smfs[s][p]['typ']))
             if self.smfs[s][p]['typ'] == '' or self.smfs[s][p]['typ'] == None:
                 if verbose:
-                    print >>sys.stderr, 'NOK: %s type must be specified to create %s' %(s,p)
+                    perror('NOK: %s type must be specified to create %s' %(s,p))
         return r
 
     def check_smf_prop_val(self, s, p, verbose=True):
@@ -221,10 +223,10 @@ class SmfCfgS(object):
         if self.smfs[s][p]['ino']:
             if self.smfs[s][p]['val'] == rvs:
                 if verbose:
-                    print '%s Prop %s values match in right order [%s]' %(s,p,rvs)
+                    pinfo('%s Prop %s values match in right order [%s]' %(s,p,rvs))
             else:
                 if verbose:
-                    print >>sys.stderr, 'NOK: %s Prop %s values Do Not match, got:[%s], expected:[%s]' %(s,p,rvs,self.smfs[s][p]['val'])
+                    perror('NOK: %s Prop %s values Do Not match, got:[%s], expected:[%s]' %(s,p,rvs,self.smfs[s][p]['val']))
                 r |= RET_ERR
         else:
             vv = self.smfs[s][p]['val'].split()
@@ -232,17 +234,17 @@ class SmfCfgS(object):
             for v in vv:
                 if not v in self.smfs[s][p]['rval']:
                     if verbose and len(self.smfs[s][p]['rval']) > 1 :
-                        print >>sys.stderr, '%s Prop %s notfound %s' %(s,p,v)
+                        perror('%s Prop %s notfound %s' %(s,p,v))
                     m = False
                 else:
                     if verbose and len(self.smfs[s][p]['rval']) > 1 :
-                        print '%s Prop %s found %s' %(s,p,v)
+                        pinfo('%s Prop %s found %s' %(s,p,v))
             if m:
                 if verbose:
-                    print '%s Prop %s values match [%s]' %(s,p,rvs)
+                    pinfo('%s Prop %s values match [%s]' %(s,p,rvs))
             else:
                 if verbose:
-                    print >>sys.stderr, 'NOK: %s Prop %s values Do Not match, got:[%s], expected:[%s]' %(s,p,rvs,self.smfs[s][p]['val'])
+                    perror('NOK: %s Prop %s values Do Not match, got:[%s], expected:[%s]' %(s,p,rvs,self.smfs[s][p]['val']))
                 r |= RET_ERR
         return r
 
@@ -251,9 +253,9 @@ class SmfCfgS(object):
         for s in self.smfs:
             for p in self.smfs[s]:
                 """
-                print 'FMRI: ', s, 'PROP: ', p, 'TYP: ', self.smfs[s][p]['typ'], 'RTYP: ', self.smfs[s][p]['rtyp'], type(self.smfs[s][p]['val']), type(self.smfs[s][p]['rval'])
-                print '	', 'VALS: ', self.smfs[s][p]['val']
-                print '	', 'RVALS: ', self.smfs[s][p]['rval']
+                pinfo('FMRI: ', s, 'PROP: ', p, 'TYP: ', self.smfs[s][p]['typ'], 'RTYP: ', self.smfs[s][p]['rtyp'], type(self.smfs[s][p]['val']), type(self.smfs[s][p]['rval']))
+                pinfo('	', 'VALS: ', self.smfs[s][p]['val'])
+                pinfo('	', 'RVALS: ', self.smfs[s][p]['rval'])
                 """
                 rx,c = self.check_smf_prop_cre(s, p, verbose=verbose)
                 r |= rx
@@ -272,7 +274,7 @@ class SmfCfgS(object):
                 vx = self.smfs[s][p]['val'].split()
                 if c:
                    if rx == 0 :
-                       print '%s try to add %s %s: = %s' %(s,p,self.smfs[s][p]['typ'],self.smfs[s][p]['val'])
+                       pinfo('%s try to add %s %s: = %s' %(s,p,self.smfs[s][p]['typ'],self.smfs[s][p]['val']))
                        if len(vx) > 1:
                            sxok = True
                            for v in vx:
@@ -285,18 +287,18 @@ class SmfCfgS(object):
                                 cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', '(%s)'%self.smfs[s][p]['val']])
                                 added = True
                            else:
-                                print >>sys.stderr, 'NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val'])
+                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val']))
                                 r |= RET_ERR
                        else:
                            cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', self.smfs[s][p]['val']])
                            added = True
                    else:
-                       print >>sys.stderr, 'NOK: %s cannot add prop %s without a valid type' %(s,p)
+                       perror('NOK: %s cannot add prop %s without a valid type' %(s,p))
                        r |= RET_ERR 
                 else:
                    ry = self.check_smf_prop_val(s, p, verbose=verbose)
                    if ry != 0:
-                       print '%s try to fix %s = %s' %(s,p,self.smfs[s][p]['val'])
+                       pinfo('%s try to fix %s = %s' %(s,p,self.smfs[s][p]['val']))
                        if len(vx) > 1:
                            sxok = True
                            for v in vx:
@@ -309,7 +311,7 @@ class SmfCfgS(object):
                                 cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '(%s)'%self.smfs[s][p]['val']])
                                 added = True
                            else:
-                                print >>sys.stderr, 'NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val'])
+                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val']))
                                 r |= RET_ERR
                        else:
                            cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['val']])
@@ -320,11 +322,12 @@ class SmfCfgS(object):
                        if self.smfs[s][p]['slp'] != 0:
                            cmds.append(['/usr/bin/sleep' , '%d'%self.smfs[s][p]['slp']])
         for cmd in cmds:
-            print 'EXEC:', ' '.join(cmd)
+            pinfo('EXEC:', ' '.join(cmd))
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out,err = p.communicate()
+            out, err = p.communicate()
+            err = bdecode(err)
             if p.returncode != 0:
-               print >>sys.stderr, 'Code=%s %s' %(p.returncode,err)
+               perror('Code=%s %s' %(p.returncode, err))
                r |= RET_ERR
         return r
 
@@ -353,8 +356,8 @@ if __name__ == "__main__":
         elif action == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except NotApplicable:
         sys.exit(RET_NA)

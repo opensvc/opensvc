@@ -4,6 +4,10 @@ from subprocess import *
 import sys
 import os
 
+sys.path.append(os.path.dirname(__file__))
+
+from comp import *
+
 os.environ['LANG'] = 'C'
 
 class InitError(Exception):
@@ -32,7 +36,8 @@ class Chkconfig(object):
         out, err = p.communicate()
         if p.returncode != 0:
             raise InitError()
-        for line in out.split('\n'):
+        out = bdecode(out)
+        for line in out.splitlines():
             words = line.split()
             if len(words) != 8:
                 continue
@@ -45,6 +50,7 @@ class Chkconfig(object):
         p = Popen(['/sbin/chkconfig', '--list', service], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
+            out = bdecode(out)
             if 'not referenced' in out:
                 self.services[service] = ['off', 'off', 'off', 'off', 'off', 'off']
                 return
@@ -88,30 +94,30 @@ class Chkconfig(object):
                 curstate = self.get_state(service, level)
             except UnknownService:
                 if verbose:
-                    print >>sys.stderr, "can not get service", service, "runlevels"
+                    perror("can not get service", service, "runlevels")
                 return 1
             if curstate != state:
                 if verbose:
-                    print >>sys.stderr, "service", service, "at runlevel", level, "is in state", curstate, "! target state is", state
+                    perror("service", service, "at runlevel", level, "is in state", curstate, "! target state is", state)
                 r |= 1
             else:
                 if verbose:
-                    print "service", service, "at runlevel", level, "is in state", curstate
+                    pinfo("service", service, "at runlevel", level, "is in state", curstate)
         return r
             
     def fix_state(self, service, levels, state, seq=None):
         cmd = ['chkconfig', '--level', levels, service, state]
-        print "exec:", ' '.join(cmd)
+        pinfo("exec:", ' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            print >>sys.stderr, "failed to set", service, "runlevels"
-            print out
-            print >>sys.stderr, err
+            perror("failed to set", service, "runlevels")
+            pinfo(out)
+            perror(err)
             return 1
         return 0
 
 if __name__ == "__main__":
     o = Chkconfig()
-    print o
-    print 'xfs@rc3 =', o.get_state('xfs', 3)
+    pinfo(o)
+    pinfo('xfs@rc3 =', o.get_state('xfs', 3))

@@ -211,7 +211,7 @@ class Conf(object):
         else:
             a = l[-1]
         if len(l) < 2:
-            print >>sys.stderr, "malformed key", key
+            perror("malformed key", key)
             return
         if l[1] == "device":
             o = self.find_device(l[0], index)
@@ -286,7 +286,7 @@ class LinuxMpath(CompObject):
 
     def load_file(self, p):
         if not os.path.exists(p):
-            print >>sys.stderr, p, "does not exist"
+            perror(p, "does not exist")
             self.nocf = True
             return
         with open(p, 'r') as f:
@@ -400,52 +400,52 @@ class LinuxMpath(CompObject):
         r = RET_OK
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s is not set"%keyname
+                perror("%s is not set"%keyname)
             return RET_ERR
 
         if type(value) == list:
             if str(target) in value:
                 if verbose:
-                    print "%s=%s on target"%(keyname, str(value))
+                    pinfo("%s=%s on target"%(keyname, str(value)))
                 return RET_OK
             else:
                 if verbose:
-                    print >>sys.stderr, "%s=%s is not set"%(keyname, str(target))
+                    perror("%s=%s is not set"%(keyname, str(target)))
                 return RET_ERR
 
         if op == '=':
             target = str(target).strip()
             if str(value) != target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), target)
+                    perror("%s=%s, target: %s"%(keyname, str(value), target))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                    perror("%s=%s value must be integer"%(keyname, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: <= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: >= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         return r
 
     def check_key(self, key, verbose=True):
         if 'key' not in key:
             if verbose:
-                print >>sys.stderr, "'key' not set in rule %s"%str(key)
+                perror("'key' not set in rule %s"%str(key))
             return RET_NA
         if 'value' not in key:
             if verbose:
-                print >>sys.stderr, "'value' not set in rule %s"%str(key)
+                perror("'value' not set in rule %s"%str(key))
             return RET_NA
         if 'op' not in key:
             op = "="
@@ -455,7 +455,7 @@ class LinuxMpath(CompObject):
 
         if op not in ('>=', '<=', '='):
             if verbose:
-                print >>sys.stderr, "'op' must be either '=', '>=' or '<=': %s"%str(key)
+                perror("'op' must be either '=', '>=' or '<=': %s"%str(key))
             return RET_NA
 
         keyname = key['key']
@@ -463,7 +463,7 @@ class LinuxMpath(CompObject):
 
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s key is not set"%keyname
+                perror("%s key is not set"%keyname)
             return RET_ERR
 
         r = self._check_key(keyname, target, op, value, verbose=verbose)
@@ -471,7 +471,7 @@ class LinuxMpath(CompObject):
         return r
 
     def fix_key(self, key):
-        print "%s=%s set"%(key['key'], key['value'])
+        pinfo("%s=%s set"%(key['key'], key['value']))
         self.conf.set(key['key'], key['value'])
 
     def check(self):
@@ -495,19 +495,19 @@ class LinuxMpath(CompObject):
                 import shutil
                 shutil.copy(self.cf, backup)
             except:
-                print >>sys.stderr, "failed to backup %s"%self.cf
+                perror("failed to backup %s"%self.cf)
                 return RET_ERR
-            print self.cf, "backed up as %s"%backup
+            pinfo(self.cf, "backed up as %s"%backup)
         try:
             with open(self.cf, 'w') as f:
                 f.write(str(self.conf))
-            print self.cf, "rewritten"
+            pinfo(self.cf, "rewritten")
             self.need_restart = True
         except:
-            print >>sys.stderr, "failed to write %s"%self.cf
+            perror("failed to write %s"%self.cf)
             if not self.nocf:
                 shutil.copy(backup, self.cf)
-                print "backup restored"
+                pinfo("backup restored")
             return RET_ERR
 
         self.restart_daemon()
@@ -527,14 +527,15 @@ class LinuxMpath(CompObject):
                 fpath = i
                 break
         if fpath is None:
-            print >>sys.stderr, "multipath tools startup script not found"
+            perror("multipath tools startup script not found")
             return RET_ERR
-        print "restarting multipath daemon"
+        pinfo("restarting multipath daemon")
         cmd = [fpath, "restart"]
         p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        err = bdecode(err)
         if len(err) > 0:
-            print >>sys.stderr, err
+            perror(err)
 
 if __name__ == "__main__":
     main(LinuxMpath)

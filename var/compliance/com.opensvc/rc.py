@@ -32,7 +32,7 @@ class CompRc(object):
                     l[i] = d
                 self.services += l
             except ValueError:
-                print >>sys.stderr, 'failed to concatenate', os.environ[k], 'to service list'
+                perror('failed to concatenate', os.environ[k], 'to service list')
 
         self.validate_svcs()
 
@@ -40,7 +40,7 @@ class CompRc(object):
             raise NotApplicable()
 
         if self.sysname not in ['Linux', 'HP-UX']:
-            print >>sys.stderr, __file__, 'module not supported on', self.sysname
+            perror(__file__, 'module not supported on', self.sysname)
             raise NotApplicable()
 
         vendor = os.environ.get('OSVC_COMP_NODES_OS_VENDOR', 'unknown')
@@ -54,7 +54,7 @@ class CompRc(object):
             import sysvinit
             self.o = sysvinit.SysVInit()
         else:
-            print >>sys.stderr, vendor, "not supported"
+            perror(vendor, "not supported")
             raise NotApplicable()
 
     def subst(self, v):
@@ -73,7 +73,7 @@ class CompRc(object):
             elif 'OSVC_COMP_'+s in os.environ:
                 _v = os.environ['OSVC_COMP_'+s]
             else:
-                print >>sys.stderr, s, 'is not an env variable'
+                perror(s, 'is not an env variable')
                 raise NotApplicable()
             v = v.replace(m, _v)
         return v
@@ -87,10 +87,10 @@ class CompRc(object):
 
     def validate_svc(self, svc):
         if 'service' not in svc:
-            print >>sys.stderr, svc, ' rule is malformed ... service key not present'
+            perror(svc, ' rule is malformed ... service key not present')
             return RET_ERR
         if 'state' not in svc:
-            print >>sys.stderr, svc, ' rule is malformed ... state key not present'
+            perror(svc, ' rule is malformed ... state key not present')
             return RET_ERR
         return RET_OK
 
@@ -126,8 +126,8 @@ if __name__ == "__main__":
     syntax = """syntax:
       %s PREFIX check|fixable|fix"""%sys.argv[0]
     if len(sys.argv) != 3:
-        print >>sys.stderr, "wrong number of arguments"
-        print >>sys.stderr, syntax
+        perror("wrong number of arguments")
+        perror(syntax)
         sys.exit(RET_ERR)
     try:
         o = CompRc(sys.argv[1])
@@ -138,8 +138,8 @@ if __name__ == "__main__":
         elif sys.argv[2] == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except NotApplicable:
         sys.exit(RET_NA)

@@ -86,7 +86,7 @@ class NodeConf(CompObject):
 
     def unset_val(self, keyname):
         cmd = ['nodemgr', 'unset', '--param', keyname]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return p.returncode
@@ -95,7 +95,7 @@ class NodeConf(CompObject):
         if type(target) == int:
             target = str(target)
         cmd = ['nodemgr', 'set', '--param', keyname, '--value', target]
-        print ' '.join(cmd)
+        pinfo(' '.join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         return p.returncode
@@ -105,7 +105,7 @@ class NodeConf(CompObject):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
-            #print >>sys.stderr, '\n'.join((' '.join(cmd), out, err))
+            #perror('\n'.join((' '.join(cmd), out, err)))
             return
         out = out.strip()
         try:
@@ -118,44 +118,44 @@ class NodeConf(CompObject):
         r = RET_OK
         if value is None:
             if verbose:
-                print >>sys.stderr, "%s not set"%keyname
+                perror("%s not set"%keyname)
             r |= RET_ERR
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    print >>sys.stderr, "%s=%s, target: %s"%(keyname, str(value), str(target))
+                    perror("%s=%s, target: %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         elif op == 'unset':
             if verbose:
-                print >>sys.stderr, "%s=%s value must be unset"%(keyname, str(value))
+                perror("%s=%s value must be unset"%(keyname, str(value)))
             r |= RET_ERR
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s=%s value must be integer"%(keyname, str(value))
+                    perror("%s=%s value must be integer"%(keyname, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: <= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: <= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s=%s target: >= %s"%(keyname, str(value), str(target))
+                    perror("%s=%s target: >= %s"%(keyname, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         return r
 
     def check_key(self, key, verbose=True):
         if 'key' not in key:
             if verbose:
-                print >>sys.stderr, "'key' not set in rule %s"%str(key)
+                perror("'key' not set in rule %s"%str(key))
             return RET_NA
         if 'value' not in key:
             if verbose:
-                print >>sys.stderr, "'value' not set in rule %s"%str(key)
+                perror("'value' not set in rule %s"%str(key))
             return RET_NA
         if 'op' not in key:
             op = "="
@@ -165,7 +165,7 @@ class NodeConf(CompObject):
 
         if op not in ('>=', '<=', '=', 'unset'):
             if verbose:
-                print >>sys.stderr, "'value' list member 0 must be either '=', '>=', '<=' or unset: %s"%str(key)
+                perror("'value' list member 0 must be either '=', '>=', '<=' or unset: %s"%str(key))
             return RET_NA
 
         keyname = key['key']
@@ -173,12 +173,12 @@ class NodeConf(CompObject):
 
         if value is None:
             if op == 'unset':
-		 if verbose:
-                     print "%s key is not set"%keyname
+                 if verbose:
+                     pinfo("%s key is not set"%keyname)
                  return RET_OK
             else:
-		 if verbose:
-                     print >>sys.stderr, "%s key is not set"%keyname
+                 if verbose:
+                     perror("%s key is not set"%keyname)
                  return RET_ERR
 
         return self._check_key(keyname, target, op, value, verbose)

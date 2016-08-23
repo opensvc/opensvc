@@ -77,15 +77,15 @@ class CompSymlink(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'symlink: failed to parse variable', rule
+                perror('symlink: failed to parse variable', rule)
 
     def add_symlink(self, v):
         if 'symlink' not in v:
-            print >>sys.stderr, 'symlink should be in the dict:', d
+            perror('symlink should be in the dict:', d)
             RET = RET_ERR
             return []
         if 'target' not in v:
-            print >>sys.stderr, 'target should be in the dict:', d
+            perror('target should be in the dict:', d)
             RET = RET_ERR
             return []
         return [v]
@@ -100,13 +100,13 @@ class CompSymlink(CompObject):
 
     def check_symlink(self, f, verbose=False):
         if not os.path.islink(f['symlink']):
-            print >>sys.stderr, "symlink", f['symlink'], "does not exist"
+            perror("symlink", f['symlink'], "does not exist")
             return RET_ERR
         if os.readlink(f['symlink']) != f['target']:
-            print >>sys.stderr, "symlink", f['symlink'], "does not point to", f['target']
+            perror("symlink", f['symlink'], "does not point to", f['target'])
             return RET_ERR
         if verbose:
-            print "symlink", f['symlink'], "->", f['target'], "is ok"
+            pinfo("symlink", f['symlink'], "->", f['target'], "is ok")
         return RET_OK
 
     def fix_symlink_notexists(self, f):
@@ -118,14 +118,14 @@ class CompSymlink(CompObject):
                os.makedirs(d)
            except OSError as e:
                if e.errno == 20:
-                   print >>sys.stderr, "symlink: can not create dir", d, "to host the symlink", f['symlink'], ": a parent is not a directory"
+                   perror("symlink: can not create dir", d, "to host the symlink", f['symlink'], ": a parent is not a directory")
                    return RET_ERR
                raise
         try:
            os.symlink(f['target'], f['symlink'])
         except:
             return RET_ERR
-        print "symlink", f['symlink'], "->", f['target'], "created"
+        pinfo("symlink", f['symlink'], "->", f['target'], "created")
         return RET_OK
 
     def check(self):

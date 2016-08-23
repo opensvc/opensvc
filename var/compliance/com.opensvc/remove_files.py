@@ -61,7 +61,7 @@ class CompRemoveFiles(CompObject):
         self.files = self.expand_patterns(patterns)
 
         if len(self.files) == 0:
-            print "no files matching patterns"
+            pinfo("no files matching patterns")
             raise NotApplicable
 
     def expand_patterns(self, patterns):
@@ -75,9 +75,9 @@ class CompRemoveFiles(CompObject):
 
     def check_file(self, _file):
         if not os.path.exists(_file):
-            print _file, "does not exist. on target."
+            pinfo(_file, "does not exist. on target.")
             return RET_OK
-        print >>sys.stderr, _file, "exists. shouldn't"
+        perror(_file, "exists. shouldn't")
         return RET_ERR
 
     def fix_file(self, _file):
@@ -88,9 +88,9 @@ class CompRemoveFiles(CompObject):
                 shutil.rmtree(_file)
             else:
                 os.unlink(_file)
-            print _file, "deleted"
+            pinfo(_file, "deleted")
         except Exception as e:
-            print >>sys.stderr, "failed to delete", _file, "(%s)"%str(e)
+            perror("failed to delete", _file, "(%s)"%str(e))
             return RET_ERR
         return RET_OK
 

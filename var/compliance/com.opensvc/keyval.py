@@ -82,7 +82,7 @@ class KeyVal(CompObject):
     def init(self):
         self.nocf = False
         if self.cf is None:
-            print >>sys.stderr, "no file path specified"
+            perror("no file path specified")
             raise NotApplicable()
 
         self.keys = self.get_rules()
@@ -99,7 +99,7 @@ class KeyVal(CompObject):
         try:
             self.conf = Parser(self.cf)
         except ParserError as e:
-            print >>sys.stderr, e
+            perror(e)
             raise ComplianceError()
 
 
@@ -114,11 +114,11 @@ class KeyVal(CompObject):
                 target_n_key = self.target_n_key[keyname] if keyname in self.target_n_key else 0
                 if current_n_key > target_n_key:
                     if verbose:
-                        print >>sys.stderr, "%s is set %d times, should be set %d times"%(keyname, current_n_key, target_n_key)
+                        perror("%s is set %d times, should be set %d times"%(keyname, current_n_key, target_n_key))
                     return RET_ERR
                 else:
                     if verbose:
-                        print "%s is set %d times, on target"%(keyname, current_n_key)
+                        pinfo("%s is set %d times, on target"%(keyname, current_n_key))
                     return RET_OK
             else:
                 return RET_OK
@@ -126,7 +126,7 @@ class KeyVal(CompObject):
             if value is not None:
                 if target.strip() == "":
                     if verbose:
-                        print >>sys.stderr, "%s is set, should not be"%keyname
+                        perror("%s is set, should not be"%keyname)
                     return RET_ERR
                 target_found = False
                 for i, val in enumerate(value):
@@ -136,80 +136,80 @@ class KeyVal(CompObject):
 
                 if target_found:
                     if verbose:
-                        print >>sys.stderr, "%s[%d] is set to value %s, should not be"%(keyname, i, target)
+                        perror("%s[%d] is set to value %s, should not be"%(keyname, i, target))
                     return RET_ERR
                 else:
                     if verbose:
-                        print "%s is not set to value %s, on target"%(keyname, target)
+                        pinfo("%s is not set to value %s, on target"%(keyname, target))
                     return RET_OK
             else:
                 if target.strip() != "":
                     if verbose:
-                        print "%s=%s is not set, on target"%(keyname, target)
+                        pinfo("%s=%s is not set, on target"%(keyname, target))
                 else:
                     if verbose:
-                        print "%s is not set, on target"%keyname
+                        pinfo("%s is not set, on target"%keyname)
                 return RET_OK
 
         if value is None:
             if op == 'IN' and "unset" in map(str, target):
                 if verbose:
-                    print "%s is not set, on target"%(keyname)
+                    pinfo("%s is not set, on target"%(keyname))
                 return RET_OK
             else:
                 if verbose:
-                    print >>sys.stderr, "%s[%d] is not set, target: %s"%(keyname, instance, str(target))
+                    perror("%s[%d] is not set, target: %s"%(keyname, instance, str(target)))
                 return RET_ERR
 
         if type(value) == list:
             if str(target) in value:
                 if verbose:
-                    print "%s[%d]=%s on target"%(keyname, instance, str(value))
+                    pinfo("%s[%d]=%s on target"%(keyname, instance, str(value)))
                 return RET_OK
             else:
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s is not set"%(keyname, instance, str(target))
+                    perror("%s[%d]=%s is not set"%(keyname, instance, str(target)))
                 return RET_ERR
 
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target))
+                    perror("%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         elif op == 'IN':
             if str(value) not in map(str, target):
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target))
+                    perror("%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s=%s on target"%(keyname, str(value))
+                pinfo("%s=%s on target"%(keyname, str(value)))
         else:
             if type(value) != int:
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s value must be integer"%(keyname, instance, str(value))
+                    perror("%s[%d]=%s value must be integer"%(keyname, instance, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s target: <= %s"%(keyname, instance, str(value), str(target))
+                    perror("%s[%d]=%s target: <= %s"%(keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    print >>sys.stderr, "%s[%d]=%s target: >= %s"%(keyname, instance, str(value), str(target))
+                    perror("%s[%d]=%s target: >= %s"%(keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                print "%s[%d]=%s on target"%(keyname, instance, str(value))
+                pinfo("%s[%d]=%s on target"%(keyname, instance, str(value)))
         return r
 
     def check_key(self, key, instance=0, verbose=True):
         if 'key' not in key:
             if verbose:
-                print >>sys.stderr, "'key' not set in rule %s"%str(key)
+                perror("'key' not set in rule %s"%str(key))
             return RET_NA
         if 'value' not in key:
             if verbose:
-                print >>sys.stderr, "'value' not set in rule %s"%str(key)
+                perror("'value' not set in rule %s"%str(key))
             return RET_NA
         if 'op' not in key:
             op = "="
@@ -220,7 +220,7 @@ class KeyVal(CompObject):
         allowed_ops = ('>=', '<=', '=', 'unset', 'reset', 'IN')
         if op not in allowed_ops:
             if verbose:
-                print >>sys.stderr, key['key'], "'op' value must be one of", ", ".join(allowed_ops)
+                perror(key['key'], "'op' value must be one of", ", ".join(allowed_ops))
             return RET_NA
 
         keyname = key['key']
@@ -232,7 +232,7 @@ class KeyVal(CompObject):
 
     def fix_key(self, key, instance=0):
         if key['op'] == "unset" or (key['op'] == "IN" and key['value'][0] == "unset"):
-            print "%s unset"%key['key']
+            pinfo("%s unset"%key['key'])
             if key['op'] == "IN":
                 target = None
             else:
@@ -240,14 +240,14 @@ class KeyVal(CompObject):
             self.conf.unset(key['key'], target)
         elif key['op'] == "reset":
             target_n_key = self.target_n_key[key['key']] if key['key'] in self.target_n_key else 0
-            print "%s truncated to %d definitions"%(key['key'], target_n_key)
+            pinfo("%s truncated to %d definitions"%(key['key'], target_n_key))
             self.conf.truncate(key['key'], target_n_key)
         else:
             if key['op'] == "IN":
                 target = key['value'][0]
             else:
                 target = key['value']
-            print "%s=%s set"%(key['key'], target)
+            pinfo("%s=%s set"%(key['key'], target))
             self.conf.set(key['key'], target, instance=instance)
 
     def check(self):
@@ -287,7 +287,7 @@ class KeyVal(CompObject):
         try:
             self.conf.write()
         except ParserError as e:
-            print >>sys.stderr, e
+            perror(e)
             return RET_ERR
         return RET_OK
 

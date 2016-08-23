@@ -6,6 +6,10 @@ import sys
 import glob
 import re
 
+sys.path.append(os.path.dirname(__file__))
+
+from comp import *
+
 class InitError(Exception):
     pass
 
@@ -82,14 +86,14 @@ class SysVInit(object):
         g = glob.glob("[SK]*%s"%service)
         if len(g) > 0:
             cmd = ['rm', '-f'] + g
-            print " ".join(cmd)
+            pinfo(" ".join(cmd))
             p = Popen(cmd, stdout=PIPE)
             out, err = p.communicate()
             if p.returncode != 0:
                 raise SetError()
 
         cmd = ['ln', '-sf', svc_p, start_l]
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -106,14 +110,14 @@ class SysVInit(object):
         g = glob.glob("[SK]*%s"%service)
         if len(g) > 0:
             cmd = ['rm', '-f'] + g
-            print " ".join(cmd)
+            pinfo(" ".join(cmd))
             p = Popen(cmd, stdout=PIPE)
             out, err = p.communicate()
             if p.returncode != 0:
                 raise SetError()
 
         cmd = ['ln', '-sf', svc_p, stop_l]
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -126,7 +130,7 @@ class SysVInit(object):
         if len(g) == 0:
             return
         cmd = ['rm', '-f'] + g
-        print " ".join(cmd)
+        pinfo(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -190,12 +194,12 @@ class SysVInit(object):
 
         if not self.check_init(service):
             if verbose:
-                print >>sys.stderr, "service %s init script does not exist in %s"%(service, self.init_d)
+                perror("service %s init script does not exist in %s"%(service, self.init_d))
             r |= 1
 
         if seq is None and state != "del":
             if verbose:
-                print >>sys.stderr, "service %s sequence number must be set"%(service)
+                perror("service %s sequence number must be set"%(service))
             return 1
 
         for level in levels:
@@ -207,12 +211,12 @@ class SysVInit(object):
                 curstate = self.get_state(service, level, seq)
             except DupError:
                 if verbose:
-                    print >>sys.stderr, "service %s has multiple launchers at level %d"%(service, level)
+                    perror("service %s has multiple launchers at level %d"%(service, level))
                 r |= 1
                 continue
             except SeqError:
                 if verbose:
-                    print >>sys.stderr, "service %s sequence number error at level %d"%(service, level)
+                    perror("service %s sequence number error at level %d"%(service, level))
                 r |= 1
                 continue
             except UnknownService:
@@ -221,11 +225,11 @@ class SysVInit(object):
             if (state != "del" and curstate != state) or \
                (state == "del" and curstate != "none"):
                 if verbose:
-                    print >>sys.stderr, "service", service, "at runlevel", level, "is in state", curstate, "! target state is", state
+                    perror("service", service, "at runlevel", level, "is in state", curstate, "! target state is", state)
                 r |= 1
             else:
                 if verbose:
-                    print "service", service, "at runlevel", level, "is in state", curstate
+                    pinfo("service", service, "at runlevel", level, "is in state", curstate)
         return r
             
     def fix_state(self, service, levels, state, seq=None):
@@ -233,19 +237,19 @@ class SysVInit(object):
             seq = "%02d"%seq
 
         if seq is None and state != "del":
-            print >>sys.stderr, "service %s sequence number must be set"%(service)
+            perror("service %s sequence number must be set"%(service))
             return 1
 
         for level in levels:
             try:
                 self.set_state(service, level, state, seq)
             except SetError:
-                print >>sys.stderr, "failed to set", service, "runlevels"
+                perror("failed to set", service, "runlevels")
                 return 1
         return 0
 
 if __name__ == "__main__":
     o = SysVInit()
-    print o
-    print 'xfs@rc3 =', o.get_state('xfs', 3)
+    pinfo(o)
+    pinfo('xfs@rc3 =', o.get_state('xfs', 3))
 

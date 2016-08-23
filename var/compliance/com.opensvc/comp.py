@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import os
 import re
 import json
-import urllib2, base64
+import base64
+
+if sys.version_info[0] >= 3:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
+else:
+    from urllib2 import Request, urlopen
+    from urllib2 import HTTPError
+    from urllib import urlencode
 
 RET_OK = 0
 RET_ERR = 1
@@ -26,6 +36,45 @@ class InitError(Exception):
 
 class EndRecursion(Exception):
      pass
+
+def pinfo(*args, **kwargs):
+    kwargs["file"] = sys.stdout
+    print(*args, **kwargs)
+
+def perror(*args, **kwargs):
+    kwargs["file"] = sys.stderr
+    print(*args, **kwargs)
+
+def is_string(s):
+    """ python[23] compatible
+    """
+    if sys.version_info[0] == 2:
+        l = (str, unicode)
+    else:
+        l = (str)
+    if isinstance(s, l):
+        return True
+    return False
+
+def bdecode(buff):
+    if sys.version_info[0] < 3:
+        return buff
+    else:
+        try:
+            return str(buff, "utf-8")
+        except:
+            return str(buff, "ascii")
+    return buff
+
+def bencode(buff):
+    if sys.version_info[0] < 3:
+        return buff
+    else:
+        try:
+            return bytes(buff, "utf-8")
+        except:
+            return bytes(buff, "ascii")
+    return buff
 
 class CompObject(object):
     def __init__(self,
@@ -83,7 +132,7 @@ class CompObject(object):
         s += "\n::\n\n"
         s += indent(self.form_definition)+"\n"
         s += "\n"
-        print s
+        pinfo(s)
 
     def set_prefix(self, prefix):
         self.prefix = prefix.upper()
@@ -135,7 +184,7 @@ class CompObject(object):
             try:
                 data = json.loads(s)
             except ValueError:
-                print >>sys.stderr, 'failed to concatenate', self.get_env(k), 'to rules list'
+                perror('failed to concatenate', self.get_env(k), 'to rules list')
             if type(data) == list:
                 for d in data:
                     rules += [(k, d)]
@@ -218,7 +267,7 @@ class CompObject(object):
     def collector_request(self, path):
         api = self.collector_api()
         url = api["url"]
-        request = urllib2.Request(url+path)
+        request = Request(url+path)
         base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
@@ -235,8 +284,8 @@ class CompObject(object):
         else:
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ComplianceError(err)
@@ -260,8 +309,8 @@ class CompObject(object):
         else:
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
         try:
-            f = urllib2.urlopen(request, **kwargs)
-        except urllib2.HTTPError as e:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
                 e = ComplianceError(err)
@@ -292,12 +341,12 @@ class CompObject(object):
         return data["data"][0]
 
     def urlretrieve(self, url, fpath):
-        request = urllib2.Request(url)
+        request = Request(url)
         kwargs = {}
         if sys.hexversion >= 0x02070900:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
-        f = urllib2.urlopen(request, **kwargs)
+        f = urlopen(request, **kwargs)
         with open(fpath, 'wb') as df:
             for chunk in iter(lambda: f.read(4096), b""):
                 df.write(chunk)
@@ -319,7 +368,7 @@ def main(co):
     try:
         o = co()
     except NotApplicable as e:
-        print e
+        pinfo(e)
         sys.exit(RET_NA)
     if o.extra_syntax_parms:
         syntax += " "+o.extra_syntax_parms
@@ -330,7 +379,7 @@ def main(co):
                 RET = o.test()
                 sys.exit(RET)
             except ComplianceError as e:
-                print >>sys.stderr, e
+                perror(e)
                 sys.exit(RET_ERR)
             except NotApplicable:
                 sys.exit(RET_NA)
@@ -339,7 +388,7 @@ def main(co):
             sys.exit(0)
 
     if len(sys.argv) < 3:
-        print >>sys.stderr, syntax
+        perror(syntax)
         sys.exit(RET_ERR)
 
     argv = [sys.argv[1]]
@@ -354,14 +403,14 @@ def main(co):
         elif sys.argv[2] == 'fixable':
             RET = o.fixable()
         else:
-            print >>sys.stderr, "unsupported argument '%s'"%sys.argv[2]
-            print >>sys.stderr, syntax
+            perror("unsupported argument '%s'"%sys.argv[2])
+            perror(syntax)
             RET = RET_ERR
     except ComplianceError as e:
-        print >>sys.stderr, e
+        perror(e)
         sys.exit(RET_ERR)
     except NotApplicable as e:
-        print e
+        pinfo(e)
         sys.exit(RET_NA)
     except:
         import traceback
@@ -371,5 +420,5 @@ def main(co):
     sys.exit(RET)
 
 if __name__ == "__main__":
-    print >>sys.stderr, "this file is for import into compliance objects"
+    perror("this file is for import into compliance objects")
 

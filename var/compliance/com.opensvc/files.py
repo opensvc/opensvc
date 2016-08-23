@@ -126,7 +126,7 @@ class CompFiles(CompObject):
             except InitError:
                 continue
             except ValueError:
-                print >>sys.stderr, 'file: failed to parse variable', os.environ[k]
+                perror('file: failed to parse variable', os.environ[k])
 
         if len(self.files) == 0:
             raise NotApplicable()
@@ -148,7 +148,7 @@ class CompFiles(CompObject):
         try:
             self.urlretrieve(d['ref'], tmpf)
         except IOError as e:
-            print >>sys.stderr, "file ref", d['ref'], "download failed:", e
+            perror("file ref", d['ref'], "download failed:", e)
             raise InitError()
         with open(tmpf, "r") as f:
             d['fmt'] = f.read()
@@ -156,15 +156,15 @@ class CompFiles(CompObject):
 
     def add_file(self, d):
         if 'path' not in d:
-            print >>sys.stderr, 'file: path should be in the dict:', d
+            perror('file: path should be in the dict:', d)
             RET = RET_ERR
             return []
         if 'fmt' not in d and 'ref' not in d and not d['path'].endswith("/"):
-            print >>sys.stderr, 'file: fmt or ref should be in the dict:', d
+            perror('file: fmt or ref should be in the dict:', d)
             RET = RET_ERR
             return []
         if 'fmt' in d and 'ref' in d:
-            print >>sys.stderr, 'file: fmt and ref are exclusive:', d
+            perror('file: fmt and ref are exclusive:', d)
             RET = RET_ERR
             return []
         try:
@@ -197,9 +197,9 @@ class CompFiles(CompObject):
             return self.check_file_fmt_buffered(f, verbose=verbose)
 
     def fix_file_fmt_safe(self, f):
-        print "file reference %s download to %s" % (f["ref"], f["path"])
+        pinfo("file reference %s download to %s" % (f["ref"], f["path"]))
         tmpfname = self.get_safe_file(f["ref"])
-        print "file %s content install" % f["path"]
+        pinfo("file %s content install" % f["path"])
         import shutil
         shutil.copy(tmpfname, f["path"])
         os.unlink(tmpfname)
@@ -213,10 +213,10 @@ class CompFiles(CompObject):
         target_md5 = data.get("md5")
         current_md5 = self.md5(f["path"])
         if target_md5 == current_md5:
-            print "file %s md5 verified" % f["path"]
+            pinfo("file %s md5 verified" % f["path"])
             return RET_OK
         else:
-            print >>sys.stderr, "file %s content md5 differs from its reference" % f["path"]
+            perror("file %s content md5 differs from its reference" % f["path"])
             if verbose and data["size"] < 1000000:
                 tmpfname = self.get_safe_file(f["ref"])
                 self.check_file_diff(f, tmpfname, verbose=verbose)
@@ -250,8 +250,9 @@ class CompFiles(CompObject):
             cmd = ['diff', f['path'], refpath]
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        out = bdecode(out)
         if verbose and len(out) > 0:
-            print >>sys.stderr, out.strip('\n')
+            perror(out.strip('\n'))
         if p.returncode != 0:
             return RET_ERR
         return RET_OK
@@ -262,11 +263,11 @@ class CompFiles(CompObject):
         try:
             mode = oct(stat.S_IMODE(os.stat(f['path']).st_mode))
         except:
-            if verbose: print >>sys.stderr, "file", f['path'], 'stat() failed'
+            if verbose: perror("file", f['path'], 'stat() failed')
             return RET_ERR
         mode = str(mode).lstrip("0")
         if mode != str(f['mode']):
-            if verbose: print >>sys.stderr, "file", f['path'], 'mode should be %s but is %s'%(f['mode'], mode)
+            if verbose: perror("file", f['path'], 'mode should be %s but is %s'%(f['mode'], mode))
             return RET_ERR
         return RET_OK
 
@@ -274,13 +275,13 @@ class CompFiles(CompObject):
         if uid in self._usr:
             return self._usr[uid]
         tuid = uid
-        if isinstance(uid, (str, unicode)):
+        if is_string(uid):
             try:
                 info=pwd.getpwnam(uid)
                 tuid = info[2]
                 self._usr[uid] = tuid
             except:
-                print >>sys.stderr, "file: user %s does not exist"%uid
+                perror("file: user %s does not exist"%uid)
                 raise ComplianceError()
         return tuid
 
@@ -288,13 +289,13 @@ class CompFiles(CompObject):
         if gid in self._grp:
             return self._grp[gid]
         tgid = gid
-        if isinstance(gid, (str, unicode)):
+        if is_string(gid):
             try:
                 info=grp.getgrnam(gid)
                 tgid = info[2]
                 self._grp[gid] = tgid
             except:
-                print >>sys.stderr, "file: group %s does not exist"%gid
+                perror("file: group %s does not exist"%gid)
                 raise ComplianceError()
         return tgid
 
@@ -304,7 +305,7 @@ class CompFiles(CompObject):
         tuid = self.get_uid(f['uid'])
         uid = os.stat(f['path']).st_uid
         if uid != tuid:
-            if verbose: print >>sys.stderr, "file", f['path'], 'uid should be %s but is %s'%(tuid, str(uid))
+            if verbose: perror("file", f['path'], 'uid should be %s but is %s'%(tuid, str(uid)))
             return RET_ERR
         return RET_OK
 
@@ -314,13 +315,13 @@ class CompFiles(CompObject):
         tgid = self.get_gid(f['gid'])
         gid = os.stat(f['path']).st_gid
         if gid != tgid:
-            if verbose: print >>sys.stderr, "file", f['path'], 'gid should be %s but is %s'%(tgid, str(gid))
+            if verbose: perror("file", f['path'], 'gid should be %s but is %s'%(tgid, str(gid)))
             return RET_ERR
         return RET_OK
 
     def check_file(self, f, verbose=False):
         if not os.path.exists(f['path']):
-            print >>sys.stderr, "file", f['path'], "does not exist"
+            perror("file", f['path'], "does not exist")
             return RET_ERR
         r = 0
         r |= self.check_file_fmt(f, verbose)
@@ -328,7 +329,7 @@ class CompFiles(CompObject):
         r |= self.check_file_uid(f, verbose)
         r |= self.check_file_gid(f, verbose)
         if r == 0 and verbose:
-            print "file", f['path'], "is ok"
+            pinfo("file", f['path'], "is ok")
         return r
 
     def fix_file_mode(self, f):
@@ -337,7 +338,7 @@ class CompFiles(CompObject):
         if self.check_file_mode(f) == RET_OK:
             return RET_OK
         try:
-            print "file %s mode set to %s"%(f['path'], str(f['mode']))
+            pinfo("file %s mode set to %s"%(f['path'], str(f['mode'])))
             os.chmod(f['path'], int(str(f['mode']), 8))
         except:
             return RET_ERR
@@ -358,18 +359,18 @@ class CompFiles(CompObject):
         try:
             os.chown(f['path'], uid, gid)
         except:
-            print >>sys.stderr, "file %s ownership set to %d:%d failed"%(f['path'], uid, gid)
+            perror("file %s ownership set to %d:%d failed"%(f['path'], uid, gid))
             return RET_ERR
-        print "file %s ownership set to %d:%d"%(f['path'], uid, gid)
+        pinfo("file %s ownership set to %d:%d"%(f['path'], uid, gid))
         return RET_OK
 
     def fix_file_fmt(self, f):
         if f['path'].endswith("/") and not os.path.exists(f['path']):
             try:
-                print "file: mkdir", f['path']
+                pinfo("file: mkdir", f['path'])
                 os.makedirs(f['path'])
             except:
-                print >>sys.stderr, "file: failed to create", f['path']
+                perror("file: failed to create", f['path'])
                 return RET_ERR
             return RET_OK
         if self.check_file_fmt(f, verbose=False) == RET_OK:
@@ -380,20 +381,20 @@ class CompFiles(CompObject):
 
         d = os.path.dirname(f['path'])
         if not os.path.exists(d):
-           print "file: mkdir", d
+           pinfo("file: mkdir", d)
            os.makedirs(d)
            try:
                os.chown(d, f['uid'], f['gid'])
            except Exception as e:
-               print >>sys.stderr, "file:", e
+               perror("file:", e)
                pass
         try:
             with codecs.open(f['path'], 'w', encoding="utf8", errors="ignore") as fi:
                 fi.write(f['fmt'])
         except Exception as e:
-            print >>sys.stderr, "file:", e
+            perror("file:", e)
             return RET_ERR
-        print "file", f['path'], "rewritten"
+        pinfo("file", f['path'], "rewritten")
         return RET_OK
 
     def check(self):

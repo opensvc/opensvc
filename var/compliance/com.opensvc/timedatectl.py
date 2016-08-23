@@ -67,11 +67,11 @@ class CompTimeDateCtl(CompObject):
         self.inputs = self.get_rules()[0]
 
         if self.sysname not in ['Linux']:
-            print >>sys.stderr, 'module not supported on', self.sysname
+            perror('module not supported on', self.sysname)
             raise NotApplicable()
 
         if which('timedatectl') is None:
-            print >>sys.stderr, 'timedatectl command not found', self.sysname
+            perror('timedatectl command not found', self.sysname)
             raise NotApplicable()
 
         self.tz = self.get_valid_tz()
@@ -103,7 +103,8 @@ class CompTimeDateCtl(CompObject):
             out, err = p.communicate()
             if p.returncode != 0:
                 raise
-            for line in out.split('\n'):
+            out = bdecode(out)
+            for line in out.splitlines():
                 if 'Time zone:' in line:
                     s = line.split(':')[-1].strip()
                     t = s.split(' ')[0]
@@ -111,7 +112,7 @@ class CompTimeDateCtl(CompObject):
                 if 'NTP enabled:' in line:
                     current['ntpenabled'] = line.split(':')[-1].strip()
         except:
-            print >>sys.stderr, 'can not fetch timedatectl infos'
+            perror('can not fetch timedatectl infos')
             return None
         return current
 
@@ -123,12 +124,13 @@ class CompTimeDateCtl(CompObject):
             out, err = p.communicate()
             if p.returncode != 0:
                 raise
-            for line in out.split('\n'):
+            out = bdecode(out)
+            for line in out.splitlines():
                 curtz = line.strip()
                 if curtz is not '':
                     tz.append(curtz)
         except:
-            print >>sys.stderr, 'can not build valid timezone list'
+            perror('can not build valid timezone list')
             return None
         return tz
 
@@ -145,9 +147,9 @@ class CompTimeDateCtl(CompObject):
 
     def _check(self, input):
         if self.inputs[input] == self.live[input]:
-            print "timedatectl %s is %s, on target" % (input, self.live[input] )
+            pinfo("timedatectl %s is %s, on target" % (input, self.live[input] ))
             return RET_OK
-        print >>sys.stderr, "timedatectl %s is %s, target %s" % (input, self.live[input], self.inputs[input])
+        perror("timedatectl %s is %s, target %s" % (input, self.live[input], self.inputs[input]))
         return RET_ERR
 
     def set_tz(self, timezone):
@@ -158,7 +160,7 @@ class CompTimeDateCtl(CompObject):
             if p.returncode != 0:
                 raise
         except:
-            print >>sys.stderr, 'could not set timezone'
+            perror('could not set timezone')
             return None
         return RET_OK
 
@@ -170,7 +172,7 @@ class CompTimeDateCtl(CompObject):
             if p.returncode != 0:
                 raise
         except:
-            print >>sys.stderr, 'could not set ntp'
+            perror('could not set ntp')
             return None
         return RET_OK
 

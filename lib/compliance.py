@@ -113,6 +113,8 @@ class Module(object):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
         os.environ.update({
+          "LC_ALL": "en_US.utf-8",
+          "PYTHONIOENCODING": "utf-8",
           "OSVC_PYTHON": sys.executable,
           "OSVC_PATH_ETC": rcEnv.pathetc,
           "OSVC_PATH_VAR": rcEnv.pathvar,
