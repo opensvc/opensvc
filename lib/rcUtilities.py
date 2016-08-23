@@ -12,6 +12,16 @@ if os.name == 'nt':
 else:
     close_fds = True
 
+def bdecode(buff):
+    if sys.version_info[0] < 3:
+        return buff
+    else:
+        try:
+            return str(buff, "utf-8")
+        except:
+            return str(buff, "ascii")
+    return buff
+
 def is_string(s):
     """ python[23] compatible
     """
@@ -82,13 +92,7 @@ def justcall(argv=['/bin/false']):
         return ("", "", 1)
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     stdout, stderr = process.communicate(input=None)
-    if sys.version_info[0] < 3:
-        return stdout, stderr, process.returncode
-    else:
-        try:
-            return str(stdout, "utf-8"), str(stderr, "utf-8"), process.returncode
-        except:
-            return str(stdout, "ascii"), str(stderr, "ascii"), process.returncode
+    return bdecode(stdout), bdecode(stderr), process.returncode
 
 def empty_string(buff):
     b = buff.strip(' ').strip('\n')
@@ -144,11 +148,7 @@ def call(argv=['/bin/false'],
             log.debug("cache miss for '%s'"%cmd)
         process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
         buff = process.communicate()
-        if sys.version_info[0] >= 3:
-            try:
-                buff = tuple(map(lambda x: str(x, "utf-8"), buff))
-            except:
-                buff = tuple(map(lambda x: str(x, "ascii"), buff))
+        buff = tuple(map(lambda x: bdecode(x), buff))
         ret = process.returncode
         if ret == 0:
             log.debug("store '%s' output in cache"%cmd)

@@ -8,7 +8,7 @@ def get_src_dir_dev(dev):
     """
     process = Popen(['df', '-l', dev], stdout=PIPE, stderr=STDOUT, close_fds=True)
     buff = process.communicate()
-    out = buff[0]
+    out = bdecode(buff[0])
     i = out.index('/')
     return out[i:].split()[0]
 
