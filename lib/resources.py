@@ -234,6 +234,13 @@ class Resource(object):
             return rcStatus.STDBY_DOWN
         return s
 
+    def try_status(self, verbose=False):
+        try:
+            return self._status(verbose=verbose)
+        except Exception as e:
+            self.status_log(str(e))
+            return rcStatus.WARN
+
     def _status(self, verbose=False):
         return rcStatus.UNDEF
 
@@ -265,7 +272,7 @@ class Resource(object):
 
         if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_log_str = ""
-            self.rstatus = self._status(verbose)
+            self.rstatus = self.try_status(verbose)
             self.log.debug("refresh status: %s => %s" % (rcStatus.status_str(last_status), rcStatus.status_str(self.rstatus)))
             self.write_status()
 
@@ -314,7 +321,7 @@ class Resource(object):
                 self.action("start")
             except Exception as e:
                 self.log.error("restart resource failed: " + str(e))
-            self.rstatus = self._status()
+            self.rstatus = self.try_status()
             self.write_status()
             if self.rstatus == rcStatus.UP:
                 self.log.info("monitored resource %s restarted."%self.rid)

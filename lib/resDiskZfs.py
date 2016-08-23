@@ -1,6 +1,6 @@
 from rcGlobalEnv import rcEnv
 import resDisk
-from rcUtilities import qcall
+from rcUtilities import qcall, which
 import os
 import rcExceptions as ex
 import glob
@@ -51,6 +51,8 @@ class Disk(resDisk.Disk):
     def has_it(self):
         """Returns True if the pool is present
         """
+        if not which("zpool"):
+            raise ex.excError("zpool command not found")
         ret = qcall( [ 'zpool', 'list', self.name ] )
         if ret == 0 :
             return True
