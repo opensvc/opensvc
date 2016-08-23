@@ -101,9 +101,9 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         err = str(e)
     log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
 
-def call_worker(q):
+def call_worker(q, node):
     e = "foo"
-    o = Collector(worker=True)
+    o = Collector(worker=True, node=node)
     o.init()
     try:
         while e is not None:
@@ -341,7 +341,7 @@ class Collector(object):
             self.log.error("Queue not supported. disable async mode. %s" % str(e))
             self.queue = None
             return
-        self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue,))
+        self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue, self.node))
         self.worker.start()
         self.log.info("worker started")
 
