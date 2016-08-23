@@ -124,7 +124,7 @@ class Ip(Res.Resource):
             return False
         if not hasattr(self, "addr"):
             return False
-        if self.check_ping() and not self.is_up():
+        if not self.is_up() and self.check_ping():
             return True
         return False
 
