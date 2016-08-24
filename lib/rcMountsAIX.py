@@ -1,20 +1,10 @@
 import rcMounts
 #import resLoopAIX as Res
 from rcUtilities import *
-from subprocess import Popen
-
-def get_src_dir_dev(dev):
-    """Given a directory path, return its hosting device
-    """
-    process = Popen(['df', dev], stdout=PIPE, stderr=STDOUT, close_fds=True)
-    buff = process.communicate()
-    out = bdecode(buff[0])
-    if "/" not in out:
-        return
-    i = out.index('/')
-    return out[i:].split()[0]
 
 class Mounts(rcMounts.Mounts):
+    df_one_cmd = ['df', dev]
+
     def match_mount(self, i, dev, mnt):
         """Given a line of 'mount' output, returns True if (dev, mnt) matches
         this line. Returns False otherwize. Also care about weirdos like loops
@@ -22,7 +12,7 @@ class Mounts(rcMounts.Mounts):
         """
         if os.path.isdir(dev):
             is_bind = True
-            src_dir_dev = get_src_dir_dev(dev)
+            src_dir_dev = self.get_src_dir_dev(dev)
         else:
             is_bind = False
 

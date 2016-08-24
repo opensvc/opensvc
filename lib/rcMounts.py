@@ -1,4 +1,6 @@
 import os
+from subprocess import *
+from rcUtilities import bdecode
 
 class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
@@ -60,6 +62,16 @@ class Mounts:
                 return m.dev
             if d == os.sep:
                 last = True
+
+    def get_src_dir_dev(self, dev):
+        """Given a directory path, return its hosting device
+        """
+        p = Popen(self.df_one_cmd + [dev], stdout=PIPE, stderr=STDOUT, close_fds=True)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        out = bdecode(out).lstrip()
+        return out.split()[0]
 
     def __str__(self):
         output="%s" % (self.__class__.__name__)
