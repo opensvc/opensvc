@@ -276,6 +276,8 @@ class DockerLib(object):
             cmd = self.docker_cmd + ['-r=false', '-d',
                    '-g', self.docker_data_dir,
                    '-p', self.docker_pid_file]
+        if self.docker_min_version("1.9") and '--exec-root' not in str(self.docker_daemon_args):
+            cmd += ["--exec-root", self.docker_data_dir]
         cmd += self.docker_daemon_args
         return cmd
 
