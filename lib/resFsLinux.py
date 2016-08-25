@@ -507,7 +507,7 @@ class Mount(Res.Mount):
         for m in mounts:
             _mnt_realpath = os.path.realpath(m.mnt)
             if _mnt_realpath != mnt_realpath and \
-               _mnt_realpath.startswith(mnt_realpath):
+               _mnt_realpath.startswith(mnt_realpath+"/"):
                 ret = self.try_umount(_mnt_realpath)
                 if ret != 0:
                     break
