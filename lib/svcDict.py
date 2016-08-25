@@ -4,6 +4,16 @@ from rcGlobalEnv import rcEnv
 from rcNode import node_get_hostmode
 from textwrap import TextWrapper
 
+deprecated_sections = [
+  "disk.pool",
+  "drbd",
+  "loop",
+  "pool",
+  "vdisk",
+  "vmdg",
+  "vg",
+]
+
 class MissKeyNoDefault(Exception):
      pass
 
@@ -3038,6 +3048,10 @@ class Section(object):
 
     def _template(self, rtype=None):
         section = self.section
+        if self.section in deprecated_sections:
+            return ""
+        if rtype and  self.section+"."+rtype in deprecated_sections:
+            return ""
         dpath = rcEnv.pathdoc
         fpath = os.path.join(dpath, "template."+section+".env")
         if rtype:
