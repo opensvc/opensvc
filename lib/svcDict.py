@@ -3334,6 +3334,20 @@ class KeyDict(KeywordStore):
                   candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
                   text="Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
                 )
+        def kw_pre_provision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_provision",
+                  at=True,
+                  text="A command or script to execute before the resource provision action. Errors do not interrupt the action."
+                )
+        def kw_post_provision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_provision",
+                  at=True,
+                  text="A command or script to execute after the resource provision action. Errors do not interrupt the action."
+                )
         def kw_pre_start(resource):
             return Keyword(
                   section=resource,
@@ -3419,6 +3433,20 @@ class KeyDict(KeywordStore):
                   text="A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
                 )
 
+        def kw_blocking_pre_provision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_provision",
+                  at=True,
+                  text="A command or script to execute before the resource provision action. Errors interrupt the action."
+                )
+        def kw_blocking_post_provision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_provision",
+                  at=True,
+                  text="A command or script to execute after the resource provision action. Errors interrupt the action."
+                )
         def kw_blocking_pre_start(resource):
             return Keyword(
                   section=resource,
@@ -3515,6 +3543,8 @@ class KeyDict(KeywordStore):
             self += kw_optional(r)
             self += kw_always_on(r)
 
+            self += kw_pre_provision(r)
+            self += kw_post_provision(r)
             self += kw_pre_start(r)
             self += kw_post_start(r)
             self += kw_pre_stop(r)
@@ -3528,6 +3558,8 @@ class KeyDict(KeywordStore):
             self += kw_pre_sync_update(r)
             self += kw_post_sync_update(r)
 
+            self += kw_blocking_pre_provision(r)
+            self += kw_blocking_post_provision(r)
             self += kw_blocking_pre_start(r)
             self += kw_blocking_post_start(r)
             self += kw_blocking_pre_stop(r)
