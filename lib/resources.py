@@ -135,9 +135,19 @@ class Resource(object):
             if self.svc.options.dry_run:
                 self.log.info("exec trigger %s" % getattr(self, attr))
                 return
-            ret, out, err = self.vcall(cmdv)
+            try:
+                ret, out, err = self.vcall(cmdv)
+            except OSError as e:
+                ret = 1
+                if e.errno == 8:
+                    self.log.error("%s exec format error: check the script shebang" % cmd)
+                else:
+                    self.log.error("%s error: %s" % (cmd, str(e)))
+            except:
+                ret = 1
+                self.log.error("%s error: %s" % (cmd, str(e)))
             if blocking and ret != 0:
-                raise exc.excError("%s trigger %s error" % (type, cmd))
+                raise exc.excError("%s trigger %s blocking error" % (type, cmd))
 
     def action_main(self, action):
         if self.svc.options.dry_run:
