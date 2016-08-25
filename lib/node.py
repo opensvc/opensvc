@@ -193,7 +193,7 @@ class Node(Svc, Freezer, Scheduler):
             'collector_untag': 'unset a node tag (pointed by --tag)',
             'collector_show_tags': 'list all node tags',
             'collector_list_tags': 'list all available tags. use --like to filter the output.',
-            'collector_create_tag': 'create a new tag',
+            'collector_create_tag': 'create a new tag with name specified by --tag',
           },
         }
         self.collector = xmlrpcClient.Collector(node=self)
