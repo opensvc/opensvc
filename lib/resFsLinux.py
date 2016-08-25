@@ -349,8 +349,7 @@ class Mount(Res.Mount):
             self.check_zfs_canmount()
 
         if self.is_up() is True:
-            self.log.info("fs(%s %s) is already mounted"%
-                (self.device, self.mountPoint))
+            self.log.info("%s is already mounted" % self.label)
             return 0
 
         if self.fsType == "btrfs":
@@ -383,7 +382,7 @@ class Mount(Res.Mount):
 
     def check_zfs_canmount(self):
         if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
-            self.log.info("fs(%s %s) should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.device, self.mountPoint, self.device))
+            self.log.info("%s should be set to canmount=noauto (zfs set canmount=noauto %s)" % (self.label, self.device))
 
     def umount_zfs(self):
         ret, out, err = self.vcall(['zfs', 'umount', self.device ], err_to_info=True)
@@ -457,8 +456,7 @@ class Mount(Res.Mount):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
         if self.is_up() is False:
-            self.log.info("fs(%s %s) is already umounted"%
-                    (self.device, self.mountPoint))
+            self.log.info("%s is already umounted" % self.label)
             return
         try:
             os.stat(self.mountPoint)

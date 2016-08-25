@@ -121,8 +121,7 @@ class Mount(Res.Mount):
         Res.Mount.start(self)
 
         if self.is_up() is True:
-            self.log.info("fs(%s %s) is already mounted"%
-                (self.device, self.mountPoint))
+            self.log.info("%s is already mounted" % self.label)
             return 0
 
         self.fsck()
@@ -147,8 +146,7 @@ class Mount(Res.Mount):
         if self.Mounts is None:
             self.Mounts = rcMounts.Mounts()
         if self.is_up() is False:
-            self.log.info("fs(%s %s) is already umounted"%
-                    (self.device, self.mountPoint))
+            self.log.info("%s is already umounted" % self.label)
             return
         for i in range(3):
             ret = try_umount(self)
