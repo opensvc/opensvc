@@ -72,7 +72,6 @@ class rcEnv:
     """Class to store globals
     """
 
-    logging_initialized = []
     allowed_svctype = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ', 'STG']
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()

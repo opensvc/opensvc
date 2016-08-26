@@ -28,8 +28,6 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         except:
             self.handleError(record)
 
-
-
 def set_streamformatter(svcs):
     maxlen = get_max_name_len(svcs)
     streamformatter = logging.Formatter("%(levelname)-7s %(name)-"+str(maxlen)+"s %(message)s")
@@ -52,78 +50,71 @@ def get_max_name_len(svcs):
                 maxlen = l
     return maxlen
 
-def initLogger(name):
+def initLogger(name, handlers=["file", "stream", "syslog"]):
     log = logging.getLogger(name)
-    if name in rcEnv.logging_initialized:
-        return log
+    log.handlers = []
 
-    """Common log formatter
-    """
-    fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    streamformatter = logging.Formatter("%(levelname)-7s %(name)s %(message)s")
+    if "file" in handlers:
+        fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
+                                                           maxBytes=5242880,
+                                                           backupCount=5)
+        filehandler.setFormatter(fileformatter)
+        log.addHandler(filehandler)
 
-    """Common logfile with rotation
-    """
-    filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
-                                                       maxBytes=5242880,
-                                                       backupCount=5)
-    filehandler.setFormatter(fileformatter)
-    log.addHandler(filehandler)
+    if "stream" in handlers:
+        streamformatter = logging.Formatter("%(levelname)-7s %(name)s %(message)s")
+        streamhandler = logging.StreamHandler()
+        streamhandler.setFormatter(streamformatter)
+        log.addHandler(streamhandler)
 
-    """Stdout logger
-    """
-    streamhandler = logging.StreamHandler()
-    streamhandler.setFormatter(streamformatter)
-    log.addHandler(streamhandler)
+    if "syslog" in handlers:
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+        config = ConfigParser.RawConfigParser({})
+        try:
+            config.read(rcEnv.nodeconf)
+        except:
+            pass
+        try:
+            facility = config.get("syslog", "facility")
+        except:
+            facility = "daemon"
+        try:
+            host = config.get("syslog", "host")
+        except:
+            host = None
+        try:
+            port = int(config.get("syslog", "port"))
+        except:
+            port = None
+        address = None
+        if host is None and port is None:
+            if os.path.exists("/dev/log"):
+                address = os.path.realpath("/dev/log")
+            elif os.path.exists("/var/run/syslog"):
+                address = os.path.realpath("/var/run/syslog")
+        if address is None:
+            if host is None:
+                host = "localhost"
+            if port is None:
+                port = 514
+            address = (host, port)
 
-    """ syslog
-    """
-    try:
-        import ConfigParser
-    except ImportError:
-        import configparser as ConfigParser
-    config = ConfigParser.RawConfigParser({})
-    try:
-        config.read(rcEnv.nodeconf)
-    except:
-        pass
-    try:
-        facility = config.get("syslog", "facility")
-    except:
-        facility = "daemon"
-    try:
-        host = config.get("syslog", "host")
-    except:
-        host = None
-    try:
-        port = int(config.get("syslog", "port"))
-    except:
-        port = None
-    address = None
-    if host is None and port is None:
-        if os.path.exists("/dev/log"):
-            address = os.path.realpath("/dev/log")
-        elif os.path.exists("/var/run/syslog"):
-            address = os.path.realpath("/var/run/syslog")
-    if address is None:
-        if host is None:
-            host = "localhost"
-        if port is None:
-            port = 514
-        address = (host, port)
-
-    syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
-    try:
-        sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
-    except Exception as e:
-        if e.errno == errno.ENOTSOCK:
-            # solaris /dev/log is a stream device
-            sysloghandler = LoggerHandler(facility=facility)
-        else:
-            sysloghandler = None
-    if sysloghandler:
-        sysloghandler.setFormatter(syslogformatter)
-        log.addHandler(sysloghandler)
+        syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
+        try:
+            sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+        except Exception as e:
+            if e.errno == errno.ENOTSOCK:
+                # solaris /dev/log is a stream device
+                sysloghandler = LoggerHandler(facility=facility)
+            else:
+                sysloghandler = None
+        if sysloghandler:
+            sysloghandler.setFormatter(syslogformatter)
+            log.addHandler(sysloghandler)
 
     if '--debug' in sys.argv:
             rcEnv.loglevel = logging.DEBUG
@@ -138,5 +129,4 @@ def initLogger(name):
             rcEnv.loglevel = logging.INFO
             log.setLevel(logging.INFO)
 
-    rcEnv.logging_initialized.append(name)
     return log

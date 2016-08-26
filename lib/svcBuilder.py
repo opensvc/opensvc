@@ -3566,6 +3566,8 @@ def build_services(status=None, svcnames=[],
             svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
             errors.append("%s: %s" % (name, str(e)))
+            svclog = rcLogger.initLogger(name, handlers=["file", "syslog"])
+            svclog.error(str(e))
             continue
         except ex.excAbortAction:
             continue
