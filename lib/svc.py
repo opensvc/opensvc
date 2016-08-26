@@ -3241,9 +3241,6 @@ class Svc(Resource, Scheduler):
         except Exception as e:
             self.log.error("the new configuration causes the following build error: %s" % str(e))
             ret["errors"] += 1
-        if svc is None:
-            self.log.error("the new configuration causes errors in the build process")
-            ret["errors"] += 1
 
         return ret
 

@@ -3252,8 +3252,7 @@ def build(name, minimal=False, svcconf=None):
 
         if "pkg_name" in defaults:
             if svcmode not in ["sg", "rhcs", "vcs"]:
-                log.error("can not set 'pkg_name' with '%s' mode in %s env"%(svcmode, name))
-                return None
+                raise ex.excInitError("can not set 'pkg_name' with '%s' mode" % svcmode)
             kwargs['pkg_name'] = defaults["pkg_name"]
 
 
@@ -3285,9 +3284,7 @@ def build(name, minimal=False, svcconf=None):
             svc.svctype = ''
 
     if svc.svctype not in rcEnv.allowed_svctype:
-        svc.log.error('service %s type %s is not a known service type (%s)'%(svc.svcname, svc.svctype, ', '.join(rcEnv.allowed_svctype)))
-        del(svc)
-        return None
+        raise ex.excInitError('%s is not a valid service type (%s)'%(svc.svctype, ', '.join(rcEnv.allowed_svctype)))
 
     if minimal:
         return svc
@@ -3364,9 +3361,7 @@ def build(name, minimal=False, svcconf=None):
     """ prune not managed service
     """
     if svc.svcmode not in rcEnv.vt_cloud and rcEnv.nodename not in svc.nodes | svc.drpnodes:
-        svc.log.error('service %s not managed here' % name)
-        del(svc)
-        return None
+        raise ex.excInitError('service not managed by this node. hostname %s is not a member of DEFAULT.nodes, DEFAULT.drpnode nor DEFAULT.drpnodes' % rcEnv.nodename)
 
     if not hasattr(svc, "clustertype"):
         try:
@@ -3378,64 +3373,46 @@ def build(name, minimal=False, svcconf=None):
         svc.ha = True
     allowed_clustertype = ['failover', 'flex', 'autoflex']
     if svc.clustertype not in allowed_clustertype:
-        svc.log.error("invalid cluster type '%s'. allowed: %s"%(svc.svcname, svc.clustertype, ', '.join(allowed_clustertype)))
-        del(svc)
-        return None
+        raise ex.excInitError("invalid cluster type '%s'. allowed: %s"%(svc.clustertype, ', '.join(allowed_clustertype)))
 
     try:
         svc.flex_min_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_min_nodes')
     except ex.OptNotFound:
         svc.flex_min_nodes = 1
     if svc.flex_min_nodes < 0:
-        svc.log.error("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
     nb_nodes = len(svc.autostart_node)
     if nb_nodes == 0:
         nb_nodes = 1
     if nb_nodes > 0 and svc.flex_min_nodes > nb_nodes:
-        svc.log.error("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
 
     try:
         svc.flex_max_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_max_nodes')
     except ex.OptNotFound:
         svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < 0:
-        svc.log.error("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
     if svc.flex_max_nodes < svc.flex_min_nodes:
-        svc.log.error("invalid flex_max_nodes '%d' (<flex_min_nodes)."%svc.flex_max_nodes)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_max_nodes '%d' (<flex_min_nodes)."%svc.flex_max_nodes)
 
     try:
         svc.flex_cpu_low_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_low_threshold')
     except ex.OptNotFound:
         svc.flex_cpu_low_threshold = 10
     if svc.flex_cpu_low_threshold < 0:
-        svc.log.error("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
     if svc.flex_cpu_low_threshold > 100:
-        svc.log.error("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
 
     try:
         svc.flex_cpu_high_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_high_threshold')
     except ex.OptNotFound:
         svc.flex_cpu_high_threshold = 90
     if svc.flex_cpu_high_threshold < 0:
-        svc.log.error("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
     if svc.flex_cpu_high_threshold > 100:
-        svc.log.error("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
-        del(svc)
-        return None
+        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
 
     try:
         svc.show_disabled = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'show_disabled')
@@ -3445,9 +3422,7 @@ def build(name, minimal=False, svcconf=None):
     """ prune service whose service type does not match host mode
     """
     if svc.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
-        svc.log.error('service %s type %s is not allowed to run on this node (host mode %s)' % (svc.svcname, svc.svctype, rcEnv.host_mode))
-        del(svc)
-        return None
+        raise ex.excInitError('not allowed to run on this node (service_type=%s host_mode=%s)' % (svc.svctype, rcEnv.host_mode))
 
     if "drp_type" in defaults:
         svc.drp_type = defaults["drp_type"]
@@ -3513,31 +3488,28 @@ def build(name, minimal=False, svcconf=None):
     #
     # instanciate resources
     #
-    try:
-        add_containers(svc, conf)
-        add_resources('hb', svc, conf)
-        add_resources('stonith', svc, conf)
-        add_resources('ip', svc, conf)
-        add_resources('disk', svc, conf)
-        add_resources('fs', svc, conf)
-        add_resources('share', svc, conf)
-        add_resources('app', svc, conf)
+    add_containers(svc, conf)
+    add_resources('hb', svc, conf)
+    add_resources('stonith', svc, conf)
+    add_resources('ip', svc, conf)
+    add_resources('disk', svc, conf)
+    add_resources('fs', svc, conf)
+    add_resources('share', svc, conf)
+    add_resources('app', svc, conf)
 
-        # deprecated, folded into "disk"
-        add_resources('vdisk', svc, conf)
-        add_resources('vmdg', svc, conf)
-        add_resources('loop', svc, conf)
-        add_resources('drbd', svc, conf)
-        add_resources('vg', svc, conf)
-        add_resources('pool', svc, conf)
+    # deprecated, folded into "disk"
+    add_resources('vdisk', svc, conf)
+    add_resources('vmdg', svc, conf)
+    add_resources('loop', svc, conf)
+    add_resources('drbd', svc, conf)
+    add_resources('vg', svc, conf)
+    add_resources('pool', svc, conf)
 
-        # deprecated, folded into "app"
-        add_apps_sysv(svc, conf)
+    # deprecated, folded into "app"
+    add_apps_sysv(svc, conf)
 
-        add_syncs(svc, conf)
-    except (ex.excInitError, ex.excError) as e:
-        log.error(str(e))
-        return None
+    add_syncs(svc, conf)
+
     svc.post_build()
     return svc
 
@@ -3573,6 +3545,7 @@ def build_services(status=None, svcnames=[],
     If no status is specified, returns all services
     """
 
+    errors = []
     services = {}
     if type(svcnames) == str:
         svcnames = [svcnames]
@@ -3580,7 +3553,11 @@ def build_services(status=None, svcnames=[],
     if len(svcnames) == 0:
         svcnames = list_services()
     else:
-        svcnames = list(set(list_services()) & set(svcnames))
+        all_svcnames = list_services()
+        missing_svcnames = sorted(list(set(svcnames) - set(all_svcnames)))
+        for m in missing_svcnames:
+            errors.append("%s: service does not exist" % m)
+        svcnames = list(set(svcnames) & set(all_svcnames))
 
     setup_logging(svcnames)
 
@@ -3588,15 +3565,13 @@ def build_services(status=None, svcnames=[],
         try:
             svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
-            log.error(str(e))
+            errors.append("%s: %s" % (name, str(e)))
             continue
         except ex.excAbortAction:
             continue
         except:
             import traceback
             traceback.print_exc()
-            continue
-        if svc is None :
             continue
         if status is not None and not svc.status() in status:
             continue
@@ -3606,7 +3581,7 @@ def build_services(status=None, svcnames=[],
             continue
         services[svc.svcname] = svc
     rcLogger.set_streamformatter(services.values())
-    return [ s for n, s in sorted(services.items()) ]
+    return [ s for n, s in sorted(services.items()) ], errors
 
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):

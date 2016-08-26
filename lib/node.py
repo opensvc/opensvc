@@ -285,7 +285,7 @@ class Node(Svc, Freezer, Scheduler):
             if not kwargs['autopush']:
                 autopush = False
             del kwargs['autopush']
-        svcs = svcBuilder.build_services(*args, **kwargs)
+        svcs, errors = svcBuilder.build_services(*args, **kwargs)
         for svc in svcs:
             self += svc
         if autopush:
@@ -299,7 +299,14 @@ class Node(Svc, Freezer, Scheduler):
             else:
                 n = 1
             if len(self.svcs) != n:
-                raise ex.excError("%d services validated out of %d" % (len(self.svcs), n))
+                msg = ""
+                if n > 1:
+                    msg += "%d services validated out of %d\n" % (len(self.svcs), n)
+                if len(errors) == 1:
+                    msg += errors[0]
+                else:
+                    msg += "\n".join(list(map(lambda x: "- "+x, errors)))
+                raise ex.excError(msg)
 
 
     def close(self):

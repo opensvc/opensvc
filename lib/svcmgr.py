@@ -272,7 +272,7 @@ def main():
             node.build_services(**build_kwargs)
         except ex.excError as e:
             if not action in ("pull"):
-                print("build error:", e)
+                print(e, file=sys.stderr)
                 build_err = True
 
     if node.svcs is not None and len(node.svcs) > 0:
@@ -281,7 +281,8 @@ def main():
         svcnames = options.parm_svcs.split(',')
 
     if cmd in ('svcmgr', 'svcmgr.py') and len(svcnames) == 0:
-        sys.stderr.write("""No service specified. Try:
+        if not build_err:
+            sys.stderr.write("""No service specified. Try:
  svcmgr -s <svcname>[,<svcname>]
  svcmgr --status <status>[,<status>]
  <svcname>
@@ -332,7 +333,7 @@ def main():
             try:
                 node.build_services(svcnames=svcnames, autopush=False, minimal=build_kwargs["minimal"])
             except ex.excError as e:
-                print("build error:", e, file=sys.stderr)
+                print(e, file=sys.stderr)
                 build_err = True
 
             if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
