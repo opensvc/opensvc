@@ -3043,32 +3043,34 @@ class Svc(Resource, Scheduler):
         return 0
 
     def set_disable(self, rids=[], disable=True):
-        if len(rids) == 0:
+        if len(rids) == 0 or len(rids) == len(self.resources_by_id):
             rids = ['DEFAULT']
+
         for rid in rids:
             if rid != 'DEFAULT' and not self.config.has_section(rid):
-                self.log.error("service", svcname, "has not resource", rid)
+                self.log.error("service %s has not resource %s" % (self.svcname, rid))
                 continue
             self.log.info("set %s.disable = %s" % (rid, str(disable)))
-            self.config.set(rid, "disable", disable)
-        try:
-            f = open(self.pathenv, 'w')
-        except:
-            self.log.error("failed to open", self.pathenv, "for writing")
-            return 1
+            self.config.set(rid, "disable", str(disable).lower())
 
         #
         # if we set DEFAULT.disable = True,
         # we don't want res#n.disable = False
         #
-        if len(rids) == 0 and disable:
+        if rids == ["DEFAULT"] and disable:
             for s in self.config.sections():
                 if self.config.has_option(s, "disable") and \
                    self.config.getboolean(s, "disable") == False:
                     self.log.info("remove %s.disable = false" % s)
                     self.config.remove_option(s, "disable")
 
-        self.config.write(f)
+        try:
+            with open(self.pathenv, 'w') as f:
+                self.config.write(f)
+        except:
+            self.log.error("failed to open", self.pathenv, "for writing")
+            return 1
+
         return 0
 
     def enable(self):
