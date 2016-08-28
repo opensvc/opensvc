@@ -2322,6 +2322,10 @@ class Svc(Resource, Scheduler):
         paths = get_osvc_paths(osvc_root_path=r.osvc_root_path, sysname=r.guestos)
         encap_pathenv = os.path.join(paths.pathetc, os.path.basename(self.pathenv))
 
+        if out == "":
+            # this is what happens when the container is down
+            return
+
         if ret == 0:
             encap_mtime = int(float(out.strip()))
             local_mtime = int(os.stat(self.pathenv).st_mtime)
