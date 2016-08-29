@@ -3218,9 +3218,13 @@ class Svc(Resource, Scheduler):
                 rtype = config.get(section, "type")
             else:
                 rtype = None
-            if family not in data.sections:
+            if family not in list(data.sections.keys()) + list(data.deprecated_sections.keys()):
                 self.log.warning("ignored section %s" % section)
                 ret["warnings"] += 1
+            if family in data.deprecated_sections:
+                self.log.warning("deprecated section prefix %s" % family)
+                ret["warnings"] += 1
+                family, rtype = data.deprecated_sections[family]
             for option in config.options(section):
                 if option in config.defaults():
                     continue

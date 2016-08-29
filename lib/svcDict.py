@@ -4,15 +4,15 @@ from rcGlobalEnv import rcEnv
 from rcNode import node_get_hostmode
 from textwrap import TextWrapper
 
-deprecated_sections = [
-  "disk.pool",
-  "drbd",
-  "loop",
-  "pool",
-  "vdisk",
-  "vmdg",
-  "vg",
-]
+deprecated_sections = {
+  "disk.pool": ["disk", "zpool"],
+  "drbd": ["disk", "drbd"],
+  "loop": ["disk", "loop"],
+  "pool": ["disk", "zpool"],
+  "vdisk": ["disk", "vdisk"],
+  "vmdg": ["disk", "vmdg"],
+  "vg": ["disk", "vg"],
+}
 
 class MissKeyNoDefault(Exception):
      pass
@@ -3286,6 +3286,7 @@ class KeywordStore(dict):
 class KeyDict(KeywordStore):
     def __init__(self, provision=False):
         KeywordStore.__init__(self, provision)
+        self.deprecated_sections = deprecated_sections
 
         import os
 
