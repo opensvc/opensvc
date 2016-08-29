@@ -19,6 +19,7 @@ action_desc = {
       'startcontainer': 'start the container resource',
       'stopcontainer': 'stop the container resource',
       'provision': 'provision and start the service',
+      'unprovision': 'stop and unprovision the service. beware: data will be lost upon fs and disk unprovisioning.',
       'disable': 'disable resources passed through --rid in services passed through --service. Specifying no resource disables the whole service.',
       'enable': 'enable resources passed through --rid in services passed through --service. Specifying no resource enables the whole service.',
       'status': 'return service overall status code',

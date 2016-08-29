@@ -1906,6 +1906,13 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("container", "rollback")
         self.refresh_ip_status()
 
+    def unprovision(self):
+        self.sub_set_action("ip", "unprovision", xtags=set(['zone', 'docker']))
+        self.sub_set_action("disk", "unprovision", xtags=set(['zone']))
+        self.sub_set_action("fs", "unprovision", xtags=set(['zone']))
+        self.sub_set_action("container", "unprovision")
+        self.push()
+
     def provision(self):
         self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
         self.sub_set_action("disk", "provision", xtags=set(['zone']))

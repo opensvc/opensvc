@@ -190,3 +190,8 @@ class Disk(resDisk.Disk):
         prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 
+    def unprovision(self):
+        m = __import__("provDiskGce")
+        prov = getattr(m, "ProvisioningDisk")(self)
+        prov.unprovisioner()
+

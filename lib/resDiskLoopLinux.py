@@ -86,3 +86,8 @@ class Disk(Res.Disk):
         prov = m.ProvisioningDisk(self)
         prov.provisioner()
 
+    def unprovision(self):
+        m = __import__("provDiskLoopLinux")
+        prov = m.ProvisioningDisk(self)
+        prov.unprovisioner()
+

@@ -177,7 +177,7 @@ class Resource(object):
             self.action_triggers("post", action)
             self.action_triggers("blocking_post", action, blocking=True)
             if not self.svc.options.dry_run and \
-               ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action in ("provision", "install", "create", "switch", "migrate")):
+               ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action in ("unprovision", "provision", "install", "create", "switch", "migrate")):
                 """ refresh resource status cache after changing actions
                 """
                 self.status(refresh=True, restart=False)
@@ -214,6 +214,7 @@ class Resource(object):
              action.startswith("stop") or \
              action.startswith("sync") or \
              action.startswith("_pg_") or \
+             action == "unprovision" or \
              action == "provision"
            ):
             self.log.debug('action: skip action on filtered-out resource')
@@ -477,6 +478,9 @@ class Resource(object):
         pass
 
     def provision(self):
+        pass
+
+    def unprovision(self):
         pass
 
     def files_to_sync(self):

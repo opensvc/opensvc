@@ -312,6 +312,8 @@ def add_scsireserv(svc, resource, conf, section):
 
 def add_triggers(svc, resource, conf, section):
     triggers = [
+      'pre_unprovision', 'pre_unprovision',
+      'post_unprovision', 'post_unprovision',
       'pre_provision', 'pre_provision',
       'post_provision', 'post_provision',
       'pre_stop', 'pre_start',

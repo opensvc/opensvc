@@ -283,3 +283,6 @@ class ScsiReserv(Res.Resource):
     def provision(self):
         self.start()
 
+    def unprovision(self):
+        self.stop()
+

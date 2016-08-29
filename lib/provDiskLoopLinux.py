@@ -7,6 +7,20 @@ class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 
+    def unprovisioner(self):
+        self.r.stop()
+        try:
+            self.path = self.r.svc.config.get(self.r.rid, 'file')
+        except Exception as e:
+            raise ex.excError(str(e))
+
+        if not os.path.exists(self.path):
+            self.r.log.info("already unprovisionned")
+
+        self.r.log.info("unlink %s" % self.path)
+        self.r.log.info("unprovisionned")
+        os.unlink(self.path)
+
     def provisioner(self):
         try:
             self.path = self.r.svc.config.get(self.r.rid, 'file')

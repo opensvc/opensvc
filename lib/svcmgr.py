@@ -136,7 +136,9 @@ parser.add_option("--tags", default=None, action="store", dest="parm_tags",
 parser.add_option("--resource", default=[], action="append",
                   help="a resource definition in json dictionary format fed to create or update")
 parser.add_option("--provision", default=False, action="store_true", dest="provision",
-                  help="provision the service in addition to env file creation. defaults to False.")
+                  help="with the install or create actions, provision the service resources after config file creation. defaults to False.")
+parser.add_option("--unprovision", default=False, action="store_true", dest="unprovision",
+                  help="with the delete action, unprovision the service resources before config files file deletion. defaults to False.")
 parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock", type="int",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",

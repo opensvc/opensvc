@@ -65,3 +65,22 @@ class ProvisioningDisk(Provisioning):
         self.r.vcall(cmd)
 
 
+    def unprovisioner(self):
+        self.r.stop()
+        for name in self.r.names:
+            self._unprovisioner(name)
+        self.r.log.info("unprovisioned")
+        return True
+
+    def _unprovisioner(self, name):
+        disk_names = self.r.get_disk_names()
+        if name not in disk_names:
+            self.r.log.info("gce disk name %s already unprovisioned" % name)
+            return
+
+        cmd = ["gcloud", "compute", "disks", "delete", "-q", name,
+               "--zone", self.r.gce_zone]
+
+        self.r.vcall(cmd)
+
+
