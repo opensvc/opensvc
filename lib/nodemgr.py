@@ -11,8 +11,6 @@ import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import check_privs, ximport
 
-check_privs()
-
 node_mod = ximport('node')
 
 try:
@@ -98,6 +96,14 @@ parser.add_option("--table", default=False, action="store_true", dest="table",
                   help="used table representation of collector data instead of the default itemized list of objects and properties")
 parser.add_option("--user", default=None, action="store", dest="user",
                   help="authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.")
+parser.add_option("--password", default=None, action="store", dest="password",
+                  help="authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.")
+parser.add_option("--insecure", default=False, action="store_true", dest="insecure",
+                  help="allow communications with a collector presenting unverified SSL certificates.")
+parser.add_option("--api", default=None, action="store", dest="api",
+                  help="specify a collector api url different from the one set in node.conf. Honored by the 'collector cli' action.")
+parser.add_option("--config", default=None, action="store", dest="config",
+                  help="specify a user-specific collector api connection configuration file. defaults to '~/.opensvc-cli'. Honored by the 'collector cli' action.")
 parser.add_option("--app", default=None, action="store", dest="app",
                   help="Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.")
 
@@ -126,10 +132,15 @@ def main():
         n.close()
         parser.error("Missing action")
     action = '_'.join(args)
+    if action.startswith("collector_cli"):
+        action = "collector_cli"
     if not action in n.supported_actions():
         n.close()
         parser.set_usage(__usage + n.format_desc(action))
         parser.error("unsupported action: %s"%action)
+
+    if action not in n.unprivileged_actions:
+        check_privs()
 
     err = 0
     try:

@@ -163,7 +163,8 @@ class Node(Svc, Freezer, Scheduler):
             'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
           },
           'Collector management': {
-            'collector_events': 'display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
+            'collector_cli': 'open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. This command accepts the --user, --password, --api, --insecure and --config parameters. If executed as root, the collector is logged in with the node credentials.',
+            'collector_events': 'display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.',
             'collector_alerts': 'display node alerts',
             'collector_checks': 'display node checks',
             'collector_disks': 'display node disks',
@@ -196,6 +197,10 @@ class Node(Svc, Freezer, Scheduler):
             'collector_create_tag': 'create a new tag with name specified by --tag',
           },
         }
+        self.unprivileged_actions = [
+          "collector_cli",
+          "print_schedule",
+        ]
         self.collector = xmlrpcClient.Collector(node=self)
         self.cmdworker = rcCommandWorker.CommandWorker()
         try:
@@ -423,7 +428,7 @@ class Node(Svc, Freezer, Scheduler):
                     o = Compliance(self.skip_action, self.options, self.collector)
                     if not hasattr(o, a):
                         continue
-                elif a.startswith("collector_"):
+                elif a.startswith("collector_") and a != "collector_cli":
                     o = Collector(self.options, self.collector)
                     if not hasattr(o, a):
                         continue
@@ -463,7 +468,7 @@ class Node(Svc, Freezer, Scheduler):
                 o.updatecomp = True
                 o.node = self
             return getattr(o, a)()
-        elif a.startswith("collector_"):
+        elif a.startswith("collector_") and a != "collector_cli":
             from collector import Collector
             o = Collector(self.options, self.collector)
             return getattr(o, a)()
@@ -1416,6 +1421,22 @@ class Node(Svc, Freezer, Scheduler):
 
         return err
 
+    def collector_cli(self):
+        data = {}
+
+        if os.getuid() == 0:
+            if not hasattr(self.options, "user") or self.options.user is None:
+                user, password = self.collector_auth_node()
+                data["user"] = user
+                data["password"] = password
+            if not hasattr(self.options, "api") or self.options.api is None:
+                config = ConfigParser.RawConfigParser({})
+                config.read(os.path.join(rcEnv.pathetc, "node.conf"))
+                data["api"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        from rcCollectorCli import Cli
+        cli = Cli(**data)
+        return cli.run()
+
     def collector_api(self):
         if hasattr(self, "collector_api_cache"):
             return self.collector_api_cache
@@ -1426,10 +1447,6 @@ class Node(Svc, Freezer, Scheduler):
             username, password = self.collector_auth_user()
         data["username"] = username
         data["password"] = password
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
@@ -1439,10 +1456,6 @@ class Node(Svc, Freezer, Scheduler):
     def collector_auth_node(self):
         import platform
         sysname, username, x, x, machine, x = platform.uname()
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         password = config.get("node", "uuid")

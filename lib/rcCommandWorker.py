@@ -17,14 +17,20 @@ import rcExceptions as ex
 
 import logging
 import logging.handlers
-logfile = os.path.join(rcEnv.pathlog, 'cmdworker.log')
-fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
-                                                   maxBytes=5242880,
-                                                   backupCount=5)
-filehandler.setFormatter(fileformatter)
+
 log = logging.getLogger("cmdworker")
-log.addHandler(filehandler)
+
+if os.getuid() == 0:
+    logfile = os.path.join(rcEnv.pathlog, 'cmdworker.log')
+    fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
+                                                       maxBytes=5242880,
+                                                       backupCount=5)
+    filehandler.setFormatter(fileformatter)
+    log.addHandler(filehandler)
+else:
+    log.handlers = []
+
 log.setLevel(logging.DEBUG)
 log.debug("logger setup")
 

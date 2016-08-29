@@ -20,8 +20,6 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
-check_privs()
-
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
 os.environ['LANG'] = 'C'
@@ -3544,6 +3542,8 @@ def build_services(status=None, svcnames=[],
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
+
+    check_privs()
 
     errors = []
     services = {}

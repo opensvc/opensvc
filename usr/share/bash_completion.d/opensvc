@@ -223,7 +223,7 @@ _nodemgr()
 		local opts="actions"
 		;;
             collector)
-		local opts="json ack alerts checks events status list show asset networks disks"
+		local opts="json ack alerts checks events status list show asset networks disks cli"
 		;;
 	    compliance)
 		local opts="check fixable fix show list attach detach env"
@@ -279,6 +279,9 @@ _nodemgr()
 		;;
             "collector checks")
 		local opts="--table"
+		;;
+            "collector cli")
+		local opts="--user --password --config --api --insecure"
 		;;
             "collector events")
 		local opts="--table"
