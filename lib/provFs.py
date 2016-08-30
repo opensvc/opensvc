@@ -1,8 +1,9 @@
 from provisioning import Provisioning
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, protected_dirs
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
+import shutil
 
 class ProvisioningFs(Provisioning):
     # required from child classes:
@@ -71,4 +72,16 @@ class ProvisioningFs(Provisioning):
     def provisioner(self):
         self.provisioner_fs()
         self.r.start()
-        return True
+
+    def unprovisioner_fs(self):
+        pass
+
+    def unprovisioner(self):
+        self.r.stop()
+        self.unprovisioner_fs()
+        if os.path.exists(self.r.mountPoint) and not self.r.mountPoint in protected_dirs:
+            self.r.log.info("rm -rf %s" % self.r.mountPoint)
+            try:
+                shutil.rmtree(self.r.mountPoint)
+            except Exception as e:
+                raise ex.excError(str(e))

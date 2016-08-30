@@ -184,6 +184,14 @@ class Mount(Res.Resource):
         prov = getattr(m, "ProvisioningFs")(self)
         prov.provisioner()
 
+    def unprovision(self):
+        m = mimport(["prov", "fs", self.fsType], fallback=True)
+        if not hasattr(m, "ProvisioningFs"):
+            raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
+        prov = getattr(m, "ProvisioningFs")(self)
+        if hasattr(prov, "unprovisioner"):
+            prov.unprovisioner()
+
 if __name__ == "__main__":
     for c in (Mount,) :
         help(c)
