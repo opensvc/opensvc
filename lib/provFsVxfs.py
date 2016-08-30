@@ -1,5 +1,5 @@
-from provFs import ProvisioningFs
+import provFs
 
-class ProvisioningFsVxfs(ProvisioningFs):
+class ProvisioningFs(provFs.ProvisioningFs):
     mkfs = ['newfs', '-F', 'vxfs', '-o', 'largefiles', '-b', '8192']
     info = ['fstyp']

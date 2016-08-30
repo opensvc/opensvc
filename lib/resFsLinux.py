@@ -339,11 +339,11 @@ class Mount(Res.Mount):
                     if len(devs) > 0:
                         self.loopdevice = devs[0]
                         mntopt_l = self.mntOpt.split(',')
-                        mntopt_l.remove("loop")
-                        self.mntOpt = ','.join(mntopt_l)
-            except:
-                self.log.debug("can not stat %s" % self.device)
-                return False
+                        if "loop" in mntopt_l:
+                            mntopt_l.remove("loop")
+                            self.mntOpt = ','.join(mntopt_l)
+            except Exception as e:
+                raise ex.excError(str(e))
  
         if self.fsType == "zfs":
             self.check_zfs_canmount()

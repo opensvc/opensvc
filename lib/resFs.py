@@ -3,7 +3,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, mimport
 
 class Mount(Res.Resource):
     """Define a mount resource
@@ -91,7 +91,7 @@ class Mount(Res.Resource):
         if which(bin) is None:
             self.log.warning("%s not found. bypass."%self.fsType)
             return
-        if self.fsck_h[self.fsType].has_key('reportcmd'):
+        if 'reportcmd' in self.fsck_h[self.fsType]:
             cmd = self.fsck_h[self.fsType]['reportcmd']
             (ret, out, err) = self.vcall(cmd, err_to_info=True)
             if ret not in self.fsck_h[self.fsType]['reportclean']:
@@ -178,15 +178,10 @@ class Mount(Res.Resource):
         return cmp(self.mountPoint, other.mountPoint)
 
     def provision(self):
-        t = self.fsType[0].upper()+self.fsType[1:].lower()
-        try:
-            m = __import__("provFs"+t)
-        except ImportError as e:
-            m = __import__("provFs")
-        if hasattr(m, "ProvisioningFs"+t):
-            prov = getattr(m, "ProvisioningFs"+t)(self)
-        else:
-            prov = getattr(m, "ProvisioningFs")(self)
+        m = mimport(["prov", "fs", self.fsType], fallback=True)
+        if not hasattr(m, "ProvisioningFs"):
+            raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
+        prov = getattr(m, "ProvisioningFs")(self)
         prov.provisioner()
 
 if __name__ == "__main__":

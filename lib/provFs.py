@@ -62,11 +62,13 @@ class ProvisioningFs(Provisioning):
             if ret != 0:
                 self.r.log.error('Failed to format %s'%self.mkfs_dev)
                 raise ex.excError
+            self.r.log.info("provisioned")
+        else:
+            self.r.log.info("already provisioned")
 
         self.remove_keywords(["size", "vg"])
 
     def provisioner(self):
         self.provisioner_fs()
-        self.r.log.info("provisioned")
         self.r.start()
         return True

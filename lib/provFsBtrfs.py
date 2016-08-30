@@ -1,11 +1,11 @@
-from provFs import ProvisioningFs
+import provFs
 import tempfile
 import os
 import time
 import rcExceptions as ex
 from rcUtilities import which, justcall
 
-class ProvisioningFsBtrfs(ProvisioningFs):
+class ProvisioningFs(provFs.ProvisioningFs):
     mkfs = ['mkfs.btrfs']
     info = ['btrfs', 'device', 'ready']
 
@@ -92,7 +92,7 @@ class ProvisioningFsBtrfs(ProvisioningFs):
             self.r.log.info("skip provision: dev with LABEL= or UUID= are not supported")
             self.r.start()
             return
-        ProvisioningFs.provisioner_fs(self)
+        provFs.ProvisioningFs.provisioner_fs(self)
         self.create_subvol()
         self.r.log.info("provisioned")
         self.r.start()

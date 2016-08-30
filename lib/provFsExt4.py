@@ -1,5 +1,5 @@
-from provFs import ProvisioningFs
+import provFs
 
-class ProvisioningFsExt4(ProvisioningFs):
+class ProvisioningFs(provFs.ProvisioningFs):
     mkfs = ['mkfs.ext4', '-F', '-q']
     info = ['tune2fs', '-l']

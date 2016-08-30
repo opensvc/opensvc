@@ -1,8 +1,8 @@
-from provFs import ProvisioningFs
+import provFs
 from rcUtilities import which
 from rcZfs import Dataset
 
-class ProvisioningFsZfs(ProvisioningFs):
+class ProvisioningFs(provFs.ProvisioningFs):
     def provision_dev(self):
         if not which('zfs'):
             self.r.log.error("zfs command not found")

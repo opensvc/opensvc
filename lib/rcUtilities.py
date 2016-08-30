@@ -33,6 +33,38 @@ def is_string(s):
         return True
     return False
 
+def mimport(*args, fallback=True):
+    def fmt(s):
+        if len(s) > 1:
+            return s[0].upper()+s[1:].lower()
+        elif len(s) == 1:
+            return s[0].upper()
+        else:
+            return ""
+
+    mod = ""
+    for i, e in enumerate(*args):
+        if e in ("res", "prov") and i == 0:
+            mod += e
+        else:
+            mod += fmt(e)
+
+    try:
+        return __import__(mod+rcEnv.sysname)
+    except:
+        pass
+
+    try:
+        return __import__(mod)
+    except:
+        pass
+
+    if fallback and len(args) > 1:
+        args = args[:-1]
+        return mimport(*args, fallback=fallback)
+    else:
+        raise ImportError("no module found")
+
 def ximport(base):
     mod = base + rcEnv.sysname
     try:
