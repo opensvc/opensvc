@@ -180,7 +180,11 @@ class CompObject(object):
     def get_rule_items(self):
         rules = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
-            s = self.subst(self.get_env(k))
+            try:
+                s = self.subst(self.get_env(k))
+            except Exception as e:
+                perror(k, e)
+                continue
             try:
                 data = json.loads(s)
             except ValueError:
