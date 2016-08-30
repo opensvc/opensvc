@@ -499,7 +499,7 @@ class Svc(Resource, Scheduler):
              app.1
              app
         """
-        if "stop" in action or action in ("rollback", "shutdown"):
+        if "stop" in action or action in ("rollback", "shutdown", "unprovision"):
             reverse = True
         else:
             reverse = False
@@ -1907,11 +1907,10 @@ class Svc(Resource, Scheduler):
         self.refresh_ip_status()
 
     def unprovision(self):
-        self.sub_set_action("ip", "unprovision", xtags=set(['zone', 'docker']))
-        self.sub_set_action("disk", "unprovision", xtags=set(['zone']))
-        self.sub_set_action("fs", "unprovision", xtags=set(['zone']))
         self.sub_set_action("container", "unprovision")
-        self.push()
+        self.sub_set_action("fs", "unprovision", xtags=set(['zone']))
+        self.sub_set_action("disk", "unprovision", xtags=set(['zone']))
+        self.sub_set_action("ip", "unprovision", xtags=set(['zone', 'docker']))
 
     def provision(self):
         self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
