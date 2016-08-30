@@ -228,7 +228,7 @@ class CompObject(object):
                     _v = self.get_env('OSVC_COMP_'+s)
                 else:
                     _v = ""
-                    raise NotApplicable()
+                    raise NotApplicable("undefined substitution variable: %s" % s)
                 v = v.replace(m, _v)
             return v
 
