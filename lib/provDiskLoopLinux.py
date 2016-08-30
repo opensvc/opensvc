@@ -16,6 +16,7 @@ class ProvisioningDisk(Provisioning):
 
         if not os.path.exists(self.path):
             self.r.log.info("already unprovisionned")
+            return
 
         self.r.log.info("unlink %s" % self.path)
         self.r.log.info("unprovisionned")
