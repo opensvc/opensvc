@@ -25,6 +25,30 @@ if 'PATH' not in os.environ:
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
+def subst(svc, s):
+    while True:
+        m = re.search(r'{.+}', s)
+        if m is None:
+            return s
+        v = m.group(0).strip("{}")
+        if v == "nodename":
+            val = rcEnv.nodename
+        elif hasattr(svc, v):
+            val = getattr(svc, v)
+            if not is_string(val):
+                raise ex.excInitError("%s: substitution value is not a string" % v)
+        elif "." in v:
+            l = v.split(".")
+            if len(l) != 2:
+                raise ex.excInitError("%s: substitition keyword can have only one dot" % v)
+            _section, _v = l
+            if not svc.config.has_section(_section):
+                raise ex.excInitError("%s: section %s does not exist" % (v, _section))
+            val = conf_get(svc, svc.config, _section, _v, "string", scope=True)
+        else:
+            raise ex.excInitError("%s: unknown substitution keyword" % v)
+        s = s[:m.start()] + val + s[m.end():]
+
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     if t == 'string':
         f = conf.get
@@ -57,29 +81,34 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
         nodename = impersonate
 
     if conf.has_option(s, o+"@"+nodename):
-        return f(s, o+"@"+nodename)
+        val = f(s, o+"@"+nodename)
     elif conf.has_option(s, o+"@nodes") and \
          nodename in d['nodes']:
-        return f(s, o+"@nodes")
+        val = f(s, o+"@nodes")
     elif conf.has_option(s, o+"@drpnodes") and \
          nodename in d['drpnodes']:
-        return f(s, o+"@drpnodes")
+        val = f(s, o+"@drpnodes")
     elif conf.has_option(s, o+"@encapnodes") and \
          nodename in d['encapnodes']:
-        return f(s, o+"@encapnodes")
+        val = f(s, o+"@encapnodes")
     elif conf.has_option(s, o+"@flex_primary") and \
          nodename == d['flex_primary']:
-        return f(s, o+"@flex_primary")
+        val = f(s, o+"@flex_primary")
     elif conf.has_option(s, o+"@drp_flex_primary") and \
          nodename == d['drp_flex_primary']:
-        return f(s, o+"@drp_flex_primary")
+        val = f(s, o+"@drp_flex_primary")
     elif conf.has_option(s, o):
         try:
-            return f(s, o)
+            val = f(s, o)
         except Exception as e:
             raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
     else:
         raise ex.OptNotFound
+
+    if t == 'string':
+        val = subst(svc, val)
+
+    return val
 
 def conf_get_string(svc, conf, s, o):
     return conf_get(svc, conf, s, o, 'string', scope=False)

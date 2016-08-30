@@ -4,6 +4,7 @@ from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
 import shutil
+from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(Provisioning):
     # required from child classes:
@@ -12,7 +13,6 @@ class ProvisioningFs(Provisioning):
 
     def __init__(self, r):
         Provisioning.__init__(self, r)
-        self.section = dict(r.svc.config.items(r.rid))
 
     def check_fs(self):
         if not hasattr(self, "info"):
@@ -34,10 +34,8 @@ class ProvisioningFs(Provisioning):
         p.ProvisioningDisk(self.r).provisioner()
 
     def provisioner_fs(self):
-        for i in ('dev', 'mnt'):
-            if i not in self.section:
-                raise ex.excError("%s keyword is not set in section %s"%(i, r.rid))
-            setattr(self, i, self.section[i])
+        self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        self.mnt = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mnt")
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
