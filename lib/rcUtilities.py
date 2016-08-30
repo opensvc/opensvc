@@ -7,6 +7,8 @@ import re
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
+protected_dirs = ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']
+
 if os.name == 'nt':
     close_fds = False
 else:
@@ -51,12 +53,12 @@ def mimport(*args, fallback=True):
 
     try:
         return __import__(mod+rcEnv.sysname)
-    except:
+    except ImportError:
         pass
 
     try:
         return __import__(mod)
-    except:
+    except ImportError:
         pass
 
     if fallback and len(args) > 1:
@@ -253,7 +255,7 @@ def getmount(path):
     return path
 
 def protected_mount(path):
-    if getmount(path) in ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']:
+    if getmount(path) in protected_dirs:
         return True
     return False
 
