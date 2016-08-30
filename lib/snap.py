@@ -94,10 +94,10 @@ class Snap(Res.Resource):
         for i, r in enumerate(rset.resources):
             r.alt_src = list(r.src)
             for j, src in enumerate(r.alt_src):
-                if not mounts_h.has_key(src):
+                if src not in mounts_h:
                     continue
                 mnt = mounts_h[src].mountPoint
-                if not self.snaps.has_key(mnt):
+                if mnt not in self.snaps:
                     continue
                 snap_mnt = self.snaps[mnt]['snap_mnt']
                 rset.resources[i].alt_src[j] = src.replace(os.path.join(mnt), os.path.join(snap_mnt), 1)

@@ -104,6 +104,6 @@ class Disk(m.Disk):
                     name_value = k.split('=')
                     if name_value[0] == 'vol' and len(name_value) == 2 :
                         vol = name_value[1]
-                        if vdevname2dev.has_key(vol):
+                        if vol in vdevname2dev:
                             self.disks |= set([ vdevname2dev[vol] ])
         return self.disks
