@@ -358,6 +358,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         from rcMountsLinux import Mounts
         m = Mounts()
         for devname, fpath in self.loop.items():
+            if fpath == "(deleted)":
+                continue
             parentpath = m.get_fpath_dev(fpath)
             if parentpath is None:
                 continue
