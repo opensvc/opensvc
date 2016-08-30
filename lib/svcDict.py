@@ -2543,6 +2543,7 @@ class KeywordLoopSize(Keyword):
                   section="disk",
                   rtype="loop",
                   keyword="size",
+                  at=True,
                   required=True,
                   default=10,
                   text="The size of the loop file to provision.",
@@ -2555,6 +2556,7 @@ class KeywordLoopFile(Keyword):
                   self,
                   section="disk",
                   rtype="loop",
+                  at=True,
                   keyword="file",
                   required=True,
                   text="The file hosting the disk image to map."
