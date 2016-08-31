@@ -55,12 +55,15 @@ def initLogger(name, handlers=["file", "stream", "syslog"]):
     log.handlers = []
 
     if "file" in handlers:
-        fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
-                                                           maxBytes=5242880,
-                                                           backupCount=5)
-        filehandler.setFormatter(fileformatter)
-        log.addHandler(filehandler)
+        try:
+            fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
+                                                               maxBytes=5242880,
+                                                               backupCount=5)
+            filehandler.setFormatter(fileformatter)
+            log.addHandler(filehandler)
+        except PermissionError:
+            pass
 
     if "stream" in handlers:
         streamformatter = logging.Formatter("%(levelname)-7s %(name)s %(message)s")
