@@ -1478,6 +1478,7 @@ class KeywordSyncZfsRecursive(Keyword):
                   section="sync",
                   keyword="recursive",
                   rtype="zfs",
+                  at=True,
                   order=13,
                   default=True,
                   candidates=(True, False),
@@ -1491,6 +1492,7 @@ class KeywordSyncZfsTags(Keyword):
                   section="sync",
                   keyword="tags",
                   rtype="zfs",
+                  at=True,
                   text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
                 )
 
@@ -1525,6 +1527,7 @@ class KeywordSyncRsyncTags(Keyword):
                   self,
                   section="sync",
                   keyword="tags",
+                  at=True,
                   rtype="rsync",
                   text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
                 )
@@ -1536,6 +1539,7 @@ class KeywordSyncRsyncExclude(Keyword):
                   section="sync",
                   keyword="exclude",
                   rtype="rsync",
+                  at=True,
                   deprecated=True,
                   text="A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
                 )
@@ -1546,6 +1550,7 @@ class KeywordSyncRsyncOptions(Keyword):
                   self,
                   section="sync",
                   keyword="options",
+                  at=True,
                   rtype="rsync",
                   text="A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
                 )
@@ -1570,6 +1575,7 @@ class KeywordSyncRsyncSnap(Keyword):
                   section="sync",
                   keyword="snap",
                   rtype="rsync",
+                  at=True,
                   order=14,
                   candidates=(True, False),
                   default=False,
@@ -1681,7 +1687,7 @@ class KeywordIpAmazonCascadeAllocation(Keyword):
                   keyword="cascade_allocation",
                   provisioning=True,
                   order=13,
-                  at=False,
+                  at=True,
                   required=False,
                   text="Set new allocated ip as value to other ip resources ipname parameter. The syntax is a whitespace separated list of <rid>.ipname[@<scope>].",
                   example="ip#1.ipname ip#1.ipname@nodes"
@@ -1878,6 +1884,7 @@ class KeywordIpType(Keyword):
                   self,
                   section="ip",
                   keyword="type",
+                  at=True,
                   candidates=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   text="The opensvc ip driver name.",
                   required=False,
@@ -1957,6 +1964,7 @@ class KeywordIpGateway(Keyword):
                   self,
                   section="ip",
                   keyword="gateway",
+                  at=True,
                   order=14,
                   required=False,
                   text="A zone ip provisioning parameter used in the sysidcfg formatting. The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
@@ -1969,6 +1977,7 @@ class KeywordDiskType(Keyword):
                   self,
                   section="disk",
                   keyword="type",
+                  at=True,
                   order=9,
                   required=False,
                   default="vg",
