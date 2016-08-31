@@ -278,7 +278,6 @@ class CompAuthKeys(CompObject):
                 continue
             with open(p, 'r') as f:
                 self.installed_keys_d[user] += f.read().splitlines()
-        pinfo(self.installed_keys_d[user][-1])
         return self.installed_keys_d[user]
 
     def get_user_group(self, user):
