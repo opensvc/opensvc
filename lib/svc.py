@@ -3207,8 +3207,19 @@ class Svc(Resource, Scheduler):
         # validate DEFAULT options
         for option in config.defaults():
             if data.sections["DEFAULT"].getkey(option) is None:
-                self.log.warning("ignored option DEFAULT.%s" % option)
-                ret["warnings"] += 1
+                found = False
+                for section in config.sections():
+                    family = section.split("#")[0]
+                    if family not in list(data.sections.keys()) + list(data.deprecated_sections.keys()):
+                        continue
+                    if family in data.deprecated_sections:
+                        family, rtype = data.deprecated_sections[family]
+                    if data.sections[family].getkey(option) is not None:
+                        found = True
+                        break
+                if not found:
+                    self.log.warning("ignored option DEFAULT.%s" % option)
+                    ret["warnings"] += 1
 
         # validate resources options
         from svcBuilder import build, handle_references
