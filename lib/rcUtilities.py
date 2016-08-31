@@ -35,7 +35,7 @@ def is_string(s):
         return True
     return False
 
-def mimport(*args, fallback=True):
+def mimport(*args, **kwargs):
     def fmt(s):
         if len(s) > 1:
             return s[0].upper()+s[1:].lower()
@@ -61,9 +61,9 @@ def mimport(*args, fallback=True):
     except ImportError:
         pass
 
-    if fallback and len(args) > 1:
+    if kwargs.get("fallback", True) and len(args) > 1:
         args = args[:-1]
-        return mimport(*args, fallback=fallback)
+        return mimport(*args, **kwargs)
     else:
         raise ImportError("no module found")
 
