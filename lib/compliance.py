@@ -121,6 +121,8 @@ class Module(object):
           "OSVC_PATH_COMP": rcEnv.pathcomp,
           "OSVC_PATH_TMP": rcEnv.pathtmp,
           "OSVC_PATH_LOG": rcEnv.pathlog,
+          "OSVC_NODEMGR": rcEnv.nodemgr,
+          "OSVC_SVCMGR": rcEnv.svcmgr,
         })
         self.set_env_path()
         for rule in self.ruleset.values():
