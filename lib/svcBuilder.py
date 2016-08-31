@@ -25,7 +25,7 @@ if 'PATH' not in os.environ:
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
-def subst(svc, s):
+def handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
         m = re.search(r'{.+}', s)
         if m is None:
@@ -36,34 +36,50 @@ def subst(svc, s):
         elif hasattr(svc, v):
             val = getattr(svc, v)
             if not is_string(val):
-                raise ex.excInitError("%s: substitution value is not a string" % v)
+                raise ex.excInitError("%s: reference target is not a string" % v)
         elif "." in v:
             l = v.split(".")
             if len(l) != 2:
-                raise ex.excInitError("%s: substitition keyword can have only one dot" % v)
+                raise ex.excInitError("%s: reference can have only one dot" % v)
             _section, _v = l
-            if not svc.config.has_section(_section):
+            if not conf.has_section(_section):
                 raise ex.excInitError("%s: section %s does not exist" % (v, _section))
-            val = conf_get(svc, svc.config, _section, _v, "string", scope=True)
+            try:
+                val = conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
+            except ex.OptNotFound as e:
+                raise ex.excInitError("%s: unresolved reference (%s)" % (v, str(e)))
         else:
-            raise ex.excInitError("%s: unknown substitution keyword" % v)
+            raise ex.excInitError("%s: unknown reference" % v)
         s = s[:m.start()] + val + s[m.end():]
 
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
-    if t == 'string':
-        f = conf.get
-    elif t == 'boolean':
-        f = conf.getboolean
-    elif t == 'integer':
-        f = conf.getint
-    else:
-        raise Exception()
-
     if not scope:
-        if conf.has_option(s, o):
-            return f(s, o)
-        else:
-            raise ex.OptNotFound
+        val = conf_get_val_unscoped(svc, conf, s, o)
+    else:
+        val = conf_get_val_scoped(svc, conf, s, o, impersonate=impersonate)
+
+    val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
+
+    if t == 'string':
+        pass
+    elif t == 'boolean':
+        val = rcUtilities.convert_bool(val)
+    elif t == 'integer':
+        try:
+            val = int(val)
+        except:
+            val = rcUtilities.convert_size(val)
+    else:
+        raise Exception("unknown keyword type: %s" % t)
+
+    return val
+
+def conf_get_val_unscoped(svc, conf, s, o):
+    if conf.has_option(s, o):
+        return conf.get(s, o)
+    raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
+
+def conf_get_val_scoped(svc, conf, s, o, impersonate=None):
     if type(svc) != dict:
         d = {
          'nodes': svc.nodes,
@@ -81,32 +97,29 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
         nodename = impersonate
 
     if conf.has_option(s, o+"@"+nodename):
-        val = f(s, o+"@"+nodename)
+        val = conf.get(s, o+"@"+nodename)
     elif conf.has_option(s, o+"@nodes") and \
          nodename in d['nodes']:
-        val = f(s, o+"@nodes")
+        val = conf.get(s, o+"@nodes")
     elif conf.has_option(s, o+"@drpnodes") and \
          nodename in d['drpnodes']:
-        val = f(s, o+"@drpnodes")
+        val = conf.get(s, o+"@drpnodes")
     elif conf.has_option(s, o+"@encapnodes") and \
          nodename in d['encapnodes']:
-        val = f(s, o+"@encapnodes")
+        val = conf.get(s, o+"@encapnodes")
     elif conf.has_option(s, o+"@flex_primary") and \
          nodename == d['flex_primary']:
-        val = f(s, o+"@flex_primary")
+        val = conf.get(s, o+"@flex_primary")
     elif conf.has_option(s, o+"@drp_flex_primary") and \
          nodename == d['drp_flex_primary']:
-        val = f(s, o+"@drp_flex_primary")
+        val = conf.get(s, o+"@drp_flex_primary")
     elif conf.has_option(s, o):
         try:
-            val = f(s, o)
+            val = conf.get(s, o)
         except Exception as e:
             raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
     else:
-        raise ex.OptNotFound
-
-    if t == 'string':
-        val = subst(svc, val)
+        raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
 
     return val
 
@@ -2813,7 +2826,7 @@ def add_syncs_nexenta(svc, conf, s):
         return
 
     try:
-        kwargs['reversible'] = conf.getboolean(s, "reversible")
+        kwargs['reversible'] = conf_get_boolean_scope(svc, conf, s, "reversible")
     except:
         pass
 

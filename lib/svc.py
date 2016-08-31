@@ -268,7 +268,7 @@ class Svc(Resource, Scheduler):
             # Error
             pass
 
-        if isinstance(r, Resource):
+        if isinstance(r, Resource) and r.rid and "#" in r.rid:
             self.resources_by_id[r.rid] = r
 
         r.svc = self
@@ -3049,12 +3049,12 @@ class Svc(Resource, Scheduler):
         return 0
 
     def set_disable(self, rids=[], disable=True):
-        if len(rids) == 0 or len(rids) == len(self.resources_by_id):
+        if not self.command_is_scoped() and (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
             rids = ['DEFAULT']
 
         for rid in rids:
             if rid != 'DEFAULT' and not self.config.has_section(rid):
-                self.log.error("service %s has not resource %s" % (self.svcname, rid))
+                self.log.error("service %s has no resource %s" % (self.svcname, rid))
                 continue
             self.log.info("set %s.disable = %s" % (rid, str(disable)))
             self.config.set(rid, "disable", str(disable).lower())
@@ -3211,6 +3211,8 @@ class Svc(Resource, Scheduler):
                 ret["warnings"] += 1
 
         # validate resources options
+        from svcBuilder import build, handle_references
+        from rcUtilities import convert_size
         for section in config.sections():
             family = section.split("#")[0]
             if config.has_option(section, "type"):
@@ -3237,21 +3239,26 @@ class Svc(Resource, Scheduler):
                     if not key.at and "@" in option:
                         self.log.error("option %s.%s does not support scoping" % (section, option))
                         ret["errors"] += 1
+                    value = config.get(section, option)
+                    try:
+                        value = handle_references(self, config, value, scope=True)
+                    except Exception as e:
+                        self.log.error(str(e))
+                        ret["errors"] += 1
+                        continue
+                    value = config.get(section, option)
                     if type(key.default) == bool:
-                        value = config.getboolean(section, option)
+                        value = bool(value)
                     elif type(key.default) == int:
                         try:
-                            value = config.getint(section, option)
+                            value = int(value)
                         except:
                             # might be a size string like 11mib
-                            value = config.get(section, option)
-                    else:
-                        value = config.get(section, option)
+                            value = convert_size(value)
                     if key.strict_candidates and key.candidates and value not in key.candidates:
                         self.log.error("option %s.%s value %s is not in valid candidates: %s" % (section, option, str(value), str(key.candidates)))
                         ret["errors"] += 1
 
-        from svcBuilder import build
         try:
             svc = build(self.svcname, svcconf=path)
         except Exception as e:

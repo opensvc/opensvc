@@ -425,6 +425,13 @@ def getaddr_caching(name, log=None):
         log.info("fetched %s address for name %s from cache" % (addr, name))
     return addr
 
+def convert_bool(s):
+    if str(s).lower() in ("yes", "y", "true",  "t", "1"):
+        return True
+    if str(s).lower() in ("no",  "n", "false", "f", "0", "0.0", "", "none", "[]", "{}"):
+        return False
+    raise Exception('Invalid value for boolean conversion: ' + str(value))
+
 def convert_size(s, _to='', _round=1):
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     if type(s) in (int, float):
