@@ -5,7 +5,7 @@ After=network.target network-online.target
 
 [Service]
 Type=idle
-Environment="PATH=/opt/opensvc/bin:/opt/opensvc/etc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PATH=/opt/opensvc/bin:/opt/opensvc/etc:/etc/opensvc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=/usr/share/opensvc/bin/init/opensvc.init start
 ExecStop=/usr/share/opensvc/bin/init/opensvc.init stop
 RemainAfterExit=yes
