@@ -147,7 +147,7 @@ class Scheduler(object):
           "sunday": 6
         }
 
-    def need_action_interval(self, last, delay=10):
+    def need_action_interval(self, last, delay=10, now=None):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
@@ -156,8 +156,10 @@ class Scheduler(object):
             return False
         if last is None:
             return True
+        if now is None:
+            now = datetime.datetime.now()
         limit = last + datetime.timedelta(minutes=delay)
-        if datetime.datetime.now() < limit:
+        if now < limit:
             return False
         else:
             return True
@@ -189,8 +191,8 @@ class Scheduler(object):
             f.close()
         return True
 
-    def skip_action_interval(self, last, interval):
-        return not self.need_action_interval(last, interval)
+    def skip_action_interval(self, last, interval, now=None):
+        return not self.need_action_interval(last, interval, now=now)
 
     def in_timerange_probabilistic(self, timerange, now=None):
         if not timerange.get("probabilistic", False):
@@ -334,7 +336,7 @@ class Scheduler(object):
             last = self.get_last(fname)
         if last is None:
             return
-        if self.skip_action_interval(last, timerange["interval"]):
+        if self.skip_action_interval(last, timerange["interval"], now=now):
             raise SchedNotAllowed("last run is too soon")
         return
 
@@ -801,7 +803,7 @@ class Scheduler(object):
             return data
         else:
             so = self.scheduler_actions[action]
-            return self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose)
+            return self._skip_action(action, so, section=section, fname=fname, schedule_option=schedule_option, cmdline_parm=cmdline_parm, now=now, verbose=verbose, deferred_write_timestamp=deferred_write_timestamp)
 
     def _skip_action(self, action, so, section=None, fname=None, schedule_option=None, cmdline_parm=None, now=None, verbose=True, deferred_write_timestamp=False):
         if section is None:
@@ -842,8 +844,8 @@ class Scheduler(object):
         if not deferred_write_timestamp:
             timestamp_f = self.get_timestamp_f(fname)
             self.timestamp(timestamp_f)
+            print(sched_fmt % ("exec", title(), "timestamp updated"))
 
-        print(sched_fmt % ("exec", title(), "timestamp updated"))
         return False
 
     def print_schedule(self):
@@ -959,6 +961,8 @@ if __name__ == "__main__":
      ("* * * %2+1", "2015-01-06 10:00", True),
      ("* * * jan-feb%2", "2015-01-06 10:00", False),
      ("* * * jan-feb%2+1", "2015-01-06 10:00", True),
+     ("18:00-18:59@60 wed", "2016-08-31 18:00", True),
+     ("18:00-18:59@60 wed", "2016-08-30 18:00", False),
     ]
     sched = Scheduler()
     for test in tests:

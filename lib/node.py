@@ -774,7 +774,7 @@ class Node(Svc, Freezer, Scheduler):
         self.options.cron = True
         for i in range(_max):
             d = now + datetime.timedelta(minutes=i*10)
-            if not self.skip_action("auto_reboot", now=d, verbose=False):
+            if not self.skip_action("auto_reboot", now=d, verbose=False, deferred_write_timestamp=True):
                 print("next allowed reboot:", d.strftime("%a %Y-%m-%d %H:%M"))
                 break
         if i == _max - 1:
