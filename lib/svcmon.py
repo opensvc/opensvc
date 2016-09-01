@@ -32,13 +32,6 @@ try:
 except:
     version = "dev"
 
-def svcmon_verbose(svcs):
-    for svc in svcs:
-        try:
-            svc.print_status()
-        except:
-            pass
-
 def max_len(svcs):
     _len = 7
     for svc in svcs:
@@ -56,14 +49,22 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     # those are triggered by the master node
     status = svc.group_status()
     l = []
-    buff = fmt % (
+    applen = 10
+    app = str(svc.app)
+    if len(app) > applen:
+        app = app[:applen-1]+"*"
+    data = [
               svc.svcname,
+              app,
               svc.svctype,
               '-',
-              svc.frozen()[0],
-              str(svc.disabled)[0],
+              "yes" if svc.frozen() else "no",
+              "yes" if svc.disabled else "no",
               colorize(status["avail"]),
               colorize(status["overall"]),
+    ]
+    if options.verbose:
+        data += [
               colorize(status["container"]),
               colorize(status["ip"]),
               colorize(status["disk"]),
@@ -72,7 +73,8 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
               colorize(status["app"]),
               colorize(status["hb"]),
               colorize(status["sync"]),
-    )
+        ]
+    buff = fmt % tuple(data)
     l.append(buff)
     containers = svc.get_resources("container")
     if len(containers) > 0 and svc.has_encap_resources:
@@ -92,14 +94,18 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                      'avail': 'n/a',
                      'overall': 'n/a'}
 
-            buff = fmt % (
+            data = [
                       ' @'+container.name,
+                      '-',
                       '-',
                       container.type.replace('container.', ''),
                       '-',
                       '-',
                       colorize(s["avail"]),
                       colorize(s["overall"]),
+            ]
+            if options.verbose:
+                data += [
                       colorize(s["container"]),
                       colorize(s["ip"]),
                       colorize(s["disk"]),
@@ -108,7 +114,8 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       colorize(s["app"]),
                       colorize(s["hb"]),
                       colorize(s["sync"]),
-            )
+                ]
+            buff = fmt % tuple(data)
             l.append(buff)
 
     if lock is not None:
@@ -130,10 +137,15 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 def svcmon_normal(svcs, upddb=False):
     svcname_len = max_len(svcs)
     fmt = '%-' + str(svcname_len) + 's'
-    fmt += ' %-7s %-9s | %s %s | %-10s %-10s | %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s'
+    if options.verbose:
+        fmt += ' %-10s %-7s %-9s | %-6s %-8s | %-10s %-10s | %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s'
+        print(" "*svcname_len+" app        type    container | frozen disabled | avail      overall    | container  ip         disk       fs         share      app        hb         sync")
+        print(" "*svcname_len+" -----------------------------+-----------------+-----------------------+----------------------------------------------------------------------------------")
+    else:
+        fmt += ' %-10s %-7s %-9s | %-6s %-8s | %-10s %-10s'
+        print(" "*svcname_len+" app        type    container | frozen disabled | avail      overall    ")
+        print(" "*svcname_len+" -----------------------------+-----------------+-----------------------")
 
-    print(" "*svcname_len, "type    container | F D | avail      overall    | container  ip         disk       fs         share      app        hb         sync")
-    print(" "*svcname_len, "------------------+----------------+-----------------------+----------------------------------------------------------------------------------")
     ps = []
     queues = {}
     try:
@@ -188,7 +200,7 @@ parser.add_option("--refresh", default=False, action="store_true", dest="refresh
 parser.add_option("--updatedb", default=False, action="store_true", dest="upddb",
                   help="update resource status in central database")
 parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
-                  help="display per-resource status for each selected service")
+                  help="display resource groups status for each selected service")
 parser.add_option("--maxdelaydb", default=0, action="store", type="int", dest="delay",
                   help="introduce a random delay before pushing to database to level the load on the collector")
 parser.add_option("--debug", default=False, action="store_true", dest="debug",
@@ -224,10 +236,7 @@ def main():
         if options.refresh:
             s.options.refresh = options.refresh
 
-    if options.verbose:
-        svcmon_verbose(node.svcs)
-    else:
-        svcmon_normal(node.svcs, options.upddb)
+    svcmon_normal(node.svcs, options.upddb)
 
     node.close()
 
