@@ -36,6 +36,9 @@ _svcmgr()
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
+	    logs)
+		local opts="--color"
+		;;
             collector)
 		local opts="json ack alerts checks events status list show asset networks disks"
 		;;

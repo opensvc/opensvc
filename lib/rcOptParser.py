@@ -77,6 +77,7 @@ action_desc = {
       'pg_freeze': "freeze the tasks of a process group",
       'pg_thaw': "thaw the tasks of a process group",
       'pg_kill': "kill the tasks of a process group",
+      'logs': "display the service logs in the pager",
      },
     'Service configuration': {
       'print_config': 'display service current configuration',
