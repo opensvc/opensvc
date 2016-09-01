@@ -8,6 +8,11 @@ from subprocess import *
 
 min_name_len = 8
 
+try:
+    type(PermissionError)
+except:
+    PermissionError = IOError
+
 class LoggerHandler(logging.handlers.SysLogHandler):
     def __init__(self, facility=logging.handlers.SysLogHandler.LOG_USER):
         logging.Handler.__init__(self)
