@@ -59,7 +59,11 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     buff = fmt % (
               svc.svcname,
               svc.svctype,
-              svc.svcmode,
+              '-',
+              svc.frozen()[0],
+              str(svc.disabled)[0],
+              colorize(status["avail"]),
+              colorize(status["overall"]),
               colorize(status["container"]),
               colorize(status["ip"]),
               colorize(status["disk"]),
@@ -68,9 +72,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
               colorize(status["app"]),
               colorize(status["hb"]),
               colorize(status["sync"]),
-              colorize(status["avail"]),
-              colorize(status["overall"]),
-              svc.frozen())
+    )
     l.append(buff)
     containers = svc.get_resources("container")
     if len(containers) > 0 and svc.has_encap_resources:
@@ -92,8 +94,12 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 
             buff = fmt % (
                       ' @'+container.name,
-                      '',
+                      '-',
                       container.type.replace('container.', ''),
+                      '-',
+                      '-',
+                      colorize(s["avail"]),
+                      colorize(s["overall"]),
                       colorize(s["container"]),
                       colorize(s["ip"]),
                       colorize(s["disk"]),
@@ -102,9 +108,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       colorize(s["app"]),
                       colorize(s["hb"]),
                       colorize(s["sync"]),
-                      colorize(s["avail"]),
-                      colorize(s["overall"]),
-                      '')
+            )
             l.append(buff)
 
     if lock is not None:
@@ -124,12 +128,12 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
             queue.put(svc.svcmon_push_lists(status))
 
 def svcmon_normal(svcs, upddb=False):
-    fmt = '%-' + str(max_len(svcs)) + 's'
-    fmt += ' %-7s %-9s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-6s'
+    svcname_len = max_len(svcs)
+    fmt = '%-' + str(svcname_len) + 's'
+    fmt += ' %-7s %-9s | %s %s | %-10s %-10s | %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s'
 
-    print(fmt % ("service", "service", "container", "container", "ip    ", "disk  ", "fs    ", "share ", "app   ", "hb    ", "sync  ", "avail ", "overall", "      "))
-    print(fmt % ("name   ", "type   ", "type     ", "status   ", "status", "status", "status", "status", "status", "status", "status", "status", "status ", "frozen"))
-    print(fmt % ("-------", "-------", "---------", "---------", "------", "------", "------", "------", "------", "------", "------", "------", "-------", "------"))
+    print(" "*svcname_len, "type    container | F D | avail      overall    | container  ip         disk       fs         share      app        hb         sync")
+    print(" "*svcname_len, "------------------+----------------+-----------------------+----------------------------------------------------------------------------------")
     ps = []
     queues = {}
     try:
