@@ -233,19 +233,19 @@ def svcmon_normal(svcs, upddb=False):
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ]\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
-parser.add_option("--service", default="", action="store", dest="parm_svcs",
+parser.add_option("-s", "--service", default="", action="store", dest="parm_svcs",
                   help="comma-separated list of service to display status of")
 parser.add_option("--refresh", default=False, action="store_true", dest="refresh",
                   help="do not use resource status cache")
 parser.add_option("--updatedb", default=False, action="store_true", dest="upddb",
                   help="update resource status in central database")
-parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
+parser.add_option("-v", "--verbose", default=False, action="store_true", dest="verbose",
                   help="display resource groups status for each selected service")
 parser.add_option("--maxdelaydb", default=0, action="store", type="int", dest="delay",
                   help="introduce a random delay before pushing to database to level the load on the collector")
 parser.add_option("--debug", default=False, action="store_true", dest="debug",
                   help="debug mode")
-parser.add_option("--cluster", default=False, action="store_true", dest="cluster",
+parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="fetch and display cluster-wide service status from the collector.")
 
 (options, args) = parser.parse_args()
