@@ -16,6 +16,8 @@ RED = 31
 YELLOW = 33
 
 class color:
+    WHITE = '\033[97m'
+    BGGRAY = '\033[100m'
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
     DARKCYAN = '\033[36m'

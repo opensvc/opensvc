@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 import optparse
@@ -14,7 +15,7 @@ import rcExceptions as ex
 from rcUtilities import *
 from lock import *
 import node
-from rcStatus import colorize
+from rcStatus import colorize, _colorize, color
 
 sysname, nodename, x, x, machine, x = platform.uname()
 
@@ -35,9 +36,15 @@ except:
 def max_len(svcs):
     _len = 7
     for svc in svcs:
-        l = len(getattr(svc, "svcname"))
+        if type(svc) == dict:
+            svcname = svc.get("svcname", "")
+        else:
+            svcname = svc.svcname
+        l = len(svcname)
         if _len < l:
             _len = l
+        if not hasattr(svc, "get_resources"):
+            continue
         for container in svc.get_resources('container'):
             l = len(getattr(container, "name")) + 2
             if _len < l:
@@ -53,10 +60,14 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     app = str(svc.app)
     if len(app) > applen:
         app = app[:applen-1]+"*"
+    name = svc.svcname
+    if os.isatty(1):
+        name = _colorize(fmt.split()[0] % name, color.BOLD)
     data = [
-              svc.svcname,
+              name,
               app,
               svc.svctype,
+              svc.clustertype,
               '-',
               "yes" if svc.frozen() else "no",
               "yes" if svc.disabled else "no",
@@ -94,8 +105,12 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                      'avail': 'n/a',
                      'overall': 'n/a'}
 
+            name = " @"+container.name
+            if os.isatty(1):
+                name = _colorize(fmt.split()[0] % name, color.WHITE)
             data = [
-                      ' @'+container.name,
+                      name,
+                      '-',
                       '-',
                       '-',
                       container.type.replace('container.', ''),
@@ -134,17 +149,42 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
         else:
             queue.put(svc.svcmon_push_lists(status))
 
+def svcmon_cluster(node):
+    svcnames = ",".join([r.svcname for r in node.svcs])
+    data = node.collector_rest_get("/services?props=svcname,svc_app,svc_type,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+    if "error" in data:
+        print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
+        return 1
+    if "data" not in data:
+        print("no 'data' key in the collector rest api response", file=sys.stderr)
+        return 1
+    if len(data["data"]) == 0:
+        print("no service found on the collector", file=sys.stderr)
+        return 1
+    svcname_len = max_len(data["data"])
+    fmt_svcname = '%(svcname)-' + str(svcname_len) + 's'
+    fmt = fmt_svcname + ' %(svc_app)-10s %(svc_type)-4s %(svc_cluster_type)-8s | %(svc_availstatus)-10s %(svc_status)-10s | %(svc_status_updated)s'
+    print(" "*svcname_len+" app        type topology | avail      overall    | updated")
+    print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
+    for d in data["data"]:
+       if os.isatty(1):
+           d["svcname"] = _colorize(fmt_svcname % d, color.BOLD)
+       d["svc_status"] = colorize(d["svc_status"])
+       d["svc_availstatus"] = colorize(d["svc_availstatus"])
+       print(fmt % d)
+ 
+
 def svcmon_normal(svcs, upddb=False):
     svcname_len = max_len(svcs)
-    fmt = '%-' + str(svcname_len) + 's'
+    fmt_svcname = '%-' + str(svcname_len) + 's'
     if options.verbose:
-        fmt += ' %-10s %-7s %-9s | %-6s %-8s | %-10s %-10s | %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s'
-        print(" "*svcname_len+" app        type    container | frozen disabled | avail      overall    | container  ip         disk       fs         share      app        hb         sync")
-        print(" "*svcname_len+" -----------------------------+-----------------+-----------------------+----------------------------------------------------------------------------------")
+        fmt = fmt_svcname + ' %-10s %-4s %-8s %-9s | %-6s %-8s | %-10s %-10s | %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s'
+        print(" "*svcname_len+" app        type topology container | frozen disabled | avail      overall    | container  ip         disk       fs         share      app        hb         sync")
+        print(" "*svcname_len+" -----------------------------------+-----------------+-----------------------+----------------------------------------------------------------------------------")
     else:
-        fmt += ' %-10s %-7s %-9s | %-6s %-8s | %-10s %-10s'
-        print(" "*svcname_len+" app        type    container | frozen disabled | avail      overall    ")
-        print(" "*svcname_len+" -----------------------------+-----------------+-----------------------")
+        fmt = fmt_svcname + ' %-10s %-4s %-8s %-9s | %-6s %-8s | %-10s %-10s'
+        print(" "*svcname_len+" app        type topology container | frozen disabled | avail      overall    ")
+        print(" "*svcname_len+" -----------------------------------+-----------------+-----------------------")
 
     ps = []
     queues = {}
@@ -205,6 +245,8 @@ parser.add_option("--maxdelaydb", default=0, action="store", type="int", dest="d
                   help="introduce a random delay before pushing to database to level the load on the collector")
 parser.add_option("--debug", default=False, action="store_true", dest="debug",
                   help="debug mode")
+parser.add_option("--cluster", default=False, action="store_true", dest="cluster",
+                  help="fetch and display cluster-wide service status from the collector.")
 
 (options, args) = parser.parse_args()
 
@@ -236,7 +278,10 @@ def main():
         if options.refresh:
             s.options.refresh = options.refresh
 
-    svcmon_normal(node.svcs, options.upddb)
+    if options.cluster:
+        svcmon_cluster(node)
+    else:
+        svcmon_normal(node.svcs, options.upddb)
 
     node.close()
 
