@@ -465,11 +465,11 @@ class Scheduler(object):
         from_tail = None
         from_head = None
         if n_col > 1:
-            raise SchedSyntaxError
+            raise SchedSyntaxError("only one ':' allowed in day spec '%s'" %day)
         elif n_col == 1:
             day, day_of_month = day.split(":")
             if len(day_of_month) == 0:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("day_of_month specifier is empty")
             if day_of_month in ("first", "1st"):
                 from_head = True
                 day_of_month = 1
@@ -497,7 +497,7 @@ class Scheduler(object):
             try:
                 day_of_month = int(day_of_month)
             except ValueError:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("day_of_month is not a number")
 
         day = self.sched_expand_value(day)
 
@@ -565,7 +565,7 @@ class Scheduler(object):
                 month_s = s
                 modulo_s = None
             else:
-                raise SchedSyntaxError("malformed month definition")
+                raise SchedSyntaxError("only one '%%' allowed in month definition '%s'" % s)
 
 
             if month_s in ("", "*"):
@@ -587,14 +587,17 @@ class Scheduler(object):
         shift = 0
         n_plus = modulo.count("+")
         if n_plus > 1:
-            raise SchedSyntaxError
+            raise SchedSyntaxError("only one '+' is allowed in modulo '%s'" % modulo)
         if n_plus == 1:
             modulo, shift = modulo.split("+")
         try:
             modulo = int(modulo)
+        except ValueError:
+            raise SchedSyntaxError("modulo '%s' is not a number" % modulo)
+        try:
             shift = int(shift)
         except ValueError:
-            raise SchedSyntaxError
+            raise SchedSyntaxError("shift '%s' is not a number" % shift)
         return set([ m for m in range(1,13) if (m + shift) % modulo == 0])
 
     def sched_to_int(self, s):
@@ -604,7 +607,7 @@ class Scheduler(object):
         except ValueError:
             s = s.lower()
             if s not in self.calendar_names:
-                 raise SchedSyntaxError("unknown calendar name")
+                 raise SchedSyntaxError("unknown calendar name '%s'" % s)
             return self.calendar_names[s]
 
     def sched_expand_value(self, s):
@@ -615,7 +618,7 @@ class Scheduler(object):
         for e in l:
             n_dash = e.count("-")
             if n_dash > 1:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("only one '-' allowed in timerange '%s'" % s)
             elif n_dash == 0:
                 v.add(self.sched_to_int(e))
                 continue
@@ -640,10 +643,10 @@ class Scheduler(object):
             try:
                 begin, end = s.split("-")
             except:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("split '%s' error" % s)
             if begin.count(":") != 1 or \
                end.count(":") != 1:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("only one ':' allowed in timerange '%s' end" % s)
             begin_m = self.time_to_minutes(begin)
             end_m = self.time_to_minutes(end)
             if begin_m > end_m:
@@ -681,14 +684,16 @@ class Scheduler(object):
 
             l = e.split("@")
             n = len(l)
-            if n != 2:
-                raise SchedSyntaxError
+            if n < 2:
+                raise SchedSyntaxError("missing @<interval> in '%s'" % e)
+            if n > 2:
+                raise SchedSyntaxError("only one @<interval> allowed in '%s'" % e)
             d = parse_timerange(l[0])
             d["probabilistic"] = probabilistic
             try:
                 d["interval"] = int(l[1])
             except:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("interval '%s' is not a number" % l[1])
             tr.append(d)
         return tr
 
@@ -749,7 +754,7 @@ class Scheduler(object):
                  "month": _month,
                 }
             else:
-                raise SchedSyntaxError
+                raise SchedSyntaxError("invalid number of element, '%d' not in (1, 2, 3, 4)" % n)
             d["exclude"] = exclude
             d["raw"] = schedule_orig
             data.append(d)
@@ -765,8 +770,8 @@ class Scheduler(object):
             self.in_schedule(schedule, fname=fname, now=now, last=last)
         except SchedNoDefault:
             raise SchedNotAllowed("no schedule in section %s and no default schedule"%section)
-        except SchedSyntaxError:
-            raise SchedNotAllowed("malformed parameter value: %s.schedule"%section)
+        except SchedSyntaxError as e:
+            raise SchedNotAllowed("malformed parameter value: %s.schedule (%s) "%(section, str(e)))
 
     def skip_action_schedule(self, section, option, fname=None, now=None, last=None):
         try:
@@ -900,15 +905,15 @@ class Scheduler(object):
 
         try:
             schedule = self.sched_get_schedule("dummy", "dummy", schedules=schedule_s)
-        except SchedSyntaxError:
-            print("failed : schedule syntax error %s" % repr(schedule_s))
+        except SchedSyntaxError as e:
+            print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(e)))
             return
         try:
             self.in_schedule(schedule, fname=None, now=d)
             result = True
             result_s = ""
-        except SchedSyntaxError:
-            print("failed : schedule syntax error %s" % repr(schedule_s))
+        except SchedSyntaxError as e:
+            print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(e)))
             return
         except SchedNotAllowed as e:
             result = False
@@ -963,6 +968,22 @@ if __name__ == "__main__":
      ("* * * jan-feb%2+1", "2015-01-06 10:00", True),
      ("18:00-18:59@60 wed", "2016-08-31 18:00", True),
      ("18:00-18:59@60 wed", "2016-08-30 18:00", False),
+     ("23:00-23:59@61 *:first", "2016-09-01 23:00", True),
+     # syntax errors
+     ("23:00-23:59@61 *:first:*", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 *:", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 *:*", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * %2+1+2", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * %foo", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * %2+foo", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 freday", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * junuary", "2016-09-01 23:00", True),
+     ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", True),
+     ("23:00-23:59-01:00@61", "2016-09-01 23:00", True),
+     ("23:00-23:59:00@61 * * %2%3", "2016-09-01 23:00", True),
+     ("23:00-23:59@61@10", "2016-09-01 23:00", True),
+     ("23:00-23:59 * * * * *", "2016-09-01 23:00", True),
     ]
     sched = Scheduler()
     for test in tests:
