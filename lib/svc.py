@@ -2109,27 +2109,31 @@ class Svc(Resource, Scheduler):
         self.presync_done = True
 
     def sync_nodes(self):
-        if not self.can_sync('nodes'):
+        rtypes = ["sync.rsync",
+                  "sync.zfs",
+                  "sync.btrfs",
+                  "sync.docker",
+                  "sync.dds",
+        ]
+        if not self.can_sync(rtypes, 'nodes'):
             return
         self.presync()
-        self.sub_set_action("sync.rsync", "sync_nodes")
-        self.sub_set_action("sync.zfs", "sync_nodes")
-        self.sub_set_action("sync.btrfs", "sync_nodes")
-        self.sub_set_action("sync.docker", "sync_nodes")
-        self.sub_set_action("sync.dds", "sync_nodes")
-        self.sub_set_action("sync.symsrdfs", "sync_nodes")
+        for rtype in rtypes:
+            self.sub_set_action(rtype, "sync_nodes")
         self.remote_postsync()
 
     def sync_drp(self):
-        if not self.can_sync('drpnodes'):
+        rtypes = ["sync.rsync",
+                  "sync.zfs",
+                  "sync.btrfs",
+                  "sync.docker",
+                  "sync.dds",
+        ]
+        if not self.can_sync(rtypes, 'drpnodes'):
             return
         self.presync()
-        self.sub_set_action("sync.rsync", "sync_drp")
-        self.sub_set_action("sync.zfs", "sync_drp")
-        self.sub_set_action("sync.btrfs", "sync_drp")
-        self.sub_set_action("sync.docker", "sync_drp")
-        self.sub_set_action("sync.dds", "sync_drp")
-        self.sub_set_action("sync.symsrdfs", "sync_drp")
+        for rtype in rtypes:
+            self.sub_set_action(rtype, "sync_drp")
         self.remote_postsync()
 
     def syncswap(self):
@@ -2177,23 +2181,17 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "sync_break")
 
     def sync_update(self):
-        if not self.can_sync():
-            return
-        self._sync_update()
-
-    def _sync_update(self):
         self.sub_set_action("sync.netapp", "sync_update")
         self.sub_set_action("sync.hp3par", "sync_update")
         self.sub_set_action("sync.nexenta", "sync_update")
         self.sub_set_action("sync.dcsckpt", "sync_update")
         self.sub_set_action("sync.dds", "sync_update")
-        self.sub_set_action("sync.zfs", "sync_nodes")
         self.sub_set_action("sync.btrfssnap", "sync_update")
         self.sub_set_action("sync.s3", "sync_update")
 
     def sync_full(self):
         self.sub_set_action("sync.dds", "sync_full")
-        self.sub_set_action("sync.zfs", "sync_nodes")
+        self.sub_set_action("sync.zfs", "sync_full")
         self.sub_set_action("sync.btrfs", "sync_full")
         self.sub_set_action("sync.s3", "sync_full")
 
@@ -2252,17 +2250,16 @@ class Svc(Resource, Scheduler):
             print("your changes were not applied because of the errors reported above. you can use the edit config command with --recover to try to fix your changes or with --discard to restart from the live config")
         return r["errors"] + r["warnings"]
 
-    def can_sync(self, target=None):
+    def can_sync(self, rtypes=[], target=None):
         ret = False
-        rtypes = ["sync.netapp", "sync.nexenta", "sync.dds", "sync.zfs",
-                  "sync.rsync", "sync.docker", "sync.btrfs", "sync.hp3par"]
         for rt in rtypes:
             for r in self.get_resources(rt):
                 try:
                     ret |= r.can_sync(target)
                 except ex.excError as e:
                     return False
-                if ret: return True
+                if ret:
+                    return True
         self.log.debug("nothing to sync for the service for now")
         return False
 
@@ -2278,7 +2275,7 @@ class Svc(Resource, Scheduler):
         self.sched_write_timestamp(sched_options)
 
     def sync_all(self):
-        if not self.can_sync():
+        if not self.can_sync(["sync"]):
             return
         if self.cron:
             self.sched_delay()
@@ -2288,13 +2285,12 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.btrfs", "sync_nodes")
         self.sub_set_action("sync.docker", "sync_nodes")
         self.sub_set_action("sync.dds", "sync_nodes")
-        self.sub_set_action("sync.symsrdfs", "sync_nodes")
         self.sub_set_action("sync.rsync", "sync_drp")
         self.sub_set_action("sync.zfs", "sync_drp")
         self.sub_set_action("sync.btrfs", "sync_drp")
         self.sub_set_action("sync.docker", "sync_drp")
         self.sub_set_action("sync.dds", "sync_drp")
-        self._sync_update()
+        self.sync_update()
         self.remote_postsync()
 
     def push_service_status(self):
