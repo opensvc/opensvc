@@ -80,7 +80,7 @@ class syncIbmdsSnap(resSync.Sync):
 
     def can_sync(self, target=None):
         self.get_last()
-        if skip_sync(self.last):
+        if self.skip_sync(self.last):
             return False
         return True
 
