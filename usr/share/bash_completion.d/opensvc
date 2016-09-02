@@ -221,10 +221,13 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown create install update pull unprovision provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler edit"
+        local opts="logs compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown create install update pull unprovision provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler edit"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
+	    logs)
+		local opts="--color"
+		;;
             create)
 		local opts="--provision"
 		;;

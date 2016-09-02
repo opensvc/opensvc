@@ -87,6 +87,7 @@ class Node(Svc, Freezer, Scheduler):
         Freezer.__init__(self, '')
         self.action_desc = {
           'Node actions': {
+            'logs': 'fancy display of the node logs',
             'shutdown': 'shutdown the node to powered off state',
             'reboot': 'reboot the node',
             'scheduler': 'run the node task scheduler',
@@ -1615,6 +1616,31 @@ class Node(Svc, Freezer, Scheduler):
         for s in self.svcs:
             s.scheduler()
 
+    def logs(self):
+        if not os.path.exists(rcEnv.logfile):
+            return
+        from rcStatus import color, _colorize
+        def c(line):
+            l = line.rstrip("\n").split(" - ")
+            if len(l) < 3:
+                return line
+            if len(l[1]) > rcLogger.namelen:
+                l[1] = "*"+l[1][-(rcLogger.namelen-1):]
+            l[1] = rcLogger.namefmt % l[1]
+            l[1] = _colorize(l[1], color.BOLD)
+            l[2] = "%-7s" % l[2]
+            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
+            l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
+            return " ".join(l)
+
+        try:
+            with open(rcEnv.logfile, "r") as f:
+                for line in f.readlines():
+                    print(c(line))
+        except (BrokenPipeError, IOError):
+            sys.stdout = os.fdopen(1)
+            pass
 
 if __name__ == "__main__" :
     for n in (Node,) :
