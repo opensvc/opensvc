@@ -147,6 +147,18 @@ class Scheduler(object):
           "sunday": 6
         }
 
+    def get_next_schedule(self, action, _max=14400):
+        now = datetime.datetime.now()
+        cron = self.options.cron
+        self.options.cron = True
+        for i in range(_max):
+            d = now + datetime.timedelta(minutes=i*10)
+            if not self.skip_action(action, now=d, verbose=False, deferred_write_timestamp=True):
+                self.options.cron = cron
+                return d, _max
+        self.options.cron = cron
+        return None, None
+
     def need_action_interval(self, last, delay=10, now=None):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.

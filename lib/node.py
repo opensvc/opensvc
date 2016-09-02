@@ -761,27 +761,24 @@ class Node(Svc, Freezer, Scheduler):
 
     def schedule_reboot_status(self):
         import stat
-        if not os.path.exists(self.reboot_flag):
+        if os.path.exists(self.reboot_flag):
+            s = os.stat(self.reboot_flag)
+        else:
+            s = None
+
+        if s is None or s.st_uid != 0 or s.st_mode & stat.S_IWOTH:
             print("reboot is not scheduled")
-            return
-        s = os.stat(self.reboot_flag)
-        if s.st_uid != 0 or s.st_mode & stat.S_IWOTH:
-            print("reboot is not scheduled")
-            return
-        sch = self.scheduler_actions["auto_reboot"]
-        schedule = self.sched_get_schedule_raw(sch.section, sch.schedule_option)
-        print("reboot is scheduled")
-        print("reboot schedule: %s" % schedule)
-        now = datetime.datetime.now()
-        _max = 14400
-        self.options.cron = True
-        for i in range(_max):
-            d = now + datetime.timedelta(minutes=i*10)
-            if not self.skip_action("auto_reboot", now=d, verbose=False, deferred_write_timestamp=True):
-                print("next allowed reboot:", d.strftime("%a %Y-%m-%d %H:%M"))
-                break
-        if i == _max - 1:
-            print("next allowed reboot: none in the next %d days" % (_max/144))
+        else:
+            sch = self.scheduler_actions["auto_reboot"]
+            schedule = self.sched_get_schedule_raw(sch.section, sch.schedule_option)
+            print("reboot is scheduled")
+            print("reboot schedule: %s" % schedule)
+
+        d, _max = self.get_next_schedule("auto_reboot")
+        if d:
+            print("next reboot slot:", d.strftime("%a %Y-%m-%d %H:%M"))
+        else:
+            print("next reboot slot: none in the next %d days" % (_max/144))
 
     def auto_reboot(self):
         if self.skip_action("auto_reboot"):
