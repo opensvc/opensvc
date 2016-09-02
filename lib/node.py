@@ -312,6 +312,8 @@ class Node(Svc, Freezer, Scheduler):
                 else:
                     msg += "\n".join(list(map(lambda x: "- "+x, errors)))
                 raise ex.excError(msg)
+        import rcLogger
+        rcLogger.set_namelen(self.svcs)
 
 
     def close(self):

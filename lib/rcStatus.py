@@ -1,4 +1,5 @@
 import os
+import platform
 
 use_color = "auto"
 
@@ -31,12 +32,20 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
-def _colorize(s, c=None):
+def ansi_colorize(s, c=None):
     if c is None:
         return s
     if use_color == "never" or (use_color == "auto" and not os.isatty(1)):
         return s
     return c + s + color.END
+
+def win_colorize(s, c=None):
+    return s
+
+if platform.system() == 'Windows':
+    _colorize = win_colorize
+else:
+    _colorize = ansi_colorize
 
 def colorize(s, lpad=10):
     if type(s) == Status:

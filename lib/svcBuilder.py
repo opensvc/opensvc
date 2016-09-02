@@ -3626,7 +3626,6 @@ def build_services(status=None, svcnames=[],
         if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
-    rcLogger.set_streamformatter(services.values())
     return [ s for n, s in sorted(services.items()) ], errors
 
 def create(svcname, resources=[], interactive=False, provision=False):

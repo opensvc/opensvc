@@ -6,12 +6,44 @@ import logging.handlers
 from rcGlobalEnv import rcEnv
 from subprocess import *
 
-min_name_len = 8
+min_name_len = 10
+namelen = 10
+namefmt = "%-"+str(namelen)+"s"
+include_svcname = False
 
 try:
     type(PermissionError)
 except:
     PermissionError = IOError
+
+import platform
+import re
+from rcStatus import _colorize, color
+
+class ColorStreamHandler(logging.StreamHandler):
+    def __init__(self, stream=None):
+        logging.StreamHandler.__init__(self, stream)
+
+    def format(self, record):
+        text = logging.StreamHandler.format(self, record)
+        def c(line):
+            line = re.sub(r'^....-..-.. ', "", line)
+            l = line.rstrip("\n").split(" - ")
+            if len(l) < 3:
+                return line
+            if not include_svcname:
+                l[1] = l[1].split(".")[-1]
+            if len(l[1]) > namelen:
+                l[1] = "*"+l[1][-(namelen-1):]
+            l[1] = namefmt % l[1]
+            l[1] = _colorize(l[1], color.BOLD)
+            l[2] = "%-7s" % l[2]
+            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
+            l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
+            return " ".join(l)
+
+        return c(text)
 
 class LoggerHandler(logging.handlers.SysLogHandler):
     def __init__(self, facility=logging.handlers.SysLogHandler.LOG_USER):
@@ -33,14 +65,11 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         except:
             self.handleError(record)
 
-def set_streamformatter(svcs):
-    maxlen = get_max_name_len(svcs)
-    streamformatter = logging.Formatter("%(levelname)-7s %(name)-"+str(maxlen)+"s %(message)s")
-    for svc in svcs:
-        handler = svc.log.handlers[1]
-        handler.setFormatter(streamformatter)
+def set_namelen(svcs):
+    global namelen
+    global namefmt
+    global include_svcname
 
-def get_max_name_len(svcs):
     maxlen = min_name_len
     for svc in svcs:
         if svc.is_disabled():
@@ -50,10 +79,16 @@ def get_max_name_len(svcs):
                 continue
             if r.is_disabled():
                 continue
-            l = len(r.log_label())
+            l = len(r.rid)
+            if r.subset:
+                l += len(r.subset) + 1
+            if len(svcs) > 1:
+                include_svcname = True
+                l += len(svc.svcname) + 1
             if l > maxlen:
                 maxlen = l
-    return maxlen
+    namelen = maxlen
+    namefmt = "%-"+str(namelen)+"s"
 
 def initLogger(name, handlers=["file", "stream", "syslog"]):
     log = logging.getLogger(name)
@@ -71,8 +106,8 @@ def initLogger(name, handlers=["file", "stream", "syslog"]):
             pass
 
     if "stream" in handlers:
-        streamformatter = logging.Formatter("%(levelname)-7s %(name)s %(message)s")
-        streamhandler = logging.StreamHandler()
+        streamformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        streamhandler = ColorStreamHandler()
         streamhandler.setFormatter(streamformatter)
         log.addHandler(streamhandler)
 

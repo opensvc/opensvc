@@ -639,17 +639,16 @@ class Svc(Resource, Scheduler):
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
             return
-        namelen = 11
-        namefmt = "%-"+str(namelen)+"s"
         from rcStatus import color, _colorize
         def c(line):
             l = line.rstrip("\n").split(" - ")
             if len(l) < 3:
                 return line
-            l[1] = l[1].replace(self.svcname, "").lstrip(".")
-            if len(l[1]) > namelen:
-                l[1] = "*"+l[1][-(namelen-1):]
-            l[1] = namefmt % l[1]
+            if not rcLogger.include_svcname:
+                l[1] = l[1].replace(self.svcname, "").lstrip(".")
+            if len(l[1]) > rcLogger.namelen:
+                l[1] = "*"+l[1][-(rcLogger.namelen-1):]
+            l[1] = rcLogger.namefmt % l[1]
             l[1] = _colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
             l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
