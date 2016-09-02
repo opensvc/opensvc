@@ -38,6 +38,9 @@ class Sync(Res.Resource, Scheduler):
                               tags=tags,
                               subset=subset)
 
+    def can_sync(self, target):
+        return True
+
     def check_timestamp(self, ts, comp='more', delay=10):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
