@@ -40,6 +40,7 @@ class SyncBtrfs(resSync.Sync):
                               subset=subset)
 
         self.label = "btrfs of %s to %s"%(src, ", ".join(target))
+        self.src = src
         self.target = target
         self.sender = sender
         self.recursive = recursive
