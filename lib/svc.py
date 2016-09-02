@@ -641,34 +641,21 @@ class Svc(Resource, Scheduler):
             return
         namelen = 11
         namefmt = "%-"+str(namelen)+"s"
-        if (self.options.color == "auto" and os.isatty(1)) or self.options.color == "always":
-            from rcStatus import color, _colorize
-            def c(line):
-                l = line.rstrip("\n").split(" - ")
-                if len(l) < 3:
-                    return line
-                #l[0] = _colorize(l[0], color.BOLD)
-                l[1] = l[1].replace(self.svcname, "").lstrip(".")
-                if len(l[1]) > namelen:
-                    l[1] = "*"+l[1][-(namelen-1):]
-                l[1] = namefmt % l[1]
-                l[1] = _colorize(l[1], color.BOLD)
-                l[2] = "%-7s" % l[2]
-                l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-                l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
-                l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
-                return " ".join(l)
-        else:
-            def c(line):
-                l = line.rstrip("\n").split(" - ")
-                if len(l) < 3:
-                    return line
-                l[1] = l[1].replace(self.svcname, "").lstrip(".")
-                if len(l[1]) > namelen:
-                    l[1] = "*"+l[1][-(namelen-1):]
-                l[1] = namefmt % l[1]
-                l[2] = "%-7s" % l[2]
-                return " ".join(l)
+        from rcStatus import color, _colorize
+        def c(line):
+            l = line.rstrip("\n").split(" - ")
+            if len(l) < 3:
+                return line
+            l[1] = l[1].replace(self.svcname, "").lstrip(".")
+            if len(l[1]) > namelen:
+                l[1] = "*"+l[1][-(namelen-1):]
+            l[1] = namefmt % l[1]
+            l[1] = _colorize(l[1], color.BOLD)
+            l[2] = "%-7s" % l[2]
+            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
+            l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
+            return " ".join(l)
 
         try:
             with open(rcEnv.logfile, "r") as f:

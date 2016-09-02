@@ -15,7 +15,7 @@ import rcExceptions as ex
 from rcUtilities import *
 from lock import *
 import node
-from rcStatus import colorize, _colorize, color
+import rcStatus
 
 sysname, nodename, x, x, machine, x = platform.uname()
 
@@ -61,8 +61,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     if len(app) > applen:
         app = app[:applen-1]+"*"
     name = svc.svcname
-    if os.isatty(1):
-        name = _colorize(fmt.split()[0] % name, color.BOLD)
+    name = rcStatus._colorize(fmt.split()[0] % name, rcStatus.color.BOLD)
     data = [
               name,
               app,
@@ -71,19 +70,19 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
               '-',
               "yes" if svc.frozen() else "no",
               "yes" if svc.disabled else "no",
-              colorize(status["avail"]),
-              colorize(status["overall"]),
+              rcStatus.colorize(status["avail"]),
+              rcStatus.colorize(status["overall"]),
     ]
     if options.verbose:
         data += [
-              colorize(status["container"]),
-              colorize(status["ip"]),
-              colorize(status["disk"]),
-              colorize(status["fs"]),
-              colorize(status.get("share", "n/a")),
-              colorize(status["app"]),
-              colorize(status["hb"]),
-              colorize(status["sync"]),
+              rcStatus.colorize(status["container"]),
+              rcStatus.colorize(status["ip"]),
+              rcStatus.colorize(status["disk"]),
+              rcStatus.colorize(status["fs"]),
+              rcStatus.colorize(status.get("share", "n/a")),
+              rcStatus.colorize(status["app"]),
+              rcStatus.colorize(status["hb"]),
+              rcStatus.colorize(status["sync"]),
         ]
     buff = fmt % tuple(data)
     l.append(buff)
@@ -106,8 +105,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                      'overall': 'n/a'}
 
             name = " @"+container.name
-            if os.isatty(1):
-                name = _colorize(fmt.split()[0] % name, color.WHITE)
+            name = rcStatus._colorize(fmt.split()[0] % name, rcStatus.color.WHITE)
             data = [
                       name,
                       '-',
@@ -116,19 +114,19 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       container.type.replace('container.', ''),
                       '-',
                       '-',
-                      colorize(s["avail"]),
-                      colorize(s["overall"]),
+                      rcStatus.colorize(s["avail"]),
+                      rcStatus.colorize(s["overall"]),
             ]
             if options.verbose:
                 data += [
-                      colorize(s["container"]),
-                      colorize(s["ip"]),
-                      colorize(s["disk"]),
-                      colorize(s["fs"]),
-                      colorize(s.get("share", "n/a")),
-                      colorize(s["app"]),
-                      colorize(s["hb"]),
-                      colorize(s["sync"]),
+                      rcStatus.colorize(s["container"]),
+                      rcStatus.colorize(s["ip"]),
+                      rcStatus.colorize(s["disk"]),
+                      rcStatus.colorize(s["fs"]),
+                      rcStatus.colorize(s.get("share", "n/a")),
+                      rcStatus.colorize(s["app"]),
+                      rcStatus.colorize(s["hb"]),
+                      rcStatus.colorize(s["sync"]),
                 ]
             buff = fmt % tuple(data)
             l.append(buff)
@@ -167,10 +165,9 @@ def svcmon_cluster(node):
     print(" "*svcname_len+" app        type topology | avail      overall    | updated")
     print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
     for d in data["data"]:
-       if os.isatty(1):
-           d["svcname"] = _colorize(fmt_svcname % d, color.BOLD)
-       d["svc_status"] = colorize(d["svc_status"])
-       d["svc_availstatus"] = colorize(d["svc_availstatus"])
+       d["svcname"] = rcStatus._colorize(fmt_svcname % d, rcStatus.color.BOLD)
+       d["svc_status"] = rcStatus.colorize(d["svc_status"])
+       d["svc_availstatus"] = rcStatus.colorize(d["svc_availstatus"])
        print(fmt % d)
  
 
@@ -247,8 +244,11 @@ parser.add_option("--debug", default=False, action="store_true", dest="debug",
                   help="debug mode")
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="fetch and display cluster-wide service status from the collector.")
+parser.add_option("--color", default="auto", action="store", dest="color",
+                  help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
 
 (options, args) = parser.parse_args()
+rcStatus.use_color = options.color
 
 node = node.Node()
 

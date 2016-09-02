@@ -1,5 +1,7 @@
 import os
 
+use_color = "auto"
+
 UP = 0
 DOWN = 1
 WARN = 2
@@ -32,14 +34,14 @@ class color:
 def _colorize(s, c=None):
     if c is None:
         return s
+    if use_color == "never" or (use_color == "auto" and not os.isatty(1)):
+        return s
     return c + s + color.END
 
 def colorize(s, lpad=10):
     if type(s) == Status:
         s = str(s)
     fmt = "%-"+str(lpad)+"s"
-    if not os.isatty(1):
-        return fmt%s
     if s == "warn":
         return _colorize(fmt%s, color.YELLOW)
     elif s.endswith("down"):

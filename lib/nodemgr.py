@@ -7,6 +7,7 @@ import optparse
 #
 prog = "nodemgr"
 
+import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import check_privs, ximport
@@ -23,6 +24,8 @@ n = node_mod.Node()
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
+parser.add_option("--color", default="auto", action="store", dest="color",
+                  help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")
@@ -109,6 +112,7 @@ parser.add_option("--app", default=None, action="store", dest="app",
 
 
 (options, args) = parser.parse_args()
+rcStatus.use_color = options.color
 
 n.options = options
 

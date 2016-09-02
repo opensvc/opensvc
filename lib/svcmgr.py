@@ -228,7 +228,8 @@ def main():
             docker_argv = []
         sys.argv = sys.argv[:pos+1]
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
+    rcStatus.use_color = options.color
 
     if _args is not None:
         args = _args
