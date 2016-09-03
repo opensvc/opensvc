@@ -63,7 +63,11 @@ class Disk(resDisk.Disk):
             return False
         cmd = [ 'zpool', 'list', '-H', '-o', 'health', self.name ]
         (ret, out, err) = self.call(cmd)
-        if out.strip() == "ONLINE" :
+        state = out.strip()
+        if state == "ONLINE":
+            return True
+        elif state == "DEGRADED":
+            self.status_log(state)
             return True
         return False
 
