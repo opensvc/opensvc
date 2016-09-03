@@ -43,13 +43,18 @@ rcEnv.warned = False
 import logging
 import logging.handlers
 logfile = os.path.join(rcEnv.pathlog, 'xmlrpc.log')
-fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
-                                                   maxBytes=5242880,
-                                                   backupCount=5)
-filehandler.setFormatter(fileformatter)
+
+try:
+    fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
+                                                       maxBytes=5242880,
+                                                       backupCount=5)
+    filehandler.setFormatter(fileformatter)
+    log.addHandler(filehandler)
+except:
+    pass
+
 log = logging.getLogger("xmlrpc")
-log.addHandler(filehandler)
 log.setLevel(logging.INFO)
 
 try:
