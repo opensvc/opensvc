@@ -10,8 +10,8 @@ import random
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string
 
+print_sched_fmt = ""
 sched_fmt = "[%s] %-45s %s"
-print_sched_fmt = "%-21s  %-21s  %-24s  %s"
 
 def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     if os.fork() > 0:
@@ -153,7 +153,11 @@ class Scheduler(object):
         self.options.cron = True
         for i in range(_max):
             d = now + datetime.timedelta(minutes=i*10)
-            if not self.skip_action(action, now=d, verbose=False, deferred_write_timestamp=True):
+            data = self.skip_action(action, now=d, verbose=False, deferred_write_timestamp=True)
+            if type(data) == dict:
+                if len(data["keep"]) > 0:
+                    return d, _max
+            elif not data:
                 self.options.cron = cron
                 return d, _max
         self.options.cron = cron
@@ -866,20 +870,27 @@ class Scheduler(object):
         return False
 
     def print_schedule(self):
-        print(print_sched_fmt % ("action", "last run", "config parameter", "schedule definition"))
-        print(print_sched_fmt % ("------", "--------", "----------------", "-------------------"))
+        global print_sched_fmt
+        if self.options.verbose:
+            print_sched_fmt = "%-21s  %-21s  %-19s  %-24s  %s"
+            print(print_sched_fmt % ("action", "last run", "next run", "config parameter", "schedule definition"))
+            print(print_sched_fmt % ("------", "--------", "--------", "----------------", "-------------------"))
+        else:
+            print_sched_fmt = "%-21s  %-21s  %-24s  %s"
+            print(print_sched_fmt % ("action", "last run", "config parameter", "schedule definition"))
+            print(print_sched_fmt % ("------", "--------", "----------------", "-------------------"))
         for a in sorted(self.scheduler_actions):
-            self._print_schedule(a)
+            self._print_schedule(a, verbose=self.options.verbose)
 
-    def _print_schedule(self, a):
+    def _print_schedule(self, a, verbose=False):
         if type(self.scheduler_actions[a]) == list:
             for so in self.scheduler_actions[a]:
-                 self.__print_schedule(a, so)
+                 self.__print_schedule(a, so, verbose=verbose)
         else:
             so = self.scheduler_actions[a]
-            self.__print_schedule(a, so)
+            self.__print_schedule(a, so, verbose=verbose)
 
-    def __print_schedule(self, a, so):
+    def __print_schedule(self, a, so, verbose=False):
         section = so.section
         schedule_option = so.schedule_option
         fname = so.fname
@@ -906,7 +917,15 @@ class Scheduler(object):
         else:
             param = schedule_option
         param = '.'.join((section, param))
-        print(print_sched_fmt % (a, last_s, param, schedule_s))
+        if verbose:
+            d, _max = self.get_next_schedule(a)
+            if d:
+                next_s = d.strftime("%Y-%m-%d %H:%M")
+            else:
+                next_s = "-"
+            print(print_sched_fmt % (a, last_s, next_s, param, schedule_s))
+        else:
+            print(print_sched_fmt % (a, last_s, param, schedule_s))
 
     def str_to_datetime(self, s):
         d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")

@@ -26,6 +26,8 @@ __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
+parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
+                  help="add more information to some print commands: +next in 'print schedule'")
 parser.add_option("--debug", default=False,
 		  action="store_true", dest="debug",
                   help="debug mode")

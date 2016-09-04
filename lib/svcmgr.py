@@ -190,6 +190,8 @@ parser.add_option("--table", default=False, action="store_true", dest="table",
                   help="use table representation of collector data instead of the default itemized list of objects and properties")
 parser.add_option("--refresh", default=False, action="store_true", dest="refresh",
                   help="drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands")
+parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
+                  help="add more information to some print commands: +next in 'print schedule'")
 parser.add_option("--tag", default=None,
                   action="store", dest="tag",
                   help="a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'")
