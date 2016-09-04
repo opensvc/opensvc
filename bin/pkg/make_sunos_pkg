@@ -142,7 +142,7 @@ su root -c "LD_LIBRARY_PATH=/opt/opensvc/usr/local/lib:\$LD_LIBRARY_PATH PATH=\$
 EOF
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
-create_pkg -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
+create_pkg -P $REPODIR/postinstall $PKGNAME $CHROOT/opt/opensvc=$BASE 2> /dev/null <<EOF
 
 opensvc Service Manager for logical servers v${VERSION}-$RELEASE
 $ARCH
@@ -151,7 +151,7 @@ $VERSION,REV=$RELEASE
 http://www.opensvc.com
 support@opensvc.com
 OPENSVC-${VERSION},REV=${RELEASE}
-$CHROOT=$BASE
+$CHROOT/opt/opensvc=$BASE
 
 EOF
 
