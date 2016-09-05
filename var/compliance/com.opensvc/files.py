@@ -100,7 +100,6 @@ import ssl
 import tempfile
 import pwd
 import grp
-import codecs
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -237,7 +236,7 @@ class CompFiles(CompObject):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfname = tmpf.name
         tmpf.close()
-        with codecs.open(tmpfname, 'w', encoding="utf8", errors="ignore") as tmpf:
+        with open(tmpfname, 'w') as tmpf:
             tmpf.write(f['fmt'])
         ret = self.check_file_diff(f, tmpfname, verbose=verbose)
         os.unlink(tmpfname)
@@ -265,9 +264,10 @@ class CompFiles(CompObject):
         except:
             if verbose: perror("file", f['path'], 'stat() failed')
             return RET_ERR
-        mode = str(mode).lstrip("0")
-        if mode != str(f['mode']):
-            if verbose: perror("file", f['path'], 'mode should be %s but is %s'%(f['mode'], mode))
+        mode = str(mode).lstrip("0o")
+        target_mode = str(f['mode']).lstrip("0o")
+        if mode != target_mode:
+            if verbose: perror("file", f['path'], 'mode should be %s but is %s'%(target_mode, mode))
             return RET_ERR
         return RET_OK
 
@@ -389,7 +389,7 @@ class CompFiles(CompObject):
                perror("file:", e)
                pass
         try:
-            with codecs.open(f['path'], 'w', encoding="utf8", errors="ignore") as fi:
+            with open(f['path'], 'w') as fi:
                 fi.write(f['fmt'])
         except Exception as e:
             perror("file:", e)
