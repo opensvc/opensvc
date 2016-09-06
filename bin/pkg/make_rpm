@@ -37,7 +37,7 @@ AutoReqProv: no
 $(echo ${DESCRIPTION}|fold -s)
 
 %post
-/usr/bin/python %{_datarootdir}/opensvc/bin/postinstall
+/usr/bin/python %{_datadir}/opensvc/bin/postinstall
 
 %files
 %docdir %{_docdir}/opensvc
@@ -49,25 +49,25 @@ $(echo ${DESCRIPTION}|fold -s)
 %config(noreplace) %{_sysconfdir}/opensvc
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc
-%{_datarootdir}/opensvc/lib
+%{_datadir}/opensvc/lib
 %attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.AIX
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.Darwin
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.debian
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.FreeBSD
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.hpux
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.OSF1
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.redhat
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.SunOS
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/init/opensvc.init.suse
-%{_datarootdir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
-%{_datarootdir}/opensvc/bin/init/systemd.opensvc-agent.service
-%{_datarootdir}/opensvc/bin/init/opensvc.agent.xml
-%{_datarootdir}/opensvc/bin/nodemgr
-%{_datarootdir}/opensvc/bin/svcmgr
-%{_datarootdir}/opensvc/bin/svcmon
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/opensvc
-%attr(0755,-,-) %{_datarootdir}/opensvc/bin/postinstall
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.AIX
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.Darwin
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.debian
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.FreeBSD
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.hpux
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.OSF1
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.redhat
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.SunOS
+%attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.suse
+%{_datadir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
+%{_datadir}/opensvc/bin/init/systemd.opensvc-agent.service
+%{_datadir}/opensvc/bin/init/opensvc.agent.xml
+%{_datadir}/opensvc/bin/nodemgr
+%{_datadir}/opensvc/bin/svcmgr
+%{_datadir}/opensvc/bin/svcmon
+%attr(0755,-,-) %{_datadir}/opensvc/bin/opensvc
+%attr(0755,-,-) %{_datadir}/opensvc/bin/postinstall
 %{_bindir}/nodemgr
 %{_bindir}/svcmgr
 %{_bindir}/svcmon
@@ -80,6 +80,6 @@ EOF
 cat $SPEC
 sudo rpmbuild --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
 #GNUPGHOME=~/.gpg sudo rpmsign --addsign $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
-rpmlint $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
+which rpmlint >/dev/null 2>&1 && rpmlint $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
 
 [ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
