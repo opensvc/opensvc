@@ -227,9 +227,11 @@ class Resource(object):
         except exc.excUndefined as ex:
             print(ex)
             return False
-        except exc.excError:
+        except exc.excError as e:
             if self.optional:
-                pass
+                if len(str(e)) > 0:
+                    self.log.error(str(e))
+                self.log.info("ignore %s error on optional resource" % action)
             else:
                 raise
 
