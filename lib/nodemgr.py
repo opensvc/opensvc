@@ -8,6 +8,7 @@ import optparse
 prog = "nodemgr"
 
 import rcStatus
+import rcColor
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import check_privs, ximport
@@ -114,7 +115,7 @@ parser.add_option("--app", default=None, action="store", dest="app",
 
 
 (options, args) = parser.parse_args()
-rcStatus.use_color = options.color
+rcColor.use_color = options.color
 
 n.options = options
 

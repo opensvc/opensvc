@@ -1,7 +1,6 @@
 import os
 import platform
-
-use_color = "auto"
+from rcColor import color, _colorize
 
 UP = 0
 DOWN = 1
@@ -13,39 +12,6 @@ STDBY_UP = 6
 STDBY_DOWN = 7
 STDBY_UP_WITH_UP = 8
 STDBY_UP_WITH_DOWN = 9
-
-GREEN = 32
-RED = 31
-YELLOW = 33
-
-class color:
-    WHITE = '\033[97m'
-    BGGRAY = '\033[100m'
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
-
-def ansi_colorize(s, c=None):
-    if c is None:
-        return s
-    if use_color == "never" or (use_color == "auto" and not os.isatty(1)):
-        return s
-    return c + s + color.END
-
-def win_colorize(s, c=None):
-    return s
-
-if platform.system() == 'Windows':
-    _colorize = win_colorize
-else:
-    _colorize = ansi_colorize
 
 def colorize(s, lpad=10):
     if type(s) == Status:

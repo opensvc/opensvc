@@ -18,7 +18,7 @@ except:
 
 import platform
 import re
-from rcStatus import _colorize, color
+from rcColor import _colorize, color
 
 class ColorStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):

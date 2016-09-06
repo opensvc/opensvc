@@ -10,7 +10,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner, is_string
 from subprocess import *
 from rcPrintTable import print_table
-from rcStatus import color, _colorize
+from rcColor import color, _colorize
 from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')

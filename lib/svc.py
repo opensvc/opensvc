@@ -639,7 +639,7 @@ class Svc(Resource, Scheduler):
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
             return
-        from rcStatus import color, _colorize
+        from rcColor import color, _colorize
         def c(line):
             l = line.rstrip("\n").split(" - ")
             if len(l) < 3:

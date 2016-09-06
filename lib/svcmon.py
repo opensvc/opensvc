@@ -16,6 +16,7 @@ from rcUtilities import *
 from lock import *
 import node
 import rcStatus
+import rcColor
 
 sysname, nodename, x, x, machine, x = platform.uname()
 
@@ -61,7 +62,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     if len(app) > applen:
         app = app[:applen-1]+"*"
     name = svc.svcname
-    name = rcStatus._colorize(fmt.split()[0] % name, rcStatus.color.BOLD)
+    name = rcColor._colorize(fmt.split()[0] % name, rcColor.color.BOLD)
     data = [
               name,
               app,
@@ -105,7 +106,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                      'overall': 'n/a'}
 
             name = " @"+container.name
-            name = rcStatus._colorize(fmt.split()[0] % name, rcStatus.color.WHITE)
+            name = rcColor._colorize(fmt.split()[0] % name, rcStatus.color.WHITE)
             data = [
                       name,
                       '-',
@@ -165,7 +166,7 @@ def svcmon_cluster(node):
     print(" "*svcname_len+" app        type topology | avail      overall    | updated")
     print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
     for d in data["data"]:
-       d["svcname"] = rcStatus._colorize(fmt_svcname % d, rcStatus.color.BOLD)
+       d["svcname"] = rcColor._colorize(fmt_svcname % d, rcStatus.color.BOLD)
        d["svc_status"] = rcStatus.colorize(d["svc_status"])
        d["svc_availstatus"] = rcStatus.colorize(d["svc_availstatus"])
        print(fmt % d)
@@ -248,7 +249,7 @@ parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
 
 (options, args) = parser.parse_args()
-rcStatus.use_color = options.color
+rcColor.use_color = options.color
 
 node = node.Node()
 

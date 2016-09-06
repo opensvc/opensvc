@@ -11,6 +11,7 @@ prog = "svcmgr"
 
 import svcBuilder
 import rcStatus
+import rcColor
 import rcOptParser
 import rcExceptions as ex
 from rcUtilities import ximport
@@ -231,7 +232,7 @@ def main():
         sys.argv = sys.argv[:pos+1]
 
     options, args = parser.parse_args()
-    rcStatus.use_color = options.color
+    rcColor.use_color = options.color
 
     if _args is not None:
         args = _args
