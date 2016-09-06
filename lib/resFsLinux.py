@@ -85,8 +85,12 @@ class Mount(Res.Mount):
         cmd = ['sync']
         (ret, out, err) = self.vcall(cmd)
     
+        if os.path.isdir(self.device):
+            fuser_opts = '-kv'
+        else:
+            fuser_opts = '-kmv'
         for i in range(4):
-            cmd = ['fuser', '-kmv', mnt]
+            cmd = ['fuser', fuser_opts, mnt]
             (ret, out, err) = self.vcall(cmd, err_to_info=True)
             self.log.info('umount %s'%mnt)
             cmd = ['umount', mnt]
