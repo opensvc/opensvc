@@ -716,7 +716,8 @@ class Svc(Resource, Scheduler):
         accessory_resources += sorted(self.get_resources("sync", discard_disabled=discard_disabled))
         n_accessory_resources = len(accessory_resources)
 
-        print(self.svcname)
+        from rcColor import color, _colorize
+        print(_colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), frozen))
