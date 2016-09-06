@@ -81,7 +81,7 @@ class Mount(Res.Resource):
             self.log.warning("failed to create missing mountpoint %s" % self.mountPoint)
 
     def fsck(self):
-        if self.fsType in ("", "none"):
+        if self.fsType in ("", "none") or os.path.isdir(self.device):
             # bind mounts are in this case
             return
         if self.fsType not in self.fsck_h:
