@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import os
 import optparse
+import platform
 
 #
 # add project lib to path
@@ -16,6 +17,7 @@ from rcUtilities import ximport
 from rcGlobalEnv import rcEnv
 node_mod = ximport('node')
 
+sysname, nodename, x, x, machine, x = platform.uname()
 build_err = False
 
 try:
@@ -70,8 +72,6 @@ def _install_service(svcname, src_env):
     if not os.path.exists(d):
         os.makedirs(d)
 
-    import platform
-    sysname, nodename, x, x, machine, x = platform.uname()
     if sysname == 'Windows':
         return
 
@@ -370,7 +370,16 @@ def main():
         if docker_argv is not None:
             s.docker_argv = docker_argv
 
-    err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
+    if sysname != "Windows" and (action.startswith("stop") or action in ("shutdown", "unprovision")):
+        pid = fork(node.do_svcs_action, [action], {"rid": rid, "tags": tags, "subsets": subsets})
+        try:
+            pid, status = os.waitpid(pid, 0)
+            err = os.WEXITSTATUS(status)
+        except (ex.excSignal, KeyboardInterrupt) as e:
+            print("the action, detached as pid %d, will continue executing" % pid)
+            err = 1
+    else:
+        err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
 
     try:
         import logging
@@ -379,6 +388,36 @@ def main():
         pass
 
     return err
+
+def fork(fn, args=[], kwargs={}):
+    pid = os.fork()
+    if pid > 0:
+        """ return to parent execution
+        """
+        return pid
+
+    """ separate the son from the father
+    """
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            pid, status = os.waitpid(pid, 0)
+            err = os.WEXITSTATUS(status)
+            os._exit(err)
+    except:
+        os._exit(1)
+
+    try:
+        fn(*args, **kwargs)
+    except Exception as e:
+        print(e, file=sys.stderr)
+        os._exit(1)
+
+    os._exit(0)
 
 if __name__ == "__main__":
     r = main()
