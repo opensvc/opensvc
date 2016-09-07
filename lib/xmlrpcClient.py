@@ -43,6 +43,8 @@ rcEnv.warned = False
 import logging
 import logging.handlers
 logfile = os.path.join(rcEnv.pathlog, 'xmlrpc.log')
+log = logging.getLogger("xmlrpc")
+log.setLevel(logging.INFO)
 
 try:
     fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -51,11 +53,8 @@ try:
                                                        backupCount=5)
     filehandler.setFormatter(fileformatter)
     log.addHandler(filehandler)
-except:
+except Exception as e:
     pass
-
-log = logging.getLogger("xmlrpc")
-log.setLevel(logging.INFO)
 
 try:
     if sys.version_info[0] >= 3:
