@@ -36,6 +36,19 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+actions_no_parallel = [
+  'edit_config',
+  'get',
+  'json_config',
+  'json_devlist',
+  'json_disklist',
+  'json_status',
+  'print_config',
+  'print_resource_status',
+  'print_schedule',
+  "print_status",
+]
+
 class Options(object):
     def __init__(self):
         self.cron = False
@@ -1376,9 +1389,14 @@ class Node(Svc, Freezer, Scheduler):
         except:
             pass
 
+    def can_parallel(self, action):
+        if self.options.parallel and action not in actions_no_parallel:
+            return True
+        return False
+
     def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
         err = 0
-        if self.options.parallel:
+        if self.can_parallel(action):
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
                 from multiprocessing import set_executable
@@ -1386,7 +1404,7 @@ class Node(Svc, Freezer, Scheduler):
             p = {}
             svcs = {}
         for s in self.svcs:
-            if self.options.parallel:
+            if self.can_parallel(action):
                 d = {
                   'action': action,
                   'rid': rid,
@@ -1408,7 +1426,7 @@ class Node(Svc, Freezer, Scheduler):
                 except ex.excSignal:
                     break
 
-        if self.options.parallel:
+        if self.can_parallel(action):
             for svcname in p:
                 p[svcname].join()
                 r = p[svcname].exitcode
