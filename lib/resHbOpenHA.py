@@ -31,23 +31,36 @@ class Hb(resHb.Hb):
                           subset=subset,
                           tags=tags,
                           always_on=always_on)
-        self.basedir = os.path.join(os.sep, 'usr', 'local', 'cluster')
-        self.bindir = os.path.join(self.basedir, 'bin')
-        self.logdir = os.path.join(self.basedir, 'log')
-        self.svcdir = os.path.join(self.basedir, 'services')
-        self.cfsvc = os.path.join(self.basedir, 'conf', 'services')
-        self.cfnod = os.path.join(self.basedir, 'conf', 'nodes')
-        self.cfmon = os.path.join(self.basedir, 'conf', 'monitor')
-        os.environ['EZ'] = self.basedir
-        os.environ['EZ_BIN'] = self.bindir
-        os.environ['EZ_SERVICES'] = self.cfsvc
-        os.environ['EZ_NODES'] = self.cfnod
-        os.environ['EZ_MONITOR'] = self.cfmon
-        os.environ['EZ_LOG'] = self.logdir
-        self.service_cmd = os.path.join(self.bindir, 'service')
+        if which("openha"):
+            self.need_env = False
+            self.basedir = os.path.join(os.sep, 'usr', 'lib', 'openha')
+            self.bindir = os.path.join(self.basedir, 'bin')
+            self.svcdir = os.path.join(os.sep, 'var', 'lib', 'openha', 'services')
+            self.confdir = os.path.join(os.sep, 'etc', 'openha')
+            self.service_cmd = ['openha', 'service']
+        else:
+            self.need_env = True
+            self.basedir = os.path.join(os.sep, 'usr', 'local', 'cluster')
+            self.bindir = os.path.join(self.basedir, 'bin')
+            self.logdir = os.path.join(self.basedir, 'log')
+            self.svcdir = os.path.join(self.basedir, 'services')
+            self.confdir = os.path.join(self.confdir, 'conf')
+            os.environ['EZ'] = self.basedir
+            os.environ['EZ_BIN'] = self.bindir
+            os.environ['EZ_SERVICES'] = self.cfsvc
+            os.environ['EZ_NODES'] = self.cfnod
+            os.environ['EZ_MONITOR'] = self.cfmon
+            os.environ['EZ_LOG'] = self.logdir
+            self.service_cmd = [os.path.join(self.bindir, 'service')]
+
+        self.cfsvc = os.path.join(self.confdir, 'services')
+        self.cfnod = os.path.join(self.confdir, 'nodes')
+        self.cfmon = os.path.join(self.confdir, 'monitor')
+
         self.heartc = os.path.join(self.bindir, 'heartc')
         self.heartd = os.path.join(self.bindir, 'heartd')
         self.nmond = os.path.join(self.bindir, 'nmond')
+
         self.name = name
         self.state = {'0': 'stopped',
                       '1': 'stopping',
@@ -108,17 +121,19 @@ class Hb(resHb.Hb):
             return 'unknown'
 
     def service_action(self, command):
-        cmd = [self.service_cmd, '-A', self.cluster_name(), command]
+        cmd = self.service_cmd + ['-A', self.cluster_name(), command]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
     def freezestop(self):
-        cmd = ['env']
-        vars = ('EZ', 'EZ_BIN', 'EZ_SERVICES', 'EZ_NODES', 'EZ_MONITOR', 'EZ_LOG')
-        for var in vars:
-            cmd.append(var+'='+os.environ[var])
-        cmd += [self.service_cmd, '-A', self.cluster_name(), 'freeze-stop']
+        cmd = []
+        if self.need_env:
+            cmd += ['env']
+            vars = ('EZ', 'EZ_BIN', 'EZ_SERVICES', 'EZ_NODES', 'EZ_MONITOR', 'EZ_LOG')
+            for var in vars:
+                cmd.append(var+'='+os.environ[var])
+        cmd += self.service_cmd + ['-A', self.cluster_name(), 'freeze-stop']
         self.svc.node.cmdworker.enqueue(cmd)
 
     def process_running(self):
@@ -460,7 +475,7 @@ class Hb(resHb.Hb):
         raise ex.excEndAction("heartbeat actions done")
 
     def __status(self, verbose=False):
-        if not os.path.exists(self.service_cmd):
+        if which(self.service_cmd[0]) is None:
             self.status_log("open-ha is not installed")
             return rcStatus.WARN
         if not self.process_running():
