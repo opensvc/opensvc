@@ -157,16 +157,16 @@ class App(Res.Resource):
         if os.path.exists(self.script):
             self.script = os.path.realpath(self.script)
             return
-        self.status_log("script %s does not exist" % self.script)
         self.script = None
 
     def is_up(self):
         if self.pg_frozen():
             raise StatusWARN()
         if self.script is None:
+            self.status_log("script does not exist")
             raise StatusNA()
         if not os.path.exists(self.script):
-            self.status_log("script does not exist")
+            self.status_log("script %s does not exist" % self.script)
             raise StatusNA()
         if self.check_seq is None:
             self.status_log("check is not set", "info")
