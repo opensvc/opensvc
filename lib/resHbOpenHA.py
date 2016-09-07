@@ -121,9 +121,11 @@ class Hb(resHb.Hb):
             return 'unknown'
 
     def service_action(self, command):
+        from subprocess import Popen
         cmd = self.service_cmd + ['-A', self.cluster_name(), command]
-        (ret, out, err) = self.vcall(cmd)
-        if ret != 0:
+        p = Popen(cmd)
+        out, err = p.communicate()
+        if p.returncode != 0:
             raise ex.excError
 
     def freezestop(self):
