@@ -150,7 +150,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 
 def svcmon_cluster(node):
     svcnames = ",".join([r.svcname for r in node.svcs])
-    data = node.collector_rest_get("/services?props=svcname,svc_app,svc_type,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+    data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_type,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return 1
@@ -160,17 +160,80 @@ def svcmon_cluster(node):
     if len(data["data"]) == 0:
         print("no service found on the collector", file=sys.stderr)
         return 1
-    svcname_len = max_len(data["data"])
+    svc_ids = []
+    for d in data["data"]:
+       svc_ids.append(d["svc_id"])
+
+    max_len_data = []
+    max_len_data += data["data"]
+    if options.verbose:
+        instance_data = svcmon_cluster_verbose_data(node, svc_ids)
+        for instances in instance_data.values():
+            max_len_data += instances
+
+    svcname_len = max_len(max_len_data)
     fmt_svcname = '%(svcname)-' + str(svcname_len) + 's'
     fmt = fmt_svcname + ' %(svc_app)-10s %(svc_type)-4s %(svc_cluster_type)-8s | %(svc_availstatus)-10s %(svc_status)-10s | %(svc_status_updated)s'
     print(" "*svcname_len+" app        type topology | avail      overall    | updated")
     print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
+
     for d in data["data"]:
        d["svcname"] = rcColor._colorize(fmt_svcname % d, rcStatus.color.BOLD)
        d["svc_status"] = rcStatus.colorize(d["svc_status"])
        d["svc_availstatus"] = rcStatus.colorize(d["svc_availstatus"])
        print(fmt % d)
- 
+       if options.verbose:
+           for inst in instance_data[d["svc_id"]]:
+               print(fmt%inst)
+
+def svcmon_cluster_verbose_data(node, svc_ids):
+    data = node.collector_rest_get("/services_instances?props=svc_id,node_id,mon_availstatus,mon_overallstatus,mon_updated&meta=0&filters=svc_id (%s)"%",".join(svc_ids))
+    if "error" in data:
+        print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
+        return {}
+    if "data" not in data:
+        print("no 'data' key in the collector rest api response", file=sys.stderr)
+        return {}
+    if len(data["data"]) == 0:
+        print("no service instance found on the collector", file=sys.stderr)
+        return {}
+    _data = {}
+
+    node_ids = set([])
+    for d in data["data"]:
+        node_ids.add(d["node_id"])
+
+    node_data = node.collector_rest_get("/nodes?props=node_id,nodename&meta=0&filters=node_id (%s)"%",".join(node_ids))
+    if "error" in node_data:
+        print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
+        return {}
+    if "data" not in node_data:
+        print("no 'data' key in the collector rest api response", file=sys.stderr)
+        return {}
+    if len(node_data["data"]) == 0:
+        print("no node found on the collector", file=sys.stderr)
+        return {}
+
+    nodenames = {}
+    for d in node_data["data"]:
+        nodenames[d["node_id"]] = d["nodename"]
+
+    for d in data["data"]:
+        if d["svc_id"] not in _data:
+            _data[d["svc_id"]] = []
+        d["svc_app"] = ""
+        d["svc_cluster_type"] = ""
+        d["svc_type"] = ""
+        d["svc_availstatus"] = rcStatus.colorize(d["mon_availstatus"])
+        d["svc_status"] = rcStatus.colorize(d["mon_overallstatus"])
+        d["svc_status_updated"] = d["mon_updated"]
+        if d["node_id"] in nodenames:
+            nodename = nodenames[d["node_id"]]
+        else:
+            nodename = d["node_id"]
+        d["svcname"] = " @"+nodename
+        _data[d["svc_id"]].append(d)
+    return _data
 
 def svcmon_normal(svcs, upddb=False):
     svcname_len = max_len(svcs)
