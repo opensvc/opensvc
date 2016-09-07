@@ -252,7 +252,7 @@ class Resource(object):
         try:
             return self._status(verbose=verbose)
         except Exception as e:
-            self.status_log(str(e), "warn")
+            self.status_log(str(e), "error")
             return rcStatus.WARN
 
     def _status(self, verbose=False):
@@ -426,6 +426,12 @@ class Resource(object):
         if (level, text) in self.status_logs:
             return
         self.status_logs.append((level, text))
+
+    def status_logs_get(self, levels=["info", "warn", "error"]):
+        return [e[1] for e in self.status_logs if e[0] in levels and e[1] != ""]
+
+    def status_logs_count(self, levels=["info", "warn", "error"]):
+        return len(self.status_logs_get(levels=levels))
 
     def status_logs_str(self, color=False):
         s = ""
@@ -674,7 +680,6 @@ class ResourceSet(Resource):
             try:
                 status = r.status()
             except:
-                import sys
                 import traceback
                 e = sys.exc_info()
                 print(e[0], e[1], traceback.print_tb(e[2]))
@@ -714,7 +719,6 @@ class ResourceSet(Resource):
             try:
                 from multiprocessing import Process
                 if rcEnv.sysname == "Windows":
-                    import sys
                     import os
                     from multiprocessing import set_executable
                     set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))

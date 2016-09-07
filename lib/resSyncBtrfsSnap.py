@@ -122,7 +122,7 @@ class syncBtrfsSnap(resSync.Sync):
 
     def _status_one(self, label, subvol):
         if self.test_btrfs(label) != 0:
-            self.status_log("snap of %s suspended: not writable"%label)
+            self.status_log("snap of %s suspended: not writable"%label, "warn")
             return
         try:
             btrfs = self.get_btrfs(label)
@@ -167,7 +167,7 @@ class syncBtrfsSnap(resSync.Sync):
                 self.status_log("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
                 continue
             self._status_one(label, subvol)
-        messages = set(self.status_logs) - set([''])
+        messages = set(self.status_logs_get(["warn"])) - set([''])
         not_writable = set([r for r in messages if "not writable" in r])
         issues = messages - not_writable
 
