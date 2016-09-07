@@ -24,6 +24,235 @@ except ImportError:
 def signal_handler(signum, frame):
     raise ex.excSignal
 
+actions_translation = {
+  "json_env": "json_config",
+  "syncall": "sync_all",
+  "syncbreak": "sync_break",
+  "syncdrp": "sync_drp",
+  "syncestablish": "sync_establish",
+  "syncfullsync": "sync_full",
+  "syncnodes": "sync_nodes",
+  "syncquiesce": "sync_quiesce",
+  "syncrestore": "sync_restore",
+  "syncresume": "sync_resume",
+  "syncresync": "sync_resync",
+  "syncrevert": "sync_revert",
+  "syncsplit": "sync_split",
+  "syncupdate": "sync_update",
+  "syncverify": "sync_verify",
+}
+
+actions_allow_on_frozen = [
+  'delete',
+  'disable',
+  'edit_config',
+  'enable',
+  'freeze',
+  'frozen',
+  'get',
+  'json_config',
+  'json_status',
+  'json_disklist',
+  'json_devlist',
+  'logs',
+  'print_config',
+  'print_devlist',
+  'print_disklist',
+  'print_env_mtime',
+  'print_resource_status',
+  'print_schedule',
+  'print_status',
+  'push',
+  'push_appinfo',
+  'push_env',
+  'push_service_status',
+  'prstatus',
+  'scheduler',
+  'set',
+  'status',
+  'thaw',
+  'update',
+  'unset',
+  'validate_config',
+]
+
+actions_allow_on_cluster = actions_allow_on_frozen + [
+  'boot',
+  'docker',
+  'postsync',
+  'presync',
+  'resource_monitor',
+  'startstandby',
+  'sync_all',
+  'sync_drp',
+  'sync_nodes',
+  'toc',
+  'validate_config',
+]
+
+actions_no_log = [
+  'delete',
+  'edit_config',
+  'get',
+  'group_status',
+  'json_config',
+  'json_devlist',
+  'json_disklist',
+  'json_status',
+  'logs',
+  'push',
+  'push_appinfo',
+  'push_env',
+  'push_service_status',
+  'print_config',
+  'print_devlist',
+  'print_disklist',
+  'print_env_mtime',
+  'print_resource_status',
+  'print_schedule',
+  'print_status',
+  'resource_monitor',
+  'scheduler',
+  'set',
+  'status',
+  'unset',
+  'validate_config',
+]
+
+actions_no_trigger = [
+  "delete",
+  "enable",
+  "disable",
+  "status",
+  'scheduler',
+  'pg_freeze',
+  'pg_thaw',
+  'pg_kill',
+  'logs',
+  'print_schedule',
+  "print_status",
+  'print_resource_status',
+  "print_disklist",
+  "print_devlist",
+  'print_config',
+  'edit_config',
+  "json_disklist",
+  "json_devlist",
+  "json_status",
+  "json_config",
+  "push_appinfo",
+  "push",
+  "group_status",
+  "presync",
+  "postsync",
+  "freezestop",
+  "resource_monitor",
+]
+
+actions_no_lock = [
+  'docker',
+  'edit_config',
+  'freeze',
+  'freezestop',
+  'frozen',
+  'get',
+  'json_config',
+  'json_devlist',
+  'json_disklist',
+  'json_status',
+  'logs',
+  'print_config',
+  'print_devlist',
+  'print_disklist',
+  'print_env_mtime',
+  'print_resource_status',
+  'print_schedule',
+  'print_status',
+  'push',
+  'push_appinfo',
+  'push_env',
+  'push_service_status',
+  'scheduler',
+  'status',
+  'thaw',
+  'toc',
+  'validate_config',
+]
+
+disk_types = [
+  "disk.drbd",
+  "disk.gandi",
+  "disk.gce",
+  "disk.lock",
+  "disk.loop",
+  "disk.md",
+  "disk.rados",
+  "disk.raw",
+  "disk.vg",
+  "disk.zpool",
+]
+
+status_types = [
+  "app",
+  "container.amazon",
+  "container.docker",
+  "container.esx",
+  "container.hpvm",
+  "container.jail",
+  "container.kvm",
+  "container.lxc",
+  "container.ldom",
+  "container.openstack",
+  "container.ovm",
+  "container.srp",
+  "container.vbox",
+  "container.vcloud",
+  "container.vz",
+  "container.xen",
+  "container.zone",
+  "disk.drbd",
+  "disk.gandi",
+  "disk.gce",
+  "disk.lock",
+  "disk.loop",
+  "disk.md",
+  "disk.lv",
+  "disk.raw",
+  "disk.rados",
+  "disk.scsireserv",
+  "disk.vg",
+  "disk.zpool",
+  "fs",
+  "hb.linuxha",
+  "hb.openha",
+  "hb.ovm",
+  "hb.rhcs",
+  "hb.sg",
+  "hb.vcs",
+  "ip",
+  "share.nfs",
+  "sync.btrfs",
+  "sync.btrfssnap",
+  "sync.dcsckpt",
+  "sync.dcssnap",
+  "sync.dds",
+  "sync.docker",
+  "sync.evasnap",
+  "sync.hp3par",
+  "sync.ibmdssnap",
+  "sync.necismsnap",
+  "sync.netapp",
+  "sync.nexenta",
+  "sync.rados",
+  "sync.rsync",
+  "sync.symclone",
+  "sync.symsrdfs",
+  "sync.s3",
+  "sync.zfs",
+  "stonith.callout",
+  "stonith.ilo",
+]
+
 class Options(object):
     def __init__(self):
         self.color = "auto"
@@ -76,76 +305,6 @@ class Svc(Resource, Scheduler):
         self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname, 'last_pushed_env')
-        self.disk_types = [
-         "disk.loop",
-         "disk.raw",
-         "disk.rados",
-         "disk.gandi",
-         "disk.drbd",
-         "disk.gce",
-         "disk.md",
-         "disk.zpool",
-         "disk.lock",
-         "disk.vg",
-        ]
-        self.status_types = ["container.hpvm",
-                             "container.kvm",
-                             "container.amazon",
-                             "container.openstack",
-                             "container.vcloud",
-                             "container.xen",
-                             "container.esx",
-                             "container.ovm",
-                             "container.lxc",
-                             "container.docker",
-                             "container.vz",
-                             "container.srp",
-                             "container.zone",
-                             "container.jail",
-                             "container.ldom",
-                             "container.vbox",
-                             "disk.drbd",
-                             "disk.gce",
-                             "disk.loop",
-                             "disk.gandi",
-                             "disk.raw",
-                             "disk.rados",
-                             "disk.scsireserv",
-                             "disk.lock",
-                             "disk.vg",
-                             "disk.lv",
-                             "disk.zpool",
-                             "disk.md",
-                             "share.nfs",
-                             "fs",
-                             "ip",
-                             "sync.rsync",
-                             "sync.symclone",
-                             "sync.rados",
-                             "sync.symsrdfs",
-                             "sync.hp3par",
-                             "sync.ibmdssnap",
-                             "sync.evasnap",
-                             "sync.necismsnap",
-                             "sync.btrfssnap",
-                             "sync.s3",
-                             "sync.dcssnap",
-                             "sync.dcsckpt",
-                             "sync.dds",
-                             "sync.zfs",
-                             "sync.btrfs",
-                             "sync.docker",
-                             "sync.netapp",
-                             "sync.nexenta",
-                             "app",
-                             "stonith.ilo",
-                             "stonith.callout",
-                             "hb.openha",
-                             "hb.sg",
-                             "hb.rhcs",
-                             "hb.vcs",
-                             "hb.ovm",
-                             "hb.linuxha"]
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
         Scheduler.__init__(self)
@@ -296,36 +455,7 @@ class Svc(Resource, Scheduler):
 
     def svclock(self, action=None, timeout=30, delay=5):
         suffix = None
-        list_actions_no_lock = [
-          'docker',
-          'push',
-          'push_env',
-          'push_appinfo',
-          'logs',
-          'print_status',
-          'print_resource_status',
-          'push_service_status',
-          'status',
-          'freeze',
-          'frozen',
-          'thaw',
-          'get',
-          'toc',
-          'freezestop',
-          'scheduler',
-          'print_schedule',
-          'print_env_mtime',
-          'print_disklist',
-          'print_devlist',
-          'print_config',
-          'edit_config',
-          'json_status',
-          'json_disklist',
-          'json_devlist',
-          'json_config',
-          'validate_config',
-        ]
-        if action in list_actions_no_lock:
+        if action in actions_no_lock:
             # no need to serialize this action
             return
         if action.startswith("collector"):
@@ -448,37 +578,6 @@ class Svc(Resource, Scheduler):
     def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
         """ TODO: r.is_optional() not doing what's expected if r is a rset
         """
-        list_actions_no_pre_action = [
-          "delete",
-          "enable",
-          "disable",
-          "status",
-          'scheduler',
-          'pg_freeze',
-          'pg_thaw',
-          'pg_kill',
-          'logs',
-          'print_schedule',
-          "print_status",
-          'print_resource_status',
-          "print_disklist",
-          "print_devlist",
-          'print_config',
-          'edit_config',
-          "json_disklist",
-          "json_devlist",
-          "json_status",
-          "json_config",
-          "push_appinfo",
-          "push",
-          "group_status",
-          "presync",
-          "postsync",
-          "freezestop",
-          "resource_monitor",
-        ]
-        list_actions_no_post_action = list_actions_no_pre_action
-
         ns = self.need_snap_trigger(sets, action)
 
         """ snapshots are created in pre_action and destroyed in post_action
@@ -509,7 +608,7 @@ class Svc(Resource, Scheduler):
         sets = sorted(sets, key=lambda x: x.type, reverse=reverse)
 
         for r in sets:
-            if action in list_actions_no_pre_action or r.skip:
+            if action in actions_no_trigger or r.skip:
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
@@ -532,7 +631,7 @@ class Svc(Resource, Scheduler):
             r.action(action, tags=tags, xtags=xtags)
 
         for r in sets:
-            if action in list_actions_no_post_action or r.skip:
+            if action in actions_no_trigger or r.skip:
                 break
             try:
                 r.log.debug("start %s post_action"%r.type)
@@ -557,7 +656,7 @@ class Svc(Resource, Scheduler):
         """aggregate status a service
         """
         ss = rcStatus.Status()
-        for r in self.get_res_sets(self.status_types, strict=True):
+        for r in self.get_res_sets(status_types, strict=True):
             if not self.encap and 'encap' in r.tags:
                 continue
             if "sync." not in r.type:
@@ -596,7 +695,7 @@ class Svc(Resource, Scheduler):
                 except:
                     d['encap'][container.name] = {'resources': {}}
 
-        for rs in self.get_res_sets(self.status_types, strict=True):
+        for rs in self.get_res_sets(status_types, strict=True):
             for r in rs.resources:
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 d['resources'][rid] = {'status': status,
@@ -963,7 +1062,7 @@ class Svc(Resource, Scheduler):
     def get_rset_status(self, groups):
         self.setup_environ()
         rset_status = {}
-        for t in self.status_types:
+        for t in status_types:
             g = t.split('.')[0]
             if g not in groups:
                 continue
@@ -1224,7 +1323,7 @@ class Svc(Resource, Scheduler):
             groups = set(["container", "ip", "disk", "fs", "share", "hb"])
             for g in groups:
                 gs[g] = 'down'
-            for rs in self.get_res_sets(self.status_types, strict=True):
+            for rs in self.get_res_sets(status_types, strict=True):
                 g = rs.type.split('.')[0]
                 if g not in groups:
                     continue
@@ -1293,7 +1392,7 @@ class Svc(Resource, Scheduler):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for t in [_t for _t in self.status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
+        for t in [_t for _t in status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
             if t in excluded_groups:
                 continue
             group = t.split('.')[0]
@@ -1318,7 +1417,7 @@ class Svc(Resource, Scheduler):
         # seed overall with avail
         status["overall"] = copy(status["avail"])
 
-        for t in [_t for _t in self.status_types if _t.startswith('stonith')]:
+        for t in [_t for _t in status_types if _t.startswith('stonith')]:
             if 'stonith' not in groups:
                 continue
             if t in excluded_groups:
@@ -1328,7 +1427,7 @@ class Svc(Resource, Scheduler):
                 status['stonith'] += s
                 status["overall"] += s
 
-        for t in [_t for _t in self.status_types if _t.startswith('hb')]:
+        for t in [_t for _t in status_types if _t.startswith('hb')]:
             if 'hb' not in groups:
                 continue
             if t in excluded_groups:
@@ -1338,7 +1437,7 @@ class Svc(Resource, Scheduler):
                 status['hb'] += s
                 status["overall"] += s
 
-        for t in [_t for _t in self.status_types if _t.startswith('sync')]:
+        for t in [_t for _t in status_types if _t.startswith('sync')]:
             if 'sync' not in groups:
                 continue
             if t in excluded_groups:
@@ -1725,7 +1824,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.symclone", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action(self.disk_types, "startstandby", xtags=set(['zone']))
+        self.sub_set_action(disk_types, "startstandby", xtags=set(['zone']))
 
     @_master_action
     def master_startdisk(self):
@@ -1737,7 +1836,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action(self.disk_types, "start", xtags=set(['zone']))
+        self.sub_set_action(disk_types, "start", xtags=set(['zone']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -1750,17 +1849,17 @@ class Svc(Resource, Scheduler):
     @_master_action
     def master_stopdisk(self):
         self.sub_set_action("sync.btrfssnap", "stop")
-        self.sub_set_action(self.disk_types, "stop", xtags=set(['zone']))
+        self.sub_set_action(disk_types, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     @_master_action
     def master_shutdowndisk(self):
         self.sub_set_action("sync.btrfssnap", "shutdown")
-        self.sub_set_action(self.disk_types, "shutdown", xtags=set(['zone']))
+        self.sub_set_action(disk_types, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
 
     def rollbackdisk(self):
-        self.sub_set_action(self.disk_types, "rollback", xtags=set(['zone']))
+        self.sub_set_action(disk_types, "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
 
     def abort_start(self):
@@ -2510,25 +2609,8 @@ class Svc(Resource, Scheduler):
         return l
 
     def action_translate(self, action):
-        translation = {
-          "json_env": "json_config",
-          "syncnodes": "sync_nodes",
-          "syncdrp": "sync_drp",
-          "syncupdate": "sync_update",
-          "syncresync": "sync_resync",
-          "syncall": "sync_all",
-          "syncfullsync": "sync_full",
-          "syncrestore": "sync_restore",
-          "syncquiesce": "sync_quiesce",
-          "syncsplit": "sync_split",
-          "syncestablish": "sync_establish",
-          "syncrevert": "sync_revert",
-          "syncbreak": "sync_break",
-          "syncresume": "sync_resume",
-          "syncverify": "sync_verify",
-        }
-        if action in translation:
-            return translation[action]
+        if action in actions_translation:
+            return actions_translation[action]
         return action
 
     def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
@@ -2566,60 +2648,15 @@ class Svc(Resource, Scheduler):
 
         action = self.action_translate(action)
 
-        actions_list_allow_on_frozen = [
-          'get',
-          'set',
-          'unset',
-          'update',
-          'enable',
-          'disable',
-          'delete',
-          'freeze',
-          'thaw',
-          'prstatus',
-          'status',
-          'frozen',
-          'push',
-          'push_env',
-          'push_appinfo',
-          'push_service_status',
-          'edit_config',
-          'scheduler',
-          'print_schedule',
-          'print_config',
-          'print_env_mtime',
-          'print_status',
-          'print_resource_status',
-          'print_disklist',
-          'print_devlist',
-          'logs',
-          'json_config',
-          'json_status',
-          'json_disklist',
-          'json_devlist',
-          'validate_config',
-        ]
-        actions_list_allow_on_cluster = actions_list_allow_on_frozen + [
-          'docker',
-          'boot',
-          'toc',
-          'startstandby',
-          'resource_monitor',
-          'presync',
-          'postsync',
-          'sync_drp',
-          'sync_nodes',
-          'sync_all',
-          'validate_config',
-        ]
-        if action not in actions_list_allow_on_frozen and \
+
+        if action not in actions_allow_on_frozen and \
            'compliance' not in action and \
            'collector' not in action:
             if self.frozen() and not self.force:
                 self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
             try:
-                if action not in actions_list_allow_on_cluster:
+                if action not in actions_allow_on_cluster:
                     self.cluster_mode_safety_net(action)
             except ex.excAbortAction as e:
                 self.log.info(str(e))
@@ -2642,35 +2679,7 @@ class Svc(Resource, Scheduler):
         self.setup_environ(action=action)
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=rids, xtags=xtags)
-        actions_list_no_log = [
-          'get',
-          'set',
-          'unset',
-          'delete',
-          'push',
-          'push_env',
-          'push_appinfo',
-          'push_service_status',
-          'scheduler',
-          'print_schedule',
-          'print_env_mtime',
-          'print_status',
-          'print_resource_status',
-          'print_disklist',
-          'print_devlist',
-          'print_config',
-          'logs',
-          'edit_config',
-          'json_status',
-          'json_disklist',
-          'json_devlist',
-          'json_config',
-          'status',
-          'group_status',
-          'resource_monitor',
-          'validate_config',
-        ]
-        if action in actions_list_no_log or \
+        if action in actions_no_log or \
            action.startswith("compliance") or \
            action.startswith("collector") or \
            action.startswith("docker") or \
