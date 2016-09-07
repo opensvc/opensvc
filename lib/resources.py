@@ -432,7 +432,7 @@ class Resource(object):
         for level, text in self.status_logs:
             if len(text) == 0:
                 continue
-            _s = level + ": " + text
+            _s = level + ": " + text + "\n"
             if color:
                 if level == "warn":
                     c = rcColor.color.BROWN

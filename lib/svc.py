@@ -601,7 +601,7 @@ class Svc(Resource, Scheduler):
                 rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 d['resources'][rid] = {'status': status,
                                        'label': label,
-                                       'log':log,
+                                       'log': log,
                                        'tags': sorted(list(r.tags)),
                                        'monitor':monitor,
                                        'disable': disable,
@@ -681,6 +681,9 @@ class Svc(Resource, Scheduler):
         """
         from textwrap import wrap
         from rcUtilities import term_width
+        from rcColor import color, _colorize
+
+        tw = term_width()
 
         def print_res(e, fmt, pfx, subpfx=None):
             if subpfx is None:
@@ -692,14 +695,17 @@ class Svc(Resource, Scheduler):
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
             print(fmt%(rid, flags, rcStatus.colorize(status), label))
-            if len(log) > 0:
-                print('\n'.join(wrap(log,
-                                     initial_indent = subpfx,
-                                     subsequent_indent = subpfx,
-                                     width=term_width()
-                                    )
-                               )
-                )
+            for msg in log.split("\n"):
+                if len(msg) > 0:
+                    if subpfx:
+                        subpfx = color.END + subpfx
+                    print('\n'.join(wrap(msg,
+                                         initial_indent = subpfx,
+                                         subsequent_indent = subpfx,
+                                         width=tw
+                                        )
+                                   )
+                    )
 
         if self.options.show_disabled is not None:
             discard_disabled = not self.options.show_disabled
@@ -717,7 +723,6 @@ class Svc(Resource, Scheduler):
         accessory_resources += sorted(self.get_resources("sync", discard_disabled=discard_disabled))
         n_accessory_resources = len(accessory_resources)
 
-        from rcColor import color, _colorize
         print(_colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
