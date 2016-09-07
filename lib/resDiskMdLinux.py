@@ -180,7 +180,7 @@ class Disk(resDisk.Disk):
         if s in (rcStatus.STDBY_DOWN, rcStatus.DOWN):
              if self.down_state_alerts() == rcStatus.WARN:
                  return rcStatus.WARN
-        if len(self.status_log_str) > 0:
+        if len(self.status_logs) > 0:
             return rcStatus.WARN
         return s
 

@@ -7,6 +7,7 @@ import sys
 import time
 import shlex
 from rcGlobalEnv import rcEnv
+import rcColor
 
 class Resource(object):
     """Define basic resource
@@ -39,7 +40,7 @@ class Resource(object):
         self.rstatus = None
         self.always_on = always_on
         if self.label is None: self.label = type
-        self.status_log_str = ""
+        self.status_logs = []
         self.can_rollback = False
 
     def fmt_info(self, keys=[]):
@@ -251,7 +252,7 @@ class Resource(object):
         try:
             return self._status(verbose=verbose)
         except Exception as e:
-            self.status_log(str(e))
+            self.status_log(str(e), "warn")
             return rcStatus.WARN
 
     def _status(self, verbose=False):
@@ -259,18 +260,17 @@ class Resource(object):
 
     def force_status(self, s):
         self.rstatus = s
-        self.status_log_str = "forced"
+        self.status_logs = [("info", "forced")]
         self.write_status()
 
     def status(self, verbose=False, refresh=False, restart=True, ignore_nostatus=False):
         # refresh param: used by do_action() to force a res status re-eval
         # self.svc.options.refresh: used to purge disk cache
         if self.disabled:
-            self.status_log("disabled")
             return rcStatus.NA
 
         if not ignore_nostatus and "nostatus" in self.tags:
-            self.status_log("nostatus tag")
+            self.status_log("nostatus tag", "info")
             return rcStatus.NA
 
         if self.rstatus is not None and not refresh:
@@ -284,7 +284,7 @@ class Resource(object):
             self.rstatus = last_status
 
         if self.rstatus is None or self.svc.options.refresh or refresh:
-            self.status_log_str = ""
+            self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.log.debug("refresh status: %s => %s" % (rcStatus.status_str(last_status), rcStatus.status_str(self.rstatus)))
             self.write_status()
@@ -314,7 +314,7 @@ class Resource(object):
         if self.rstatus in no_restart_status:
             return
         if last_status not in restart_last_status:
-            self.status_log("not restarted because previous status is %s" % rcStatus.status_str(last_status))
+            self.status_log("not restarted because previous status is %s" % rcStatus.status_str(last_status), "info")
             return
 
         if not hasattr(self, 'start'):
@@ -324,7 +324,7 @@ class Resource(object):
         if self.svc.frozen():
             s = "resource restart skipped: service is frozen"
             self.log.info(s)
-            self.status_log(s)
+            self.status_log(s, "info")
             return
 
         for i in range(self.nb_restart):
@@ -375,7 +375,15 @@ class Resource(object):
                 status_str = lines[0]
                 s = rcStatus.status_value(status_str)
                 if len(lines) > 1:
-                    self.status_log_str = '\n'.join(lines[1:])
+                    for line in lines[1:]:
+                        if line.startswith("info: "):
+                            self.status_logs.append("info", line.replace("info: ", "", 1))
+                        elif line.startswith("warn: "):
+                            self.status_logs.append("warn", line.replace("warn: ", "", 1))
+                        elif line.startswith("error: "):
+                            self.status_logs.append("error", line.replace("error: ", "", 1))
+                        else:
+                            self.status_logs.append("warn", line)
         except:
             s = None
         return s
@@ -383,8 +391,8 @@ class Resource(object):
     def write_status_last(self):
         with open(self.fpath_status_last(), 'w') as f:
             s = rcStatus.status_str(self.rstatus)+'\n'
-            if len(self.status_log_str) > 1:
-                s += self.status_log_str+'\n'
+            if len(self.status_logs) > 0:
+                s += '\n'.join(map(lambda x: x[0]+": "+x[1], self.status_logs))+'\n'
             f.write(s)
 
     def write_status_history(self):
@@ -412,11 +420,30 @@ class Resource(object):
         logfilehandler.close()
         log.removeHandler(logfilehandler)
 
-    def status_log(self, text):
-        msg = "# " + text + "\n"
-        if msg in self.status_log_str:
+    def status_log(self, text, level="warn"):
+        if len(text) == 0:
             return
-        self.status_log_str += msg
+        if (level, text) in self.status_logs:
+            return
+        self.status_logs.append((level, text))
+
+    def status_logs_str(self, color=False):
+        s = ""
+        for level, text in self.status_logs:
+            if len(text) == 0:
+                continue
+            _s = level + ": " + text
+            if color:
+                if level == "warn":
+                    c = rcColor.color.BROWN
+                elif level == "error":
+                    c = rcColor.color.RED
+                else:
+                    c = rcColor.color.LIGHTBLUE
+                s += rcColor._colorize(_s, c)
+            else:
+                s += _s
+        return s
 
     def status_quad(self):
         r = self.status(verbose=True)
@@ -427,7 +454,7 @@ class Resource(object):
         return (self.rid,
                 rcStatus.status_str(r),
                 self.label,
-                self.status_log_str,
+                self.status_logs_str(color=True),
                 self.monitor,
                 self.disabled,
                 self.optional,
@@ -541,7 +568,7 @@ class Resource(object):
         try:
             pg = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
-            self.status_log("process group are not supported on this platform")
+            self.status_log("process group are not supported on this platform", "warn")
             return False
         return pg.frozen(self)
 

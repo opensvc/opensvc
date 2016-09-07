@@ -17,13 +17,13 @@ def colorize(s, lpad=10):
         s = str(s)
     fmt = "%-"+str(lpad)+"s"
     if s == "warn":
-        return _colorize(fmt%s, color.YELLOW)
+        return _colorize(fmt%s, color.BROWN)
     elif s.endswith("down"):
         return _colorize(fmt%s, color.RED)
     elif s.endswith("up"):
         return _colorize(fmt%s, color.GREEN)
     elif s == "n/a":
-        return _colorize(fmt%s, color.PURPLE)
+        return _colorize(fmt%s, color.LIGHTBLUE)
     return fmt%s
 
 _status_value = {

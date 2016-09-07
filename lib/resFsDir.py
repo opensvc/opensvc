@@ -114,7 +114,7 @@ class FsDir(Res.Resource):
         self.check_uid()
         self.check_gid()
         self.check_perm()
-        if len(self.status_log_str) > 0:
+        if len(self.status_logs) > 0:
             return rcStatus.WARN
         else:
             return rcStatus.NA

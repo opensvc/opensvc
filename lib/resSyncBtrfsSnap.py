@@ -167,7 +167,7 @@ class syncBtrfsSnap(resSync.Sync):
                 self.status_log("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
                 continue
             self._status_one(label, subvol)
-        messages = set(self.status_log_str.split("\n")) - set([''])
+        messages = set(self.status_logs) - set([''])
         not_writable = set([r for r in messages if "not writable" in r])
         issues = messages - not_writable
 

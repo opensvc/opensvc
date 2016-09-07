@@ -169,7 +169,7 @@ class App(Res.Resource):
             self.status_log("script does not exist")
             raise StatusNA()
         if self.check_seq is None:
-            self.status_log("check disabled")
+            self.status_log("check is not set", "info")
             raise StatusNA()
         r = self.run('status', dedicated_log=False)
         return r
@@ -237,8 +237,8 @@ class App(Res.Resource):
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk.scsireserv", "disk.drbd", "hb"]))
         if n_ref_res > 0 and str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
-            if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"])
-            self.status_log("not evaluated (instance not up)")
+            if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"], "info")
+            self.status_log("not evaluated (instance not up)", "info")
             return rcStatus.NA
 
         try:

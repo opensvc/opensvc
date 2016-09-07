@@ -39,8 +39,8 @@ class ColorStreamHandler(logging.StreamHandler):
             l[1] = _colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
             l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
-            l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
+            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.BROWN))
+            l[2] = l[2].replace("INFO", _colorize("INFO", color.LIGHTBLUE))
             return " ".join(l)
 
         return c(text)

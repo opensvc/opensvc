@@ -652,8 +652,8 @@ class Svc(Resource, Scheduler):
             l[1] = _colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
             l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.YELLOW))
-            l[2] = l[2].replace("INFO", _colorize("INFO", color.GREEN))
+            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.BROWN))
+            l[2] = l[2].replace("INFO", _colorize("INFO", color.LIGHTBLUE))
             return " ".join(l)
 
         try:
@@ -736,7 +736,7 @@ class Svc(Resource, Scheduler):
                 js = self.encap_json_status(container)
                 encap_res_status[container.rid] = js["resources"]
                 if js.get("frozen", False):
-                    container.status_log("frozen")
+                    container.status_log("frozen", "info")
             except ex.excNotAvailable as e:
                 encap_res_status[container.rid] = {}
             except Exception as e:
@@ -849,7 +849,7 @@ class Svc(Resource, Scheduler):
                                "1" if r.optional else "0",
                                "1" if r.disabled else "0",
                                repr(str(now)),
-                               r.status_log_str])
+                               r.status_logs_str()])
 
         g_vars=["mon_svcname",
                 "mon_svctype",
@@ -994,8 +994,8 @@ class Svc(Resource, Scheduler):
 
         for r in monitored_resources:
             if r.rstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
-                if len(r.status_log_str) > 0:
-                    rstatus_log = ''.join((' ', '(', r.status_log_str.strip().strip("# "), ')'))
+                if len(r.status_logs) > 0:
+                    rstatus_log = ''.join((' ', '(', r.status_logs_str().strip().strip("# "), ')'))
                 else:
                     rstatus_log = ''
                 self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
