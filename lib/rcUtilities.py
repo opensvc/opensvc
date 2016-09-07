@@ -533,6 +533,27 @@ def to_cidr(s):
         return dotted_to_cidr(s)
     return s
 
+def term_width():
+    default = 78
+    try:
+        # python 3.3+
+        return os.get_terminal_size().columns
+    except:
+        pass
+    if rcEnv.sysname == "Windows":
+        return default
+    if which("stty") is None:
+        return default
+    output = check_output(['stty', '-a'])
+    m = re.search('columns\s+(?P<columns>\d+);', bdecode(output))
+    if m:
+        return int(m.group('columns'))
+    try:
+        return int(os.environ["COLUMNS"])
+    except Exception as e:
+        pass
+    return default
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

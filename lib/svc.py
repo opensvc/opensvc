@@ -680,6 +680,7 @@ class Svc(Resource, Scheduler):
         """print() each resource status for a service
         """
         from textwrap import wrap
+        from rcUtilities import term_width
 
         def print_res(e, fmt, pfx, subpfx=None):
             if subpfx is None:
@@ -695,7 +696,7 @@ class Svc(Resource, Scheduler):
                 print('\n'.join(wrap(log,
                                      initial_indent = subpfx,
                                      subsequent_indent = subpfx,
-                                     width=78
+                                     width=term_width()
                                     )
                                )
                 )
@@ -759,7 +760,7 @@ class Svc(Resource, Scheduler):
                 if i == last:
                     fmt = head_c+"  '- %-14s %4s %-10s %s"
                     pfx = head_c+"     %-14s %4s %-10s "%('','','')
-                    subpfx = head_c+"     |  %-11s %4s %-10s "%('','','')
+                    subpfx = head_c+"        %-11s %4s %-10s "%('','','')
                     print_res(e, fmt, pfx, subpfx=subpfx)
                     subresbar = " "
                 else:
