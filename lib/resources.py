@@ -308,7 +308,6 @@ class Resource(object):
           rcStatus.UNDEF,
           rcStatus.STDBY_UP_WITH_UP,
           rcStatus.STDBY_UP_WITH_DOWN,
-          rcStatus.TODO
         )
         if self.nb_restart == 0:
             return

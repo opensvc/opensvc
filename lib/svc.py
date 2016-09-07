@@ -568,7 +568,7 @@ class Svc(Resource, Scheduler):
                 s = r.status()
                 if s == rcStatus.UP:
                     ss += rcStatus.UNDEF
-                elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                elif s in [rcStatus.NA, rcStatus.UNDEF]:
                     ss += s
                 else:
                     ss += rcStatus.WARN
@@ -1345,7 +1345,7 @@ class Svc(Resource, Scheduler):
                 status['sync'] += s
                 if s == rcStatus.UP:
                     status["overall"] += rcStatus.UNDEF
-                elif s in [rcStatus.NA, rcStatus.UNDEF, rcStatus.TODO]:
+                elif s in [rcStatus.NA, rcStatus.UNDEF]:
                     status["overall"] += s
                 else:
                     status["overall"] += rcStatus.WARN

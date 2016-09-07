@@ -6,7 +6,6 @@ UP = 0
 DOWN = 1
 WARN = 2
 NA = 3
-TODO = 4
 UNDEF = 5
 STDBY_UP = 6
 STDBY_DOWN = 7
@@ -33,7 +32,6 @@ _status_value = {
     'warn': WARN,
     'n/a': NA,
     'na': NA,
-    'todo': TODO,
     'undef': UNDEF,
     'stdby up': STDBY_UP,
     'stdby down': STDBY_DOWN,
@@ -44,7 +42,6 @@ _status_str = {
     DOWN: 'down',
     WARN: 'warn',
     NA: 'n/a',
-    TODO: 'todo',
     UNDEF: 'undef',
     STDBY_UP: 'stdby up',
     STDBY_DOWN: 'stdby down',
@@ -63,7 +60,7 @@ def status_str(val):
     return _status_str[val]
 
 def _merge(s1, s2):
-    """Merge too status: WARN and TODO taint UP and DOWN
+    """Merge two status: WARN taints UP and DOWN
     """
     if s1 not in _status_str:
         raise Exception("left member has unsupported value: %s"%str(s1))
@@ -77,7 +74,6 @@ def _merge(s1, s2):
     elif setstate == set([ UP, DOWN ]): return WARN
     elif setstate == set([ UP, WARN ]): return WARN
     elif setstate == set([ UP, NA ]): return UP
-    elif setstate == set([ UP, TODO ]): return WARN
     elif setstate == set([ UP, STDBY_UP ]): return STDBY_UP_WITH_UP
     elif setstate == set([ UP, STDBY_DOWN ]): return WARN
     elif setstate == set([ UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
@@ -85,29 +81,21 @@ def _merge(s1, s2):
     elif setstate == set([ DOWN, DOWN ]): return DOWN
     elif setstate == set([ DOWN, WARN ]): return WARN
     elif setstate == set([ DOWN, NA ]): return DOWN
-    elif setstate == set([ DOWN, TODO ]): return WARN
     elif setstate == set([ DOWN, STDBY_UP ]): return STDBY_UP_WITH_DOWN
     elif setstate == set([ DOWN, STDBY_DOWN ]): return STDBY_DOWN
     elif setstate == set([ DOWN, STDBY_UP_WITH_UP ]): return WARN
     elif setstate == set([ DOWN, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
     elif setstate == set([ WARN, WARN ]): return WARN
     elif setstate == set([ WARN, NA ]): return WARN
-    elif setstate == set([ WARN, TODO ]): return WARN
     elif setstate == set([ WARN, STDBY_UP ]): return WARN
     elif setstate == set([ WARN, STDBY_DOWN ]): return WARN
     elif setstate == set([ WARN, STDBY_UP_WITH_UP ]): return WARN
     elif setstate == set([ WARN, STDBY_UP_WITH_DOWN ]): return WARN
     elif setstate == set([ NA, NA ] ): return NA
-    elif setstate == set([ NA, TODO ]): return WARN
     elif setstate == set([ NA, STDBY_UP ]): return STDBY_UP
     elif setstate == set([ NA, STDBY_DOWN ]): return STDBY_DOWN
     elif setstate == set([ NA, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
     elif setstate == set([ NA, STDBY_UP_WITH_DOWN ]): return STDBY_UP_WITH_DOWN
-    elif setstate == set([ TODO, TODO ]): return TODO
-    elif setstate == set([ TODO, STDBY_UP ]): return TODO
-    elif setstate == set([ TODO, STDBY_DOWN ]): return TODO
-    elif setstate == set([ TODO, STDBY_UP_WITH_UP ]): return TODO
-    elif setstate == set([ TODO, STDBY_UP_WITH_DOWN ]): return TODO
     elif setstate == set([ STDBY_UP, STDBY_UP ]): return STDBY_UP
     elif setstate == set([ STDBY_UP, STDBY_DOWN ]): return WARN
     elif setstate == set([ STDBY_UP, STDBY_UP_WITH_UP ]): return STDBY_UP_WITH_UP
