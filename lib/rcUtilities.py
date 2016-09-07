@@ -544,8 +544,8 @@ def term_width():
         return default
     if which("stty") is None:
         return default
-    output = check_output(['stty', '-a'])
-    m = re.search('columns\s+(?P<columns>\d+);', bdecode(output))
+    out, err, ret = justcall(['stty', '-a'])
+    m = re.search('columns\s+(?P<columns>\d+);', out)
     if m:
         return int(m.group('columns'))
     try:
