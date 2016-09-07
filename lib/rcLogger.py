@@ -33,6 +33,8 @@ class ColorStreamHandler(logging.StreamHandler):
                 return line
             if not include_svcname:
                 l[1] = l[1].split(".")[-1]
+                if "#" not in l[1]:
+                    l[1] = ""
             if len(l[1]) > namelen:
                 l[1] = "*"+l[1][-(namelen-1):]
             l[1] = namefmt % l[1]
