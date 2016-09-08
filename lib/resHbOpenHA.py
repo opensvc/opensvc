@@ -45,12 +45,6 @@ class Hb(resHb.Hb):
             self.logdir = os.path.join(self.basedir, 'log')
             self.svcdir = os.path.join(self.basedir, 'services')
             self.confdir = os.path.join(self.basedir, 'conf')
-            os.environ['EZ'] = self.basedir
-            os.environ['EZ_BIN'] = self.bindir
-            os.environ['EZ_SERVICES'] = self.cfsvc
-            os.environ['EZ_NODES'] = self.cfnod
-            os.environ['EZ_MONITOR'] = self.cfmon
-            os.environ['EZ_LOG'] = self.logdir
             self.service_cmd = [os.path.join(self.bindir, 'service')]
 
         self.cfsvc = os.path.join(self.confdir, 'services')
@@ -60,6 +54,14 @@ class Hb(resHb.Hb):
         self.heartc = os.path.join(self.bindir, 'heartc')
         self.heartd = os.path.join(self.bindir, 'heartd')
         self.nmond = os.path.join(self.bindir, 'nmond')
+
+        if self.need_env:
+            os.environ['EZ'] = self.basedir
+            os.environ['EZ_BIN'] = self.bindir
+            os.environ['EZ_SERVICES'] = self.cfsvc
+            os.environ['EZ_NODES'] = self.cfnod
+            os.environ['EZ_MONITOR'] = self.cfmon
+            os.environ['EZ_LOG'] = self.logdir
 
         self.name = name
         self.state = {'0': 'stopped',
