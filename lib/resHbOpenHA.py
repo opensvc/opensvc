@@ -44,7 +44,7 @@ class Hb(resHb.Hb):
             self.bindir = os.path.join(self.basedir, 'bin')
             self.logdir = os.path.join(self.basedir, 'log')
             self.svcdir = os.path.join(self.basedir, 'services')
-            self.confdir = os.path.join(self.confdir, 'conf')
+            self.confdir = os.path.join(self.basedir, 'conf')
             os.environ['EZ'] = self.basedir
             os.environ['EZ_BIN'] = self.bindir
             os.environ['EZ_SERVICES'] = self.cfsvc
