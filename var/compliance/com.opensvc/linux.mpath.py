@@ -10,9 +10,14 @@ data = {
     "value": 20
   },
   {
-    "key": "device.HP.HSV210.prio",
+    "key": "device.{HP}.{HSV210.*}.prio",
     "op": "=",
     "value": "alua"
+  },
+  {
+    "key": "blacklist.wwid",
+    "value": 600600000001,
+    "op": "="
   }
 ]
 """,
@@ -39,10 +44,10 @@ Inputs:
     Help: >
      The multipath.conf parameter to check.
      ex: defaults.polling_interval or
-         device.device.HP.HSV100 or
+         device.device.{HP}.{HSV210.*} or
          multipaths.multipath.6006000000000000 or
          blacklist.wwid or
-         blacklist.device.HP.HSV210
+         blacklist.device.{HP}.{HSV210.*}
   -
     Id: op
     Label: Comparison operator
