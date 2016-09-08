@@ -5,7 +5,7 @@ from __future__ import print_function
 import os
 import sys
 import stat
-import requests, json
+import json
 import optparse
 import shlex
 import re
@@ -17,13 +17,24 @@ except ImportError:
 import readline
 import atexit
 import fnmatch
+import rcExceptions as ex
+
+try:
+    import requests
+except:
+    raise ex.excError("This feature requires the python requests module")
+    
 
 # the collector api doc uses restructured text we'll have to print
 # in the command help messages
 import textwrap
-import docutils.utils
-import docutils.parsers
-import docutils.parsers.rst
+try:
+    import docutils.utils
+    import docutils.parsers
+    import docutils.parsers.rst
+    has_docutils = True
+except:
+    has_docutils = False
 
 from rcUtilities import bdecode
 
@@ -434,6 +445,9 @@ class Cmd(object):
 
 class IndentedHelpFormatterRst(optparse.IndentedHelpFormatter):
     def format_description(self, description):
+        if not has_docutils:
+            return description
+
         if not description:
             return ""
 
@@ -2286,8 +2300,8 @@ class Cli(object):
         sys.exit(1)
 
     def parse_args(self):
-        __ver = progname
-        __usage = "%prog [options] command"
+        __ver = ""
+        __usage = "nodemgr collector cli [options] command"
         desc = "A command line interface to manage and access data on the OpenSVC collector."
         parser = optparse.OptionParser(version=__ver, usage=__usage, description=desc)
         parser.add_option("--user", "-u", default=None,
