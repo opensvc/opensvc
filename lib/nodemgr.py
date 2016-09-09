@@ -25,6 +25,8 @@ n = node_mod.Node()
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
+parser.add_option("--refresh-api", default=False, action="store_true", dest="refresh_api",
+                  help="The OpenSVC collector api url")
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
 parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
