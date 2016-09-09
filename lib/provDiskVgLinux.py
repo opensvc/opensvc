@@ -16,7 +16,11 @@ class ProvisioningDisk(Provisioning):
             self.r.log.info("already provisioned")
             return
 
-        self.pvs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "pvs")
+        try:
+            self.pvs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "pvs")
+        except ex.OptNotFound:
+            raise ex.excError("the 'pvs' parameter is mandatory for provisioning")
+
         self.pvs = self.pvs.split()
         l = []
         for pv in self.pvs:
