@@ -30,7 +30,11 @@ class ProvisioningDisk(Provisioning):
 
         try:
             self.size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
-            self.size = convert_size(self.size, _to="m")
+            self.size = str(self.size).upper()
+            if "%FREE" not in self.size:
+                size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
+            else:
+                size_parm = ["-l", self.size]
             self.vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
@@ -53,7 +57,7 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', dev, '-L', str(self.size)+'M', self.vg]
+        cmd = ['lvcreate', '-n', dev] + size_parm + [self.vg]
         _cmd = "yes | " + " ".join(cmd)
         self.r.log.info(_cmd)
         p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
