@@ -4,6 +4,14 @@ from rcGlobalEnv import rcEnv
 from rcNode import node_get_hostmode
 from textwrap import TextWrapper
 
+deprecated_keywords = {
+  "disk.lvm.vgname": "name",
+  "disk.pool.poolname": "name",
+  "disk.vg.vgname": "name",
+  "sync.rsync.exclude": "options",
+  "disk.zpool.poolname": "name",
+}
+
 deprecated_sections = {
   "disk.pool": ["disk", "zpool"],
   "drbd": ["disk", "drbd"],
@@ -97,8 +105,10 @@ class Keyword(object):
         return s
 
     def __str__(self):
-        if self.deprecated:
-            return ''
+        for t in self.rtype:
+            key = ".".join((self.section, t, self.keyword))
+            if key in deprecated_keyword:
+                return ''
 
         wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
 
@@ -136,8 +146,10 @@ class Keyword(object):
         return s
 
     def form(self, d):
-        if self.deprecated:
-            return
+        for t in self.rtype:
+            key = ".".join((self.section, t, self.keyword))
+            if key in deprecated_keyword:
+                return
 
         # skip this form if dependencies are not met
         for d_keyword, d_value in self.depends:
@@ -1540,7 +1552,6 @@ class KeywordSyncRsyncExclude(Keyword):
                   keyword="exclude",
                   rtype="rsync",
                   at=True,
-                  deprecated=True,
                   text="A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
                 )
 
@@ -2097,6 +2108,18 @@ class KeywordDiskVgname(Keyword):
                   text="The name of the volume group"
                 )
 
+class KeywordDiskVgName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype=["lvm", "vg"],
+                  keyword="name",
+                  order=10,
+                  required=True,
+                  text="The name of the volume group"
+                )
+
 class KeywordDiskOptions(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2335,7 +2358,6 @@ class KeywordZPoolPoolname(Keyword):
                   keyword="poolname",
                   order=10,
                   at=True,
-                  deprecated=True,
                   text="The name of the zfs pool"
                 )
 
@@ -3160,6 +3182,7 @@ class KeywordStore(dict):
             rtype = d['type']
         else:
             rtype = None
+        delete_keywords = []
         for keyword, value in d.items():
             key = self.sections[section].getkey(keyword)
             if key is None and rtype is not None:
@@ -3167,7 +3190,11 @@ class KeywordStore(dict):
             if key is None:
                 if keyword != "rtype":
                     print("Remove unknown keyword '%s' from section '%s'"%(keyword, section))
-                    del d[keyword]
+                    delete_keywords.append(keyword)
+
+        for keyword in delete_keywords:
+            del d[keyword]
+
         return d
 
     def update(self, rid, d):
@@ -3210,6 +3237,10 @@ class KeywordStore(dict):
 
         # add missing required keys if they have a known default value
         for key in self.required_keys(section, rtype):
+            fkey = ".".join((section, str(rtype), key.keyword))
+            if fkey in deprecated_keywords:
+                continue
+
             if key.keyword in d:
                 continue
             if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
@@ -3740,6 +3771,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskRawGroup()
         self += KeywordDiskRawPerm()
         self += KeywordDiskVgname()
+        self += KeywordDiskVgName()
         self += KeywordDiskDsf()
         self += KeywordDiskImages()
         self += KeywordDiskMdUuid()
