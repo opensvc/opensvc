@@ -2400,7 +2400,9 @@ class Svc(Resource, Scheduler):
 
     def push_appinfo(self):
         data = self.skip_action("push_appinfo", deferred_write_timestamp=True)
-        if len(data["keep"]) == 0:
+        if type(data) == bool and not data:
+            return
+        if type(data) == dict and len(data["keep"]) == 0:
             return
         self.task_push_appinfo()
 
