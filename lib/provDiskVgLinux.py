@@ -11,6 +11,17 @@ class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 
+    def unprovisioner(self):
+        if not self.r.has_it():
+            self.r.log.info("already unprovisioned")
+            return
+        cmd = ['vgremove', '-ff', self.r.name]
+        ret, out, err = self.r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+
+
     def provisioner(self):
         if self.r.has_it():
             self.r.log.info("already provisioned")

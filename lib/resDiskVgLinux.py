@@ -240,6 +240,11 @@ class Disk(resDisk.Disk):
         self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
         return self.disks
 
+    def unprovision(self):
+        m = __import__("provDiskVgLinux")
+        prov = getattr(m, "ProvisioningDisk")(self)
+        prov.unprovisioner()
+
     def provision(self):
         m = __import__("provDiskVgLinux")
         prov = getattr(m, "ProvisioningDisk")(self)
