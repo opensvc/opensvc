@@ -3302,7 +3302,6 @@ def build(name, minimal=False, svcconf=None):
     # dynamically import the module matching the service mode
     # and instanciate a service
     #
-    log.debug('service mode = ' + svcmode)
     mod , svc_class_name = svcmode_mod_name(svcmode)
     svcMod = __import__(mod)
     svc = getattr(svcMod, svc_class_name)(**kwargs)
