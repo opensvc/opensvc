@@ -739,10 +739,25 @@ class Svc(Resource, Scheduler):
         if not os.path.exists(rcEnv.logfile):
             return
         from rcColor import color, _colorize
+        class shared:
+            skip = False
         def c(line):
-            l = line.rstrip("\n").split(" - ")
-            if len(l) < 3:
-                return line
+            line = line.rstrip("\n")
+            l = line.split(" - ")
+
+            if len(l) < 3 or l[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
+                # this is a log line continuation (command output for ex.)
+                if shared.skip:
+                    return
+                else:
+                    return line
+
+            if not self.options.debug and l[2] == "DEBUG":
+                shared.skip = True
+                return
+            else:
+                shared.skip = False
+
             if not rcLogger.include_svcname:
                 l[1] = l[1].replace(self.svcname, "").lstrip(".")
             if len(l[1]) > rcLogger.namelen:
@@ -758,7 +773,9 @@ class Svc(Resource, Scheduler):
         try:
             with open(rcEnv.logfile, "r") as f:
                 for line in f.readlines():
-                    print(c(line))
+                    s = c(line)
+                    if s:
+                         print(s)
         except (BrokenPipeError, IOError):
             sys.stdout = os.fdopen(1)
             pass

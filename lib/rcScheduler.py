@@ -45,9 +45,9 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
         from lock import lock, unlock
         try:
             fd = lock(lockfile=lockfile, timeout=0, delay=0)
-            print(sched_fmt % ("fork", title, "lock acquired"))
+            self.log.info(sched_fmt % ("fork", title, "lock acquired"))
         except Exception as e:
-            print(sched_fmt % ("fork", title, "task is already running"))
+            self.log.warning(sched_fmt % ("fork", title, "task is already running"))
             os._exit(0)
 
     # now wait for a random delay to not DoS the collector.
@@ -55,11 +55,11 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
         import random
         import time
         delay = int(random.random()*delay)
-        print(sched_fmt % ("fork", title, "delay %d secs to level database load"%delay))
+        self.log.info(sched_fmt % ("fork", title, "delay %d secs to level database load"%delay))
         try:
             time.sleep(delay)
         except KeyboardInterrupt as e:
-            print(e)
+            self.log.error(e)
             os._exit(1)
 
     try:
@@ -67,7 +67,7 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     except Exception as e:
         if serialize:
             unlock(fd)
-        print(e, file=sys.stderr)
+        self.log.error(e)
         os._exit(1)
 
     if serialize:
@@ -276,7 +276,7 @@ class Scheduler(object):
         """
 
         if r >= p:
-            #print("win probabilistic challenge: %d, over %d"%(r, p))
+            self.log.debug("win probabilistic challenge: %d, over %d"%(r, p))
             return
 
         raise SchedNotAllowed("lost probabilistic challenge: %d, over %d"%(r, p))
@@ -397,7 +397,7 @@ class Scheduler(object):
         try:
             days = json.loads(days_s)
         except:
-            print("invalid days schedule definition in section", section, days_s, file=sys.stderr)
+            self.log.error("invalid days schedule definition in section", section, days_s, file=sys.stderr)
             return ""
 
         try:
@@ -409,7 +409,7 @@ class Scheduler(object):
                 l.append("%s-%s@%s" % (p[0], p[1], interval_s))
             period_s = ",".join(l)
         except:
-            print("invalid periods schedule definition in section", section, file=sys.stderr)
+            self.log.error("invalid periods schedule definition in section", section, file=sys.stderr)
             return ""
         s = "%(period)s %(days)s" % dict(
               period=period_s,
@@ -842,7 +842,7 @@ class Scheduler(object):
         def err(msg):
             if not verbose:
                 return
-            print(sched_fmt % ("skip", title(), msg))
+            self.log.debug(sched_fmt % ("skip", title(), msg))
 
         def title():
             s = ".".join((scheduler, action))
@@ -865,7 +865,7 @@ class Scheduler(object):
         if not deferred_write_timestamp:
             timestamp_f = self.get_timestamp_f(fname)
             self.timestamp(timestamp_f)
-            print(sched_fmt % ("exec", title(), "timestamp updated"))
+            self.log.info(sched_fmt % ("exec", title(), "timestamp updated"))
 
         return False
 

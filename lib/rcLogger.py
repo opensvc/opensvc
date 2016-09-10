@@ -103,6 +103,7 @@ def initLogger(name, handlers=["file", "stream", "syslog"]):
                                                                maxBytes=5242880,
                                                                backupCount=5)
             filehandler.setFormatter(fileformatter)
+            filehandler.setLevel(logging.DEBUG)
             log.addHandler(filehandler)
         except PermissionError:
             pass
@@ -112,6 +113,19 @@ def initLogger(name, handlers=["file", "stream", "syslog"]):
         streamhandler = ColorStreamHandler()
         streamhandler.setFormatter(streamformatter)
         log.addHandler(streamhandler)
+
+        if '--debug' in sys.argv:
+                rcEnv.loglevel = logging.DEBUG
+                streamhandler.setLevel(logging.DEBUG)
+        elif '--warn' in sys.argv:
+                rcEnv.loglevel = logging.WARNING
+                streamhandler.setLevel(logging.WARNING)
+        elif '--error' in sys.argv:
+                rcEnv.loglevel = logging.ERROR
+                streamhandler.setLevel(logging.ERROR)
+        else:
+                rcEnv.loglevel = logging.INFO
+                streamhandler.setLevel(logging.INFO)
 
     if "syslog" in handlers:
         try:
@@ -158,20 +172,9 @@ def initLogger(name, handlers=["file", "stream", "syslog"]):
             else:
                 sysloghandler = None
         if sysloghandler:
+            sysloghandler.setLevel(logging.INFO)
             sysloghandler.setFormatter(syslogformatter)
             log.addHandler(sysloghandler)
 
-    if '--debug' in sys.argv:
-            rcEnv.loglevel = logging.DEBUG
-            log.setLevel(logging.DEBUG)
-    elif '--warn' in sys.argv:
-            rcEnv.loglevel = logging.WARNING
-            log.setLevel(logging.WARNING)
-    elif '--error' in sys.argv:
-            rcEnv.loglevel = logging.ERROR
-            log.setLevel(logging.ERROR)
-    else:
-            rcEnv.loglevel = logging.INFO
-            log.setLevel(logging.INFO)
-
+    log.setLevel(logging.DEBUG)
     return log
