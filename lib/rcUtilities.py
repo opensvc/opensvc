@@ -169,17 +169,19 @@ def call(argv=['/bin/false'],
                   argv[0])
         return (1, '', '')
     cmd = ' '.join(argv)
+
     if info:
         log.info(cmd)
     else:
         log.debug(cmd)
+
     if not hasattr(rcEnv, "call_cache"):
         rcEnv.call_cache = {}
+
+    if cache and cmd not in rcEnv.call_cache:
+        log.debug("cache miss for '%s'"%cmd)
+
     if not cache or cmd not in rcEnv.call_cache:
-        if not cache:
-            log.debug("caching for '%s' explicitely disabled"%cmd)
-        elif cmd not in rcEnv.call_cache:
-            log.debug("cache miss for '%s'"%cmd)
         process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
         buff = process.communicate()
         buff = tuple(map(lambda x: bdecode(x), buff))
@@ -190,7 +192,7 @@ def call(argv=['/bin/false'],
         elif cmd in rcEnv.call_cache:
             log.debug("discard '%s' output from cache because ret!=0"%cmd)
             del rcEnv.call_cache[cmd]
-        else:
+        elif cache:
             log.debug("skip store '%s' output in cache because ret!=0"%cmd)
     else:
         log.debug("serve '%s' output from cache"%cmd)
