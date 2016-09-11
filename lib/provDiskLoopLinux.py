@@ -46,5 +46,6 @@ class ProvisioningDisk(Provisioning):
             self.r.log.error("Failed to create %s: %s"% (self.path, str(e)))
             raise ex.excError
 
+        self.remove_keywords(["size"])
         self.r.log.info("provisioned")
         self.r.start()
