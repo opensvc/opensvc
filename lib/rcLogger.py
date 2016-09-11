@@ -9,7 +9,7 @@ from subprocess import *
 min_name_len = 10
 namelen = 10
 namefmt = "%-"+str(namelen)+"s"
-include_svcname = False
+include_svcname = True
 
 try:
     type(PermissionError)
@@ -87,6 +87,8 @@ def set_namelen(svcs):
             if len(svcs) > 1:
                 include_svcname = True
                 l += len(svc.svcname) + 1
+            else:
+                include_svcname = False
             if l > maxlen:
                 maxlen = l
     namelen = maxlen
