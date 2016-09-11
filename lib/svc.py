@@ -679,6 +679,7 @@ class Svc(Resource, Scheduler):
 
     def json_status(self):
         import json
+        from rcColor import colorize_json
         d = {
               'resources': {},
               'frozen': self.frozen(),
@@ -709,10 +710,11 @@ class Svc(Resource, Scheduler):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print(json.dumps(d, indent=4, separators=(',', ': ')))
+        print(colorize_json(json.dumps(d, indent=4, separators=(',', ': '))))
 
     def json_config(self):
         import json
+        from rcColor import colorize_json
         svcenv = {}
         tmp = {}
         self.load_config()
@@ -733,7 +735,7 @@ class Svc(Resource, Scheduler):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svcenv[section] = tmpsection
-        print(json.dumps(svcenv, indent=4, separators=(',', ': ')))
+        print(colorize_json(json.dumps(svcenv, indent=4, separators=(',', ': '))))
 
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
@@ -1482,11 +1484,13 @@ class Svc(Resource, Scheduler):
 
     def json_disklist(self):
         import json
-        print(json.dumps(list(self.disklist()), indent=4, separators=(',', ': ')))
+        from rcColor import colorize_json
+        print(colorize_json(json.dumps(list(self.disklist()), indent=4, separators=(',', ': '))))
 
     def json_devlist(self):
         import json
-        print(json.dumps(list(self.devlist()), indent=4, separators=(',', ': ')))
+        from rcColor import colorize_json
+        print(colorize_json(json.dumps(list(self.devlist()), indent=4, separators=(',', ': '))))
 
     def disklist(self):
         if len(self.disks) == 0:

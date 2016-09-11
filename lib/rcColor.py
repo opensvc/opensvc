@@ -44,3 +44,14 @@ if platform.system() == 'Windows':
 else:
     colorize = ansi_colorize
 
+def colorize_json(s):
+    import re
+    from rcStatus import colorize_status
+    s = re.sub(r'((?!"DEFAULT":)("[\w: @-]+":))', colorize(r'\1', color.LIGHTBLUE), s)
+    s = re.sub(r'("DEFAULT":)( {)', colorize(r'\1', color.BROWN)+r'\2', s)
+    s = re.sub(r'("[\w:-]+#[\w:-]+":)( {)', colorize(r'\1', color.BROWN)+r'\2', s)
+    s = re.sub(r'(@[\w-]+)(":)', colorize(r'\1', color.RED)+colorize(r'\2', color.LIGHTBLUE), s)
+    s = re.sub(r'({.+})', colorize(r'\1', color.GREEN), s)
+    s = re.sub(r'"(ok|err|up|down|warn|n/a)"', lambda m: '"'+colorize_status(m.group(1), lpad=0)+'"', s)
+    return s
+
