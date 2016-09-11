@@ -10,7 +10,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner, is_string
 from subprocess import *
 from rcPrintTable import print_table
-from rcColor import color, _colorize
+from rcColor import color, colorize
 from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
@@ -260,13 +260,13 @@ class Module(object):
         return p.returncode
 
     def print_bold(self, s):
-        print(_colorize(s, color.BOLD))
+        print(colorize(s, color.BOLD))
 
     def print_rcode(self, r):
         if r == 1:
-            print(_colorize("RCODE:    %d"%r, color.RED))
+            print(colorize("RCODE:    %d"%r, color.RED))
         elif r == 0:
-            print(_colorize("RCODE:    %d"%r, color.GREEN))
+            print(colorize("RCODE:    %d"%r, color.GREEN))
         else:
             print("RCODE:    %d"%r)
 
@@ -353,7 +353,7 @@ class Compliance(object):
         return self
 
     def print_bold(self, s):
-        print(_colorize(s, color.BOLD))
+        print(colorize(s, color.BOLD))
 
     def expand_modulesets(self, modulesets):
         l = []

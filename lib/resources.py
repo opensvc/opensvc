@@ -446,7 +446,7 @@ class Resource(object):
                     c = rcColor.color.RED
                 else:
                     c = rcColor.color.LIGHTBLUE
-                s += rcColor._colorize(_s, c)
+                s += rcColor.colorize(_s, c)
             else:
                 s += _s
         return s

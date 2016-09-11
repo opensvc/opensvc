@@ -62,7 +62,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     if len(app) > applen:
         app = app[:applen-1]+"*"
     name = svc.svcname
-    name = rcColor._colorize(fmt.split()[0] % name, rcColor.color.BOLD)
+    name = rcColor.colorize(fmt.split()[0] % name, rcColor.color.BOLD)
     data = [
               name,
               app,
@@ -106,7 +106,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                      'overall': 'n/a'}
 
             name = " @"+container.name
-            name = rcColor._colorize(fmt.split()[0] % name, rcStatus.color.WHITE)
+            name = rcColor.colorize(fmt.split()[0] % name, rcStatus.color.WHITE)
             data = [
                       name,
                       '-',
@@ -178,7 +178,7 @@ def svcmon_cluster(node):
     print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
 
     for d in data["data"]:
-       d["svcname"] = rcColor._colorize(fmt_svcname % d, rcStatus.color.BOLD)
+       d["svcname"] = rcColor.colorize(fmt_svcname % d, rcStatus.color.BOLD)
        d["svc_status"] = rcStatus.colorize_status(d["svc_status"])
        d["svc_availstatus"] = rcStatus.colorize_status(d["svc_availstatus"])
        print(fmt % d)

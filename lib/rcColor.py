@@ -40,7 +40,7 @@ def win_colorize(s, c=None):
     return s
 
 if platform.system() == 'Windows':
-    _colorize = win_colorize
+    colorize = win_colorize
 else:
-    _colorize = ansi_colorize
+    colorize = ansi_colorize
 

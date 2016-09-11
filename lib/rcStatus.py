@@ -1,6 +1,6 @@
 import os
 import platform
-from rcColor import color, _colorize
+from rcColor import color, colorize
 
 UP = 0
 DOWN = 1
@@ -17,13 +17,13 @@ def colorize_status(s, lpad=10):
         s = str(s)
     fmt = "%-"+str(lpad)+"s"
     if s == "warn":
-        return _colorize(fmt%s, color.BROWN)
+        return colorize(fmt%s, color.BROWN)
     elif s.endswith("down"):
-        return _colorize(fmt%s, color.RED)
+        return colorize(fmt%s, color.RED)
     elif s.endswith("up"):
-        return _colorize(fmt%s, color.GREEN)
+        return colorize(fmt%s, color.GREEN)
     elif s == "n/a":
-        return _colorize(fmt%s, color.LIGHTBLUE)
+        return colorize(fmt%s, color.LIGHTBLUE)
     return fmt%s
 
 _status_value = {

@@ -18,7 +18,7 @@ except:
 
 import platform
 import re
-from rcColor import _colorize, color
+from rcColor import colorize, color
 
 class ColorStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -38,11 +38,11 @@ class ColorStreamHandler(logging.StreamHandler):
             if len(l[1]) > namelen:
                 l[1] = "*"+l[1][-(namelen-1):]
             l[1] = namefmt % l[1]
-            l[1] = _colorize(l[1], color.BOLD)
+            l[1] = colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
-            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.BROWN))
-            l[2] = l[2].replace("INFO", _colorize("INFO", color.LIGHTBLUE))
+            l[2] = l[2].replace("ERROR", colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", colorize("WARNING", color.BROWN))
+            l[2] = l[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
             return " ".join(l)
 
         return c(text)

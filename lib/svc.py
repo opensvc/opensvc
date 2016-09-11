@@ -738,7 +738,7 @@ class Svc(Resource, Scheduler):
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
             return
-        from rcColor import color, _colorize
+        from rcColor import color, colorize
         class shared:
             skip = False
         def c(line):
@@ -763,11 +763,11 @@ class Svc(Resource, Scheduler):
             if len(l[1]) > rcLogger.namelen:
                 l[1] = "*"+l[1][-(rcLogger.namelen-1):]
             l[1] = rcLogger.namefmt % l[1]
-            l[1] = _colorize(l[1], color.BOLD)
+            l[1] = colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
-            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.BROWN))
-            l[2] = l[2].replace("INFO", _colorize("INFO", color.LIGHTBLUE))
+            l[2] = l[2].replace("ERROR", colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", colorize("WARNING", color.BROWN))
+            l[2] = l[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
             return " ".join(l)
 
         try:
@@ -797,7 +797,7 @@ class Svc(Resource, Scheduler):
         """
         from textwrap import wrap
         from rcUtilities import term_width
-        from rcColor import color, _colorize
+        from rcColor import color, colorize
 
         tw = term_width()
 
@@ -839,7 +839,7 @@ class Svc(Resource, Scheduler):
         accessory_resources += sorted(self.get_resources("sync", discard_disabled=discard_disabled))
         n_accessory_resources = len(accessory_resources)
 
-        print(_colorize(self.svcname, color.BOLD))
+        print(colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
         print(fmt%("overall", '', rcStatus.colorize_status(self.group_status()['overall']), frozen))
@@ -2317,15 +2317,15 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dds", "sync_verify")
 
     def print_config(self):
-        from rcColor import _colorize, color
+        from rcColor import colorize, color
         import re
         def c(line):
             line = line.rstrip("\n")
             if re.match(r'\[.+\]', line):
-                return _colorize(line, color.BROWN)
-            line = re.sub("({.+})", _colorize(r"\1", color.GREEN), line)
-            line = re.sub("^(\s*\w+\s*)=", _colorize(r"\1", color.LIGHTBLUE)+"=", line)
-            line = re.sub("^(\s*\w+)(@\w+\s*)=", _colorize(r"\1", color.LIGHTBLUE)+_colorize(r"\2", color.RED)+"=", line)
+                return colorize(line, color.BROWN)
+            line = re.sub("({.+})", colorize(r"\1", color.GREEN), line)
+            line = re.sub("^(\s*\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+"=", line)
+            line = re.sub("^(\s*\w+)(@\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=", line)
             return line
         try:
             with open(self.pathenv, 'r') as f:

@@ -1634,7 +1634,7 @@ class Node(Svc, Freezer, Scheduler):
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
             return
-        from rcColor import color, _colorize
+        from rcColor import color, colorize
         class shared:
             skip = False
         def c(line):
@@ -1657,11 +1657,11 @@ class Node(Svc, Freezer, Scheduler):
             if len(l[1]) > rcLogger.namelen:
                 l[1] = "*"+l[1][-(rcLogger.namelen-1):]
             l[1] = rcLogger.namefmt % l[1]
-            l[1] = _colorize(l[1], color.BOLD)
+            l[1] = colorize(l[1], color.BOLD)
             l[2] = "%-7s" % l[2]
-            l[2] = l[2].replace("ERROR", _colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", _colorize("WARNING", color.BROWN))
-            l[2] = l[2].replace("INFO", _colorize("INFO", color.LIGHTBLUE))
+            l[2] = l[2].replace("ERROR", colorize("ERROR", color.RED))
+            l[2] = l[2].replace("WARNING", colorize("WARNING", color.BROWN))
+            l[2] = l[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
             return " ".join(l)
 
         try:
