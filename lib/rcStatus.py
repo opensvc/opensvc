@@ -12,7 +12,7 @@ STDBY_DOWN = 7
 STDBY_UP_WITH_UP = 8
 STDBY_UP_WITH_DOWN = 9
 
-def colorize(s, lpad=10):
+def colorize_status(s, lpad=10):
     if type(s) == Status:
         s = str(s)
     fmt = "%-"+str(lpad)+"s"

@@ -71,19 +71,19 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
               '-',
               "yes" if svc.frozen() else "no",
               "yes" if svc.disabled else "no",
-              rcStatus.colorize(status["avail"]),
-              rcStatus.colorize(status["overall"]),
+              rcStatus.colorize_status(status["avail"]),
+              rcStatus.colorize_status(status["overall"]),
     ]
     if options.verbose:
         data += [
-              rcStatus.colorize(status["container"]),
-              rcStatus.colorize(status["ip"]),
-              rcStatus.colorize(status["disk"]),
-              rcStatus.colorize(status["fs"]),
-              rcStatus.colorize(status.get("share", "n/a")),
-              rcStatus.colorize(status["app"]),
-              rcStatus.colorize(status["hb"]),
-              rcStatus.colorize(status["sync"]),
+              rcStatus.colorize_status(status["container"]),
+              rcStatus.colorize_status(status["ip"]),
+              rcStatus.colorize_status(status["disk"]),
+              rcStatus.colorize_status(status["fs"]),
+              rcStatus.colorize_status(status.get("share", "n/a")),
+              rcStatus.colorize_status(status["app"]),
+              rcStatus.colorize_status(status["hb"]),
+              rcStatus.colorize_status(status["sync"]),
         ]
     buff = fmt % tuple(data)
     l.append(buff)
@@ -115,19 +115,19 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
                       container.type.replace('container.', ''),
                       '-',
                       '-',
-                      rcStatus.colorize(s["avail"]),
-                      rcStatus.colorize(s["overall"]),
+                      rcStatus.colorize_status(s["avail"]),
+                      rcStatus.colorize_status(s["overall"]),
             ]
             if options.verbose:
                 data += [
-                      rcStatus.colorize(s["container"]),
-                      rcStatus.colorize(s["ip"]),
-                      rcStatus.colorize(s["disk"]),
-                      rcStatus.colorize(s["fs"]),
-                      rcStatus.colorize(s.get("share", "n/a")),
-                      rcStatus.colorize(s["app"]),
-                      rcStatus.colorize(s["hb"]),
-                      rcStatus.colorize(s["sync"]),
+                      rcStatus.colorize_status(s["container"]),
+                      rcStatus.colorize_status(s["ip"]),
+                      rcStatus.colorize_status(s["disk"]),
+                      rcStatus.colorize_status(s["fs"]),
+                      rcStatus.colorize_status(s.get("share", "n/a")),
+                      rcStatus.colorize_status(s["app"]),
+                      rcStatus.colorize_status(s["hb"]),
+                      rcStatus.colorize_status(s["sync"]),
                 ]
             buff = fmt % tuple(data)
             l.append(buff)
@@ -179,8 +179,8 @@ def svcmon_cluster(node):
 
     for d in data["data"]:
        d["svcname"] = rcColor._colorize(fmt_svcname % d, rcStatus.color.BOLD)
-       d["svc_status"] = rcStatus.colorize(d["svc_status"])
-       d["svc_availstatus"] = rcStatus.colorize(d["svc_availstatus"])
+       d["svc_status"] = rcStatus.colorize_status(d["svc_status"])
+       d["svc_availstatus"] = rcStatus.colorize_status(d["svc_availstatus"])
        print(fmt % d)
        if options.verbose:
            for inst in instance_data[d["svc_id"]]:
@@ -224,8 +224,8 @@ def svcmon_cluster_verbose_data(node, svc_ids):
         d["svc_app"] = ""
         d["svc_cluster_type"] = ""
         d["svc_type"] = ""
-        d["svc_availstatus"] = rcStatus.colorize(d["mon_availstatus"])
-        d["svc_status"] = rcStatus.colorize(d["mon_overallstatus"])
+        d["svc_availstatus"] = rcStatus.colorize_status(d["mon_availstatus"])
+        d["svc_status"] = rcStatus.colorize_status(d["mon_overallstatus"])
         d["svc_status_updated"] = d["mon_updated"]
         if d["node_id"] in nodenames:
             nodename = nodenames[d["node_id"]]

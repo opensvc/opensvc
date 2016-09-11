@@ -789,7 +789,7 @@ class Svc(Resource, Scheduler):
                 print("resource not found")
                 continue
             r = self.resources_by_id[rid]
-            print(rcStatus.colorize(rcStatus.status_str(r.status())))
+            print(rcStatus.colorize_status(rcStatus.status_str(r.status())))
         return 0
 
     def print_status(self):
@@ -810,7 +810,7 @@ class Svc(Resource, Scheduler):
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
-            print(fmt%(rid, flags, rcStatus.colorize(status), label))
+            print(fmt%(rid, flags, rcStatus.colorize_status(status), label))
             for msg in log.split("\n"):
                 if len(msg) > 0:
                     if subpfx:
@@ -842,14 +842,14 @@ class Svc(Resource, Scheduler):
         print(_colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
-        print(fmt%("overall", '', rcStatus.colorize(self.group_status()['overall']), frozen))
+        print(fmt%("overall", '', rcStatus.colorize_status(self.group_status()['overall']), frozen))
         if n_accessory_resources == 0:
             fmt = "'- %-17s %4s %-10s %s"
             head_c = " "
         else:
             fmt = "|- %-17s %4s %-10s %s"
             head_c = "|"
-        print(fmt%("avail", '', rcStatus.colorize(self.group_status()['avail']), ''))
+        print(fmt%("avail", '', rcStatus.colorize_status(self.group_status()['avail']), ''))
 
         encap_res_status = {}
         for container in self.get_resources('container'):
