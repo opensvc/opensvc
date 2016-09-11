@@ -2191,7 +2191,7 @@ class Svc(Resource, Scheduler):
             sync = True
 
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
-        if self.log.isEnabledFor(logging.DEBUG):
+        if self.options.debug:
             rcmd += ['--debug']
         if self.cluster:
             rcmd += ['--cluster']
