@@ -18,7 +18,7 @@ def colorize_status(s, lpad=10):
     fmt = "%-"+str(lpad)+"s"
     if s == "warn":
         return colorize(fmt%s, color.BROWN)
-    elif s.endswith("down") or s == "err":
+    elif s.endswith("down") or s in ("err", "error"):
         return colorize(fmt%s, color.RED)
     elif s.endswith("up") or s == "ok":
         return colorize(fmt%s, color.GREEN)

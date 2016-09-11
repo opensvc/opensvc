@@ -37,6 +37,7 @@ except:
     has_docutils = False
 
 from rcUtilities import bdecode
+from rcColor import colorize_json
 
 if sys.version_info[0] >= 3:
     raw_input = input
@@ -153,6 +154,9 @@ class Cmd(object):
 
     def __init__(self, cli=None):
         self.cli = cli
+
+    def print_content(self, s):
+        print(colorize_json(bdecode(s)))
 
     def path_match_handlers(self, p):
         for a, l in self.cli.api_o.get().items():
@@ -622,7 +626,7 @@ class CmdDelete(Cmd):
             params["query"] = options.query
         _path = self.args_to_path(args)
         r = requests.delete(self.cli.api+_path, params=params, data=data, headers=headers, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 class CmdPost(Cmd):
     api_candidates = True
@@ -649,7 +653,7 @@ class CmdPost(Cmd):
             params["query"] = options.query
         _path = self.args_to_path(args)
         r = requests.post(self.cli.api+_path, data=data, files=files, params=params, headers=headers, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 class CmdPut(Cmd):
     api_candidates = True
@@ -673,7 +677,7 @@ class CmdPut(Cmd):
         data, files, headers = self.get_data_from_options(options)
         _path = self.args_to_path(args)
         r = requests.put(self.cli.api+_path, data=data, files=files, headers=headers, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 class CmdSafe(Cmd):
     command = "safe"
@@ -713,7 +717,7 @@ class CmdSafe(Cmd):
             return
         params = {}
         r = requests.get(self.cli.api+"/safe", params=params, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def upload(self, options):
         if options.upload is None:
@@ -731,7 +735,7 @@ class CmdSafe(Cmd):
         }
         
         r = requests.post(self.cli.api+"/safe/upload", data=data, files=files, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def download(self, options):
         if options.download is None:
@@ -936,7 +940,7 @@ class CmdFilter(Cmd):
           "f_value": options.value,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def delete_filter(self, options):
         if options.delete is None or options.filter is None:
@@ -944,7 +948,7 @@ class CmdFilter(Cmd):
         global path
         _path = "/filters/"+options.filter
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_filter_to_filterset(self, options):
         if options.attach is None or options.filterset is None or options.filter is None:
@@ -956,14 +960,14 @@ class CmdFilter(Cmd):
         if options.logical_operator:
             data["f_order"] = options.order
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_filter_from_filterset(self, options):
         if options.detach is None or options.filterset is None or options.filter is None:
             return
         _path = "/filtersets/%s/filters/%s" % (options.filterset, options.filter)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_filter(self, options):
         if options.set is None or options.filter is None:
@@ -981,7 +985,7 @@ class CmdFilter(Cmd):
             return
         _path = "/filters/%s" % options.filter
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
 class CmdFilterset(Cmd):
@@ -1060,7 +1064,7 @@ class CmdFilterset(Cmd):
           "fset_name": options.filterset,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def delete_filterset(self, options):
         if options.delete is None or options.filterset is None:
@@ -1068,21 +1072,21 @@ class CmdFilterset(Cmd):
         global path
         _path = "/filtersets/"+options.filterset
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_filterset_to_filterset(self, options):
         if options.attach is None or options.parent_filterset is None or options.filterset is None:
             return
         _path = "/filtersets/%s/filtersets/%s" % (options.parent_filterset, options.filterset)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_filterset_from_filterset(self, options):
         if options.detach is None or options.parent_filterset is None or options.filterset is None:
             return
         _path = "/filtersets/%s/filtersets/%s" % (options.parent_filterset, options.filterset)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def rename_filterset(self, options):
         if options.rename is None or options.filterset is None or options.to is None:
@@ -1092,7 +1096,7 @@ class CmdFilterset(Cmd):
         }
         _path = "/filtersets/%s" % options.filterset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_filterset(self, options):
         if options.set is None or options.filterset is None:
@@ -1107,7 +1111,7 @@ class CmdFilterset(Cmd):
         }
         _path = "/filtersets/%s" % options.filterset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
 class CmdModuleset(Cmd):
@@ -1191,7 +1195,7 @@ class CmdModuleset(Cmd):
           "modset_name": options.moduleset,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def clone_moduleset(self, options):
         if options.clone is None or options.moduleset is None:
@@ -1201,7 +1205,7 @@ class CmdModuleset(Cmd):
         }
         _path = "/compliance/modulesets/%s" % options.moduleset
         r = requests.put(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def delete_moduleset(self, options):
         if options.delete is None or options.moduleset is None:
@@ -1209,49 +1213,49 @@ class CmdModuleset(Cmd):
         global path
         _path = "/compliance/modulesets/"+options.moduleset
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_publication_group_to_moduleset(self, options):
         if options.attach is None or options.publication_group is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/publications/%s" % (options.moduleset, options.publication_group)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_responsible_group_to_moduleset(self, options):
         if options.attach is None or options.responsible_group is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/responsibles/%s" % (options.moduleset, options.responsible_group)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_publication_group_from_moduleset(self, options):
         if options.detach is None or options.publication_group is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/publications/%s" % (options.moduleset, options.publication_group)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_responsible_group_from_moduleset(self, options):
         if options.detach is None or options.responsible_group is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/responsibles/%s" % (options.moduleset, options.responsible_group)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_moduleset_to_moduleset(self, options):
         if options.attach is None or options.parent_moduleset is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/modulesets/%s" % (options.parent_moduleset, options.moduleset)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_moduleset_from_moduleset(self, options):
         if options.detach is None or options.parent_moduleset is None or options.moduleset is None:
             return
         _path = "/compliance/modulesets/%s/modulesets/%s" % (options.parent_moduleset, options.moduleset)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def rename_moduleset(self, options):
         if options.rename is None or options.moduleset is None or options.to is None:
@@ -1261,7 +1265,7 @@ class CmdModuleset(Cmd):
         }
         _path = "/compliance/modulesets/%s" % options.moduleset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
 class CmdModule(Cmd):
@@ -1324,7 +1328,7 @@ class CmdModule(Cmd):
           "modset_mod_name": options.module,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def remove_module(self, options):
         if options.remove is None or options.moduleset is None or options.module is None:
@@ -1332,7 +1336,7 @@ class CmdModule(Cmd):
         global path
         _path = "/compliance/modulesets/%s/modules/%s" % (options.moduleset, options.module)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def rename_module(self, options):
         if options.rename is None or options.moduleset is None or options.module is None or options.to is None:
@@ -1342,7 +1346,7 @@ class CmdModule(Cmd):
         }
         _path = "/compliance/modulesets/%s/modules/%s" % (options.moduleset, options.module)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
     def set_module(self, options):
@@ -1358,7 +1362,7 @@ class CmdModule(Cmd):
         }
         _path = "/compliance/modulesets/%s/modules/%s" % (options.moduleset, options.module)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 class CmdVariable(Cmd):
     command = "variable"
@@ -1431,7 +1435,7 @@ class CmdVariable(Cmd):
           "var_name": options.variable,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def remove_variable(self, options):
         if options.remove is None or options.ruleset is None or options.variable is None:
@@ -1439,7 +1443,7 @@ class CmdVariable(Cmd):
         global path
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def rename_variable(self, options):
         if options.rename is None or options.ruleset is None or options.variable is None or options.to is None:
@@ -1449,7 +1453,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def copy_variable(self, options):
         if options.copy is None or options.ruleset is None or options.variable is None or options.dest_ruleset is None:
@@ -1460,7 +1464,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.put(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def move_variable(self, options):
         if options.move is None or options.ruleset is None or options.variable is None or options.dest_ruleset is None:
@@ -1471,7 +1475,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.put(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_variable(self, options):
         if options.set is None or options.ruleset is None or options.variable is None:
@@ -1488,7 +1492,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_variable_value(self, options):
         if options.var_value is None:
@@ -1498,7 +1502,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_variable_value_edit(self, options):
         if not options.var_value_edit:
@@ -1582,7 +1586,7 @@ class CmdVariable(Cmd):
         }
         _path = "/compliance/rulesets/%s/variables/%s" % (options.ruleset, options.variable)
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
 class CmdRuleset(Cmd):
@@ -1686,7 +1690,7 @@ class CmdRuleset(Cmd):
         }
         _path = "/compliance/rulesets/%s" % options.ruleset
         r = requests.put(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def create_ruleset(self, options):
         if options.create is None or options.ruleset is None:
@@ -1697,7 +1701,7 @@ class CmdRuleset(Cmd):
           "ruleset_name": options.ruleset,
         }
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def delete_ruleset(self, options):
         if options.delete is None or options.ruleset is None:
@@ -1705,7 +1709,7 @@ class CmdRuleset(Cmd):
         global path
         _path = "/compliance/rulesets/"+options.ruleset
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_ruleset(self, options):
         if options.set is None or options.ruleset is None:
@@ -1721,7 +1725,7 @@ class CmdRuleset(Cmd):
         }
         _path = "/compliance/rulesets/%s" % options.ruleset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def set_ruleset_type(self, options):
         if options.contextual is None and options.explicit is None:
@@ -1738,77 +1742,77 @@ class CmdRuleset(Cmd):
         }
         _path = "/compliance/rulesets/%s" % options.ruleset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_publication_group_to_ruleset(self, options):
         if options.attach is None or options.publication_group is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/publications/%s" % (options.ruleset, options.publication_group)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_publication_group_from_ruleset(self, options):
         if options.detach is None or options.publication_group is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/publications/%s" % (options.ruleset, options.publication_group)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_responsible_group_to_ruleset(self, options):
         if options.attach is None or options.responsible_group is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/responsibles/%s" % (options.ruleset, options.responsible_group)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_responsible_group_from_ruleset(self, options):
         if options.detach is None or options.responsible_group is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/responsibles/%s" % (options.ruleset, options.responsible_group)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_filterset_to_ruleset(self, options):
         if options.attach is None or options.filterset is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/filtersets/%s" % (options.ruleset, options.filterset)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_filterset_from_ruleset(self, options):
         if options.detach is None or options.filterset is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/filtersets/%s" % (options.ruleset, options.filterset)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_ruleset_to_ruleset(self, options):
         if options.attach is None or options.parent_ruleset is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/rulesets/%s" % (options.parent_ruleset, options.ruleset)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def attach_ruleset_to_moduleset(self, options):
         if options.attach is None or options.parent_moduleset is None or options.ruleset is None:
             return
         _path = "/compliance/modulesets/%s/rulesets/%s" % (options.parent_moduleset, options.ruleset)
         r = requests.post(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_ruleset_from_ruleset(self, options):
         if options.detach is None or options.parent_ruleset is None or options.ruleset is None:
             return
         _path = "/compliance/rulesets/%s/rulesets/%s" % (options.parent_ruleset, options.ruleset)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def detach_ruleset_from_moduleset(self, options):
         if options.detach is None or options.parent_moduleset is None or options.ruleset is None:
             return
         _path = "/compliance/modulesets/%s/rulesets/%s" % (options.parent_moduleset, options.ruleset)
         r = requests.delete(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
     def rename_ruleset(self, options):
         if options.rename is None or options.ruleset is None or options.to is None:
@@ -1818,7 +1822,7 @@ class CmdRuleset(Cmd):
         }
         _path = "/compliance/rulesets/%s" % options.ruleset
         r = requests.post(self.cli.api+_path, data=data, auth=self.cli.auth, verify=not self.cli.insecure)
-        print(r.content)
+        self.print_content(r.content)
 
 
 class CmdShow(Cmd):
@@ -1996,9 +2000,9 @@ class CmdGet(Cmd):
         try:
             # try not to display \u0000 in the output
             d = json.loads(bdecode(r.content))
-            print(json.dumps(d, ensure_ascii=False, indent=8))
+            self.print_content(json.dump(d, ensure_ascii=False, indent=8))
         except Exception as e:
-            print(r.content)
+            self.print_content(r.content)
 
 class CmdHistory(Cmd):
     command = "history"
