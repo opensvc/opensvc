@@ -1127,7 +1127,7 @@ def add_veritas(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     try:
-        m = __import__('resDiskVeritas')
+        m = __import__('resDiskVgVeritas')
     except ImportError:
         svc.log.error("disk type veritas is not implemented")
         return
