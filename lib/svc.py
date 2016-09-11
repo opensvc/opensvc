@@ -2317,11 +2317,22 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dds", "sync_verify")
 
     def print_config(self):
+        from rcColor import _colorize, color
+        import re
+        def c(line):
+            line = line.rstrip("\n")
+            if re.match(r'\[.+\]', line):
+                return _colorize(line, color.BROWN)
+            line = re.sub("({.+})", _colorize(r"\1", color.GREEN), line)
+            line = re.sub("^(\s*\w+\s*)=", _colorize(r"\1", color.LIGHTBLUE)+"=", line)
+            line = re.sub("^(\s*\w+)(@\w+\s*)=", _colorize(r"\1", color.LIGHTBLUE)+_colorize(r"\2", color.RED)+"=", line)
+            return line
         try:
             with open(self.pathenv, 'r') as f:
-                print(f.read())
+                for line in f.readlines():
+                    print(c(line))
         except Exception as e:
-            print(s, file=sys.stderr)
+            raise ex.excError(e)
 
     def make_temp_config(self):
         import shutil
