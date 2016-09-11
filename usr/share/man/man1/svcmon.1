@@ -1,4 +1,4 @@
-.TH SVCMON 1 2016\-08\-09
+.TH SVCMON 1 2016\-09\-11
 .SH NAME
 svcmon - OpenSVC agent's services instances status requesting command.
 .SH SYNOPSIS
@@ -14,7 +14,7 @@ show program's version number and exit
 .B -h, --help
 show this help message and exit
 .TP
-.B --service=PARM_SVCS
+.B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to display status of
 .TP
 .B --refresh
@@ -23,14 +23,20 @@ do not use resource status cache
 .B --updatedb
 update resource status in central database
 .TP
-.B --verbose
-display per-resource status for each selected service
+.B -v, --verbose
+display resource groups status for each selected service
 .TP
 .B --maxdelaydb=DELAY
 introduce a random delay before pushing to database to level the load on the collector
 .TP
 .B --debug
 debug mode
+.TP
+.B -c, --cluster
+fetch and display cluster-wide service status from the collector.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)

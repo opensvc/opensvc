@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-08\-09
+.TH NODEMGR 1 2016\-09\-11
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -24,8 +24,16 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBnodemgr collector checks\fP
   \fB               \fP  display node checks
 
+  \fBnodemgr collector cli\fP
+  \fB               \fP  open a Command Line Interface to the collector rest API.
+  \fB               \fP  The CLI offers autocompletion of paths and arguments,
+  \fB               \fP  piping JSON data from files. This command accepts the
+  \fB               \fP  --user, --password, --api, --insecure and --config
+  \fB               \fP  parameters. If executed as root, the collector is logged in
+  \fB               \fP  with the node credentials.
+
   \fBnodemgr collector create tag\fP
-  \fB               \fP  create a new tag
+  \fB               \fP  create a new tag with name specified by --tag
 
   \fBnodemgr collector disks\fP
   \fB               \fP  display node disks
@@ -33,7 +41,7 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBnodemgr collector events\fP
   \fB               \fP  display node events during the period specified by
   \fB               \fP  --begin/--end. --end defaults to now. --begin defaults to 7
-  \fB               \fP  days ago
+  \fB               \fP  days ago.
 
   \fBnodemgr collector json alerts\fP
   \fB               \fP  same as "collector alerts", output in JSON
@@ -195,6 +203,8 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fB               \fP  dequeue and execute actions from the collector's action
   \fB               \fP  queue for this node and its services.
 
+  \fBnodemgr logs   \fP  fancy display of the node logs
+
   \fBnodemgr print schedule\fP
   \fB               \fP  print the node tasks schedule
 
@@ -353,6 +363,15 @@ show program's version number and exit
 .B -h, --help
 show this help message and exit
 .TP
+.B --refresh-api
+The OpenSVC collector api url
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize
+.TP
+.B --verbose
+add more information to some print commands: +next in 'print schedule'
+.TP
 .B --debug
 debug mode
 .TP
@@ -436,6 +455,18 @@ used table representation of collector data instead of the default itemized list
 .TP
 .B --user=USER
 authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.
+.TP
+.B --password=PASSWORD
+authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
+.TP
+.B --insecure
+allow communications with a collector presenting unverified SSL certificates.
+.TP
+.B --api=API
+specify a collector api url different from the one set in node.conf. Honored by the 'collector cli' action.
+.TP
+.B --config=CONFIG
+specify a user-specific collector api connection configuration file. defaults to '~/.opensvc-cli'. Honored by the 'collector cli' action.
 .TP
 .B --app=APP
 Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.

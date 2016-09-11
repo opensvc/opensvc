@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-08\-09
+.TH SVCMGR 1 2016\-09\-11
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -204,6 +204,8 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fB               \fP  provide the resource and aggregated status in json format,
   \fB               \fP  for use by tier tools
 
+  \fBsvcmgr logs    \fP  display the service logs in the pager
+
   \fBsvcmgr migrate \fP  live migrate the service to the remote node. --to <node>
   \fB               \fP  specify the remote node to migrate the service to.
 
@@ -396,6 +398,10 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
   \fBsvcmgr thaw    \fP  remove the flag to unblock actions on this service
 
+  \fBsvcmgr unprovision\fP
+  \fB               \fP  stop and unprovision the service. beware: data will be lost
+  \fB               \fP  upon fs and disk unprovisioning.
+
 \fRSERVICE CONFIGURATION\fP
 
   \fBsvcmgr create  \fP  create a new service configuration file. --interactive
@@ -439,6 +445,9 @@ show program's version number and exit
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize
 .TP
 .B --debug
 debug mode
@@ -498,7 +507,10 @@ comma-separated list of resource tags to limit action to. The + separator can be
 a resource definition in json dictionary format fed to create or update
 .TP
 .B --provision
-provision the service in addition to env file creation. defaults to False.
+with the install or create actions, provision the service resources after config file creation. defaults to False.
+.TP
+.B --unprovision
+with the delete action, unprovision the service resources before config files file deletion. defaults to False.
 .TP
 .B --waitlock=PARM_WAITLOCK
 comma-separated list of resource tags to limit action to
@@ -560,11 +572,29 @@ use table representation of collector data instead of the default itemized list 
 .B --refresh
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
 .TP
+.B --verbose
+add more information to some print commands: +next in 'print schedule'
+.TP
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B --envfile=PARAM_ENVFILE
+the envfile to use when installing a service
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)
