@@ -16,6 +16,7 @@ import rcUtilities
 import rcExceptions as ex
 from subprocess import *
 from rcScheduler import *
+from rcConfigParser import RawConfigParser
 
 if sys.version_info[0] >= 3:
     from urllib.request import Request, urlopen
@@ -389,7 +390,7 @@ class Node(Svc, Freezer, Scheduler):
 
     def read_cf(self, fpath, defaults={}):
         import codecs
-        config = ConfigParser.RawConfigParser(defaults)
+        config = RawConfigParser(defaults)
         if not os.path.exists(fpath):
             return config
         with codecs.open(fpath, "r", "utf8") as f:
@@ -1369,7 +1370,7 @@ class Node(Svc, Freezer, Scheduler):
           'vm_name': vmname,
           'cloud_id': c.cid,
         }
-        config = ConfigParser.RawConfigParser(defaults)
+        config = RawConfigParser(defaults)
 
         try:
             fp = open(cf, 'w')
@@ -1455,7 +1456,7 @@ class Node(Svc, Freezer, Scheduler):
                 data["user"] = user
                 data["password"] = password
             if not hasattr(self.options, "api") or self.options.api is None:
-                config = ConfigParser.RawConfigParser({})
+                config = RawConfigParser({})
                 config.read(os.path.join(rcEnv.pathetc, "node.conf"))
                 data["api"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
         from rcCollectorCli import Cli
@@ -1472,7 +1473,7 @@ class Node(Svc, Freezer, Scheduler):
             username, password = self.collector_auth_user()
         data["username"] = username
         data["password"] = password
-        config = ConfigParser.RawConfigParser({})
+        config = RawConfigParser({})
         config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
         self.collector_api_cache = data
@@ -1481,7 +1482,7 @@ class Node(Svc, Freezer, Scheduler):
     def collector_auth_node(self):
         import platform
         sysname, username, x, x, machine, x = platform.uname()
-        config = ConfigParser.RawConfigParser({})
+        config = RawConfigParser({})
         config.read(os.path.join(rcEnv.pathetc, "node.conf"))
         password = config.get("node", "uuid")
         return username, password

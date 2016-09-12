@@ -117,7 +117,6 @@ parser.add_option("--app", default=None, action="store", dest="app",
 
 
 (options, args) = parser.parse_args()
-print(type(options.value), unicode(options.value, "utf-8"))
 rcColor.use_color = options.color
 
 n.options = options

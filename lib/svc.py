@@ -4,6 +4,7 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths
 from rcUtilities import justcall
+from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
 import sys
@@ -2978,7 +2979,7 @@ class Svc(Resource, Scheduler):
             pass
 
     def load_config(self):
-        self.config = ConfigParser.RawConfigParser()
+        self.config = RawConfigParser()
         self.config.read(self.cf)
 
     def unset(self):
@@ -3275,7 +3276,7 @@ class Svc(Resource, Scheduler):
         if path is None:
             config = self.config
         else:
-            config = ConfigParser.RawConfigParser()
+            config = RawConfigParser()
             config.read(path)
 
         # validate DEFAULT options
