@@ -2000,7 +2000,7 @@ class CmdGet(Cmd):
         try:
             # try not to display \u0000 in the output
             d = json.loads(bdecode(r.content))
-            self.print_content(json.dump(d, ensure_ascii=False, indent=8))
+            self.print_content(json.dumps(d, ensure_ascii=False, indent=8))
         except Exception as e:
             self.print_content(r.content)
 
