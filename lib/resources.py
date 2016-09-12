@@ -85,30 +85,9 @@ class Resource(object):
         """
         return self.rid < other.rid
 
-    def print_exc(self):
-        import traceback
-        try:
-            self.log.error(traceback.format_exc())
-        except:
-            self.log.error("unexpected error")
-            traceback.print_exc()
-
     def save_exc(self):
-        import traceback
-        try:
-            import tempfile
-            import datetime
-            now = str(datetime.datetime.now()).replace(' ', '-')
-            f = tempfile.NamedTemporaryFile(dir=rcEnv.pathtmp,
-                                            prefix='exc-')
-            f.close()
-            f = open(f.name, 'w')
-            traceback.print_exc(file=f)
-            self.log.error("unexpected error. stack saved in %s"%f.name)
-            f.close()
-        except:
-            self.log.error("unexpected error")
-            traceback.print_exc()
+        self.log.error("unexpected error. stack saved in the service debug log")
+        self.log.debug("", exc_info=True)
 
     def setup_environ(self):
         """ setup environement variables for use by triggers and startup

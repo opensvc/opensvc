@@ -354,8 +354,7 @@ class Svc(Resource, Scheduler):
                 else:
                     self.action(action)
             except:
-                import traceback
-                traceback.print_exc()
+                self.save_exc()
 
     def post_build(self):
         if self.ha and not "flex" in self.clustertype:
@@ -490,8 +489,7 @@ class Svc(Resource, Scheduler):
         except ex.excSignal:
             raise ex.excError("interrupted by signal %s" % details)
         except:
-            import traceback
-            traceback.print_exc()
+            self.save_exc()
             raise ex.excError("unexpected locking error %s" % details)
         if lockfd is not None:
             self.lockfd = lockfd

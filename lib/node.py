@@ -497,8 +497,7 @@ class Node(Svc, Freezer, Scheduler):
             try:
                 self.action(action)
             except:
-                import traceback
-                traceback.print_exc()
+                self.log.exception("")
 
     def get_push_objects(self, s):
         if len(self.options.objects) > 0:

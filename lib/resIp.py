@@ -194,10 +194,8 @@ class Ip(Res.Resource):
             self.log.error("interrupted by signal")
             raise ex.excError
         except:
-            self.log.error("unexpected locking error")
-            import traceback
-            traceback.print_exc()
-            raise ex.excError
+            self.save_exc()
+            raise ex.excError("unexpected locking error")
         self.lockfd = lockfd
 
     def unlock(self):
