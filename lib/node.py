@@ -353,6 +353,7 @@ class Node(Svc, Freezer, Scheduler):
         if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
+        os.environ["LANG"] = "en_US.UTF-8"
         return os.system(' '.join((editor, cf)))
 
     def write_config(self):
@@ -362,12 +363,17 @@ class Node(Svc, Freezer, Scheduler):
         for s in self.config.sections():
             if '#sync#' in s:
                 self.config.remove_section(s)
+        import tempfile
+        import shutil
         try:
-            fp = open(rcEnv.nodeconf, 'w')
-            self.config.write(fp)
+            fp = tempfile.NamedTemporaryFile()
+            fname = fp.name
             fp.close()
-        except:
-            print("failed to write new %s"%rcEnv.nodeconf, file=sys.stderr)
+            with open(fname, "w") as fp:
+                self.config.write(fp)
+            shutil.move(fname, rcEnv.nodeconf)
+        except Exception as e:
+            print("failed to write new %s (%s)" % (rcEnv.nodeconf, str(e)), file=sys.stderr)
             raise Exception()
         try:
             os.chmod(rcEnv.nodeconf, 0o0600)
