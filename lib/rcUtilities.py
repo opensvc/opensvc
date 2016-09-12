@@ -17,6 +17,8 @@ else:
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff
+    if type(buff) == str:
+        return buff
     else:
         try:
             return str(buff, "utf-8")
