@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-09\-11
+.TH NODEMGR 1 2016\-09\-12
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -253,7 +253,7 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBnodemgr wol    \fP  forge and send udp wake on lan packet to mac address
   \fB               \fP  specified by --mac and --broadcast arguments
 
-\fRNODE CONFIGURATION EDITION\fP
+\fRNODE CONFIGURATION\fP
 
   \fBnodemgr edit authconfig\fP
   \fB               \fP  open the auth.conf configuration file with the preferred
@@ -265,6 +265,14 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
   \fBnodemgr get    \fP  get the value of the node configuration parameter pointed
   \fB               \fP  by --param
+
+  \fBnodemgr print authconfig\fP
+  \fB               \fP  open the node.conf configuration file with the preferred
+  \fB               \fP  editor
+
+  \fBnodemgr print config\fP
+  \fB               \fP  open the node.conf configuration file with the preferred
+  \fB               \fP  editor
 
   \fBnodemgr register\fP
   \fB               \fP  obtain a registration number from the collector, used to

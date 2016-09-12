@@ -121,7 +121,9 @@ class Node(Svc, Freezer, Scheduler):
           'Service actions': {
             'discover': 'discover vservices accessible from this host, cloud nodes for example',
           },
-          'Node configuration edition': {
+          'Node configuration': {
+            'print_config': 'open the node.conf configuration file with the preferred editor',
+            'print_authconfig': 'open the node.conf configuration file with the preferred editor',
             'edit_config': 'open the node.conf configuration file with the preferred editor',
             'edit_authconfig': 'open the auth.conf configuration file with the preferred editor',
             'register': 'obtain a registration number from the collector, used to authenticate the node',
@@ -1678,6 +1680,30 @@ class Node(Svc, Freezer, Scheduler):
         except (BrokenPipeError, IOError):
             sys.stdout = os.fdopen(1)
             pass
+
+    def _print_config(self, cf):
+        from rcColor import colorize, color
+        import re
+        def c(line):
+            line = line.rstrip("\n")
+            if re.match(r'\[.+\]', line):
+                return colorize(line, color.BROWN)
+            line = re.sub("({.+})", colorize(r"\1", color.GREEN), line)
+            line = re.sub("^(\s*\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+"=", line)
+            line = re.sub("^(\s*\w+)(@\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=", line)
+            return line
+        try:
+            with open(cf, 'r') as f:
+                for line in f.readlines():
+                    print(c(line))
+        except Exception as e:
+            raise ex.excError(e)
+
+    def print_config(self):
+        self._print_config(rcEnv.nodeconf)
+
+    def print_authconfig(self):
+        self._print_config(rcEnv.authconf)
 
 if __name__ == "__main__" :
     for n in (Node,) :

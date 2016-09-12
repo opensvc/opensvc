@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-09\-11
+.TH SVCMGR 1 2016\-09\-12
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -221,14 +221,14 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
   \fBsvcmgr presync \fP  update var files associated to resources
 
+  \fBsvcmgr print config mtime\fP
+  \fB               \fP  display service configuration file modification time
+
   \fBsvcmgr print devlist\fP
   \fB               \fP  print service device list
 
   \fBsvcmgr print disklist\fP
   \fB               \fP  print service disk list
-
-  \fBsvcmgr print env mtime\fP
-  \fB               \fP  display service env file modification time
 
   \fBsvcmgr print resource status\fP
   \fB               \fP  display a specific service resource status, pointed by
@@ -418,8 +418,8 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fB               \fP  by --param
 
   \fBsvcmgr install \fP  install a service using the configuration file pointed by
-  \fB               \fP  --envfile. used by master services when pushing the envfile
-  \fB               \fP  to their slave.
+  \fB               \fP  --config. used by master services when pushing the
+  \fB               \fP  configuration file to their slaves.
 
   \fBsvcmgr json config\fP
   \fB               \fP  provide the service configuration in json format, for use
@@ -580,21 +580,6 @@ a tag specifier used by 'collector create tag', 'collector add tag', 'collector 
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-comma-separated list of service to operate on
-.TP
-.B --status=PARM_STATUS
-operate only on service in the specified status (up/down/warn)
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
-.B --envfile=PARAM_ENVFILE
-the envfile to use when installing a service
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)
