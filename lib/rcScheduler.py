@@ -11,7 +11,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_string
 
 print_sched_fmt = ""
-sched_fmt = "[%s] %-45s %s"
+sched_fmt = "%s: %s"
 
 def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     if os.fork() > 0:
@@ -45,9 +45,9 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
         from lock import lock, unlock
         try:
             fd = lock(lockfile=lockfile, timeout=0, delay=0)
-            self.log.info(sched_fmt % ("fork", title, "lock acquired"))
+            self.sched_log(title, "lock acquired", "debug")
         except Exception as e:
-            self.log.warning(sched_fmt % ("fork", title, "task is already running"))
+            self.sched_log(title, "task is already running", "warning")
             os._exit(0)
 
     # now wait for a random delay to not DoS the collector.
@@ -55,7 +55,7 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
         import random
         import time
         delay = int(random.random()*delay)
-        self.log.info(sched_fmt % ("fork", title, "delay %d secs to level database load"%delay))
+        self.sched_log(title, "delay %d secs to level database load"%delay, "debug")
         try:
             time.sleep(delay)
         except KeyboardInterrupt as e:
@@ -146,6 +146,14 @@ class Scheduler(object):
           "saturday": 5,
           "sunday": 6
         }
+
+    def sched_log(self, task, msg, level):
+        try:
+            task = ".".join(task.split(".")[1:])
+        except:
+            pass
+        log = self.log.getChild("scheduler")
+        getattr(log, level)(sched_fmt % (task, msg))
 
     def get_next_schedule(self, action, _max=14400):
         now = datetime.datetime.now()
@@ -839,11 +847,6 @@ class Scheduler(object):
         else:
             scheduler = "node"
 
-        def err(msg):
-            if not verbose:
-                return
-            self.log.debug(sched_fmt % ("skip", title(), msg))
-
         def title():
             s = ".".join((scheduler, action))
             if "#" in section:
@@ -858,14 +861,16 @@ class Scheduler(object):
         try:
             self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
         except Exception as e:
-            err(str(e))
+            self.sched_log(title(), str(e), "debug")
             return True
+
+        self.sched_log(title(), "run task", "info")
 
         # update the timestamp file
         if not deferred_write_timestamp:
             timestamp_f = self.get_timestamp_f(fname)
             self.timestamp(timestamp_f)
-            self.log.info(sched_fmt % ("exec", title(), "timestamp updated"))
+            self.sched_log(title(), "last run timestamp updated", "debug")
 
         return False
 

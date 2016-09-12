@@ -27,13 +27,16 @@ class ColorStreamHandler(logging.StreamHandler):
     def format(self, record):
         text = logging.StreamHandler.format(self, record)
         def c(line):
+            # remove date, keep time
             line = re.sub(r'^....-..-.. ', "", line)
+
             l = line.rstrip("\n").split(" - ")
             if len(l) < 3:
                 return line
+
             if not include_svcname:
                 l[1] = l[1].split(".")[-1]
-                if "#" not in l[1]:
+                if "#" not in l[1] and l[1] != "scheduler":
                     l[1] = ""
             if len(l[1]) > namelen:
                 l[1] = "*"+l[1][-(namelen-1):]
