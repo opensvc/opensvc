@@ -414,22 +414,22 @@ class Asset(object):
         print("security zone (%s)"%source)
         print("  %s"%s)
 
-    def get_environnement(self):
+    def get_asset_env(self):
         s = None
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'environment')
+            s = self.node.config.get('node', 'asset_env')
             s = try_decode(s)
             source = self.s_config
         except:
             pass
-        self.print_environnement(s, source)
+        self.print_asset_env(s, source)
         return s
 
-    def print_environnement(self, s, source):
+    def print_asset_env(self, s, source):
         if s is None:
             return
-        print("environment (%s)"%source)
+        print("asset environment (%s)"%source)
         print("  %s"%s)
 
     def get_version(self):
@@ -764,9 +764,9 @@ class Asset(object):
         sec_zone = self.get_sec_zone()
         if sec_zone is not None:
             self.data['sec_zone'] = sec_zone
-        environnement = self.get_environnement()
-        if environnement is not None:
-            self.data['environnement'] = environnement
+        asset_env = self.get_asset_env()
+        if asset_env is not None:
+            self.data['asset_env'] = asset_env
         tz = self.get_tz()
         if tz is not None:
             self.data['tz'] = tz
