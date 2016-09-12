@@ -400,17 +400,17 @@ class Node(Svc, Freezer, Scheduler):
         self.auth_config = self.read_cf(rcEnv.authconf)
 
     def setup_sync_outdated(self):
-        """ return True if one env file has changed in the last 10'
+        """ return True if one configuration file has changed in the last 10'
             else return False
         """
         import datetime
         import glob
-        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
+        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
         if not os.path.exists(self.setup_sync_flag):
             return True
-        for pathenv in envs:
+        for cf in cfs:
             try:
-                mtime = os.stat(pathenv).st_mtime
+                mtime = os.stat(cf).st_mtime
                 f = open(self.setup_sync_flag)
                 last = float(f.read())
                 f.close()
@@ -1338,17 +1338,17 @@ class Node(Svc, Freezer, Scheduler):
 
     def cloud_purge_services(self, suffix, svcnames):
         import glob
-        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-        for env in envs:
-            svcname = os.path.basename(env).rstrip('.env')
+        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        for cf in cfs:
+            svcname = os.path.basename(cf)[:-5]
             if svcname.endswith(suffix) and svcname not in svcnames:
                 print("purge_service(svcname)", svcname)
 
     def cloud_init_service(self, c, vmname, svcname):
         import glob
-        envs = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-        env = os.path.join(rcEnv.pathetc, svcname+'.env')
-        if env in envs:
+        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        if cf in cfs:
             print(svcname, "is already defined")
             return
         print("initialize", svcname)
@@ -1364,17 +1364,17 @@ class Node(Svc, Freezer, Scheduler):
         config = ConfigParser.RawConfigParser(defaults)
 
         try:
-            fp = open(env, 'w')
+            fp = open(cf, 'w')
             config.write(fp)
             fp.close()
         except:
-            print("failed to write %s"%env, file=sys.stderr)
+            print("failed to write %s"%cf, file=sys.stderr)
             raise Exception()
 
-        d = env.rstrip('.env')+'.dir'
-        s = env.rstrip('.env')+'.d'
+        b = cf[:-5]
+        d = b + '.dir'
+        s = b + '.d'
         x = rcEnv.svcmgr
-        b = env.rstrip('.env')
         try:
             os.makedirs(d)
         except:
@@ -1593,20 +1593,20 @@ class Node(Svc, Freezer, Scheduler):
             os.symlink(s, ls)
 
     def pull(self, svcname):
-        env = os.path.join(rcEnv.pathetc, svcname+'.env')
-        data = self.collector_rest_get("/services/"+svcname+"?props=svc_envfile&meta=0")
+        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        data = self.collector_rest_get("/services/"+svcname+"?props=svc_config&meta=0")
         if "error" in data:
             self.log.error(data["error"])
             return 1
         if len(data["data"]) == 0:
             self.log.error("service not found on the collector")
             return 1
-        if len(data["data"][0]["svc_envfile"]) == 0:
+        if len(data["data"][0]["svc_config"]) == 0:
             self.log.error("service has an empty configuration")
             return 1
-        with open(env, "w") as f:
-            f.write(data["data"][0]["svc_envfile"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.log.info("%s pulled" % env)
+        with open(cf, "w") as f:
+            f.write(data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t"))
+        self.log.info("%s pulled" % cf)
         self.install_service_files(svcname)
 
     def set_rlimit(self):

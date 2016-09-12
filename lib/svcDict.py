@@ -3086,10 +3086,10 @@ class Section(object):
         if rtype and  self.section+"."+rtype in deprecated_sections:
             return ""
         dpath = rcEnv.pathdoc
-        fpath = os.path.join(dpath, "template."+section+".env")
+        fpath = os.path.join(dpath, "template."+section+".conf")
         if rtype:
             section += ", type "+rtype
-            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".env")
+            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".conf")
         s = "#"*78 + "\n"
         s += "# %-74s #\n" % " "
         s += "# %-74s #\n" % section

@@ -13,7 +13,7 @@ class SysReport(object):
     def __init__(self, node=None):
         self.todo = [
           ('INC', os.path.join(rcEnv.pathetc, 'node.conf')),
-          ('INC', os.path.join(rcEnv.pathetc, '*.env')),
+          ('INC', os.path.join(rcEnv.pathetc, '*.conf')),
           ('INC', os.path.join(rcEnv.pathetc, 'sysreport.conf.d')),
         ]
 

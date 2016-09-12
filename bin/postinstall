@@ -728,6 +728,13 @@ def convert_svclinks():
         logit("create link %s -> %s"%(fpath,svcmgr))
         os.symlink(svcmgr, fpath)
 
+def move_env_to_conf():
+    for fpath in glob.glob(os.path.join(pathetc, "*.env")):
+        svcname = os.path.basename(fpath)[:-4]
+        new_basename = svcname+".conf"
+        new_fpath = os.path.join(pathetc, new_basename)
+        shutil.move(fpath, new_fpath)
+
 def move_var_files_in_subdirs():
     for fpath in glob.glob(os.path.join(pathvar, "last_*")):
         dst = os.path.join(pathvar, "node")
@@ -1183,6 +1190,7 @@ try:
     purge_collector_api_cache()
     chmod_directories()
     convert_to_lsb()
+    move_env_to_conf()
     dump_install_content()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
 except:

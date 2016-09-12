@@ -50,7 +50,7 @@ class ProvisioningZone(Provisioning):
           protocol_ipv6=no
           default_route=172.30.5.1}
         """
-        envfile = os.path.join(rcEnv.pathetc, self.r.svc.svcname+'.env')
+        cf = os.path.join(rcEnv.pathetc, self.r.svc.svcname+'.conf')
         s = ""
 
         for rs in self.r.svc.get_res_sets(["ip"]):
@@ -84,7 +84,7 @@ class ProvisioningZone(Provisioning):
 
         # save new service env file
         self.r.svc.config.set(r.rid, "tags", ' '.join(r.tags))
-        with open(envfile, 'w') as f:
+        with open(cf, 'w') as f:
             self.r.svc.config.write(f)
 
         return s

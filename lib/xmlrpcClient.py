@@ -562,11 +562,11 @@ class Collector(object):
         self.proxy.update_appinfo(*args)
 
     def push_service(self, svc, sync=True):
-        def envfile(svc):
-            envfile = os.path.join(rcEnv.pathsvc, 'etc', svc+'.env')
-            if not os.path.exists(envfile):
+        def repr_config(svc):
+            cf = os.path.join(rcEnv.pathsvc, 'etc', svc+'.conf')
+            if not os.path.exists(cf):
                 return
-            with open(envfile, 'r') as f:
+            with open(cf, 'r') as f:
                 buff = ""
                 for line in f.readlines():
                     l = line.strip()
@@ -594,7 +594,7 @@ class Collector(object):
                 'svc_autostart',
                 'svc_app',
                 'svc_containertype',
-                'svc_envfile',
+                'svc_config',
                 'svc_drnoaction',
                 'svc_ha']
 
@@ -614,7 +614,7 @@ class Collector(object):
                 repr(' '.join(svc.autostart_node)),
                 repr(svc.app),
                 repr(svc.svcmode),
-                repr(envfile(svc.svcname)),
+                repr(repr_config(svc.svcname)),
                 repr(svc.drnoaction),
                 '1' if svc.ha else '0']
 

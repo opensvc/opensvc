@@ -39,7 +39,7 @@ data = {
 """,
   "form_definition": """
 Desc: |
-  A rule to set a parameter in OpenSVC <service>.env configuration file. Used by the 'svcconf' compliance object.
+  A rule to set a parameter in OpenSVC <service>.conf configuration file. Used by the 'svcconf' compliance object.
 Css: comp48
 Outputs:
   -
@@ -55,7 +55,7 @@ Inputs:
     LabelCss: action16
     Mandatory: Yes
     Type: string
-    Help: The OpenSVC <service>.env parameter to check.
+    Help: The OpenSVC <service>.conf parameter to check.
   -
     Id: op
     Label: Comparison operator
@@ -78,7 +78,7 @@ Inputs:
     LabelCss: action16
     Mandatory: Yes
     Type: string or integer
-    Help: The OpenSVC <service>.env parameter value to check.
+    Help: The OpenSVC <service>.conf parameter value to check.
 
 """,
 }
@@ -111,7 +111,7 @@ class SvcConf(CompObject):
         self.keys = self.get_rules()
 
         try:
-            self.get_env_file(refresh=True)
+            self.get_config_file(refresh=True)
         except Exception as e:
             perror("unable to load service configuration:", str(e))
             raise ComplianceError()
@@ -119,15 +119,15 @@ class SvcConf(CompObject):
         self.sanitize_keys()
         self.expand_keys()
 
-    def get_env_file(self, refresh=False):
+    def get_config_file(self, refresh=False):
        if not refresh:
-           return self.svcenv
-       cmd = ['svcmgr', '-s', self.svcname, 'json_env']
+           return self.svc_config
+       cmd = ['svcmgr', '-s', self.svcname, 'json_config']
        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
        out, err = p.communicate()
        out = bdecode(out)
-       self.svcenv = json.loads(out)
-       return self.svcenv
+       self.svc_config = json.loads(out)
+       return self.svc_config
 
     def fixable(self):
         return RET_NA
@@ -143,9 +143,9 @@ class SvcConf(CompObject):
 
     def get_val(self, keyname):
         section, var = keyname.split('.')
-        if section not in self.svcenv:
+        if section not in self.svc_config:
             return None
-        return self.svcenv[section].get(var)
+        return self.svc_config[section].get(var)
 
     def _check_key(self, keyname, target, op, value, verbose=True):
         r = RET_OK
@@ -222,7 +222,7 @@ class SvcConf(CompObject):
             perror("invalid filter syntax: %s" % filter)
             return False
         key, val = l
-        cur_val = self.svcenv[section].get(key)
+        cur_val = self.svc_config[section].get(key)
         if cur_val is None:
             return False
         if str(cur_val) == str(val):
@@ -236,7 +236,7 @@ class SvcConf(CompObject):
             return False
         key, val = l
         val = val.strip("/")
-        cur_val = self.svcenv[section].get(key)
+        cur_val = self.svc_config[section].get(key)
         if cur_val is None:
             return False
         reg = re.compile(val)
@@ -255,7 +255,7 @@ class SvcConf(CompObject):
         """
         result = [];
         eligiblesections = [];
-        for section in self.svcenv.keys():
+        for section in self.svc_config.keys():
             if section.startswith(s+'#') or section == s:
                 eligiblesections.append(section)
         for section in eligiblesections:

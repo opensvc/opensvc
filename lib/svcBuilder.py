@@ -2135,7 +2135,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs = {}
         src = []
         src.append(os.path.join(rcEnv.pathetc, svc.svcname))
-        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.env'))
+        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.conf'))
         src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
         localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
         cluster = os.path.join(rcEnv.pathetc, svc.svcname+'.cluster')
@@ -3218,7 +3218,7 @@ def build(name, minimal=False, svcconf=None):
     else it return new Svc instance
     """
     if svcconf is None:
-        svcconf = os.path.join(rcEnv.pathetc, name) + '.env'
+        svcconf = os.path.join(rcEnv.pathetc, name) + '.conf'
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
     logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     rcEnv.logfile = logfile
@@ -3559,7 +3559,7 @@ def is_service(f):
         return True
     if os.path.realpath(f) != os.path.realpath(rcEnv.svcmgr):
         return False
-    if not os.path.exists(f + '.env'):
+    if not os.path.exists(f + '.conf'):
         return False
     return True
 
@@ -3568,8 +3568,8 @@ def list_services():
         print("create dir %s"%rcEnv.pathetc)
         os.makedirs(rcEnv.pathetc)
 
-    s = glob.glob(os.path.join(rcEnv.pathetc, '*.env'))
-    s = list(map(lambda x: os.path.basename(x).replace('.env',''), s))
+    s = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+    s = list(map(lambda x: os.path.basename(x)[:-5], s))
 
     l = []
     for name in s:
@@ -3641,14 +3641,14 @@ def create(svcname, resources=[], interactive=False, provision=False):
     if svcname in list_services():
         print("service", svcname, "already exists", file=sys.stderr)
         return {"ret": 1}
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
-    if os.path.exists(envfile):
-        print(envfile, "already exists", file=sys.stderr)
+    cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+    if os.path.exists(cf):
+        print(cf, "already exists", file=sys.stderr)
         return {"ret": 1}
     try:
-       f = open(envfile, 'w')
+       f = open(cf, 'w')
     except:
-        print("failed to open", envfile, "for writing", file=sys.stderr)
+        print("failed to open", cf, "for writing", file=sys.stderr)
         return {"ret": 1}
 
     defaults = {}
@@ -3749,11 +3749,11 @@ def update(svcname, resources=[], interactive=False, provision=False):
     if svcname not in list_services():
         print("service", svcname, "does not exist", file=sys.stderr)
         return {"ret": 1}
-    envfile = os.path.join(rcEnv.pathetc, svcname+'.env')
+    cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
     sections = {}
     rtypes = {}
     conf = ConfigParser.RawConfigParser()
-    conf.read(envfile)
+    conf.read(cf)
     defaults = conf.defaults()
     for section in conf.sections():
         sections[section] = {}
@@ -3831,9 +3831,9 @@ def update(svcname, resources=[], interactive=False, provision=False):
             conf.set(section, key, val)
 
     try:
-        f = open(envfile, 'w')
+        f = open(cf, 'w')
     except:
-        print("failed to open", envfile, "for writing", file=sys.stderr)
+        print("failed to open", cf, "for writing", file=sys.stderr)
         return {"ret": 1}
 
     conf.write(f)

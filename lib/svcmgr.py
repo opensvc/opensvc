@@ -38,35 +38,35 @@ def pull_service(svcnames):
     for svcname in svcnames:
         node.pull(svcname)
 
-def install_service(svcnames, src_env):
+def install_service(svcnames, cf):
     if len(svcnames) != 1:
         print("only one service must be specified", file=sys.stderr)
         return 1
 
-    if src_env is None:
-        print("missing --envfile", file=sys.stderr)
+    if cf is None:
+        print("missing --config", file=sys.stderr)
         return 1
 
-    if not os.path.exists(src_env):
-        print("%s does not exists"%src_env, file=sys.stderr)
+    if not os.path.exists(cf):
+        print("%s does not exists"%cf, file=sys.stderr)
         return 1
 
     try:
-        _install_service(svcnames[0], src_env)
+        _install_service(svcnames[0], cf)
     except Exception as e:
         print(e)
         return 1
 
     return 0
 
-def _install_service(svcname, src_env):
+def _install_service(svcname, cf):
     import shutil
 
-    # install env file in etc/
-    src_env = os.path.realpath(src_env)
-    dst_env = os.path.join(rcEnv.pathetc, svcname+'.env')
-    if dst_env != src_env:
-        shutil.copy2(src_env, dst_env)
+    # install the configuration file in etc/
+    src_cf = os.path.realpath(cf)
+    dst_cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+    if dst_cf != src_cf:
+        shutil.copy2(src_cf, dst_cf)
 
     # install .dir
     d = os.path.join(rcEnv.pathetc, svcname+'.dir')
@@ -212,8 +212,8 @@ if cmd in ('svcmgr', 'svcmgr.py'):
               help="operate only on service flagged for autostart on this node")
     parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
               help="operate only on service not flagged for autostart on this node")
-    parser.add_option("--envfile", default=None, action="store", dest="param_envfile",
-              help="the envfile to use when installing a service")
+    parser.add_option("--config", default=None, action="store", dest="param_config",
+              help="the configuration file to use when installing a service")
 
 def main():
     action = None
@@ -302,7 +302,7 @@ def main():
         return r
 
     if action == 'install':
-        r = install_service(svcnames, options.param_envfile)
+        r = install_service(svcnames, options.param_config)
 
     if hasattr(options, "parm_rid") and options.parm_rid is not None:
         rid = options.parm_rid.split(',')
@@ -330,7 +330,7 @@ def main():
         else:
             data = {"rid": [], "ret": 0}
         if options.provision:
-            # if the user want to provision a resource defined through env editing, he
+            # if the user want to provision a resource defined via configuration file edition, he
             # will set --rid <rid> or --tag or --subset to point the update command to it
             rid += data.get("rid", [])
 

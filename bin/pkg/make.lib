@@ -66,7 +66,7 @@ function prepare_chroot {
 
 	# compress docs
 	cd $CHROOT/opt/opensvc/usr/share/doc
-	for f in $(echo template*env)
+	for f in $(echo template*conf)
 	do
 		echo "gzip -9 -n $f"
 		gzip -n $f
