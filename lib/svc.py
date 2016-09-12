@@ -2960,13 +2960,22 @@ class Svc(Resource, Scheduler):
         return False
 
     def write_config(self):
+        import tempfile
+        import shutil
         try:
-            fp = open(self.cf, 'w')
-            self.config.write(fp)
+            fp = tempfile.NamedTemporaryFile()
+            fname = fp.name
             fp.close()
-        except:
-            print("failed to write new %s"%self.cf, file=sys.stderr)
+            with open(fname, "w") as fp:
+                self.config.write(fp)
+            shutil.move(fname, rcEnv.nodeconf)
+        except Exception as e:
+            print("failed to write new %s (%s)" % (self.cf, str(e)), file=sys.stderr)
             raise ex.excError()
+        try:
+            os.chmod(rcEnv.nodeconf, 0o0644)
+        except:
+            pass
 
     def load_config(self):
         self.config = ConfigParser.RawConfigParser()
