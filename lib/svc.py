@@ -2797,7 +2797,7 @@ class Svc(Resource, Scheduler):
                 getattr(o, action)()
             elif action.startswith("collector_"):
                 from collector import Collector
-                o = Collector(self.options, self.node.collector, self.svcname)
+                o = Collector(self.options, self.node, self.svcname)
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action

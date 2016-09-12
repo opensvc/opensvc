@@ -11,9 +11,10 @@ from subprocess import *
 from rcPrintTable import print_table
 
 class Collector(object):
-    def __init__(self, options=None, collector=None, svcname=None):
+    def __init__(self, options=None, node=None, svcname=None):
         self.options = options
-        self.collector = collector
+        self.node = node
+        self.collector = node.collector
         self.svcname = svcname
         self.options = options
 
@@ -73,7 +74,7 @@ class Collector(object):
         d = self._collector_list_unavailability_ack()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_list_unavailability_ack(self):
         if self.svcname is None:
@@ -112,7 +113,7 @@ class Collector(object):
         d = self._collector_list_actions()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_list_actions(self):
         opts = {}
@@ -160,7 +161,7 @@ class Collector(object):
         d = self._collector_status()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_status(self):
         opts = {}
@@ -182,7 +183,7 @@ class Collector(object):
         d = self._collector_networks()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_networks(self):
         opts = {}
@@ -204,7 +205,7 @@ class Collector(object):
         d = self._collector_asset()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_asset(self):
         opts = {}
@@ -226,7 +227,7 @@ class Collector(object):
         d = self._collector_checks()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_checks(self):
         opts = {}
@@ -248,7 +249,7 @@ class Collector(object):
         d = self._collector_disks()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_disks(self):
         opts = {}
@@ -270,7 +271,7 @@ class Collector(object):
         d = self._collector_alerts()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_alerts(self):
         opts = {}
@@ -292,7 +293,7 @@ class Collector(object):
         d = self._collector_events()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_events(self):
         opts = {}
@@ -318,7 +319,7 @@ class Collector(object):
         d = self._collector_show_actions()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_show_actions(self):
         opts = {}
@@ -416,7 +417,7 @@ class Collector(object):
         d = self._collector_list_nodes()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
@@ -436,7 +437,7 @@ class Collector(object):
         d = self._collector_list_services()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
@@ -456,7 +457,7 @@ class Collector(object):
         d = self._collector_list_filtersets()
         import json
         from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, indent=4, separators=(',', ': '))))
+        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
 
     def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}

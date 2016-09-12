@@ -445,7 +445,7 @@ class Node(Svc, Freezer, Scheduler):
                     if not hasattr(o, a):
                         continue
                 elif a.startswith("collector_") and a != "collector_cli":
-                    o = Collector(self.options, self.collector)
+                    o = Collector(self.options, self)
                     if not hasattr(o, a):
                         continue
                 elif not hasattr(self, a):
@@ -486,7 +486,7 @@ class Node(Svc, Freezer, Scheduler):
             return getattr(o, a)()
         elif a.startswith("collector_") and a != "collector_cli":
             from collector import Collector
-            o = Collector(self.options, self.collector)
+            o = Collector(self.options, self)
             return getattr(o, a)()
         else:
             return getattr(self, a)()
@@ -1228,7 +1228,7 @@ class Node(Svc, Freezer, Scheduler):
         pw = self.genpw()
 
         from collector import Collector
-        o = Collector(self.options, self.collector)
+        o = Collector(self.options, self)
         try:
             data = getattr(o, 'rotate_root_pw')(pw)
         except Exception as e:
