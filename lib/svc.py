@@ -2364,6 +2364,7 @@ class Svc(Resource, Scheduler):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         path = self.make_temp_config()
+        os.environ["LANG"] = "en_US.UTF-8"
         os.system(' '.join((editor, path)))
         r = self._validate_config(path=path)
         if r["errors"] == 0:
