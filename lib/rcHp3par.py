@@ -6,6 +6,7 @@ from subprocess import *
 import time
 import urllib
 import urllib2
+from rcGlobalEnv import rcEnv
 
 if rcEnv.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.pathbin
