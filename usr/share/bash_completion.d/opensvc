@@ -32,7 +32,7 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg sync_all sync_break sync_drp sync_full syncnodes sync_quiesce sync_resync sync_update sync_break thaw umount collector compliance scheduler validate"
+        local opts="docker install configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg sync_all sync_break sync_drp sync_full syncnodes sync_quiesce sync_resync sync_update sync_break thaw umount collector compliance scheduler validate"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -45,6 +45,9 @@ _svcmgr()
 	    compliance)
 		local opts="check fixable fix show list attach detach env"
 		;;
+            create)
+		local opts="--provision"
+		;;
 	    push)
 		local opts="appinfo"
 		;;
@@ -53,6 +56,9 @@ _svcmgr()
 		;;
 	    get|unset)
 		local opts="--param"
+		;;
+            install)
+		local opts="--provision"
 		;;
 	    resource)
 		local opts="monitor"
@@ -221,7 +227,7 @@ _nodemgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="logs compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown create install update pull unprovision provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler edit"
+        local opts="logs compliance checks collector pushasset pushnsr pusheva pushdcs pushvioserver pushnecism pushibmsvc pushhp3par pushibmds pushhds pushdisks pushbrocade pushsym pushstats pushpkg pushpatch push get set unset register reboot shutdown create update pull unprovision provision prkey updatepkg updatecomp scanscsi dequeue schedule unschedule scheduler edit"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
@@ -229,10 +235,7 @@ _nodemgr()
 		local opts="--color"
 		;;
             create)
-		local opts="--provision"
-		;;
-            install)
-		local opts="--provision"
+		local opts="tag"
 		;;
             dequeue)
 		local opts="actions"
