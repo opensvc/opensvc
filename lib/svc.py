@@ -2477,6 +2477,7 @@ class Svc(Resource, Scheduler):
         try:
             out, err, ret = self._encap_cmd(cmd, r)
         except ex.excError:
+            out = None
             ret = 1
 
         paths = get_osvc_paths(osvc_root_path=r.osvc_root_path, sysname=r.guestos)
