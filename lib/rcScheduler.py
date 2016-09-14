@@ -6,6 +6,7 @@ import datetime
 import json
 import time
 import random
+import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string
@@ -152,7 +153,7 @@ class Scheduler(object):
             task = ".".join(task.split(".")[1:])
         except:
             pass
-        log = self.log.getChild("scheduler")
+        log = logging.getLogger(self.log.name+".scheduler")
         getattr(log, level)(sched_fmt % (task, msg))
 
     def get_next_schedule(self, action, _max=14400):
