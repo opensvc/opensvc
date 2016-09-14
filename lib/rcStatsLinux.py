@@ -127,10 +127,10 @@ class StatsProvider(rcStats.StatsProvider):
         if f is None:
             return [], []
         cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
-        (buff, err, ret) = justcall(cmd)
+        buff, err, ret = justcall(cmd)
 
-        if "kbactive" in buff:
-            fmt = 3
+        if "kbdirty" in buff:
+            fmt = 4
             cols = ['date',
                     'kbmemfree',
                     'kbmemused',
@@ -142,6 +142,19 @@ class StatsProvider(rcStats.StatsProvider):
                     'kbactive',
                     'kbinact',
                     'kbdirty',
+                    'nodename']
+        elif "kbactive" in buff:
+            fmt = 3
+            cols = ['date',
+                    'kbmemfree',
+                    'kbmemused',
+                    'pct_memused',
+                    'kbbuffers',
+                    'kbcached',
+                    'kbcommit',
+                    'pct_commit',
+                    'kbactive',
+                    'kbinact',
                     'nodename']
         elif "pct_commit" in buff:
             fmt = 2
