@@ -204,7 +204,7 @@ class Drbd(Res.Resource):
         except Exception as e:
             self.status_log(str(e))
             return rcStatus.WARN
-        self.status_log(str(roles[0]))
+        self.status_log(str(roles[0]), "info")
         (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)
