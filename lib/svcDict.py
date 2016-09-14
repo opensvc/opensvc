@@ -1,10 +1,11 @@
 import sys
 import os
 from rcGlobalEnv import rcEnv
-from rcNode import node_get_hostmode
+from rcNode import node_get_node_env
 from textwrap import TextWrapper
 
 deprecated_keywords = {
+  "DEFAULT.service_type": "env",
   "disk.lvm.vgname": "name",
   "disk.pool.poolname": "name",
   "disk.vg.vgname": "name",
@@ -41,7 +42,6 @@ class Keyword(object):
                  depends=[],
                  text="",
                  example="foo",
-                 deprecated=False,
                  provisioning=False):
         self.section = section
         self.keyword = keyword
@@ -59,13 +59,23 @@ class Keyword(object):
         self.text = text
         self.example = example
         self.provisioning = provisioning
-        self.deprecated = deprecated
 
     def __lt__(self, o):
         return self.order < o.order
 
+    def deprecated(self):
+        if self.rtype is None:
+            if self.section+"."+self.keyword in deprecated_keywords:
+                return True
+            else:
+                return False
+        for rtype in self.rtype:
+            if self.section+"."+rtype+"."+self.keyword in deprecated_keywords:
+                return True
+        return False
+
     def template(self):
-        if self.deprecated:
+        if self.deprecated():
             return ''
 
         wrapper = TextWrapper(subsequent_indent="#%15s"%"", width=78)
@@ -888,8 +898,21 @@ class KeywordServiceType(Keyword):
                   keyword="service_type",
                   order=15,
                   required=True,
-                  default=node_get_hostmode(),
-                  candidates=rcEnv.allowed_svctype,
+                  default=node_get_node_env(),
+                  candidates=rcEnv.allowed_svc_envs,
+                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+                )
+
+class KeywordServiceEnv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="env",
+                  order=15,
+                  required=True,
+                  default=node_get_node_env(),
+                  candidates=rcEnv.allowed_svc_envs,
                   text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
                 )
 
@@ -3328,7 +3351,6 @@ class KeywordStore(dict):
 class KeyDict(KeywordStore):
     def __init__(self, provision=False):
         KeywordStore.__init__(self, provision)
-        self.deprecated_sections = deprecated_sections
 
         import os
 
@@ -3684,6 +3706,7 @@ class KeyDict(KeywordStore):
         self += KeywordFlexMaxNodes()
         self += KeywordFlexCpuMinThreshold()
         self += KeywordFlexCpuMaxThreshold()
+        self += KeywordServiceEnv()
         self += KeywordServiceType()
         self += KeywordNodes()
         self += KeywordAutostartNode()

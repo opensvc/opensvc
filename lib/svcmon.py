@@ -66,7 +66,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     data = [
               name,
               app,
-              svc.svctype,
+              svc.svc_env,
               svc.clustertype,
               '-',
               "yes" if svc.frozen() else "no",
@@ -150,7 +150,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 
 def svcmon_cluster(node):
     svcnames = ",".join([r.svcname for r in node.svcs])
-    data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_type,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+    data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return 1
@@ -173,7 +173,7 @@ def svcmon_cluster(node):
 
     svcname_len = max_len(max_len_data)
     fmt_svcname = '%(svcname)-' + str(svcname_len) + 's'
-    fmt = fmt_svcname + ' %(svc_app)-10s %(svc_type)-4s %(svc_cluster_type)-8s | %(svc_availstatus)-10s %(svc_status)-10s | %(svc_status_updated)s'
+    fmt = fmt_svcname + ' %(svc_app)-10s %(svc_env)-4s %(svc_cluster_type)-8s | %(svc_availstatus)-10s %(svc_status)-10s | %(svc_status_updated)s'
     print(" "*svcname_len+" app        type topology | avail      overall    | updated")
     print(" "*svcname_len+" -------------------------+-----------------------+--------------------")
 
@@ -223,7 +223,7 @@ def svcmon_cluster_verbose_data(node, svc_ids):
             _data[d["svc_id"]] = []
         d["svc_app"] = ""
         d["svc_cluster_type"] = ""
-        d["svc_type"] = ""
+        d["svc_env"] = ""
         d["svc_availstatus"] = rcStatus.colorize_status(d["mon_availstatus"])
         d["svc_status"] = rcStatus.colorize_status(d["mon_overallstatus"])
         d["svc_status_updated"] = d["mon_updated"]

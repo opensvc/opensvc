@@ -999,11 +999,11 @@ class Svc(Resource, Scheduler):
         containers = [ c for c in containers if c.type != "container.docker" ]
         if len(containers) == 0:
             g_vals=[self.svcname,
-                    self.svctype,
+                    self.svc_env,
                     rcEnv.nodename,
                     "",
                     "hosted",
-                    rcEnv.host_mode,
+                    rcEnv.node_env,
                     str(status["ip"]),
                     str(status["disk"]),
                     str(status["sync"]),
@@ -1058,11 +1058,11 @@ class Svc(Resource, Scheduler):
                     continue
 
                 g_vals.append([self.svcname,
-                               self.svctype,
+                               self.svc_env,
                                rcEnv.nodename,
                                container.name,
                                container.type.replace('container.', ''),
-                               rcEnv.host_mode,
+                               rcEnv.node_env,
                                str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
                                str(status["disk"]+rcStatus.Status(encap_res_status['disk'])),
                                str(status["sync"]+rcStatus.Status(encap_res_status['sync'])),
@@ -2664,7 +2664,7 @@ class Svc(Resource, Scheduler):
         if self.node is None:
             self.node = node.Node()
         self.action_start_date = datetime.datetime.now()
-        if self.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
+        if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 

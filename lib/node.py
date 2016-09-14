@@ -83,7 +83,7 @@ class Node(Svc, Freezer, Scheduler):
         self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
         self.config_defaults = {
           'clusters': '',
-          'host_mode': 'TST',
+          'node_env': 'TST',
           'push_schedule': '00:00-06:00@361 mon-sun',
           'sync_schedule': '04:00-06:00@121 mon-sun',
           'comp_schedule': '02:00-06:00@241 sun',

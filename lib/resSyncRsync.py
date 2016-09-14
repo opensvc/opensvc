@@ -279,7 +279,7 @@ class Rsync(resSync.Sync):
 
         """Don't sync PRD services when running on !PRD node
         """
-        if self.svc.svctype == 'PRD' and rcEnv.host_mode != 'PRD':
+        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
             if not self.svc.cron:
                 self.log.info("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction

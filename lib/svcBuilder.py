@@ -3318,14 +3318,16 @@ def build(name, minimal=False, svcconf=None):
     #
     # Store and validate the service type
     #
-    if not hasattr(svc, "service_type"):
+    if not hasattr(svc, "env"):
+        if "env" in defaults:
+            svc.svc_env = defaults["env"]
         if "service_type" in defaults:
-            svc.svctype = defaults["service_type"]
+            svc.svc_env = defaults["service_type"]
         else:
-            svc.svctype = ''
+            svc.svc_env = ''
 
-    if svc.svctype not in rcEnv.allowed_svctype:
-        raise ex.excInitError('%s is not a valid service type (%s)'%(svc.svctype, ', '.join(rcEnv.allowed_svctype)))
+    if svc.svc_env not in rcEnv.allowed_svc_envs:
+        raise ex.excInitError('%s is not a valid service env (%s)'%(svc.svc_env, ', '.join(rcEnv.allowed_svc_envs)))
 
     if minimal:
         return svc
@@ -3462,8 +3464,8 @@ def build(name, minimal=False, svcconf=None):
 
     """ prune service whose service type does not match host mode
     """
-    if svc.svctype != 'PRD' and rcEnv.host_mode == 'PRD':
-        raise ex.excInitError('not allowed to run on this node (service_type=%s host_mode=%s)' % (svc.svctype, rcEnv.host_mode))
+    if svc.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
+        raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
 
     if "drp_type" in defaults:
         svc.drp_type = defaults["drp_type"]

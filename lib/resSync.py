@@ -8,7 +8,7 @@ import time
 from rcGlobalEnv import rcEnv
 from rcScheduler import *
 
-cache_remote_node_type = {}
+cache_remote_node_env = {}
 
 class Sync(Res.Resource, Scheduler):
     def __init__(self,
@@ -101,37 +101,37 @@ class Sync(Res.Resource, Scheduler):
             return False
         return True
 
-    def remote_node_type(self, node, target):
+    def remote_node_env(self, node, target):
         if target == 'drpnodes':
-            expected_type = list(set(rcEnv.allowed_svctype) - set(['PRD']))
+            expected_type = list(set(rcEnv.allowed_svc_envs) - set(['PRD']))
         elif target == 'nodes':
-            if self.svc.svctype == "PRD":
+            if self.svc.svc_env == "PRD":
                 expected_type = ["PRD"]
             else:
-                expected_type = list(set(rcEnv.allowed_svctype) - set(["PRD"]))
+                expected_type = list(set(rcEnv.allowed_svc_envs) - set(["PRD"]))
         else:
             self.log.error('unknown sync target: %s'%target)
             raise ex.excError
 
         ruser = self.svc.node.get_ruser(node)
-        rcmd = [rcEnv.nodemgr, 'get', '--param', 'node.host_mode']
+        rcmd = [rcEnv.nodemgr, 'get', '--param', 'node.env']
         if ruser != "root":
             rcmd = ['sudo'] + rcmd
 
-        if node not in cache_remote_node_type:
+        if node not in cache_remote_node_env:
             cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
             (ret, out, err) = self.call(cmd, cache=True)
             if ret != 0:
                 return False
             words = out.split()
             if len(words) == 1:
-                cache_remote_node_type[node] = words[0]
+                cache_remote_node_env[node] = words[0]
             else:
-                cache_remote_node_type[node] = out
+                cache_remote_node_env[node] = out
 
-        if cache_remote_node_type[node] in expected_type:
+        if cache_remote_node_env[node] in expected_type:
             return True
         self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
-                       (node, cache_remote_node_type[node], ', '.join(expected_type)))
+                       (node, cache_remote_node_env[node], ', '.join(expected_type)))
         return False
 

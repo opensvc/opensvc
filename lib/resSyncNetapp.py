@@ -245,7 +245,7 @@ class syncNetapp(resSync.Sync):
                     self.log.error("set force mode to bypass")
                     raise ex.excError
             self.sync_break()
-        if rcEnv.host_mode == "PRD":
+        if rcEnv.node_env == "PRD":
             self.syncswap()
 
     def stop(self):

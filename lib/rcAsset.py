@@ -382,18 +382,23 @@ class Asset(object):
         print("model (%s)"%source)
         print("  %s"%s)
 
-    def get_host_mode(self):
+    def get_node_env(self):
         s = 'TST'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'host_mode')
-            source = self.s_config
+            if self.node.config.has_option('node', 'env'):
+                s = self.node.config.get('node', 'env')
+                source = self.s_config
+            elif self.node.config.has_option('node', 'host_mode'):
+                # compat
+                s = self.node.config.get('node', 'host_mode')
+                source = self.s_config
         except:
             pass
-        self.print_host_mode(s, source)
+        self.print_node_env(s, source)
         return s
 
-    def print_host_mode(self, s, source):
+    def print_node_env(self, s, source):
         print("host mode (%s)"%source)
         print("  %s"%s)
 
@@ -752,7 +757,7 @@ class Asset(object):
         self.data['cpu_model'] = self.get_cpu_model()
         self.data['serial'] = self.get_serial()
         self.data['model'] = self.get_model()
-        self.data['host_mode'] = self.get_host_mode()
+        self.data['env'] = self.get_node_env()
         self.data['enclosure'] = self.get_enclosure()
         self.data['listener_port'] = self.get_listener_port()
         connect_to = self.get_connect_to()
