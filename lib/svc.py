@@ -3267,7 +3267,7 @@ class Svc(Resource, Scheduler):
         return ret["warnings"] + ret["errors"]
 
     def _validate_config(self, path=None):
-        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue, deprecated_sections
         data = KeyDict(provision=True)
         ret = {
           "errors": 0,
@@ -3286,10 +3286,10 @@ class Svc(Resource, Scheduler):
                 found = False
                 for section in config.sections():
                     family = section.split("#")[0]
-                    if family not in list(data.sections.keys()) + list(data.deprecated_sections.keys()):
+                    if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
                         continue
-                    if family in data.deprecated_sections:
-                        family, rtype = data.deprecated_sections[family]
+                    if family in deprecated_sections:
+                        family, rtype = deprecated_sections[family]
                     if data.sections[family].getkey(option) is not None:
                         found = True
                         break
@@ -3306,13 +3306,13 @@ class Svc(Resource, Scheduler):
                 rtype = config.get(section, "type")
             else:
                 rtype = None
-            if family not in list(data.sections.keys()) + list(data.deprecated_sections.keys()):
+            if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
                 self.log.warning("ignored section %s" % section)
                 ret["warnings"] += 1
-            if family in data.deprecated_sections:
+            if family in deprecated_sections:
                 self.log.warning("deprecated section prefix %s" % family)
                 ret["warnings"] += 1
-                family, rtype = data.deprecated_sections[family]
+                family, rtype = deprecated_sections[family]
             for option in config.options(section):
                 if option in config.defaults():
                     continue
