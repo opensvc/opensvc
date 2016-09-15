@@ -150,7 +150,11 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 
 def svcmon_cluster(node):
     svcnames = ",".join([r.svcname for r in node.svcs])
-    data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+    try:
+        data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+    except Exception as e:
+        print(e, file=sys.stderr)
+        return
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return 1
