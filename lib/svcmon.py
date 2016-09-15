@@ -183,6 +183,9 @@ def svcmon_cluster(node):
        d["svc_availstatus"] = rcStatus.colorize_status(d["svc_availstatus"])
        print(fmt % d)
        if options.verbose:
+           if d['svc_id'] not in instance_data:
+               print(" (no instances data)")
+               continue
            for inst in instance_data[d["svc_id"]]:
                print(fmt%inst)
 
