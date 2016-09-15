@@ -79,10 +79,10 @@ class Disk(resDisk.Disk):
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
-        if not self.has_it():
-            return False
         cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
-        (ret, out, err) = self.call(cmd)
+        ret, out, err = self.call(cmd, errlog=False, cache=False)
+        if ret != 0 and "not found" in err:
+            return False
         if len(out) == 0 and ret == 0:
             # no lv ... happens in provisioning, where lv are not created yet
             return True
@@ -206,21 +206,32 @@ class Disk(resDisk.Disk):
 
         self.devs = set()
 
-        cmd = ['vgs', '--noheadings', '-o', 'pv_name', self.name]
+        cmd = ['vgs', '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
         (ret, out, err) = self.call(cmd, cache=True)
         if ret == 0:
-            self.devs |= set(out.split())
+            for line in out.split("\n"):
+                try:
+                    vgname, pvname = line.split(";")
+                except:
+                    pass
+                if vgname.strip() != self.name:
+                    continue
+                self.devs.add(pvname.strip())
 
-        cmd = ['vgs', '--noheadings', '-o', 'lv_name', self.name]
+        cmd = ['vgs', '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
         (ret, out, err) = self.call(cmd, cache=True)
         if ret == 0:
-            lvs = out.split()
-            devs = []
-            for lv in lvs:
-                lvp = "/dev/"+self.name+"/"+lv
+            for line in out.split("\n"):
+                try:
+                    vgname, lvname = line.split(";")
+                except:
+                    pass
+                if vgname.strip() != self.name:
+                    continue
+                lvname = lvname.strip()
+                lvp = "/dev/"+self.name+"/"+lvname
                 if os.path.exists(lvp):
-                    devs.append(lvp)
-            self.devs |= set(devs)
+                    self.devs.add(lvp)
 
         if len(self.devs) > 0:
             self.log.debug("found devs %s held by vg %s" % (self.devs, self.name))
@@ -228,8 +239,6 @@ class Disk(resDisk.Disk):
         return self.devs
 
     def disklist(self):
-        if not self.has_it():
-            return set()
         if self.disks != set():
             return self.disks
 
