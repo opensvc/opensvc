@@ -371,7 +371,7 @@ def main():
         if docker_argv is not None:
             s.docker_argv = docker_argv
 
-    if sysname != "Windows" and (action.startswith("stop") or action in ("shutdown", "unprovision")):
+    if sysname != "Windows" and (action.startswith("stop") or action in ("shutdown", "unprovision", "switch")):
         pid = fork(node.do_svcs_action, [action], {"rid": rid, "tags": tags, "subsets": subsets})
         try:
             pid, status = os.waitpid(pid, 0)
