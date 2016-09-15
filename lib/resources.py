@@ -356,14 +356,15 @@ class Resource(object):
                 if len(lines) > 1:
                     for line in lines[1:]:
                         if line.startswith("info: "):
-                            self.status_logs.append("info", line.replace("info: ", "", 1))
+                            self.status_logs.append(("info", line.replace("info: ", "", 1)))
                         elif line.startswith("warn: "):
-                            self.status_logs.append("warn", line.replace("warn: ", "", 1))
+                            self.status_logs.append(("warn", line.replace("warn: ", "", 1)))
                         elif line.startswith("error: "):
-                            self.status_logs.append("error", line.replace("error: ", "", 1))
+                            self.status_logs.append(("error", line.replace("error: ", "", 1)))
                         else:
-                            self.status_logs.append("warn", line)
-        except:
+                            self.status_logs.append(("warn", line))
+        except Exception as e:
+            self.log.debug(e)
             s = None
         return s
 
