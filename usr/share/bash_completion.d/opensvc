@@ -32,7 +32,7 @@ _svcmgr()
     esac
 
     if [ $COMP_CWORD -eq 1 ]; then
-        local opts="docker install configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg sync_all sync_break sync_drp sync_full syncnodes sync_quiesce sync_resync sync_update sync_break thaw umount collector compliance scheduler validate"
+        local opts="docker install configure create disklist freeze frozen mount postsync presync print_status print_resource_status print_service edit prstart prstatus prstop push restart start startapp startcontainer startdisk startip startloop startpool startstandby startfs startvg status stop stopapp stopcontainer stopdisk stopip stoploop stoppool stopvg sync_all sync_break sync_drp sync_full syncnodes sync_quiesce sync_resync sync_update sync_break thaw umount collector compliance scheduler validate"
     elif [ $COMP_CWORD -eq 2 ]; then
         b="${COMP_WORDS[COMP_CWORD-1]}"
         case "${b}" in
