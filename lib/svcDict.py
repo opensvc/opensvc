@@ -2760,6 +2760,7 @@ class KeywordSyncHp3parArray(Keyword):
                   keyword="array",
                   rtype="hp3par",
                   required=True,
+                  at=True,
                   text="Name of the HP 3par array to send commands to."
                 )
 
@@ -2786,6 +2787,7 @@ class KeywordSyncHp3parMethod(Keyword):
                   required=False,
                   candidates=["ssh", "cli"],
                   default="ssh",
+                  at=True,
                   text="The method to use to submit commands to the arrays."
                 )
 
@@ -2797,6 +2799,7 @@ class KeywordSyncHp3parRcg(Keyword):
                   keyword="rcg",
                   rtype="hp3par",
                   required=True,
+                  at=True,
                   text="Name of the HP 3par remote copy group. The scoping syntax must be used to fully describe the replication topology."
                 )
 
