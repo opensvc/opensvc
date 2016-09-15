@@ -260,7 +260,7 @@ class ScsiReserv(Res.Resource):
             return rcStatus.WARN
         if not self.scsireserv_supported():
             return rcStatus.NA
-        return self.scsicheckreserv()
+        return self.checkreserv()
 
     def start(self):
         self.get_hostid()
