@@ -66,6 +66,7 @@ def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
 
 def cli_cmd(cmd, array, pwf, cli="cli", log=None):
     os.environ["TPDPWFILE"] = pwf
+    os.environ["TPDNOCERTPROMPT"] = "1"
     cmd = [cli, '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
