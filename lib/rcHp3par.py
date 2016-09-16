@@ -65,7 +65,8 @@ def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
     return out, err
 
 def cli_cmd(cmd, array, pwf, log=None):
-    cmd = ['cli', '-sys', array, '-pwf', pwf, '-nohdtot', '-csvtable'] + cmd.split()
+    os.environ["TPDPWFILE"] = pwf
+    cmd = ['cli', '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
     out = reformat(out)
