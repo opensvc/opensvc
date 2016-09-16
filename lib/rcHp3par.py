@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import json
 import rcExceptions as ex
@@ -115,7 +116,7 @@ def _rcmd(_cmd, cmd, log=None, retry=10):
     return out, err
 
 class Hp3pars(object):
-    allowed_methods = ("ssh", "proxy")
+    allowed_methods = ("ssh", "proxy", "cli")
 
     def __init__(self, objects=[]):
         self.objects = objects
@@ -157,9 +158,9 @@ class Hp3pars(object):
             try:
                 manager = conf.get(s, 'manager')
                 kwargs['manager'] = manager
-            except:
-                if method in ("proxy", "ssh"):
-                    print("error parsing section", s)
+            except Exception as e:
+                if method in ("proxy", "ssh", "cli"):
+                    print(e)
                     continue
 
             try:
@@ -167,17 +168,17 @@ class Hp3pars(object):
                 key = conf.get(s, 'key')
                 kwargs['username'] = username
                 kwargs['key'] = key
-            except:
+            except Exception as e:
                 if method in ("ssh"):
-                    print("error parsing section", s)
+                    print(e)
                     continue
 
             try:
-                key = conf.get(s, 'pwf')
+                pwf = conf.get(s, 'pwf')
                 kwargs['pwf'] = pwf
-            except:
+            except Exception as e:
                 if method in ("cli"):
-                    print("error parsing section", s)
+                    print(e)
                     continue
 
             self.arrays.append(Hp3par(s, method, **kwargs))
