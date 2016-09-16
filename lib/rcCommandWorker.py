@@ -28,11 +28,11 @@ if os.getuid() == 0:
                                                        backupCount=5)
     filehandler.setFormatter(fileformatter)
     log.addHandler(filehandler)
+    log.setLevel(logging.DEBUG)
+    log.debug("logger setup")
 else:
     log.handlers = []
 
-log.setLevel(logging.DEBUG)
-log.debug("logger setup")
 
 def worker(q):
     try:
