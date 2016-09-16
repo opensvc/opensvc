@@ -55,6 +55,8 @@ class syncHp3par(resSync.Sync):
                 self.rcg)
 
     def on_add(self):
+        if self.array_obj is None:
+            raise ex.excError("no 3par array object")
         self.array_obj.svcname = self.svc.svcname
 
     def _cmd(self, cmd, target=None, log=False):
