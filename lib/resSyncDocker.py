@@ -87,7 +87,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
                 target = 'drpnodes'
             else:
                 continue
-            if not self.remote_node_type(node, target):
+            if not self.remote_node_env(node, target):
                 self.targets -= set([node])
                 continue
             try:
