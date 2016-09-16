@@ -64,9 +64,9 @@ def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
 
     return out, err
 
-def cli_cmd(cmd, array, pwf, log=None):
+def cli_cmd(cmd, array, pwf, cli="cli", log=None):
     os.environ["TPDPWFILE"] = pwf
-    cmd = ['cli', '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
+    cmd = [cli, '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
     out = reformat(out)
@@ -182,6 +182,12 @@ class Hp3pars(object):
                     print(e)
                     continue
 
+            try:
+                cli = conf.get(s, 'cli')
+                kwargs['cli'] = cli
+            except Exception as e:
+                pass
+
             self.arrays.append(Hp3par(s, method, **kwargs))
 
         del(conf)
@@ -196,12 +202,13 @@ class Hp3pars(object):
         return self.arrays[self.index-1]
 
 class Hp3par(object):
-    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, svcname=""):
+    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname=""):
         self.name = name
         self.manager = manager
         self.method = method
         self.username = username
         self.pwf = pwf
+        self.cli = cli
         self.svcname = svcname
         self.key = key
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
@@ -227,7 +234,7 @@ class Hp3par(object):
         if self.method == "ssh":
             return ssh_cmd(cmd, self.manager, self.username, self.key, log=log)
         elif self.method == "cli":
-            return cli_cmd(cmd, self.name, self.pwf, log=log)
+            return cli_cmd(cmd, self.name, self.pwf, cli=self.cli, log=log)
         elif self.method == "proxy":
             self.get_uuid()
             return proxy_cmd(cmd, self.name, self.manager, self.svcname, uuid=self.uuid, log=log)
