@@ -37,6 +37,17 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+deprecated_keywords = {
+  "node.host_mode": "env",
+  "node.environnement": "asset_env",
+  "node.environment": "asset_env",
+}
+
+reverse_deprecated_keywords = {
+  "node.env": ["host_mode"],
+  "node.asset_env": ["environnement", "environment"],
+}
+
 actions_no_parallel = [
   'edit_config',
   'get',
@@ -953,14 +964,26 @@ class Node(Svc, Freezer, Scheduler):
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
+
         if not self.config.has_section(section):
             self.config.add_section(section)
-        try:
+
+        if self.config.has_option(section, option):
             print(self.config.get(section, option))
-        except ConfigParser.NoOptionError:
+            return 0
+        else:
+            if self.options.param in deprecated_keywords:
+                newkw = deprecated_keywords[self.options.param]
+                if self.config.has_option(section, newkw):
+                    print(self.config.get(section, newkw))
+                    return 0
+            if self.options.param in reverse_deprecated_keywords:
+                for oldkw in reverse_deprecated_keywords[self.options.param]:
+                    if self.config.has_option(section, oldkw):
+                        print(self.config.get(section, oldkw))
+                        return 0
             print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
             return 1
-        return 0
 
     def set(self):
         if self.options.param is None:
