@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-09\-12
+.TH SVCMGR 1 2016\-09\-17
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -41,38 +41,6 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fB               \fP  display service events during the period specified by
   \fB               \fP  --begin/--end. --end defaults to now. --begin defaults to 7
   \fB               \fP  days ago
-
-  \fBsvcmgr collector json alerts\fP
-  \fB               \fP  same as "collector alerts", output in JSON
-
-  \fBsvcmgr collector json asset\fP
-  \fB               \fP  display asset information known to the collector, output in
-  \fB               \fP  JSON
-
-  \fBsvcmgr collector json checks\fP
-  \fB               \fP  same as "collector checks", output in JSON
-
-  \fBsvcmgr collector json disks\fP
-  \fB               \fP  same as "collector disks", output in JSON
-
-  \fBsvcmgr collector json events\fP
-  \fB               \fP  same as "collector events", output in JSON
-
-  \fBsvcmgr collector json list actions\fP
-  \fB               \fP  same as "collector list actions", output in JSON
-
-  \fBsvcmgr collector json list unavailability ack\fP
-  \fB               \fP  same as "collector list unavailability ack", output in JSON
-
-  \fBsvcmgr collector json networks\fP
-  \fB               \fP  display network information known to the collector for each
-  \fB               \fP  service ip, output in JSON
-
-  \fBsvcmgr collector json show actions\fP
-  \fB               \fP  same as "collector show actions", output in JSON
-
-  \fBsvcmgr collector json status\fP
-  \fB               \fP  same as "collector status", output in JSON
 
   \fBsvcmgr collector list actions\fP
   \fB               \fP  list actions on the service, whatever the node, during the
@@ -191,18 +159,6 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBsvcmgr freeze  \fP  set up a flag to block actions on this service
 
   \fBsvcmgr frozen  \fP  report on the current blocking of actions on this service
-
-  \fBsvcmgr json devlist\fP
-  \fB               \fP  provide the service device list in json format, for use by
-  \fB               \fP  tier tools
-
-  \fBsvcmgr json disklist\fP
-  \fB               \fP  provide the service disk list in json format, for use by
-  \fB               \fP  tier tools
-
-  \fBsvcmgr json status\fP
-  \fB               \fP  provide the resource and aggregated status in json format,
-  \fB               \fP  for use by tier tools
 
   \fBsvcmgr logs    \fP  display the service logs in the pager
 
@@ -421,10 +377,6 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fB               \fP  --config. used by master services when pushing the
   \fB               \fP  configuration file to their slaves.
 
-  \fBsvcmgr json config\fP
-  \fB               \fP  provide the service configuration in json format, for use
-  \fB               \fP  by tier tools
-
   \fBsvcmgr print config\fP
   \fB               \fP  display service current configuration
 
@@ -566,9 +518,6 @@ the acker name to log when used with the 'collector ack unavailability' action
 .B --id=ID
 specify an id to act on
 .TP
-.B --table
-use table representation of collector data instead of the default itemized list of objects and properties
-.TP
 .B --refresh
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
 .TP
@@ -580,6 +529,9 @@ a tag specifier used by 'collector create tag', 'collector add tag', 'collector 
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)
