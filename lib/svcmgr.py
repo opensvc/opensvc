@@ -191,8 +191,6 @@ parser.add_option("--author", default=None, action="store", dest="author",
                   help="the acker name to log when used with the 'collector ack unavailability' action")
 parser.add_option("--id", default=0, action="store", dest="id", type="int",
                   help="specify an id to act on")
-parser.add_option("--table", default=False, action="store_true", dest="table",
-                  help="use table representation of collector data instead of the default itemized list of objects and properties")
 parser.add_option("--refresh", default=False, action="store_true", dest="refresh",
                   help="drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands")
 parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
@@ -203,6 +201,10 @@ parser.add_option("--tag", default=None,
 parser.add_option("--like", default="%",
                   action="store", dest="like",
                   help="a sql like filtering expression. leading and trailing wildcards are automatically set.")
+parser.add_option("--format", default=None,
+                  action="store", dest="format",
+                  help="specify a data formatter for output of the print* and collector* commands. possible values are json or table.")
+
 
 
 cmd = os.path.basename(__file__)
@@ -237,6 +239,7 @@ def main():
 
     options, args = parser.parse_args()
     rcColor.use_color = options.color
+    node.options.format = options.format
 
     if _args is not None:
         args = _args
@@ -380,11 +383,18 @@ def main():
         try:
             pid, status = os.waitpid(pid, 0)
             err = os.WEXITSTATUS(status)
+        except ex.excError as e:
+            print(e, file=sys.stderr)
+            err = 1
         except (ex.excSignal, KeyboardInterrupt) as e:
             print("the action, detached as pid %d, will continue executing" % pid)
             err = 1
     else:
-        err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
+        try:
+            err = node.do_svcs_action(action, rid=rid, tags=tags, subsets=subsets)
+        except ex.excError as e:
+            print(e, file=sys.stderr)
+            err = 1
 
     try:
         import logging

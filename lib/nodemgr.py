@@ -100,8 +100,6 @@ parser.add_option("--broadcast", default=None,
                   help="list of broadcast addresses, comma separated, used by the 'wol' action")
 parser.add_option("--sync", default=False, action="store_true", dest="syncrpc",
                   help="use synchronous collector rpc if available. to use with pushasset when chaining a compliance run, to make sure the node ruleset is up-to-date.")
-parser.add_option("--table", default=False, action="store_true", dest="table",
-                  help="used table representation of collector data instead of the default itemized list of objects and properties")
 parser.add_option("--user", default=None, action="store", dest="user",
                   help="authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.")
 parser.add_option("--password", default=None, action="store", dest="password",
@@ -114,6 +112,8 @@ parser.add_option("--config", default=None, action="store", dest="config",
                   help="specify a user-specific collector api connection configuration file. defaults to '~/.opensvc-cli'. Honored by the 'collector cli' action.")
 parser.add_option("--app", default=None, action="store", dest="app",
                   help="Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.")
+parser.add_option("--format", default=None, action="store", dest="format",
+                  help="specify a data formatter for output of the print* and collector* commands. possible values are json or table.")
 
 
 (options, args) = parser.parse_args()

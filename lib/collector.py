@@ -8,7 +8,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
-from rcPrintTable import print_table
+from rcColor import formatter
 
 class Collector(object):
     def __init__(self, options=None, node=None, svcname=None):
@@ -17,18 +17,6 @@ class Collector(object):
         self.collector = node.collector
         self.svcname = svcname
         self.options = options
-
-    def expand_list(self, d):
-        if len(d) < 2:
-            return []
-        l = []
-        titles = d[0]
-        for _d in d[1:]:
-            h = {}
-            for a, b in zip(titles, _d):
-                h[a] = b
-            l.append(h)
-        return l
 
     def rotate_root_pw(self, pw):
         opts = {}
@@ -66,15 +54,9 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
+    @formatter
     def collector_list_unavailability_ack(self):
-        d = self._collector_list_unavailability_ack()
-        print_table(d, table=self.options.table)
-
-    def collector_json_list_unavailability_ack(self):
-        d = self._collector_list_unavailability_ack()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_list_unavailability_ack()
 
     def _collector_list_unavailability_ack(self):
         if self.svcname is None:
@@ -105,15 +87,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_list_actions(self):
-        d = self._collector_list_actions()
-        print_table(d, table=self.options.table)
-
-    def collector_json_list_actions(self):
-        d = self._collector_list_actions()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_list_actions()
 
     def _collector_list_actions(self):
         opts = {}
@@ -153,15 +129,9 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
+    @formatter
     def collector_status(self):
-        d = self._collector_status()
-        print_table(d, table=self.options.table)
-
-    def collector_json_status(self):
-        d = self._collector_status()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_status()
 
     def _collector_status(self):
         opts = {}
@@ -175,15 +145,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_networks(self, table=True):
-        d = self._collector_networks()
-        print_table(d, table=self.options.table)
-
-    def collector_json_networks(self):
-        d = self._collector_networks()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_networks()
 
     def _collector_networks(self):
         opts = {}
@@ -197,15 +161,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_asset(self, table=True):
-        d = self._collector_asset()
-        print_table(d, table=self.options.table)
-
-    def collector_json_asset(self):
-        d = self._collector_asset()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_asset()
 
     def _collector_asset(self):
         opts = {}
@@ -219,15 +177,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_checks(self, table=True):
-        d = self._collector_checks()
-        print_table(d, table=self.options.table)
-
-    def collector_json_checks(self):
-        d = self._collector_checks()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_checks()
 
     def _collector_checks(self):
         opts = {}
@@ -241,15 +193,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_disks(self):
-        d = self._collector_disks()
-        print_table(d, width=64, table=self.options.table)
-
-    def collector_json_disks(self):
-        d = self._collector_disks()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_disks()
 
     def _collector_disks(self):
         opts = {}
@@ -263,15 +209,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_alerts(self):
-        d = self._collector_alerts()
-        print_table(d, width=30, table=self.options.table)
-
-    def collector_json_alerts(self):
-        d = self._collector_alerts()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_alerts()
 
     def _collector_alerts(self):
         opts = {}
@@ -285,15 +225,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_events(self):
-        d = self._collector_events()
-        print_table(d, width=50, table=self.options.table)
-
-    def collector_json_events(self):
-        d = self._collector_events()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_events()
 
     def _collector_events(self):
         opts = {}
@@ -311,15 +245,9 @@ class Collector(object):
 
         return d['data']
 
+    @formatter
     def collector_show_actions(self):
-        d = self._collector_show_actions()
-        print_table(d, width=50, table=self.options.table)
-
-    def collector_json_show_actions(self):
-        d = self._collector_show_actions()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(self.expand_list(d), ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_show_actions()
 
     def _collector_show_actions(self):
         opts = {}
@@ -388,14 +316,14 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
+    @formatter
     def collector_show_tags(self):
         try:
             d = self._collector_show_tags()
         except ex.excError as e:
             print(e, file=sys.stderr)
             return
-        for tag in d:
-            print(tag)
+        return d
 
     def _collector_show_tags(self):
         opts = {}
@@ -408,16 +336,9 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
+    @formatter
     def collector_list_nodes(self):
-        d = self._collector_list_nodes()
-        for node in d:
-            print(node)
-
-    def collector_json_list_nodes(self):
-        d = self._collector_list_nodes()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_list_nodes()
 
     def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
@@ -428,16 +349,9 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
+    @formatter
     def collector_list_services(self):
-        d = self._collector_list_services()
-        for service in d:
-            print(service)
-
-    def collector_json_list_services(self):
-        d = self._collector_list_services()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_list_services()
 
     def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
@@ -448,16 +362,9 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
+    @formatter
     def collector_list_filtersets(self):
-        d = self._collector_list_filtersets()
-        for fset in d:
-            print(fset)
-
-    def collector_json_list_filtersets(self):
-        d = self._collector_list_filtersets()
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
+        return self._collector_list_filtersets()
 
     def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}

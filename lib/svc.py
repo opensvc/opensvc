@@ -46,80 +46,69 @@ actions_translation = {
 }
 
 actions_allow_on_frozen = [
-  'delete',
-  'disable',
-  'edit_config',
-  'enable',
-  'freeze',
-  'frozen',
-  'get',
-  'json_config',
-  'json_status',
-  'json_disklist',
-  'json_devlist',
-  'logs',
-  'print_config',
-  'print_devlist',
-  'print_disklist',
-  'print_config_mtime',
-  'print_resource_status',
-  'print_schedule',
-  'print_status',
-  'push',
-  'push_appinfo',
-  'push_config',
-  'push_service_status',
-  'prstatus',
-  'scheduler',
-  'set',
-  'status',
-  'thaw',
-  'update',
-  'unset',
-  'validate_config',
+  "delete",
+  "disable",
+  "edit_config",
+  "enable",
+  "freeze",
+  "frozen",
+  "get",
+  "json_config",
+  "json_status",
+  "json_disklist",
+  "json_devlist",
+  "logs",
+  "print_config",
+  "print_devlist",
+  "print_disklist",
+  "print_config_mtime",
+  "print_resource_status",
+  "print_schedule",
+  "print_status",
+  "push",
+  "push_appinfo",
+  "push_config",
+  "push_service_status",
+  "prstatus",
+  "scheduler",
+  "set",
+  "status",
+  "thaw",
+  "update",
+  "unset",
+  "validate_config",
 ]
 
 actions_allow_on_cluster = actions_allow_on_frozen + [
-  'boot',
-  'docker',
-  'postsync',
-  'presync',
-  'resource_monitor',
-  'startstandby',
-  'sync_all',
-  'sync_drp',
-  'sync_nodes',
-  'toc',
-  'validate_config',
+  "boot",
+  "docker",
+  "postsync",
+  "presync",
+  "resource_monitor",
+  "startstandby",
+  "sync_all",
+  "sync_drp",
+  "sync_nodes",
+  "toc",
+  "validate_config",
 ]
 
 actions_no_log = [
-  'delete',
-  'edit_config',
-  'get',
-  'group_status',
-  'json_config',
-  'json_devlist',
-  'json_disklist',
-  'json_status',
-  'logs',
-  'push',
-  'push_appinfo',
-  'push_config',
-  'push_service_status',
-  'print_config',
-  'print_devlist',
-  'print_disklist',
-  'print_config_mtime',
-  'print_resource_status',
-  'print_schedule',
-  'print_status',
-  'resource_monitor',
-  'scheduler',
-  'set',
-  'status',
-  'unset',
-  'validate_config',
+  "delete",
+  "edit_config",
+  "get",
+  "group_status",
+  "logs",
+  "push",
+  "push_appinfo",
+  "push_config",
+  "push_service_status",
+  "resource_monitor",
+  "scheduler",
+  "set",
+  "status",
+  "unset",
+  "validate_config",
 ]
 
 actions_no_trigger = [
@@ -127,22 +116,12 @@ actions_no_trigger = [
   "enable",
   "disable",
   "status",
-  'scheduler',
-  'pg_freeze',
-  'pg_thaw',
-  'pg_kill',
-  'logs',
-  'print_schedule',
-  "print_status",
-  'print_resource_status',
-  "print_disklist",
-  "print_devlist",
-  'print_config',
-  'edit_config',
-  "json_disklist",
-  "json_devlist",
-  "json_status",
-  "json_config",
+  "scheduler",
+  "pg_freeze",
+  "pg_thaw",
+  "pg_kill",
+  "logs",
+  "edit_config",
   "push_appinfo",
   "push",
   "group_status",
@@ -153,33 +132,22 @@ actions_no_trigger = [
 ]
 
 actions_no_lock = [
-  'docker',
-  'edit_config',
-  'freeze',
-  'freezestop',
-  'frozen',
-  'get',
-  'json_config',
-  'json_devlist',
-  'json_disklist',
-  'json_status',
-  'logs',
-  'print_config',
-  'print_devlist',
-  'print_disklist',
-  'print_config_mtime',
-  'print_resource_status',
-  'print_schedule',
-  'print_status',
-  'push',
-  'push_appinfo',
-  'push_config',
-  'push_service_status',
-  'scheduler',
-  'status',
-  'thaw',
-  'toc',
-  'validate_config',
+  "docker",
+  "edit_config",
+  "freeze",
+  "freezestop",
+  "frozen",
+  "get",
+  "logs",
+  "push",
+  "push_appinfo",
+  "push_config",
+  "push_service_status",
+  "scheduler",
+  "status",
+  "thaw",
+  "toc",
+  "validate_config",
 ]
 
 disk_types = [
@@ -678,9 +646,7 @@ class Svc(Resource, Scheduler):
             ss.status = rcStatus.STDBY_UP
         return ss.status
 
-    def json_status(self):
-        import json
-        from rcColor import colorize_json
+    def print_status_data(self):
         d = {
               'resources': {},
               'frozen': self.frozen(),
@@ -699,7 +665,7 @@ class Svc(Resource, Scheduler):
 
         for rs in self.get_res_sets(status_types, strict=True):
             for r in rs.resources:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                rid, status, label, log, monitor, disable, optional, encap = r.status_quad(color=False)
                 d['resources'][rid] = {'status': status,
                                        'label': label,
                                        'log': log,
@@ -711,11 +677,9 @@ class Svc(Resource, Scheduler):
         ss = self.group_status()
         for g in ss:
             d[g] = str(ss[g])
-        print(colorize_json(json.dumps(d, indent=4, separators=(',', ': '))))
+        return d
 
-    def json_config(self):
-        import json
-        from rcColor import colorize_json
+    def print_config_data(self):
         svc_config = {}
         tmp = {}
         self.load_config()
@@ -736,7 +700,7 @@ class Svc(Resource, Scheduler):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svc_config[section] = tmpsection
-        print(colorize_json(json.dumps(svc_config, indent=4, separators=(',', ': '))))
+        return svc_config
 
     def logs(self):
         if not os.path.exists(rcEnv.logfile):
@@ -785,7 +749,7 @@ class Svc(Resource, Scheduler):
 
     def print_resource_status(self):
         if len(self.action_rid) != 1:
-            print("only one resource id is allowed", file=sys.stderr)
+            print("action 'print_resource_status' is not allowed on mutiple resources", file=sys.stderr)
             return 1
         for rid in self.action_rid:
             if rid not in self.resources_by_id:
@@ -796,6 +760,8 @@ class Svc(Resource, Scheduler):
         return 0
 
     def print_status(self):
+        if self.options.format is not None:
+            return self.print_status_data()
         """print() each resource status for a service
         """
         from textwrap import wrap
@@ -1478,20 +1444,24 @@ class Svc(Resource, Scheduler):
         return status
 
     def print_disklist(self):
-        print('\n'.join(self.disklist()))
+        if self.options.format is not None:
+            return self.print_disklist_data()
+        l = self.disklist()
+        if len(l) > 0:
+            print('\n'.join(l))
 
     def print_devlist(self):
-        print('\n'.join(self.devlist()))
+        if self.options.format is not None:
+            return self.print_devlist_data()
+        l = self.devlist()
+        if len(l) > 0:
+            print('\n'.join(l))
 
-    def json_disklist(self):
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(list(self.disklist()), indent=4, separators=(',', ': '))))
+    def print_disklist_data(self):
+        return list(self.disklist())
 
-    def json_devlist(self):
-        import json
-        from rcColor import colorize_json
-        print(colorize_json(json.dumps(list(self.devlist()), indent=4, separators=(',', ': '))))
+    def print_devlist_data(self):
+        return list(self.devlist())
 
     def disklist(self):
         if len(self.disks) == 0:
@@ -2322,6 +2292,8 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dds", "sync_verify")
 
     def print_config(self):
+        if self.options.format is not None:
+            return self.print_config_data()
         self.node._print_config(self.cf)
 
     def make_temp_config(self):
@@ -2701,9 +2673,12 @@ class Svc(Resource, Scheduler):
         self.setup_environ(action=action)
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=rids, xtags=xtags)
+        if action.startswith("print_") or \
+           action.startswith("collector") or \
+           action.startswith("json_"):
+            return self.do_print_action(action)
         if action in actions_no_log or \
            action.startswith("compliance") or \
-           action.startswith("collector") or \
            action.startswith("docker") or \
            self.options.dry_run:
             err = self.do_action(action, waitlock=waitlock)
@@ -2711,61 +2686,135 @@ class Svc(Resource, Scheduler):
             err = self.do_logged_action(action, waitlock=waitlock)
         return err
 
-    def do_cluster_action(self, action, waitlock=60):
+    def do_print_action(self, action):
+        _action = action + ""
+        if action.startswith("json_"):
+            action = "print_"+action[5:]
+            self.node.options.format = "json"
+            self.options.format = "json"
+
+        if "_json_" in action:
+            action = action.replace("_json_", "_")
+            self.node.options.format = "json"
+            self.options.format = "json"
+
+        if self.cluster and self.options.format != "json":
+            raise ex.excError("only the json output format is allowed with --cluster")
+        if action.startswith("collector_"):
+            from collector import Collector
+            o = Collector(self.options, self.node, self.svcname)
+            if self.options.format is not None:
+                action = '_' + action
+            fn = getattr(o, action)
+        else:
+            fn = getattr(self, action)
+
+        if not hasattr(fn, "__call__"):
+            raise ex.excError("%s is not callable" % action)
+
+        psinfo = self.do_cluster_action(_action, collect=True, action_mode=False)
+
+        try:
+            data = fn()
+        except Exception as e:
+            data = {"error": str(e)}
+
+        if psinfo:
+            # --cluster is set and we have remote responses
+            res = self.join_cluster_action(**psinfo)
+            for n in res:
+                res[n] = res[n][0]
+                if self.options.format == "json":
+                    try:
+                        res[n] = json.loads(res[n])
+                    except Exception as e:
+                        res[n] = {"error": str(e)}
+            res[rcEnv.nodename] = data
+            return res
+        elif self.cluster:
+            # no remote though --cluster is set
+            res = {}
+            res[rcEnv.nodename] = data
+            return res
+
+        return data
+
+    def do_cluster_action(self, action, waitlock=60, collect=False, action_mode=True):
         if not self.cluster:
-            return
-        if not "flex" in self.clustertype:
             return
         if action in (
             "edit_config",
-            "print_config",
-            "json_config",
             "validate_config",
         ) or "sync" in action:
             return
-        if rcEnv.nodename == self.drp_flex_primary:
-            peers = set(self.drpnodes) - set([rcEnv.nodename])
-        elif rcEnv.nodename == self.flex_primary:
-            peers = set(self.nodes) - set([rcEnv.nodename])
+
+        if action_mode:
+            if not "flex" in self.clustertype:
+                return
+
+        if action_mode:
+            if rcEnv.nodename == self.drp_flex_primary:
+                peers = set(self.drpnodes) - set([rcEnv.nodename])
+            elif rcEnv.nodename == self.flex_primary:
+                peers = set(self.nodes) - set([rcEnv.nodename])
+            else:
+                return
         else:
-            return
+            peers = set(self.nodes) | set(self.drpnodes)
+            peers -= set([rcEnv.nodename])
 
         a = [e for e in sys.argv[1:] if e != "--cluster"]
         if hasattr(self, "docker_argv") and len(self.docker_argv) > 0:
             a += self.docker_argv
 
-        def wrapper(**kwargs):
-            out, err, ret = self.remote_action(**kwargs)
-            if len(out):
-                print(out)
-            if len(err):
-                print(err)
+        if collect:
+            def wrapper(q, **kwargs):
+                out, err, ret = self.remote_action(**kwargs)
+                q.put([out, err, ret])
+        else:
+            def wrapper(q, **kwargs):
+                out, err, ret = self.remote_action(**kwargs)
+                if len(out):
+                    print(out)
+                if len(err):
+                    print(err)
 
         if rcEnv.sysname == "Windows":
             mp = False
         else:
             try:
-                from multiprocessing import Process
+                from multiprocessing import Process, Queue
                 mp = True
+                results = None
+                ps = {}
+                queues = {}
             except:
                 mp = False
+                results = {}
+                ps = None
+                queues = None
 
-        ps = {}
         for n in peers:
             kwargs = {"node": n, "action": " ".join(a), "waitlock": waitlock, "verbose": False, "sync": True}
             if mp:
-                p = Process(target=wrapper, args=[], kwargs=kwargs)
+                queues[n] = Queue()
+                p = Process(target=wrapper, args=(queues[n],), kwargs=kwargs)
                 p.start()
                 ps[n] = p
             else:
-                wrapper(**kwargs)
-        return ps
+                results[n] = wrapper(**kwargs)
+        return {"ps": ps, "queues": queues, "results": results}
 
-    def join_cluster_action(self, ps):
-        if ps is None:
-            return
+    def join_cluster_action(self, ps=None, queues=None, results=None):
+        if ps is None or queues is None:
+            return results
+        results = {}
         for n, p in ps.items():
             p.join()
+        for n, q in queues.items():
+            if not q.empty():
+                results[n] = q.get()
+        return results
 
     def do_action(self, action, waitlock=60):
         """Trigger action
@@ -2778,16 +2827,12 @@ class Svc(Resource, Scheduler):
             self.log.error(str(e))
             return 1
 
-        ps = self.do_cluster_action(action, waitlock=waitlock)
+        psinfo = self.do_cluster_action(action, waitlock=waitlock)
 
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
                 o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname)
-                getattr(o, action)()
-            elif action.startswith("collector_"):
-                from collector import Collector
-                o = Collector(self.options, self.node, self.svcname)
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action
@@ -2842,7 +2887,8 @@ class Svc(Resource, Scheduler):
                         continue
                     r.force_status(rcStatus.UP)
 
-        self.join_cluster_action(ps)
+        if psinfo:
+            self.join_cluster_action(**psinfo)
 
         return err
 

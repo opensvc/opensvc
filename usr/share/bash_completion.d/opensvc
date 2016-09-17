@@ -40,7 +40,7 @@ _svcmgr()
 		local opts="--color"
 		;;
             collector)
-		local opts="json ack alerts checks events status list show asset networks disks"
+		local opts="ack alerts checks events status list show asset networks disks"
 		;;
 	    compliance)
 		local opts="check fixable fix show list attach detach env"
@@ -63,7 +63,7 @@ _svcmgr()
 	    resource)
 		local opts="monitor"
 		;;
-	    print|json)
+	    print)
 		local opts="disklist status resource schedule"
 		;;
 	    edit)
@@ -79,7 +79,7 @@ _svcmgr()
         b="${COMP_WORDS[COMP_CWORD-1]}"
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
-            "collector json")
+            "collector")
 		local opts="alerts checks events status list show asset networks disks"
 		;;
             "collector ack")
@@ -144,15 +144,6 @@ _svcmgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         d="${COMP_WORDS[COMP_CWORD-3]}"
         case "${d} ${c} ${b}" in
-            "collector json list")
-		local opts="actions"
-		;;
-            "collector json show")
-		local opts="actions"
-		;;
-            "collector json events")
-		local opts="--begin --end"
-		;;
             "collector ack action")
 		local opts="--comment --author --duration"
 		;;
@@ -184,22 +175,6 @@ _svcmgr()
 		local opts="--rid"
 		;;
         esac
-    elif [ $COMP_CWORD -eq 5 ]; then
-        b="${COMP_WORDS[COMP_CWORD-1]}"
-        c="${COMP_WORDS[COMP_CWORD-2]}"
-        d="${COMP_WORDS[COMP_CWORD-3]}"
-        e="${COMP_WORDS[COMP_CWORD-4]}"
-        case "${e} ${d} ${c} ${b}" in
-            "collector json ack action")
-		local opts="--comment --author --duration"
-		;;
-            "collector json list actions")
-		local opts="--begin --end"
-		;;
-            "collector json show action")
-		local opts="--id --begin --end"
-		;;
-	esac
      fi
 
      COMPREPLY=($(compgen -W "${opts}" -- ${a}))  
@@ -241,7 +216,7 @@ _nodemgr()
 		local opts="actions"
 		;;
             collector)
-		local opts="json ack alerts checks events status list show asset networks disks cli"
+		local opts="ack alerts checks events status list show asset networks disks cli"
 		;;
 	    compliance)
 		local opts="check fixable fix show list attach detach env"
@@ -280,9 +255,6 @@ _nodemgr()
         b="${COMP_WORDS[COMP_CWORD-1]}"
         c="${COMP_WORDS[COMP_CWORD-2]}"
         case "${c} ${b}" in
-            "collector json")
-		local opts="alerts checks events status list show asset networks disks"
-		;;
             "collector ack")
 		local opts="action"
 		;;
@@ -351,15 +323,6 @@ _nodemgr()
         c="${COMP_WORDS[COMP_CWORD-2]}"
         d="${COMP_WORDS[COMP_CWORD-3]}"
         case "${d} ${c} ${b}" in
-            "collector json list")
-                local opts="actions"
-                ;;
-            "collector json show")
-                local opts="actions"
-                ;;
-            "collector json events")
-                local opts="--begin --end"
-                ;;
             "collector ack action")
 		local opts="--comment --author --duration"
 		;;
@@ -393,22 +356,6 @@ _nodemgr()
             "compliance list ruleset")
 		local opts="--ruleset"
 		;;
-        esac
-    elif [ $COMP_CWORD -eq 5 ]; then
-        b="${COMP_WORDS[COMP_CWORD-1]}"
-        c="${COMP_WORDS[COMP_CWORD-2]}"
-        d="${COMP_WORDS[COMP_CWORD-3]}"
-        e="${COMP_WORDS[COMP_CWORD-4]}"
-        case "${e} ${d} ${c} ${b}" in
-            "collector json ack action")
-                local opts="--comment --author --duration"
-                ;;
-            "collector json list actions")
-                local opts="--begin --end"
-                ;;
-            "collector json show action")
-                local opts="--id --begin --end"
-                ;;
         esac
     fi
 

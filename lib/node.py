@@ -17,6 +17,7 @@ import rcExceptions as ex
 from subprocess import *
 from rcScheduler import *
 from rcConfigParser import RawConfigParser
+from rcColor import formatter
 
 if sys.version_info[0] >= 3:
     from urllib.request import Request, urlopen
@@ -37,6 +38,22 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+deprecated_actions = [
+  "collector_json_asset",
+  "collector_json_networks",
+  "collector_json_list_unavailability_ack",
+  "collector_json_list_actions",
+  "collector_json_show_actions",
+  "collector_json_status",
+  "collector_json_checks",
+  "collector_json_disks",
+  "collector_json_alerts",
+  "collector_json_events",
+  "collector_json_list_nodes",
+  "collector_json_list_services",
+  "collector_json_list_filtersets",
+]
+
 deprecated_keywords = {
   "node.host_mode": "env",
   "node.environnement": "asset_env",
@@ -51,15 +68,16 @@ reverse_deprecated_keywords = {
 actions_no_parallel = [
   'edit_config',
   'get',
-  'json_config',
-  'json_devlist',
-  'json_disklist',
-  'json_status',
   'print_config',
   'print_resource_status',
   'print_schedule',
   "print_status",
 ]
+
+actions_no_multiple_services = [
+  "print_resource_status",
+]
+
 
 class Options(object):
     def __init__(self):
@@ -205,19 +223,6 @@ class Node(Svc, Freezer, Scheduler):
             'collector_list_filtersets': 'show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>',
             'collector_asset': 'display asset information known to the collector',
             'collector_networks': 'display network information known to the collector for each node ip',
-            'collector_json_asset': 'display asset information known to the collector, output in JSON',
-            'collector_json_networks': 'display network information known to the collector for each node ip, output in JSON',
-            'collector_json_list_unavailability_ack': 'same as "collector list unavailability ack", output in JSON',
-            'collector_json_list_actions': 'same as "collector list actions", output in JSON',
-            'collector_json_show_actions': 'same as "collector show actions", output in JSON',
-            'collector_json_status': 'same as "collector status", output in JSON',
-            'collector_json_checks': 'same as "collector checks", output in JSON',
-            'collector_json_disks': 'same as "collector disks", output in JSON',
-            'collector_json_alerts': 'same as "collector alerts", output in JSON',
-            'collector_json_events': 'same as "collector events", output in JSON',
-            'collector_json_list_nodes': 'same as "collector list nodes", output in JSON',
-            'collector_json_list_services': 'same as "collector list services", output in JSON',
-            'collector_json_list_filtersets': 'same as "collector list filtersets", output in JSON',
             'collector_tag': 'set a node tag (pointed by --tag)',
             'collector_untag': 'unset a node tag (pointed by --tag)',
             'collector_show_tags': 'list all node tags',
@@ -294,6 +299,7 @@ class Node(Svc, Freezer, Scheduler):
         a = []
         for s in self.action_desc:
             a += self.action_desc[s].keys()
+        a += deprecated_actions
         return a
 
     def build_services(self, *args, **kwargs):
@@ -495,6 +501,12 @@ class Node(Svc, Freezer, Scheduler):
         return self
 
     def action(self, a):
+        if "_json_" in a:
+            self.options.format = "json"
+            a = a.replace("_json_", "_")
+        if a.startswith("json_"):
+            self.options.format = "json"
+            a = a[:5]
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
@@ -1425,8 +1437,29 @@ class Node(Svc, Freezer, Scheduler):
             return True
         return False
 
+    def action_need_aggregate(self, action):
+        if action.startswith("print_"):
+            return True
+        if action.startswith("json_"):
+            return True
+        if action.startswith("collector_"):
+            return True
+        if "_json_" in action:
+            return True
+        return False
+
+    @formatter
+    def print_aggregate(self, data):
+        return data
+
     def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
         err = 0
+        outs = {}
+        need_aggregate = self.action_need_aggregate(action)
+
+        if action in actions_no_multiple_services and len(self.svcs) > 1:
+            print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
+            return 1
         if self.can_parallel(action):
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
@@ -1451,7 +1484,12 @@ class Node(Svc, Freezer, Scheduler):
                 p[s.svcname].start()
             else:
                 try:
-                    err += s.action(action, rid=rid, tags=tags, subsets=subsets, waitlock=self.options.waitlock)
+                    ret = s.action(action, rid=rid, tags=tags, subsets=subsets, waitlock=self.options.waitlock)
+                    if need_aggregate:
+                        if ret is not None:
+                            outs[s.svcname] = ret
+                    else:
+                        err += ret
                 except s.exMonitorAction:
                     s.action('toc')
                 except ex.excSignal:
@@ -1467,6 +1505,15 @@ class Node(Svc, Freezer, Scheduler):
                     # r is negative when p[svcname] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += r
+
+        if need_aggregate:
+            if len(self.svcs) == 1:
+                svcname = self.svcs[0].svcname
+                if svcname not in outs:
+                    return
+                return self.print_aggregate(outs[self.svcs[0].svcname])
+            else:
+                return self.print_aggregate(outs)
 
         return err
 

@@ -431,7 +431,7 @@ class Resource(object):
                 s += _s
         return s
 
-    def status_quad(self):
+    def status_quad(self, color=True):
         r = self.status(verbose=True)
         if 'encap' in self.tags:
             encap = True
@@ -440,7 +440,7 @@ class Resource(object):
         return (self.rid,
                 rcStatus.status_str(r),
                 self.label,
-                self.status_logs_str(color=True),
+                self.status_logs_str(color=color),
                 self.monitor,
                 self.disabled,
                 self.optional,

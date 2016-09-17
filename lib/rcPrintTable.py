@@ -1,4 +1,6 @@
+from __future__ import print_function
 from textwrap import wrap
+from rcColor import color, colorize
 import sys
 
 if sys.version_info[0] >= 3:
@@ -7,7 +9,7 @@ if sys.version_info[0] >= 3:
 def parse_data(data):
     lines = data.splitlines()
     if len(lines) < 2:
-        print("no data")
+        return []
     labels = list(map(lambda x: x.split('.')[-1], lines[0].split(',')))
     lines = lines[1:]
     rows = []
@@ -56,24 +58,46 @@ def convert(s):
         pass
     return s
 
-def print_table(data, width=20, table=False):
-    if table:
-        from tabulate import tabulate
-        try:
-            print(tabulate(data, headers="firstrow", tablefmt="simple"))
-        except UnicodeEncodeError:
-            print(tabulate(data, headers="firstrow", tablefmt="simple").encode("utf-8"))
-        return
+def validate_format(data):
     if not isinstance(data, list):
         data = parse_data(data)
+
+    if len(data) == 0:
+        raise Exception
+
+    if not isinstance(data[0], list): 
+        for s in data:
+            print(s)
+        raise Exception
+
     if len(data) < 2:
-        print("no data")
+        raise Exception
+
+def print_table_tabulate(data, width=20):
+    try:
+        validate_format(data)
+    except Exception as e:
+        return
+
+    from tabulate import tabulate
+    try:
+        print(tabulate(data, headers="firstrow", tablefmt="simple"))
+    except UnicodeEncodeError:
+        print(tabulate(data, headers="firstrow", tablefmt="simple").encode("utf-8"))
+
+def print_table_default(data):
+    try:
+        validate_format(data)
+    except Exception as e:
+        return
+
     labels = data[0]
-    max_label_len = reduce(lambda x,y: max(x,len(y)), labels, 0)
+    max_label_len = reduce(lambda x,y: max(x,len(y)), labels, 0)+1
     data = data[1:]
     subsequent_indent = ""
-    for i in range(max_label_len+4):
+    for i in range(max_label_len+3):
         subsequent_indent += " "
+    fmt = " %-"+str(max_label_len)+"s "
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
@@ -83,6 +107,17 @@ def print_table(data, width=20, table=False):
                        width=78
                   ))
             try:
-                print(" %s = %s" % (label.ljust(max_label_len), val))
+                print(colorize(fmt % (label+":"), color.LIGHTBLUE), val)
             except UnicodeEncodeError:
-                print(" %s = %s" % (label.ljust(max_label_len), val.encode("utf-8")))
+                print(colorize(fmt % (label+":"), color.LIGHTBLUE), val.encode("utf-8"))
+
+def print_table_csv(data):
+    try:
+        validate_format(data)
+    except Exception as e:
+        print(e)
+        return
+
+    for d in data:
+        print(";".join(map(lambda x: repr(x), d)))
+

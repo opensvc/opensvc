@@ -9,8 +9,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner, is_string
 from subprocess import *
-from rcPrintTable import print_table
-from rcColor import color, colorize
+from rcColor import color, colorize, formatter
 from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
@@ -737,7 +736,11 @@ class Compliance(object):
         if err:
             raise ex.excError()
 
+    @formatter
     def compliance_show_status(self):
+        return self._compliance_show_status()
+
+    def _compliance_show_status(self):
         args = ['comp_show_status']
         if self.svcname is None:
            args.append('')
@@ -749,7 +752,7 @@ class Compliance(object):
         l = self.collector.call(*args)
         if l is None:
             return
-        print_table(l, width=50, table=self.options.table)
+        return l
 
     def compliance_list_ruleset(self):
         if not hasattr(self.options, 'ruleset') or \
