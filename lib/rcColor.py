@@ -1,4 +1,5 @@
 import os
+import sys
 import platform
 import rcExceptions as ex
 
@@ -58,7 +59,14 @@ def colorize_json(s):
 
 def format_json(d):
     import json
-    print(colorize_json(json.dumps(d, ensure_ascii=False, indent=4, separators=(',', ': '))))
+    kwargs = {
+      "ensure_ascii": False,
+      "indent": 4,
+      "separators": (',', ': '),
+    }
+    if sys.version_info[0] < 3:
+        kwargs["encoding"] = "utf8"
+    print(colorize_json(json.dumps(d, **kwargs)))
 
 def format_table(d):
     from rcPrintTable import print_table_tabulate
