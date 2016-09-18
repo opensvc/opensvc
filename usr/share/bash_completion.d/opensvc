@@ -1,4 +1,4 @@
-svcs=$(ls /opt/opensvc/etc/*env 2>/dev/null|xargs -n1 basename 2>/dev/null|sed -e "s/.env//")
+svcs=$(ls /opt/opensvc/etc/*conf 2>/dev/null|xargs -n1 basename 2>/dev/null|sed -e "s/.conf//")
 svcmgr_opts="--force --debug --waitlock --rid --tags --service"
 nodemgr_opts="--force --debug --cron"
 
@@ -14,12 +14,12 @@ _svcmgr()
     #
     case "${prev}" in
 	--tags)
-	    local tags=$(grep -h "tag" /opt/opensvc/etc/*env|cut -d= -f2)
+	    local tags=$(grep -h "tag" /opt/opensvc/etc/*conf|cut -d= -f2)
 	    COMPREPLY=( $(compgen -W "${tags}" -- ${a}) )
             return 0
             ;;
         --rid)
-	    local rid=$(grep -h "\[.*\]" /opt/opensvc/etc/*env|sed -e "s/\[//"|sed -e "s/\]//")
+	    local rid=$(grep -h "\[.*\]" /opt/opensvc/etc/*conf|sed -e "s/\[//"|sed -e "s/\]//")
 	    COMPREPLY=( $(compgen -W "${rid}" -- ${a}) )
             return 0
             ;;
