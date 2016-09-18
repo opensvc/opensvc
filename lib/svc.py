@@ -2159,7 +2159,7 @@ class Svc(Resource, Scheduler):
 
         self.need_postsync = set([])
 
-    def remote_action(self, node, action, waitlock=60, sync=False, verbose=True):
+    def remote_action(self, node, action, waitlock=60, sync=False, verbose=True, action_mode=True):
         if self.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
@@ -2168,7 +2168,7 @@ class Svc(Resource, Scheduler):
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
         if self.options.debug:
             rcmd += ['--debug']
-        if self.cluster:
+        if self.cluster and action_mode:
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
@@ -2795,7 +2795,14 @@ class Svc(Resource, Scheduler):
                 queues = None
 
         for n in peers:
-            kwargs = {"node": n, "action": " ".join(a), "waitlock": waitlock, "verbose": False, "sync": True}
+            kwargs = {
+              "node": n,
+              "action": " ".join(a),
+              "waitlock": waitlock,
+              "verbose": False,
+              "sync": True,
+              "action_mode": action_mode,
+            }
             if mp:
                 queues[n] = Queue()
                 p = Process(target=wrapper, args=(queues[n],), kwargs=kwargs)
