@@ -294,6 +294,7 @@ class Svc(Resource, Scheduler):
         self.action_start_date = datetime.datetime.now()
         self.monitor_action = None
         self.group_status_cache = None
+        self.abort_start_done = False
         self.config_defaults = {
           'push_schedule': '00:00-06:00@361',
           'sync_schedule': '04:00-06:00@121',
@@ -1855,6 +1856,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
 
     def abort_start(self):
+        self.abort_start_done = True
         if rcEnv.sysname == "Windows":
             mp = False
         else:

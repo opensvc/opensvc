@@ -119,7 +119,6 @@ class Ip(Res.Resource):
         qcall(cmd)
 
     def abort_start(self):
-        self.abort_start_done = True
         if 'nonrouted' in self.tags or 'noaction' in self.tags:
             return False
         if not hasattr(self, "addr"):
@@ -167,7 +166,7 @@ class Ip(Res.Resource):
             else:
                 self.log.error("interface %s is not up. Cannot stack over it." % self.ipDev)
                 raise ex.IpDevDown(self.ipDev)
-        if not hasattr(self, 'abort_start_done') and self.check_ping():
+        if not self.svc.abort_start_done and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
         return
