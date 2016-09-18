@@ -33,7 +33,7 @@ def ansi_colorize(s, c=None):
     global use_color
     if c is None:
         return s
-    if use_color == "never" or (use_color == "auto" and not os.isatty(1)):
+    if use_color in ("never", "no") or (use_color == "auto" and not os.isatty(1)):
         return s
     return c + s + color.END
 

@@ -28,7 +28,7 @@ parser = optparse.OptionParser(version=__ver, usage=__usage + n.format_desc())
 parser.add_option("--refresh-api", default=False, action="store_true", dest="refresh_api",
                   help="The OpenSVC collector api url")
 parser.add_option("--color", default="auto", action="store", dest="color",
-                  help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
+                  help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 parser.add_option("--verbose", default=False, action="store_true", dest="verbose",
                   help="add more information to some print commands: +next in 'print schedule'")
 parser.add_option("--debug", default=False,

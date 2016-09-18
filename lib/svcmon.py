@@ -316,7 +316,7 @@ parser.add_option("--debug", default=False, action="store_true", dest="debug",
 parser.add_option("-c", "--cluster", default=False, action="store_true", dest="cluster",
                   help="fetch and display cluster-wide service status from the collector.")
 parser.add_option("--color", default="auto", action="store", dest="color",
-                  help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
+                  help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 
 (options, args) = parser.parse_args()
 rcColor.use_color = options.color

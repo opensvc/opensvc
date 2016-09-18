@@ -103,7 +103,7 @@ __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
 parser.add_option("--color", default="auto", action="store", dest="color",
-                  help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
+                  help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 parser.add_option("--debug", default=False, action="store_true", dest="debug",
                   help="debug mode")
 parser.add_option("--recover", default=False, action="store_true", dest="recover",

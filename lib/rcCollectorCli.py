@@ -2328,7 +2328,7 @@ class Cli(object):
                           help="The file the collector credentials and access url are read from, or written to if empty. Defaults to %s" % conf_f)
         parser.add_option("--color", default="auto",
                           action="store", dest="color",
-                          help="colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize")
+                          help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
     
         self.options, self.args = parser.parse_args()
 
