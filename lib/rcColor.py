@@ -49,7 +49,7 @@ else:
 def colorize_json(s):
     import re
     from rcStatus import colorize_status
-    s = re.sub(r'(")(error|ok|err|up|down|warn|n/a)(")', lambda m: m.group(1)+colorize_status(m.group(2), lpad=0)+m.group(3), s)
+    s = re.sub(r'(")(error|ok|err|up|down|warn|n/a|stdby up|stdby down)(")', lambda m: m.group(1)+colorize_status(m.group(2), lpad=0)+m.group(3), s)
     s = re.sub(r'((?!"DEFAULT":)("[\w: ,@-]+":))', colorize(r'\1', color.LIGHTBLUE), s)
     s = re.sub(r'("DEFAULT":)( {)', colorize(r'\1', color.BROWN)+r'\2', s)
     s = re.sub(r'("[\w:-]+#[\w:-]+":)( {)', colorize(r'\1', color.BROWN)+r'\2', s)
