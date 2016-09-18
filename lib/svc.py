@@ -2760,7 +2760,10 @@ class Svc(Resource, Scheduler):
             else:
                 return
         else:
-            peers = set(self.nodes) | set(self.drpnodes)
+            if rcEnv.nodename in nodes:
+                peers = set(self.nodes) | set(self.drpnodes)
+            else:
+                peers = set(self.drpnodes)
             peers -= set([rcEnv.nodename])
 
         a = [e for e in sys.argv[1:] if e != "--cluster"]
