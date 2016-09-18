@@ -2748,18 +2748,17 @@ class Svc(Resource, Scheduler):
         ) or "sync" in action:
             return
 
-        if action_mode:
-            if not "flex" in self.clustertype:
-                return
+        if action_mode and not "flex" in self.clustertype:
+            return
 
-        if action_mode:
+        if "flex" in self.clustertype:
             if rcEnv.nodename == self.drp_flex_primary:
                 peers = set(self.drpnodes) - set([rcEnv.nodename])
             elif rcEnv.nodename == self.flex_primary:
                 peers = set(self.nodes) - set([rcEnv.nodename])
             else:
                 return
-        else:
+        elif not action_mode:
             if rcEnv.nodename in self.nodes:
                 peers = set(self.nodes) | set(self.drpnodes)
             else:
