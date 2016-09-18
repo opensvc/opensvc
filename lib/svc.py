@@ -2760,7 +2760,7 @@ class Svc(Resource, Scheduler):
             else:
                 return
         else:
-            if rcEnv.nodename in nodes:
+            if rcEnv.nodename in self.nodes:
                 peers = set(self.nodes) | set(self.drpnodes)
             else:
                 peers = set(self.drpnodes)
