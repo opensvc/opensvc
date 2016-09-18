@@ -72,9 +72,12 @@ class Dataset(object):
         else:
             return "Failed to list info for dataset: %s" % (self.name)
 
-    def destroy(self):
+    def destroy(self, recursive=False):
         "destroy dataset"
-        cmd = ['zfs', 'destroy', self.name ]
+        cmd = ['zfs', 'destroy']
+        if recursive:
+            cmd.append("-r")
+        cmd.append(self.name)
         (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return True
@@ -139,7 +142,7 @@ class Dataset(object):
                             err_to_warn=err_to_warn,
                             err_to_info=err_to_info)
 
-    def snapshot(self, snapname=None):
+    def snapshot(self, snapname=None, recursive=False):
         """snapshot dataset
         return snapshot dataset object
         Return False if failure
@@ -147,7 +150,10 @@ class Dataset(object):
         if snapname is None:
             raise(rcExceptions.excBug("snapname should be defined"))
         snapdataset = self.name + "@" + snapname
-        cmd = ['zfs', 'snapshot', snapdataset ]
+        cmd = ['zfs', 'snapshot']
+        if recursive:
+            cmd.append("-r")
+        cmd.append(snapdataset)
         (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return Dataset(snapdataset)

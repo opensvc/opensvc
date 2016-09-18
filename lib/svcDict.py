@@ -1277,7 +1277,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "btrfssnap", "rados", "s3"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -1366,6 +1366,64 @@ class KeywordSyncS3FullSchedule(Keyword):
                   example="@1441 sun",
                   default="@1441 sun",
                   text="The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
+                )
+
+class KeywordSyncZfsSnapRecursive(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="recursive",
+                  rtype="zfssnap",
+                  order=10,
+                  at=True,
+                  required=False,
+                  example="true",
+                  default=True,
+                  text="Set to true to snap recursively the datasets."
+                )
+
+class KeywordSyncZfsSnapName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="name",
+                  rtype="zfssnap",
+                  order=10,
+                  at=True,
+                  required=False,
+                  example="weekly",
+                  text="A name included in the snapshot name to avoid retention conflicts between multiple zfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
+                )
+
+class KeywordSyncZfsSnapDataset(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="dataset",
+                  rtype="zfssnap",
+                  order=10,
+                  at=True,
+                  required=True,
+                  example="svc1fs/data svc1fs/log",
+                  text="A whitespace separated list of datasets to snapshot."
+                )
+
+class KeywordSyncZfsSnapKeep(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="keep",
+                  rtype="zfssnap",
+                  order=10,
+                  at=True,
+                  required=True,
+                  default=3,
+                  example="3",
+                  text="The maximum number of snapshots to retain."
                 )
 
 class KeywordSyncBtrfsSnapName(Keyword):
@@ -3744,6 +3802,10 @@ class KeyDict(KeywordStore):
         self += KeywordSyncBtrfsSnapName()
         self += KeywordSyncBtrfsSnapSubvol()
         self += KeywordSyncBtrfsSnapKeep()
+        self += KeywordSyncZfsSnapName()
+        self += KeywordSyncZfsSnapRecursive()
+        self += KeywordSyncZfsSnapDataset()
+        self += KeywordSyncZfsSnapKeep()
         self += KeywordSyncS3Src()
         self += KeywordSyncS3Options()
         self += KeywordSyncS3Bucket()

@@ -2273,6 +2273,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "sync_update")
         self.sub_set_action("sync.dds", "sync_update")
         self.sub_set_action("sync.btrfssnap", "sync_update")
+        self.sub_set_action("sync.zfssnap", "sync_update")
         self.sub_set_action("sync.s3", "sync_update")
 
     def sync_full(self):

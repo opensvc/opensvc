@@ -2230,6 +2230,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('necismsnap', svc, conf)
     add_syncs_resources('btrfssnap', svc, conf)
+    add_syncs_resources('zfssnap', svc, conf)
     add_syncs_resources('s3', svc, conf)
     add_syncs_resources('dcssnap', svc, conf)
     add_syncs_resources('dcsckpt', svc, conf)
@@ -2501,6 +2502,41 @@ def add_syncs_s3(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
+def add_syncs_zfssnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['keep'] = conf_get_int_scope(svc, conf, s, 'keep')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['recursive'] = conf_get_boolean_scope(svc, conf, s, 'recursive')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['dataset'] = conf_get_string_scope(svc, conf, s, 'dataset').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have dataset set" % s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    sc = __import__('resSyncZfsSnap')
+    r = sc.syncZfsSnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
 def add_syncs_btrfssnap(svc, conf, s):
     kwargs = {}
 
@@ -2517,7 +2553,7 @@ def add_syncs_btrfssnap(svc, conf, s):
     try:
         kwargs['subvol'] = conf_get_string_scope(svc, conf, s, 'subvol').split()
     except ex.OptNotFound:
-        svc.log.error("config file section %s must have devs set" % s)
+        svc.log.error("config file section %s must have subvol set" % s)
         return
 
     kwargs['rid'] = s
