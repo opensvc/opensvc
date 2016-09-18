@@ -418,7 +418,10 @@ class Node(Svc, Freezer, Scheduler):
         return config
 
     def load_config(self):
-        self.config = self.read_cf(rcEnv.nodeconf, self.config_defaults)
+        try:
+            self.config = self.read_cf(rcEnv.nodeconf, self.config_defaults)
+        except:
+            self.config = None
 
     def load_auth_config(self):
         if self.auth_config is not None:
