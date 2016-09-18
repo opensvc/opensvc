@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-09\-17
+.TH SVCMGR 1 2016\-09\-18
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -399,7 +399,7 @@ show program's version number and exit
 show this help message and exit
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always=always colorize, never=never colorize
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
 .B --debug
 debug mode
@@ -532,6 +532,21 @@ a sql like filtering expression. leading and trailing wildcards are automaticall
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B --config=PARAM_CONFIG
+the configuration file to use when installing a service
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)
