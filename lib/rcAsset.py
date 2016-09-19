@@ -757,7 +757,7 @@ class Asset(object):
         self.data['cpu_model'] = self.get_cpu_model()
         self.data['serial'] = self.get_serial()
         self.data['model'] = self.get_model()
-        self.data['env'] = self.get_node_env()
+        self.data['node_env'] = self.get_node_env()
         self.data['enclosure'] = self.get_enclosure()
         self.data['listener_port'] = self.get_listener_port()
         connect_to = self.get_connect_to()
