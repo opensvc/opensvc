@@ -10,6 +10,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string
+from rcColor import formatter
 
 print_sched_fmt = ""
 sched_fmt = "%s: %s"
@@ -108,6 +109,7 @@ class SchedOpts(object):
 
 class Scheduler(object):
     def __init__(self):
+        self.sched_log_shut = False
         self.calendar_names = {
           "jan": 1,
           "feb": 2,
@@ -149,6 +151,8 @@ class Scheduler(object):
         }
 
     def sched_log(self, task, msg, level):
+        if self.sched_log_shut:
+            return
         try:
             task = ".".join(task.split(".")[1:])
         except:
@@ -157,6 +161,7 @@ class Scheduler(object):
         getattr(log, level)(sched_fmt % (task, msg))
 
     def get_next_schedule(self, action, _max=14400):
+        self.sched_log_shut = True
         now = datetime.datetime.now()
         cron = self.options.cron
         self.options.cron = True
@@ -875,28 +880,43 @@ class Scheduler(object):
 
         return False
 
+    @formatter
     def print_schedule(self):
+        if self.options.format is None:
+            self.print_schedule_default()
+            return
+        return self.print_schedule_data()
+
+    def print_schedule_default(self):
         global print_sched_fmt
         if self.options.verbose:
-            print_sched_fmt = "%-21s  %-21s  %-19s  %-24s  %s"
-            print(print_sched_fmt % ("action", "last run", "next run", "config parameter", "schedule definition"))
-            print(print_sched_fmt % ("------", "--------", "--------", "----------------", "-------------------"))
+            print_sched_fmt = "%(action)-21s  %(last_run)-21s  %(next_run)-19s  %(config_parameter)-24s  %(schedule_definition)s"
+            print("action                 last run               next run             config parameter          schedule definition")
+            print("------                 --------               --------             ----------------          -------------------")
         else:
-            print_sched_fmt = "%-21s  %-21s  %-24s  %s"
-            print(print_sched_fmt % ("action", "last run", "config parameter", "schedule definition"))
-            print(print_sched_fmt % ("------", "--------", "----------------", "-------------------"))
-        for a in sorted(self.scheduler_actions):
-            self._print_schedule(a, verbose=self.options.verbose)
+            print_sched_fmt = "%(action)-21s  %(last_run)-21s  %(config_parameter)-24s  %(schedule_definition)s"
+            print("action                 last run               config parameter          schedule definition")
+            print("------                 --------               ----------------          -------------------")
+        for d in self.print_schedule_data():
+            print(print_sched_fmt % d)
 
-    def _print_schedule(self, a, verbose=False):
+    def print_schedule_data(self):
+        data = []
+        for a in sorted(self.scheduler_actions):
+            data += self._print_schedule_data(a)
+        return data
+
+    def _print_schedule_data(self, a):
+        data = []
         if type(self.scheduler_actions[a]) == list:
             for so in self.scheduler_actions[a]:
-                 self.__print_schedule(a, so, verbose=verbose)
+                 data += [self.__print_schedule_data(a, so)]
         else:
             so = self.scheduler_actions[a]
-            self.__print_schedule(a, so, verbose=verbose)
+            data += [self.__print_schedule_data(a, so)]
+        return data
 
-    def __print_schedule(self, a, so, verbose=False):
+    def __print_schedule_data(self, a, so):
         section = so.section
         schedule_option = so.schedule_option
         fname = so.fname
@@ -923,15 +943,15 @@ class Scheduler(object):
         else:
             param = schedule_option
         param = '.'.join((section, param))
-        if verbose:
+        if self.options.verbose:
             d, _max = self.get_next_schedule(a)
             if d:
                 next_s = d.strftime("%Y-%m-%d %H:%M")
             else:
                 next_s = "-"
-            print(print_sched_fmt % (a, last_s, next_s, param, schedule_s))
+            return dict(action=a, last_run=last_s, next_run=next_s, config_parameter=param, schedule_definition=schedule_s)
         else:
-            print(print_sched_fmt % (a, last_s, param, schedule_s))
+            return dict(action=a, last_run=last_s, config_parameter=param, schedule_definition=schedule_s)
 
     def str_to_datetime(self, s):
         d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")
