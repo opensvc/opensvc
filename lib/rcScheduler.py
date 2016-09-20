@@ -880,12 +880,20 @@ class Scheduler(object):
 
         return False
 
-    @formatter
     def print_schedule(self):
         if self.options.format is None:
             self.print_schedule_default()
             return
-        return self.print_schedule_data()
+        data = self.print_schedule_data()
+        if not hasattr(self, "svcname"):
+            # format ourself
+            return self._print_schedule(self, data)
+        # let the Node object do the formatting (for aggregation)
+        return data
+
+    @formatter
+    def _print_schedule(self, data):
+        return data
 
     def print_schedule_default(self):
         global print_sched_fmt

@@ -8,7 +8,6 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner
 from subprocess import *
-from rcColor import formatter
 
 class Collector(object):
     def __init__(self, options=None, node=None, svcname=None):
@@ -54,11 +53,7 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-    @formatter
     def collector_list_unavailability_ack(self):
-        return self._collector_list_unavailability_ack()
-
-    def _collector_list_unavailability_ack(self):
         if self.svcname is None:
             return
 
@@ -87,11 +82,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
     def collector_list_actions(self):
-        return self._collector_list_actions()
-
-    def _collector_list_actions(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -129,11 +120,7 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-    @formatter
     def collector_status(self):
-        return self._collector_status()
-
-    def _collector_status(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -145,11 +132,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
-    def collector_networks(self, table=True):
-        return self._collector_networks()
-
-    def _collector_networks(self):
+    def collector_networks(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -161,11 +144,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
-    def collector_asset(self, table=True):
-        return self._collector_asset()
-
-    def _collector_asset(self):
+    def collector_asset(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -177,11 +156,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
-    def collector_checks(self, table=True):
-        return self._collector_checks()
-
-    def _collector_checks(self):
+    def collector_checks(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -193,11 +168,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
     def collector_disks(self):
-        return self._collector_disks()
-
-    def _collector_disks(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -209,11 +180,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
     def collector_alerts(self):
-        return self._collector_alerts()
-
-    def _collector_alerts(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -225,11 +192,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
     def collector_events(self):
-        return self._collector_events()
-
-    def _collector_events(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -245,11 +208,7 @@ class Collector(object):
 
         return d['data']
 
-    @formatter
     def collector_show_actions(self):
-        return self._collector_show_actions()
-
-    def _collector_show_actions(self):
         opts = {}
         if self.svcname is not None:
             opts['svcname'] = self.svcname
@@ -316,16 +275,7 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
-    @formatter
     def collector_show_tags(self):
-        try:
-            d = self._collector_show_tags()
-        except ex.excError as e:
-            print(e, file=sys.stderr)
-            return
-        return d
-
-    def _collector_show_tags(self):
         opts = {}
         if self.svcname:
             opts['svcname'] = self.svcname
@@ -336,11 +286,7 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
-    @formatter
     def collector_list_nodes(self):
-        return self._collector_list_nodes()
-
-    def _collector_list_nodes(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_nodes', opts)
         if d is None:
@@ -349,11 +295,7 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
-    @formatter
     def collector_list_services(self):
-        return self._collector_list_services()
-
-    def _collector_list_services(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_services', opts)
         if d is None:
@@ -362,11 +304,7 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
-    @formatter
     def collector_list_filtersets(self):
-        return self._collector_list_filtersets()
-
-    def _collector_list_filtersets(self):
         opts = {'fset': self.options.filterset}
         d = self.collector.call('collector_list_filtersets', opts)
         if d is None:

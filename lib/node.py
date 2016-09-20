@@ -522,9 +522,14 @@ class Node(Svc, Freezer, Scheduler):
         elif a.startswith("collector_") and a != "collector_cli":
             from collector import Collector
             o = Collector(self.options, self)
-            return getattr(o, a)()
+            data = getattr(o, a)()
+            return self.print_data(data)
         else:
             return getattr(self, a)()
+
+    @formatter
+    def print_data(self, data):
+        return data
 
     def scheduler(self):
         self.options.cron = True

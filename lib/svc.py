@@ -2706,8 +2706,6 @@ class Svc(Resource, Scheduler):
         if action.startswith("collector_"):
             from collector import Collector
             o = Collector(self.options, self.node, self.svcname)
-            if self.options.format is not None:
-                action = '_' + action
             fn = getattr(o, action)
         else:
             fn = getattr(self, action)

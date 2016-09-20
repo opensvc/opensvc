@@ -80,7 +80,7 @@ def format_csv(d):
     from rcPrintTable import print_table_csv
     print_table_csv(d)
 
-def is_list_dataset(d):
+def is_list_of_list(d):
     if type(d) != list:
         return False
     if len(d) == 2 and type(d[0]) == list and type(d[1]) == list:
@@ -89,23 +89,95 @@ def is_list_dataset(d):
         return True
     return False
 
-def is_dict_of_list_dataset(d):
-    if type(d) != dict:
+def is_list_of_dict(d):
+    if type(d) != list:
         return False
-    for k, v in d.items():
-        if not is_list_dataset(v):
+    if len(d) == 0:
+        return False
+    for e in d:
+        if type(e) != dict:
             return False
     return True
 
-def expand_list_dataset(d):
-    if is_list_dataset(d):
-        return _expand_list_dataset(d)
-    if is_dict_of_list_dataset(d):
-        for k in d:
-            d[k] = _expand_list_dataset(d[k])
+def is_dict_of_list(d):
+    if type(d) != dict:
+        return False
+    for k, v in d.items():
+        if not is_list_of_list(v):
+            return False
+    return True
+
+def is_dict_of_list_of_dict(d):
+    if type(d) != dict:
+        return False
+    for k, v in d.items():
+        if not is_list_of_dict(v):
+            return False
+    return True
+
+def is_dict_of_list_of_list(d):
+    if type(d) != dict:
+        return False
+    for k, v in d.items():
+        if not is_list_of_list(v):
+            return False
+    return True
+
+def xform_data_for_tabular(d):
+    if is_list_of_dict(d):
+        return _xform_ld_data_for_tabular(d)
+    if is_dict_of_list_of_dict(d):
+        return _xform_dld_data_for_tabular(d)
+    if is_dict_of_list_of_list(d):
+        return _xform_dll_data_for_tabular(d)
     return d
 
-def _expand_list_dataset(d):
+def _xform_dll_data_for_tabular(d):
+    l = []
+    for k, v in d.items():
+        if len(v) == 0:
+            continue
+        v[0].insert(0, "service")
+        for i, e in enumerate(v[1:]):
+            v[i+1].insert(0, k)
+        if len(l) == 0:
+            l += v
+        else:
+            l += v[1:]
+    return l
+
+def _xform_dld_data_for_tabular(d):
+    l = []
+    for k, v in d.items():
+        if len(l) == 0:
+            l += _xform_ld_data_for_tabular(v, include_header=True, prepend=("service", k))
+        else:
+            l += _xform_ld_data_for_tabular(v, include_header=False, prepend=("service", k))
+    return l
+
+def _xform_ld_data_for_tabular(d, include_header=True, prepend=None):
+    l = []
+    if include_header:
+        header = d[0].keys()
+        if prepend:
+            header.insert(0, prepend[0])
+        l += [header]
+    for e in d:
+        values = e.values()
+        if prepend:
+            values.insert(0, prepend[1])
+        l.append(values)
+    return l
+    
+def xform_data_for_json(d):
+    if is_list_of_list(d):
+        return _xform_data_for_json(d)
+    if is_dict_of_list(d):
+        for k in d:
+            d[k] = _xform_data_for_json(d[k])
+    return d
+
+def _xform_data_for_json(d):
     if len(d) < 2:
         return []
     l = []
@@ -132,18 +204,22 @@ def formatter(fn):
         elif hasattr(fmt, "__call__"):
             _fmt = fmt
         else:
-            raise ex.excError("unsupport format: %s" % str(fmt))
+            raise ex.excError("unsupported output format: %s" % str(fmt))
 
         data = fn(*args, **kwargs)
+
         if fmt == "json":
-            data = expand_list_dataset(data)
-        elif type(data) in (int, float):
-            return
-        elif len(data) == 0:
-            return
+            data = xform_data_for_json(data)
+        elif fmt in ("table", "csv", None):
+            data = xform_data_for_tabular(data)
 
         if data is None:
             return
+        if type(data) in (int, float):
+            return
+        if len(data) == 0:
+            return
+
         if type(data) != dict and type(data) != list:
             print(data)
             return
