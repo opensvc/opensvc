@@ -173,7 +173,7 @@ class syncHp3par(resSync.Sync):
         data = self.showrcopy()
         if data['rcg']['Role'] != 'Primary':
             self.log.info("rcopy group %s role is not Primary. skip sync" % self.rcg)
-            raise ex.excError()
+            return
         self._cmd("syncrcopy -w %s" % self.rcg, log=True)
 
     def startrcopygroup(self):
