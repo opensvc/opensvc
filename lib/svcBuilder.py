@@ -3274,7 +3274,12 @@ def build(name, minimal=False, svcconf=None):
     kwargs = {'svcname': name}
     if os.path.isfile(svcconf):
         conf = ConfigParser.RawConfigParser()
-        conf.read(svcconf)
+        import codecs
+        with codecs.open(svcconf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                conf.read_file(f)
+            else:
+                conf.readfp(f)
         defaults = conf.defaults()
         if "mode" in defaults:
             svcmode = conf_get_string_scope({}, conf, 'DEFAULT', "mode")

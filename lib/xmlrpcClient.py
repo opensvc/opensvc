@@ -563,18 +563,12 @@ class Collector(object):
 
     def push_service(self, svc, sync=True):
         def repr_config(svc):
+            import codecs
             cf = os.path.join(rcEnv.pathsvc, 'etc', svc+'.conf')
             if not os.path.exists(cf):
                 return
-            with open(cf, 'r') as f:
-                buff = ""
-                for line in f.readlines():
-                    l = line.strip()
-                    if len(l) == 0:
-                        continue
-                    if l[0] == '#' or l[0] == ';':
-                        continue
-                    buff += line
+            with codecs.open(cf, 'r', encoding="utf8") as f:
+                buff = f.read()
                 return buff
             return
 
@@ -598,24 +592,24 @@ class Collector(object):
                 'svc_drnoaction',
                 'svc_ha']
 
-        vals = [repr(hostid),
-                repr(svc.svcname),
-                repr(svc.clustertype),
-                repr(svc.flex_min_nodes),
-                repr(svc.flex_max_nodes),
-                repr(svc.flex_cpu_low_threshold),
-                repr(svc.flex_cpu_high_threshold),
-                repr(svc.svc_env),
-                repr(' '.join(svc.nodes)),
-                repr(svc.drpnode),
-                repr(' '.join(svc.drpnodes)),
-                repr(svc.comment),
-                repr(svc.drp_type),
-                repr(' '.join(svc.autostart_node)),
-                repr(svc.app),
-                repr(svc.svcmode),
-                repr(repr_config(svc.svcname)),
-                repr(svc.drnoaction),
+        vals = [hostid,
+                svc.svcname,
+                svc.clustertype,
+                svc.flex_min_nodes,
+                svc.flex_max_nodes,
+                svc.flex_cpu_low_threshold,
+                svc.flex_cpu_high_threshold,
+                svc.svc_env,
+                ' '.join(svc.nodes),
+                svc.drpnode,
+                ' '.join(svc.drpnodes),
+                svc.comment,
+                svc.drp_type,
+                ' '.join(svc.autostart_node),
+                svc.app,
+                svc.svcmode,
+                repr_config(svc.svcname),
+                svc.drnoaction,
                 '1' if svc.ha else '0']
 
         args = [vars, vals]
