@@ -887,7 +887,7 @@ class Scheduler(object):
         data = self.print_schedule_data()
         if not hasattr(self, "svcname"):
             # format ourself
-            return self._print_schedule(self, data)
+            return self._print_schedule(data)
         # let the Node object do the formatting (for aggregation)
         return data
 

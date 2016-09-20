@@ -52,6 +52,7 @@ deprecated_actions = [
   "collector_json_list_nodes",
   "collector_json_list_services",
   "collector_json_list_filtersets",
+  "json_schedule",
 ]
 
 deprecated_keywords = {
@@ -509,7 +510,8 @@ class Node(Svc, Freezer, Scheduler):
             a = a.replace("_json_", "_")
         if a.startswith("json_"):
             self.options.format = "json"
-            a = a[:5]
+            a = "print"+a[4:]
+        print(a)
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
