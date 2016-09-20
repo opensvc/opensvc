@@ -511,7 +511,6 @@ class Node(Svc, Freezer, Scheduler):
         if a.startswith("json_"):
             self.options.format = "json"
             a = "print"+a[4:]
-        print(a)
         if a.startswith("compliance_"):
             from compliance import Compliance
             o = Compliance(self.skip_action, self.options, self.collector)
