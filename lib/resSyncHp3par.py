@@ -209,8 +209,8 @@ class syncHp3par(resSync.Sync):
     def showrcopy_links(self):
         """
         Target,Node,Address,Status,Options
-        baie-pra.cgr.fr,0:2:4,20240002AC00992B,Down,
-        baie-pra.cgr.fr,1:2:3,21230002AC00992B,Down,
+        baie-pra,0:2:4,20240002AC00992B,Down,
+        baie-pra,1:2:3,21230002AC00992B,Down,
         receive,0:2:4,20240002AC00992B,Up,
         receive,1:2:3,21230002AC00992B,Up,
         """
@@ -236,7 +236,7 @@ class syncHp3par(resSync.Sync):
 	Group Information
 
 	Name        ,Target    ,Status  ,Role      ,Mode    ,Options
-	RCG.SVCTEST1,baie-pra.cgr.fr,Started,Primary,Periodic,"Last-Sync 2014-03-05 10:19:42 CET , Period 5m, auto_recover,over_per_alert"
+	RCG.SVCTEST1,baie-pra,Started,Primary,Periodic,"Last-Sync 2014-03-05 10:19:42 CET , Period 5m, auto_recover,over_per_alert"
 	 ,LocalVV     ,ID  ,RemoteVV    ,ID  ,SyncStatus   ,LastSyncTime
 	 ,LXC.SVCTEST1.DATA01,2706,LXC.SVCTEST1.DATA01,2718,Synced,2014-03-05 10:19:42 CET
 	 ,LXC.SVCTEST1.DATA02,2707,LXC.SVCTEST1.DATA02,2719,Synced,2014-03-05 10:19:42 CET
