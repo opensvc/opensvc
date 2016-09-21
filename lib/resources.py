@@ -722,7 +722,7 @@ class ResourceSet(Resource):
 
         if hasattr(self, "sort_resources"):
             resources = self.sort_resources(resources, action)
-        elif action in ["fs", "start", "startstandby", "provision"]:
+        elif action in ["fs", "start", "startstandby", "provision"] or action.startswith("sync"):
             # CODE TO KILL ASAP
             resources.sort()
         else:
