@@ -1137,7 +1137,7 @@ class Svc(Resource, Scheduler):
         pass
 
     def reboot(self):
-        self.node.os.reboot()
+        self.node.os._reboot()
 
     def crash(self):
         self.node.os.crash()

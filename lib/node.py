@@ -870,6 +870,44 @@ class Node(Svc, Freezer, Scheduler):
         print("TODO")
 
     def reboot(self):
+        self.do_triggers("reboot", "pre")
+        self.log.info("reboot")
+        self._reboot()
+
+    def do_triggers(self, action, when):
+        trigger = None
+        blocking_trigger = None
+        try:
+            trigger = self.config.get(action, when)
+        except:
+            pass
+        try:
+            blocking_trigger = self.config.get(action, "blocking_"+when)
+        except:
+            pass
+        if trigger:
+            self.log.info("execute trigger %s" % trigger)
+            try:
+                self.do_trigger(trigger)
+            except ex.excError:
+                pass
+        if blocking_trigger:
+            self.log.info("execute blocking trigger %s" % trigger)
+            try:
+                self.do_trigger(blocking_trigger)
+            except ex.excError:
+                if when == "pre":
+                    self.log.error("blocking pre trigger error: abort %s" % action)
+                raise
+
+    def do_trigger(self, cmd, err_to_warn=False):
+        import shlex
+        _cmd = shlex.split(cmd)
+        ret, out, err = self.vcall(_cmd, err_to_warn)
+        if ret != 0:
+            raise ex.excError
+ 
+    def _reboot(self):
         print("TODO")
 
     def sysreport(self):

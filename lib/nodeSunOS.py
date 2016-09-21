@@ -5,6 +5,6 @@ class Node(node.Node):
         cmd = ["init", "5"]
         ret, out, err = self.vcall(cmd)
 
-    def reboot(self):
+    def _reboot(self):
         cmd = ["init", "6"]
         ret, out, err = self.vcall(cmd)
