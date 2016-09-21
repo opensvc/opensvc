@@ -1277,7 +1277,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -2810,6 +2810,42 @@ class KeywordSyncNexentaReversible(Keyword):
                   text="Defines if the replication link can be reversed. Set to no for prd to drp replications to protect production data."
                 )
 
+class KeywordSyncHp3parSnapArray(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="array",
+                  rtype="hp3parsnap",
+                  required=True,
+                  at=True,
+                  text="Name of the HP 3par array to send commands to."
+                )
+
+class KeywordSyncHp3parSnapVvnames(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="vv_names",
+                  rtype="hp3parsnap",
+                  required=True,
+                  at=True,
+                  text="The names of snapshot VV or sets of VV to update."
+                )
+
+class KeywordSyncHp3parSnapDepends(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="depends",
+                  rtype="hp3parsnap",
+                  required=False,
+                  at=True,
+                  text="A whitespace-separated list of resource ids, specifying resources that must be up to allow the snapshots update."
+                )
+
 class KeywordSyncHp3parArray(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3934,6 +3970,9 @@ class KeyDict(KeywordStore):
         self += KeywordSyncHp3parRcg()
         self += KeywordSyncHp3parMode()
         self += KeywordSyncHp3parMethod()
+        self += KeywordSyncHp3parSnapArray()
+        self += KeywordSyncHp3parSnapVvnames()
+        self += KeywordSyncHp3parSnapDepends()
         self += KeywordSyncDdsSrc()
         self += KeywordSyncDdsDst()
         self += KeywordSyncDdsTarget()

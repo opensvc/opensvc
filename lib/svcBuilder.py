@@ -2226,6 +2226,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('symclone', svc, conf)
     add_syncs_resources('symsrdfs', svc, conf)
     add_syncs_resources('hp3par', svc, conf)
+    add_syncs_resources('hp3parsnap', svc, conf)
     add_syncs_resources('ibmdssnap', svc, conf)
     add_syncs_resources('evasnap', svc, conf)
     add_syncs_resources('necismsnap', svc, conf)
@@ -2630,6 +2631,46 @@ def add_syncs_evasnap(svc, conf, s):
     except:
         sc = __import__('resSyncEvasnap')
     r = sc.syncEvasnap(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_hp3parsnap(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have array set" % s)
+        return
+
+    try:
+        kwargs["depends"] = conf_get_string_scope(svc, conf, s, 'depends').split()
+    except ex.OptNotFound:
+        pass
+
+    try:
+        vv_names = conf_get_string_scope(svc, conf, s, 'vv_names').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have vv_names set" % s)
+        return
+
+    if len(vv_names) == 0:
+        svc.log.error("config file section %s must have at least one vv_name set" % s)
+        return
+
+    kwargs['vv_names'] = vv_names
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncHp3parSnap'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncHp3parSnap')
+    r = sc.syncHp3parSnap(**kwargs)
     add_triggers(svc, r, conf, s)
     svc += r
 
@@ -3362,7 +3403,7 @@ def build(name, minimal=False, svcconf=None):
     if not hasattr(svc, "env"):
         if "env" in defaults:
             svc.svc_env = defaults["env"]
-        if "service_type" in defaults:
+        elif "service_type" in defaults:
             svc.svc_env = defaults["service_type"]
         else:
             svc.svc_env = ''

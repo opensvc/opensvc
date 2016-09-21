@@ -210,6 +210,7 @@ status_types = [
   "sync.docker",
   "sync.evasnap",
   "sync.hp3par",
+  "sync.hp3parsnap",
   "sync.ibmdssnap",
   "sync.necismsnap",
   "sync.netapp",
@@ -783,7 +784,7 @@ class Svc(Resource, Scheduler):
             print(fmt%(rid, flags, rcStatus.colorize_status(status), label))
             for msg in log.split("\n"):
                 if len(msg) > 0:
-                    if subpfx:
+                    if subpfx and not subpfx.startswith(color.END):
                         subpfx = color.END + subpfx
                     print('\n'.join(wrap(msg,
                                          initial_indent = subpfx,
@@ -2269,6 +2270,7 @@ class Svc(Resource, Scheduler):
     def sync_update(self):
         self.sub_set_action("sync.netapp", "sync_update")
         self.sub_set_action("sync.hp3par", "sync_update")
+        self.sub_set_action("sync.hp3parsnap", "sync_update")
         self.sub_set_action("sync.nexenta", "sync_update")
         self.sub_set_action("sync.dcsckpt", "sync_update")
         self.sub_set_action("sync.dds", "sync_update")

@@ -8,6 +8,7 @@ import time
 import urllib
 import urllib2
 from rcGlobalEnv import rcEnv
+import re
 
 if rcEnv.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.pathbin
@@ -68,6 +69,12 @@ def cli_cmd(cmd, array, pwf, cli="cli", log=None):
     os.environ["TPDPWFILE"] = pwf
     os.environ["TPDNOCERTPROMPT"] = "1"
     cmd = [cli, '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
+
+    if log:
+        s = " ".join(cmd)
+        s = re.sub(r'password \w+', 'password xxxxx', s)
+        log.info(s)
+
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
     out = reformat(out)
@@ -83,7 +90,7 @@ def cli_cmd(cmd, array, pwf, cli="cli", log=None):
             if len(out) > 0: log.info(out)
             if len(err) > 0: log.error(err)
         else:
-            print(cmd)
+            print(' '.join(cmd))
             print(out)
         raise ex.excError("3par command execution error")
 
@@ -129,7 +136,7 @@ class Hp3pars(object):
         self.arrays = []
         self.index = 0
         if not os.path.exists(rcEnv.authconf):
-            return
+            raise ex.excError("%s not found" % rcEnv.authconf)
         conf = ConfigParser.RawConfigParser()
         conf.read(rcEnv.authconf)
         m = {}
@@ -161,9 +168,7 @@ class Hp3pars(object):
                 manager = conf.get(s, 'manager')
                 kwargs['manager'] = manager
             except Exception as e:
-                if method in ("proxy", "ssh", "cli"):
-                    print(e)
-                    continue
+                kwargs['manager'] = s
 
             try:
                 username = conf.get(s, 'username')
@@ -172,16 +177,14 @@ class Hp3pars(object):
                 kwargs['key'] = key
             except Exception as e:
                 if method in ("ssh"):
-                    print(e)
-                    continue
+                    raise
 
             try:
                 pwf = conf.get(s, 'pwf')
                 kwargs['pwf'] = pwf
             except Exception as e:
                 if method in ("cli"):
-                    print(e)
-                    continue
+                    raise
 
             try:
                 cli = conf.get(s, 'cli')
@@ -215,6 +218,7 @@ class Hp3par(object):
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
         self.uuid = None
         self.remotecopy = None
+        self.virtualcopy = None
 
     def get_uuid(self):
         if self.uuid is not None:
@@ -235,7 +239,7 @@ class Hp3par(object):
         if self.method == "ssh":
             return ssh_cmd(cmd, self.manager, self.username, self.key, log=log)
         elif self.method == "cli":
-            return cli_cmd(cmd, self.name, self.pwf, cli=self.cli, log=log)
+            return cli_cmd(cmd, self.manager, self.pwf, cli=self.cli, log=log)
         elif self.method == "proxy":
             self.get_uuid()
             return proxy_cmd(cmd, self.name, self.manager, self.svcname, uuid=self.uuid, log=log)
@@ -243,6 +247,9 @@ class Hp3par(object):
             raise ex.excError("unsupported method %s set in auth.conf for array %s" % (self.method, self.name))
 
     def serialize(self, s, cols):
+        json.dumps(self.csv_to_list_of_dict(s, cols))
+
+    def csv_to_list_of_dict(self, s, cols):
         l = []
         for line in s.split('\n'):
             v = line.split(',')
@@ -251,7 +258,18 @@ class Hp3par(object):
                 h[a] = b
             if len(h) > 1:
                 l.append(h)
-        return json.dumps(l)
+        return l
+
+    def has_virtualcopy(self):
+        if self.virtualcopy is not None:
+            return self.virtualcopy
+        cmd = 'showlicense'
+        s = self.rcmd(cmd)[0].strip("\n")
+        self.virtualcopy = False
+        for line in s.split('\n'):
+            if "Virtual Copy" in line:
+                self.virtualcopy = True
+        return self.virtualcopy
 
     def has_remotecopy(self):
         if self.remotecopy is not None:
@@ -273,6 +291,26 @@ class Hp3par(object):
         print("%s: %s"%(self.name, cmd))
         s = self.rcmd(cmd)[0]
         return self.serialize(s, cols)
+
+    def updatevv(self, vvnames=None, log=None):
+        cmd = 'updatevv -f'
+        if vvnames is None or len(vvnames) == 0:
+            raise ex.excError("updatevv: no vv names specified")
+        if vvnames:
+            cmd += ' ' + ' '.join(vvnames)
+        s = self.rcmd(cmd, log=log)[0]
+
+    def showvv(self, vvnames=None, vvprov=None, cols=None):
+        cmd = 'showvv'
+        if cols is None:
+            raise ex.excError("showvv: cols is mandatory")
+        cmd += ' -showcols ' + ','.join(cols)
+        if vvprov:
+            cmd += " -p -prov " + vvprov
+        if vvnames:
+            cmd += ' ' + ' '.join(vvnames)
+        s = self.rcmd(cmd)[0]
+        return self.csv_to_list_of_dict(s, cols)
 
     def get_showsys(self):
         cols = ["ID", "Name", "Model", "Serial", "Nodes", "Master", "TotalCap", "AllocCap", "FreeCap", "FailedCap"]
