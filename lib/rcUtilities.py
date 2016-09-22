@@ -637,6 +637,7 @@ def clear_cache(sig, o=None):
 
 def purge_cache():
     import time
+    import shutil
     cache_d = os.path.join(rcEnv.pathvar, "cache")
     for d in os.listdir(cache_d): 
         d = os.path.join(cache_d, d)
