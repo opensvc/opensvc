@@ -8,6 +8,7 @@ import time
 import urllib
 import urllib2
 from rcGlobalEnv import rcEnv
+from rcUtilities import cache, clear_cache
 import re
 
 if rcEnv.pathbin not in os.environ['PATH']:
@@ -127,7 +128,7 @@ def _rcmd(_cmd, cmd, log=None, retry=10):
 class Hp3pars(object):
     allowed_methods = ("ssh", "proxy", "cli")
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], log=None):
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
@@ -163,7 +164,7 @@ class Hp3pars(object):
                 print("invalid method. allowed methods: %s" % ', '.join(self.allowed_methods))
                 continue
 
-            kwargs = {}
+            kwargs = {"log": log}
             try:
                 manager = conf.get(s, 'manager')
                 kwargs['manager'] = manager
@@ -206,7 +207,7 @@ class Hp3pars(object):
         return self.arrays[self.index-1]
 
 class Hp3par(object):
-    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname=""):
+    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname="", log=None):
         self.name = name
         self.manager = manager
         self.method = method
@@ -219,6 +220,8 @@ class Hp3par(object):
         self.uuid = None
         self.remotecopy = None
         self.virtualcopy = None
+        self.log = log
+        self.cache_sig_prefix = "hp3par."+self.manager+"."
 
     def get_uuid(self):
         if self.uuid is not None:
@@ -251,8 +254,8 @@ class Hp3par(object):
 
     def csv_to_list_of_dict(self, s, cols):
         l = []
-        for line in s.split('\n'):
-            v = line.split(',')
+        for line in s.splitlines():
+            v = line.strip().split(',')
             h = {}
             for a, b in zip(cols, v):
                 h[a] = b
@@ -260,6 +263,7 @@ class Hp3par(object):
                 l.append(h)
         return l
 
+    @cache("has_virtualcopy")
     def has_virtualcopy(self):
         if self.virtualcopy is not None:
             return self.virtualcopy
@@ -271,6 +275,7 @@ class Hp3par(object):
                 self.virtualcopy = True
         return self.virtualcopy
 
+    @cache("has_remotecopy")
     def has_remotecopy(self):
         if self.remotecopy is not None:
             return self.remotecopy
@@ -301,16 +306,25 @@ class Hp3par(object):
         s = self.rcmd(cmd, log=log)[0]
 
     def showvv(self, vvnames=None, vvprov=None, cols=None):
-        cmd = 'showvv'
-        if cols is None:
-            raise ex.excError("showvv: cols is mandatory")
-        cmd += ' -showcols ' + ','.join(cols)
-        if vvprov:
-            cmd += " -p -prov " + vvprov
-        if vvnames:
-            cmd += ' ' + ' '.join(vvnames)
-        s = self.rcmd(cmd)[0]
-        return self.csv_to_list_of_dict(s, cols)
+        fdata = []
+        data = self._showvv()
+        for d in data:
+            if vvnames and d["Name"] not in vvnames:
+                continue
+            if vvprov and d["Prov"] != vvprov:
+                continue
+            fdata.append(d)
+        return fdata
+
+    @cache("showvv")
+    def _showvv(self):
+        cols = ["Name", "CreationTime", "Prov"]
+        cmd = 'showvv -showcols ' + ','.join(cols)
+        out, err = self.rcmd(cmd)
+        return self.csv_to_list_of_dict(out, cols)
+
+    def clear_caches(self):
+        clear_cache("showvv", o=self)
 
     def get_showsys(self):
         cols = ["ID", "Name", "Model", "Serial", "Nodes", "Master", "TotalCap", "AllocCap", "FreeCap", "FailedCap"]

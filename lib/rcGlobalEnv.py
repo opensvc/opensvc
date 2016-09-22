@@ -71,6 +71,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
 class rcEnv:
     """Class to store globals
     """
+    cache_decorator = {}
 
     allowed_svc_envs = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ', 'STG']
     _platform = sys.platform

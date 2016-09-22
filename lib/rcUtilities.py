@@ -6,6 +6,7 @@ import socket
 import re
 from subprocess import *
 from rcGlobalEnv import rcEnv
+from functools import wraps
 
 protected_dirs = ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']
 
@@ -557,6 +558,36 @@ def term_width():
     except Exception as e:
         pass
     return default
+
+def cache(sig):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            if len(args) > 0 and hasattr(args[0], "log"):
+                log = args[0].log
+            else:
+                log = None
+            if len(args) > 0 and hasattr(args[0], "cache_sig_prefix"):
+                _sig = args[0].cache_sig_prefix + sig
+            else:
+                _sig = sig
+            if _sig in rcEnv.cache_decorator:
+                if log:
+                    log.debug("from cache %s" % _sig)
+                return rcEnv.cache_decorator[_sig]
+            if log:
+                log.debug("to cache %s" % _sig)
+            data = fn(*args, **kwargs)
+            rcEnv.cache_decorator[_sig] = data
+            return data
+        return decorator
+    return wrapper
+
+def clear_cache(sig, o=None):
+    if o and hasattr(o, "cache_sig_prefix"):
+        sig = o.cache_sig_prefix + sig
+    if sig in rcEnv.cache_decorator:
+        del(rcEnv.cache_decorator[sig])
 
 if __name__ == "__main__":
     #print("call(('id','-a'))")
