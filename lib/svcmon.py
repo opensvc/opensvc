@@ -369,6 +369,10 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    r = main()
+    try:
+        r = main()
+    except ex.excError as e:
+        print(e, file=sys.stderr)
+        r = 1
     sys.exit(r)
 
