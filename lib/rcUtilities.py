@@ -7,6 +7,7 @@ import re
 from subprocess import *
 from rcGlobalEnv import rcEnv
 from functools import wraps
+import lock
 
 protected_dirs = ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']
 
@@ -559,6 +560,9 @@ def term_width():
         pass
     return default
 
+def get_cache_d():
+    return os.path.join(rcEnv.pathvar, "cache", rcEnv.session_uuid)
+
 def cache(sig):
     def wrapper(fn):
         @wraps(fn)
@@ -571,23 +575,77 @@ def cache(sig):
                 _sig = args[0].cache_sig_prefix + sig
             else:
                 _sig = sig
-            if _sig in rcEnv.cache_decorator:
+            try:
+                data = cache_get(_sig)
                 if log:
                     log.debug("from cache %s" % _sig)
-                return rcEnv.cache_decorator[_sig]
-            if log:
-                log.debug("to cache %s" % _sig)
-            data = fn(*args, **kwargs)
-            rcEnv.cache_decorator[_sig] = data
+            except Exception as e:
+                if log:
+                    log.debug("to cache %s" % _sig)
+                data = fn(*args, **kwargs)
+                cache_put(_sig, data)
             return data
         return decorator
     return wrapper
 
+def cache_put(sig, data):
+    cache_d = get_cache_d()
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    fpath = os.path.join(cache_d, sig)
+    import json
+    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    try:
+        with open(fpath, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        try:
+            os.unlink(fpath)
+        except:
+            pass
+    lock.unlock(lfd)
+    return data
+
+def cache_get(sig):
+    cache_d = get_cache_d()
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    fpath = os.path.join(cache_d, sig)
+    if not os.path.exists(fpath):
+        raise Exception("cache miss for %s" % sig)
+    import json
+    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    with open(fpath, "r") as f:
+        data = json.load(f)
+    lock.unlock(lfd)
+    return data
+
 def clear_cache(sig, o=None):
+    cache_d = get_cache_d()
     if o and hasattr(o, "cache_sig_prefix"):
         sig = o.cache_sig_prefix + sig
-    if sig in rcEnv.cache_decorator:
-        del(rcEnv.cache_decorator[sig])
+    if not os.path.exists(cache_d):
+        os.makedirs(cache_d)
+    fpath = os.path.join(cache_d, sig)
+    if not os.path.exists(fpath):
+        return
+    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    try:
+        os.unlink(fpath)
+    except:
+        pass
+
+def purge_cache():
+    import time
+    cache_d = os.path.join(rcEnv.pathvar, "cache")
+    for d in os.listdir(cache_d): 
+        d = os.path.join(cache_d, d)
+        if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600): 
+            # session more recent than 6 hours
+            continue
+        shutil.rmtree(d)
+
+purge_cache()
 
 if __name__ == "__main__":
     #print("call(('id','-a'))")
