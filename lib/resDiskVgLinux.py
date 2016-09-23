@@ -212,6 +212,12 @@ class Disk(resDisk.Disk):
                  continue
              self.remove_dev_holders(lvdev, tree)
 
+    def udevadm_settle(self):
+        if not which("udevadm"):
+            return
+        cmd = ["udevadm", "settle"]
+        justcall(cmd)
+
     def do_stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.label)
@@ -219,6 +225,7 @@ class Disk(resDisk.Disk):
         self.remove_holders()
         curtags = self.list_tags()
         self.remove_tags(curtags)
+        self.udevadm_settle()
         self.deactivate_vg()
 
     @cache("vg.lvs")
