@@ -615,8 +615,12 @@ def cache_get(sig):
         raise Exception("cache miss for %s" % sig)
     import json
     lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
-    with open(fpath, "r") as f:
-        data = json.load(f)
+    try:
+        with open(fpath, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        raise ex.excError("cache read error: %s" % str(e))
+        lock.unlock(lfd)
     lock.unlock(lfd)
     return data
 
@@ -634,6 +638,7 @@ def clear_cache(sig, o=None):
         os.unlink(fpath)
     except:
         pass
+    lock.unlock(lfd)
 
 def purge_cache():
     import time
