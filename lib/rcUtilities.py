@@ -594,7 +594,7 @@ def cache_put(sig, data):
         os.makedirs(cache_d)
     fpath = os.path.join(cache_d, sig)
     import json
-    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         with open(fpath, "w") as f:
             json.dump(data, f)
@@ -614,7 +614,7 @@ def cache_get(sig):
     if not os.path.exists(fpath):
         raise Exception("cache miss for %s" % sig)
     import json
-    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     with open(fpath, "r") as f:
         data = json.load(f)
     lock.unlock(lfd)
@@ -629,7 +629,7 @@ def clear_cache(sig, o=None):
     fpath = os.path.join(cache_d, sig)
     if not os.path.exists(fpath):
         return
-    lfd = lock.lock(timeout=30, delay=1, lockfile=fpath+'.lock')
+    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         os.unlink(fpath)
     except:
