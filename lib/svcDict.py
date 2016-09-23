@@ -638,6 +638,19 @@ class KeywordVmName(Keyword):
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
+class KeywordContainerRcmd(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="rcmd",
+                  at=True,
+                  order=2,
+                  rtype=["container.lxc"],
+                  example="lxc-attach -e -n osvtavnprov01 -- ",
+                  text="An container remote command override the agent default"
+                )
+
 class KeywordOsvcRootPath(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4019,6 +4032,7 @@ class KeyDict(KeywordStore):
         self += KeywordContainerZoneDeleteOnStop()
         self += KeywordVmName()
         self += KeywordOsvcRootPath()
+        self += KeywordContainerRcmd()
         self += KeywordGuestos()
         self += KeywordRootfs()
         self += KeywordLxcCf()
