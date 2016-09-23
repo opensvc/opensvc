@@ -4,6 +4,7 @@ import rcStatus
 import re
 import rcExceptions as ex
 from rcGlobalEnv import *
+from rcUtilities import justcall
 
 class Disk(resDiskRaw.Disk):
     def __init__(self,
@@ -56,12 +57,12 @@ class Disk(resDiskRaw.Disk):
 
     def modprobe(self):
         cmd = ["raw", "-qa"]
-        ret, out, err = self.call(cmd)
+        err, ret, out = justcall(cmd)
         if ret == 0:
             # no need to load (already loaded or compiled-in)
             return
         cmd = ["lsmod"]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
         if "raw" in out.split():
@@ -91,7 +92,7 @@ class Disk(resDiskRaw.Disk):
                 self.raws[dirname] = {'rdev': (int(major), int(minor))}
 
         cmd = ['raw', '-qa']
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             self.log.error('failed to fetch raw device bindings')
             raise ex.excError

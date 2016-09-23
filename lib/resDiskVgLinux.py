@@ -5,7 +5,7 @@ import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
-from rcUtilities import which, justcall, cache, clear_cache
+from rcUtilities import which, justcall, cache
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -112,7 +112,7 @@ class Disk(resDisk.Disk):
     def test_vgs(self):
         data = self.get_tags()
         if self.name not in data:
-            clear_cache("vg.tags")
+            self.clear_cache("vg.tags")
             return False
         return True
 
@@ -121,7 +121,7 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        clear_cache("vg.tags")
+        self.clear_cache("vg.tags")
 
     def list_tags(self, tags=[]):
         tmo = 5
@@ -148,23 +148,23 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        clear_cache("vg.tags")
+        self.clear_cache("vg.tags")
 
     def activate_vg(self):
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         ret, out, err = self.vcall(cmd)
-        clear_cache("vg.lvs")
-        clear_cache("vg.lvs.attr")
-        clear_cache("vg.tags")
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
         if ret != 0:
             raise ex.excError
 
     def _deactivate_vg(self):
         cmd = [ 'vgchange', '-a', 'n', self.name ]
         ret, out, err = self.vcall(cmd, err_to_info=True)
-        clear_cache("vg.lvs")
-        clear_cache("vg.lvs.attr")
-        clear_cache("vg.tags")
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
         if ret == 0:
             return True
         if not self.is_up():

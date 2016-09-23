@@ -633,6 +633,8 @@ def clear_cache(sig, o=None):
     fpath = os.path.join(cache_d, sig)
     if not os.path.exists(fpath):
         return
+    if o and hasattr(o, "log"):
+        o.log.debug("cache CLEAR: %s" % fpath)
     lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         os.unlink(fpath)

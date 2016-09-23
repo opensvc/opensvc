@@ -106,6 +106,9 @@ class Resource(object):
     def disable(self): self.disabled=True
     def enable(self):  self.disabled=False
 
+    def clear_cache(self, sig):
+        rcUtilities.clear_cache(sig, o=self)
+
     def action_triggers(self, type, action, blocking=False):
         attr = type+"_"+action
         if hasattr(self, attr):
