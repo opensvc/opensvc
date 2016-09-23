@@ -576,23 +576,21 @@ def cache(sig):
             else:
                 _sig = sig
             try:
-                data = cache_get(_sig)
-                if log:
-                    log.debug("from cache %s" % _sig)
+                data = cache_get(_sig, log=log)
             except Exception as e:
-                if log:
-                    log.debug("to cache %s" % _sig)
                 data = fn(*args, **kwargs)
-                cache_put(_sig, data)
+                cache_put(_sig, data, log=log)
             return data
         return decorator
     return wrapper
 
-def cache_put(sig, data):
+def cache_put(sig, data, log=None):
     cache_d = get_cache_d()
     if not os.path.exists(cache_d):
         os.makedirs(cache_d)
     fpath = os.path.join(cache_d, sig)
+    if log:
+        log.debug("cache PUT: %s" % fpath)
     import json
     lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
@@ -606,14 +604,16 @@ def cache_put(sig, data):
     lock.unlock(lfd)
     return data
 
-def cache_get(sig):
+def cache_get(sig, log=None):
     cache_d = get_cache_d()
     if not os.path.exists(cache_d):
         os.makedirs(cache_d)
     fpath = os.path.join(cache_d, sig)
     if not os.path.exists(fpath):
-        raise Exception("cache miss for %s" % sig)
+        raise Exception("cache MISS: %s" % fpath)
     import json
+    if log:
+        log.debug("cache GET: %s" % fpath)
     lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         with open(fpath, "r") as f:
