@@ -307,6 +307,7 @@ class Disk(resDisk.Disk):
 
     def do_start(self):
         self.validate_devs()
+        self.can_rollback = True
         self.do_start_char_devices()
         self.mangle_devs_map()
         self.do_start_blocks()
