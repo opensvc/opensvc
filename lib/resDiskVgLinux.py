@@ -5,7 +5,7 @@ import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, cache, clear_cache
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -90,13 +90,26 @@ class Disk(resDisk.Disk):
             return True
         return False
 
-    def test_vgs(self):
-        cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
+    @cache("vg.tags")
+    def get_tags(self):
+        cmd = ['vgs', '-o', 'vg_name,tags', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
-        if "not found" in err:
-            return False
         if ret != 0:
             raise ex.excError
+        data = {}
+        for line in out.splitlines():
+            l = line.split(";")
+            if len(l) == 1:
+                data[l[0].strip()] = []
+            if len(l) == 2:
+                data[l[0].strip()] = l[1].strip().split(",")
+        return data
+
+    def test_vgs(self):
+        data = self.get_tags()
+        if self.name not in data:
+            clear_cache("vg.tags")
+            return False
         return True
 
     def remove_tag(self, tag):
@@ -104,6 +117,7 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        clear_cache("vg.tags")
 
     def list_tags(self, tags=[]):
         tmo = 5
@@ -111,15 +125,12 @@ class Disk(resDisk.Disk):
             self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
         except ex.excError as e:
             self.log.warning(str(e))
-            cmd = ["pvscan"]
-            ret, out, err = self.vcall(cmd)
-        cmd = ['vgs', '-o', 'tags', '--noheadings', self.name]
-        (ret, out, err) = self.call(cmd)
-        if ret != 0:
-            raise ex.excError
-        out = out.strip(' \n')
-        curtags = out.split(',')
-        return curtags
+            ret, out, err = self.vcall(["pvscan"])
+        # last chance
+        data = self.get_tags()
+        if self.name not in data:
+            raise ex.excError("vg %s not found" % self.name)
+        return data[self.name]
 
     def remove_tags(self, tags=[]):
         for tag in tags:
@@ -133,6 +144,32 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        clear_cache("vg.tags")
+
+    def activate_vg(self):
+        cmd = [ 'vgchange', '-a', 'y', self.name ]
+        (ret, out, err) = self.vcall(cmd)
+        clear_cache("vg.lvs")
+        if ret != 0:
+            raise ex.excError
+
+    def deactivate_vg(self):
+        cmd = [ 'vgchange', '-a', 'n', self.name ]
+        (ret, out, err) = self.vcall(cmd, err_to_info=True)
+
+        import time
+        for i in range(3, 0, -1):
+            if self.is_up() and i > 0:
+                time.sleep(1)
+                (ret, out, err) = self.vcall(cmd, err_to_info=True)
+                if ret == 0:
+                    return
+                continue
+            break
+        clear_cache("vg.lvs")
+        if i == 0:
+            self.log.error("deactivation failed to release all logical volumes")
+            raise ex.excError
 
     def do_start(self):
         curtags = self.list_tags()
@@ -145,10 +182,7 @@ class Disk(resDisk.Disk):
             self.log.info("%s is already up" % self.label)
             return 0
         self.can_rollback = True
-        cmd = [ 'vgchange', '-a', 'y', self.name ]
-        (ret, out, err) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
+        self.activate_vg()
 
     def remove_dev_holders(self, devpath, tree):
         dev = tree.get_dev_by_devpath(devpath)
@@ -182,21 +216,44 @@ class Disk(resDisk.Disk):
         self.remove_holders()
         curtags = self.list_tags()
         self.remove_tags(curtags)
-        cmd = [ 'vgchange', '-a', 'n', self.name ]
-        (ret, out, err) = self.vcall(cmd, err_to_info=True)
+        self.deactivate_vg()
 
-        import time
-        for i in range(3, 0, -1):
-            if self.is_up() and i > 0:
-                time.sleep(1)
-                (ret, out, err) = self.vcall(cmd, err_to_info=True)
-                if ret == 0:
-                    return
-                continue
-            break
-        if i == 0:
-            self.log.error("deactivation failed to release all logical volumes")
+    @cache("vg.lvs")
+    def vg_lvs(self):
+        cmd = ['vgs', '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
+        (ret, out, err) = self.call(cmd, cache=True)
+        if ret != 0:
             raise ex.excError
+        data = {}
+        for line in out.splitlines():
+            try:
+                vgname, lvname = line.split(";")
+                vgname = vgname.strip()
+            except:
+                pass
+            if vgname not in data:
+                data[vgname] = []
+            data[vgname].append(lvname.strip())
+        return data
+
+
+    @cache("vg.pvs")
+    def vg_pvs(self):
+        cmd = ['vgs', '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
+        (ret, out, err) = self.call(cmd, cache=True)
+        if ret != 0:
+            raise ex.excError
+        data = {}
+        for line in out.splitlines():
+            try:
+                vgname, pvname = line.split(";")
+                vgname = vgname.strip()
+            except:
+                pass
+            if vgname not in data:
+                data[vgname] = []
+            data[vgname].append(pvname.strip())
+        return data
 
     def devlist(self):
         if not self.has_it():
@@ -206,29 +263,14 @@ class Disk(resDisk.Disk):
 
         self.devs = set()
 
-        cmd = ['vgs', '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
-        (ret, out, err) = self.call(cmd, cache=True)
-        if ret == 0:
-            for line in out.split("\n"):
-                try:
-                    vgname, pvname = line.split(";")
-                except:
-                    pass
-                if vgname.strip() != self.name:
-                    continue
-                self.devs.add(pvname.strip())
+        data = self.vg_pvs()
+        if self.name in data:
+            self.devs |= set(data[self.name])
 
-        cmd = ['vgs', '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
-        (ret, out, err) = self.call(cmd, cache=True)
-        if ret == 0:
-            for line in out.split("\n"):
-                try:
-                    vgname, lvname = line.split(";")
-                except:
-                    pass
-                if vgname.strip() != self.name:
-                    continue
-                lvname = lvname.strip()
+        data = self.vg_lvs()
+        if self.name in data:
+            l = []
+            for lvname in data[self.name]:
                 lvp = "/dev/"+self.name+"/"+lvname
                 if os.path.exists(lvp):
                     self.devs.add(lvp)
