@@ -8,6 +8,7 @@ from subprocess import *
 from rcGlobalEnv import rcEnv
 from functools import wraps
 import lock
+import json
 
 protected_dirs = ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']
 
@@ -571,28 +572,37 @@ def cache(sig):
                 log = args[0].log
             else:
                 log = None
+
             if len(args) > 0 and hasattr(args[0], "cache_sig_prefix"):
                 _sig = args[0].cache_sig_prefix + sig
             else:
                 _sig = sig
+
+            fpath = cache_fpath(_sig)
+
+            lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
             try:
-                data = cache_get(_sig, log=log)
+                data = cache_get(fpath, log=log)
             except Exception as e:
+                if log:
+                    log.debug(str(e))
                 data = fn(*args, **kwargs)
-                cache_put(_sig, data, log=log)
+                cache_put(fpath, data, log=log)
+            lock.unlock(lfd)
             return data
         return decorator
     return wrapper
 
-def cache_put(sig, data, log=None):
+def cache_fpath(sig):
     cache_d = get_cache_d()
     if not os.path.exists(cache_d):
         os.makedirs(cache_d)
     fpath = os.path.join(cache_d, sig)
+    return fpath
+
+def cache_put(fpath, data, log=None):
     if log:
         log.debug("cache PUT: %s" % fpath)
-    import json
-    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         with open(fpath, "w") as f:
             json.dump(data, f)
@@ -601,36 +611,25 @@ def cache_put(sig, data, log=None):
             os.unlink(fpath)
         except:
             pass
-    lock.unlock(lfd)
     return data
 
-def cache_get(sig, log=None):
-    cache_d = get_cache_d()
-    if not os.path.exists(cache_d):
-        os.makedirs(cache_d)
-    fpath = os.path.join(cache_d, sig)
+def cache_get(fpath, log=None):
     if not os.path.exists(fpath):
         raise Exception("cache MISS: %s" % fpath)
-    import json
     if log:
         log.debug("cache GET: %s" % fpath)
-    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
     try:
         with open(fpath, "r") as f:
             data = json.load(f)
     except Exception as e:
         raise ex.excError("cache read error: %s" % str(e))
         lock.unlock(lfd)
-    lock.unlock(lfd)
     return data
 
 def clear_cache(sig, o=None):
-    cache_d = get_cache_d()
     if o and hasattr(o, "cache_sig_prefix"):
         sig = o.cache_sig_prefix + sig
-    if not os.path.exists(cache_d):
-        os.makedirs(cache_d)
-    fpath = os.path.join(cache_d, sig)
+    fpath = cache_fpath(sig)
     if not os.path.exists(fpath):
         return
     if o and hasattr(o, "log"):
