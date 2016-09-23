@@ -217,7 +217,6 @@ class Disk(resDisk.Disk):
         self.remove_holders()
         curtags = self.list_tags()
         self.remove_tags(curtags)
-        print("here")
         self.deactivate_vg()
 
     @cache("vg.lvs")
