@@ -54,41 +54,45 @@ class Disk(resDisk.Disk):
         return False
 
     def has_it(self):
-        try:
-            r = self._has_it()
-        except ex.excError as e:
-            self.log.debug(str(e))
-            return False
-        return r
-
-    def vgdisplay(self):
-        """Returns True if the volume is present
-        """
-        cmd = ['vgdisplay', self.name]
-        out, err, ret = justcall(cmd)
-        return ret, out, err
-
-    def _has_it(self):
-        ret, out, err = self.vgdisplay()
-        if ret == 0:
+        data = self.get_tags()
+        if self.name in data:
             return True
-        if "not found" in err:
-            return False
-        raise ex.excError(err)
+        return False
 
     def is_up(self):
         """Returns True if the volume group is present and activated
         """
-        cmd = [ 'lvs', '--noheadings', '-o', 'lv_attr', self.name ]
-        ret, out, err = self.call(cmd, errlog=False, cache=False)
-        if ret != 0 and "not found" in err:
+        if not self.has_it():
             return False
-        if len(out) == 0 and ret == 0:
+        data = self.get_lvs_attr()
+        if self.name not in data:
             # no lv ... happens in provisioning, where lv are not created yet
+            self.log.info("no logical volumes. consider up")
             return True
-        if re.search(' ....a.', out, re.MULTILINE) is not None:
-            return True
+        for attr in data[self.name].values():
+            if re.search('....a.', attr) is not None:
+                # at least one lv is active
+                return True
         return False
+
+    @cache("vg.lvs.attr")
+    def get_lvs_attr(self):
+        cmd = ['lvs', '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
+        ret, out, err = self.call(cmd, errlog=False, cache=False)
+        if ret != 0:
+            raise ex.excError
+        data = {}
+        for line in out.splitlines():
+            l = line.split(";")
+            if len(l) != 3:
+                continue
+            vgname = l[0].strip()
+            lvname = l[1].strip()
+            attr = l[2].strip()
+            if vgname not in data:
+                data[vgname] = {}
+            data[vgname][lvname] = attr
+        return data
 
     @cache("vg.tags")
     def get_tags(self):
@@ -150,26 +154,23 @@ class Disk(resDisk.Disk):
         cmd = [ 'vgchange', '-a', 'y', self.name ]
         (ret, out, err) = self.vcall(cmd)
         clear_cache("vg.lvs")
+        clear_cache("vg.lvs.attr")
+        clear_cache("vg.tags")
         if ret != 0:
             raise ex.excError
 
-    def deactivate_vg(self):
+    def _deactivate_vg(self):
         cmd = [ 'vgchange', '-a', 'n', self.name ]
-        (ret, out, err) = self.vcall(cmd, err_to_info=True)
-
-        import time
-        for i in range(3, 0, -1):
-            if self.is_up() and i > 0:
-                time.sleep(1)
-                (ret, out, err) = self.vcall(cmd, err_to_info=True)
-                if ret == 0:
-                    return
-                continue
-            break
+        ret, out, err = self.vcall(cmd, err_to_info=True)
         clear_cache("vg.lvs")
-        if i == 0:
-            self.log.error("deactivation failed to release all logical volumes")
-            raise ex.excError
+        clear_cache("vg.lvs.attr")
+        clear_cache("vg.tags")
+        if ret == 0:
+            return True
+        return False
+
+    def deactivate_vg(self):
+        self.wait_for_fn(self._deactivate_vg, 3, 1, errmsg="deactivation failed to release all logical volumes")
 
     def do_start(self):
         curtags = self.list_tags()
@@ -216,6 +217,7 @@ class Disk(resDisk.Disk):
         self.remove_holders()
         curtags = self.list_tags()
         self.remove_tags(curtags)
+        print("here")
         self.deactivate_vg()
 
     @cache("vg.lvs")
