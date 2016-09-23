@@ -646,7 +646,7 @@ class KeywordContainerRcmd(Keyword):
                   keyword="rcmd",
                   at=True,
                   order=2,
-                  rtype=["container.lxc"],
+                  rtype="lxc",
                   example="lxc-attach -e -n osvtavnprov01 -- ",
                   text="An container remote command override the agent default"
                 )
