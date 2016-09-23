@@ -37,14 +37,8 @@ class syncHp3par(resSync.Sync):
         self.mode = mode
         self.method = method
         self.label = "hp3par %s %s"%(mode, self.rcg)
-        try:
-            arrays = rc.Hp3pars(objects=[self.array])
-        except Exception as e:
-            raise ex.excInitError(str(e))
-        if len(arrays.arrays) == 1:
-            self.array_obj = arrays.arrays[0]
-        else:
-            self.array_obj = None
+        self.array_obj = None
+        self.remote_array_obj = None
 
     def __str__(self):
         return "%s array=%s method=%s mode=%s rcg=%s" % (
@@ -55,32 +49,46 @@ class syncHp3par(resSync.Sync):
                 self.rcg)
 
     def on_add(self):
+        try:
+            arrays = rc.Hp3pars(objects=[self.array], log=self.log)
+        except Exception as e:
+            raise ex.excError(str(e))
+        if len(arrays.arrays) == 1:
+            self.array_obj = arrays.arrays[0]
         if self.array_obj is None:
-            raise ex.excError("no 3par array object")
+            raise ex.excError("array %s is not accessible" % self.array)
         self.array_obj.svcname = self.svc.svcname
 
-    def _cmd(self, cmd, target=None, log=False):
+    def get_array_obj(self, target=None, log=False):
         if target is None:
             array_name = self.array
-            array_obj = self.array_obj
+            return self.array_obj
         else:
             array_name = target
-            if not hasattr(self, 'remote_array_obj'):
+            if self.remote_array_obj is None:
                 try:
-                    self.remote_array_obj = rc.Hp3pars(objects=[target]).arrays[0]
+                    self.remote_array_obj = rc.Hp3pars(objects=[target], log=self.log).arrays[0]
+                    if self.remote_array_obj is None:
+                        raise ex.excError("array %s is not accessible" % array_name)
+                    self.remote_array_obj.svcname = self.svc.svcname
+                    return self.remote_array_obj
                 except Exception as e:
                     raise ex.excError(str(e))
-            array_obj = self.remote_array_obj
 
-        if array_obj is None:
-            raise ex.excError("array %s is not accessible" % array_name)
+    def _cmd(self, cmd, target=None, log=False):
+        array_obj = self.get_array_obj(target=target, log=log)
         if log:
             if target is not None:
                 suffix = " (on " + target + ")"
             else:
                 suffix = ""
             self.log.info(cmd+suffix)
-        out, err = array_obj.rcmd(cmd, log=self.log)
+
+        if log:
+            out, err = array_obj.rcmd(cmd, log=log)
+        else:
+            out, err = array_obj.rcmd(cmd)
+
         if not log:
             return out, err
         if len(out) > 0:
@@ -154,6 +162,7 @@ class syncHp3par(resSync.Sync):
            self.log.error("rcopy group %s role is not Primary-Rev. refuse to setrcopygroup revert" % self.rcg)
            return
         self._cmd("setrcopygroup reverse -f -waittask -stopgroups -local -current %s" % self.rcg, log=True)
+        self.clear_caches()
 
     def setrcopygroup_failover(self):
         data = self.showrcopy()
@@ -161,6 +170,7 @@ class syncHp3par(resSync.Sync):
            self.log.info("rcopy group %s role is already Primary-Rev. skip setrcopygroup failover" % self.rcg)
            return
         self._cmd("setrcopygroup failover -f -waittask %s" % self.rcg, log=True)
+        self.clear_caches()
 
     def setrcopygroup_reverse(self):
         data = self.showrcopy()
@@ -168,6 +178,7 @@ class syncHp3par(resSync.Sync):
             self.log.info("rcopy group %s role is already Primary. skip setrcopygroup reverse" % self.rcg)
             return
         self._cmd("setrcopygroup reverse -f -waittask %s" % self.rcg, log=True)
+        self.clear_caches()
 
     def syncrcopygroup(self):
         data = self.showrcopy()
@@ -175,6 +186,7 @@ class syncHp3par(resSync.Sync):
             self.log.info("rcopy group %s role is not Primary. skip sync" % self.rcg)
             return
         self._cmd("syncrcopy -w %s" % self.rcg, log=True)
+        self.clear_caches()
 
     def startrcopygroup(self):
         data = self.showrcopy()
@@ -185,6 +197,7 @@ class syncHp3par(resSync.Sync):
             self.log.error("rcopy group %s role is not Primary. refuse to start rcopy" % self.rcg)
             raise ex.excError()
         self._cmd("startrcopygroup %s" % self.rcg, log=True)
+        self.clear_caches()
 
     def stoprcopygroup(self):
         data = self.showrcopy()
@@ -196,6 +209,7 @@ class syncHp3par(resSync.Sync):
         else:
             target = data['rcg']['Target']
             self._cmd("stoprcopygroup -f %s" % self.rcg_names[target], target=target, log=True)
+        self.clear_caches()
 
     def is_splitted(self, target):
         data = self.showrcopy_links()
@@ -228,59 +242,11 @@ class syncHp3par(resSync.Sync):
             data.append(h)
         return data
 
-    def showrcopy(self, refresh=False):
-        """
-	Remote Copy System Information
-	Status: Started, Normal
+    def clear_caches(self):
+        self.array_obj.clear_showrcopy_cache()
 
-	Group Information
-
-	Name        ,Target    ,Status  ,Role      ,Mode    ,Options
-	RCG.SVCTEST1,baie-pra,Started,Primary,Periodic,"Last-Sync 2014-03-05 10:19:42 CET , Period 5m, auto_recover,over_per_alert"
-	 ,LocalVV     ,ID  ,RemoteVV    ,ID  ,SyncStatus   ,LastSyncTime
-	 ,LXC.SVCTEST1.DATA01,2706,LXC.SVCTEST1.DATA01,2718,Synced,2014-03-05 10:19:42 CET
-	 ,LXC.SVCTEST1.DATA02,2707,LXC.SVCTEST1.DATA02,2719,Synced,2014-03-05 10:19:42 CET
-
-        """
-        if not refresh and hasattr(self, "showrcopy_cache"):
-            return self.showrcopy_cache
-
-        out, err = self._cmd("showrcopy groups %s" % self.rcg)
-        cols_rcg = ["Name", "Target", "Status", "Role", "Mode"]
-        cols_vv = ["LocalVV", "ID", "RemoteVV", "ID", "SyncStatus", "LastSyncTime"]
-        lines = out.split('\n')
-
-        if "does not exist" in err:
-            raise ex.excError("rcg does not exist")
-
-        if len(out) == 0:
-            raise ex.excError("unable to fetch rcg status")
-
-        # RCG status
-        rcg_s = lines[0]
-        options_start = rcg_s.index('"')
-        rcg_options = rcg_s[options_start+1:-1].split(",")
-        rcg_options = map(lambda x: x.strip(), rcg_options)
-        rcg_v = rcg_s[:options_start].split(",")
-        rcg_data = {}
-        for a, b in zip(cols_rcg, rcg_v):
-            rcg_data[a] = b
-        rcg_data["Options"] = rcg_options
-
-        # VV status
-        vv_l = []
-        for line in lines[1:]:
-            v = line.strip().strip(",").split(",")
-            if len(v) != len(cols_vv):
-                continue
-            vv_data = {}
-            for a, b in zip(cols_vv, v):
-                vv_data[a] = b
-            vv_data['LastSyncTime'] = self.lastsync_s_to_datetime(vv_data['LastSyncTime'])
-            vv_l.append(vv_data)
-        data = {'rcg': rcg_data, 'vv': vv_l}
-        self.showrcopy_cache = data
-        return self.showrcopy_cache
+    def showrcopy(self):
+        return self.array_obj.showrcopy(self.rcg)
 
     def lastsync_s_to_datetime(self, s):
         try:
@@ -297,7 +263,7 @@ class syncHp3par(resSync.Sync):
             return rcStatus.WARN
 
         try:
-            data = self.showrcopy(refresh=True)
+            data = self.showrcopy()
         except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.UNDEF

@@ -323,6 +323,79 @@ class Hp3par(object):
         out, err = self.rcmd(cmd)
         return self.csv_to_list_of_dict(out, cols)
 
+    def showrcopy(self, rcg):
+        """
+        Remote Copy System Information
+        Status: Started, Normal
+
+        Group Information
+
+        Name        ,Target    ,Status  ,Role      ,Mode    ,Options
+        RCG.SVCTEST1,baie-pra,Started,Primary,Periodic,"Last-Sync 2014-03-05 10:19:42 CET , Period 5m, auto_recover,over_per_alert"
+         ,LocalVV     ,ID  ,RemoteVV    ,ID  ,SyncStatus   ,LastSyncTime
+         ,LXC.SVCTEST1.DATA01,2706,LXC.SVCTEST1.DATA01,2718,Synced,2014-03-05 10:19:42 CET
+         ,LXC.SVCTEST1.DATA02,2707,LXC.SVCTEST1.DATA02,2719,Synced,2014-03-05 10:19:42 CET
+
+        """
+        out, err = self._showrcopy()
+
+        if len(out) == 0:
+            raise ex.excError("unable to fetch rcg status")
+
+        lines = []
+        cols_rcg = ["Name", "Target", "Status", "Role", "Mode"]
+        cols_vv = ["LocalVV", "ID", "RemoteVV", "ID", "SyncStatus", "LastSyncTime"]
+
+        # extract rcg block
+        in_block = False
+        for line in out.splitlines():
+            if not in_block:
+                if not line.startswith(rcg+","):
+                    continue
+                lines.append(line)
+                in_block = True
+            else:
+                if line.startswith(" "):
+                    break
+                lines.append(line)
+
+        if len(lines) == 0:
+            raise ex.excError("rcg does not exist")
+
+        # RCG status
+        rcg_s = lines[0]
+        options_start = rcg_s.index('"')
+        rcg_options = rcg_s[options_start+1:-1].split(",")
+        rcg_options = map(lambda x: x.strip(), rcg_options)
+        rcg_v = rcg_s[:options_start].split(",")
+        rcg_data = {}
+        for a, b in zip(cols_rcg, rcg_v):
+            rcg_data[a] = b
+        rcg_data["Options"] = rcg_options
+
+        # VV status
+        vv_l = []
+        for line in lines[1:]:
+            v = line.strip().strip(",").split(",")
+            if len(v) != len(cols_vv):
+                continue
+            vv_data = {}
+            for a, b in zip(cols_vv, v):
+                vv_data[a] = b
+            vv_data['LastSyncTime'] = self.lastsync_s_to_datetime(vv_data['LastSyncTime'])
+            vv_l.append(vv_data)
+        data = {'rcg': rcg_data, 'vv': vv_l}
+        return data
+
+    @cache("showrcopy_groups")
+    def _showrcopy(self):
+        cmd = 'showrcopy groups'
+        out, err = self.rcmd(cmd)
+        return out, err
+
+    def clear_showrcopy_cache(self):
+        clear_cache("showrcopy_groups", o=self)
+
     def clear_caches(self):
         clear_cache("showvv", o=self)
 
