@@ -646,8 +646,6 @@ def purge_cache():
             continue
         shutil.rmtree(d)
 
-purge_cache()
-
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

@@ -1504,6 +1504,10 @@ class Node(Svc, Freezer, Scheduler):
         outs = {}
         need_aggregate = self.action_need_aggregate(action)
 
+        # generic cache janitoring
+        rcUtilities.purge_cache()
+        self.log.debug("session uuid: %s" % rcEnv.session_uuid)
+
         if action in actions_no_multiple_services and len(self.svcs) > 1:
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
