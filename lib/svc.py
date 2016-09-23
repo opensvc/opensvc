@@ -2913,7 +2913,7 @@ class Svc(Resource, Scheduler):
         if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
             return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback]
+        rids = [r.rid for r in self.get_resources() if r.can_rollback and not r.always_on]
         if len(rids) == 0:
             self.log.info("skip rollback %s: no resource activated"%action)
             return
