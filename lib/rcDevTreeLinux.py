@@ -466,7 +466,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             devtype = self.dev_type(slavename)
             d.add_parent(slavename, size, devtype)
 
-        if devname in mp_h:
+        if devname in wwid_h:
             wwid = wwid_h[devname]
             d.set_alias(wwid)
             try:
