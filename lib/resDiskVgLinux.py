@@ -78,7 +78,7 @@ class Disk(resDisk.Disk):
     @cache("vg.lvs.attr")
     def get_lvs_attr(self):
         cmd = ['lvs', '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
-        ret, out, err = self.call(cmd, errlog=False, cache=False)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
         data = {}
@@ -152,7 +152,7 @@ class Disk(resDisk.Disk):
 
     def activate_vg(self):
         cmd = [ 'vgchange', '-a', 'y', self.name ]
-        (ret, out, err) = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd)
         clear_cache("vg.lvs")
         clear_cache("vg.lvs.attr")
         clear_cache("vg.tags")
@@ -166,6 +166,8 @@ class Disk(resDisk.Disk):
         clear_cache("vg.lvs.attr")
         clear_cache("vg.tags")
         if ret == 0:
+            return True
+        if not self.is_up():
             return True
         return False
 
@@ -222,7 +224,7 @@ class Disk(resDisk.Disk):
     @cache("vg.lvs")
     def vg_lvs(self):
         cmd = ['vgs', '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
-        (ret, out, err) = self.call(cmd, cache=True)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
         data = {}
@@ -241,7 +243,7 @@ class Disk(resDisk.Disk):
     @cache("vg.pvs")
     def vg_pvs(self):
         cmd = ['vgs', '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
-        (ret, out, err) = self.call(cmd, cache=True)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
         data = {}
