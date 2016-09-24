@@ -389,7 +389,7 @@ class Compliance(object):
                 # purge unspecified modulesets
                 modulesets = self.options.moduleset.split(',')
                 modulesets = self.expand_modulesets(modulesets)
-                for ms in self.data["modulesets"].keys():
+                for ms in list(self.data["modulesets"].keys()):
                     if ms not in modulesets:
                         del(self.data["modulesets"][ms])
             elif self.options.module != "":
