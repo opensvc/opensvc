@@ -26,6 +26,15 @@ fi
 BASENAME=`basename $0`
 
 case $BASENAME in
+opensvc)
+	#
+	# Use me as the shebang for python modules to be garantied the
+	# same python requirements than the agent are met (ie 2.6+).
+	#
+	# Example: #!/usr/bin/env opensvc
+	#
+	exec "$OSVC_PYTHON" "$@"
+	;;
 *.cluster)
 	BIN_ARGS="--cluster"
 	BASENAME=`echo $BASENAME|sed -e "s/.cluster$//"`
