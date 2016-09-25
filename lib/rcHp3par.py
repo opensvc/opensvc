@@ -2,14 +2,19 @@ from __future__ import print_function
 import os
 import json
 import rcExceptions as ex
-import ConfigParser
 from subprocess import *
 import time
 import urllib
 import urllib2
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, clear_cache
+from rcUtilities import cache, clear_cache, justcall
 import re
+import datetime
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 if rcEnv.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.pathbin
@@ -226,10 +231,6 @@ class Hp3par(object):
     def get_uuid(self):
         if self.uuid is not None:
             return self.uuid
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
         config = ConfigParser.RawConfigParser()
         config.read(nodeconf)
         try:
@@ -355,7 +356,7 @@ class Hp3par(object):
                 lines.append(line)
                 in_block = True
             else:
-                if line.startswith(" "):
+                if not line.startswith(" "):
                     break
                 lines.append(line)
 
@@ -382,10 +383,15 @@ class Hp3par(object):
             vv_data = {}
             for a, b in zip(cols_vv, v):
                 vv_data[a] = b
-            vv_data['LastSyncTime'] = self.lastsync_s_to_datetime(vv_data['LastSyncTime'])
+            vv_data['LastSyncTime'] = self.s_to_datetime(vv_data['LastSyncTime'])
             vv_l.append(vv_data)
         data = {'rcg': rcg_data, 'vv': vv_l}
         return data
+
+    def s_to_datetime(self, s):
+        out, err, ret = justcall(["date", "--utc", "--date=%s" % s, '+%Y-%m-%d %H:%M:%S'])
+        d = datetime.datetime.strptime(out.strip(), "%Y-%m-%d %H:%M:%S")
+        return d
 
     @cache("showrcopy_groups")
     def _showrcopy(self):

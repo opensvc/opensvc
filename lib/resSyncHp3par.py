@@ -101,7 +101,7 @@ class syncHp3par(resSync.Sync):
     def can_sync(self, target=None, s=None):
         data = self.showrcopy()
         last = data['vv'][0]['LastSyncTime']
-        if self.skip_sync(datetime.datetime.now()-last):
+        if self.skip_sync(datetime.datetime.utcnow()-last):
             return False
         return True
 
@@ -248,15 +248,6 @@ class syncHp3par(resSync.Sync):
     def showrcopy(self):
         return self.array_obj.showrcopy(self.rcg)
 
-    def lastsync_s_to_datetime(self, s):
-        try:
-            d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S %Z")
-        except ValueError:
-            # workaround hp-ux python 2.6
-            s = s.replace("CET", "MET")
-            d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S %Z")
-        return d
-
     def _status(self, verbose=False):
         if self.array_obj is None:
             self.status_log("array %s is not accessible" % self.array)
@@ -268,7 +259,7 @@ class syncHp3par(resSync.Sync):
             self.status_log(str(e))
             return rcStatus.UNDEF
 
-        elapsed = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay)
+        elapsed = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.sync_max_delay)
         r = None
         if data['rcg']['Status'] != "Started":
             self.status_log("rcopy group status is not Started (%s)"%data['rcg']['Status'])
