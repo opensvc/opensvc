@@ -935,17 +935,17 @@ class Svc(Resource, Scheduler):
                 if 'encap' in r.tags:
                     continue
                 rstatus = rcStatus.status_str(r.rstatus)
-                r_vals.append([repr(self.svcname),
-                               repr(rcEnv.nodename),
+                r_vals.append([self.svcname,
+                               rcEnv.nodename,
                                "",
-                               repr(r.rid),
-                               repr(r.type),
-                               repr(r.label),
-                               repr(str(rstatus)),
+                               r.rid,
+                               r.type,
+                               r.label,
+                               str(rstatus),
                                "1" if r.monitor else "0",
                                "1" if r.optional else "0",
                                "1" if r.disabled else "0",
-                               repr(str(now)),
+                               str(now),
                                r.status_logs_str()])
 
         g_vars=["mon_svcname",
@@ -1014,18 +1014,18 @@ class Svc(Resource, Scheduler):
 
                 for rid in encap_res_status['resources']:
                     rstatus = encap_res_status['resources'][rid]['status']
-                    r_vals.append([repr(self.svcname),
-                                   repr(rcEnv.nodename),
-                                   repr(container.name),
-                                   repr(str(rid)),
-                                   repr(str(r.type)),
-                                   repr(str(encap_res_status['resources'][rid]['label'])),
-                                   repr(str(rstatus)),
+                    r_vals.append([self.svcname,
+                                   rcEnv.nodename,
+                                   container.name,
+                                   str(rid),
+                                   str(r.type),
+                                   str(encap_res_status['resources'][rid]['label']),
+                                   str(rstatus),
                                    "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
                                    "1" if encap_res_status['resources'][rid].get('optional', False) else "0",
                                    "1" if encap_res_status['resources'][rid].get('disabled', False) else "0",
-                                   repr(str(now)),
-                                   repr(str(encap_res_status['resources'][rid]['log']))])
+                                   str(now),
+                                   str(encap_res_status['resources'][rid]['log'])])
 
                 if 'avail' not in status or 'avail' not in encap_res_status:
                     continue
