@@ -39,8 +39,6 @@ class Disk(resDisk.Disk):
                           restart=restart,
                           subset=subset)
 
-        self.devs = set([])
-        self.devs_not_found = set([])
         self.user = user
         self.group = group
         self.perm = perm
@@ -97,6 +95,9 @@ class Disk(resDisk.Disk):
         return path
 
     def validate_devs(self):
+        self.devs = set([])
+        self.devs_not_found = set([])
+        self.dst_devs_not_found = set([])
         for dev in self.original_devs:
             if ":" in dev:
                 try:
