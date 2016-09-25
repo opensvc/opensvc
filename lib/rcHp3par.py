@@ -34,102 +34,6 @@ def reformat(s):
     s = s.replace("Pseudo-terminal will not be allocated because stdin is not a terminal.", "")
     return s.strip()
 
-def proxy_cmd(cmd, array, manager, svcname, uuid=None, log=None):
-    url = 'https://%s/api/cmd/' % manager
-    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-    header = { 'User-Agent' : user_agent }
-
-    values = {
-      'array' : array,
-      'cmd' : cmd,
-      'svcname' : svcname,
-      'uuid' : uuid,
-    }
-
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data, header)
-
-    try:
-        f = urllib2.build_opener().open(req)
-        response = f.read()
-        #response = urllib2.urlopen(req)
-    except Exception as e:
-        return "", str(e)
-
-    try:
-        d = json.loads(response)
-        ret = d['ret']
-        out = d['out']
-        err = d['err']
-    except:
-        ret = 1
-        out = ""
-        err = "unexpected proxy response format (not json)"
-
-    if ret != 0:
-        raise ex.excError("proxy error: %s" % err)
-
-    return out, err
-
-def cli_cmd(cmd, array, pwf, cli="cli", log=None):
-    os.environ["TPDPWFILE"] = pwf
-    os.environ["TPDNOCERTPROMPT"] = "1"
-    cmd = [cli, '-sys', array, '-nohdtot', '-csvtable'] + cmd.split()
-
-    if log:
-        s = " ".join(cmd)
-        s = re.sub(r'password \w+', 'password xxxxx', s)
-        log.info(s)
-
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    out, err = p.communicate()
-    out = reformat(out)
-    err = reformat(err)
-
-    if p.returncode != 0:
-        if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
-            if log is not None:
-                log.info("3par connection refused. try #%d" % retry)
-            time.sleep(1)
-            return _rcmd(_cmd, cmd, log=log, retry=retry-1)
-        if log is not None:
-            if len(out) > 0: log.info(out)
-            if len(err) > 0: log.error(err)
-        else:
-            print(' '.join(cmd))
-            print(out)
-        raise ex.excError("3par command execution error")
-
-    return out, err
-
-def ssh_cmd(cmd, manager, username, key, log=None):
-    _cmd = ['ssh', '-i', key, '@'.join((username, manager))]
-    cmd = 'setclienv csvtable 1 ; setclienv nohdtot 1 ; ' + cmd + ' ; exit'
-    return _rcmd(_cmd, cmd, log=log)
-
-def _rcmd(_cmd, cmd, log=None, retry=10):
-    p = Popen(_cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-    p.stdin.write(cmd)
-    out, err = p.communicate()
-    out = reformat(out)
-    err = reformat(err)
-
-    if p.returncode != 0:
-        if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
-            if log is not None:
-                log.info("3par connection refused. try #%d" % retry)
-            time.sleep(1)
-            return _rcmd(_cmd, cmd, log=log, retry=retry-1)
-        if log is not None:
-            if len(out) > 0: log.info(out)
-            if len(err) > 0: log.error(err)
-        else:
-            print(cmd)
-            print(out)
-        raise ex.excError("3par command execution error")
-
-    return out, err
-
 class Hp3pars(object):
     allowed_methods = ("ssh", "proxy", "cli")
 
@@ -228,6 +132,102 @@ class Hp3par(object):
         self.log = log
         self.cache_sig_prefix = "hp3par."+self.manager+"."
 
+    def ssh_cmd(self, cmd, log=False):
+        _cmd = ['ssh', '-i', self.key, '@'.join((self.username, self.manager))]
+        cmd = 'setclienv csvtable 1 ; setclienv nohdtot 1 ; ' + cmd + ' ; exit'
+        return self._rcmd(_cmd, cmd, log=log)
+
+    def proxy_cmd(self, cmd, log=False):
+        url = 'https://%s/api/cmd/' % self.manager
+        user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+        header = { 'User-Agent' : user_agent }
+
+        values = {
+          'array' : self.name,
+          'cmd' : cmd,
+          'svcname' : self.svcname,
+          'uuid' : self.uuid,
+        }
+
+        data = urllib.urlencode(values)
+        req = urllib2.Request(url, data, header)
+
+        try:
+            f = urllib2.build_opener().open(req)
+            response = f.read()
+            #response = urllib2.urlopen(req)
+        except Exception as e:
+            return "", str(e)
+
+        try:
+            d = json.loads(response)
+            ret = d['ret']
+            out = d['out']
+            err = d['err']
+        except:
+            ret = 1
+            out = ""
+            err = "unexpected proxy response format (not json)"
+
+        if ret != 0:
+            raise ex.excError("proxy error: %s" % err)
+
+        return out, err
+
+    def _rcmd(self, _cmd, cmd, log=False, retry=10):
+        p = Popen(_cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        p.stdin.write(cmd)
+        out, err = p.communicate()
+        out = reformat(out)
+        err = reformat(err)
+
+        if p.returncode != 0:
+            if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
+                if log:
+                    self.log.info("3par connection refused. try #%d" % retry)
+                time.sleep(1)
+                return self._rcmd(_cmd, cmd, log=log, retry=retry-1)
+            if log:
+                if len(out) > 0: self.log.info(out)
+                if len(err) > 0: self.log.error(err)
+            else:
+                print(cmd)
+                print(out)
+            raise ex.excError("3par command execution error")
+
+        return out, err
+
+    def cli_cmd(self, cmd, log=False):
+        os.environ["TPDPWFILE"] = self.pwf
+        os.environ["TPDNOCERTPROMPT"] = "1"
+        cmd = [self.cli, '-sys', self.name, '-nohdtot', '-csvtable'] + cmd.split()
+
+        if log:
+            s = " ".join(cmd)
+            s = re.sub(r'password \w+', 'password xxxxx', s)
+            self.log.info(s)
+
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        out = reformat(out)
+        err = reformat(err)
+
+        if p.returncode != 0:
+            if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
+                if log:
+                    self.log.info("3par connection refused. try #%d" % retry)
+                time.sleep(1)
+                return self._rcmd(_cmd, cmd, log=log, retry=retry-1)
+            if log:
+                if len(out) > 0: self.log.info(out)
+                if len(err) > 0: self.log.error(err)
+            else:
+                print(' '.join(cmd))
+                print(out)
+            raise ex.excError("3par command execution error")
+
+        return out, err
+
     def get_uuid(self):
         if self.uuid is not None:
             return self.uuid
@@ -239,14 +239,14 @@ class Hp3par(object):
             pass
         return self.uuid
 
-    def rcmd(self, cmd, log=None):
+    def rcmd(self, cmd, log=False):
         if self.method == "ssh":
-            return ssh_cmd(cmd, self.manager, self.username, self.key, log=log)
+            return self.ssh_cmd(cmd, log=log)
         elif self.method == "cli":
-            return cli_cmd(cmd, self.manager, self.pwf, cli=self.cli, log=log)
+            return self.cli_cmd(cmd, log=log)
         elif self.method == "proxy":
             self.get_uuid()
-            return proxy_cmd(cmd, self.name, self.manager, self.svcname, uuid=self.uuid, log=log)
+            return self.proxy_cmd(cmd, log=log)
         else:
             raise ex.excError("unsupported method %s set in auth.conf for array %s" % (self.method, self.name))
 
@@ -298,7 +298,7 @@ class Hp3par(object):
         s = self.rcmd(cmd)[0]
         return self.serialize(s, cols)
 
-    def updatevv(self, vvnames=None, log=None):
+    def updatevv(self, vvnames=None, log=False):
         cmd = 'updatevv -f'
         if vvnames is None or len(vvnames) == 0:
             raise ex.excError("updatevv: no vv names specified")

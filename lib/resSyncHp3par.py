@@ -76,7 +76,7 @@ class syncHp3par(resSync.Sync):
                     raise ex.excError(str(e))
 
     def _cmd(self, cmd, target=None, log=False):
-        array_obj = self.get_array_obj(target=target, log=log)
+        array_obj = self.get_array_obj(target=target, log=self.log)
         if log:
             if target is not None:
                 suffix = " (on " + target + ")"
