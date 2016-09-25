@@ -119,8 +119,6 @@ class Disk(resDisk.Disk):
     def remove_tag(self, tag):
         cmd = [ 'vgchange', '--deltag', '@'+tag, self.name ]
         (ret, out, err) = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
         self.clear_cache("vg.tags")
 
     def list_tags(self, tags=[]):
@@ -223,8 +221,7 @@ class Disk(resDisk.Disk):
             self.log.info("%s is already down" % self.label)
             return
         self.remove_holders()
-        curtags = self.list_tags()
-        self.remove_tags(curtags)
+        self.remove_tags([self.tag])
         self.udevadm_settle()
         self.deactivate_vg()
 
