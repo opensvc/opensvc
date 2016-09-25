@@ -38,6 +38,9 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+if sys.version_info[0] < 3:
+    BrokenPipeError = IOError
+
 deprecated_actions = [
   "collector_json_asset",
   "collector_json_networks",
@@ -1799,9 +1802,11 @@ class Node(Svc, Freezer, Scheduler):
                     s = c(line)
                     if s:
                          print(s)
-        except (BrokenPipeError, IOError):
-            sys.stdout = os.fdopen(1)
-            pass
+        except BrokenPipeError:
+            try:
+                sys.stdout = os.fdopen(1)
+            except:
+                pass
 
     def _print_config(self, cf):
         from rcColor import colorize, color
