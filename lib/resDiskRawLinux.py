@@ -223,6 +223,7 @@ class Disk(resDiskRaw.Disk):
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
                     raise ex.excError
+                del(self.raws[raw])
 
     def load_sys_devs(self):
         import glob
