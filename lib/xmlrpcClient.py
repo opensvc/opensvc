@@ -564,7 +564,7 @@ class Collector(object):
     def push_service(self, svc, sync=True):
         def repr_config(svc):
             import codecs
-            cf = os.path.join(rcEnv.pathsvc, 'etc', svc+'.conf')
+            cf = os.path.join(rcEnv.pathetc, svc+'.conf')
             if not os.path.exists(cf):
                 return
             with codecs.open(cf, 'r', encoding="utf8") as f:
