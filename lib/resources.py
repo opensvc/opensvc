@@ -126,7 +126,7 @@ class Resource(object):
                     self.log.error("%s exec format error: check the script shebang" % cmd)
                 else:
                     self.log.error("%s error: %s" % (cmd, str(e)))
-            except:
+            except Exception as e:
                 ret = 1
                 self.log.error("%s error: %s" % (cmd, str(e)))
             if blocking and ret != 0:
