@@ -3219,7 +3219,12 @@ def get_pg_settings(svc, s):
     d = {}
     if s != "DEFAULT":
         conf = ConfigParser.RawConfigParser()
-        conf.read(svc.conf)
+        import codecs
+        with codecs.open(svc.conf, "r", "utf8") as f:
+            if sys.version_info[0] >= 3:
+                conf.read_file(f)
+            else:
+                conf.readfp(f)
         import copy
         for o in copy.copy(conf.defaults()):
             conf.remove_option("DEFAULT", o)
