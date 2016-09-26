@@ -1,7 +1,6 @@
 import sys
 import os
 from rcGlobalEnv import rcEnv
-from rcNode import node_get_node_env
 from textwrap import TextWrapper
 
 deprecated_keywords = {
@@ -942,9 +941,8 @@ class KeywordServiceType(Keyword):
                   keyword="service_type",
                   order=15,
                   required=True,
-                  default=node_get_node_env(),
                   candidates=rcEnv.allowed_svc_envs,
-                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
 
 class KeywordServiceEnv(Keyword):
@@ -955,9 +953,8 @@ class KeywordServiceEnv(Keyword):
                   keyword="env",
                   order=15,
                   required=True,
-                  default=node_get_node_env(),
                   candidates=rcEnv.allowed_svc_envs,
-                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
 
 class KeywordNodes(Keyword):
