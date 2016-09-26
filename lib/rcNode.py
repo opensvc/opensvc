@@ -1,9 +1,6 @@
 import os
 import sys
-import re
 from rcGlobalEnv import rcEnv
-import logging
-import rcExceptions as ex
 
 try:
     import ConfigParser
@@ -11,8 +8,15 @@ except ImportError:
     import configparser as ConfigParser
 
 def node_get_node_env():
+    import codecs
     config = ConfigParser.RawConfigParser()
-    config.read(rcEnv.nodeconf)
+    if not os.path.exists(rcEnv.nodeconf):
+        return 'TST'
+    with codecs.open(rcEnv.nodeconf, "r", "utf8") as f:
+        if sys.version_info[0] >= 3:
+            config.read_file(f)
+        else:
+            config.readfp(f)
     if config.has_section('node'):
         if config.has_option('node', 'env'):
             return config.get('node', 'env')
