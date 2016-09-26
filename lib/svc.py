@@ -1227,7 +1227,7 @@ class Svc(Resource, Scheduler):
         # now we known we'll execute a command in the slave, so purge the encap cache
         self.purge_cache_encap_json_status(container.rid)
 
-        options = []
+        options = ['--daemon']
         if self.options.dry_run:
             options.append('--dry-run')
         if self.options.refresh:

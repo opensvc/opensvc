@@ -102,6 +102,8 @@ def _install_service(svcname, cf):
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
+parser.add_option("--daemon", default=False, action="store_true", dest="daemon",
+                  help="a flag inhibiting the daemonization. set by the daemonization routine.")
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 parser.add_option("--debug", default=False, action="store_true", dest="debug",
@@ -378,16 +380,14 @@ def main():
         if docker_argv is not None:
             s.docker_argv = docker_argv
 
-    if sysname != "Windows" and (action.startswith("stop") or action in ("shutdown", "unprovision", "switch")):
-        pid = fork(node.do_svcs_action, [action], {"rid": rid, "tags": tags, "subsets": subsets})
+    if not options.daemon and action.startswith("stop") or action in ("shutdown", "unprovision", "switch"):
         try:
-            pid, status = os.waitpid(pid, 0)
-            err = os.WEXITSTATUS(status)
-        except ex.excError as e:
-            print(e, file=sys.stderr)
-            err = 1
+            import subprocess
+            p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep)
+            p.wait()
+            err = p.returncode
         except (ex.excSignal, KeyboardInterrupt) as e:
-            print("the action, detached as pid %d, will continue executing" % pid)
+            print("the action, detached as pid %d, will continue executing" % p.pid)
             err = 1
     else:
         try:
@@ -403,36 +403,6 @@ def main():
         pass
 
     return err
-
-def fork(fn, args=[], kwargs={}):
-    pid = os.fork()
-    if pid > 0:
-        """ return to parent execution
-        """
-        return pid
-
-    """ separate the son from the father
-    """
-    os.chdir('/')
-    os.setsid()
-    os.umask(0)
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            pid, status = os.waitpid(pid, 0)
-            err = os.WEXITSTATUS(status)
-            os._exit(err)
-    except:
-        os._exit(1)
-
-    try:
-        fn(*args, **kwargs)
-    except Exception as e:
-        print(e, file=sys.stderr)
-        os._exit(1)
-
-    os._exit(0)
 
 if __name__ == "__main__":
     r = main()
