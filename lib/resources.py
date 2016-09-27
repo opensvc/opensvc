@@ -113,7 +113,11 @@ class Resource(object):
         attr = type+"_"+action
         if hasattr(self, attr):
             cmd = getattr(self, attr)
-            cmdv = shlex.split(cmd)
+            if sys.version_info[0] < 3:
+                cmdv = shlex.split(cmd.encode('utf8'))
+                cmdv = map(lambda s: s.decode('utf8'), cmdv)
+            else:
+                cmdv = shlex.split(cmd)
 
             if self.svc.options.dry_run:
                 self.log.info("exec trigger %s" % getattr(self, attr))
