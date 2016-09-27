@@ -2829,7 +2829,7 @@ class Svc(Resource, Scheduler):
         joined = []
         while len(joined) < len(ps):
             for n, p in ps.items():
-                p.join(1)
+                p.join(0.1)
                 if not p.is_alive():
                     joined.append(n)
                 q = queues[n]
