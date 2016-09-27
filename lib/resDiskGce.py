@@ -47,6 +47,7 @@ class Disk(resDisk.Disk, rcGce.Gce):
     def get_attached_disks(self, refresh=False):
         if hasattr(self.svc, "gce_attached_disks") and not refresh:
              return self.svc.gce_attached_disks
+        self.wait_gce_auth()
         cmd = ["gcloud", "compute", "instances", "describe", rcEnv.nodename, "--format", "json", "--zone", self.gce_zone]
         out, err, ret = justcall(cmd)
         data = json.loads(out)
@@ -59,6 +60,7 @@ class Disk(resDisk.Disk, rcGce.Gce):
     def get_disks(self, refresh=False):
         if hasattr(self.svc, "gce_disks") and not refresh:
              return self.svc.gce_disks
+        self.wait_gce_auth()
         cmd = ["gcloud", "compute", "disks", "list", "--format", "json", "--zone", self.gce_zone]
         out, err, ret = justcall(cmd)
         data = json.loads(out)
@@ -93,7 +95,6 @@ class Disk(resDisk.Disk, rcGce.Gce):
             raise Exception("non allocated volumes: %s" % ', '.join(non_exist))
 
     def _status(self, verbose=False):
-        self.wait_gce_auth()
         try:
             self.validate_volumes()
         except Exception as e:

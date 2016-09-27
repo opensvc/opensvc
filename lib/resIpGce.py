@@ -128,6 +128,7 @@ class Ip(resIp.Ip, rcGce.Gce):
         if not self.routename:
             return
         routenames = " ".join([r.routename for r in self.svc.get_resources("ip") if hasattr(r, "routename")])
+        self.wait_gce_auth()
         cmd = ["gcloud", "compute", "routes", "list", "--format", "json", routenames]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -174,7 +175,6 @@ class Ip(resIp.Ip, rcGce.Gce):
         return True
 
     def _status(self, verbose=False):
-        self.wait_gce_auth()
         self.getaddr()
         try:
             local_status = self.has_local_route()
