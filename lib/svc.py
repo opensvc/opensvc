@@ -2826,11 +2826,15 @@ class Svc(Resource, Scheduler):
         if ps is None or queues is None:
             return results
         results = {}
-        for n, p in ps.items():
-            p.join()
-        for n, q in queues.items():
-            if not q.empty():
-                results[n] = q.get()
+        joined = []
+        while len(joined) < len(ps):
+            for n, p in ps.items():
+                p.join(1)
+                if not p.is_alive():
+                    joined.append(n)
+                q = queues[n]
+                if not q.empty():
+                    results[n] = q.get()
         return results
 
     def do_action(self, action, waitlock=60):
