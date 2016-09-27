@@ -321,6 +321,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             if verbose:
                 self.log.info("create symlink %s -> %s" % (run_netns, proc_netns))
             os.symlink(proc_netns, run_netns)
+        # keep a reference on the run_netns file to prevent its removal during our run
+        self.ns_fd = open(run_netns, "r")
 
     def stopip_cmd(self):
         intf = self.get_docker_interface()
