@@ -5,8 +5,9 @@ import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import justcall
+import rcGce
 
-class Disk(resDisk.Disk):
+class Disk(resDisk.Disk, rcGce.Gce):
     def __init__(self,
                  rid=None,
                  type="disk.gce",
@@ -92,6 +93,7 @@ class Disk(resDisk.Disk):
             raise Exception("non allocated volumes: %s" % ', '.join(non_exist))
 
     def _status(self, verbose=False):
+        self.wait_gce_auth()
         try:
             self.validate_volumes()
         except Exception as e:

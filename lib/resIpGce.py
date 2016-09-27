@@ -5,10 +5,11 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from rcUtilities import getaddr, justcall
 import json
+import rcGce
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
-class Ip(resIp.Ip):
+class Ip(resIp.Ip, rcGce.Gce):
     def __init__(self,
                  rid=None,
                  ipName=None,
@@ -173,6 +174,7 @@ class Ip(resIp.Ip):
         return True
 
     def _status(self, verbose=False):
+        self.wait_gce_auth()
         self.getaddr()
         try:
             local_status = self.has_local_route()
