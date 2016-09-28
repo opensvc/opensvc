@@ -3037,12 +3037,12 @@ class Svc(Resource, Scheduler):
             fp.close()
             with open(fname, "w") as fp:
                 self.config.write(fp)
-            shutil.move(fname, rcEnv.nodeconf)
+            shutil.move(fname, self.cf)
         except Exception as e:
             print("failed to write new %s (%s)" % (self.cf, str(e)), file=sys.stderr)
             raise ex.excError()
         try:
-            os.chmod(rcEnv.nodeconf, 0o0644)
+            os.chmod(self.cf, 0o0644)
         except:
             pass
 
