@@ -27,7 +27,7 @@ os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/us
 
 def handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
-        m = re.search(r'{.+}', s)
+        m = re.search(r'{[\w#\.]+}', s)
         if m is None:
             return s
         v = m.group(0).strip("{}")
@@ -3345,7 +3345,7 @@ def build(name, minimal=False, svcconf=None):
             nodes -= set([''])
             nodes = set(map(lambda x: x.lower(), nodes))
         else:
-            nodes = set([])
+            nodes = set([rcEnv.nodename])
         d_nodes['nodes'] = nodes
 
         if "drpnodes" in defaults:
@@ -3411,7 +3411,10 @@ def build(name, minimal=False, svcconf=None):
         elif "service_type" in defaults:
             svc.svc_env = defaults["service_type"]
         else:
-            svc.svc_env = ''
+            svc.svc_env = None
+
+    if svc.svc_env is None:
+        svc.svc_env = rcEnv.node_env
 
     if svc.svc_env not in rcEnv.allowed_svc_envs:
         raise ex.excInitError('%s is not a valid service env (%s)'%(svc.svc_env, ', '.join(rcEnv.allowed_svc_envs)))
