@@ -380,7 +380,7 @@ def main():
         if docker_argv is not None:
             s.docker_argv = docker_argv
 
-    if not options.daemon and action.startswith("stop") or action in ("shutdown", "unprovision", "switch"):
+    if not options.daemon and action.startswith("stop") and action in ("shutdown", "unprovision", "switch"):
         try:
             import subprocess
             p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep)
