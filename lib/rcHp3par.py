@@ -232,7 +232,7 @@ class Hp3par(object):
         if self.uuid is not None:
             return self.uuid
         config = ConfigParser.RawConfigParser()
-        config.read(nodeconf)
+        config.read(rcEnv.nodeconf)
         try:
             self.uuid = config.get("node", "uuid")
         except:
