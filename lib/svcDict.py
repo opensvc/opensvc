@@ -2459,6 +2459,19 @@ class KeywordDiskPvs(Keyword):
                   provisioning=True
                 )
 
+class KeywordZPoolVdev(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype=["zpool", "pool"],
+                  keyword="vdev",
+                  order=11,
+                  at=True,
+                  provisioning=True,
+                  text="The vdev list, including optional parity keywords, as would be passed to zpool create."
+                )
+
 class KeywordZPoolName(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3957,6 +3970,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskPvs()
         self += KeywordZPoolName()
         self += KeywordZPoolPoolname()
+        self += KeywordZPoolVdev()
         self += KeywordVmdgContainerid()
         self += KeywordDiskDrbdRes()
         self += KeywordFsType()
