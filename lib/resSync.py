@@ -80,7 +80,7 @@ class Sync(Res.Resource, Scheduler):
             # No dstfs check has been configured. Assume the admin knows better.
             return True
         ruser = self.svc.node.get_ruser(node)
-        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'df', self.dstfs]
+        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', self.dstfs]
         (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret != 0:
             raise ex.excError
