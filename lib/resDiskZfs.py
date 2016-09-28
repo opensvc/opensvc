@@ -159,12 +159,13 @@ class Disk(resDisk.Disk):
                     continue
                 # vdev entry
                 disk = line.split()[0]
-                if disk.startswith(rcEnv.pathvar):
-                    disk = disk.split('/')[-1]
-                if re.match("^.*", disk) is None:
-                    continue
-                if not disk.startswith("/dev/rdsk/"):
-                    disk = "/dev/rdsk/" + disk
+                if rcEnv.sysname == "SunOS":
+                    if disk.startswith(rcEnv.pathvar):
+                        disk = disk.split('/')[-1]
+                    if re.match("^.*", disk) is None:
+                        continue
+                    if not disk.startswith("/dev/rdsk/"):
+                        disk = "/dev/rdsk/" + disk
                 disks.add(disk)
 
         self.log.debug("found disks %s held by pool %s" % (disks, self.name))
@@ -180,6 +181,16 @@ class Disk(resDisk.Disk):
             self.disks.add(d)
 
         return self.disks
+
+    def unprovision(self):
+        m = __import__("provDiskZpool")
+        prov = getattr(m, "ProvisioningDisk")(self)
+        prov.unprovisioner()
+
+    def provision(self):
+        m = __import__("provDiskZpool")
+        prov = getattr(m, "ProvisioningDisk")(self)
+        prov.provisioner()
 
 if __name__ == "__main__":
     help(Disk)
