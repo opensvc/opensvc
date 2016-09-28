@@ -596,7 +596,12 @@ def cache(sig):
 def cache_fpath(sig):
     cache_d = get_cache_d()
     if not os.path.exists(cache_d):
-        os.makedirs(cache_d)
+        try:
+            os.makedirs(cache_d)
+        except:
+            # we run unlocked here ...
+            # another process created the dir since we tested ?
+            pass
     fpath = os.path.join(cache_d, sig)
     return fpath
 
