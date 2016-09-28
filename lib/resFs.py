@@ -38,6 +38,8 @@ class Mount(Res.Resource):
         self.snap_size = snap_size
         self.always_on = always_on
         self.label = device + '@' + mountPoint
+        if self.fsType != "none":
+            self.label = self.fsType + " " + self.label
         self.fsck_h = {}
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']

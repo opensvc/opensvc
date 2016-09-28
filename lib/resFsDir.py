@@ -39,7 +39,7 @@ class FsDir(Res.Resource):
         self.user = user
         self.group = group
         self.perm = perm
-        self.label = path
+        self.label = "dir " + path
 
     def start(self):
         self.create()
