@@ -131,7 +131,7 @@ class Sync(Res.Resource, Scheduler):
 
         if cache_remote_node_env[node] in expected_type:
             return True
-        self.log.error("incompatible remote node '%s' host mode: '%s' (expected in %s)"%\
+        self.log.error("incompatible remote node '%s' env: '%s' (expected in %s)"%\
                        (node, cache_remote_node_env[node], ', '.join(expected_type)))
         return False
 

@@ -399,7 +399,7 @@ class Asset(object):
         return s
 
     def print_node_env(self, s, source):
-        print("host mode (%s)"%source)
+        print("environment (%s)"%source)
         print("  %s"%s)
 
     def get_sec_zone(self):
