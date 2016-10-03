@@ -282,8 +282,9 @@ class Module(object):
         return self.action('fixable')
 
 class Compliance(object):
-    def __init__(self, skip_action=None, options=None, collector=None, svcname=None):
+    def __init__(self, skip_action=None, options=None, collector=None, svcname=None, sched_log=None):
         self.skip_action = skip_action
+        self.sched_log = sched_log
         self.options = options
         self.collector = collector
         self.svcname = svcname

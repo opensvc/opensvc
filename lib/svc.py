@@ -1211,7 +1211,7 @@ class Svc(Resource, Scheduler):
             self.log.debug("skip encap %s: no encap resource" % ' '.join(cmd))
             return '', '', 0
         if not container.is_up():
-            self.log.debug("skip encap %s: the container is not running here" % ' '.join(cmd))
+            self.log.info("skip encap %s: the container is not running here" % ' '.join(cmd))
             return '', '', 0
 
         if self.options.slave is not None and not \
@@ -2853,7 +2853,7 @@ class Svc(Resource, Scheduler):
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
-                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname)
+                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname, self.sched_log)
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action
