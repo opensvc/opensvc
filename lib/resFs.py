@@ -44,18 +44,6 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
-    def pre_action(self, rset=None, action=None):
-        if action not in ("stop", "shutdown"):
-            return
-        cwd = os.getcwd()
-        for r in rset.resources:
-            if r.skip or r.disabled:
-                continue
-            if "noaction" in r.tags:
-                continue
-            if cwd.startswith(r.mountPoint):
-                raise ex.excError("parent process current working directory %s is held by the %s resource" % (cwd, r.rid))
-
     def start(self):
         self.validate_dev()
         self.create_mntpt()
