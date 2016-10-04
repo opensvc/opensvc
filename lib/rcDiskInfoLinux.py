@@ -197,7 +197,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             dev = re.sub("[0-9]+$", "", dev)
         path = '/sys/block/%s/device/model' % dev
         if not os.path.exists(path):
-            l = glob.glob("/sys/block/%s/slaves/*/device/vendor" % dev)
+            l = glob.glob("/sys/block/%s/slaves/*/device/model" % dev)
             if len(l) > 0:
                 path = l[0]
         if not os.path.exists(path):
