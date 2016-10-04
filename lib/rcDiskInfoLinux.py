@@ -7,6 +7,7 @@ import rcDiskInfo
 import math
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
+import glob
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
@@ -161,12 +162,22 @@ class diskInfo(rcDiskInfo.diskInfo):
             return id
         return ""
 
+    def devpath_to_sysname(self, devpath):
+        devpath = os.path.realpath(devpath)
+        return os.path.basename(devpath)
+
     def disk_vendor(self, dev):
         if 'cciss' in dev:
             return 'HP'
         s = ''
-        dev = re.sub("[0-9]+$", "", dev)
-        path = dev.replace('/dev/', '/sys/block/')+'/device/vendor'
+        dev = self.devpath_to_sysname(dev)
+        if dev.startswith("sd"):
+            dev = re.sub("[0-9]+$", "", dev)
+        path = '/sys/block/%s/device/vendor' % dev
+        if not os.path.exists(path):
+            l = glob.glob("/sys/block/%s/slaves/*/device/vendor" % dev)
+            if len(l) > 0:
+                path = l[0]
         if not os.path.exists(path):
             return ""
         with open(path, 'r') as f:
@@ -181,8 +192,14 @@ class diskInfo(rcDiskInfo.diskInfo):
             return 'VOLUME'
         s = ''
         vendor = self.disk_vendor(dev)
-        dev = re.sub("[0-9]+$", "", dev)
-        path = dev.replace('/dev/', '/sys/block/')+'/device/model'
+        dev = self.devpath_to_sysname(dev)
+        if dev.startswith("sd"):
+            dev = re.sub("[0-9]+$", "", dev)
+        path = '/sys/block/%s/device/model' % dev
+        if not os.path.exists(path):
+            l = glob.glob("/sys/block/%s/slaves/*/device/vendor" % dev)
+            if len(l) > 0:
+                path = l[0]
         if not os.path.exists(path):
             if 'Red Hat' in vendor:
                 return 'VirtIO'
@@ -251,8 +268,6 @@ class diskInfo(rcDiskInfo.diskInfo):
             print("scanscsi is not supported without /sys mounted", file=sys.stderr)
             return 1
 
-        import glob
-
         disks_before = glob.glob('/sys/block/sd*')
         disks_before += glob.glob('/sys/block/vd*')
         hosts = glob.glob('/sys/class/scsi_host/host*')
@@ -277,7 +292,6 @@ class diskInfo(rcDiskInfo.diskInfo):
 
 if __name__ == "__main__":
     diskinfo = diskInfo()
-    import glob
     disks = glob.glob('/sys/block/sd*')
     disks += glob.glob('/sys/block/vd*')
     diskinfo.print_diskinfo_header()
