@@ -731,7 +731,7 @@ class Collector(object):
                             valsh[disk_id][3] = disk_size
 
             for l in valsh.values():
-                vals += [map(lambda x: repr(x), l)]
+                vals += [l]
                 print(l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region)
 
         done = []
@@ -773,15 +773,15 @@ class Collector(object):
                 continue
             print(rcEnv.nodename, "disk", disk_id, "%d/%dM"%(left, disk_size), "region", region)
             vals.append([
-                 repr(disk_id),
+                 disk_id,
                  "",
-                 repr(disk_size),
-                 repr(left),
-                 repr(disks.disk_vendor(d)),
-                 repr(disks.disk_model(d)),
+                 disk_size,
+                 left,
+                 disks.disk_vendor(d),
+                 disks.disk_model(d),
                  "",
-                 repr(rcEnv.nodename),
-                 repr(region)
+                 rcEnv.nodename,
+                 region
             ])
 
 
@@ -811,7 +811,7 @@ class Collector(object):
               vdisk_id,
               cluster,
               disk_id,
-              str(disk_size),
+              disk_size,
               "virtual",
               "virtual"
             ])
