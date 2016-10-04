@@ -383,11 +383,14 @@ def main():
     if not options.daemon and (action.startswith("stop") or action in ("shutdown", "unprovision", "switch")):
         try:
             import subprocess
-            p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep)
+            p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep, preexec_fn=os.setpgrp)
             p.wait()
             err = p.returncode
         except (ex.excSignal, KeyboardInterrupt) as e:
             print("the action, detached as pid %d, will continue executing" % p.pid)
+            err = 1
+        except Exception as e:
+            print(e, file=sys.stderr)
             err = 1
     else:
         try:
