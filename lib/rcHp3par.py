@@ -251,7 +251,7 @@ class Hp3par(object):
             raise ex.excError("unsupported method %s set in auth.conf for array %s" % (self.method, self.name))
 
     def serialize(self, s, cols):
-        json.dumps(self.csv_to_list_of_dict(s, cols))
+        return json.dumps(self.csv_to_list_of_dict(s, cols))
 
     def csv_to_list_of_dict(self, s, cols):
         l = []
