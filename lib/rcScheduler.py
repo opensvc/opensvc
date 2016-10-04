@@ -881,6 +881,10 @@ class Scheduler(object):
         return False
 
     def print_schedule(self):
+        if not hasattr(self, "config") or self.config is None:
+            print("you are not allowed to print schedules", file=sys.stderr)
+            import rcExceptions as ex
+            raise ex.excError()
         if self.options.format is None:
             self.print_schedule_default()
             return
