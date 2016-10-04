@@ -160,7 +160,9 @@ def main():
     except ex.excError:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        sys.stderr.write(str(exc_value)+'\n')
+        es = str(exc_value)
+        if len(es) > 0:
+            sys.stderr.write(str(exc_value)+'\n')
         err = 1
     except:
         raise
