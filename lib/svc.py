@@ -1667,6 +1667,7 @@ class Svc(Resource, Scheduler):
         if not self.cluster:
             for r in self.get_resources("hb"):
                 if not r.skip and hasattr(r, action):
+                    self.running_action = action
                     getattr(r, action)()
             raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
 

@@ -300,7 +300,9 @@ class Hb(resHb.Hb):
         if not self.svc.remote and remote_status not in ['frozen_stop', 'start_ready']:
             self.log.info("remote already unfrozen")
             do_remote = False
-        if self.svc.remote:
+
+        if self.svc.remote and self.svc.running_action == "thaw":
+            self.log.debug("skip remote action: remote flag %s, running action %s"%(str(self.svc.remote), self.svc.running_action))
             do_remote = False
 
         if not do_local and not do_remote:
