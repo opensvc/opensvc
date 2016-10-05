@@ -845,7 +845,7 @@ class Svc(Resource, Scheduler):
         cr = {}
         for r in avail_resources:
             rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
-            l.append((rid, rtype, status, label, log, monitor, disable, optional, encap))
+            l.append((rid, status, label, log, monitor, disable, optional, encap))
             if rid.startswith("container") and rid in encap_res_status:
                 _l = []
                 for _rid, val in encap_res_status[rid].items():
