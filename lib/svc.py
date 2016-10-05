@@ -2955,6 +2955,7 @@ class Svc(Resource, Scheduler):
         actionlogformatter = logging.Formatter("%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL")
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
+        actionlogfilehandler.setLevel(logging.INFO)
         log.addHandler(actionlogfilehandler)
         self.log.info(" ".join(sys.argv))
 
