@@ -587,8 +587,9 @@ class Svc(Resource, Scheduler):
 
         for rs in self.get_res_sets(self.status_types, strict=True):
             for r in rs.resources:
-                rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+                rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
                 d['resources'][rid] = {'status': status,
+                                       'type': rtype,
                                        'label': label,
                                        'log':log,
                                        'tags': sorted(list(r.tags)),
@@ -704,9 +705,9 @@ class Svc(Resource, Scheduler):
 
         l = []
         cr = {}
-	for r in avail_resources:
-            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
-            l.append((rid, status, label, log, monitor, disable, optional, encap))
+        for r in avail_resources:
+            rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            l.append((rid, rtype, status, label, log, monitor, disable, optional, encap))
             if rid.startswith("container") and rid in encap_res_status:
                 _l = []
                 for _rid, val in encap_res_status[rid].items():
@@ -750,7 +751,7 @@ class Svc(Resource, Scheduler):
 
         l = []
         for r in accessory_resources:
-            rid, status, label, log, monitor, disable, optional, encap = r.status_quad()
+            rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
             if rid in encap_res_status:
                 status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
             l.append((rid, status, label, log, monitor, disable, optional, encap))
@@ -880,7 +881,7 @@ class Svc(Resource, Scheduler):
                                    repr(rcEnv.nodename),
                                    repr(container.name),
                                    repr(str(rid)),
-                                   repr(str(r.type)),
+                                   repr(encap_res_status['resources'][rid].get('type', '')),
                                    repr(str(encap_res_status['resources'][rid]['label'])),
                                    repr(str(rstatus)),
                                    "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
