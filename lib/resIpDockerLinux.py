@@ -280,7 +280,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
     def ip_wait(self):
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
-        for i in range(5, 0, -1):
+        for i in range(15, 0, -1):
             if check_ping(self.addr, timeout=1, count=1):
                 return
         raise ex.excError("timed out waiting for ip activation")
