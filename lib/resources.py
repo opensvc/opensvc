@@ -445,6 +445,7 @@ class Resource(object):
         else:
             encap = False
         return (self.rid,
+                self.type,
                 rcStatus.status_str(r),
                 self.label,
                 self.status_logs_str(color=color),
