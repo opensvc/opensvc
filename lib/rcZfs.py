@@ -107,6 +107,15 @@ class Dataset(object):
         else:
             return False
 
+    def destroy(self, options=[]):
+        "destroy dataset"
+        cmd = ['zfs', 'destroy'] + options + [self.name]
+        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
+        if retcode == 0:
+            return True
+        else:
+            return False
+
     def getprop(self, propname):
         """get a dataset propertie value of dataset
         If success return propperty value

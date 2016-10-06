@@ -30,7 +30,7 @@ class ProvisioningDisk(Provisioning):
             self.r.start()
             return
 
-        cmd = ["zpool", "create", self.name] + self.vdev
+        cmd = ["zpool", "create", "-m", "legacy", self.name] + self.vdev
         self.r.vcall(cmd)
 
         self.remove_keywords(["vdev"])
