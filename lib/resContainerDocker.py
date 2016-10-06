@@ -245,3 +245,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.start()
         self.status(refresh=True)
 
+    def unprovision(self):
+        self.stop()
+        self.status(refresh=True)
+
