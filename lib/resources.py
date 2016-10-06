@@ -713,7 +713,7 @@ class ResourceSet(Resource):
             except:
                 self.parallel = False
 
-        if len(xtags) > 0:
+        if len(xtags) > 0 and not self.svc.command_is_scoped():
             resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
         else:
             resources = self.resources
