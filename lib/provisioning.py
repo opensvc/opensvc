@@ -5,6 +5,10 @@ class Provisioning(object):
     def validate(self):
         return True
 
+    def unprovisioner(self):
+        self.r.stop()
+        return True
+
     def provisioner(self):
         return True
 
