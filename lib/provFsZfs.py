@@ -12,7 +12,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
         ds = Dataset(self.r.device, log=self.r.log)
         if ds.exists():
             ds.destroy(["-r"])
-        if os.path.exists(self.r.mountPoint) and os.path.is_dir(self.r.mountPoint):
+        if os.path.exists(self.r.mountPoint) and os.path.isdir(self.r.mountPoint):
             os.rmdir(self.r.mountPoint)
 
     def provision_dev(self):
