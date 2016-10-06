@@ -12,7 +12,8 @@ class ProvisioningFs(provFs.ProvisioningFs):
         ds = Dataset(self.r.device, log=self.r.log)
         if ds.exists():
             ds.destroy(["-r"])
-        os.rmdir(self.r.mountPoint)
+        if os.path.exists(self.r.mountPoint) and os.path.is_dir(self.r.mountPoint):
+            os.rmdir(self.r.mountPoint)
 
     def provision_dev(self):
         if not which('zfs'):
