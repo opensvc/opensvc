@@ -2,6 +2,7 @@ import sys
 import os
 from rcGlobalEnv import rcEnv
 from textwrap import TextWrapper
+from rcNode import node_get_node_env
 
 deprecated_keywords = {
   "DEFAULT.service_type": "env",
@@ -35,6 +36,7 @@ class Keyword(object):
                  required=False,
                  at=False,
                  default=None,
+                 default_text=None,
                  validator=None,
                  candidates=None,
                  strict_candidates=True,
@@ -52,12 +54,16 @@ class Keyword(object):
         self.at = at
         self.required = required
         self.default = default
+        self.default_text = default_text
         self.candidates = candidates
         self.strict_candidates = strict_candidates
         self.depends = depends
         self.text = text
         self.example = example
         self.provisioning = provisioning
+
+        if self.default_text is None:
+            self.default_text = self.default
 
     def __lt__(self, o):
         return self.order < o.order
@@ -95,7 +101,7 @@ class Keyword(object):
         s += "# ----------------------------------------------------------------------------\n"
         s += "#  required:     %s\n"%str(self.required)
         s += "#  provisioning: %s\n"%str(self.provisioning)
-        s += "#  default:      %s\n"%str(self.default)
+        s += "#  default:      %s\n"%str(self.default_text)
         s += "#  candidates:   %s\n"%candidates
         s += "#  depends:      %s\n"%depends
         s += "#  scopable:     %s\n"%str(self.at)
@@ -104,8 +110,8 @@ class Keyword(object):
             wrapper = TextWrapper(subsequent_indent="#%9s"%"", width=78)
             s += wrapper.fill("#  desc:  "+self.text) + "\n"
         s += '#\n'
-        if self.default is not None:
-            val = self.default
+        if self.default_text is not None:
+            val = self.default_text
         elif self.candidates and len(self.candidates) > 0:
             val = self.candidates[0]
         else:
@@ -940,7 +946,7 @@ class KeywordServiceType(Keyword):
                   section="DEFAULT",
                   keyword="service_type",
                   order=15,
-                  required=True,
+                  required=False,
                   candidates=rcEnv.allowed_svc_envs,
                   text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
@@ -953,6 +959,8 @@ class KeywordServiceEnv(Keyword):
                   keyword="env",
                   order=15,
                   required=True,
+                  default=node_get_node_env(),
+                  default_text="<same as node env>",
                   candidates=rcEnv.allowed_svc_envs,
                   text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
