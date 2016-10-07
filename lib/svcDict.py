@@ -293,6 +293,19 @@ class KeywordStatusSchedule(Keyword):
                   text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
                 )
 
+class KeywordResinfoSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="resinfo_schedule",
+                  at=True,
+                  required=False,
+                  order=11,
+                  default="@60",
+                  text="The service resource info push schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
 class KeywordMonitorSchedule(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3860,6 +3873,7 @@ class KeyDict(KeywordStore):
         self += KeywordRollback()
         self += KeywordStatusSchedule()
         self += KeywordMonitorSchedule()
+        self += KeywordResinfoSchedule()
         self += KeywordPushSchedule()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()

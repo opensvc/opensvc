@@ -33,18 +33,18 @@ class Ip(Res.Resource):
                               monitor=monitor,
                               always_on=always_on,
                               restart=restart)
-        self.ipDev=ipDev
-        self.ipName=ipName
-        self.mask=mask
+        self.ipDev = ipDev
+        self.ipName = ipName
+        self.mask = mask
         self.label = ipName + '@' + ipDev
         self.gateway = gateway
 
     def info(self):
         data = [
-          [self.rid, "ipname", self.ipName],
-          [self.rid, "ipdev", self.ipDev],
-          [self.rid, "mask", str(self.mask)],
-          [self.rid, "gateway", str(self.gateway)],
+          ["ipname", self.ipName],
+          ["ipdev", self.ipDev],
+          ["mask", str(self.mask)],
+          ["gateway", str(self.gateway)],
         ]
         return self.fmt_info(data)
 

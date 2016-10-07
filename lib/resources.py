@@ -35,6 +35,7 @@ class Resource(object):
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
+        self.restart = restart
         self.nb_restart = restart
         self.log = logging.getLogger(self.log_label())
         self.rstatus = None

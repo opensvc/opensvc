@@ -44,6 +44,14 @@ class Mount(Res.Resource):
         self.testfile = os.path.join(mountPoint, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
+    def info(self):
+        data = [
+          ["dev", self.device],
+          ["mnt", self.mountPoint],
+          ["mnt_opt", self.mntOpt if self.mntOpt else ""],
+        ]
+        return self.fmt_info(data)
+
     def start(self):
         self.validate_dev()
         self.create_mntpt()

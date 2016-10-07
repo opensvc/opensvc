@@ -175,10 +175,17 @@ class App(Res.Resource):
         return r
 
     def info(self):
-        self.validate_on_action()
+        l = [
+          ["script", self.script],
+          ["start", str(self.start_seq) if self.start_seq else ""],
+          ["stop", str(self.stop_seq) if self.stop_seq else ""],
+          ["check", str(self.check_seq) if self.check_seq else ""],
+          ["info", str(self.info_seq) if self.info_seq else ""],
+          ["timeout", str(self.timeout) if self.timeout else ""],
+        ]
         if self.info_seq is None:
-            return []
-        l = [["script", self.script]]
+            return self.fmt_info(l)
+        self.validate_on_action()
         s = self.run('info', dedicated_log=False, return_out=True)
         if type(s) != str or len(s) == 0:
             l.append(["Error", "info not implemented in launcher"])

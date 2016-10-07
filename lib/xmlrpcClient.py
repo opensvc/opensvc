@@ -532,18 +532,32 @@ class Collector(object):
             else:
                 self.submit("resmon_update", *args)
 
-    def _push_appinfo(self, svc, sync=True):
-        if 'update_appinfo' not in self.proxy_methods:
+    def _push_resinfo(self, svc, sync=True):
+        if 'update_resinfo' not in self.proxy_methods:
             return
 
-        vars = ['app_svcname',
-                'app_nodename',
+        vars = ['res_svcname',
+                'res_nodename',
                 'cluster_type',
-                'app_launcher',
-                'app_key',
-                'app_value']
+                'rid',
+                'res_key',
+                'res_value']
         vals = []
         for r in svc.get_resources():
+            l = [
+              ["driver", r.type],
+              ["always_on", str(rcEnv.nodename in r.always_on).lower()],
+              ["optional", str(r.optional).lower()],
+              ["disabled", str(r.disabled).lower()],
+              ["monitor", str(r.monitor).lower()],
+              ["restart", str(r.restart)],
+            ]
+            if r.subset:
+                l.append(["subset", r.subset])
+            if len(r.tags) > 0:
+                l.append(["tags", " ".join(r.tags)])
+            vals += r.fmt_info(l)
+
             if not hasattr(r, "info"):
                 continue
             try:
@@ -559,7 +573,7 @@ class Collector(object):
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.update_appinfo(*args)
+        self.proxy.update_resinfo(*args)
 
     def push_service(self, svc, sync=True):
         def repr_config(svc):
@@ -1326,12 +1340,15 @@ class Collector(object):
         for svc in svcs:
             self.push_service(svc, sync=sync)
 
-    def push_appinfo(self, svcs, sync=True):
+    def push_resinfo(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         for svc in svcs:
-            self._push_appinfo(svc, sync=sync)
+            try:
+                self._push_resinfo(svc, sync=sync)
+            except Exception as e:
+                print(e)
 
     def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:

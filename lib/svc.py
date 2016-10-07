@@ -69,7 +69,7 @@ actions_allow_on_frozen = [
   "print_schedule",
   "print_status",
   "push",
-  "push_appinfo",
+  "push_resinfo",
   "push_config",
   "push_service_status",
   "prstatus",
@@ -103,7 +103,7 @@ actions_no_log = [
   "group_status",
   "logs",
   "push",
-  "push_appinfo",
+  "push_resinfo",
   "push_config",
   "push_service_status",
   "resource_monitor",
@@ -125,7 +125,7 @@ actions_no_trigger = [
   "pg_kill",
   "logs",
   "edit_config",
-  "push_appinfo",
+  "push_resinfo",
   "push",
   "group_status",
   "presync",
@@ -143,7 +143,7 @@ actions_no_lock = [
   "get",
   "logs",
   "push",
-  "push_appinfo",
+  "push_resinfo",
   "push_config",
   "push_service_status",
   "scheduler",
@@ -305,6 +305,7 @@ class Svc(Resource, Scheduler):
           'comp_schedule': '00:00-06:00@361',
           'status_schedule': '@9',
           'monitor_schedule': '@1',
+          'resinfo_schedule': '@60',
           'no_schedule': '',
         }
         self.scheduler_actions = {
@@ -342,13 +343,7 @@ class Svc(Resource, Scheduler):
         if len(syncs) > 0:
             self.scheduler_actions["sync_all"] = syncs
 
-        apps = []
-        for r in self.get_resources():
-            if not hasattr(r, "info"):
-                continue
-            apps += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_push_appinfo_"+r.rid, schedule_option="push_schedule")]
-        if len(apps) > 0:
-            self.scheduler_actions["push_appinfo"] = apps
+        self.scheduler_actions["push_resinfo"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_resinfo", schedule_option="resinfo_schedule")
 
     def purge_status_last(self):
         for rset in self.resSets:
@@ -2401,20 +2396,16 @@ class Svc(Resource, Scheduler):
         self.options.refresh = True
         rcSvcmon.svcmon_normal([self])
 
-    def push_appinfo(self):
-        data = self.skip_action("push_appinfo", deferred_write_timestamp=True)
-        if type(data) == bool and not data:
+    def push_resinfo(self):
+        if self.skip_action("push_resinfo"):
             return
-        if type(data) == dict and len(data["keep"]) == 0:
-            return
-        self.task_push_appinfo()
+        self.task_push_resinfo()
 
     @scheduler_fork
-    def task_push_appinfo(self):
+    def task_push_resinfo(self):
         if self.cron:
             self.sched_delay()
-        self.node.collector.call('push_appinfo', [self])
-        self.sched_write_timestamp(self.scheduler_actions["push_appinfo"])
+        self.node.collector.call('push_resinfo', [self])
 
     def push_config(self):
         if self.skip_action("push_config"):
