@@ -33,6 +33,12 @@ class Disk(resDisk.Disk):
                           restart=restart,
                           subset=subset)
 
+    def info(self):
+        data = [
+          ["name", self.name],
+        ]
+        return self.fmt_info(data)
+
     def is_child_dev(self, device):
         l = device.split("/")
         if len(l) != 4 or l[1] != "dev":

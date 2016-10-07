@@ -40,6 +40,13 @@ class Disk(resDisk.Disk):
                           restart=restart,
                           subset=subset)
 
+    def info(self):
+        data = [
+          ["uuid", self.uuid],
+          ["shared", str(self.shared).lower()],
+        ]
+        return self.fmt_info(data)
+
     def md_config_file_name(self):
         return os.path.join(rcEnv.pathvar, 'md_' + self.md_devname() + '.disklist')
 

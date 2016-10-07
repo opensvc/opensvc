@@ -39,12 +39,24 @@ class SyncZfs(resSync.Sync):
         self.target = target
         self.sender = sender
         self.recursive = recursive
+        self.src = src
+        self.dst = dst
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
         (self.dst_pool, self.dst_ds) = a2pool_dataset(dst)
         if delta_store is None:
             self.delta_store = rcEnv.pathvar
         else:
             self.delta_store = delta_store
+
+    def info(self):
+        data = [
+          ["src", self.src],
+          ["dst", self.dst],
+          ["sender", self.sender if self.sender else ""],
+          ["target", " ".join(self.target) if self.target else ""],
+          ["recursive", str(self.recursive).lower()],
+        ]
+        return self.fmt_info(data)
 
     def pre_action(self, rset, action):
         """Prepare dataset snapshots

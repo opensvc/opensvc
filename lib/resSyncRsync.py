@@ -471,6 +471,19 @@ class Rsync(resSync.Sync):
         self.timeout = 3600
         self.options = options
 
+    def info(self):
+        data = [
+          ["src", " ".join(self.src)],
+          ["dst", self.dst],
+          ["dstfs", self.dstfs if self.dstfs else ""],
+          ["bwlimit", self.bwlimit if self.bwlimit else ""],
+          ["snap", str(self.snap).lower()],
+          ["timeout", str(self.timeout)],
+          ["target", " ".join(list(self.target.keys()))],
+          ["options", " ".join(self.options)],
+        ]
+        return self.fmt_info(data)
+
     def __str__(self):
         return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\
                 self.src, self.dst, self.get_options(), str(self.target))

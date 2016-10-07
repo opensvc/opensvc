@@ -34,6 +34,12 @@ class Disk(resDisk.Disk):
                           restart=restart,
                           subset=subset)
 
+    def info(self):
+        data = [
+          ["name", self.name],
+        ]
+        return self.fmt_info(data)
+
     def disklist_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
 
