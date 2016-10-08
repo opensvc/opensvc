@@ -95,6 +95,18 @@ class Module(object):
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
+        os.environ.update({
+          "LC_ALL": "en_US.utf-8",
+          "PYTHONIOENCODING": "utf-8",
+          "OSVC_PYTHON": sys.executable,
+          "OSVC_PATH_ETC": rcEnv.pathetc,
+          "OSVC_PATH_VAR": rcEnv.pathvar,
+          "OSVC_PATH_COMP": rcEnv.pathcomp,
+          "OSVC_PATH_TMP": rcEnv.pathtmp,
+          "OSVC_PATH_LOG": rcEnv.pathlog,
+          "OSVC_NODEMGR": rcEnv.nodemgr,
+          "OSVC_SVCMGR": rcEnv.svcmgr,
+        })
         for rule in self.ruleset.values():
             if (rule["filter"] != "explicit attachment via moduleset" and \
                 "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \

@@ -178,6 +178,7 @@ class rcEnv:
         svcmon = os.path.join(pathbin, "svcmon")
         cron = os.path.join(pathcron, "cron")
 
+    pathcomp = os.path.join(pathvar, "compliance")
     nodeconf = os.path.join(pathetc, "node.conf")
     authconf = os.path.join(pathetc, "auth.conf")
 
