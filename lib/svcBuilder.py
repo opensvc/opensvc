@@ -1333,7 +1333,7 @@ def add_fs_directory(svc, conf, s):
 
     if zone is not None:
         zp = None
-        for r in svc.get_resources("container.zone"):
+        for r in svc.get_resources("container.zone", discard_disabled=False):
             if r.name == zone:
                 try:
                     zp = r.get_zonepath()
@@ -1417,7 +1417,7 @@ def add_fs(svc, conf, s):
 
     if zone is not None:
         zp = None
-        for r in svc.get_resources("container.zone"):
+        for r in svc.get_resources("container.zone", discard_disabled=False):
             if r.name == zone:
                 try:
                     zp = r.get_zonepath()
@@ -3007,7 +3007,7 @@ def add_apps_sysv(svc, conf):
         return d
 
     def find_app(script):
-        for r in svc.get_resources("app"):
+        for r in svc.get_resources("app", discard_disabled=False):
             if r.script.startswith(os.sep):
                 rscript = r.script
             else:
