@@ -260,7 +260,7 @@ class Svc(Resource, Scheduler):
             # Error
             pass
 
-        if isinstance(r, Resource):
+        if isinstance(r, Resource) and r.rid and "#" in r.rid:
             self.resources_by_id[r.rid] = r
 
         r.svc = self
@@ -3022,11 +3022,11 @@ class Svc(Resource, Scheduler):
         return 0
 
     def set_disable(self, rids=[], disable=True):
-        if len(rids) == 0:
+        if not self.command_is_scoped() and (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
             rids = ['DEFAULT']
         for rid in rids:
             if rid != 'DEFAULT' and not self.config.has_section(rid):
-                self.log.error("service", svcname, "has not resource", rid)
+                self.log.error("service %s has not resource %s" % (self.svcname,rid))
                 continue
             self.log.info("set %s.disable = %s" % (rid, str(disable)))
             self.config.set(rid, "disable", disable)
