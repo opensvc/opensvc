@@ -987,6 +987,7 @@ class KeywordNodes(Keyword):
                   order=20,
                   required=True,
                   default=rcEnv.nodename,
+                  default_text="<hostname of the current node>",
                   text="List of cluster local nodes able to start the service.  Whitespace separated."
                 )
 
@@ -999,6 +1000,7 @@ class KeywordAutostartNode(Keyword):
                   order=20,
                   required=False,
                   default=rcEnv.nodename,
+                  default_text="<hostname of the current node>",
                   text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
                 )
 
@@ -3230,7 +3232,7 @@ class KeywordHbType(Keyword):
                   section="hb",
                   keyword="type",
                   required=True,
-                  candidates=('OpenHA', 'LinuxHA'),
+                  candidates=('openha', 'linuxha'),
                   text="Specify the heartbeat driver to use."
                 )
 
@@ -3240,7 +3242,7 @@ class KeywordHbName(Keyword):
                   self,
                   section="hb",
                   keyword="name",
-                  rtype="OpenHA",
+                  rtype="openha",
                   text="Specify the service name used by the heartbeat. Defaults to the service name."
                 )
 
