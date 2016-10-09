@@ -374,6 +374,10 @@ class Compliance(object):
         if self.options.moduleset != "" and self.options.module != "":
             raise ex.excError('--moduleset and --module are exclusive')
 
+        if len(self.options.moduleset) != "" and \
+           hasattr(self.options, "attach") and self.options.attach:
+            self._compliance_attach_moduleset(self.options.moduleset.split(','))
+
         if self.data is None:
             try:
                 self.data = self.get_comp_data()
@@ -412,10 +416,6 @@ class Compliance(object):
                         print("module %s not found in any attached moduleset" % module)
                     elif len(in_modsets) > 1:
                         raise ex.excError("module %s found in multiple attached moduleset (%s). Use --moduleset instead of --module to clear the ambiguity" % (module, ', '.join(in_modsets)))
-
-            if len(modulesets) > 0 and \
-               hasattr(self.options, "attach") and self.options.attach:
-                self._compliance_attach_moduleset(modulesets)
 
         self.module = self.merge_moduleset_modules()
         self.ruleset = self.data['rulesets']
