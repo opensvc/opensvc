@@ -247,6 +247,7 @@ class Node(Svc, Freezer, Scheduler):
         self.os = rcos.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
+        self.set_collector_env()
         self.scheduler_actions = {
 	 "checks": SchedOpts("checks"),
 	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
@@ -278,6 +279,79 @@ class Node(Svc, Freezer, Scheduler):
 	 "auto_reboot": SchedOpts("reboot", fname="node"+os.sep+"last_auto_reboot", schedule_option="no_schedule")
         }
 
+    def split_url(self, url, default_app=None):
+        if url == 'None':
+            return 'https', '127.0.0.1', '443', '/'
+
+        # transport
+        if url.startswith('https'):
+            transport = 'https'
+            url = url.replace('https://', '')
+        elif url.startswith('http'):
+            transport = 'http'
+            url = url.replace('http://', '')
+        else:
+            transport = 'https'
+
+        l = url.split('/')
+        if len(l) < 1:
+            raise
+
+        # app
+        if len(l) > 1:
+            app = l[1]
+        else:
+            app = default_app
+
+        # host/port
+        l = l[0].split(':')
+        if len(l) == 1:
+            host = l[0]
+            if transport == 'http':
+                port = '80'
+            else:
+                port = '443'
+        elif len(l) == 2:
+            host = l[0]
+            port = l[1]
+        else:
+            raise
+
+        return transport, host, port, app
+
+    def set_collector_env(self):
+        if self.config.has_option('node', 'dbopensvc'):
+            url = self.config.get('node', 'dbopensvc')
+            try:
+                rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = self.split_url(url, default_app="feed")
+                rcEnv.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app)
+            except Exception as e:
+                self.log.error("malformed dbopensvc url: %s (%s)" % (rcEnv.dbopensvc, str(e)))
+        else:
+            rcEnv.dbopensvc_transport = None
+            rcEnv.dbopensvc_host = None
+            rcEnv.dbopensvc_port = None
+            rcEnv.dbopensvc_app = None
+            rcEnv.dbopensvc = None
+
+        if self.config.has_option('node', 'dbcompliance'):
+            url = self.config.get('node', 'dbcompliance')
+            try:
+                rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(url, default_app="init")
+                rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
+            except Exception as e:
+                self.log.error("malformed dbcompliance url: %s (%s)" % (rcEnv.dbcompliance, str(e)))
+        else:
+            rcEnv.dbcompliance_transport = rcEnv.dbopensvc_transport
+            rcEnv.dbcompliance_host = rcEnv.dbopensvc_host
+            rcEnv.dbcompliance_port = rcEnv.dbopensvc_port
+            rcEnv.dbcompliance_app = "init"
+            rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
+
+        if self.config.has_option('node', 'uuid'):
+            rcEnv.uuid = self.config.get('node', 'uuid')
+        else:
+            rcEnv.uuid = ""
 
     def call(self, cmd=['/bin/false'], cache=False, info=False,
              errlog=True, err_to_warn=False, err_to_info=False,
@@ -1586,9 +1660,7 @@ class Node(Svc, Freezer, Scheduler):
                 data["user"] = user
                 data["password"] = password
             if not hasattr(self.options, "api") or self.options.api is None:
-                config = RawConfigParser({})
-                config.read(os.path.join(rcEnv.pathetc, "node.conf"))
-                data["api"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+                data["api"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         from rcCollectorCli import Cli
         cli = Cli(**data)
         return cli.run()
@@ -1603,9 +1675,7 @@ class Node(Svc, Freezer, Scheduler):
             username, password = self.collector_auth_user()
         data["username"] = username
         data["password"] = password
-        config = RawConfigParser({})
-        config.read(os.path.join(rcEnv.pathetc, "node.conf"))
-        data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        data["url"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         self.collector_api_cache = data
         return self.collector_api_cache
 

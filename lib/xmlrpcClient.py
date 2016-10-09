@@ -121,80 +121,6 @@ def call_worker(q, node):
         o.log.info("interrupted on signal")
 
 class Collector(object):
-    def split_url(self, url, default_app=None):
-        if url == 'None':
-            return 'https', '127.0.0.1', '443', '/'
-
-        # transport
-        if url.startswith('https'):
-            transport = 'https'
-            url = url.replace('https://', '')
-        elif url.startswith('http'):
-            transport = 'http'
-            url = url.replace('http://', '')
-        else:
-            transport = 'https'
-
-        l = url.split('/')
-        if len(l) < 1:
-            raise
-
-        # app
-        if len(l) > 1:
-            app = l[1]
-        else:
-            app = default_app
-
-        # host/port
-        l = l[0].split(':')
-        if len(l) == 1:
-            host = l[0]
-            if transport == 'http':
-                port = '80'
-            else:
-                port = '443'
-        elif len(l) == 2:
-            host = l[0]
-            port = l[1]
-        else:
-            raise
-
-        return transport, host, port, app
-
-    def setNodeEnv(self):
-        if self.node.config.has_option('node', 'dbopensvc'):
-            url = self.node.config.get('node', 'dbopensvc')
-            try:
-                rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = self.split_url(url, default_app="feed")
-                rcEnv.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app)
-            except Exception as e:
-                self.log.error("malformed dbopensvc url: %s (%s)" % (rcEnv.dbopensvc, str(e)))
-        else:
-            rcEnv.dbopensvc_transport = None
-            rcEnv.dbopensvc_host = None
-            rcEnv.dbopensvc_port = None
-            rcEnv.dbopensvc_app = None
-            rcEnv.dbopensvc = None
-
-        if self.node.config.has_option('node', 'dbcompliance'):
-            url = self.node.config.get('node', 'dbcompliance')
-            try:
-                rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(url, default_app="init")
-                rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
-            except Exception as e:
-                self.log.error("malformed dbcompliance url: %s (%s)" % (rcEnv.dbcompliance, str(e)))
-        else:
-            rcEnv.dbcompliance_transport = rcEnv.dbopensvc_transport
-            rcEnv.dbcompliance_host = rcEnv.dbopensvc_host
-            rcEnv.dbcompliance_port = rcEnv.dbopensvc_port
-            rcEnv.dbcompliance_app = "init"
-            rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
-
-        if self.node.config.has_option('node', 'uuid'):
-            rcEnv.uuid = self.node.config.get('node', 'uuid')
-        else:
-            rcEnv.uuid = ""
-
     def submit(self, fn, *args, **kwargs):
         self.init_worker()
         self.log.info("enqueue %s"%fn)
@@ -295,8 +221,6 @@ class Collector(object):
                     return
             elif self.proxy is not None:
                 return
-
-        self.setNodeEnv()
 
         if rcEnv.dbopensvc == "None":
             return
