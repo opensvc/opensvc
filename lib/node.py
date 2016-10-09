@@ -1110,6 +1110,12 @@ class Node(Svc, Freezer, Scheduler):
             print("failed to write registration number: %s"%u, file=sys.stderr)
             return 1
         print("registered")
+        self.pushasset()
+        self.pushdisks()
+        self.pushpkg()
+        self.pushpatch()
+        self.sysreport()
+        self.checks()
         return 0
 
     def service_action_worker(self, s, **kwargs):
