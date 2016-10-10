@@ -134,22 +134,13 @@ class Mount(Res.Resource):
         return True
 
     def _status(self, verbose=False):
-        if rcEnv.nodename in self.always_on:
-            if self.is_up():
-                if self.need_check_writable() and not self.check_writable():
-                    self.status_log("fs is not writable")
-                    return rcStatus.WARN
-                return rcStatus.STDBY_UP
-            else:
-                return rcStatus.STDBY_DOWN
+        if self.is_up():
+            if self.need_check_writable() and not self.check_writable():
+                self.status_log("fs is not writable")
+                return rcStatus.WARN
+            return self.status_stdby(rcStatus.UP)
         else:
-            if self.is_up():
-                if self.need_check_writable() and not self.check_writable():
-                    self.status_log("fs is not writable")
-                    return rcStatus.WARN
-                return rcStatus.UP
-            else:
-                return rcStatus.DOWN
+            return self.status_stdby(rcStatus.DOWN)
 
     def devlist(self):
         pseudofs = [
