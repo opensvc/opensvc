@@ -1406,7 +1406,10 @@ class Svc(Resource, Scheduler):
         # seed overall with avail
         status["overall"] = copy(status["avail"])
 
-        for r in self.get_resources(status_types):
+        for r in self.get_resources():
+            group = r.type.split(".")[0]
+            if group not in groups:
+                continue
             if r.status_logs_count(levels=["warn", "error"]) > 0:
                 status["overall"] += rcStatus.WARN
                 break
