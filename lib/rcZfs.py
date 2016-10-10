@@ -72,18 +72,6 @@ class Dataset(object):
         else:
             return "Failed to list info for dataset: %s" % (self.name)
 
-    def destroy(self, recursive=False):
-        "destroy dataset"
-        cmd = ['zfs', 'destroy']
-        if recursive:
-            cmd.append("-r")
-        cmd.append(self.name)
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
-        if retcode == 0:
-            return True
-        else:
-            return False
-
     def exists(self, type="all"):
         """return True if dataset exists else return False
         if type is provided, also verify dataset type"""

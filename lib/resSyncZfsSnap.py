@@ -103,7 +103,11 @@ class syncZfsSnap(resSync.Sync):
         for path in sorted_snaps[self.keep:]:
             try:
                 ds = rcZfs.Dataset(path, log=self.log)
-                ds.destroy(recursive=self.recursive)
+                if self.recursive:
+                    options = ["-r"]
+                else:
+                    options = []
+                ds.destroy(options=options)
             except Exception as e:
                 raise ex.excError(str(e))
 
