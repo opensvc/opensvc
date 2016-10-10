@@ -401,7 +401,7 @@ class syncDds(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        self.label = "dds of %s to %s"%(src, target)
+        self.label = "dds of %s to %s"%(src, ", ".join(target))
         self.target = target
         self.src = src
         self.dsts = dsts
