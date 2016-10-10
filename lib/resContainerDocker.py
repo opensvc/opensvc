@@ -144,7 +144,6 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
 
         if run_image_id != running_image_id:
             self.status_log("the running container is based on image '%s' instead of '%s'"%(running_image_id, run_image_id))
-            s = rcStatus._merge(s, rcStatus.WARN)
 
         return s
 
@@ -159,7 +158,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             self.status_log("DEFAULT.docker_data_dir must be defined")
 
         if not self.docker_running():
-            self.status_log("docker daemon is not running")
+            self.status_log("docker daemon is not running", "info")
             return False
 
         if self.container_id is None:
