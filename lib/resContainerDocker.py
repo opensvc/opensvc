@@ -143,7 +143,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         run_image_id = self.get_run_image_id()
 
         if run_image_id != running_image_id:
-            self.status_log("the running container is based on image '%s' instead of '%s'"%(running_image_id, run_image_id))
+            self.status_log("the current container is based on image '%s' instead of '%s'"%(running_image_id, run_image_id))
 
         return s
 
