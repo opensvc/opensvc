@@ -90,12 +90,12 @@ class Ip(Res.Resource):
             self.getaddr()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return rcStatus.UNDEF
         ifconfig = rcIfconfig.ifconfig()
         intf = ifconfig.interface(self.ipDev)
         if intf is None and not "dedicated" in self.tags:
             self.status_log("interface %s not found" % self.ipDev)
-            return rcStatus.WARN
+            return rcStatus.DOWN
         try:
             if self.is_up():
                 return self.status_stdby(rcStatus.UP)
@@ -106,7 +106,7 @@ class Ip(Res.Resource):
             return rcStatus.UNDEF
         except ex.excError as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return rcStatus.UNDEF
 
     def arp_announce(self):
         if ':' in self.addr:
