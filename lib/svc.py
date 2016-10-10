@@ -1406,6 +1406,11 @@ class Svc(Resource, Scheduler):
         # seed overall with avail
         status["overall"] = copy(status["avail"])
 
+        for r in self.get_resources():
+            if r.status_logs_count(levels=["warn", "error"]) > 0:
+                status["overall"] += rcStatus.WARN
+                break
+
         for t in [_t for _t in status_types if _t.startswith('stonith')]:
             if 'stonith' not in groups:
                 continue

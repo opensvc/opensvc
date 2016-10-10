@@ -79,11 +79,11 @@ class Disk(resDisk.Disk):
 
     def down_state_alerts(self):
         if not self.shared:
-            return rcStatus.NA
+            return
         devnames = self.md_config_import()
         devnames = set([d for d in devnames if not d.startswith("md")])
         if len(devnames) == 0:
-            return rcStatus.NA
+            return
 
         from rcDevTreeLinux import DevTree
         dt = DevTree()
@@ -92,8 +92,6 @@ class Disk(resDisk.Disk):
         not_found = devnames - aliases
         if len(not_found) > 0:
             self.status_log("md member missing: %s" % ", ".join(sorted(list(not_found))))
-            return rcStatus.WARN
-        return rcStatus.NA
 
     def presync(self):
         if not self.shared:
@@ -180,15 +178,12 @@ class Disk(resDisk.Disk):
             return True
         if state != "devpath does not exist":
             self.status_log(state)
-        return False
+        return True
 
     def _status(self, verbose=False):
         s = resDisk.Disk._status(self, verbose=verbose)
         if s in (rcStatus.STDBY_DOWN, rcStatus.DOWN):
-             if self.down_state_alerts() == rcStatus.WARN:
-                 return rcStatus.WARN
-        if self.status_logs_count(["warn", "error"]) > 0:
-            return rcStatus.WARN
+             self.down_state_alerts()
         return s
 
     def do_start(self):
