@@ -161,12 +161,12 @@ class App(Res.Resource):
 
     def is_up(self):
         if self.pg_frozen():
-            raise StatusWARN()
+            raise StatusNA()
         if self.script is None:
-            self.status_log("script does not exist")
+            self.status_log("script does not exist", "warn")
             raise StatusNA()
         if not os.path.exists(self.script):
-            self.status_log("script %s does not exist" % self.script)
+            self.status_log("script %s does not exist" % self.script, "warn")
             raise StatusNA()
         if self.check_seq is None:
             self.status_log("check is not set", "info")
@@ -242,9 +242,10 @@ class App(Res.Resource):
 
         n_ref_res = len(self.svc.get_resources(['fs', 'ip', 'container', 'share', 'disk']))
         status = self.svc.group_status(excluded_groups=set(["sync", "app", "disk.scsireserv", "disk.drbd", "hb"]))
-        if n_ref_res > 0 and str(status["overall"]) != "up" and len(self.svc.nodes) > 1:
+        if n_ref_res > 0 and str(status["overall"]) != "up":
             self.log.debug("abort resApp status because ip+fs status is %s"%status["overall"])
-            if verbose: self.status_log("ip+fs status is %s, skip check"%status["overall"], "info")
+            if verbose:
+                self.status_log("ip+fs status is %s, skip check"%status["overall"], "info")
             self.status_log("not evaluated (instance not up)", "info")
             return rcStatus.NA
 
@@ -256,9 +257,9 @@ class App(Res.Resource):
             return rcStatus.NA
 
         if r == 0:
-            return rcStatus.UP
+            return self.status_stdby(rcStatus.UP)
         elif r == 1:
-            return rcStatus.DOWN
+            return self.status_stdby(rcStatus.DOWN)
 
         self.status_log("check reports errors (%d)"%r)
         return rcStatus.WARN
