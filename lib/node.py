@@ -320,6 +320,10 @@ class Node(Svc, Freezer, Scheduler):
         return transport, host, port, app
 
     def set_collector_env(self):
+        if self.config is None:
+            self.load_config
+        if self.config is None:
+            return
         if self.config.has_option('node', 'dbopensvc'):
             url = self.config.get('node', 'dbopensvc')
             try:
