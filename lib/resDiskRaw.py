@@ -297,8 +297,6 @@ class Disk(resDisk.Disk):
         self.validate_devs()
         self.mangle_devs_map()
         r = self.is_up()
-        if self.status_logs_count(["warn", "error"]) > 0:
-            return rcStatus.WARN
         if not self.create_char_devices and len(self.devs_map) == 0:
             return rcStatus.NA
         if r:
