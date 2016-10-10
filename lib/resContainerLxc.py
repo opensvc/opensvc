@@ -237,8 +237,7 @@ class Lxc(resContainer.Container):
         return False
 
     def _status(self, verbose=False):
-        if not self.check_installed_cf():
-            return rcStatus.WARN
+        self.check_installed_cf():
         return resContainer.Container._status(self, verbose=verbose)
 
     def find_cf(self):
