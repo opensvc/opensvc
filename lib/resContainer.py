@@ -224,28 +224,21 @@ class Container(Res.Resource):
 
     def _status(self, verbose=False):
         if self.pg_frozen():
-            return rcStatus.WARN
+            return rcStatus.NA
+        if not self.check_manual_boot():
+            self.status_log("container auto boot is on")
         try:
             self.getaddr()
         except Exception as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if not self.check_capabilities():
-            self.status_log("node capabilities do not permit this action")
-            return rcStatus.WARN
-        if not self.check_manual_boot():
-            self.status_log("container auto boot is on")
+            self.status_log("insufficient node capabilities")
             return rcStatus.WARN
         if self.is_up():
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_UP
-            else:
-                return rcStatus.UP
+            return self.status_stdby(rcStatus.UP)
         if self.is_down():
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_DOWN
-            else:
-                return rcStatus.DOWN
+            return self.status_stdby(rcStatus.DOWN)
         else:
             self.status_log("container status is neither up nor down")
             return rcStatus.WARN
