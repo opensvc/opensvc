@@ -293,6 +293,19 @@ class KeywordStatusSchedule(Keyword):
                   text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
                 )
 
+class KeywordDefaultSyncSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="sync_schedule",
+                  at=True,
+                  required=False,
+                  order=11,
+                  default="04:00-06:00@121",
+                  text="The default sync resources schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
 class KeywordResinfoSchedule(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1020,7 +1033,7 @@ class KeywordDrpnodes(Keyword):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="nodes",
+                  keyword="drpnodes",
                   order=21,
                   text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
                   example="node1 node2"
@@ -3187,6 +3200,7 @@ class KeywordSyncDdsDst(Keyword):
                   section="sync",
                   keyword="dst",
                   rtype="dds",
+                  at=True,
                   required=True,
                   text="Target file or block device. Optional. Defaults to src. Points the media to replay the binary-delta received from source node to. This media must have a size superior or equal to source."
                 )
@@ -3938,6 +3952,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncSnap()
         self += KeywordSyncRsyncDstfs()
         self += KeywordSyncRsyncBwlimit()
+        self += KeywordDefaultSyncSchedule()
         self += KeywordSyncSchedule()
         self += KeywordSyncSyncMaxDelay()
         self += KeywordIpType()
