@@ -162,7 +162,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
             return False
 
         if self.container_id is None:
-            self.status_log("can not find container id")
+            self.status_log("can not find container id", "info")
             return False
 
         if self.container_id in self.get_running_instance_ids():
