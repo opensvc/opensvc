@@ -240,7 +240,7 @@ class Resource(object):
             return self._status(verbose=verbose)
         except Exception as e:
             self.status_log(str(e), "error")
-            return rcStatus.WARN
+            return rcStatus.UNDEF
 
     def _status(self, verbose=False):
         return rcStatus.UNDEF
