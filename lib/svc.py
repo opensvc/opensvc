@@ -3378,6 +3378,7 @@ class Svc(Resource, Scheduler):
             if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
                 self.log.warning("ignored section %s" % section)
                 ret["warnings"] += 1
+                continue
             if family in deprecated_sections:
                 self.log.warning("deprecated section prefix %s" % family)
                 ret["warnings"] += 1
