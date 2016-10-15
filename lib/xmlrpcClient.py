@@ -501,7 +501,7 @@ class Collector(object):
               ["optional", str(r.optional).lower()],
               ["disabled", str(r.disabled).lower()],
               ["monitor", str(r.monitor).lower()],
-              ["restart", str(r.restart)],
+              ["restart", str(r.nb_restart)],
             ]
             if r.subset:
                 l.append(["subset", r.subset])
