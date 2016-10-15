@@ -78,5 +78,8 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError
 
         self.remove_keywords(["pvs"])
+        self.r.clear_cache("vg.lvs")
+        self.r.clear_cache("vg.lvs.attr")
+        self.r.clear_cache("vg.tags")
         self.r.log.info("provisioned")
         return True
