@@ -42,12 +42,16 @@ def handle_references(svc, conf, s, scope=False, impersonate=None):
             if len(l) != 2:
                 raise ex.excInitError("%s: reference can have only one dot" % v)
             _section, _v = l
-            if not conf.has_section(_section):
-                raise ex.excInitError("%s: section %s does not exist" % (v, _section))
-            try:
-                val = conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
-            except ex.OptNotFound as e:
-                raise ex.excInitError("%s: unresolved reference (%s)" % (v, str(e)))
+            if _section == "env" and _v.upper() in os.environ:
+                # give os env precedence over the env cf section
+                val = os.environ[_v.upper()]
+            else:
+                if not conf.has_section(_section):
+                    raise ex.excInitError("%s: section %s does not exist" % (v, _section))
+                try:
+                    val = conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
+                except ex.OptNotFound as e:
+                    raise ex.excInitError("%s: unresolved reference (%s)" % (v, str(e)))
         else:
             raise ex.excInitError("%s: unknown reference" % v)
         s = s[:m.start()] + val + s[m.end():]
