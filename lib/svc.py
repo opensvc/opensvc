@@ -3116,7 +3116,11 @@ class Svc(Resource, Scheduler):
         if not self.config.has_option(section, option):
             print("option '%s' not found in section [%s]"%(option, section), file=sys.stderr)
             return 1
-        print(self.config.get(section, option))
+        if self.options.eval:
+            from svcBuilder import conf_get
+            print(conf_get(self, self.config, section, option, "string", scope=True))
+        else:
+            print(self.config.get(section, option))
         return 0
 
     def set(self):

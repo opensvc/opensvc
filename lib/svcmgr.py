@@ -102,6 +102,8 @@ def _install_service(svcname, cf):
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage + rcOptParser.format_desc())
+parser.add_option("--eval", default=False, action="store_true", dest="eval",
+                  help="If set with the 'get' action, the printed value of --param is scoped and dereferenced.")
 parser.add_option("--daemon", default=False, action="store_true", dest="daemon",
                   help="a flag inhibiting the daemonization. set by the daemonization routine.")
 parser.add_option("--color", default="auto", action="store", dest="color",
@@ -260,7 +262,8 @@ def main():
         parser.set_usage(__usage + rcOptParser.format_desc(action=action))
         parser.error("unsupported action")
 
-    if action in ("get", "set", "unset", "delete"):
+    if action in ("set", "unset", "delete") or \
+       (action == "get" and not options.eval):
         build_kwargs["minimal"] = True
     else:
         build_kwargs["minimal"] = False

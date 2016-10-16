@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-09\-18
+.TH SVCMGR 1 2016\-10\-17
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -211,9 +211,9 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
   \fBsvcmgr push    \fP  push service configuration to the collector
 
-  \fBsvcmgr push appinfo\fP
-  \fB               \fP  push service application launchers appinfo key/value pairs
-  \fB               \fP  to database
+  \fBsvcmgr push resinfo\fP
+  \fB               \fP  push service resources and application launchers info
+  \fB               \fP  key/value pairs the collector
 
   \fBsvcmgr push service status\fP
   \fB               \fP  push service and its resources status to database
@@ -397,6 +397,12 @@ show program's version number and exit
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --eval
+If set with the 'get' action, the printed value of --param is scoped and dereferenced.
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
