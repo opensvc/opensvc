@@ -3370,6 +3370,10 @@ class Svc(Resource, Scheduler):
         from svcBuilder import build, handle_references
         from rcUtilities import convert_size
         for section in config.sections():
+            if section == "env":
+                # the "env" section is not handled by a resource driver, and is
+                # unknown to the svcDict. Just ignore it.
+                continue
             family = section.split("#")[0]
             if config.has_option(section, "type"):
                 rtype = config.get(section, "type")
