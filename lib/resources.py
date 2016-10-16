@@ -8,6 +8,10 @@ import time
 import shlex
 from rcGlobalEnv import rcEnv
 
+allow_action_with_noaction = [
+  "presync",
+]
+
 class Resource(object):
     """Define basic resource
     properties: type, optional=optional, disabled=disabled, tags=tags
@@ -191,7 +195,9 @@ class Resource(object):
             self.log.debug('skip encap resource action: action=%s res=%s'%(action, self.rid))
             return
 
-        if 'noaction' in self.tags and not hasattr(self, "delayed_noaction"):
+        if 'noaction' in self.tags and \
+           not hasattr(self, "delayed_noaction") and \
+           not action in allow_action_with_noaction:
             self.log.debug('skip resource action (noaction tag): action=%s res=%s'%(action, self.rid))
             return
 
