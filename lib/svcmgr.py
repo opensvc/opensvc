@@ -213,7 +213,7 @@ parser.add_option("--format", default=None,
 
 cmd = os.path.basename(__file__)
 
-if cmd in ('svcmgr', 'svcmgr.py'):
+if cmd in ('svcmgr', 'svcmgr.py', None):
     parser.add_option("-s", "--service", default=None, action="store", dest="parm_svcs",
               help="comma-separated list of service to operate on")
     parser.add_option("--status", default=None, action="store", dest="parm_status",
