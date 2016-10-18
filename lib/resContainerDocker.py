@@ -7,6 +7,7 @@ import rcStatus
 import rcDocker
 import json
 import re
+import shlex
 import resources as Res
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall
@@ -76,7 +77,7 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
     def add_run_args(self):
         if self.run_args is None:
             return []
-        l = self.run_args.split()
+        l = shlex.split(self.run_args)
         for e, i in enumerate(l):
             if e != '-p':
                 continue
