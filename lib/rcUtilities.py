@@ -580,7 +580,11 @@ def cache(sig):
 
             fpath = cache_fpath(_sig)
 
-            lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
+            try:
+                lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
+            except Exception as e:
+                self.log.warning("cache locking error: %s. run command uncached." % str(e))
+                return fn(*args, **kwargs)
             try:
                 data = cache_get(fpath, log=log)
             except Exception as e:
