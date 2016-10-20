@@ -185,6 +185,9 @@ class syncHp3par(resSync.Sync):
         if data['rcg']['Role'] != 'Primary':
             self.log.info("rcopy group %s role is not Primary. skip sync" % self.rcg)
             return
+        if data['rcg']['Mode'] == 'Periodic':
+            self.log.info("skip syncrcopy as group %s is in periodic mode" % self.rcg)
+            return
         self._cmd("syncrcopy -w %s" % self.rcg, log=True)
         self.clear_caches()
 
