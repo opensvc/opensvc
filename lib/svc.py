@@ -2425,6 +2425,14 @@ class Svc(Resource, Scheduler):
         if not os.path.exists(sd):
             os.makedirs(sd)
 
+    def autopush(self):
+        _level = self.log.getEffectiveLevel()
+        self.log.handlers[1].setLevel(logging.CRITICAL)
+        try:
+            self.push()
+        finally:
+            self.log.handlers[1].setLevel(_level)
+
     @scheduler_fork
     def push(self):
         if self.encap:
@@ -2433,7 +2441,6 @@ class Svc(Resource, Scheduler):
             self.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
-        self.log.handlers[1].setLevel(logging.CRITICAL)
         self.log.info("send %s to collector" % self.cf)
         try:
             self.create_var_subdir()
@@ -2441,10 +2448,8 @@ class Svc(Resource, Scheduler):
             with open(self.push_flag, 'w') as f:
                 f.write(str(time.time()))
             self.log.info("update %s timestamp" % self.push_flag)
-            self.log.handlers[1].setLevel(logging.INFO)
         except:
             self.log.error("failed to update %s timestamp" % self.push_flag)
-            self.log.handlers[1].setLevel(logging.INFO)
 
     def push_encap_config(self):
         if self.encap or not self.has_encap_resources:
@@ -2480,7 +2485,7 @@ class Svc(Resource, Scheduler):
                     cmd = rcEnv.rcp.split() + [r.name+':'+encap_cf, rcEnv.pathetc+'/']
                     out, err, ret = justcall(cmd)
                 os.utime(self.cf, (encap_mtime, encap_mtime))
-                print("fetch %s from %s ..."%(encap_cf, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+                self.log.info("fetch %s from %s"%(encap_cf, r.name))
                 if ret != 0:
                     raise ex.excError()
                 return
@@ -2492,10 +2497,8 @@ class Svc(Resource, Scheduler):
         else:
             cmd = rcEnv.rcp.split() + [self.cf, r.name+':'+encap_cf]
             out, err, ret = justcall(cmd)
-        self.log.handlers[1].setLevel(logging.CRITICAL)
         if ret != 0:
             self.log.error("failed to send %s to %s" % (self.cf, r.name))
-            self.log.handlers[0].setLevel(logging.INFO)
             raise ex.excError()
         self.log.info("send %s to %s" % (self.cf, r.name))
 
@@ -2503,10 +2506,8 @@ class Svc(Resource, Scheduler):
         out, err, ret = self._encap_cmd(cmd, container=r)
         if ret != 0:
             self.log.error("failed to install %s slave service" % r.name)
-            self.log.handlers[1].setLevel(logging.INFO)
             raise ex.excError()
         self.log.info("install %s slave service" % r.name)
-        self.log.handlers[1].setLevel(logging.INFO)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
