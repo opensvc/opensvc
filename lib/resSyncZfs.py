@@ -69,9 +69,7 @@ class SyncZfs(resSync.Sync):
         if len(resources) == 0:
             return
 
-        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
-            self.log.debug("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
+        self.pre_sync_check_prd_svc_on_non_prd_node()
 
         for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
@@ -244,17 +242,8 @@ class SyncZfs(resSync.Sync):
             rotate snap
         rotate snap on local node
         """
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
-            return
-
-        """ Refuse to sync from a flex non-primary node
-        """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            self.log.debug("won't sync this resource from a flex non-primary node")
-            return set([])
+        self.pre_sync_check_svc_not_up()
+        self.pre_sync_check_flex_primary()
 
         self.get_info()
         if not self.snap_exists(self.src_snap_tosend):

@@ -95,8 +95,9 @@ Internal                 : False
         return self._info[snap]
 
     def no_status(self):
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
+        try:
+            self.pre_sync_check_flex_primary()
+        except ex.excAbortAction:
             return True
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status not in [rcStatus.UP, rcStatus.NA]:

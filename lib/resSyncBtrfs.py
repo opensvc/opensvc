@@ -88,14 +88,8 @@ class SyncBtrfs(resSync.Sync):
         if not action.startswith('sync'):
             return
 
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if not self.svc.force and s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
-            raise ex.excAbortAction
-
-        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
-            self.log.debug("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
+        self.pre_sync_check_svc_not_up()
+        self.pre_sync_check_prd_svc_on_non_prd_node()
 
         self.init_src_btrfs()
         for i, r in enumerate(resources):
@@ -167,20 +161,8 @@ class SyncBtrfs(resSync.Sync):
         self._sync_update('sync_drp')
 
     def sanity_checks(self):
-        if not self.svc.force:
-            s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-            if s['overall'].status != rcStatus.UP:
-                if not self.svc.cron:
-                    self.log.info("won't sync this resource for a service not up")
-                raise ex.excError
-
-        """ Refuse to sync from a flex non-primary node
-        """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            if not self.svc.cron:
-                self.log.info("won't sync this resource from a flex non-primary node")
-            raise ex.excError
+        self.pre_sync_check_svc_not_up()
+        self.pre_sync_check_flex_primary()
 
     def sync_full(self):
         self.init_src_btrfs()
