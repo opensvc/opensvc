@@ -2269,12 +2269,11 @@ class Svc(Resource, Scheduler):
             os.makedirs(sd)
 
     def autopush(self):
-        _level = self.log.getEffectiveLevel()
         self.log.handlers[1].setLevel(logging.CRITICAL)
         try:
             self.push()
         finally:
-            self.log.handlers[1].setLevel(_level)
+            self.log.handlers[1].setLevel(rcEnv.loglevel)
 
     @scheduler_fork
     def push(self):
@@ -2796,7 +2795,8 @@ class Svc(Resource, Scheduler):
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         log.addHandler(actionlogfilehandler)
-        self.log.info(" ".join(sys.argv))
+        if "/svcmgr.py" in sys.argv:
+            self.log.info(" ".join(sys.argv))
 
         err = self.do_action(action, waitlock=waitlock)
 
