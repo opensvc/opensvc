@@ -2518,6 +2518,7 @@ class Svc(Resource, Scheduler):
           'prstatus',
           'status',
           'frozen',
+          'autopush',
           'push',
           'push_env',
           'push_appinfo',
