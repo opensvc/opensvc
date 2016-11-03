@@ -49,6 +49,7 @@ actions_translation = {
 }
 
 actions_allow_on_frozen = [
+  "autopush",
   "delete",
   "disable",
   "edit_config",
@@ -1653,6 +1654,8 @@ class Svc(Resource, Scheduler):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
     def cluster_mode_safety_net(self, action):
+        if action in actions_allow_on_cluster:
+            return
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
         if self.command_is_scoped():
@@ -1673,7 +1676,7 @@ class Svc(Resource, Scheduler):
                 if not r.skip and hasattr(r, action):
                     self.running_action = action
                     getattr(r, action)()
-            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
+            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled (%s). the --cluster option circumvent this safety net." % action)
 
     def starthb(self):
         self.master_starthb()
@@ -2661,8 +2664,7 @@ class Svc(Resource, Scheduler):
                 self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
             try:
-                if action not in actions_allow_on_cluster:
-                    self.cluster_mode_safety_net(action)
+                self.cluster_mode_safety_net(action)
             except ex.excAbortAction as e:
                 self.log.info(str(e))
                 return 0
