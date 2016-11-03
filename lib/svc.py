@@ -3310,6 +3310,13 @@ class Svc(Resource, Scheduler):
                     s = list(set([r.run_image for r in containers if not r.skip and not r.disabled]))
                     for image in s:
                         argv.insert(i, image)
+            for i, arg in enumerate(argv):
+                if arg == "%as_service%":
+                    del argv[i]
+                    argv[i:i] = ["-u", self.svcname+"@"+rcEnv.nodename]
+                    argv[i:i] = ["-p", self.node.config.get("node", "uuid")]
+                    if len(containers) > 0 and containers[0].docker_min_version("1.11"):
+                        argv[i:i] = ["-m", ""]
             return argv
 
         for r in containers:
