@@ -2395,6 +2395,10 @@ class Svc(Resource, Scheduler):
         self.remote_postsync()
 
     def push_service_status(self):
+        if self.encap:
+            if not self.cron:
+                self.log.info("push service status is disabled for encapsulated services")
+            return
         if self.skip_action("push_service_status"):
             return
         self.task_push_service_status()
