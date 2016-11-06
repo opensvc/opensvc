@@ -659,7 +659,10 @@ def purge_cache():
         if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600): 
             # session more recent than 6 hours
             continue
-        shutil.rmtree(d)
+        try:
+            shutil.rmtree(d)
+        except:
+            pass
 
 if __name__ == "__main__":
     #print("call(('id','-a'))")
