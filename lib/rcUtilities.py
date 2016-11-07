@@ -654,6 +654,8 @@ def purge_cache():
     import time
     import shutil
     cache_d = os.path.join(rcEnv.pathvar, "cache")
+    if not os.path.exists(cache_d) or not os.path.isdir(cache_d):
+        return
     for d in os.listdir(cache_d): 
         d = os.path.join(cache_d, d)
         if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600): 
