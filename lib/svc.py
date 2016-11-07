@@ -2267,23 +2267,22 @@ class Svc(Resource, Scheduler):
     def sync_resync(self):
         self.sub_set_action("sync.netapp", "sync_resync")
         self.sub_set_action("sync.nexenta", "sync_resync")
+        self.sub_set_action("sync.rados", "sync_resync")
+        self.sub_set_action("sync.dds", "sync_resync")
         self.sub_set_action("sync.symclone", "sync_resync")
         self.sub_set_action("sync.symsnap", "sync_resync")
-        self.sub_set_action("sync.rados", "sync_resync")
         self.sub_set_action("sync.ibmdssnap", "sync_resync")
         self.sub_set_action("sync.evasnap", "sync_resync")
         self.sub_set_action("sync.necismsnap", "sync_resync")
         self.sub_set_action("sync.dcssnap", "sync_resync")
-        self.sub_set_action("sync.dds", "sync_resync")
 
     def sync_break(self):
         self.sub_set_action("sync.netapp", "sync_break")
         self.sub_set_action("sync.nexenta", "sync_break")
+        self.sub_set_action("sync.hp3par", "sync_break")
+        self.sub_set_action("sync.dcsckpt", "sync_break")
         self.sub_set_action("sync.symclone", "sync_break")
         self.sub_set_action("sync.symsnap", "sync_break")
-        self.sub_set_action("sync.hp3par", "sync_break")
-        self.sub_set_action("sync.ibmdssnap", "sync_break")
-        self.sub_set_action("sync.dcsckpt", "sync_break")
 
     def sync_update(self):
         self.sub_set_action("sync.netapp", "sync_update")
@@ -2295,6 +2294,9 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.btrfssnap", "sync_update")
         self.sub_set_action("sync.zfssnap", "sync_update")
         self.sub_set_action("sync.s3", "sync_update")
+        self.sub_set_action("sync.symclone", "sync_update")
+        self.sub_set_action("sync.symsnap", "sync_update")
+        self.sub_set_action("sync.ibmdssnap", "sync_update")
 
     def sync_full(self):
         self.sub_set_action("sync.dds", "sync_full")

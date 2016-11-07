@@ -167,8 +167,11 @@ class syncIbmdsSnap(resSync.Sync):
     def sync_resync(self):
         self.resyncflash()
 
+    def sync_update(self):
+        self.resyncflash()
+
     def start(self):
-        self.sync_break()
+        pass
 
     def __init__(self,
                  rid=None,
@@ -201,6 +204,7 @@ class syncIbmdsSnap(resSync.Sync):
         self.array = None
         self.last = None
         self.params = "setenv -banner off -header on -format delim\n"
+        self.default_schedule = "@0"
 
     def lsflash(self):
         if self.array is None:

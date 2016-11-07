@@ -36,6 +36,7 @@ class syncHp3parSnap(resSync.Sync):
         self.label = "hp3parsnap %s" % ", ".join(self.vv_names)
         if len(self.label) > 50:
             self.label = self.label[:47] + "..."
+        self.default_schedule = "@0"
 
     def __str__(self):
         return self.label

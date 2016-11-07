@@ -208,6 +208,9 @@ class syncEvasnap(resSync.Sync):
     def sync_resync(self):
         self.recreate()
 
+    def sync_update(self):
+        self.recreate()
+
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
 
@@ -292,6 +295,7 @@ class syncEvasnap(resSync.Sync):
         self.pairs = pairs
         self.conf = os.path.join(rcEnv.pathetc, 'auth.conf')
         self._lun_info = {}
+        self.default_schedule = "@0"
 
     def __str__(self):
         return "%s eva_name=%s pairs=%s" % (resSync.Sync.__str__(self),\

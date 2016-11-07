@@ -205,6 +205,10 @@ class syncSymclone(resSync.Sync):
     def sync_resync(self):
         self.recreate()
 
+    def sync_update(self):
+        self.recreate()
+        self.activate()
+
     def start(self):
         self.activate()
 
@@ -260,6 +264,7 @@ class syncSymclone(resSync.Sync):
         self.active_pairs = []
         self.last = None
         self.showdevs_etree = {}
+        self.default_schedule = "@0"
 
     def __str__(self):
         return "%s symid=%s pairs=%s" % (resSync.Sync.__str__(self),\
