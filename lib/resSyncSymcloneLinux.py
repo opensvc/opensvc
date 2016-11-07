@@ -2,13 +2,13 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
 import rcExceptions as ex
 import rcStatus
 import resources as Res
 import time
 import datetime
 import resSyncSymclone as symclone
+from rcUtilities import which
 
 class syncSymclone(symclone.syncSymclone):
     def dev_rescan(self, dev):
@@ -19,6 +19,8 @@ class syncSymclone(symclone.syncSymclone):
             s.write("1")
 
     def refresh_multipath(self, dev):
+        if which("multipath") is None:
+            return
         cmd = ['multipath', '-v0', '-r', dev]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
@@ -44,17 +46,23 @@ class syncSymclone(symclone.syncSymclone):
         raise ex.excError
 
     def wait_for_devs_ready(self):
-        for (symid, devid) in self.symld:
-            dev = self.symld[symid, devid]['pdev']
+        self.showdevs()
+        for pair in self.pairs:
+            src, dst = self.split_pair(pair)
+            dev = self.showdevs_etree[dst].find('Dev_Info/pd_name').text
+            if dev is "Not Visible":
+                raise ex.excError("pd name is 'Not Visible'. please scan scsi buses and run symcfg discover")
             self.dev_rescan(dev)
             self.wait_for_dev_ready(dev)
             self.refresh_multipath(dev)
 
     def __init__(self,
                  rid=None,
-                 symdg=None,
-                 symdevs=[],
+                 symid=None,
+                 pairs=[],
                  precopy_timeout=300,
+                 consistent=True,
+                 type="sync.symclone",
                  sync_max_delay=1440,
                  sync_min_delay=30,
                  optional=False,
@@ -64,9 +72,11 @@ class syncSymclone(symclone.syncSymclone):
                  subset=None):
         symclone.syncSymclone.__init__(self,
                                        rid,
-                                       symdg,
-                                       symdevs,
+                                       symid,
+                                       pairs,
                                        precopy_timeout,
+                                       consistent,
+                                       type,
                                        sync_max_delay,
                                        sync_min_delay,
                                        optional=optional,

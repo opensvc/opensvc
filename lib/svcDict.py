@@ -1354,7 +1354,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -3108,17 +3108,6 @@ class KeywordSyncNecismsnapDevs(Keyword):
                   text="A whitespace-separated list of SV:LD."
                 )
 
-class KeywordSyncSymcloneSymdg(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="sync",
-                  keyword="symdg",
-                  rtype="symclone",
-                  required=True,
-                  text="Name of the symmetrix device group where the source and target devices are grouped."
-                )
-
 class KeywordSyncSymSrdfsSymid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3168,18 +3157,41 @@ class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
                   text="Seconds to wait for a precopy (sync_resync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
                 )
 
-class KeywordSyncSymcloneSymdevs(Keyword):
+class KeywordSyncSymcloneSymid(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="sync",
-                  keyword="symdevs",
-                  rtype="symclone",
+                  keyword="symid",
+                  rtype=["symclone", "symsnap"],
+                  required=True,
+                  text="Identifier of the symmetrix array hosting the source and target devices pairs pointed by 'pairs'."
+                )
+
+class KeywordSyncSymclonePairs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="pairs",
+                  rtype=["symclone", "symsnap"],
                   required=True,
                   at=True,
                   default=None,
-                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename.",
-                  example="000000000198:0060 000000000198:0061",
+                  text="Whitespace-separated list of devices <src>:<dst> devid pairs to drive with this resource.",
+                  example="00B60:00B61 00B62:00B63",
+                )
+
+class KeywordSyncSymcloneConsistent(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="consistent",
+                  rtype=["symclone", "symsnap"],
+                  at=True,
+                  default=True,
+                  text="Use -consistent in symclone commands.",
                 )
 
 class KeywordSyncDdsSrc(Keyword):
@@ -4046,9 +4058,10 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSymSrdfsSymid()
         self += KeywordSyncSymSrdfsSymdg()
         self += KeywordSyncSymSrdfsRdfg()
-        self += KeywordSyncSymcloneSymdg()
+        self += KeywordSyncSymcloneConsistent()
+        self += KeywordSyncSymcloneSymid()
+        self += KeywordSyncSymclonePairs()
         self += KeywordSyncSymclonePrecopyTimeout()
-        self += KeywordSyncSymcloneSymdevs()
         self += KeywordSyncDcsckptDcs()
         self += KeywordSyncDcsckptManager()
         self += KeywordSyncDcsckptPairs()

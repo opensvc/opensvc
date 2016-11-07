@@ -222,6 +222,7 @@ status_types = [
   "sync.rados",
   "sync.rsync",
   "sync.symclone",
+  "sync.symsnap",
   "sync.symsrdfs",
   "sync.s3",
   "sync.zfs",
@@ -1829,6 +1830,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "startstandby")
         self.sub_set_action("sync.nexenta", "startstandby")
         self.sub_set_action("sync.symclone", "startstandby")
+        self.sub_set_action("sync.symsnap", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
         self.sub_set_action(disk_types, "startstandby", xtags=set(['zone']))
@@ -1839,6 +1841,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
+        self.sub_set_action("sync.symsnap", "start")
         self.sub_set_action("sync.symsrdfs", "start")
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
@@ -2265,6 +2268,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.netapp", "sync_resync")
         self.sub_set_action("sync.nexenta", "sync_resync")
         self.sub_set_action("sync.symclone", "sync_resync")
+        self.sub_set_action("sync.symsnap", "sync_resync")
         self.sub_set_action("sync.rados", "sync_resync")
         self.sub_set_action("sync.ibmdssnap", "sync_resync")
         self.sub_set_action("sync.evasnap", "sync_resync")
@@ -2276,6 +2280,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.netapp", "sync_break")
         self.sub_set_action("sync.nexenta", "sync_break")
         self.sub_set_action("sync.symclone", "sync_break")
+        self.sub_set_action("sync.symsnap", "sync_break")
         self.sub_set_action("sync.hp3par", "sync_break")
         self.sub_set_action("sync.ibmdssnap", "sync_break")
         self.sub_set_action("sync.dcsckpt", "sync_break")

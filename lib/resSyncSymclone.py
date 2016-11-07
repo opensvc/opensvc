@@ -8,107 +8,87 @@ import rcStatus
 import time
 import datetime
 import resSync
+import xml.etree.ElementTree as ElementTree
 
 class syncSymclone(resSync.Sync):
     def wait_for_devs_ready(self):
         pass
 
-    def get_symdevs(self):
-        for symdev in self.symdevs:
-            l = symdev.split(':')
-            if len(l) != 2:
-                self.log.error("symdevs must be in symid:symdev ... format")
-                raise ex.excError
-            self.symdev[l[0],l[1]] = dict(symid=l[0], symdev=l[1])
+    def pairs_file(self, pairs=None):
+        if pairs is None:
+            suffix = ""
+        else:
+            suffix = "." + ",".join(pairs)
+        return os.path.join(rcEnv.pathvar, self.svc.svcname, "pairs."+self.rid)
 
-    def get_symld(self):
-        cmd = ['/usr/symcli/bin/symld', '-g', self.symdg, 'list', '-v']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            if len(err) > 0:
-                self.status_log(err.strip())
-            raise ex.excError
-        ld = {}
-        for line in out.split('\n'):
-            if len(line) == 0:
-                continue
-            l = line.split(': ')
-            if len(l) != 2:
-                continue
-            if "Device Physical Name" in l[0]:
-                """ New logical device
-                """
-                if ld != {}:
-                    self.symld[ld['symid'],ld['symdev']] = ld
-                    ld = {}
-                ld['pdev'] = l[1].strip()
-            elif "  Symmetrix ID" in l[0]:
-                ld['symid'] = l[1].strip()
-            elif "  Device Symmetrix Name" in l[0]:
-                ld['symdev'] = l[1].strip()
-            elif "  Device Logical Name" in l[0]:
-                ld['symld'] = l[1].strip()
-            elif "  Product Revision" in l[0]:
-                ld['symrev'] = l[1].strip()
-            elif "  Source (SRC) Device Symmetrix Name" in l[0]:
-                ld['clone_srcdev'] = l[1].strip()
-            elif "  Target (TGT) Device Symmetrix Name" in l[0]:
-                ld['clone_tgtdev'] = l[1].strip()
-            elif "  State of Session" in l[0]:
-                ld['clone_state'] = l[1].strip()
-            elif "  Time of Last Clone Action" in l[0]:
-                ld['clone_lastaction'] = l[1].strip()
-            elif "  Changed Tracks for SRC Device" in l[0]:
-                ld['clone_srcchangedtracks'] = l[1].strip()
-            elif "  Changed Tracks for TGT Device" in l[0]:
-                ld['clone_tgtchangedtracks'] = l[1].strip()
-        if ld != {}:
-            self.symld[ld['symid'],ld['symdev']] = ld
+    def write_pair_file(self, pairs=None):
+        if pairs is None:
+            _pairs = self.pairs
+            key = "all"
+        else:
+            _pairs = pairs
+            key = ",".join(pairs)
+        if key in self.pairs_written:
+            return
+        pf = self.pairs_file(pairs)
+        content = "\n".join(map(lambda x: x.replace(":", " "), _pairs))
+        with open(pf, "w") as f:
+            f.write(content)
+        self.log.debug("wrote content '%s' in file '%s'" % (content, pf))
+        self.pairs_written[key] = True
 
-    def is_active(self):
-        for pair in self._pairs:
+    def symclone_cmd(self, pairs=None):
+        self.write_pair_file(pairs)
+        return ['/usr/symcli/bin/symclone', '-sid', self.symid, '-f', self.pairs_file(pairs)]
+
+    def is_active_snap(self):
+        for pair in self.pairs:
             if pair in self.active_pairs:
                 continue
-            cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+pair
+            cmd = self.symclone_cmd([pair]) + ['verify', '-copyonwrite']
             out, err, ret = justcall(cmd)
             if ret == 0:
                 self.active_pairs.append(pair)
                 continue
-            cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copyinprog']+pair
-            out, err, ret = justcall(cmd)
-            if ret == 0:
-                self.active_pairs.append(pair)
-                continue
-        if len(self.active_pairs) == len(self._pairs):
+        if len(self.active_pairs) == len(self.pairs):
             return True
         return False
 
-    def is_copied(self):
-        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-copied']+self.pairs
+    def is_active_clone(self):
+        for pair in self.pairs:
+            if pair in self.active_pairs:
+                continue
+            cmd = self.symclone_cmd([pair]) + ['verify', '-copied']
+            out, err, ret = justcall(cmd)
+            if ret == 0:
+                self.active_pairs.append(pair)
+                continue
+            cmd = self.symclone_cmd([pair]) + ['verify', '-copyinprog']
+            out, err, ret = justcall(cmd)
+            if ret == 0:
+                self.active_pairs.append(pair)
+                continue
+        if len(self.active_pairs) == len(self.pairs):
+            return True
+        return False
+
+    def is_activable_snap(self):
+        cmd = self.symclone_cmd() + ['verify', '-recreated']
+        (ret, out, err) = self.call(cmd)
+        if ret == 0:
+            return True
+        cmd = self.symclone_cmd() + ['verify', '-created']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
-    def is_activable(self):
-        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, 'verify', '-precopy']+self.pairs
+    def is_activable_clone(self):
+        cmd = self.symclone_cmd() + ['verify', '-precopy']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
-
-    def get_pairs(self):
-        for symid, dev in self.symdev:
-            ld = self.symld[symid,dev]
-            if dev == ld['clone_tgtdev']:
-                tgtld = ld['symld']
-                srcld = self.symld[ld['symid'],ld['clone_srcdev']]['symld']
-            else:
-                self.log.error("device %s not a clone target"%(dev))
-                raise ex.excError
-            pair = [srcld, 'sym', 'ld', tgtld]
-            self.pairs += pair
-            self._pairs += [pair]
 
     def wait_for_active(self):
         delay = 20
@@ -121,11 +101,10 @@ class syncSymclone(resSync.Sync):
                 self.log.info("waiting for copied or copyinprog state (max %i secs)"%timeout)
             time.sleep(delay)
         self.log.error("timed out waiting for copied or copyinprog state (%i secs)"%timeout)
-        ina = set(self._pairs) - set(self.active_pairs)
+        ina = set(self.pairs) - set(self.active_pairs)
         ina = map(lambda x: ' '.join(x), ina)
         ina = ", ".join(ina)
-        self.log.error("%s still not in copied or copyinprod state"%ina)
-        raise ex.excError
+        raise ex.excError("%s still not in copied or copyinprod state"%ina)
 
     def wait_for_activable(self):
         delay = 30
@@ -133,33 +112,31 @@ class syncSymclone(resSync.Sync):
             if self.is_activable():
                 return
             if i == 0:
-                self.log.info("waiting for precopied state (max %i secs)"%self.precopy_timeout)
+                self.log.info("waiting for precopy state (max %i secs)"%self.precopy_timeout)
             time.sleep(delay)
-        self.log.error("timed out waiting for precopied state (%i secs)"%self.precopy_timeout)
-        raise ex.excError
+        raise ex.excError("timed out waiting for precopy state (%i secs)"%self.precopy_timeout)
 
     def activate(self):
-        self.get_syminfo()
         if self.is_active():
-            self.log.info("symclone dg %s is already active"%self.symdg)
+            self.log.info("symclone target devices are already active")
             return
         self.wait_for_activable()
-        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'activate', '-i', '20', '-c', '30']+self.pairs
-        (ret, out, err) = self.vcall(cmd)
+        cmd = self.symclone_cmd() + ['-noprompt', 'activate', '-i', '20', '-c', '30']
+        if self.consistent:
+            cmd.append("-consistent")
+        (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError
         self.wait_for_active()
         self.wait_for_devs_ready()
 
     def can_sync(self, target=None):
-        self.get_syminfo()
         self.get_last()
         if skip_sync(self.last):
             return False
         return True
 
     def recreate(self):
-        self.get_syminfo()
         self.get_last()
         if self.skip_sync(self.last):
             return
@@ -167,42 +144,59 @@ class syncSymclone(resSync.Sync):
         if self.svcstatus['overall'].status != rcStatus.DOWN:
             self.log.error("the service (sync excluded) is in '%s' state. Must be in 'down' state"%self.svcstatus['overall'])
             raise ex.excError
-        if not self.is_copied():
-            self.log.info("symclone dg %s is not fully copied"%self.symdg)
+        if self.is_activable():
+            self.log.info("symclone are already recreated")
             return
-        cmd = ['/usr/symcli/bin/symclone', '-g', self.symdg, '-noprompt', 'recreate', '-precopy', '-i', '20', '-c', '30']+self.pairs
-        (ret, out, err) = self.vcall(cmd)
+        cmd = self.symclone_cmd() + ['-noprompt', 'recreate', '-i', '20', '-c', '30']
+        if self.type == "sync.symclone":
+            cmd.append("-precopy")
+        (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError
 
-    def get_syminfo(self):
-        self.get_symdevs()
-        self.get_symld()
-        self.get_pairs()
+    def split_pair(self, pair):
+        l = pair.split(":")
+        if len(l) != 2:
+            raise ex.excError("pair %s malformed" % pair)
+        return l
+
+    def showdevs(self):
+        if len(self.showdevs_etree) > 0:
+            return
+        dst_devs = map(lambda x: x.split(":")[1], self.pairs)
+        cmd = ['/usr/symcli/bin/symdev', '-sid', self.symid, 'list', '-v', '-devs', ','.join(dst_devs), '-output', 'xml_e']
+        out, err, ret = justcall(cmd)
+        etree = ElementTree.fromstring(out)
+        etree = ElementTree.fromstring(out)
+        for e in etree.findall("Symmetrix/Device"):
+            dev_name = e.find("Dev_Info/dev_name").text
+            self.showdevs_etree[dev_name] = e
+
+    def last_action_dev(self, dev):
+        # format: Thu Feb 25 10:20:56 2010
+        self.showdevs()
+        s = self.showdevs_etree[dev].find("CLONE_Device/last_action").text
+        return datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
 
     def get_last(self):
         if self.last is not None:
             return
-        for symid, symdev in self.symdev:
-            ld = self.symld[symid,symdev]
-            # format: Thu Feb 25 10:20:56 2010
-            last = datetime.datetime.strptime(ld['clone_lastaction'], "%a %b %d %H:%M:%S %Y")
+        self.showdevs()
+        for pair in self.pairs:
+            src, dst = self.split_pair(pair)
+            last = self.last_action_dev(dst)
             if self.last is None or last > self.last:
                 self.last = last
 
     def _status(self, verbose=False):
-        try:
-            self.get_syminfo()
-            self.get_last()
-        except:
-            return rcStatus.WARN
-
+        self.get_last()
         if self.last is None:
             return rcStatus.DOWN
         elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
             self.status_log("Last sync on %s older than %d minutes"%(self.last, self.sync_max_delay))
             return rcStatus.WARN
         else:
+            self.status_log("Last sync on %s" % self.last, "info")
             return rcStatus.UP
 
     def sync_break(self):
@@ -212,7 +206,7 @@ class syncSymclone(resSync.Sync):
         self.recreate()
 
     def start(self):
-        self.sync_break()
+        self.activate()
 
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
@@ -223,9 +217,11 @@ class syncSymclone(resSync.Sync):
 
     def __init__(self,
                  rid=None,
-                 symdg=None,
-                 symdevs=[],
+                 symid=None,
+                 pairs=[],
                  precopy_timeout=300,
+                 consistent=True,
+                 type="sync.symclone",
                  sync_max_delay=None,
                  schedule=None,
                  optional=False,
@@ -235,7 +231,7 @@ class syncSymclone(resSync.Sync):
                  subset=None):
         resSync.Sync.__init__(self,
                               rid=rid,
-                              type="sync.symclone",
+                              type=type,
                               sync_max_delay=sync_max_delay,
                               schedule=schedule,
                               optional=optional,
@@ -243,21 +239,29 @@ class syncSymclone(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        self.label = "clone symdg %s"%(symdg)
-        self.symdg = symdg
-        self.symdevs = symdevs
+        if type == "sync.symclone":
+            self.is_active = self.is_active_clone
+            self.is_activable = self.is_activable_clone
+        elif type == "sync.symsnap":
+            self.is_active = self.is_active_snap
+            self.is_activable = self.is_activable_snap
+        else:
+            raise ex.excInitError("unsupported symclone driver type %s", type)
+        self.pairs_written = {}
+        self.label = "symclone symid %s pairs %s" % (symid, " ".join(pairs))
+        if len(self.label) > 80:
+            self.label = self.label[:76] + "..."
+        self.symid = symid
+        self.pairs = pairs
         self.precopy_timeout = precopy_timeout
+        self.consistent = consistent
         self.disks = set([])
-        self.symdev = {}
-        self.pdevs = {}
         self.svcstatus = {}
-        self.symld = {}
-        self.pairs = []
-        self._pairs = []
         self.active_pairs = []
         self.last = None
+        self.showdevs_etree = {}
 
     def __str__(self):
-        return "%s symdg=%s symdevs=%s" % (resSync.Sync.__str__(self),\
-                self.symdg, self.symdevs)
+        return "%s symid=%s pairs=%s" % (resSync.Sync.__str__(self),\
+                self.symid, str(self.pairs))
 

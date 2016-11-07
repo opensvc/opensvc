@@ -2228,6 +2228,7 @@ def add_syncs(svc, conf):
     add_syncs_resources('radossnap', svc, conf)
     add_syncs_resources('radosclone', svc, conf)
     add_syncs_resources('symclone', svc, conf)
+    add_syncs_resources('symsnap', svc, conf)
     add_syncs_resources('symsrdfs', svc, conf)
     add_syncs_resources('hp3par', svc, conf)
     add_syncs_resources('hp3parsnap', svc, conf)
@@ -2816,23 +2817,64 @@ def add_syncs_radossnap(svc, conf, s):
     add_triggers(svc, r, conf, s)
     svc += r
 
-def add_syncs_symclone(svc, conf, s):
+def add_syncs_symsnap(svc, conf, s):
     kwargs = {}
+    kwargs['type'] = "sync.symsnap"
 
     try:
-        kwargs['symdg'] = conf_get_string(svc, conf, s, 'symdg')
+        kwargs['pairs'] = conf_get_string(svc, conf, s, 'pairs').split()
     except ex.OptNotFound:
-        svc.log.error("config file section %s must have symdg set" % s)
+        svc.log.error("config file section %s must have pairs set" % s)
         return
 
     try:
-        kwargs['symdevs'] = conf_get_string_scope(svc, conf, s, 'symdevs').split()
+        kwargs['symid'] = conf_get_string_scope(svc, conf, s, 'symid')
     except ex.OptNotFound:
-        svc.log.error("config file section %s must have symdevs set" % s)
+        svc.log.error("config file section %s must have sid set" % s)
+        return
+
+    try:
+        kwargs['consistent'] = conf_get_boolean(svc, conf, s, 'consistent')
+    except ex.OptNotFound:
+        pass
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs.update(get_sync_args(conf, s, svc))
+    try:
+        sc = __import__('resSyncSymclone'+rcEnv.sysname)
+    except:
+        sc = __import__('resSyncSymclone')
+    r = sc.syncSymclone(**kwargs)
+    add_triggers(svc, r, conf, s)
+    svc += r
+
+def add_syncs_symclone(svc, conf, s):
+    kwargs = {}
+    kwargs['type'] = "sync.symclone"
+
+    try:
+        kwargs['pairs'] = conf_get_string(svc, conf, s, 'pairs').split()
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have pairs set" % s)
+        return
+
+    try:
+        kwargs['symid'] = conf_get_string_scope(svc, conf, s, 'symid')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have sid set" % s)
         return
 
     try:
         kwargs['precopy_timeout'] = conf_get_int(svc, conf, s, 'precopy_timeout')
+    except ex.OptNotFound:
+        pass
+
+    try:
+        kwargs['consistent'] = conf_get_boolean(svc, conf, s, 'consistent')
     except ex.OptNotFound:
         pass
 
