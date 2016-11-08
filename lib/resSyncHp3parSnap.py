@@ -13,7 +13,6 @@ class syncHp3parSnap(resSync.Sync):
                  rid=None,
                  array=None,
                  vv_names=[],
-                 depends=[],
                  sync_max_delay=None,
                  schedule=None,
                  optional=False,
@@ -32,7 +31,6 @@ class syncHp3parSnap(resSync.Sync):
                               subset=subset)
         self.array = array
         self.vv_names = vv_names
-        self.depends = depends
         self.label = "hp3parsnap %s" % ", ".join(self.vv_names)
         if len(self.label) > 50:
             self.label = self.label[:47] + "..."
@@ -64,32 +62,12 @@ class syncHp3parSnap(resSync.Sync):
         if self.skip_sync(datetime.datetime.utcnow()-last):
             return False
         try:
-            self.check_depends()
+            self.check_depends("sync_update")
         except ex.excError:
             return False
         return True
 
-    def check_depends(self):
-        if len(self.depends) == 0:
-            return
-        for rid in self.depends:
-            self._check_depends(rid)
-
-    def _check_depends(self, rid):
-        if rid not in self.svc.resources_by_id:
-            self.log.warning("ignore depends on %s: resource not found" % rid)
-            return
-        r = self.svc.resources_by_id[rid]
-        rs = r.status()
-        if r.status() != rcStatus.UP:
-            raise ex.excError("depends on resource %s, in state %s" % (rid, rcStatus.status_str(rs)))
-
     def updatevv(self):
-        try:
-            self.check_depends()
-        except ex.excError as e:
-            self.log.error(e)
-            raise ex.excError()
         self.array_obj.updatevv(vvnames=self.vv_names, log=self.log)
 
     def sync_update(self):

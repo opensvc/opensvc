@@ -19,7 +19,7 @@ class syncSymclone(resSync.Sync):
             suffix = ""
         else:
             suffix = "." + ",".join(pairs)
-        return os.path.join(rcEnv.pathvar, self.svc.svcname, "pairs."+self.rid)
+        return os.path.join(rcEnv.pathvar, self.svc.svcname, "pairs."+self.rid+suffix)
 
     def write_pair_file(self, pairs=None):
         if pairs is None:
@@ -41,80 +41,55 @@ class syncSymclone(resSync.Sync):
         self.write_pair_file(pairs)
         return ['/usr/symcli/bin/symclone', '-sid', self.symid, '-f', self.pairs_file(pairs)]
 
-    def is_active_snap(self):
+    def is_active(self):
         for pair in self.pairs:
             if pair in self.active_pairs:
                 continue
-            cmd = self.symclone_cmd([pair]) + ['verify', '-copyonwrite']
-            out, err, ret = justcall(cmd)
-            if ret == 0:
-                self.active_pairs.append(pair)
-                continue
+            found = False
+            for state in self.active_states:
+                cmd = self.symclone_cmd([pair]) + ['verify', '-'+state]
+                out, err, ret = justcall(cmd)
+                if ret == 0:
+                    self.active_pairs.append(pair)
+                    break
         if len(self.active_pairs) == len(self.pairs):
             return True
         return False
 
-    def is_active_clone(self):
-        for pair in self.pairs:
-            if pair in self.active_pairs:
-                continue
-            cmd = self.symclone_cmd([pair]) + ['verify', '-copied']
-            out, err, ret = justcall(cmd)
+    def is_activable(self):
+        for state in self.activable_states:
+            cmd = self.symclone_cmd() + ['verify', '-'+state]
+            (ret, out, err) = self.call(cmd)
             if ret == 0:
-                self.active_pairs.append(pair)
-                continue
-            cmd = self.symclone_cmd([pair]) + ['verify', '-copyinprog']
-            out, err, ret = justcall(cmd)
-            if ret == 0:
-                self.active_pairs.append(pair)
-                continue
-        if len(self.active_pairs) == len(self.pairs):
-            return True
-        return False
-
-    def is_activable_snap(self):
-        cmd = self.symclone_cmd() + ['verify', '-recreated']
-        (ret, out, err) = self.call(cmd)
-        if ret == 0:
-            return True
-        cmd = self.symclone_cmd() + ['verify', '-created']
-        (ret, out, err) = self.call(cmd)
-        if ret == 0:
-            return True
-        return False
-
-    def is_activable_clone(self):
-        cmd = self.symclone_cmd() + ['verify', '-precopy']
-        (ret, out, err) = self.call(cmd)
-        if ret == 0:
-            return True
+                return True
         return False
 
     def wait_for_active(self):
-        delay = 20
-        timeout = 300
+        delay = 10
         self.active_pairs = []
-        for i in range(timeout/delay):
+        ass = " or ".join(self.active_states)
+        for i in range(self.activate_timeout//delay+1):
             if self.is_active():
                 return
             if i == 0:
-                self.log.info("waiting for copied or copyinprog state (max %i secs)"%timeout)
+                self.log.info("waiting for active state (max %i secs, %s)" % (timeout, ass))
             time.sleep(delay)
-        self.log.error("timed out waiting for copied or copyinprog state (%i secs)"%timeout)
+        self.log.error("timed out waiting for active state (%i secs, %s)" % (timeout, ass))
         ina = set(self.pairs) - set(self.active_pairs)
         ina = map(lambda x: ' '.join(x), ina)
         ina = ", ".join(ina)
-        raise ex.excError("%s still not in copied or copyinprod state"%ina)
+        raise ex.excError("%s still not in active state (%s)" % (ina, ass))
 
     def wait_for_activable(self):
-        delay = 30
-        for i in range(self.precopy_timeout/delay):
+        delay = 10
+        ass = " or ".join(self.activable_states)
+        for i in range(self.recreate_timeout//delay+1):
             if self.is_activable():
                 return
             if i == 0:
-                self.log.info("waiting for precopy state (max %i secs)"%self.precopy_timeout)
+                self.log.info("waiting for activable state (max %i secs, %s)" % (self.activate_timeout, ass))
             time.sleep(delay)
-        raise ex.excError("timed out waiting for precopy state (%i secs)"%self.precopy_timeout)
+        raise ex.excError("timed out waiting for activable state (%i secs, %s)" % (self.activate_timeout, ass))
 
     def activate(self):
         if self.is_active():
@@ -131,8 +106,14 @@ class syncSymclone(resSync.Sync):
         self.wait_for_devs_ready()
 
     def can_sync(self, target=None):
+        try:
+            self.check_depends("sync_update")
+        except ex.excError as e:
+            self.log.debug(e)
+            return False
+
         self.get_last()
-        if skip_sync(self.last):
+        if self.skip_sync(self.last):
             return False
         return True
 
@@ -140,19 +121,24 @@ class syncSymclone(resSync.Sync):
         self.get_last()
         if self.skip_sync(self.last):
             return
-        self.get_svcstatus()
-        if self.svcstatus['overall'].status != rcStatus.DOWN:
-            self.log.error("the service (sync excluded) is in '%s' state. Must be in 'down' state"%self.svcstatus['overall'])
-            raise ex.excError
         if self.is_activable():
             self.log.info("symclone are already recreated")
             return
         cmd = self.symclone_cmd() + ['-noprompt', 'recreate', '-i', '20', '-c', '30']
-        if self.type == "sync.symclone":
+        if self.type == "sync.symclone" and self.precopy:
             cmd.append("-precopy")
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError
+
+    def info(self):
+        data = [
+          ["precopy", str(self.precopy)],
+          ["pairs", str(self.pairs)],
+          ["symid", str(self.symid)],
+          ["consistent", str(self.consistent)],
+        ]
+        return self.fmt_info(data)
 
     def split_pair(self, pair):
         l = pair.split(":")
@@ -212,20 +198,13 @@ class syncSymclone(resSync.Sync):
     def start(self):
         self.activate()
 
-    def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
-
-    def get_svcstatus(self):
-        if len(self.svcstatus) == 0:
-            self.refresh_svcstatus()
-
     def __init__(self,
                  rid=None,
+                 type="sync.symclone",
                  symid=None,
                  pairs=[],
-                 precopy_timeout=300,
+                 precopy=True,
                  consistent=True,
-                 type="sync.symclone",
                  sync_max_delay=None,
                  schedule=None,
                  optional=False,
@@ -243,21 +222,23 @@ class syncSymclone(resSync.Sync):
                               tags=tags,
                               subset=subset)
 
-        if type == "sync.symclone":
-            self.is_active = self.is_active_clone
-            self.is_activable = self.is_activable_clone
-        elif type == "sync.symsnap":
-            self.is_active = self.is_active_snap
-            self.is_activable = self.is_activable_snap
+        if self.type == "sync.symclone":
+            self.active_states = ["copied", "copyinprog"]
+            self.activable_states = ["recreated", "precopy"]
+        elif self.type == "sync.symsnap":
+            self.active_states = ["copyonwrite"]
+            self.activable_states = ["recreated", "created"]
         else:
-            raise ex.excInitError("unsupported symclone driver type %s", type)
+            raise ex.excInitError("unsupported symclone driver type %s", self.type)
+        self.activate_timeout = 20
+        self.recreate_timeout = 20
+        self.precopy = precopy
         self.pairs_written = {}
         self.label = "symclone symid %s pairs %s" % (symid, " ".join(pairs))
         if len(self.label) > 80:
             self.label = self.label[:76] + "..."
         self.symid = symid
         self.pairs = pairs
-        self.precopy_timeout = precopy_timeout
         self.consistent = consistent
         self.disks = set([])
         self.svcstatus = {}

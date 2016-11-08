@@ -2924,18 +2924,6 @@ class KeywordSyncHp3parSnapVvnames(Keyword):
                   text="The names of snapshot VV or sets of VV to update."
                 )
 
-class KeywordSyncHp3parSnapDepends(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="sync",
-                  keyword="depends",
-                  rtype="hp3parsnap",
-                  required=False,
-                  at=True,
-                  text="A whitespace-separated list of resource ids, specifying resources that must be up to allow the snapshots update."
-                )
-
 class KeywordSyncHp3parArray(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3144,17 +3132,17 @@ class KeywordSyncSymSrdfsRdfg(Keyword):
                   text="Name of the RDF group pairing the source and target devices."
                 )
 
-class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
+class KeywordSyncSymclonePrecopy(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="sync",
-                  keyword="precopy_timeout",
+                  keyword="precopy",
                   at=True,
                   rtype="symclone",
-                  required=True,
-                  default=300,
-                  text="Seconds to wait for a precopy (sync_resync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
+                  required=False,
+                  default=True,
+                  text="Use -precopy on recreate."
                 )
 
 class KeywordSyncSymcloneSymid(Keyword):
@@ -3839,6 +3827,17 @@ class KeyDict(KeywordStore):
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
 
+        def kw_depends(section, action):
+            return Keyword(
+                  section=section,
+                  keyword=action+"_depends",
+                  at=True,
+                  example="ip#0 fs#0(down,stdby down)",
+                  default="",
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are ommited, 'up,stdby up' is used as the default expected states." % action
+                )
+
+
         self += kw_disable("DEFAULT")
 
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
@@ -3883,6 +3882,11 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_resync(r)
             self += kw_blocking_pre_sync_update(r)
             self += kw_blocking_post_sync_update(r)
+
+            for action in ["unprovision", "provision", "start", "stop",
+                           "sync_nodes", "sync_drp", "sync_update",
+                           "sync_break", "sync_resync"]:
+                self += kw_depends(r, action)
 
         self += KeywordMode()
         self += KeywordPrKey()
@@ -4061,7 +4065,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSymcloneConsistent()
         self += KeywordSyncSymcloneSymid()
         self += KeywordSyncSymclonePairs()
-        self += KeywordSyncSymclonePrecopyTimeout()
+        self += KeywordSyncSymclonePrecopy()
         self += KeywordSyncDcsckptDcs()
         self += KeywordSyncDcsckptManager()
         self += KeywordSyncDcsckptPairs()
@@ -4079,7 +4083,6 @@ class KeyDict(KeywordStore):
         self += KeywordSyncHp3parMethod()
         self += KeywordSyncHp3parSnapArray()
         self += KeywordSyncHp3parSnapVvnames()
-        self += KeywordSyncHp3parSnapDepends()
         self += KeywordSyncDdsSrc()
         self += KeywordSyncDdsDst()
         self += KeywordSyncDdsTarget()
