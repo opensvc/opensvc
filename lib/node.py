@@ -412,7 +412,7 @@ class Node(Svc, Freezer, Scheduler):
         if autopush:
             for svc in self.svcs:
                 if svc.collector_outdated():
-                    svc.action('autopush')
+                    svc.autopush()
 
         if 'svcnames' in kwargs:
             if type(kwargs['svcnames']) == list:
