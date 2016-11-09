@@ -875,20 +875,22 @@ class Svc(Resource, Scheduler):
                     print(e)
                     continue
 
+                vhostname = container.vm_hostname()
+
                 for rid in encap_res_status['resources']:
                     rstatus = encap_res_status['resources'][rid]['status']
-                    r_vals.append([repr(self.svcname),
-                                   repr(rcEnv.nodename),
-                                   repr(container.name),
-                                   repr(str(rid)),
-                                   repr(encap_res_status['resources'][rid].get('type', '')),
-                                   repr(str(encap_res_status['resources'][rid]['label'])),
-                                   repr(str(rstatus)),
+                    r_vals.append([self.svcname,
+                                   rcEnv.nodename,
+                                   vhostname,
+                                   str(rid),
+                                   encap_res_status['resources'][rid].get('type', ''),
+                                   str(encap_res_status['resources'][rid]['label']),
+                                   str(rstatus),
                                    "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
                                    "1" if encap_res_status['resources'][rid].get('optional', False) else "0",
                                    "1" if encap_res_status['resources'][rid].get('disabled', False) else "0",
-                                   repr(str(now)),
-                                   repr(str(encap_res_status['resources'][rid]['log']))])
+                                   str(now),
+                                   str(encap_res_status['resources'][rid]['log'])])
 
                 if 'avail' not in status or 'avail' not in encap_res_status:
                     continue
@@ -896,7 +898,7 @@ class Svc(Resource, Scheduler):
                 g_vals.append([self.svcname,
                                self.svctype,
                                rcEnv.nodename,
-                               container.name,
+                               vhostname,
                                container.type.replace('container.', ''),
                                rcEnv.host_mode,
                                str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
