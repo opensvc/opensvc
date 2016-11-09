@@ -147,7 +147,49 @@ class Lxc(resContainer.Container):
             f.write(' ')
             f.close()
 
+    def set_cpuset_clone_children(self):
+        ppath = "/sys/fs/cgroup/cpuset"
+        if not os.path.exists(ppath):
+            self.log.debug("set_clone_children: %s does not exist" % ppath)
+            return
+        path = "/sys/fs/cgroup/cpuset/lxc"
+        val = "1"
+        if not os.path.exists(path):
+            self.log.info("mkdir %s" % path)
+            os.makedirs(path)
+        for parm in ("cpuset.mems", "cpuset.cpus"):
+            current_val = self.get_sysfs(path, parm)
+            if current_val is None:
+                continue
+            if current_val.strip() == "":
+                self.set_sysfs(path, parm, "0")
+        parm = "cgroup.clone_children"
+        current_val = self.get_sysfs(path, parm)
+        if current_val is None:
+            return
+        if current_val.strip() == "1":
+            self.log.debug("set_cpuset_clone_children: %s/%s already set to 1" % (path, parm))
+            return
+        self.set_sysfs(path, parm, "1")
+
+    def get_sysfs(self, path, parm):
+        fpath = os.sep.join([path, parm])
+        if not os.path.exists(fpath):
+            self.log.debug("get_sysfs: %s does not exist" % path)
+            return
+        with open(fpath, "r") as f:
+            current_val = f.read()
+        self.log.debug("get_sysfs: %s contains %s" % (fpath, repr(current_val)))
+        return current_val
+
+    def set_sysfs(self, path, parm, val):
+        fpath = os.sep.join([path, parm])
+        self.log.info("echo %s >%s" % (val, fpath))
+        with open(fpath, "w") as f:
+            f.write(val)
+
     def container_start(self):
+        self.set_cpuset_clone_children()
         self.lxc('start')
 
     def container_stop(self):
