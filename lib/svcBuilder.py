@@ -383,7 +383,7 @@ def add_triggers(svc, resource, conf, section):
                 trigger = trigger.replace("sync", "sync_")
             setattr(resource, prefix+trigger, s)
 
-def add_depends(svc, resource, conf, section):
+def add_requires(svc, resource, conf, section):
     actions = [
       'unprovision', 'provision'
       'stop', 'start',
@@ -391,17 +391,17 @@ def add_depends(svc, resource, conf, section):
     ]
     for action in actions:
         try:
-            s = conf_get_string_scope(svc, conf, section, action+'_depends')
+            s = conf_get_string_scope(svc, conf, section, action+'_requires')
         except ex.OptNotFound:
             continue
         s = s.replace("stdby ", "stdby_")
         l = s.split(" ")
         l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
-        setattr(resource, action+'_depends', l)
+        setattr(resource, action+'_requires', l)
 
-def add_triggers_and_depends(svc, resource, conf, section):
+def add_triggers_and_requires(svc, resource, conf, section):
     add_triggers(svc, resource, conf, section)
-    add_depends(svc, resource, conf, section)
+    add_requires(svc, resource, conf, section)
 
 def always_on_nodes_set(svc, conf, section):
     try:
@@ -506,7 +506,7 @@ def add_ip_gce(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
     r = ip.Ip(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_ip_amazon(svc, conf, s):
@@ -548,7 +548,7 @@ def add_ip_amazon(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
     r = ip.Ip(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_ip(svc, conf, s):
@@ -635,7 +635,7 @@ def add_ip(svc, conf, s):
     kwargs['monitor'] = get_monitor(conf, s, svc)
     kwargs['restart'] = get_restart(conf, s, svc)
     r = ip.Ip(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_md(svc, conf, s):
@@ -672,7 +672,7 @@ def add_md(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -698,7 +698,7 @@ def add_drbd(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
     mod = __import__('resDiskDrbd')
     r = mod.Drbd(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_vdisk(svc, conf, s):
@@ -724,7 +724,7 @@ def add_vdisk(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
     m = __import__('resDiskVdisk')
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -781,7 +781,7 @@ def add_stonith(svc, conf, s):
         return
 
     r = st.Stonith(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_hb(svc, conf, s):
@@ -821,7 +821,7 @@ def add_hb(svc, conf, s):
         return
 
     r = hb.Hb(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_loop(svc, conf, s):
@@ -852,7 +852,7 @@ def add_loop(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 
@@ -882,7 +882,7 @@ def add_disk_gce(svc, conf, s):
     m = __import__('resDiskGce')
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_disk_amazon(svc, conf, s):
@@ -905,7 +905,7 @@ def add_disk_amazon(svc, conf, s):
     m = __import__('resDiskAmazon')
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_rados(svc, conf, s):
@@ -947,7 +947,7 @@ def add_rados(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
     if not lock:
@@ -958,7 +958,7 @@ def add_rados(svc, conf, s):
     kwargs["lock"] = lock
     kwargs["lock_shared_tag"] = lock_shared_tag
     r = m.DiskLock(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 
@@ -1022,7 +1022,7 @@ def add_raw(svc, conf, s):
     if zone is not None:
         r.tags.add('zone')
         r.tags.add(zone)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1072,7 +1072,7 @@ def add_gandi(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1155,7 +1155,7 @@ def add_veritas(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1198,7 +1198,7 @@ def add_vg(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1292,7 +1292,7 @@ def add_vmdg(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     r = m.Disk(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1338,7 +1338,7 @@ def add_zpool(svc, conf, s):
         r.tags.add('zone')
         r.tags.add(zone)
 
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1386,7 +1386,7 @@ def add_share_nfs(svc, conf, s):
 
     r = m.Share(**kwargs)
 
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_fs_directory(svc, conf, s):
@@ -1451,7 +1451,7 @@ def add_fs_directory(svc, conf, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_fs(svc, conf, s):
@@ -1539,7 +1539,7 @@ def add_fs(svc, conf, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1569,7 +1569,7 @@ def add_containers_esx(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Esx(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1599,7 +1599,7 @@ def add_containers_hpvm(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.HpVm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1629,7 +1629,7 @@ def add_containers_ldom(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Ldom(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1659,7 +1659,7 @@ def add_containers_vbox(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Vbox(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1690,7 +1690,7 @@ def add_containers_xen(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Xen(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1726,7 +1726,7 @@ def add_containers_zone(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Zone(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1770,7 +1770,7 @@ def add_containers_vcloud(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1829,7 +1829,7 @@ def add_containers_amazon(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1882,7 +1882,7 @@ def add_containers_openstack(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -1912,7 +1912,7 @@ def add_containers_vz(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Vz(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1944,7 +1944,7 @@ def add_containers_kvm(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Kvm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -1975,7 +1975,7 @@ def add_containers_srp(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Srp(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -2011,7 +2011,7 @@ def add_containers_lxc(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Lxc(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -2053,7 +2053,7 @@ def add_containers_docker(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Docker(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -2091,7 +2091,7 @@ def add_containers_ovm(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Ovm(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
@@ -2134,7 +2134,7 @@ def add_containers_jail(svc, conf, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
 
     r = m.Jail(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
 
@@ -2317,7 +2317,7 @@ def add_syncs_btrfs(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     btrfs = __import__('resSyncBtrfs')
     r = btrfs.SyncBtrfs(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_zfs(svc, conf, s):
@@ -2354,7 +2354,7 @@ def add_syncs_zfs(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     zfs = __import__('resSyncZfs')
     r = zfs.SyncZfs(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_dds(svc, conf, s):
@@ -2406,7 +2406,7 @@ def add_syncs_dds(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     dds = __import__('resSyncDds')
     r = dds.syncDds(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_dcsckpt(svc, conf, s):
@@ -2447,7 +2447,7 @@ def add_syncs_dcsckpt(svc, conf, s):
     except:
         sc = __import__('resSyncDcsCkpt')
     r = sc.syncDcsCkpt(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_dcssnap(svc, conf, s):
@@ -2482,7 +2482,7 @@ def add_syncs_dcssnap(svc, conf, s):
     except:
         sc = __import__('resSyncDcsSnap')
     r = sc.syncDcsSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_s3(svc, conf, s):
@@ -2523,7 +2523,7 @@ def add_syncs_s3(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     sc = __import__('resSyncS3')
     r = sc.syncS3(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_zfssnap(svc, conf, s):
@@ -2558,7 +2558,7 @@ def add_syncs_zfssnap(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     sc = __import__('resSyncZfsSnap')
     r = sc.syncZfsSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_btrfssnap(svc, conf, s):
@@ -2588,7 +2588,7 @@ def add_syncs_btrfssnap(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
     sc = __import__('resSyncBtrfsSnap')
     r = sc.syncBtrfsSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_necismsnap(svc, conf, s):
@@ -2616,7 +2616,7 @@ def add_syncs_necismsnap(svc, conf, s):
     except:
         sc = __import__('resSyncNecIsmSnap')
     r = sc.syncNecIsmSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_evasnap(svc, conf, s):
@@ -2654,7 +2654,7 @@ def add_syncs_evasnap(svc, conf, s):
     except:
         sc = __import__('resSyncEvasnap')
     r = sc.syncEvasnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_hp3parsnap(svc, conf, s):
@@ -2689,7 +2689,7 @@ def add_syncs_hp3parsnap(svc, conf, s):
     except:
         sc = __import__('resSyncHp3parSnap')
     r = sc.syncHp3parSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_hp3par(svc, conf, s):
@@ -2730,7 +2730,7 @@ def add_syncs_hp3par(svc, conf, s):
     except:
         sc = __import__('resSyncHp3par')
     r = sc.syncHp3par(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_symsrdfs(svc, conf, s):
@@ -2760,7 +2760,7 @@ def add_syncs_symsrdfs(svc, conf, s):
     except:
         sc = __import__('resSyncSymSrdfS')
     r = sc.syncSymSrdfS(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 
@@ -2794,7 +2794,7 @@ def add_syncs_radosclone(svc, conf, s):
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosClone(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_radossnap(svc, conf, s):
@@ -2827,7 +2827,7 @@ def add_syncs_radossnap(svc, conf, s):
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_symsnap(svc, conf, s):
@@ -2877,7 +2877,7 @@ def _add_syncs_symclone(svc, conf, s, t):
     except:
         sc = __import__('resSyncSymclone')
     r = sc.syncSymclone(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_ibmdssnap(svc, conf, s):
@@ -2918,7 +2918,7 @@ def add_syncs_ibmdssnap(svc, conf, s):
     except:
         m = __import__('resSyncIbmdsSnap')
     r = m.syncIbmdsSnap(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_nexenta(svc, conf, s):
@@ -2971,7 +2971,7 @@ def add_syncs_nexenta(svc, conf, s):
 
     import resSyncNexenta
     r = resSyncNexenta.syncNexenta(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_netapp(svc, conf, s):
@@ -3019,7 +3019,7 @@ def add_syncs_netapp(svc, conf, s):
 
     import resSyncNetapp
     r = resSyncNetapp.syncNetapp(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_syncs_rsync(svc, conf, s):
@@ -3093,7 +3093,7 @@ def add_syncs_rsync(svc, conf, s):
     kwargs.update(get_sync_args(conf, s, svc))
 
     r = resSyncRsync.Rsync(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
 def add_app(svc, conf, s):
@@ -3153,7 +3153,7 @@ def add_app(svc, conf, s):
     kwargs['restart'] = get_restart(conf, s, svc)
 
     r = resApp.App(**kwargs)
-    add_triggers_and_depends(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, conf, s)
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
 

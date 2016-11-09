@@ -161,7 +161,7 @@ class Resource(object):
                 else:
                     self.log.info("skip '%s' on standby resource (--force to override)"%action)
                     return
-            self.check_depends(action)
+            self.check_requires(action)
             self.setup_environ()
             self.action_triggers("pre", action)
             self.action_triggers("blocking_pre", action, blocking=True)
@@ -586,17 +586,17 @@ class Resource(object):
             raise
         pg.create_pg(self)
 
-    def check_depends(self, action):
-        param = action + "_depends"
+    def check_requires(self, action):
+        param = action + "_requires"
         if not hasattr(self, param):
             return
-        depends = getattr(self, param)
-        if len(depends) == 0:
+        requires = getattr(self, param)
+        if len(requires) == 0:
             return
-        for e in depends:
-            self._check_depends(e)
+        for e in requires:
+            self._check_requires(e)
 
-    def _check_depends(self, e):
+    def _check_requires(self, e):
         if e is None:
             return
         if e.count("(") == 1:
@@ -606,12 +606,12 @@ class Resource(object):
             rid = e
             states = ["up", "stdby up"]
         if rid not in self.svc.resources_by_id:
-            self.log.warning("ignore depends on %s: resource not found" % rid)
+            self.log.warning("ignore requires on %s: resource not found" % rid)
             return
         r = self.svc.resources_by_id[rid]
         current_state = rcStatus.status_str(r.status())
         if current_state not in states:
-            raise ex.excError("depends on resource %s in state %s, current state %s" % (rid, " or ".join(states), current_state))
+            raise ex.excError("requires on resource %s in state %s, current state %s" % (rid, " or ".join(states), current_state))
 
 
 class ResourceSet(Resource):

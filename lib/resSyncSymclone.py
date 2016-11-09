@@ -107,7 +107,7 @@ class syncSymclone(resSync.Sync):
 
     def can_sync(self, target=None):
         try:
-            self.check_depends("sync_update")
+            self.check_requires("sync_update")
         except ex.excError as e:
             self.log.debug(e)
             return False

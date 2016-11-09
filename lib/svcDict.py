@@ -3827,10 +3827,10 @@ class KeyDict(KeywordStore):
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
 
-        def kw_depends(section, action):
+        def kw_requires(section, action):
             return Keyword(
                   section=section,
-                  keyword=action+"_depends",
+                  keyword=action+"_requires",
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
@@ -3886,7 +3886,7 @@ class KeyDict(KeywordStore):
             for action in ["unprovision", "provision", "start", "stop",
                            "sync_nodes", "sync_drp", "sync_update",
                            "sync_break", "sync_resync"]:
-                self += kw_depends(r, action)
+                self += kw_requires(r, action)
 
         self += KeywordMode()
         self += KeywordPrKey()

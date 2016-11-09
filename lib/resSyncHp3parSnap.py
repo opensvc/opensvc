@@ -62,7 +62,7 @@ class syncHp3parSnap(resSync.Sync):
         if self.skip_sync(datetime.datetime.utcnow()-last):
             return False
         try:
-            self.check_depends("sync_update")
+            self.check_requires("sync_update")
         except ex.excError:
             return False
         return True
