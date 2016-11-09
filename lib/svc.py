@@ -798,17 +798,17 @@ class Svc(Resource, Scheduler):
                 if 'encap' in r.tags:
                     continue
                 rstatus = rcStatus.status_str(r.rstatus)
-                r_vals.append([repr(self.svcname),
-                               repr(rcEnv.nodename),
+                r_vals.append([self.svcname,
+                               rcEnv.nodename,
                                "",
-                               repr(r.rid),
-                               repr(r.type),
-                               repr(r.label),
-                               repr(str(rstatus)),
+                               r.rid,
+                               r.type,
+                               r.label,
+                               str(rstatus),
                                "1" if r.monitor else "0",
                                "1" if r.optional else "0",
                                "1" if r.disabled else "0",
-                               repr(str(now)),
+                               str(now),
                                r.status_log_str])
 
         g_vars=["mon_svcname",
