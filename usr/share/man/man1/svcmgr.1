@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-10\-17
+.TH SVCMGR 1 2016\-11\-03
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -143,14 +143,18 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
   \fBsvcmgr docker  \fP  wrap the docker client command, setting automatically the
   \fB               \fP  socket parameter to join the service-private docker daemon.
-  \fB               \fP  The %images% and %instances% words in the wrapped command
-  \fB               \fP  are replaced by, respectively, the set of docker instance
-  \fB               \fP  names and images for container resources passing the
-  \fB               \fP  --tags, --rid and --subsets filters. This is useful to
-  \fB               \fP  remove all instances of a service or all instances of
-  \fB               \fP  resources with a tag like "frontend". Note the opensvc
-  \fB               \fP  filters must be positioned before the docker command in the
-  \fB               \fP  arguments list.
+  \fB               \fP  The %as_service%, %images% and %instances% words in the
+  \fB               \fP  wrapped command are replaced by, respectively, the registry
+  \fB               \fP  login username/password/email parameters to log as a
+  \fB               \fP  service using <svcname>@<nodename> as the username and the
+  \fB               \fP  node uuid as password (which is what is expected when the
+  \fB               \fP  opensvc collector is used as the JWT manager for the
+  \fB               \fP  registry), the set of docker instance names and images for
+  \fB               \fP  container resources passing the --tags, --rid and --subsets
+  \fB               \fP  filters. This is useful to remove all instances of a
+  \fB               \fP  service or all instances of resources with a tag like
+  \fB               \fP  "frontend". Note the opensvc filters must be positioned
+  \fB               \fP  before the docker command in the arguments list.
 
   \fBsvcmgr enable  \fP  enable resources passed through --rid in services passed
   \fB               \fP  through --service. Specifying no resource enables the whole

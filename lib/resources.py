@@ -1,5 +1,5 @@
 import os
-import rcExceptions as exc
+import rcExceptions as ex
 import rcStatus
 import logging
 import rcUtilities
@@ -138,7 +138,7 @@ class Resource(object):
                 ret = 1
                 self.log.error("%s error: %s" % (cmd, str(e)))
             if blocking and ret != 0:
-                raise exc.excError("%s trigger %s blocking error" % (type, cmd))
+                raise ex.excError("%s trigger %s blocking error" % (type, cmd))
 
     def action_main(self, action):
         if self.svc.options.dry_run:
@@ -161,6 +161,7 @@ class Resource(object):
                 else:
                     self.log.info("skip '%s' on standby resource (--force to override)"%action)
                     return
+            self.check_requires(action)
             self.setup_environ()
             self.action_triggers("pre", action)
             self.action_triggers("blocking_pre", action, blocking=True)
@@ -178,7 +179,7 @@ class Resource(object):
         Alert on these minimal implementation requirements
         """
         if action in ("start","stop","status") :
-            raise exc.excUndefined(action,self.__class__.__name__,\
+            raise ex.excUndefined(action,self.__class__.__name__,\
                                     "Resource.do_action")
 
     def action(self, action=None):
@@ -217,10 +218,10 @@ class Resource(object):
             return True
         try :
             self.do_action(action)
-        except exc.excUndefined as ex:
-            print(ex)
+        except ex.excUndefined as e:
+            print(e)
             return False
-        except exc.excError as e:
+        except ex.excError as e:
             if self.optional:
                 if len(str(e)) > 0:
                     self.log.error(str(e))
@@ -488,7 +489,7 @@ class Resource(object):
             if fn():
                 return
             time.sleep(delay)
-        raise exc.excError(errmsg)
+        raise ex.excError(errmsg)
 
     def devlist(self):
         return self.disklist()
@@ -584,6 +585,33 @@ class Resource(object):
             print(e)
             raise
         pg.create_pg(self)
+
+    def check_requires(self, action):
+        param = action + "_requires"
+        if not hasattr(self, param):
+            return
+        requires = getattr(self, param)
+        if len(requires) == 0:
+            return
+        for e in requires:
+            self._check_requires(e)
+
+    def _check_requires(self, e):
+        if e is None:
+            return
+        if e.count("(") == 1:
+            rid, states = e.rstrip(")").split("(")
+            states = states.split(",")
+        else:
+            rid = e
+            states = ["up", "stdby up"]
+        if rid not in self.svc.resources_by_id:
+            self.log.warning("ignore requires on %s: resource not found" % rid)
+            return
+        r = self.svc.resources_by_id[rid]
+        current_state = rcStatus.status_str(r.status())
+        if current_state not in states:
+            raise ex.excError("requires on resource %s in state %s, current state %s" % (rid, " or ".join(states), current_state))
 
 
 class ResourceSet(Resource):
@@ -768,14 +796,14 @@ class ResourceSet(Resource):
                     # the action_job tells us what to do with it through its exitcode
                     r.can_rollback = True
             if len(err) > 0:
-                raise exc.excError("%s non-optional resources jobs returned with error" % ",".join(err))
+                raise ex.excError("%s non-optional resources jobs returned with error" % ",".join(err))
         else:
             if self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
                 r.log.info("entering parallel subset")
             for r in resources:
                 try:
                     r.action(action)
-                except exc.excAbortAction:
+                except ex.excAbortAction:
                     break
 
     def action_job(self, r, action):

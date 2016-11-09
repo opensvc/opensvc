@@ -468,6 +468,8 @@ class Scheduler(object):
             schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
+        elif hasattr(self, "resources_by_id") and section in self.resources_by_id and hasattr(self.resources_by_id[section], "default_schedule"):
+            schedule_s = self.resources_by_id[section].default_schedule
         elif option in config_defaults:
             schedule_s = config_defaults[option]
         else:

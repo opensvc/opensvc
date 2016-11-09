@@ -95,8 +95,9 @@ Internal                 : False
         return self._info[snap]
 
     def no_status(self):
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
+        try:
+            self.pre_sync_check_flex_primary()
+        except ex.excAbortAction:
             return True
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['overall'].status not in [rcStatus.UP, rcStatus.NA]:
@@ -141,6 +142,9 @@ Internal                 : False
     def sync_resync(self):
         self.update_snap()
 
+    def sync_update(self):
+        self.update_snap()
+
     def refresh_svcstatus(self):
         self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb', 'app']))
 
@@ -175,6 +179,7 @@ Internal                 : False
         self.label = "DCS snapshot %s"%', '.join(snapname)
         self.snapname = snapname
         self._info = {}
+        self.default_schedule = "@0"
 
     def __str__(self):
         return "%s dcs=%s manager=%s snapname=%s" % (

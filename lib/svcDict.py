@@ -1354,7 +1354,7 @@ class KeywordSyncType(Keyword):
                   keyword="type",
                   order=10,
                   required=True,
-                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
+                  candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
                 )
@@ -2924,18 +2924,6 @@ class KeywordSyncHp3parSnapVvnames(Keyword):
                   text="The names of snapshot VV or sets of VV to update."
                 )
 
-class KeywordSyncHp3parSnapDepends(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="sync",
-                  keyword="depends",
-                  rtype="hp3parsnap",
-                  required=False,
-                  at=True,
-                  text="A whitespace-separated list of resource ids, specifying resources that must be up to allow the snapshots update."
-                )
-
 class KeywordSyncHp3parArray(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3108,17 +3096,6 @@ class KeywordSyncNecismsnapDevs(Keyword):
                   text="A whitespace-separated list of SV:LD."
                 )
 
-class KeywordSyncSymcloneSymdg(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="sync",
-                  keyword="symdg",
-                  rtype="symclone",
-                  required=True,
-                  text="Name of the symmetrix device group where the source and target devices are grouped."
-                )
-
 class KeywordSyncSymSrdfsSymid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3155,31 +3132,54 @@ class KeywordSyncSymSrdfsRdfg(Keyword):
                   text="Name of the RDF group pairing the source and target devices."
                 )
 
-class KeywordSyncSymclonePrecopyTimeout(KeywordInteger):
-    def __init__(self):
-        KeywordInteger.__init__(
-                  self,
-                  section="sync",
-                  keyword="precopy_timeout",
-                  at=True,
-                  rtype="symclone",
-                  required=True,
-                  default=300,
-                  text="Seconds to wait for a precopy (sync_resync) to finish before returning with an error. In this case, the precopy proceeds normally, but the opensvc leftover actions must be retried. The precopy time depends on the amount of changes logged at the source, which is context-dependent. Tune to your needs."
-                )
-
-class KeywordSyncSymcloneSymdevs(Keyword):
+class KeywordSyncSymclonePrecopy(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="sync",
-                  keyword="symdevs",
+                  keyword="precopy",
+                  at=True,
                   rtype="symclone",
+                  required=False,
+                  default=True,
+                  text="Use -precopy on recreate."
+                )
+
+class KeywordSyncSymcloneSymid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="symid",
+                  rtype=["symclone", "symsnap"],
+                  required=True,
+                  text="Identifier of the symmetrix array hosting the source and target devices pairs pointed by 'pairs'."
+                )
+
+class KeywordSyncSymclonePairs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="pairs",
+                  rtype=["symclone", "symsnap"],
                   required=True,
                   at=True,
                   default=None,
-                  text="Whitespace-separated list of devices to drive with this resource. Devices are specified as 'symmetrix identifier:symmetrix device identifier. Different symdevs can be setup on each node using the symdevs@nodename.",
-                  example="000000000198:0060 000000000198:0061",
+                  text="Whitespace-separated list of devices <src>:<dst> devid pairs to drive with this resource.",
+                  example="00B60:00B61 00B62:00B63",
+                )
+
+class KeywordSyncSymcloneConsistent(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="consistent",
+                  rtype=["symclone", "symsnap"],
+                  at=True,
+                  default=True,
+                  text="Use -consistent in symclone commands.",
                 )
 
 class KeywordSyncDdsSrc(Keyword):
@@ -3827,6 +3827,17 @@ class KeyDict(KeywordStore):
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
 
+        def kw_requires(section, action):
+            return Keyword(
+                  section=section,
+                  keyword=action+"_requires",
+                  at=True,
+                  example="ip#0 fs#0(down,stdby down)",
+                  default="",
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are ommited, 'up,stdby up' is used as the default expected states." % action
+                )
+
+
         self += kw_disable("DEFAULT")
 
         for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
@@ -3871,6 +3882,11 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_resync(r)
             self += kw_blocking_pre_sync_update(r)
             self += kw_blocking_post_sync_update(r)
+
+            for action in ["unprovision", "provision", "start", "stop",
+                           "sync_nodes", "sync_drp", "sync_update",
+                           "sync_break", "sync_resync"]:
+                self += kw_requires(r, action)
 
         self += KeywordMode()
         self += KeywordPrKey()
@@ -4046,9 +4062,10 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSymSrdfsSymid()
         self += KeywordSyncSymSrdfsSymdg()
         self += KeywordSyncSymSrdfsRdfg()
-        self += KeywordSyncSymcloneSymdg()
-        self += KeywordSyncSymclonePrecopyTimeout()
-        self += KeywordSyncSymcloneSymdevs()
+        self += KeywordSyncSymcloneConsistent()
+        self += KeywordSyncSymcloneSymid()
+        self += KeywordSyncSymclonePairs()
+        self += KeywordSyncSymclonePrecopy()
         self += KeywordSyncDcsckptDcs()
         self += KeywordSyncDcsckptManager()
         self += KeywordSyncDcsckptPairs()
@@ -4066,7 +4083,6 @@ class KeyDict(KeywordStore):
         self += KeywordSyncHp3parMethod()
         self += KeywordSyncHp3parSnapArray()
         self += KeywordSyncHp3parSnapVvnames()
-        self += KeywordSyncHp3parSnapDepends()
         self += KeywordSyncDdsSrc()
         self += KeywordSyncDdsDst()
         self += KeywordSyncDdsTarget()

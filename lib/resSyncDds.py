@@ -17,11 +17,7 @@ class syncDds(resSync.Sync):
         if len(resources) == 0:
             return
 
-        """Don't sync PRD services when running on !PRD node
-        """
-        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
-            self.log.debug("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
+        self.pre_sync_check_prd_svc_on_non_prd_node()
 
         for i, r in enumerate(resources):
             if not r.svc_syncable():
@@ -127,15 +123,11 @@ class syncDds(resSync.Sync):
         self.get_src_info()
 
     def svc_syncable(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't sync this resource for a service not up")
+        try:
+            self.pre_sync_check_svc_not_up()
+            self.pre_sync_check_flex_primary()
+        except ex.excAbortAction:
             return False
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            self.log.debug("won't sync this resource from a flex non-primary node")
-            return set([])
-
         return True
 
     def sync_full(self):
@@ -301,15 +293,8 @@ class syncDds(resSync.Sync):
             self.checksums[node] = o[0]
 
     def sync_verify(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if s['overall'].status != rcStatus.UP:
-            self.log.debug("won't verify this resource for a service not up")
+        if not self.svc_syncable():
             return
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            self.log.debug("won't verify this resource from a flex non-primary node")
-            return set([])
-
         self.get_info()
         from multiprocessing import Process, Queue
         self.checksums = {}

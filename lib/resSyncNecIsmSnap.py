@@ -34,6 +34,7 @@ class syncNecIsmSnap(resSync.Sync):
         self.devs = devs
         self.array = rcNecIsm.NecIsm(array_name)
         self.parse_devs(devs)
+        self.default_schedule = "@0"
 
     def on_add(self):
         self.array.log = self.log
@@ -129,6 +130,11 @@ class syncNecIsmSnap(resSync.Sync):
         return 0
 
     def sync_resync(self):
+        self.unlink()
+        self.create()
+        self.link()
+
+    def sync_update(self):
         self.unlink()
         self.create()
         self.link()

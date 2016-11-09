@@ -107,16 +107,8 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
         self._sync_update('sync_drp')
 
     def sanity_checks(self):
-        if not self.svc.force:
-            s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-            if s['overall'].status != rcStatus.UP:
-                raise ex.excError("won't sync this resource for a service not up")
-
-        """ Refuse to sync from a flex non-primary node
-        """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            raise ex.excError("won't sync this resource from a flex non-primary node")
+        self.pre_sync_check_flex_primary()
+        self.pre_sync_check_svc_not_up()
 
     def _sync_update(self, action):
         try:

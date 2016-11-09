@@ -49,6 +49,7 @@ actions_translation = {
 }
 
 actions_allow_on_frozen = [
+  "autopush",
   "delete",
   "disable",
   "edit_config",
@@ -221,6 +222,7 @@ status_types = [
   "sync.rados",
   "sync.rsync",
   "sync.symclone",
+  "sync.symsnap",
   "sync.symsrdfs",
   "sync.s3",
   "sync.zfs",
@@ -1008,11 +1010,13 @@ class Svc(Resource, Scheduler):
                     print(e)
                     continue
 
+                vhostname = container.vm_hostname()
+
                 for rid in encap_res_status['resources']:
                     rstatus = encap_res_status['resources'][rid]['status']
                     r_vals.append([self.svcname,
                                    rcEnv.nodename,
-                                   container.name,
+                                   vhostname,
                                    str(rid),
                                    encap_res_status['resources'][rid].get('type', ''),
                                    str(encap_res_status['resources'][rid]['label']),
@@ -1029,7 +1033,7 @@ class Svc(Resource, Scheduler):
                 g_vals.append([self.svcname,
                                self.svc_env,
                                rcEnv.nodename,
-                               container.name,
+                               vhostname,
                                container.type.replace('container.', ''),
                                rcEnv.node_env,
                                str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
@@ -1653,6 +1657,8 @@ class Svc(Resource, Scheduler):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
     def cluster_mode_safety_net(self, action):
+        if action in actions_allow_on_cluster:
+            return
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
         if self.command_is_scoped():
@@ -1673,7 +1679,7 @@ class Svc(Resource, Scheduler):
                 if not r.skip and hasattr(r, action):
                     self.running_action = action
                     getattr(r, action)()
-            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled. the --cluster option circumvent this safety net.")
+            raise ex.excError("this service is managed by a clusterware, thus direct service manipulation is disabled (%s). the --cluster option circumvent this safety net." % action)
 
     def starthb(self):
         self.master_starthb()
@@ -1826,6 +1832,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "startstandby")
         self.sub_set_action("sync.nexenta", "startstandby")
         self.sub_set_action("sync.symclone", "startstandby")
+        self.sub_set_action("sync.symsnap", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
         self.sub_set_action(disk_types, "startstandby", xtags=set(['zone']))
@@ -1836,6 +1843,7 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.dcsckpt", "start")
         self.sub_set_action("sync.nexenta", "start")
         self.sub_set_action("sync.symclone", "start")
+        self.sub_set_action("sync.symsnap", "start")
         self.sub_set_action("sync.symsrdfs", "start")
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
@@ -2261,21 +2269,22 @@ class Svc(Resource, Scheduler):
     def sync_resync(self):
         self.sub_set_action("sync.netapp", "sync_resync")
         self.sub_set_action("sync.nexenta", "sync_resync")
-        self.sub_set_action("sync.symclone", "sync_resync")
         self.sub_set_action("sync.rados", "sync_resync")
+        self.sub_set_action("sync.dds", "sync_resync")
+        self.sub_set_action("sync.symclone", "sync_resync")
+        self.sub_set_action("sync.symsnap", "sync_resync")
         self.sub_set_action("sync.ibmdssnap", "sync_resync")
         self.sub_set_action("sync.evasnap", "sync_resync")
         self.sub_set_action("sync.necismsnap", "sync_resync")
         self.sub_set_action("sync.dcssnap", "sync_resync")
-        self.sub_set_action("sync.dds", "sync_resync")
 
     def sync_break(self):
         self.sub_set_action("sync.netapp", "sync_break")
         self.sub_set_action("sync.nexenta", "sync_break")
-        self.sub_set_action("sync.symclone", "sync_break")
         self.sub_set_action("sync.hp3par", "sync_break")
-        self.sub_set_action("sync.ibmdssnap", "sync_break")
         self.sub_set_action("sync.dcsckpt", "sync_break")
+        self.sub_set_action("sync.symclone", "sync_break")
+        self.sub_set_action("sync.symsnap", "sync_break")
 
     def sync_update(self):
         self.sub_set_action("sync.netapp", "sync_update")
@@ -2287,6 +2296,9 @@ class Svc(Resource, Scheduler):
         self.sub_set_action("sync.btrfssnap", "sync_update")
         self.sub_set_action("sync.zfssnap", "sync_update")
         self.sub_set_action("sync.s3", "sync_update")
+        self.sub_set_action("sync.symclone", "sync_update")
+        self.sub_set_action("sync.symsnap", "sync_update")
+        self.sub_set_action("sync.ibmdssnap", "sync_update")
 
     def sync_full(self):
         self.sub_set_action("sync.dds", "sync_full")
@@ -2392,6 +2404,10 @@ class Svc(Resource, Scheduler):
         self.remote_postsync()
 
     def push_service_status(self):
+        if self.encap:
+            if not self.cron:
+                self.log.info("push service status is disabled for encapsulated services")
+            return
         if self.skip_action("push_service_status"):
             return
         self.task_push_service_status()
@@ -2425,6 +2441,13 @@ class Svc(Resource, Scheduler):
         if not os.path.exists(sd):
             os.makedirs(sd)
 
+    def autopush(self):
+        self.log.handlers[1].setLevel(logging.CRITICAL)
+        try:
+            self.push()
+        finally:
+            self.log.handlers[1].setLevel(rcEnv.loglevel)
+
     @scheduler_fork
     def push(self):
         if self.encap:
@@ -2433,7 +2456,6 @@ class Svc(Resource, Scheduler):
             self.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
-        self.log.handlers[1].setLevel(logging.CRITICAL)
         self.log.info("send %s to collector" % self.cf)
         try:
             self.create_var_subdir()
@@ -2441,10 +2463,8 @@ class Svc(Resource, Scheduler):
             with open(self.push_flag, 'w') as f:
                 f.write(str(time.time()))
             self.log.info("update %s timestamp" % self.push_flag)
-            self.log.handlers[1].setLevel(logging.INFO)
         except:
             self.log.error("failed to update %s timestamp" % self.push_flag)
-            self.log.handlers[1].setLevel(logging.INFO)
 
     def push_encap_config(self):
         if self.encap or not self.has_encap_resources:
@@ -2480,7 +2500,7 @@ class Svc(Resource, Scheduler):
                     cmd = rcEnv.rcp.split() + [r.name+':'+encap_cf, rcEnv.pathetc+'/']
                     out, err, ret = justcall(cmd)
                 os.utime(self.cf, (encap_mtime, encap_mtime))
-                print("fetch %s from %s ..."%(encap_cf, r.name), "OK" if ret == 0 else "ERR\n%s"%err)
+                self.log.info("fetch %s from %s"%(encap_cf, r.name))
                 if ret != 0:
                     raise ex.excError()
                 return
@@ -2492,10 +2512,8 @@ class Svc(Resource, Scheduler):
         else:
             cmd = rcEnv.rcp.split() + [self.cf, r.name+':'+encap_cf]
             out, err, ret = justcall(cmd)
-        self.log.handlers[1].setLevel(logging.CRITICAL)
         if ret != 0:
             self.log.error("failed to send %s to %s" % (self.cf, r.name))
-            self.log.handlers[0].setLevel(logging.INFO)
             raise ex.excError()
         self.log.info("send %s to %s" % (self.cf, r.name))
 
@@ -2503,10 +2521,8 @@ class Svc(Resource, Scheduler):
         out, err, ret = self._encap_cmd(cmd, container=r)
         if ret != 0:
             self.log.error("failed to install %s slave service" % r.name)
-            self.log.handlers[1].setLevel(logging.INFO)
             raise ex.excError()
         self.log.info("install %s slave service" % r.name)
-        self.log.handlers[1].setLevel(logging.INFO)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
@@ -2661,8 +2677,7 @@ class Svc(Resource, Scheduler):
                 self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
             try:
-                if action not in actions_allow_on_cluster:
-                    self.cluster_mode_safety_net(action)
+                self.cluster_mode_safety_net(action)
             except ex.excAbortAction as e:
                 self.log.info(str(e))
                 return 0
@@ -2958,7 +2973,8 @@ class Svc(Resource, Scheduler):
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
         log.addHandler(actionlogfilehandler)
-        self.log.info(" ".join(sys.argv))
+        if "/svcmgr.py" in sys.argv:
+            self.log.info(" ".join(sys.argv))
 
         err = self.do_action(action, waitlock=waitlock)
 
@@ -3013,6 +3029,9 @@ class Svc(Resource, Scheduler):
         """ return True if the configuration file has changed since last push
             else return False
         """
+        if self.encap:
+            return False
+
         import datetime
         if not os.path.exists(self.push_flag):
             self.log.debug("no last push timestamp found")
@@ -3307,6 +3326,13 @@ class Svc(Resource, Scheduler):
                     s = list(set([r.run_image for r in containers if not r.skip and not r.disabled]))
                     for image in s:
                         argv.insert(i, image)
+            for i, arg in enumerate(argv):
+                if arg == "%as_service%":
+                    del argv[i]
+                    argv[i:i] = ["-u", self.svcname+"@"+rcEnv.nodename]
+                    argv[i:i] = ["-p", self.node.config.get("node", "uuid")]
+                    if len(containers) > 0 and containers[0].docker_min_version("1.11"):
+                        argv[i:i] = ["-m", ""]
             return argv
 
         for r in containers:

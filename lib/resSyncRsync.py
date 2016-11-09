@@ -109,13 +109,7 @@ class Rsync(resSync.Sync):
         if rcEnv.nodename in self.svc.drpnodes:
             return set([])
 
-        """ Refuse to sync from a flex non-primary node
-        """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
-           self.svc.flex_primary != rcEnv.nodename:
-            if not self.svc.cron:
-                self.log.info("won't sync this resource from a flex non-primary node")
-            return set([])
+        self.pre_sync_check_flex_primary()
 
         """Discard the local node from the set
         """
@@ -277,12 +271,7 @@ class Rsync(resSync.Sync):
         if len(resources) == 0:
             return
 
-        """Don't sync PRD services when running on !PRD node
-        """
-        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
-            if not self.svc.cron:
-                self.log.info("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
+        self.pre_sync_check_prd_svc_on_non_prd_node()
 
         """ Is there at least one node to sync ?
         """
