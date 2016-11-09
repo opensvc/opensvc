@@ -1010,11 +1010,13 @@ class Svc(Resource, Scheduler):
                     print(e)
                     continue
 
+                vhostname = container.vm_hostname()
+
                 for rid in encap_res_status['resources']:
                     rstatus = encap_res_status['resources'][rid]['status']
                     r_vals.append([self.svcname,
                                    rcEnv.nodename,
-                                   container.name,
+                                   vhostname,
                                    str(rid),
                                    encap_res_status['resources'][rid].get('type', ''),
                                    str(encap_res_status['resources'][rid]['label']),
@@ -1031,7 +1033,7 @@ class Svc(Resource, Scheduler):
                 g_vals.append([self.svcname,
                                self.svc_env,
                                rcEnv.nodename,
-                               container.name,
+                               vhostname,
                                container.type.replace('container.', ''),
                                rcEnv.node_env,
                                str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
