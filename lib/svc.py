@@ -3027,6 +3027,9 @@ class Svc(Resource, Scheduler):
         """ return True if the configuration file has changed since last push
             else return False
         """
+        if self.encap:
+            return False
+
         import datetime
         if not os.path.exists(self.push_flag):
             self.log.debug("no last push timestamp found")
