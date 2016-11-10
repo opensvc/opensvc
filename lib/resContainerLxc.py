@@ -200,8 +200,8 @@ class Lxc(resContainer.Container):
                 self.log.debug("failed to remove leftover cgroup %s: %s" % (p, str(e)))
 
     def container_start(self):
-        self.set_cpuset_clone_children()
         self.cleanup_cgroup()
+        self.set_cpuset_clone_children()
         self.lxc('start')
 
     def container_stop(self):
@@ -210,6 +210,7 @@ class Lxc(resContainer.Container):
 
     def post_container_stop(self):
         self.cleanup_links(self.links)
+        self.cleanup_cgroup()
 
     def container_forcestop(self):
         """ no harder way to stop a lxc container, raise to signal our
