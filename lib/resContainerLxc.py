@@ -188,8 +188,19 @@ class Lxc(resContainer.Container):
         with open(fpath, "w") as f:
             f.write(val)
 
+    def cleanup_cgroup(self):
+        import glob
+        for p in glob.glob("/sys/fs/cgroup/*/lxc/%s-[0-9]" % self.name) + \
+                 glob.glob("/sys/fs/cgroup/*/lxc/%s" % self.name):
+            try:
+                os.rmdir(p)
+                self.log.info("removed leftover cgroup %s" % p)
+            except Exception as e:
+                self.log.debug("failed to remove leftover cgroup %s: %s" % (p, str(e)))
+
     def container_start(self):
         self.set_cpuset_clone_children()
+        self.cleanup_cgroup()
         self.lxc('start')
 
     def container_stop(self):
