@@ -219,6 +219,8 @@ def get_cgroup_path(o, t, create=True):
         log = o.svc.log
 
     if not os.path.exists(cgp) and create:
+        if hasattr(o, "cleanup_cgroup"):
+            o.cleanup_cgroup(t)
         create_cgroup(cgp, log=log)
     return cgp
 
