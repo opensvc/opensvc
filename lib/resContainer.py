@@ -198,6 +198,8 @@ class Container(Res.Resource):
         except ex.excError:
             self.container_forcestop()
             self.wait_for_shutdown()
+        if hasattr(self, "post_container_stop"):
+            self.post_container_stop()
 
     def check_capabilities(self):
         #print("TODO: check_capabilities(self)")

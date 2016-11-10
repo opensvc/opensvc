@@ -204,13 +204,40 @@ class Lxc(resContainer.Container):
         self.lxc('start')
 
     def container_stop(self):
+        self.links = self.get_links()
         self.lxc('stop')
+
+    def post_container_stop(self):
+        self.cleanup_links(self.links)
 
     def container_forcestop(self):
         """ no harder way to stop a lxc container, raise to signal our
             helplessness
         """
         raise ex.excError
+
+    def get_links(self):
+        links = []
+        cmd = ['lxc-info', '--name', self.name]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return []
+        for line in out.splitlines():
+            if line.startswith("Link:"):
+                links.append(line.split()[-1].strip())
+        return links
+
+    def cleanup_link(self, link):
+        cmd = ["ip", "link", "del", "dev", link]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            self.log.info(" ".join(cmd))
+        else:
+            self.log.debug(" ".join(cmd)+out+err)
+
+    def cleanup_links(self, links):
+        for link in links:
+            self.cleanup_link(link)
 
     def _ping(self):
         return check_ping(self.addr, timeout=1)
