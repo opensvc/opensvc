@@ -219,9 +219,35 @@ def get_cgroup_path(o, t, create=True):
         log = o.svc.log
 
     if not os.path.exists(cgp) and create:
-        log.info("create cgroup %s" % cgp)
-        os.makedirs(cgp)
+        create_cgroup(cgp, log=log)
     return cgp
+
+def create_cgroup(cgp, log=None):
+    log.info("create cgroup %s" % cgp)
+    os.makedirs(cgp)
+    set_sysfs(cgp+"/cgroup.clone_children", "1", log=log)
+    for parm in ("cpus", "mems"):
+        parent_val = get_sysfs(cgp+"/../cpuset."+parm)
+        set_sysfs(cgp+"/cpuset."+parm, parent_val, log=log)
+
+def get_sysfs(path):
+    if not os.path.exists(path):
+        return
+    with open(path, "r") as f:
+        return f.read().rstrip("\n")
+
+def set_sysfs(path, val, log=None):
+    current_val = get_sysfs(path)
+    if current_val is None:
+        return
+    if current_val == val:
+        return
+    
+    if log:
+        log.info("/bin/echo %s >%s" % (val, path))
+
+    with open(path, "w") as f:
+        return f.write(val)
 
 def freeze(o):
     return freezer(o, "FROZEN")
