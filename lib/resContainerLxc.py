@@ -161,13 +161,14 @@ class Lxc(resContainer.Container):
             current_val = self.get_sysfs(path, parm)
             if current_val is None:
                 continue
-            if current_val.strip() == "":
-                self.set_sysfs(path, parm, "0")
+            if current_val == "":
+                parent_val = self.get_sysfs(ppath, parm)
+                self.set_sysfs(path, parm, parent_val)
         parm = "cgroup.clone_children"
         current_val = self.get_sysfs(path, parm)
         if current_val is None:
             return
-        if current_val.strip() == "1":
+        if current_val == "1":
             self.log.debug("set_cpuset_clone_children: %s/%s already set to 1" % (path, parm))
             return
         self.set_sysfs(path, parm, "1")
@@ -178,7 +179,7 @@ class Lxc(resContainer.Container):
             self.log.debug("get_sysfs: %s does not exist" % path)
             return
         with open(fpath, "r") as f:
-            current_val = f.read()
+            current_val = f.read().rstrip("\n")
         self.log.debug("get_sysfs: %s contains %s" % (fpath, repr(current_val)))
         return current_val
 
