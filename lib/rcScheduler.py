@@ -25,7 +25,6 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
     """
     os.chdir('/')
     os.setsid()
-    os.umask(0)
 
     try:
         pid = os.fork()
