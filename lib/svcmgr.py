@@ -90,6 +90,8 @@ parser.add_option("--provision", default=False, action="store_true", dest="provi
                   help="with the install or create actions, provision the service resources after config file creation. defaults to False.")
 parser.add_option("--unprovision", default=False, action="store_true", dest="unprovision",
                   help="with the delete action, unprovision the service resources before config files file deletion. defaults to False.")
+parser.add_option("--env", default=[], action="append", dest="env",
+                  help="with the create action, set a env section parameter. multiple --env <key>=<val> can be specified.")
 parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock", type="int",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
@@ -167,6 +169,15 @@ if cmd in ('svcmgr', 'svcmgr.py', None):
     parser.add_option("--template", default=None, action="store", dest="param_template",
               help="the configuration file template name or id, served by the collector, to use when creating or installing a service")
 
+def refresh_node_svcs(svcnames, minimal):
+    del(node.svcs)
+    node.svcs = None
+    try:
+        node.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
+    except ex.excError as e:
+        print(e, file=sys.stderr)
+        return 1
+
 def main():
     action = None
     _args = None
@@ -204,8 +215,9 @@ def main():
         parser.set_usage(__usage + rcOptParser.format_desc(action=action))
         parser.error("unsupported action")
 
-    if action in ("set", "unset", "delete") or \
-       (action == "get" and not options.eval):
+    if action in ("set", "unset") or \
+       (action == "get" and not options.eval) or \
+       (action == "delete" and not options.unprovision):
         build_kwargs["minimal"] = True
     else:
         build_kwargs["minimal"] = False
@@ -295,13 +307,15 @@ def main():
 
             # force a refresh of node.svcs
             # don't push to the collector yet
-            del(node.svcs)
-            node.svcs = None
-            try:
-                node.build_services(svcnames=svcnames, autopush=False, minimal=build_kwargs["minimal"])
-            except ex.excError as e:
-                print(e, file=sys.stderr)
+            if refresh_node_svcs(svcnames, build_kwargs["minimal"]) != 0:
                 build_err = True
+
+            if len(node.svcs) == 1 and (options.param_config or options.param_template):
+                node.svcs[0].setenv(options.env)
+                # setenv changed the service config file
+                # we need to rebuild again
+                if refresh_node_svcs(svcnames, build_kwargs["minimal"]) != 0:
+                    build_err = True
 
             if len(node.svcs) == 1 and (len(rid) > 0 or options.param_config or options.param_template):
                 node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)

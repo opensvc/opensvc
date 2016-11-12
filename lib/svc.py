@@ -3154,7 +3154,16 @@ class Svc(Resource, Scheduler):
         if len(l) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
-        section, option = l
+        return self._set(l[0], l[1], self.options.value)
+
+    def setenv(self, l):
+        for s in l:
+            i = s.index("=")
+            option = s[:i]
+            value = s[i+1:]
+            self._set("env", option, value)
+
+    def _set(self, section, option, value):
         section = "[%s]" % section
         with open(self.cf, 'r') as f:
             lines = f.read().split("\n")
@@ -3171,7 +3180,7 @@ class Svc(Resource, Scheduler):
                     j = i
                     while j > 0 and lines[j-1].strip() == "":
                         j -= 1
-                    lines.insert(j, "%s = %s" % (option, self.options.value))
+                    lines.insert(j, "%s = %s" % (option, value))
                     done = True
                     break
                 elif "=" in sline:
@@ -3192,9 +3201,9 @@ class Svc(Resource, Scheduler):
                         if lines[j].strip() == "":
                             continue
                         _value += " %s" % lines[j].strip()
-                    if self.options.value.replace("\n", " ") == _value:
+                    if value.replace("\n", " ") == _value:
                         return 0
-                    lines[i] = "%s = %s" % (option, self.options.value)
+                    lines[i] = "%s = %s" % (option, value)
                     j = i
                     while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("[") and lines[j+1].strip() != "":
                         del(lines[j+1])
@@ -3207,7 +3216,7 @@ class Svc(Resource, Scheduler):
                 # section in last position and no option => add section
                 lines.append("")
                 lines.append(section)
-            lines.append("%s = %s" % (option, self.options.value))
+            lines.append("%s = %s" % (option, value))
 
         try:
             with open(self.cf, "w") as f:
@@ -3254,11 +3263,12 @@ class Svc(Resource, Scheduler):
         return self.set_disable(self.action_rid, True)
 
     def delete(self):
-        if len(self.action_rid) == 0:
+        if self.options.unprovision:
+            self.unprovision()
+        if len(self.action_rid) in (0, len(self.resources_by_id.keys())):
             import shutil
             dpaths = [
               os.path.join(rcEnv.pathetc, self.svcname+".dir"),
-              os.path.join(rcEnv.pathvar, self.svcname),
             ]
             fpaths = [
               self.cf,
