@@ -3369,7 +3369,7 @@ class Svc(Resource, Scheduler):
         return self.freezer.frozen()
 
     def pull(self):
-        self.node.pull(self.svcname)
+        self.node.pull_service(self.svcname)
 
     def validate_config(self, path=None):
         ret = self._validate_config(path=path)
