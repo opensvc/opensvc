@@ -115,7 +115,7 @@ class DockerLib(object):
             self.log.error("unsupported docker action: %s" % action)
             return 1
 
-        ret, out, err = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError
 
