@@ -38,66 +38,6 @@ except Exception as e:
     print(e, file=sys.stderr)
     sys.exit(1)
 
-def pull_service(svcnames):
-    for svcname in svcnames:
-        node.pull(svcname)
-
-def install_service(svcnames, cf):
-    if len(svcnames) != 1:
-        print("only one service must be specified", file=sys.stderr)
-        return 1
-
-    if cf is None:
-        print("missing --config", file=sys.stderr)
-        return 1
-
-    if not os.path.exists(cf):
-        print("%s does not exists"%cf, file=sys.stderr)
-        return 1
-
-    try:
-        _install_service(svcnames[0], cf)
-    except Exception as e:
-        print(e)
-        return 1
-
-    return 0
-
-def _install_service(svcname, cf):
-    import shutil
-
-    # install the configuration file in etc/
-    src_cf = os.path.realpath(cf)
-    dst_cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
-    if dst_cf != src_cf:
-        shutil.copy2(src_cf, dst_cf)
-
-    # install .dir
-    d = os.path.join(rcEnv.pathetc, svcname+'.dir')
-    if not os.path.exists(d):
-        os.makedirs(d)
-
-    if sysname == 'Windows':
-        return
-
-    # install .d
-    ld = os.path.join(rcEnv.pathetc, svcname+'.d')
-    if not os.path.exists(ld):
-        os.symlink(d, ld)
-    elif not os.path.exists(ld+os.sep):
-        # repair broken symlink
-        os.unlink(ld)
-        os.symlink(d, ld)
-
-    # install svcmgr link
-    ls = os.path.join(rcEnv.pathetc, svcname)
-    s = os.path.join(rcEnv.pathbin, 'svcmgr')
-    if not os.path.exists(ls):
-        os.symlink(s, ls)
-    elif os.path.realpath(s) != os.path.realpath(ls):
-        os.unlink(ls)
-        os.symlink(s, ls)
-
 
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ] COMMAND\n\n"
@@ -223,7 +163,9 @@ if cmd in ('svcmgr', 'svcmgr.py', None):
     parser.add_option("--onlysecondary", default=None, action="store_true", dest="parm_secondary",
               help="operate only on service not flagged for autostart on this node")
     parser.add_option("--config", default=None, action="store", dest="param_config",
-              help="the configuration file to use when installing a service")
+              help="the configuration file to use when creating or installing a service")
+    parser.add_option("--template", default=None, action="store", dest="param_template",
+              help="the configuration file template name or id, served by the collector, to use when creating or installing a service")
 
 def main():
     action = None
@@ -310,11 +252,16 @@ def main():
         return 1
 
     if action == 'pull' and (node.svcs is None or len(node.svcs) == 0):
-        r = pull_service(svcnames)
+        r = node.pull_services(svcnames)
         return r
 
-    if action == 'install':
-        r = install_service(svcnames, options.param_config)
+    if action in ('install', 'create'):
+        try:
+            node.install_service(svcnames, cf=options.param_config, template=options.param_template)
+            r = 0
+        except Exception as e:
+            print(str(e), file=sys.stderr)
+            r = 1
 
     if hasattr(options, "parm_rid") and options.parm_rid is not None:
         rid = options.parm_rid.split(',')
@@ -337,7 +284,7 @@ def main():
         subsets = []
 
     if action in ['create', 'update', 'install']:
-        if action in ['create', 'update']:
+        if action == 'update' or (action == 'create' and options.param_config is None and options.param_template is None):
             data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
         else:
             data = {"rid": [], "ret": 0}
@@ -356,7 +303,7 @@ def main():
                 print(e, file=sys.stderr)
                 build_err = True
 
-            if len(node.svcs) == 1 and (len(rid) > 0 or action == "install"):
+            if len(node.svcs) == 1 and (len(rid) > 0 or options.param_config or options.param_template):
                 node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
         return data["ret"]
 

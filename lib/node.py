@@ -1242,7 +1242,7 @@ class Node(Svc, Freezer, Scheduler):
         except IOError as e:
             print("download failed", ":", e, file=sys.stderr)
             try:
-                os.unlink(fname)
+                os.unlink(tmpf)
             except:
                 pass
             if self.options.cron:
@@ -1267,13 +1267,13 @@ class Node(Svc, Freezer, Scheduler):
             tar.close()
         except:
             try:
-                os.unlink(fname)
+                os.unlink(tmpf)
             except:
                 pass
             print("failed to unpack", file=sys.stderr)
             return 1
         try:
-            os.unlink(fname)
+            os.unlink(tmpf)
         except:
             pass
         print("install new compliance")
@@ -1302,7 +1302,7 @@ class Node(Svc, Freezer, Scheduler):
         except IOError as e:
             print("download failed", ":", e, file=sys.stderr)
             try:
-                os.unlink(fname)
+                os.unlink(tmpf)
             except:
                 pass
             return 1
@@ -1310,7 +1310,7 @@ class Node(Svc, Freezer, Scheduler):
         m.update(tmpf)
         print("clean up")
         try:
-            os.unlink(fname)
+            os.unlink(tmpf)
         except:
             pass
         return 0
@@ -1792,6 +1792,92 @@ class Node(Svc, Freezer, Scheduler):
                 df.write(chunk)
         f.close()
 
+    def install_service_cf_from_template(self, svcname, template):
+        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        data = self.collector_rest_get("/provisioning_templates/"+template+"?props=tpl_definition&meta=0")
+        if "error" in data:
+            raise ex.excError(data["error"])
+        if len(data["data"]) == 0:
+            raise ex.excError("service not found on the collector")
+        if len(data["data"][0]["tpl_definition"]) == 0:
+            raise ex.excError("service has an empty configuration")
+        with open(cf, "w") as f:
+            f.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
+        self.install_service_cf_from_file(svcname, cf)
+
+    def install_service_cf_from_uri(self, svcname, cf):
+        import tempfile
+        f = tempfile.NamedTemporaryFile()
+        tmpf = f.name
+        f.close()
+        print("get %s (%s)"%(cf, tmpf))
+        try:
+            self.urlretrieve(cf, tmpf)
+        except IOError as e:
+            print("download failed", ":", e, file=sys.stderr)
+            try:
+                os.unlink(tmpf)
+            except:
+                pass
+        self.install_service_cf_from_file(svcname, tmpf)
+
+    def install_service_cf_from_file(self, svcname, cf):
+        if not os.path.exists(cf):
+            raise ex.excError("%s does not exists" % cf)
+
+        import shutil
+
+        # install the configuration file in etc/
+        src_cf = os.path.realpath(cf)
+        dst_cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        if dst_cf != src_cf:
+            shutil.copy2(src_cf, dst_cf)
+
+    def install_service(self, svcname, cf=None, template=None):
+        if type(svcname) == list:
+            if len(svcname) != 1:
+                raise ex.excError("only one service must be specified")
+            svcname = svcname[0]
+
+        if cf is None and template is None:
+            raise ex.excError("either --config or --template must be specified")
+
+        if cf is not None and template is not None:
+            raise ex.excError("--config and --template can't both be specified")
+
+        if template is not None:
+            self.install_service_cf_from_template(svcname, template)
+        elif "://" in template:
+            self.install_service_cf_from_uri(svcname, template)
+        else:
+            self.install_service_cf_from_file(svcname, template)
+
+        # install .dir
+        d = os.path.join(rcEnv.pathetc, svcname+'.dir')
+        if not os.path.exists(d):
+            os.makedirs(d)
+
+        if rcEnv.sysname == 'Windows':
+            return
+
+        # install .d
+        ld = os.path.join(rcEnv.pathetc, svcname+'.d')
+        if not os.path.exists(ld):
+            os.symlink(d, ld)
+        elif not os.path.exists(ld+os.sep):
+            # repair broken symlink
+            os.unlink(ld)
+            os.symlink(d, ld)
+
+        # install svcmgr link
+        ls = os.path.join(rcEnv.pathetc, svcname)
+        s = os.path.join(rcEnv.pathbin, 'svcmgr')
+        if not os.path.exists(ls):
+            os.symlink(s, ls)
+        elif os.path.realpath(s) != os.path.realpath(ls):
+            os.unlink(ls)
+            os.symlink(s, ls)
+
     def install_service_files(self, svcname):
         if rcEnv.sysname == 'Windows':
             return
@@ -1805,7 +1891,11 @@ class Node(Svc, Freezer, Scheduler):
             os.unlink(ls)
             os.symlink(s, ls)
 
-    def pull(self, svcname):
+    def pull_services(self, svcnames):
+        for svcname in svcnames:
+            self.pull_service(svcname)
+
+    def pull_service(self, svcname):
         cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
         data = self.collector_rest_get("/services/"+svcname+"?props=svc_config&meta=0")
         if "error" in data:
