@@ -89,10 +89,9 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
     def provisioner(self):
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
-            self.r.log.info("skip provision: dev with LABEL= or UUID= are not supported")
-            self.r.start()
-            return
-        provFs.ProvisioningFs.provisioner_fs(self)
+            self.r.log.info("skip formatting because dev is specified by LABEL or UUID")
+        else:
+            provFs.ProvisioningFs.provisioner_fs(self)
         self.create_subvol()
         self.r.log.info("provisioned")
         self.r.start()
