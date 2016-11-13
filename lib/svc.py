@@ -1908,8 +1908,8 @@ class Svc(Resource, Scheduler):
                 p.join()
                 if p.exitcode > 0:
                     err.append(rid)
-        if len(err) > 0:
-            raise ex.excError("start aborted due to resource %s conflict" % ",".join(err))
+            if len(err) > 0:
+                raise ex.excError("start aborted due to resource %s conflict" % ",".join(err))
 
     def startip(self):
         self.master_startip()
