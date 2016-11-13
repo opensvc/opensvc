@@ -1902,8 +1902,8 @@ class Svc(Resource, Scheduler):
                 p.start()
                 ps[r.rid] = p
 
-        err = []
         if mp:
+            err = []
             for rid, p in ps.items():
                 p.join()
                 if p.exitcode > 0:
