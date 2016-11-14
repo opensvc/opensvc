@@ -598,7 +598,7 @@ class Collector(object):
             container_info = container.get_container_info()
             vals += [[svc.svcname,
                       rcEnv.nodename,
-                      container.name,
+                      container.vm_hostname(),
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
                       container_info['vmem'],
                       container_info['vcpus'],
