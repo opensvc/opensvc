@@ -241,6 +241,12 @@ def main():
     if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
         build_kwargs["onlysecondary"] = options.parm_secondary
 
+    # don't autopush when the intent is to push explicitely
+    if action == "push":
+        build_kwargs["autopush"] = False
+    else:
+        build_kwargs["autopush"] = True
+
     if action not in ("create", "install"):
         try:
             node.build_services(**build_kwargs)
