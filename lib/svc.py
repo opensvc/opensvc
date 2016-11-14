@@ -168,7 +168,6 @@ class Svc(Resource, Scheduler):
         }
         self.scheduler_actions = {
          "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
-         "push_env": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_env", schedule_option="push_schedule"),
          "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="mon_schedule"),
         }
 
@@ -193,6 +192,9 @@ class Svc(Resource, Scheduler):
                 traceback.print_exc()
 
     def post_build(self):
+        if not self.encap:
+            self.scheduler_actions["push_env"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_env", schedule_option="push_schedule")
+
         syncs = []
         for r in self.get_resources("sync"):
             syncs += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_syncall_"+r.rid, schedule_option="sync_schedule")]
