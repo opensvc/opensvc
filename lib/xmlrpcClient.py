@@ -519,7 +519,10 @@ class Collector(object):
             return
 
         for val in vals:
-            print("%-16s %-20s %s"%(val[3], val[4], val[5]))
+            try:
+                print("%-16s %-20s %s"%(val[3], val[4], val[5]))
+            except Exception as e:
+                print(e, val, file=sys.stderr)
 
         args = [vars, vals]
         if self.auth_node:
