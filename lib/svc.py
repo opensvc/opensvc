@@ -312,7 +312,6 @@ class Svc(Resource, Scheduler):
         }
         self.scheduler_actions = {
          "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
-         "push_config": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_config", schedule_option="push_schedule"),
          "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="status_schedule"),
         }
 
@@ -336,6 +335,9 @@ class Svc(Resource, Scheduler):
                 self.save_exc()
 
     def post_build(self):
+        if not self.encap:
+            self.scheduler_actions["push_config"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_config", schedule_option="push_schedule")
+
         if self.ha and not "flex" in self.clustertype:
             self.scheduler_actions["resource_monitor"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_resource_monitor", schedule_option="monitor_schedule")
 
