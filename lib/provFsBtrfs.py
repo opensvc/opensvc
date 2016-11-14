@@ -51,6 +51,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
         cmd = ["findfs", "LABEL="+label]
         for i in range(20):
             out, err, ret = justcall(cmd)
+            self.r.log.debug("%s\n%s\n%s" % (" ".join(cmd), out, err))
             if ret == 0:
                 return
             self.r.log.info("label is not usable yet (%s)" % err.strip())
