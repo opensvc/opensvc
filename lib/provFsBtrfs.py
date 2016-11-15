@@ -4,6 +4,7 @@ import os
 import time
 import rcExceptions as ex
 from rcUtilities import which, justcall
+from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(provFs.ProvisioningFs):
     mkfs = ['mkfs.btrfs']
@@ -89,6 +90,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
         self.cleanup(mnt)
 
     def provisioner(self):
+        self.r.device = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
             self.r.log.info("skip formatting because dev is specified by LABEL or UUID")
         else:
