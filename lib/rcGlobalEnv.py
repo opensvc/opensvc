@@ -76,7 +76,11 @@ def create_or_update_dir(d):
     else:
         # update tmpdir timestamp to avoid tmpwatch kicking-in while we run
         now = time.time()
-        os.utime(d, (now, now))
+        try:
+            os.utime(d, (now, now))
+        except:
+            # unprivileged
+            pass
 
 class rcEnv:
     """Class to store globals
