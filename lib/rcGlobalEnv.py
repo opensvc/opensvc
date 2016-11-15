@@ -13,6 +13,7 @@ import os
 import platform
 import socket
 import uuid
+import time
 
 class Storage(object):
     pass
@@ -68,6 +69,14 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.drp_path = os.path.join(o.pathvar, "cache")
 
     return o
+
+def create_or_update_dir(d):
+    if not os.path.exists(d):
+        os.makedirs(d)
+    else:
+        # update tmpdir timestamp to avoid tmpwatch kicking-in while we run
+        now = time.time()
+        os.utime(d, (now, now))
 
 class rcEnv:
     """Class to store globals
@@ -222,3 +231,4 @@ class rcEnv:
     pathcomp = paths.pathcomp
     drp_path = paths.drp_path
 
+    create_or_update_dir(paths.pathtmp)
