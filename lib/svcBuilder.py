@@ -3376,38 +3376,34 @@ def build(name, minimal=False, svcconf=None):
         d_nodes = {}
 
         if "encapnodes" in defaults:
-            encapnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split())
-            encapnodes -= set([''])
-            encapnodes = set(map(lambda x: x.lower(), encapnodes))
+            encapnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split() if n != ""]
         else:
-            encapnodes = set([])
-        d_nodes['encapnodes'] = encapnodes
+            encapnodes = []
+        d_nodes['encapnodes'] = set(encapnodes)
 
         if "nodes" in defaults:
-            nodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split())
-            nodes -= set([''])
-            nodes = set(map(lambda x: x.lower(), nodes))
+            nodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split() if n != ""]
         else:
-            nodes = set([rcEnv.nodename])
-        d_nodes['nodes'] = nodes
+            nodes = [rcEnv.nodename]
+        d_nodes['nodes'] = set(nodes)
 
         if "drpnodes" in defaults:
-            drpnodes = set(conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split())
-            drpnodes -= set([''])
-            drpnodes = set(map(lambda x: x.lower(), drpnodes))
+            drpnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split() if n != ""]
         else:
-            drpnodes = set([])
+            drpnodes = []
 
         if "drpnode" in defaults:
             drpnode = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnode").lower()
-            drpnodes |= set([drpnode])
-            drpnodes -= set([''])
+            if drpnode not in drpnodes and drpnode != "":
+                drpnodes.append(drpnode)
         else:
             drpnode = ''
-        d_nodes['drpnodes'] = drpnodes
+        d_nodes['drpnodes'] = set(drpnodes)
 
         if "flex_primary" in defaults:
             flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "flex_primary").lower()
+        elif len(nodes) > 0:
+            flex_primary = nodes[0]
         else:
             flex_primary = ''
         d_nodes['flex_primary'] = flex_primary
@@ -3416,6 +3412,8 @@ def build(name, minimal=False, svcconf=None):
 
         if "drp_flex_primary" in defaults:
             drp_flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drp_flex_primary").lower()
+        elif len(drpnodes) > 0:
+            drp_flex_primary = drpnodes[0]
         else:
             drp_flex_primary = ''
         d_nodes['drp_flex_primary'] = drp_flex_primary
@@ -3469,13 +3467,13 @@ def build(name, minimal=False, svcconf=None):
     # Setup service properties from config file content
     #
     if not hasattr(svc, "nodes"):
-        svc.nodes = nodes
+        svc.nodes = set(nodes)
     if not hasattr(svc, "drpnodes"):
-        svc.drpnodes = drpnodes
+        svc.drpnodes = set(drpnodes)
     if not hasattr(svc, "drpnode"):
         svc.drpnode = drpnode
     if not hasattr(svc, "encapnodes"):
-        svc.encapnodes = encapnodes
+        svc.encapnodes = set(encapnodes)
     if not hasattr(svc, "flex_primary"):
         svc.flex_primary = flex_primary
     if not hasattr(svc, "drp_flex_primary"):

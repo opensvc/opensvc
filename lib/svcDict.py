@@ -355,6 +355,7 @@ class KeywordFlexPrimary(Keyword):
                   required=False,
                   order=11,
                   depends=[('cluster_type', ["flex"])],
+                  default_text="<first node of the nodes parameter>",
                   text="The node in charge of syncing the other nodes. --cluster actions on the flex_primary are execute on all peer nodes (ie, not drpnodes)."
                 )
 
@@ -368,7 +369,8 @@ class KeywordDrpFlexPrimary(Keyword):
                   required=False,
                   order=11,
                   depends=[('cluster_type', ["flex"])],
-                  text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not prd nodes)."
+                  default_text="<first node of the drpnodes parameter>",
+                  text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not pri nodes)."
                 )
 
 class KeywordDockerExe(Keyword):
