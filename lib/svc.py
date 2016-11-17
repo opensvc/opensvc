@@ -3079,7 +3079,9 @@ class Svc(Resource, Scheduler):
             print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
-        if len(l) != 2:
+        if len(l) == 1:
+            l.insert(0, "DEFAULT")
+        elif len(l) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
@@ -3127,7 +3129,9 @@ class Svc(Resource, Scheduler):
             print("no parameter. set --param", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
-        if len(l) != 2:
+        if len(l) == 1:
+            l.insert(0, "DEFAULT")
+        elif len(l) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
@@ -3153,7 +3157,9 @@ class Svc(Resource, Scheduler):
             print("no value. set --value", file=sys.stderr)
             return 1
         l = self.options.param.split('.')
-        if len(l) != 2:
+        if len(l) == 1:
+            l.insert(0, "DEFAULT")
+        elif len(l) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         return self._set(l[0], l[1], self.options.value)
