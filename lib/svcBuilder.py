@@ -25,35 +25,44 @@ if 'PATH' not in os.environ:
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
+def _handle_references(svc, conf, ref, scope=False, impersonate=None):
+        # hardcoded references
+        if ref == "nodename":
+            return rcEnv.nodename
+        if ref == "svcname":
+            return self.svcname
+
+        # use DEFAULT as the implicit section
+        n_dots = ref.count(".")
+        if n_dots == 0:
+            _section = "DEFAULT"
+            _v = ref
+        elif n_dots == 1:
+            _section, _v = ref.split(".")
+        else:
+            raise ex.excInitError("%s: reference can have only one dot" % ref)
+
+        # give os env precedence over the env cf section
+        if _section == "env" and _v.upper() in os.environ:
+            return os.environ[_v.upper()]
+
+        if not conf.has_section(_section):
+            raise ex.excInitError("%s: section %s does not exist" % (ref, _section))
+
+        try:
+            return conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
+        except ex.OptNotFound as e:
+            raise ex.excInitError("%s: unresolved reference (%s)" % (ref, str(e)))
+
+        raise ex.excInitError("%s: unknown reference" % ref)
+
 def handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
         m = re.search(r'{[\w#\.]+}', s)
         if m is None:
             return s
-        v = m.group(0).strip("{}")
-        if v == "nodename":
-            val = rcEnv.nodename
-        elif hasattr(svc, v):
-            val = getattr(svc, v)
-            if not is_string(val):
-                raise ex.excInitError("%s: reference target is not a string" % v)
-        elif "." in v:
-            l = v.split(".")
-            if len(l) != 2:
-                raise ex.excInitError("%s: reference can have only one dot" % v)
-            _section, _v = l
-            if _section == "env" and _v.upper() in os.environ:
-                # give os env precedence over the env cf section
-                val = os.environ[_v.upper()]
-            else:
-                if not conf.has_section(_section):
-                    raise ex.excInitError("%s: section %s does not exist" % (v, _section))
-                try:
-                    val = conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
-                except ex.OptNotFound as e:
-                    raise ex.excInitError("%s: unresolved reference (%s)" % (v, str(e)))
-        else:
-            raise ex.excInitError("%s: unknown reference" % v)
+        ref = m.group(0).strip("{}")
+        val = _handle_references(svc, conf, ref, scope=scope, impersonate=impersonate)
         s = s[:m.start()] + val + s[m.end():]
 
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
