@@ -5,6 +5,9 @@ import logging
 import re
 import socket
 import glob
+import ast
+import operator as op
+import platform
 
 from rcGlobalEnv import *
 from rcNode import discover_node
@@ -13,7 +16,11 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcUtilities
-import platform
+
+# supported operators in arithmetic expressions
+operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
+             ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
+             ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
 
 try:
     import ConfigParser
@@ -24,6 +31,20 @@ if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
+
+def eval_expr(expr):
+    """ arithmetic expressions evaluator
+    """
+    def eval_(node):
+        if isinstance(node, ast.Num): # <number>
+            return node.n
+        elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+            return operators[type(node.op)](eval_(node.left), eval_(node.right))
+        elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+            return operators[type(node.op)](eval_(node.operand))
+        else:
+            raise TypeError(node)
+    return eval_(ast.parse(expr, mode='eval').body)
 
 def handle_reference(svc, conf, ref, scope=False, impersonate=None):
         # hardcoded references
@@ -75,7 +96,7 @@ def _handle_reference(svc, conf, ref, _section, _v, scope=False, impersonate=Non
 
         raise ex.excError("%s: unknown reference" % ref)
 
-def handle_references(svc, conf, s, scope=False, impersonate=None):
+def _handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
         m = re.search(r'{[\w#\.]+}', s)
         if m is None:
@@ -84,7 +105,7 @@ def handle_references(svc, conf, s, scope=False, impersonate=None):
         val = handle_reference(svc, conf, ref, scope=scope, impersonate=impersonate)
         s = s[:m.start()] + val + s[m.end():]
 
-def handle_expressions(s):
+def _handle_expressions(s):
     while True:
         m = re.search(r'\$\((.+)\)', s)
         if m is None:
@@ -93,26 +114,10 @@ def handle_expressions(s):
         val = eval_expr(expr)
         s = s[:m.start()] + str(val) + s[m.end():]
 
-import ast
-import operator as op
-
-# supported operators
-operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-             ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
-             ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
-
-def eval_expr(expr):
-    return eval_(ast.parse(expr, mode='eval').body)
-
-def eval_(node):
-    if isinstance(node, ast.Num): # <number>
-        return node.n
-    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-        return operators[type(node.op)](eval_(node.left), eval_(node.right))
-    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
-        return operators[type(node.op)](eval_(node.operand))
-    else:
-        raise TypeError(node)
+def handle_references(svc, conf, s, scope=False, impersonate=None):
+    val = _handle_references(svc, conf, s, scope=scope, impersonate=impersonate)
+    val = _handle_expressions(val)
+    return val
 
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     if not scope:
@@ -121,7 +126,6 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
         val = conf_get_val_scoped(svc, conf, s, o, impersonate=impersonate)
 
     val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
-    val = handle_expressions(val)
 
     if t == 'string':
         pass
