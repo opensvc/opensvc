@@ -3287,11 +3287,11 @@ class Svc(Resource, Scheduler):
             ]
             for fpath in fpaths:
                 if os.path.exists(fpath):
-                    print("remove %s" % fpath)
+                    self.log.info("remove %s" % fpath)
                     os.unlink(fpath)
             for dpath in dpaths:
                 if os.path.exists(dpath):
-                    print("remove %s" % dpath)
+                    self.log.info("remove %s" % dpath)
                     shutil.rmtree(dpath)
             return 0
         with open(self.cf, 'r') as f:

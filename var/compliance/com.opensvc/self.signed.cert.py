@@ -190,15 +190,17 @@ class CompSelfSignedCert(CompObject):
             perror("crt %s does not exist" % rule["crt"])
             r = RET_ERR
         else:
-            pinfo("crt %s exists" % rule["key"])
+            pinfo("crt %s exists" % rule["crt"])
         return r
 
     def fix_rule(self, rule):
+        if os.path.exists(rule["key"]) and os.path.exists(rule["crt"]):
+            return RET_OK
         for k in ("key", "crt"):
             d = os.path.dirname(rule[k])
             if not os.path.isdir(d):
                 if os.path.exists(d):
-                    perror("%s exists by is not a directory" % d)
+                    perror("%s exists but is not a directory" % d)
                     return RET_ERR
                 else:
                     pinfo("mkdir -p %s" %d)
