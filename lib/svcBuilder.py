@@ -25,7 +25,7 @@ if 'PATH' not in os.environ:
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
-def _handle_references(svc, conf, ref, scope=False, impersonate=None):
+def handle_reference(svc, conf, ref, scope=False, impersonate=None):
         # hardcoded references
         if ref == "nodename":
             return rcEnv.nodename
@@ -40,21 +40,40 @@ def _handle_references(svc, conf, ref, scope=False, impersonate=None):
         elif n_dots == 1:
             _section, _v = ref.split(".")
         else:
-            raise ex.excInitError("%s: reference can have only one dot" % ref)
+            raise ex.excError("%s: reference can have only one dot" % ref)
 
+        if len(_section) == 0:
+            raise ex.excError("%s: reference section can not be empty" % ref)
+        if len(_v) == 0:
+            raise ex.excError("%s: reference option can not be empty" % ref)
+
+        if _v[0] == "#":
+            return_length = True
+            _v = _v[1:]
+        else:
+            return_length = False
+
+        val = _handle_reference(svc, conf, ref, _section, _v, scope=scope, impersonate=impersonate)
+
+        if return_length:
+            return str(len(val.split()))
+
+        return val
+
+def _handle_reference(svc, conf, ref, _section, _v, scope=False, impersonate=None):
         # give os env precedence over the env cf section
         if _section == "env" and _v.upper() in os.environ:
             return os.environ[_v.upper()]
 
-        if not conf.has_section(_section):
-            raise ex.excInitError("%s: section %s does not exist" % (ref, _section))
+        if _section != "DEFAULT" and not conf.has_section(_section):
+            raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
         try:
             return conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
         except ex.OptNotFound as e:
-            raise ex.excInitError("%s: unresolved reference (%s)" % (ref, str(e)))
+            raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
 
-        raise ex.excInitError("%s: unknown reference" % ref)
+        raise ex.excError("%s: unknown reference" % ref)
 
 def handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
@@ -62,8 +81,38 @@ def handle_references(svc, conf, s, scope=False, impersonate=None):
         if m is None:
             return s
         ref = m.group(0).strip("{}")
-        val = _handle_references(svc, conf, ref, scope=scope, impersonate=impersonate)
+        val = handle_reference(svc, conf, ref, scope=scope, impersonate=impersonate)
         s = s[:m.start()] + val + s[m.end():]
+
+def handle_expressions(s):
+    while True:
+        m = re.search(r'\$\((.+)\)', s)
+        if m is None:
+            return s
+        expr = m.group(1)
+        val = eval_expr(expr)
+        s = s[:m.start()] + str(val) + s[m.end():]
+
+import ast
+import operator as op
+
+# supported operators
+operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
+             ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
+             ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
+
+def eval_expr(expr):
+    return eval_(ast.parse(expr, mode='eval').body)
+
+def eval_(node):
+    if isinstance(node, ast.Num): # <number>
+        return node.n
+    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        return operators[type(node.op)](eval_(node.left), eval_(node.right))
+    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        return operators[type(node.op)](eval_(node.operand))
+    else:
+        raise TypeError(node)
 
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     if not scope:
@@ -72,6 +121,7 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
         val = conf_get_val_scoped(svc, conf, s, o, impersonate=impersonate)
 
     val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
+    val = handle_expressions(val)
 
     if t == 'string':
         pass
