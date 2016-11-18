@@ -53,7 +53,7 @@ def handle_reference(svc, conf, ref, scope=False, impersonate=None):
         if ref == "nodename":
             return rcEnv.nodename
         if ref == "svcname":
-            return self.svcname
+            return svc.svcname
 
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
