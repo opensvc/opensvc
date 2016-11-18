@@ -320,6 +320,7 @@ def get_restart(conf, section, svc):
     return 0
 
 def get_disabled(conf, section, svc):
+    # service-level disable takes precedence over all resource-level disable method
     if conf.has_option('DEFAULT', 'disable'):
         svc_disable = conf.getboolean("DEFAULT", "disable")
     else:
@@ -331,16 +332,29 @@ def get_disabled(conf, section, svc):
     if section == "":
         return svc_disable
 
+    # unscopable enable_on option (takes precedence over disable and disable_on)
+    nodes = set([])
+    if conf.has_option(section, 'enable_on'):
+        l = conf.get(section, "enable_on").split()
+        for i in l:
+            if i == 'nodes': nodes |= svc.nodes
+            elif i == 'drpnodes': nodes |= svc.drpnodes
+            else: nodes |= set([i])
+        if rcEnv.nodename in nodes:
+            return False
+
+    # scoped disable option
     try:
         r = conf_get_boolean_scope(svc, conf, section, 'disable')
-        return r
     except ex.OptNotFound:
-        pass
+        r = False
     except Exception as e:
         print(e, "... consider section as disabled")
-        return True
+        r = True
+    if r:
+        return r
 
-    # deprecated
+    # unscopable disable_on option
     nodes = set([])
     if conf.has_option(section, 'disable_on'):
         l = conf.get(section, "disable_on").split()
@@ -350,6 +364,7 @@ def get_disabled(conf, section, svc):
             else: nodes |= set([i])
     if rcEnv.nodename in nodes:
         return True
+
     return False
 
 def need_scsireserv(svc, conf, section):

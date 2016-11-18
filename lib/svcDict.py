@@ -34,6 +34,7 @@ class Keyword(object):
                  rtype=None,
                  order=100,
                  required=False,
+                 generic=False,
                  at=False,
                  default=None,
                  default_text=None,
@@ -51,6 +52,7 @@ class Keyword(object):
         else:
             self.rtype = [rtype]
         self.order = order
+        self.generic = generic
         self.at = at
         self.required = required
         self.default = default
@@ -221,6 +223,282 @@ class Keyword(object):
                 continue
             else:
                 return d
+
+class Section(object):
+    def __init__(self, section):
+        self.section = section
+        self.keywords = []
+
+    def __iadd__(self, o):
+        if not isinstance(o, Keyword):
+            return self
+        self.keywords.append(o)
+        return self
+
+    def __str__(self):
+        s = ''
+        for keyword in sorted(self.keywords):
+            s += str(keyword)
+        return s
+
+    def template(self):
+        k = self.getkey("type")
+        if k is None:
+            return self._template()
+        if k.candidates is None:
+            return self._template()
+        s = ""
+        if not k.strict_candidates:
+            s += self._template()
+        for t in k.candidates:
+            s += self._template(t)
+        return s
+
+    def _template(self, rtype=None):
+        section = self.section
+        if self.section in deprecated_sections:
+            return ""
+        if rtype and  self.section+"."+rtype in deprecated_sections:
+            return ""
+        dpath = rcEnv.pathdoc
+        fpath = os.path.join(dpath, "template."+section+".conf")
+        if rtype:
+            section += ", type "+rtype
+            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".conf")
+        s = "#"*78 + "\n"
+        s += "# %-74s #\n" % " "
+        s += "# %-74s #\n" % section
+        s += "# %-74s #\n" % " "
+        s += "#"*78 + "\n\n"
+        if section == "DEFAULT":
+            s += "[%s]\n" % self.section
+        else:
+            s += "[%s#0]\n" % self.section
+        if rtype is not None:
+            s += ";type = " + rtype + "\n\n"
+        for keyword in sorted(self.getkeys(rtype)):
+            s += keyword.template()
+        for keyword in sorted(self.getprovkeys(rtype)):
+            s += keyword.template()
+        if rtype is not None:
+            for keyword in sorted(self.getkeys()):
+                if keyword.keyword == "type":
+                    continue
+                s += keyword.template()
+        with open(fpath, "w") as f:
+            f.write(s)
+        return s
+
+    def getkeys(self, rtype=None):
+        if rtype is None:
+            return [k for k in self.keywords if k.rtype is None and not k.provisioning]
+        else:
+            return [k for k in self.keywords if k.rtype and rtype in k.rtype and not k.provisioning]
+
+    def getprovkeys(self, rtype=None):
+        if rtype is None:
+            return [k for k in self.keywords if k.rtype is None and k.provisioning]
+        else:
+            return [k for k in self.keywords if k.rtype and rtype in k.rtype and k.provisioning]
+
+    def getkey(self, keyword, rtype=None):
+        if '@' in keyword:
+            l = keyword.split('@')
+            if len(l) != 2:
+                return None
+            keyword, node = l
+        if rtype:
+            for k in self.keywords:
+                if k.keyword == keyword and k.rtype and rtype in k.rtype:
+                    return k
+        else:
+            for k in self.keywords:
+                if k.keyword == keyword:
+                    return k
+        return None
+
+class KeywordStore(dict):
+    def __init__(self, provision=False):
+        self.sections = {}
+        self.provision = provision
+
+    def __iadd__(self, o):
+        if not isinstance(o, Keyword):
+            return self
+        o.top = self
+        if o.section not in self.sections:
+             self.sections[o.section] = Section(o.section)
+        self.sections[o.section] += o
+        return self
+
+    def __getattr__(self, key):
+        return self.sections[str(key)]
+
+    def __getitem__(self, key):
+        return self.sections[str(key)]
+
+    def __str__(self):
+        s = ''
+        for section in self.sections:
+            s += str(self.sections[section])
+        return s
+
+    def print_templates(self):
+        for section in sorted(self.sections.keys()):
+            print(self.sections[section].template())
+
+    def required_keys(self, section, rtype=None):
+        if section not in self.sections:
+            return []
+        return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
+
+    def purge_keywords_from_dict(self, d, section):
+        if 'type' in d:
+            rtype = d['type']
+        else:
+            rtype = None
+        delete_keywords = []
+        for keyword, value in d.items():
+            key = self.sections[section].getkey(keyword)
+            if key is None and rtype is not None:
+                key = self.sections[section].getkey(keyword, rtype)
+            if key is None:
+                if keyword != "rtype":
+                    print("Remove unknown keyword '%s' from section '%s'"%(keyword, section))
+                    delete_keywords.append(keyword)
+
+        for keyword in delete_keywords:
+            del d[keyword]
+
+        return d
+
+    def update(self, rid, d):
+        """ Given a resource dictionary, spot missing required keys
+            and provide a new dictionary to merge populated by default
+            values
+        """
+        import copy
+        completion = copy.copy(d)
+
+        # decompose rid into section and rtype
+        if rid == 'DEFAULT':
+            section = rid
+            rtype = None
+        else:
+            if '#' not in rid:
+                return {}
+            l = rid.split('#')
+            if len(l) != 2:
+                return {}
+            section = l[0]
+            if 'type' in d:
+                 rtype = d['type']
+            elif self[section].getkey('type') is not None and \
+                  self[section].getkey('type').default is not None:
+                rtype = self[section].getkey('type').default
+            else:
+                rtype = None
+
+        # validate command line dictionary
+        for keyword, value in d.items():
+            key = self.sections[section].getkey(keyword)
+            if key is None and rtype is not None:
+                key = self.sections[section].getkey(keyword, rtype)
+            if key is None:
+                continue
+            if key.strict_candidates and key.candidates is not None and value not in key.candidates:
+                print("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
+                raise KeyInvalidValue()
+
+        # add missing required keys if they have a known default value
+        for key in self.required_keys(section, rtype):
+            fkey = ".".join((section, str(rtype), key.keyword))
+            if fkey in deprecated_keywords:
+                continue
+
+            if key.keyword in d:
+                continue
+            if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
+                continue
+            if key.default is None:
+                sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
+                raise MissKeyNoDefault()
+            print("Implicitely add [%s] %s = %s" % (rid, key.keyword, str(key.default)))
+            completion[key.keyword] = key.default
+
+        # purge unknown keywords and provisioning keywords
+        completion = self.purge_keywords_from_dict(completion, section)
+
+        return completion
+
+    def form_sections(self, sections):
+        wrapper = TextWrapper(subsequent_indent="%18s"%"", width=78)
+        candidates = set(self.sections.keys()) - set(['DEFAULT'])
+
+        print("------------------------------------------------------------------------------")
+        print("Choose a resource type to add or a resource to edit.")
+        print("Enter 'quit' to finish the creation.")
+        print("------------------------------------------------------------------------------")
+        print(wrapper.fill("resource types: "+', '.join(candidates)))
+        print(wrapper.fill("resource ids:   "+', '.join(sections.keys())))
+        print
+        return raw_input("resource type or id> ")
+
+    def free_resource_index(self, section, sections):
+        indices = []
+        for s in sections:
+            l = s.split('#')
+            if len(l) != 2:
+                continue
+            sname, sindex = l
+            if section != sname:
+                continue
+            try:
+                indices.append(int(sindex))
+            except:
+                continue
+        i = 0
+        while True:
+            if i not in indices:
+                return i
+            i += 1
+
+    def form(self, defaults, sections):
+        for key in sorted(self.DEFAULT.getkeys()):
+            defaults = key.form(defaults)
+        while True:
+            try:
+                section = self.form_sections(sections)
+            except EOFError:
+                break
+            if section == "quit":
+                break
+            if '#' in section:
+                rid = section
+                section = section.split('#')[0]
+            else:
+                index = self.free_resource_index(section, sections)
+                rid = '#'.join((section, str(index)))
+            if section not in self.sections:
+                 print("unsupported resource type")
+                 continue
+            for key in sorted(self.sections[section].getkeys()):
+                if rid not in sections:
+                    sections[rid] = {}
+                sections[rid] = key.form(sections[rid])
+            if 'type' in sections[rid]:
+                specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
+                if len(specific_keys) > 0:
+                    print("\nKeywords specific to the '%s' driver\n"%sections[rid]['type'])
+                for key in sorted(specific_keys):
+                    if rid not in sections:
+                        sections[rid] = {}
+                    sections[rid] = key.form(sections[rid])
+
+            # purge the provisioning keywords
+            sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
+
+        return defaults, sections
 
 class KeywordInteger(Keyword):
     def validator(self, val, d=None):
@@ -3262,282 +3540,6 @@ class KeywordHbName(Keyword):
                   text="Specify the service name used by the heartbeat. Defaults to the service name."
                 )
 
-class Section(object):
-    def __init__(self, section):
-        self.section = section
-        self.keywords = []
-
-    def __iadd__(self, o):
-        if not isinstance(o, Keyword):
-            return self
-        self.keywords.append(o)
-        return self
-
-    def __str__(self):
-        s = ''
-        for keyword in sorted(self.keywords):
-            s += str(keyword)
-        return s
-
-    def template(self):
-        k = self.getkey("type")
-        if k is None:
-            return self._template()
-        if k.candidates is None:
-            return self._template()
-        s = ""
-        if not k.strict_candidates:
-            s += self._template()
-        for t in k.candidates:
-            s += self._template(t)
-        return s
-
-    def _template(self, rtype=None):
-        section = self.section
-        if self.section in deprecated_sections:
-            return ""
-        if rtype and  self.section+"."+rtype in deprecated_sections:
-            return ""
-        dpath = rcEnv.pathdoc
-        fpath = os.path.join(dpath, "template."+section+".conf")
-        if rtype:
-            section += ", type "+rtype
-            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".conf")
-        s = "#"*78 + "\n"
-        s += "# %-74s #\n" % " "
-        s += "# %-74s #\n" % section
-        s += "# %-74s #\n" % " "
-        s += "#"*78 + "\n\n"
-        if section == "DEFAULT":
-            s += "[%s]\n" % self.section
-        else:
-            s += "[%s#0]\n" % self.section
-        if rtype is not None:
-            s += ";type = " + rtype + "\n\n"
-        for keyword in sorted(self.getkeys(rtype)):
-            s += keyword.template()
-        for keyword in sorted(self.getprovkeys(rtype)):
-            s += keyword.template()
-        if rtype is not None:
-            for keyword in sorted(self.getkeys()):
-                if keyword.keyword == "type":
-                    continue
-                s += keyword.template()
-        with open(fpath, "w") as f:
-            f.write(s)
-        return s
-
-    def getkeys(self, rtype=None):
-        if rtype is None:
-            return [k for k in self.keywords if k.rtype is None and not k.provisioning]
-        else:
-            return [k for k in self.keywords if k.rtype and rtype in k.rtype and not k.provisioning]
-
-    def getprovkeys(self, rtype=None):
-        if rtype is None:
-            return [k for k in self.keywords if k.rtype is None and k.provisioning]
-        else:
-            return [k for k in self.keywords if k.rtype and rtype in k.rtype and k.provisioning]
-
-    def getkey(self, keyword, rtype=None):
-        if '@' in keyword:
-            l = keyword.split('@')
-            if len(l) != 2:
-                return None
-            keyword, node = l
-        if rtype:
-            for k in self.keywords:
-                if k.keyword == keyword and k.rtype and rtype in k.rtype:
-                    return k
-        else:
-            for k in self.keywords:
-                if k.keyword == keyword:
-                    return k
-        return None
-
-class KeywordStore(dict):
-    def __init__(self, provision=False):
-        self.sections = {}
-        self.provision = provision
-
-    def __iadd__(self, o):
-        if not isinstance(o, Keyword):
-            return self
-        o.top = self
-        if o.section not in self.sections:
-             self.sections[o.section] = Section(o.section)
-        self.sections[o.section] += o
-        return self
-
-    def __getattr__(self, key):
-        return self.sections[str(key)]
-
-    def __getitem__(self, key):
-        return self.sections[str(key)]
-
-    def __str__(self):
-        s = ''
-        for section in self.sections:
-            s += str(self.sections[section])
-        return s
-
-    def print_templates(self):
-        for section in sorted(self.sections.keys()):
-            print(self.sections[section].template())
-
-    def required_keys(self, section, rtype=None):
-        if section not in self.sections:
-            return []
-        return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
-
-    def purge_keywords_from_dict(self, d, section):
-        if 'type' in d:
-            rtype = d['type']
-        else:
-            rtype = None
-        delete_keywords = []
-        for keyword, value in d.items():
-            key = self.sections[section].getkey(keyword)
-            if key is None and rtype is not None:
-                key = self.sections[section].getkey(keyword, rtype)
-            if key is None:
-                if keyword != "rtype":
-                    print("Remove unknown keyword '%s' from section '%s'"%(keyword, section))
-                    delete_keywords.append(keyword)
-
-        for keyword in delete_keywords:
-            del d[keyword]
-
-        return d
-
-    def update(self, rid, d):
-        """ Given a resource dictionary, spot missing required keys
-            and provide a new dictionary to merge populated by default
-            values
-        """
-        import copy
-        completion = copy.copy(d)
-
-        # decompose rid into section and rtype
-        if rid == 'DEFAULT':
-            section = rid
-            rtype = None
-        else:
-            if '#' not in rid:
-                return {}
-            l = rid.split('#')
-            if len(l) != 2:
-                return {}
-            section = l[0]
-            if 'type' in d:
-                 rtype = d['type']
-            elif self[section].getkey('type') is not None and \
-                  self[section].getkey('type').default is not None:
-                rtype = self[section].getkey('type').default
-            else:
-                rtype = None
-
-        # validate command line dictionary
-        for keyword, value in d.items():
-            key = self.sections[section].getkey(keyword)
-            if key is None and rtype is not None:
-                key = self.sections[section].getkey(keyword, rtype)
-            if key is None:
-                continue
-            if key.strict_candidates and key.candidates is not None and value not in key.candidates:
-                print("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
-                raise KeyInvalidValue()
-
-        # add missing required keys if they have a known default value
-        for key in self.required_keys(section, rtype):
-            fkey = ".".join((section, str(rtype), key.keyword))
-            if fkey in deprecated_keywords:
-                continue
-
-            if key.keyword in d:
-                continue
-            if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
-                continue
-            if key.default is None:
-                sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
-                raise MissKeyNoDefault()
-            print("Implicitely add [%s] %s = %s" % (rid, key.keyword, str(key.default)))
-            completion[key.keyword] = key.default
-
-        # purge unknown keywords and provisioning keywords
-        completion = self.purge_keywords_from_dict(completion, section)
-
-        return completion
-
-    def form_sections(self, sections):
-        wrapper = TextWrapper(subsequent_indent="%18s"%"", width=78)
-        candidates = set(self.sections.keys()) - set(['DEFAULT'])
-
-        print("------------------------------------------------------------------------------")
-        print("Choose a resource type to add or a resource to edit.")
-        print("Enter 'quit' to finish the creation.")
-        print("------------------------------------------------------------------------------")
-        print(wrapper.fill("resource types: "+', '.join(candidates)))
-        print(wrapper.fill("resource ids:   "+', '.join(sections.keys())))
-        print
-        return raw_input("resource type or id> ")
-
-    def free_resource_index(self, section, sections):
-        indices = []
-        for s in sections:
-            l = s.split('#')
-            if len(l) != 2:
-                continue
-            sname, sindex = l
-            if section != sname:
-                continue
-            try:
-                indices.append(int(sindex))
-            except:
-                continue
-        i = 0
-        while True:
-            if i not in indices:
-                return i
-            i += 1
-
-    def form(self, defaults, sections):
-        for key in sorted(self.DEFAULT.getkeys()):
-            defaults = key.form(defaults)
-        while True:
-            try:
-                section = self.form_sections(sections)
-            except EOFError:
-                break
-            if section == "quit":
-                break
-            if '#' in section:
-                rid = section
-                section = section.split('#')[0]
-            else:
-                index = self.free_resource_index(section, sections)
-                rid = '#'.join((section, str(index)))
-            if section not in self.sections:
-                 print("unsupported resource type")
-                 continue
-            for key in sorted(self.sections[section].getkeys()):
-                if rid not in sections:
-                    sections[rid] = {}
-                sections[rid] = key.form(sections[rid])
-            if 'type' in sections[rid]:
-                specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
-                if len(specific_keys) > 0:
-                    print("\nKeywords specific to the '%s' driver\n"%sections[rid]['type'])
-                for key in sorted(specific_keys):
-                    if rid not in sections:
-                        sections[rid] = {}
-                    sections[rid] = key.form(sections[rid])
-
-            # purge the provisioning keywords
-            sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
-
-        return defaults, sections
-
 class KeyDict(KeywordStore):
     def __init__(self, provision=False):
         KeywordStore.__init__(self, provision)
@@ -3548,6 +3550,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="tags",
+                  generic=True,
                   at=True,
                   candidates=None,
                   default=None,
@@ -3557,6 +3560,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="subset",
+                  generic=True,
                   at=True,
                   default=None,
                   text="Assign the resource to a specific subset."
@@ -3565,6 +3569,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="restart",
+                  generic=True,
                   at=True,
                   default=0,
                   text="The agent will try to restart a resource n times before falling back to the monitor action."
@@ -3573,6 +3578,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="monitor",
+                  generic=True,
                   at=True,
                   candidates=(True, False),
                   default=False,
@@ -3582,15 +3588,33 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="disable",
+                  generic=True,
                   at=True,
                   candidates=(True, False),
                   default=False,
                   text="A disabled resource will be ignored on service startup and shutdown."
                 )
+        def kw_disable_on(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="disable_on",
+                  generic=True,
+                  default=[],
+                  text="A whitelist-separated list of nodes to disable the resource on. A disabled resource will be ignored on service startup and shutdown."
+                )
+        def kw_enable_on(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="enable_on",
+                  generic=True,
+                  default=[],
+                  text="A whitelist-separated list of nodes to enable the resource on. Takes precedence over disable and disable_on."
+                )
         def kw_optional(resource):
             return Keyword(
                   section=resource,
                   keyword="optional",
+                  generic=True,
                   at=True,
                   candidates=(True, False),
                   default=False,
@@ -3600,6 +3624,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="always_on",
+                  generic=True,
                   candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
                   text="Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
                 )
@@ -3607,6 +3632,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_unprovision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource unprovision action. Errors do not interrupt the action."
                 )
@@ -3614,6 +3640,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_unprovision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource unprovision action. Errors do not interrupt the action."
                 )
@@ -3621,6 +3648,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_provision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource provision action. Errors do not interrupt the action."
                 )
@@ -3628,6 +3656,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_provision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource provision action. Errors do not interrupt the action."
                 )
@@ -3635,6 +3664,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_start",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource start action. Errors do not interrupt the action."
                 )
@@ -3642,6 +3672,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_start",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource start action. Errors do not interrupt the action."
                 )
@@ -3649,6 +3680,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_stop",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource stop action. Errors do not interrupt the action."
                 )
@@ -3656,6 +3688,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_stop",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource stop action. Errors do not interrupt the action."
                 )
@@ -3663,6 +3696,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_nodes",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_nodes action. Errors do not interrupt the action."
                 )
@@ -3670,6 +3704,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_sync_nodes",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_nodes action. Errors do not interrupt the action."
                 )
@@ -3677,6 +3712,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_drp",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_drp action. Errors do not interrupt the action."
                 )
@@ -3684,6 +3720,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_sync_drp",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_drp action. Errors do not interrupt the action."
                 )
@@ -3691,6 +3728,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_resync",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_resync action. Errors do not interrupt the action."
                 )
@@ -3698,6 +3736,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_sync_resync",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_resync action. Errors do not interrupt the action."
                 )
@@ -3705,6 +3744,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="pre_sync_update",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_update action. Errors do not interrupt the action."
                 )
@@ -3712,6 +3752,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="post_sync_update",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
                 )
@@ -3720,6 +3761,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_unprovision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource unprovision action. Errors interrupt the action."
                 )
@@ -3727,6 +3769,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_unprovision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource unprovision action. Errors interrupt the action."
                 )
@@ -3734,6 +3777,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_provision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource provision action. Errors interrupt the action."
                 )
@@ -3741,6 +3785,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_provision",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource provision action. Errors interrupt the action."
                 )
@@ -3748,6 +3793,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_start",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource start action. Errors interrupt the action."
                 )
@@ -3755,6 +3801,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_start",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource start action. Errors interrupt the action."
                 )
@@ -3762,6 +3809,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_stop",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource stop action. Errors interrupt the action."
                 )
@@ -3769,6 +3817,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_stop",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource stop action. Errors interrupt the action."
                 )
@@ -3776,6 +3825,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_sync_nodes",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_nodes action. Errors interrupt the action."
                 )
@@ -3783,6 +3833,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_sync_nodes",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_nodes action. Errors interrupt the action."
                 )
@@ -3790,6 +3841,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_sync_drp",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_drp action. Errors interrupt the action."
                 )
@@ -3797,6 +3849,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_sync_drp",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_drp action. Errors interrupt the action."
                 )
@@ -3804,6 +3857,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_sync_resync",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_resync action. Errors interrupt the action."
                 )
@@ -3811,6 +3865,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_sync_resync",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_resync action. Errors interrupt the action."
                 )
@@ -3818,6 +3873,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_pre_sync_update",
+                  generic=True,
                   at=True,
                   text="A command or script to execute before the resource sync_update action. Errors interrupt the action."
                 )
@@ -3825,6 +3881,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="blocking_post_sync_update",
+                  generic=True,
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
@@ -3833,6 +3890,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=section,
                   keyword=action+"_requires",
+                  generic=True,
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
@@ -3848,6 +3906,8 @@ class KeyDict(KeywordStore):
             self += kw_subset(r)
             self += kw_monitor(r)
             self += kw_disable(r)
+            self += kw_disable_on(r)
+            self += kw_enable_on(r)
             self += kw_optional(r)
             self += kw_always_on(r)
 
