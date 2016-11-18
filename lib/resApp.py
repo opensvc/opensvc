@@ -62,13 +62,6 @@ class RsetApps(Res.ResourceSet):
                                  disabled=disabled,
                                  parallel=parallel,
                                  tags=tags)
-        #
-        # this bug should have be fixed, but it is not the case with python
-        # 2.6.2 we ship for el5.
-        # it manifests as apache failing to spawn workers because they can't
-        # acquire stdin, closed upon thread startup.
-        #
-        sys.stdin = open(os.devnull)
 
     def action(self, action=None, tags=set([]), xtags=set([])):
         if action == 'start' and self.type == "app":

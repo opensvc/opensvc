@@ -685,10 +685,16 @@ class Svc(Resource, Scheduler):
         return d
 
     def env_section_keys_evaluated(self):
+        return env_section_keys(evaluate=True)
+
+    def env_section_keys(self, evaluate=False):
         config = self.print_config_data()
         data = {}
         for key in config.get("env", {}).keys():
-            data[key] = conf_get_string_scope(self, self.config, 'env', key)
+            if evaluate:
+                data[key] = conf_get_string_scope(self, self.config, 'env', key)
+            else:
+                data[key] = config["env"][key]
         return data
 
     def print_config_data(self):
@@ -3172,12 +3178,24 @@ class Svc(Resource, Scheduler):
             return 1
         return self._set(l[0], l[1], self.options.value)
 
-    def setenv(self, l):
+    def setenv(self, l, interactive=False):
+        explicit_options = []
         for s in l:
             i = s.index("=")
             option = s[:i]
             value = s[i+1:]
             self._set("env", option, value)
+            explicit_options.append(option)
+        if not interactive:
+            return
+        if not os.isatty(0):
+            raise ex.excError("--interactive is set but input fd is not a tty")
+        for k, v in self.env_section_keys().items():
+            if k in explicit_options:
+                continue
+            val = raw_input("%s [%s] > " % (k, str(v)))
+            if val != "":
+                self._set("env", k, val)
 
     def _set(self, section, option, value):
         section = "[%s]" % section

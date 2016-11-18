@@ -306,23 +306,24 @@ def main():
             data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
         else:
             data = {"rid": [], "ret": 0}
-        if options.provision:
-            # if the user want to provision a resource defined via configuration file edition, he
-            # will set --rid <rid> or --tag or --subset to point the update command to it
-            rid += data.get("rid", [])
 
-            # force a refresh of node.svcs
-            # don't push to the collector yet
+        # if the user want to provision a resource defined via configuration file edition, he
+        # will set --rid <rid> or --tag or --subset to point the update command to it
+        rid += data.get("rid", [])
+
+        # force a refresh of node.svcs
+        # don't push to the collector yet
+        if refresh_node_svcs(svcnames, build_kwargs["minimal"]) != 0:
+            build_err = True
+
+        if len(node.svcs) == 1 and (options.param_config or options.param_template):
+            node.svcs[0].setenv(options.env, options.interactive)
+            # setenv changed the service config file
+            # we need to rebuild again
             if refresh_node_svcs(svcnames, build_kwargs["minimal"]) != 0:
                 build_err = True
 
-            if len(node.svcs) == 1 and (options.param_config or options.param_template):
-                node.svcs[0].setenv(options.env)
-                # setenv changed the service config file
-                # we need to rebuild again
-                if refresh_node_svcs(svcnames, build_kwargs["minimal"]) != 0:
-                    build_err = True
-
+        if options.provision:
             if len(node.svcs) == 1 and (len(rid) > 0 or options.param_config or options.param_template):
                 node.svcs[0].action("provision", rid=rid, tags=tags, subsets=subsets)
         return data["ret"]
