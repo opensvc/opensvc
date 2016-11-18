@@ -173,7 +173,7 @@ class Module(object):
     def do_env(self):
         self.setup_env()
         for var in sorted(os.environ):
-            print(var, "=", os.environ[var])
+            print(var, "=", os.environ[var], sep="")
         return 0
 
     def do_action(self, action):
