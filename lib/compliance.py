@@ -282,13 +282,16 @@ class Module(object):
         return self.action('fixable')
 
 class Compliance(object):
-    def __init__(self, skip_action=None, options=None, collector=None, svcname=None, sched_log=None):
-        self.skip_action = skip_action
-        self.sched_log = sched_log
-        self.options = options
-        self.collector = collector
-        self.svcname = svcname
-        self.options = options
+    def __init__(self, o=None):
+        if hasattr(o, "svcname"):
+            self.svc = o
+            self.node = o.node
+        else:
+            self.svc = None
+            self.node = o
+        self.skip_action = o.skip_action
+        self.sched_log = o.sched_log
+        self.options = o.options
         self.module_o = {}
         self.module = []
         self.updatecomp = False
@@ -332,7 +335,7 @@ class Compliance(object):
 
     @scheduler_fork
     def task_compliance_auto(self):
-        if self.updatecomp and self.svcname is None:
+        if self.updatecomp and self.svc is None:
             self.node.updatecomp()
         self.do_auto()
 
@@ -344,10 +347,10 @@ class Compliance(object):
 
     def __iadd__(self, o):
         self.module_o[o.name] = o
-        o.svcname = self.svcname
+        o.svcname = self.svc.svcname if self.svc else None
         o.ruleset = self.ruleset
         o.options = self.options
-        o.collector = self.collector
+        o.collector = self.node.collector
         o.context = self
         o.rset_md5 = self.rset_md5
         return self
@@ -461,10 +464,10 @@ class Compliance(object):
         return val
 
     def get_moduleset(self):
-        if self.svcname is not None:
-            moduleset = self.collector.call('comp_get_svc_data_moduleset', self.svcname)
+        if self.svc:
+            moduleset = self.node.collector.call('comp_get_svc_data_moduleset', self.svc.svcname)
         else:
-            moduleset = self.collector.call('comp_get_data_moduleset')
+            moduleset = self.node.collector.call('comp_get_data_moduleset')
         if moduleset is None:
             raise ex.excError('could not fetch moduleset')
         return moduleset
@@ -476,16 +479,16 @@ class Compliance(object):
         return self.get_current_ruleset()
 
     def get_current_ruleset(self):
-        if self.svcname is not None:
-            ruleset = self.collector.call('comp_get_svc_ruleset', self.svcname)
+        if self.svc:
+            ruleset = self.node.collector.call('comp_get_svc_ruleset', self.svc.svcname)
         else:
-            ruleset = self.collector.call('comp_get_ruleset')
+            ruleset = self.node.collector.call('comp_get_ruleset')
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
 
     def get_ruleset_md5(self, rset_md5):
-        ruleset = self.collector.call('comp_get_ruleset_md5', rset_md5)
+        ruleset = self.node.collector.call('comp_get_ruleset_md5', rset_md5)
         if ruleset is None:
             raise ex.excError('could not fetch ruleset')
         return ruleset
@@ -506,10 +509,10 @@ class Compliance(object):
         return '\n'.join(a)
 
     def get_comp_data(self, modulesets=[]):
-        if self.svcname is not None:
-            return self.collector.call('comp_get_svc_data', self.svcname, modulesets)
+        if self.svc:
+            return self.node.collector.call('comp_get_svc_data', self.svc.svcname, modulesets)
         else:
-            return self.collector.call('comp_get_data', modulesets)
+            return self.node.collector.call('comp_get_data', modulesets)
 
     def merge_moduleset_modules(self):
         l = []
@@ -604,7 +607,7 @@ class Compliance(object):
         r = self.digest_errors(err)
         end = datetime.datetime.now()
         print("total duration: %s"%str(end-start))
-        self.collector.call('comp_log_actions', self.action_log_vars, self.action_log_vals)
+        self.node.collector.call('comp_log_actions', self.action_log_vars, self.action_log_vals)
         return r
 
     def do_auto(self):
@@ -654,10 +657,10 @@ class Compliance(object):
     def _compliance_attach_moduleset(self, modulesets):
         err = False
         for moduleset in modulesets:
-            if self.svcname is not None:
-                d = self.collector.call('comp_attach_svc_moduleset', self.svcname, moduleset)
+            if self.svc:
+                d = self.node.collector.call('comp_attach_svc_moduleset', self.svc.svcname, moduleset)
             else:
-                d = self.collector.call('comp_attach_moduleset', moduleset)
+                d = self.node.collector.call('comp_attach_moduleset', moduleset)
             if d is None:
                 print("Failed to attach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
                 err = True
@@ -677,10 +680,10 @@ class Compliance(object):
     def _compliance_detach_moduleset(self, modulesets):
         err = False
         for moduleset in modulesets:
-            if self.svcname is not None:
-                d = self.collector.call('comp_detach_svc_moduleset', self.svcname, moduleset)
+            if self.svc:
+                d = self.node.collector.call('comp_detach_svc_moduleset', self.svc.svcname, moduleset)
             else:
-                d = self.collector.call('comp_detach_moduleset', moduleset)
+                d = self.node.collector.call('comp_detach_moduleset', moduleset)
             if d is None:
                 print("Failed to detach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
                 err = True
@@ -700,10 +703,10 @@ class Compliance(object):
     def _compliance_attach_ruleset(self, rulesets):
         err = False
         for ruleset in rulesets:
-            if self.svcname is not None:
-                d = self.collector.call('comp_attach_svc_ruleset', self.svcname, ruleset)
+            if self.svc:
+                d = self.node.collector.call('comp_attach_svc_ruleset', self.svc.svcname, ruleset)
             else:
-                d = self.collector.call('comp_attach_ruleset', ruleset)
+                d = self.node.collector.call('comp_attach_ruleset', ruleset)
             if d is None:
                 print("Failed to attach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
                 err = True
@@ -723,10 +726,10 @@ class Compliance(object):
     def _compliance_detach_ruleset(self, rulesets):
         err = False
         for ruleset in rulesets:
-            if self.svcname is not None:
-                d = self.collector.call('comp_detach_svc_ruleset', self.svcname, ruleset)
+            if self.svc:
+                d = self.node.collector.call('comp_detach_svc_ruleset', self.svc.svcname, ruleset)
             else:
-                d = self.collector.call('comp_detach_ruleset', ruleset)
+                d = self.node.collector.call('comp_detach_ruleset', ruleset)
             if d is None:
                 print("Failed to detach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
                 err = True
@@ -743,14 +746,14 @@ class Compliance(object):
 
     def _compliance_show_status(self):
         args = ['comp_show_status']
-        if self.svcname is None:
-           args.append('')
+        if self.svc:
+           args.append(self.svc.svcname)
         else:
-           args.append(self.svcname)
+           args.append('')
         if hasattr(self.options, 'module') and \
            len(self.options.module) > 0:
             args.append(self.options.module)
-        l = self.collector.call(*args)
+        l = self.node.collector.call(*args)
         if l is None:
             return
         return l
@@ -758,9 +761,9 @@ class Compliance(object):
     def compliance_list_ruleset(self):
         if not hasattr(self.options, 'ruleset') or \
            len(self.options.ruleset) == 0:
-            l = self.collector.call('comp_list_ruleset')
+            l = self.node.collector.call('comp_list_ruleset')
         else:
-            l = self.collector.call('comp_list_ruleset', self.options.ruleset)
+            l = self.node.collector.call('comp_list_ruleset', self.options.ruleset)
         if l is None:
             return
         print('\n'.join(l))
@@ -768,9 +771,9 @@ class Compliance(object):
     def compliance_list_moduleset(self):
         if not hasattr(self.options, 'moduleset') or \
            len(self.options.moduleset) == 0:
-            l = self.collector.call('comp_list_moduleset')
+            l = self.node.collector.call('comp_list_moduleset')
         else:
-            l = self.collector.call('comp_list_moduleset', self.options.moduleset)
+            l = self.node.collector.call('comp_list_moduleset', self.options.moduleset)
         if l is None:
             return
         print('\n'.join(l))

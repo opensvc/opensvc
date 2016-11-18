@@ -2871,7 +2871,7 @@ class Svc(Resource, Scheduler):
         try:
             if action.startswith("compliance_"):
                 from compliance import Compliance
-                o = Compliance(self.skip_action, self.options, self.node.collector, self.svcname, self.sched_log)
+                o = Compliance(self)
                 getattr(o, action)()
             elif hasattr(self, action):
                 self.running_action = action

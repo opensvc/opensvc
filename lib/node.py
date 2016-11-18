@@ -552,7 +552,7 @@ class Node(Svc, Freezer, Scheduler):
             desc += "\n\n"
             for a in valid_actions:
                 if a.startswith("compliance_"):
-                    o = Compliance(self.skip_action, self.options, self.collector, sched_log=self.sched_log)
+                    o = Compliance(self)
                     if not hasattr(o, a):
                         continue
                 elif a.startswith("collector_") and a != "collector_cli":
@@ -594,7 +594,7 @@ class Node(Svc, Freezer, Scheduler):
             a = "print"+a[4:]
         if a.startswith("compliance_"):
             from compliance import Compliance
-            o = Compliance(self.skip_action, self.options, self.collector, sched_log=self.sched_log)
+            o = Compliance(self)
             if self.options.cron and a == "compliance_auto" and \
                self.config.has_option('compliance', 'auto_update') and \
                self.config.getboolean('compliance', 'auto_update'):
