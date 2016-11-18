@@ -127,7 +127,7 @@ class SvcConf(CompObject):
        out, err = p.communicate()
        out = bdecode(out)
        self.svc_config = json.loads(out)
-       return self.svc_config
+       return self.encode_data(self.svc_config)
 
     def fixable(self):
         return RET_NA
