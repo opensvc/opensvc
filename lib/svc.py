@@ -684,6 +684,13 @@ class Svc(Resource, Scheduler):
             d[g] = str(ss[g])
         return d
 
+    def env_section_keys_evaluated(self):
+        config = self.print_config_data()
+        data = {}
+        for key in config.get("env", {}).keys():
+            data[key] = conf_get_string_scope(self, self.config, 'env', key)
+        return data
+
     def print_config_data(self):
         svc_config = {}
         tmp = {}
@@ -705,6 +712,7 @@ class Svc(Resource, Scheduler):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svc_config[section] = tmpsection
+        self.load_config()
         return svc_config
 
     def logs(self):

@@ -90,8 +90,8 @@ class Module(object):
                 self.strip_unprintable(out),
                 action,
                 self.rset_md5]
-        if self.svcname is not None:
-            vals.append(self.svcname)
+        if self.context.svc:
+            vals.append(self.context.svc.svcname)
         else:
             vals.append("")
         self.context.action_log_vals.append(vals)
@@ -124,6 +124,12 @@ class Module(object):
           "OSVC_SVCMGR": rcEnv.svcmgr,
         })
         self.set_env_path()
+
+        # add services env section keys, with values eval'ed on this node
+        if self.context.svc:
+            for key, val in self.context.svc.env_section_keys_evaluated().items():
+                os.environ[self.context.format_rule_var("SVC_CONF_ENV_"+key.upper())] = self.context.format_rule_val(val)
+
         for rule in self.ruleset.values():
             if (rule["filter"] != "explicit attachment via moduleset" and \
                 "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \
@@ -165,12 +171,9 @@ class Module(object):
         return r
 
     def do_env(self):
-        a = []
         self.setup_env()
         for var in sorted(os.environ):
-            val = os.environ[var]
-            a.append('%s=%s'%(var, val))
-        print('\n'.join(a))
+            print(var, "=", os.environ[var])
         return 0
 
     def do_action(self, action):
@@ -347,7 +350,6 @@ class Compliance(object):
 
     def __iadd__(self, o):
         self.module_o[o.name] = o
-        o.svcname = self.svc.svcname if self.svc else None
         o.ruleset = self.ruleset
         o.options = self.options
         o.collector = self.node.collector
