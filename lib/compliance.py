@@ -332,7 +332,7 @@ class Compliance(object):
 
     @scheduler_fork
     def task_compliance_auto(self):
-        if self.updatecomp and not hasattr(self, "svcname"):
+        if self.updatecomp and self.svcname is None:
             self.node.updatecomp()
         self.do_auto()
 
