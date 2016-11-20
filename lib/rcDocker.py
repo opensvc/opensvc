@@ -195,29 +195,24 @@ class DockerLib(object):
     def docker_info_images(self):
         data = []
         images = self.get_images()
+        images_done = []
         h = {}
+
+        # referenced images
         for r in self.svc.get_resources("container.docker"):
             image_id = r.get_run_image_id()
-            d = {"rid": r.rid, "instance_id": r.container_id}
-            if image_id in h:
-                h[image_id].append(d)
-            else:
-                h[image_id] = [d]
+            images_done.append(image_id)
+            data.append([r.rid, "run_image", r.run_image])
+            data.append([r.rid, "docker_image_id", image_id])
+            data.append([r.rid, "docker_instance_id", r.container_id])
+
+        # unreferenced images
         for image_id in images:
-            if image_id in h:
-                for d in h[image_id]:
-                    data.append([
-                      d["rid"],
-                      "docker_image",
-                      image_id+":"+d["instance_id"]
-                    ])
-            else:
-                data.append([
-                  "",
-                  "docker_image",
-                  image_id
-                ])
+            if image_id in images_done:
+                continue
+            data.append(["", "docker_image_id", image_id])
         self.svc.docker_info_done = True
+
         return data
 
     def image_userfriendly_name(self):
