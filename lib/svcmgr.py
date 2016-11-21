@@ -379,6 +379,9 @@ def main():
     return err
 
 if __name__ == "__main__":
-    r = main()
+    try:
+        r = main()
+    except KeyboardInterrupt:
+        r = 1
     _exit(r)
 
