@@ -147,6 +147,7 @@ actions_no_lock = [
   "push_resinfo",
   "push_config",
   "push_service_status",
+  "run",
   "scheduler",
   "status",
   "thaw",
@@ -329,6 +330,8 @@ class Svc(Resource, Scheduler):
                     # save the action logging to the collector if sync_all
                     # is not needed
                     self.sched_sync_all()
+                elif action.startswith("task#"):
+                    self.run_task(action)
                 else:
                     self.action(action)
             except:
@@ -346,6 +349,9 @@ class Svc(Resource, Scheduler):
             syncs += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_syncall_"+r.rid, schedule_option="sync_schedule")]
         if len(syncs) > 0:
             self.scheduler_actions["sync_all"] = syncs
+
+        for r in self.get_resources("task"):
+            self.scheduler_actions[r.rid] = SchedOpts(r.rid, fname=self.svcname+os.sep+"last_"+r.rid, schedule_option="no_schedule")
 
         self.scheduler_actions["push_resinfo"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_resinfo", schedule_option="resinfo_schedule")
 
@@ -449,7 +455,7 @@ class Svc(Resource, Scheduler):
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 
-        details = "(timeout %d, delay %d, action %s)" % (timeout, delay, action)
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % (timeout, delay, action, lockfile)
         self.log.debug("acquire service lock %s %s" % (lockfile, details))
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
@@ -1619,6 +1625,23 @@ class Svc(Resource, Scheduler):
                (not self.options.master and not self.options.slaves and self.options.slave is None):
                 fn(self)
         return _fn
+
+    def run_task(self, rid):
+        if self.skip_action(rid):
+            return
+        self.resources_by_id[rid].run()
+
+    def run(self):
+        self.master_run()
+        self.slave_run()
+
+    @_master_action
+    def master_run(self):
+        self.sub_set_action("task", "run")
+
+    @_slave_action
+    def slave_run(self):
+        self.encap_cmd(['run'], verbose=True)
 
     def start(self):
         self.master_starthb()

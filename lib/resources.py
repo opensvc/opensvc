@@ -114,7 +114,10 @@ class Resource(object):
         rcUtilities.clear_cache(sig, o=self)
 
     def action_triggers(self, type, action, blocking=False):
-        attr = type+"_"+action
+        if type == "":
+            attr = action
+        else:
+            attr = type+"_"+action
         if hasattr(self, attr):
             cmd = getattr(self, attr)
             if sys.version_info[0] < 3:

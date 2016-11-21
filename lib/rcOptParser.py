@@ -29,6 +29,7 @@ action_desc = {
       'freeze': 'set up a flag to block actions on this service',
       'thaw': 'remove the flag to unblock actions on this service',
       'frozen': 'report on the current blocking of actions on this service',
+      'run': 'run all tasks, or tasks specified by --rid --tags and --subset, disregarding their schedule',
       'startloop': 'attach loop resources of this service',
       'stoploop': 'detach loop resources of this service',
       'startvg': 'activate/import volume group resources of this service',

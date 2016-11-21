@@ -467,6 +467,7 @@ def add_triggers(svc, resource, conf, section):
       'post_sync_nodes', 'post_sync_drp',
       'post_sync_resync', 'pre_sync_resync',
       'post_sync_update', 'pre_sync_update',
+      'post_run', 'pre_run',
     ]
     compat_triggers = [
       'pre_syncnodes', 'pre_syncdrp',
@@ -489,6 +490,7 @@ def add_requires(svc, resource, conf, section):
       'unprovision', 'provision'
       'stop', 'start',
       'sync_nodes', 'sync_drp', 'sync_resync', 'sync_break', 'sync_update',
+      'run',
     ]
     for action in actions:
         try:
@@ -3197,6 +3199,30 @@ def add_syncs_rsync(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
+def add_task(svc, conf, s):
+    kwargs = {}
+
+    try:
+        kwargs['command'] = conf_get_string_scope(svc, conf, s, 'command')
+    except ex.OptNotFound:
+        svc.log.error("'command' is not defined in config file section %s"%s)
+        return
+
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    import resTask
+    r = resTask.Task(**kwargs)
+    add_triggers_and_requires(svc, r, conf, s)
+    r.pg_settings = get_pg_settings(svc, s)
+    svc += r
+
 def add_app(svc, conf, s):
     resApp = ximport('resApp')
     kwargs = {}
@@ -3762,6 +3788,7 @@ def build(name, minimal=False, svcconf=None):
     add_resources('fs', svc, conf)
     add_resources('share', svc, conf)
     add_resources('app', svc, conf)
+    add_resources('task', svc, conf)
 
     # deprecated, folded into "disk"
     add_resources('vdisk', svc, conf)

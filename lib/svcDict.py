@@ -2052,9 +2052,9 @@ class KeywordSyncRsyncBwlimit(KeywordInteger):
                   text="Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over 'bwlimit' set in [DEFAULT]."
                 )
 
-class KeywordSyncSchedule(KeywordInteger):
+class KeywordSyncSchedule(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="sync",
                   keyword="schedule",
@@ -3540,6 +3540,31 @@ class KeywordHbName(Keyword):
                   text="Specify the service name used by the heartbeat. Defaults to the service name."
                 )
 
+class KeywordTaskCommand(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="command",
+                  at=True,
+                  order=1,
+                  required=True,
+                  text="The command to execute on 'run' action and at scheduled interval. The default schedule for tasks is @0.",
+                  example="/srv/{svcname}/data/scripts/backup.sh"
+                )
+
+class KeywordTaskSchedule(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="schedule",
+                  default="@0",
+                  at=True,
+                  text="Set the this task run schedule. See usr/share/doc/node.conf for the schedule syntax reference.",
+                  example='["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
+                )
+
 class KeyDict(KeywordStore):
     def __init__(self, provision=False):
         KeywordStore.__init__(self, provision)
@@ -3756,6 +3781,22 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
                 )
+        def kw_pre_run(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_run",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute before the resource run action. Errors do not interrupt the action."
+                )
+        def kw_post_run(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_run",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute after the resource run action. Errors do not interrupt the action."
+                )
 
         def kw_blocking_pre_unprovision(resource):
             return Keyword(
@@ -3885,6 +3926,22 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
+        def kw_blocking_pre_run(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_run",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute before the resource run action. Errors interrupt the action."
+                )
+        def kw_blocking_post_run(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_run",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute after the resource run action. Errors interrupt the action."
+                )
 
         def kw_requires(section, action):
             return Keyword(
@@ -3900,7 +3957,7 @@ class KeyDict(KeywordStore):
 
         self += kw_disable("DEFAULT")
 
-        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app"]:
+        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app", "task"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
@@ -3927,6 +3984,8 @@ class KeyDict(KeywordStore):
             self += kw_post_sync_resync(r)
             self += kw_pre_sync_update(r)
             self += kw_post_sync_update(r)
+            self += kw_pre_run(r)
+            self += kw_post_run(r)
 
             self += kw_blocking_pre_unprovision(r)
             self += kw_blocking_post_unprovision(r)
@@ -3944,10 +4003,12 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_resync(r)
             self += kw_blocking_pre_sync_update(r)
             self += kw_blocking_post_sync_update(r)
+            self += kw_blocking_pre_run(r)
+            self += kw_blocking_post_run(r)
 
             for action in ["unprovision", "provision", "start", "stop",
                            "sync_nodes", "sync_drp", "sync_update",
-                           "sync_break", "sync_resync"]:
+                           "sync_break", "sync_resync", "run"]:
                 self += kw_requires(r, action)
 
         self += KeywordMode()
@@ -4187,6 +4248,8 @@ class KeyDict(KeywordStore):
         self += KeywordShareType()
         self += KeywordSharePath()
         self += KeywordShareNfsOpts()
+        self += KeywordTaskCommand()
+        self += KeywordTaskSchedule()
 
 if __name__ == "__main__":
     store = KeyDict()
