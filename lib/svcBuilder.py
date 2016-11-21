@@ -358,7 +358,7 @@ def get_disabled(conf, section, svc):
     # unscopable enable_on option (takes precedence over disable and disable_on)
     nodes = set([])
     if conf.has_option(section, 'enable_on'):
-        l = conf.get(section, "enable_on").split()
+        l = conf_get_string_scope(svc, conf, section, "enable_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
