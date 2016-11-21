@@ -3553,6 +3553,19 @@ class KeywordTaskCommand(Keyword):
                   example="/srv/{svcname}/data/scripts/backup.sh"
                 )
 
+class KeywordTaskUser(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="user",
+                  at=True,
+                  order=2,
+                  required=False,
+                  text="The user to impersonate when running the task command. The default user is root.",
+                  example="admin"
+                )
+
 class KeywordTaskSchedule(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4249,6 +4262,7 @@ class KeyDict(KeywordStore):
         self += KeywordSharePath()
         self += KeywordShareNfsOpts()
         self += KeywordTaskCommand()
+        self += KeywordTaskUser()
         self += KeywordTaskSchedule()
 
 if __name__ == "__main__":

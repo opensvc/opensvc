@@ -139,7 +139,7 @@ def empty_string(buff):
         return True
     return False
 
-def call(argv=['/bin/false'],
+def call(argv,
          cache=False,      # serve/don't serve cmd output from cache
          log=None,         # callers should provide there own logger
                            # or we'll have to allocate a generic one
@@ -163,17 +163,28 @@ def call(argv=['/bin/false'],
                            #        err_to_info value
          err_to_warn=False,
          err_to_info=False,
-         warn_to_info=False):
-    "return(ret, stdout,stderr)"
+         warn_to_info=False,
+         shell=False,
+         preexec_fn=None,
+         cwd=None,
+         env=None):
+    """ return(ret, out,err)
+    """
     if log is None:
         log = logging.getLogger('CALL')
+
     if not argv or len(argv) == 0:
         return (0, '', '')
-    if which(argv[0]) is None:
+
+    if shell:
+        cmd = argv
+    else:
+        cmd = ' '.join(argv)
+     
+    if not shell and which(argv[0]) is None:
         log.error("%s does not exist or not in path or is not executable"%
                   argv[0])
         return (1, '', '')
-    cmd = ' '.join(argv)
 
     if info:
         log.info(cmd)
@@ -187,7 +198,7 @@ def call(argv=['/bin/false'],
         log.debug("cache miss for '%s'"%cmd)
 
     if not cache or cmd not in rcEnv.call_cache:
-        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell, preexec_fn=preexec_fn, cwd=cwd, env=env)
         buff = process.communicate()
         buff = tuple(map(lambda x: bdecode(x), buff))
         ret = process.returncode
@@ -240,18 +251,10 @@ def qcall(argv=['/bin/false']) :
     process.wait()
     return process.returncode
 
-def vcall(argv=['/bin/false'],
-          log=None,
-          err_to_warn=False,
-          err_to_info=False,
-          warn_to_info=False):
-    return call(argv,
-                log=log,
-                info=True,
-                outlog=True,
-                err_to_warn=err_to_warn,
-                err_to_info=err_to_info,
-                warn_to_info=warn_to_info)
+def vcall(args, **kwargs):
+    kwargs["info"] = True
+    kwargs["outlog"] = True
+    return call(args, **kwargs)
 
 def getmount(path):
     path = os.path.abspath(path)

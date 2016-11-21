@@ -113,35 +113,49 @@ class Resource(object):
     def clear_cache(self, sig):
         rcUtilities.clear_cache(sig, o=self)
 
-    def action_triggers(self, type, action, blocking=False):
+    def action_triggers(self, type, action, **kwargs):
+        if "blocking" in kwargs:
+            blocking = kwargs["blocking"]
+            del(kwargs["blocking"])
+        else:
+            blocking = False
+
         if type == "":
             attr = action
         else:
             attr = type+"_"+action
-        if hasattr(self, attr):
-            cmd = getattr(self, attr)
+
+        if not hasattr(self, attr):
+            return
+
+        cmd = getattr(self, attr)
+        if not kwargs.get("shell", False):
             if sys.version_info[0] < 3:
                 cmdv = shlex.split(cmd.encode('utf8'))
                 cmdv = map(lambda s: s.decode('utf8'), cmdv)
             else:
                 cmdv = shlex.split(cmd)
+        else:
+            cmdv = cmd
 
-            if self.svc.options.dry_run:
-                self.log.info("exec trigger %s" % getattr(self, attr))
-                return
-            try:
-                ret, out, err = self.vcall(cmdv)
-            except OSError as e:
-                ret = 1
-                if e.errno == 8:
-                    self.log.error("%s exec format error: check the script shebang" % cmd)
-                else:
-                    self.log.error("%s error: %s" % (cmd, str(e)))
-            except Exception as e:
-                ret = 1
+        if self.svc.options.dry_run:
+            self.log.info("exec trigger %s" % getattr(self, attr))
+            return
+
+        try:
+            ret, out, err = self.vcall(cmdv, **kwargs)
+        except OSError as e:
+            ret = 1
+            if e.errno == 8:
+                self.log.error("%s exec format error: check the script shebang" % cmd)
+            else:
                 self.log.error("%s error: %s" % (cmd, str(e)))
-            if blocking and ret != 0:
-                raise ex.excError("%s trigger %s blocking error" % (type, cmd))
+        except Exception as e:
+            ret = 1
+            self.log.error("%s error: %s" % (cmd, str(e)))
+
+        if blocking and ret != 0:
+            raise ex.excError("%s trigger %s blocking error" % (type, cmd))
 
     def action_main(self, action):
         if self.svc.options.dry_run:
@@ -464,28 +478,17 @@ class Resource(object):
                 self.optional,
                 encap)
 
-    def call(self, cmd=['/bin/false'], cache=False, info=False,
-             errlog=True, err_to_warn=False, err_to_info=False,
-             warn_to_info=False, outlog=False):
-        """Use subprocess module functions to do a call
+    def call(self, cmd, **kwargs):
+        """ wrap call, setting the resource logger
         """
-        return rcUtilities.call(cmd, log=self.log,
-                                cache=cache,
-                                info=info, errlog=errlog,
-                                err_to_warn=err_to_warn,
-                                err_to_info=err_to_info,
-                                warn_to_info=warn_to_info,
-                                outlog=outlog)
+        kwargs["log"] = self.log
+        return rcUtilities.call(cmd, **kwargs)
 
-    def vcall(self, cmd, err_to_warn=False, err_to_info=False,
-              warn_to_info=False):
-        """Use subprocess module functions to do a call and
-        log the command line using the resource logger
+    def vcall(self, cmd, **kwargs):
+        """ wrap vcall, setting the resource logger
         """
-        return rcUtilities.vcall(cmd, log=self.log,
-                                 err_to_warn=err_to_warn,
-                                 err_to_info=err_to_info,
-                                 warn_to_info=warn_to_info)
+        kwargs["log"] = self.log
+        return rcUtilities.vcall(cmd, **kwargs)
 
     def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
         for tick in range(tmo//delay):

@@ -3208,6 +3208,11 @@ def add_task(svc, conf, s):
         svc.log.error("'command' is not defined in config file section %s"%s)
         return
 
+    try:
+        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+    except ex.OptNotFound:
+        pass
+
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)
     kwargs['tags'] = get_tags(conf, s, svc)
