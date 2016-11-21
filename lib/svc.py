@@ -691,7 +691,7 @@ class Svc(Resource, Scheduler):
         return d
 
     def env_section_keys_evaluated(self):
-        return env_section_keys(evaluate=True)
+        return self.env_section_keys(evaluate=True)
 
     def env_section_keys(self, evaluate=False):
         config = self.print_config_data()
