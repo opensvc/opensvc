@@ -32,8 +32,6 @@ if 'PATH' not in os.environ:
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
-ref_cache = {}
-
 def eval_expr(expr):
     """ arithmetic expressions evaluator
     """
@@ -129,8 +127,8 @@ def _handle_expressions(s):
 
 def handle_references(svc, conf, s, scope=False, impersonate=None):
     key = (s, scope, impersonate)
-    if key in ref_cache:
-        return ref_cache[key]
+    if hasattr(svc, "ref_cache") and key in svc.ref_cache:
+        return svc.ref_cache[key]
     try:
         val = _handle_references(svc, conf, s, scope=scope, impersonate=impersonate)
         val = _handle_expressions(val)
@@ -139,7 +137,8 @@ def handle_references(svc, conf, s, scope=False, impersonate=None):
         svc.log.error("%s: reference evaluation failed: %s" %(s, str(e)))
         svc.save_exc()
         return s
-    ref_cache[key] = val
+    if hasattr(svc, "ref_cache"):
+        svc.ref_cache[key] = val
     return val
 
 def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):

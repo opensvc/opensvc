@@ -287,6 +287,7 @@ class Svc(Resource, Scheduler):
                           disabled=disabled, tags=tags)
         Scheduler.__init__(self)
 
+        self.ref_cache = {}
         self.log = rcLogger.initLogger(self.svcname)
         self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
