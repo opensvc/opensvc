@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-11\-03
+.TH SVCMGR 1 2016\-11\-22
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -229,6 +229,9 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBsvcmgr restart \fP  combo action, chaining stop-start
 
   \fBsvcmgr resync  \fP  combo action, chaining stop-sync_resync-start
+
+  \fBsvcmgr run     \fP  run all tasks, or tasks specified by --rid --tags and
+  \fB               \fP  --subset, disregarding their schedule
 
   \fBsvcmgr scheduler\fP
   \fB               \fP  run the service task scheduler
@@ -474,6 +477,9 @@ with the install or create actions, provision the service resources after config
 .B --unprovision
 with the delete action, unprovision the service resources before config files file deletion. defaults to False.
 .TP
+.B --env=ENV
+with the create action, set a env section parameter. multiple --env <key>=<val> can be specified.
+.TP
 .B --waitlock=PARM_WAITLOCK
 comma-separated list of resource tags to limit action to
 .TP
@@ -556,7 +562,10 @@ operate only on service flagged for autostart on this node
 operate only on service not flagged for autostart on this node
 .TP
 .B --config=PARAM_CONFIG
-the configuration file to use when installing a service
+the configuration file to use when creating or installing a service
+.TP
+.B --template=PARAM_TEMPLATE
+the configuration file template name or id, served by the collector, to use when creating or installing a service
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)

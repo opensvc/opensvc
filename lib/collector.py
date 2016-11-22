@@ -313,3 +313,23 @@ class Collector(object):
             raise ex.excError(d['msg'])
         return d['data']
 
+    def collector_search(self):
+        path = "/search?"
+        if self.options.like.count(":") == 1:
+            t, s = self.options.like.split(":")
+            t = t.strip()
+            s = s.strip()
+            path += "substring=%s&in=%s" % (s, t)
+        else:
+            s = self.options.like
+            path += "substring=%s" % s
+        d = self.node.collector_rest_get(path)
+        data = []
+        for t, _d in d["data"].items():
+            if _d["total"] == 0:
+                continue
+            print("%s (%d/%d)"  % (t, len(_d["data"]), _d["total"]))
+            for e in d["data"][t]["data"]:
+                e_name = _d["fmt"]["name"] % e
+                e_id = _d["fmt"]["id"] % e
+                print(" %s: %s" % (e_id, e_name))

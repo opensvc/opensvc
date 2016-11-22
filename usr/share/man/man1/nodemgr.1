@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-11\-03
+.TH NODEMGR 1 2016\-11\-22
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -67,6 +67,11 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
   \fBnodemgr collector networks\fP
   \fB               \fP  display network information known to the collector for each
   \fB               \fP  node ip
+
+  \fBnodemgr collector search\fP
+  \fB               \fP  report the collector objects matching --like [<type>:
+  \fB               \fP  }<substring>, where <type> is the object type acronym as
+  \fB               \fP  shown in the collector search widget.
 
   \fBnodemgr collector show actions\fP
   \fB               \fP  show actions detailled log. a single action is specified by

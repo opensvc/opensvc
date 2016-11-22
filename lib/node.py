@@ -232,6 +232,7 @@ class Node(Svc, Freezer, Scheduler):
             'collector_show_tags': 'list all node tags',
             'collector_list_tags': 'list all available tags. use --like to filter the output.',
             'collector_create_tag': 'create a new tag with name specified by --tag',
+            'collector_search': 'report the collector objects matching --like [<type>: }<substring>, where <type> is the object type acronym as shown in the collector search widget.',
           },
         }
         self.unprivileged_actions = [
