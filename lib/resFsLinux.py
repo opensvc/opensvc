@@ -462,16 +462,16 @@ class Mount(Res.Mount):
         if self.is_up() is False:
             self.log.info("%s is already umounted" % self.label)
             return
+        if not os.path.exists(self.mountPoint):
+            raise ex.excError('mount point %s does not exist' % self.mountPoint)
         try:
             os.stat(self.mountPoint)
-            if not os.path.exists(self.mountPoint):
-                raise ex.excError('mount point %s does not exist' % self.mountPoint)
         except OSError as e:
-            if e.errno == 5:
+            if e.errno == (5, 13):
                 self.log.warning("I/O error on mount point. try to umount anyway")
                 self.kill_users()
             else:
-                raise
+                raise ex.excError(str(e))
         self.remove_holders()
         self.remove_deeper_mounts()
         for i in range(3):
