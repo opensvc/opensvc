@@ -1,5 +1,7 @@
+from __future__ import print_function
 import os
 import time
+import json
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
@@ -18,8 +20,6 @@ class lockCreateError(Exception):
 class lockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
-    def __init__(self, pid):
-        self.pid = pid
 
 def monlock(timeout=0, delay=0, fname='svcmon.lock'):
     lockfile = os.path.join(rcEnv.pathlock, fname)
@@ -45,25 +45,30 @@ def monlock(timeout=0, delay=0, fname='svcmon.lock'):
 def monunlock(lockfd):
     unlock(lockfd)
 
-def lock(timeout=30, delay=5, lockfile=None):
+def lock(timeout=30, delay=5, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
         l = [1]
     else:
         l = range(int(timeout/delay))
+    if len(l) == 0:
+        l = [1]
+    err = ""
     for i in l:
         if i > 0:
             time.sleep(delay)
         try:
-            return lock_nowait(lockfile)
-        except lockAcquire:
-            pass
-    raise lockTimeout
+            return lock_nowait(lockfile, intent)
+        except lockAcquire as e:
+            err = str(e)
+        except Exception:
+            raise
+    raise lockTimeout(err)
 
-def lock_nowait(lockfile=None):
+def lock_nowait(lockfile=None, intent=None):
     if lockfile is None:
         raise lockNoLockFile
 
-    pid = 0
+    data = {"pid": os.getpid(), "intent": intent}
     dir = os.path.dirname(lockfile)
 
     if not os.path.exists(dir):
@@ -71,26 +76,34 @@ def lock_nowait(lockfile=None):
 
     try:
         with open(lockfile, 'r') as fd:
-            pid = int(fd.read())
-            fd.close()
-    except:
-        pass
+            buff = fd.read()
+        prev_data = json.loads(buff)
+        fd.close()
+        #print("lock data from file", lockfile, prev_data)
+        if type(prev_data) != dict or "pid" not in prev_data or "intent" not in prev_data:
+            prev_data = {"pid": 0, "intent": ""}
+            #print("lock data corrupted", lockfile, prev_data)
+    except Exception as e:
+        prev_data = {"pid": 0, "intent": ""}
+        #print("error reading lockfile", lockfile, prev_data, str(e))
+
+    """ test if we already own the lock
+    """
+    if prev_data["pid"] == os.getpid():
+        return
+
+    if os.path.isdir(lockfile):
+        raise lockCreateError("lockfile points to a directory")
 
     try:
-        flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+        flags = os.O_RDWR|os.O_CREAT
         if rcEnv.sysname != 'Windows':
             flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as e:
-        raise lockCreateError()
+        raise lockCreateError(str(e))
 
     try:
-        """ test if we already own the lock
-        """
-        if pid == os.getpid():
-            os.close(lockfd)
-            return
-
         """ FD_CLOEXEC makes sure the lock is the held by processes
             we fork from this process
         """
@@ -108,13 +121,18 @@ def lock_nowait(lockfile=None):
             size = os.path.getsize(lockfile)
             msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
 
-        """ drop our pid in the lockfile
+        """ drop our pid and intent in the lockfile, best effort
         """
-        os.write(lockfd, str(os.getpid()).encode('utf-8'))
-        os.fsync(lockfd)
-        return lockfd
+        fd = lockfd
+        try:
+            os.ftruncate(lockfd, 0)
+            os.write(lockfd, json.dumps(data))
+            os.fsync(lockfd)
+        except:
+            pass
+        return fd
     except IOError:
-        raise lockAcquire(pid)
+        raise lockAcquire("holder pid %(pid)d, holder intent '%(intent)s'" % prev_data)
     except:
         raise
 
@@ -135,12 +153,20 @@ if __name__ == "__main__":
     import sys
 
     parser = optparse.OptionParser()
-    parser.add_option("-f", "--file", default="", action="store", dest="file",
+    parser.add_option("-f", "--file", default="/tmp/test.lock", action="store", dest="file",
                   help="The file to lock")
+    parser.add_option("-i", "--intent", default="test", action="store", dest="intent",
+                  help="The lock intent")
     parser.add_option("-t", "--time", default=60, action="store", type="int", dest="time",
                   help="The time we will hold the lock")
+    parser.add_option("--timeout", default=1, action="store", type="int", dest="timeout",
+                  help="The time before failing to acquire the lock")
     (options, args) = parser.parse_args()
-    lockfd = lock(timeout=5, delay=1, lockfile=options.file)
+    try:
+        lockfd = lock(timeout=options.timeout, delay=1, lockfile=options.file, intent=options.intent)
+    except Exception as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
     print("lock acquired")
     try:
         time.sleep(options.time)
