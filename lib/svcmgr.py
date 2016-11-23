@@ -92,7 +92,7 @@ parser.add_option("--unprovision", default=False, action="store_true", dest="unp
                   help="with the delete action, unprovision the service resources before config files file deletion. defaults to False.")
 parser.add_option("--env", default=[], action="append", dest="env",
                   help="with the create action, set a env section parameter. multiple --env <key>=<val> can be specified.")
-parser.add_option("--waitlock", default=60, action="store", dest="parm_waitlock", type="int",
+parser.add_option("--waitlock", default=-1, action="store", dest="parm_waitlock", type="int",
                   help="comma-separated list of resource tags to limit action to")
 parser.add_option("--to", default=None, action="store", dest="parm_destination_node",
                   help="remote node to start or migrate the service to")

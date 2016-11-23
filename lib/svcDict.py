@@ -520,6 +520,18 @@ class KeywordProvision(Keyword):
                   text="Say yes to provision this resource. Warning, provisioning implies destructive operations like formating."
                 )
 
+class KeywordLockTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="lock_timeout",
+                  required=False,
+                  order=10,
+                  default=60,
+                  text="The duration in seconds the agent wait for the action lock acquisition before aborting the action. The svcmgr --waitlock parameter overides this option."
+                )
+
 class KeywordMode(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4025,6 +4037,7 @@ class KeyDict(KeywordStore):
                 self += kw_requires(r, action)
 
         self += KeywordMode()
+        self += KeywordLockTimeout()
         self += KeywordPrKey()
         self += KeywordPkgName()
         self += KeywordDockerDaemonPrivate()

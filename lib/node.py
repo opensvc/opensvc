@@ -95,7 +95,7 @@ class Options(object):
         self.moduleset = ""
         self.module = ""
         self.ruleset_date = ""
-        self.waitlock = 60
+        self.waitlock = -1
         self.parallel = False
         self.objects = []
         os.environ['LANG'] = 'C'

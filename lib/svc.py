@@ -2220,7 +2220,7 @@ class Svc(Resource, Scheduler):
 
         self.need_postsync = set([])
 
-    def remote_action(self, node, action, waitlock=60, sync=False, verbose=True, action_mode=True):
+    def remote_action(self, node, action, waitlock=-1, sync=False, verbose=True, action_mode=True):
         if self.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
@@ -2233,7 +2233,9 @@ class Svc(Resource, Scheduler):
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
-        rcmd += ['--waitlock', str(waitlock)] + action.split()
+        if waitlock >= 0:
+            rcmd += ['--waitlock', str(waitlock)]
+        rcmd += action.split()
         cmd = rcEnv.rsh.split() + [node] + rcmd
         if verbose:
             self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
@@ -2674,7 +2676,9 @@ class Svc(Resource, Scheduler):
             return actions_translation[action]
         return action
 
-    def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
+    def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=-1):
+        if waitlock < 0:
+            waitlock = self.lock_timeout
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.resources_by_id.keys()) - set([None])
             l = self.expand_rids(rid)

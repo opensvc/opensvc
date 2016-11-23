@@ -3582,9 +3582,6 @@ def build(name, minimal=False, svcconf=None):
     if svc.svc_env not in rcEnv.allowed_svc_envs:
         raise ex.excInitError('%s is not a valid service env (%s)'%(svc.svc_env, ', '.join(rcEnv.allowed_svc_envs)))
 
-    if minimal:
-        return svc
-
     #
     # Setup service properties from config file content
     #
@@ -3600,6 +3597,14 @@ def build(name, minimal=False, svcconf=None):
         svc.flex_primary = flex_primary
     if not hasattr(svc, "drp_flex_primary"):
         svc.drp_flex_primary = drp_flex_primary
+
+    try:
+        svc.lock_timeout = conf_get_int_scope(svc, conf, 'DEFAULT', 'lock_timeout')
+    except ex.OptNotFound:
+        svc.lock_timeout = 60
+
+    if minimal:
+        return svc
 
     try:
         svc.presnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'presnap_trigger').split()
@@ -3653,6 +3658,7 @@ def build(name, minimal=False, svcconf=None):
         svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
     except ex.OptNotFound:
         pass
+
 
     """ prune not managed service
     """
