@@ -247,7 +247,7 @@ def main():
     else:
         build_kwargs["autopush"] = True
 
-    if action not in ("create", "install"):
+    if action != "create":
         try:
             node.build_services(**build_kwargs)
         except ex.excError as e:
@@ -257,7 +257,7 @@ def main():
 
     if node.svcs is not None and len(node.svcs) > 0:
         svcnames = list(map(lambda x: x.svcname, node.svcs))
-    elif action in ("create", "install", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
+    elif action in ("create", "pull") and hasattr(options, "parm_svcs") and options.parm_svcs is not None:
         svcnames = options.parm_svcs.split(',')
 
     if cmd in ('svcmgr', 'svcmgr.py') and len(svcnames) == 0:
@@ -273,7 +273,7 @@ def main():
         r = node.pull_services(svcnames)
         return r
 
-    if action in ('install', 'create'):
+    if action == "create":
         try:
             node.install_service(svcnames, cf=options.param_config, template=options.param_template)
             r = 0
@@ -301,7 +301,7 @@ def main():
     else:
         subsets = []
 
-    if action in ['create', 'update', 'install']:
+    if action in ['create', 'update']:
         if action == 'update' or (action == 'create' and options.param_config is None and options.param_template is None):
             data = getattr(svcBuilder, action)(svcnames, options.resource, interactive=options.interactive, provision=options.provision)
         else:
