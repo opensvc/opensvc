@@ -143,7 +143,7 @@ class syncZfsSnap(resSync.Sync):
 
     def _status(self, verbose=False):
         for dataset in self.dataset:
-            if dataset.count("/") != 1:
+            if dataset.count("/") < 1:
                 self.status_log("misformatted dataset entry %s (expected <pool>/<ds>)" % dataset)
                 continue
             self._status_one(dataset)
