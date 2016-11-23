@@ -1847,11 +1847,17 @@ class Node(Svc, Freezer, Scheduler):
             raise ex.excError("--config and --template can't both be specified")
 
         if template is not None:
-            self.install_service_cf_from_template(svcname, template)
-        elif "://" in template:
-            self.install_service_cf_from_uri(svcname, template)
+            if "://" in template:
+                self.install_service_cf_from_uri(svcname, template)
+            elif os.path.exists(template):
+                self.install_service_cf_from_file(svcname, template)
+            else:
+                self.install_service_cf_from_template(svcname, template)
         else:
-            self.install_service_cf_from_file(svcname, template)
+            if "://" in cf:
+                self.install_service_cf_from_uri(svcname, cf)
+            else:
+                self.install_service_cf_from_file(svcname, cf)
 
         # install .dir
         d = os.path.join(rcEnv.pathetc, svcname+'.dir')
