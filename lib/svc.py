@@ -2560,6 +2560,12 @@ class Svc(Resource, Scheduler):
             if self.frozen() and not self.force:
                 self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
+
+            if action == "boot" and len([r for r in self.resources_by_id.values() if rcEnv.nodename in r.always_on]) == 0 and \
+                len(self.get_resources('hb')) > 0:
+                self.log.info("end boot action on cluster node before acquiring the action lock: no stdby resource needs activation.")
+                return 0
+
             try:
                 if action not in actions_list_allow_on_cluster:
                     self.cluster_mode_safety_net(action)
