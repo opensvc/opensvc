@@ -87,7 +87,7 @@ class syncZfsSnap(resSync.Sync):
             l = s.split('.')
             if len(l) < 2:
                 continue
-            if l[1] not in ("snap", self.name):
+            if l[0] != self.name or l[1] != "snap":
                 continue
             try:
                 ds = sv.split(".snap.")[-1]
@@ -123,7 +123,7 @@ class syncZfsSnap(resSync.Sync):
             l = s.split('.')
             if len(l) < 2:
                 continue
-            if l[1] not in ("snap", self.name):
+            if l[0] != self.name or l[1] != "snap":
                 continue
             try:
                 ds = sv.split(".snap.")[-1]
