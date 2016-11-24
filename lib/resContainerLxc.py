@@ -112,6 +112,17 @@ class Lxc(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
+    def vm_hostname(self):
+        if hasattr(self, "hostname"):
+            return self.hostname
+        try:
+            self.hostname = self.get_cf_value("lxc.utsname")
+        except:
+            self.hostname = self.name
+        if self.hostname is None:
+            self.hostname = self.name
+        return self.hostname
+
     def get_cf_value(self, param):
         self.find_cf()
         value = None
