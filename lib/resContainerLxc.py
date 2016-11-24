@@ -214,10 +214,12 @@ class Lxc(resContainer.Container):
         if not self.svc.create_pg:
             self.cleanup_cgroup()
         self.set_cpuset_clone_children()
+        self.install_cf()
         self.lxc('start')
 
     def container_stop(self):
         self.links = self.get_links()
+        self.install_cf()
         self.lxc('stop')
 
     def post_container_stop(self):
@@ -303,6 +305,26 @@ class Lxc(resContainer.Container):
             self.log.debug("lxc-info is not in PATH")
             return False
         return True
+
+    def install_cf(self):
+        cf = self.get_cf_path()
+        if cf is None:
+            self.log.debug("could not determine the config file standard hosting directory")
+            return
+        if self.cf == cf:
+            return
+        dn = os.path.dirname(cf)
+        if not os.path.isdir(dn):
+            try:
+                os.makedirs(dn)
+            except Exception as e:
+                raise ex.excError("failed to create directory %s: %s"%(dn, str(e)))
+        self.log.info("install %s as %s" % (self.cf, cf))
+        try:
+            import shutil
+            shutil.copy(self.cf, cf)
+        except Exception as e:
+            raise ex.excError(str(e))
 
     def get_cf_path(self):
         path = which('lxc-info')
