@@ -50,26 +50,6 @@ class Lxc(resContainer.Container):
         if cf:
             l.append(cf)
 
-        # and the config file actually used by opensvc
-        # (might be the same)
-        try:
-            self.find_cf()
-        except:
-            return l
-        if self.cf is None:
-            return l
-
-        if self.cf not in l:
-            l.append(self.cf)
-
-        # and the eventual fstab file referenced from the main config
-        try:
-            fstab = self.get_cf_value("lxc.mount")
-            if os.path.exists(fstab):
-                l.append(fstab)
-        except:
-            pass
-
         return l
 
     def rcp_from(self, src, dst):
