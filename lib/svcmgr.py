@@ -354,10 +354,15 @@ def main():
     if not options.daemon and (action.startswith("stop") or action in ("shutdown", "unprovision", "switch")):
         try:
             import subprocess
+            import signal
             p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep, preexec_fn=os.setsid)
             p.wait()
             err = p.returncode
-        except (ex.excSignal, KeyboardInterrupt) as e:
+        except KeyboardInterrupt as e:
+            os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+            print("kill detached process")
+            err = 1
+        except ex.excSignal as e:
             print("the action, detached as pid %d, will continue executing" % p.pid)
             err = 1
         except Exception as e:
