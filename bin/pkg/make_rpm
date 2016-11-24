@@ -47,7 +47,7 @@ $(echo ${DESCRIPTION}|fold -s)
 %{_mandir}/man1/svcmgr.1.gz
 %{_mandir}/man1/nodemgr.1.gz
 %config(noreplace) %{_sysconfdir}/opensvc
-%config(noreplace) %{_sysconfdir}/bash_completion.d
+%{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc
 %{_datadir}/opensvc/lib
 %attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
