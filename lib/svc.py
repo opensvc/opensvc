@@ -2559,12 +2559,12 @@ class Svc(Resource, Scheduler):
             raise ex.excError()
         self.log.info("send %s to %s" % (self.cf, r.name))
 
-        cmd = ['install', '--config', encap_cf]
+        cmd = ['create', '--config', encap_cf]
         out, err, ret = self._encap_cmd(cmd, container=r)
         if ret != 0:
-            self.log.error("failed to install %s slave service" % r.name)
+            self.log.error("failed to create %s slave service" % r.name)
             raise ex.excError()
-        self.log.info("install %s slave service" % r.name)
+        self.log.info("create %s slave service" % r.name)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
