@@ -354,7 +354,7 @@ def main():
     if not options.daemon and (action.startswith("stop") or action in ("shutdown", "unprovision", "switch")):
         try:
             import subprocess
-            p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep, preexec_fn=os.setpgrp)
+            p = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"], stdout=None, stderr=None, stdin=None, close_fds=True, cwd=os.sep, preexec_fn=os.setsid)
             p.wait()
             err = p.returncode
         except (ex.excSignal, KeyboardInterrupt) as e:
