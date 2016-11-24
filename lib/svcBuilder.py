@@ -127,17 +127,15 @@ def _handle_expressions(s):
 
 def handle_references(svc, conf, s, scope=False, impersonate=None):
     key = (s, scope, impersonate)
-    if hasattr(svc, "ref_cache") and key in svc.ref_cache:
+    if hasattr(svc, "ref_cache") and svc.ref_cache is not None and key in svc.ref_cache:
         return svc.ref_cache[key]
     try:
         val = _handle_references(svc, conf, s, scope=scope, impersonate=impersonate)
         val = _handle_expressions(val)
         val = _handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
     except Exception as e:
-        svc.log.error("%s: reference evaluation failed: %s" %(s, str(e)))
-        svc.save_exc()
-        return s
-    if hasattr(svc, "ref_cache"):
+        raise ex.excError("%s: reference evaluation failed: %s" %(s, str(e)))
+    if hasattr(svc, "ref_cache") and svc.ref_cache is not None:
         svc.ref_cache[key] = val
     return val
 
@@ -169,17 +167,6 @@ def conf_get_val_unscoped(svc, conf, s, o):
     raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
 
 def conf_get_val_scoped(svc, conf, s, o, impersonate=None):
-    if type(svc) != dict:
-        d = {
-         'nodes': svc.nodes,
-         'drpnodes': svc.drpnodes,
-         'encapnodes': svc.encapnodes,
-         'flex_primary': svc.flex_primary,
-         'drp_flex_primary': svc.drp_flex_primary,
-        }
-    else:
-        d = svc
-
     if impersonate is None:
         nodename = rcEnv.nodename
     else:
@@ -188,19 +175,19 @@ def conf_get_val_scoped(svc, conf, s, o, impersonate=None):
     if conf.has_option(s, o+"@"+nodename):
         val = conf.get(s, o+"@"+nodename)
     elif conf.has_option(s, o+"@nodes") and \
-         nodename in d['nodes']:
+         nodename in svc.nodes:
         val = conf.get(s, o+"@nodes")
     elif conf.has_option(s, o+"@drpnodes") and \
-         nodename in d['drpnodes']:
+         nodename in svc.drpnodes:
         val = conf.get(s, o+"@drpnodes")
     elif conf.has_option(s, o+"@encapnodes") and \
-         nodename in d['encapnodes']:
+         nodename in svc.encapnodes:
         val = conf.get(s, o+"@encapnodes")
     elif conf.has_option(s, o+"@flex_primary") and \
-         nodename == d['flex_primary']:
+         nodename == svc.flex_primary:
         val = conf.get(s, o+"@flex_primary")
     elif conf.has_option(s, o+"@drp_flex_primary") and \
-         nodename == d['drp_flex_primary']:
+         nodename == svc.drp_flex_primary:
         val = conf.get(s, o+"@drp_flex_primary")
     elif conf.has_option(s, o):
         try:
@@ -3495,7 +3482,8 @@ def build(name, minimal=False, svcconf=None):
         if "mode" in defaults:
             svcmode = conf_get_string_scope({}, conf, 'DEFAULT', "mode")
 
-        d_nodes = {}
+        d_nodes = Storage()
+        d_nodes.svcname = name
 
         if "encapnodes" in defaults:
             encapnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split() if n != ""]

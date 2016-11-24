@@ -15,8 +15,14 @@ import socket
 import uuid
 import time
 
-class Storage(object):
-    pass
+class Storage(dict):
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+    __getitem__ = dict.get
+    __getattr__ = dict.get
+    __repr__ = lambda self: '<Storage %s>' % dict.__repr__(self)
+    __getstate__ = lambda self: None
+    __copy__ = lambda self: Storage(self)
 
 def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o = Storage()
