@@ -124,7 +124,7 @@ class rcEnv:
     ez_last_chance == True:
         check_up_script_gen.sh will try a ping + RSH other node before stonith
     ez_startapp_bg == True:
-        startapp in background if EZ-HA take-over is succesful
+        startapp in background if EZ-HA take-over is successful
     """
     ez_path = "/usr/local/cluster"
     ez_path_services = ez_path + "/conf/services"

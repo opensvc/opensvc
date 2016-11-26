@@ -142,7 +142,7 @@ class Container(Res.Resource):
 
     def abort_start_ping(self):
         if len(self.name) == 0:
-            # docker container for exemple
+            # docker container for example
             return False
         try:
             self.getaddr()

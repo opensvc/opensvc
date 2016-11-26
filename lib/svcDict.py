@@ -1360,7 +1360,7 @@ class KeywordComment(Keyword):
                   section="DEFAULT",
                   keyword="comment",
                   order=25,
-                  text="Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usualy responsible for."
+                  text="Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usually responsible for."
                 )
 
 class KeywordScsireserv(Keyword):
@@ -1395,7 +1395,7 @@ class KeywordSyncInterval(KeywordInteger):
                   keyword="sync_interval",
                   order=26,
                   default=121,
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occured less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
                 )
 
 class KeywordSyncMaxDelay(KeywordInteger):
@@ -3286,7 +3286,7 @@ class KeywordSyncDcsckptManager(Keyword):
                   keyword="manager",
                   rtype="dcsckpt",
                   required=True,
-                  text="The DataCore manager name runing a ssh daemon, as set in the auth.conf section title."
+                  text="The DataCore manager name running a ssh daemon, as set in the auth.conf section title."
                 )
 
 class KeywordSyncDcsckptPairs(Keyword):
@@ -3319,7 +3319,7 @@ class KeywordSyncDcssnapManager(Keyword):
                   keyword="manager",
                   rtype="dcssnap",
                   required=True,
-                  text="The DataCore manager name runing a ssh daemon, as set in the auth.conf section title."
+                  text="The DataCore manager name running a ssh daemon, as set in the auth.conf section title."
                 )
 
 class KeywordSyncDcssnapSnapname(Keyword):
@@ -3976,7 +3976,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
-                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are ommited, 'up,stdby up' is used as the default expected states." % action
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
                 )
 
 

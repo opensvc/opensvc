@@ -572,7 +572,7 @@ class Svc(Resource, Scheduler):
             so that the start and stop action happen in a predictible order.
             Sort alphanumerically on reseourceset type.
 
-            Exemple, on start:
+            Example, on start:
              app
              app.1
              app.2

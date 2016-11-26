@@ -440,7 +440,7 @@ class syncSymSrdfS(resSync.Sync):
                 elif self.is_partitioned_state():
                     self.log.warning("symrdf dg %s is RDF1 and partitioned."%self.symdg)
                 elif self.is_failedover_state():
-                    raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie loosing R2 data), or syncfailback (ie loosing R1 data)"%self.symdg)
+                    raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie losing R2 data), or syncfailback (ie losing R1 data)"%self.symdg)
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF1 and suspended."%self.symdg)
                 elif self.is_split_state():

@@ -118,7 +118,7 @@ class Dataset(object):
 
     def setprop(self, propname, propval, err_to_warn=False, err_to_info=False):
         """set Dataset property value
-        Return True is sucess else return False
+        Return True is success else return False
         """
         cmd = [ 'zfs', 'set', propname + '='+ propval, self.name ]
         (retcode, stdout, stderr) = vcall(cmd, log=self.log,
