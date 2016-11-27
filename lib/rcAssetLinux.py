@@ -11,13 +11,10 @@ def is_container():
         lines = f.readlines()
         if len(lines) == 0:
             return False
-        if ':' not in lines[0]:
-            return False
-        l = lines[0].split(':')
-        if l[-1].strip('\n') != '/':
+        lines = [line for line in lines if line.strip().endswith(":/")]
+        if len(lines) == 0:
             return True
     return False
-
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
