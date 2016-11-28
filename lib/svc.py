@@ -3409,8 +3409,11 @@ class Svc(Resource, Scheduler):
                     del argv[i]
                     argv[i:i] = ["-u", self.svcname+"@"+rcEnv.nodename]
                     argv[i:i] = ["-p", self.node.config.get("node", "uuid")]
-                    if len(containers) > 0 and containers[0].docker_min_version("1.11"):
-                        argv[i:i] = ["-m", ""]
+                    if len(containers) > 0:
+                        if containers[0].docker_min_version("1.12"):
+                            pass
+                        elif containers[0].docker_min_version("1.11"):
+                            argv[i:i] = ["--email", ""]
             return argv
 
         for r in containers:
