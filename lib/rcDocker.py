@@ -257,9 +257,18 @@ class DockerLib(object):
             self.log.warning("can't read %s. skip docker daemon kill" % self.docker_pid_file)
             return
 
-        self.log.info("no more container handled by docker daemon. shut it down")
+        self.log.info("no more container handled by docker daemon (pid %d). shut it down" % pid)
         import signal
+        import time
+        tries = 10
         os.kill(pid, signal.SIGTERM)
+        while self.docker_running() and tries > 0:
+            tries -= 1
+            time.sleep(1)
+        if tries == 0:
+            self.log.warning("dockerd did not stop properly. send a kill signal")
+            os.kill(pid, signal.SIGKILL)
+   
 
     def dockerd_cmd(self):
         if self.docker_min_version("1.8"):
