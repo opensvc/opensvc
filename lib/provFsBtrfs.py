@@ -28,9 +28,11 @@ class ProvisioningFs(provFs.ProvisioningFs):
         ret, out, err = self.r.call(cmd, errlog=False)
         if ret == 0 and len(out.strip()) > 0:
             label = out.strip()
+            raw_label = out.strip().replace(self.r.svc.svcname, "{svcname}")
             relabel = False
         else:
             label = self.r.svc.svcname + '.' + self.r.rid.replace("#", ".")
+            raw_label = '{svcname}.' + self.r.rid.replace("#", ".")
             relabel = True
 
         if relabel:
@@ -40,7 +42,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
                 self.cleanup(mnt)
                 raise ex.excError
 
-        self.r.svc.config.set(self.r.rid, "dev", "LABEL="+label)
+        self.r.svc.config.set(self.r.rid, "dev", "LABEL="+raw_label)
         self.r.svc.write_config()
         self.r.device = "LABEL="+label
         self.wait_label(label)
