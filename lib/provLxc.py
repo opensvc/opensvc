@@ -253,7 +253,6 @@ iface %(ipdev)s inet static
         self.setup_authkeys()
         self.setup_ips()
 
-        self.remove_keywords(["template"])
         self.r.start()
         self.r.log.info("provisioned")
         return True

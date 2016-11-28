@@ -65,7 +65,6 @@ class ProvisioningFs(Provisioning):
         else:
             self.r.log.info("already provisioned")
 
-        self.remove_keywords(["size", "vg"])
 
     def provisioner(self):
         self.provisioner_fs()

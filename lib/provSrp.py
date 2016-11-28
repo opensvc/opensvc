@@ -100,6 +100,5 @@ class ProvisioningSrp(Provisioning):
     def provisioner(self):
         self.add_srp()
         self.r.start()
-        self.remove_keywords(["ip", "prm_cores"])
         self.r.log.info("provisioned")
         return True

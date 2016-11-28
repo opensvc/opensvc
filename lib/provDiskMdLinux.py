@@ -11,7 +11,6 @@ class ProvisioningDisk(Provisioning):
 
     def provisioner(self):
         self.provisioner_md()
-        self.remove_keywords(["level", "devs", "spares", "chunk", "layout"])
         self.r.log.info("provisioned")
         self.r.start()
         return True
