@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-11\-22
+.TH NODEMGR 1 2016\-11\-29
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -10,323 +10,761 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 
 \fRCOLLECTOR MANAGEMENT\fP
 
-  \fBnodemgr collector ack action\fP
-  \fB               \fP  acknowledge an action error on the node. an acknowlegment
-  \fB               \fP  can be completed by --author (defaults to root@nodename)
-  \fB               \fP  and --comment
+.RE
+\fBnodemgr collector ack action\fP
+.RS
+.RE
+\fB               \fP  
+..RSacknowledge an action error on the node. an acknowlegment
+.RE
+\fB               \fP  
+..RScan be completed by --author (defaults to root@nodename)
+.RE
+\fB               \fP  
+..RSand --comment
 
-  \fBnodemgr collector alerts\fP
-  \fB               \fP  display node alerts
+.RE
+\fBnodemgr collector alerts\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay node alerts
 
-  \fBnodemgr collector asset\fP
-  \fB               \fP  display asset information known to the collector
+.RE
+\fBnodemgr collector asset\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay asset information known to the collector
 
-  \fBnodemgr collector checks\fP
-  \fB               \fP  display node checks
+.RE
+\fBnodemgr collector checks\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay node checks
 
-  \fBnodemgr collector cli\fP
-  \fB               \fP  open a Command Line Interface to the collector rest API.
-  \fB               \fP  The CLI offers autocompletion of paths and arguments,
-  \fB               \fP  piping JSON data from files. This command accepts the
-  \fB               \fP  --user, --password, --api, --insecure and --config
-  \fB               \fP  parameters. If executed as root, the collector is logged in
-  \fB               \fP  with the node credentials.
+.RE
+\fBnodemgr collector cli\fP
+.RS
+.RE
+\fB               \fP  
+..RSopen a Command Line Interface to the collector rest API.
+.RE
+\fB               \fP  
+..RSThe CLI offers autocompletion of paths and arguments,
+.RE
+\fB               \fP  
+..RSpiping JSON data from files. This command accepts the
+.RE
+\fB               \fP  
+..RS--user, --password, --api, --insecure and --config
+.RE
+\fB               \fP  
+..RSparameters. If executed as root, the collector is logged in
+.RE
+\fB               \fP  
+..RSwith the node credentials.
 
-  \fBnodemgr collector create tag\fP
-  \fB               \fP  create a new tag with name specified by --tag
+.RE
+\fBnodemgr collector create tag\fP
+.RS
+.RE
+\fB               \fP  
+..RScreate a new tag with name specified by --tag
 
-  \fBnodemgr collector disks\fP
-  \fB               \fP  display node disks
+.RE
+\fBnodemgr collector disks\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay node disks
 
-  \fBnodemgr collector events\fP
-  \fB               \fP  display node events during the period specified by
-  \fB               \fP  --begin/--end. --end defaults to now. --begin defaults to 7
-  \fB               \fP  days ago.
+.RE
+\fBnodemgr collector events\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay node events during the period specified by
+.RE
+\fB               \fP  
+..RS--begin/--end. --end defaults to now. --begin defaults to 7
+.RE
+\fB               \fP  
+..RSdays ago.
 
-  \fBnodemgr collector list actions\fP
-  \fB               \fP  list actions on the node, whatever the service, during the
-  \fB               \fP  period specified by --begin/--end. --end defaults to now.
-  \fB               \fP  --begin defaults to 7 days ago
+.RE
+\fBnodemgr collector list actions\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist actions on the node, whatever the service, during the
+.RE
+\fB               \fP  
+..RSperiod specified by --begin/--end. --end defaults to now.
+.RE
+\fB               \fP  
+..RS--begin defaults to 7 days ago
 
-  \fBnodemgr collector list filtersets\fP
-  \fB               \fP  show the list of filtersets available on the collector. if
-  \fB               \fP  specified, --filterset <pattern> limits the resulset to
-  \fB               \fP  filtersets matching <pattern>
+.RE
+\fBnodemgr collector list filtersets\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow the list of filtersets available on the collector. if
+.RE
+\fB               \fP  
+..RSspecified, --filterset <pattern> limits the resulset to
+.RE
+\fB               \fP  
+..RSfiltersets matching <pattern>
 
-  \fBnodemgr collector list nodes\fP
-  \fB               \fP  show the list of nodes matching the filterset pointed by
-  \fB               \fP  --filterset
+.RE
+\fBnodemgr collector list nodes\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow the list of nodes matching the filterset pointed by
+.RE
+\fB               \fP  
+..RS--filterset
 
-  \fBnodemgr collector list services\fP
-  \fB               \fP  show the list of services matching the filterset pointed by
-  \fB               \fP  --filterset
+.RE
+\fBnodemgr collector list services\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow the list of services matching the filterset pointed by
+.RE
+\fB               \fP  
+..RS--filterset
 
-  \fBnodemgr collector list tags\fP
-  \fB               \fP  list all available tags. use --like to filter the output.
+.RE
+\fBnodemgr collector list tags\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist all available tags. use --like to filter the output.
 
-  \fBnodemgr collector networks\fP
-  \fB               \fP  display network information known to the collector for each
-  \fB               \fP  node ip
+.RE
+\fBnodemgr collector networks\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay network information known to the collector for each
+.RE
+\fB               \fP  
+..RSnode ip
 
-  \fBnodemgr collector search\fP
-  \fB               \fP  report the collector objects matching --like [<type>:
-  \fB               \fP  }<substring>, where <type> is the object type acronym as
-  \fB               \fP  shown in the collector search widget.
+.RE
+\fBnodemgr collector search\fP
+.RS
+.RE
+\fB               \fP  
+..RSreport the collector objects matching --like [<type>:
+.RE
+\fB               \fP  
+..RS}<substring>, where <type> is the object type acronym as
+.RE
+\fB               \fP  
+..RSshown in the collector search widget.
 
-  \fBnodemgr collector show actions\fP
-  \fB               \fP  show actions detailled log. a single action is specified by
-  \fB               \fP  --id. a range is specified by --begin/--end dates. --end
-  \fB               \fP  defaults to now. --begin defaults to 7 days ago
+.RE
+\fBnodemgr collector show actions\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow actions detailed log. a single action is specified by
+.RE
+\fB               \fP  
+..RS--id. a range is specified by --begin/--end dates. --end
+.RE
+\fB               \fP  
+..RSdefaults to now. --begin defaults to 7 days ago
 
-  \fBnodemgr collector show tags\fP
-  \fB               \fP  list all node tags
+.RE
+\fBnodemgr collector show tags\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist all node tags
 
-  \fBnodemgr collector status\fP
-  \fB               \fP  display node services status according to the collector
+.RE
+\fBnodemgr collector status\fP
+.RS
+.RE
+\fB               \fP  
+..RSdisplay node services status according to the collector
 
-  \fBnodemgr collector tag\fP
-  \fB               \fP  set a node tag (pointed by --tag)
+.RE
+\fBnodemgr collector tag\fP
+.RS
+.RE
+\fB               \fP  
+..RSset a node tag (pointed by --tag)
 
-  \fBnodemgr collector untag\fP
-  \fB               \fP  unset a node tag (pointed by --tag)
+.RE
+\fBnodemgr collector untag\fP
+.RS
+.RE
+\fB               \fP  
+..RSunset a node tag (pointed by --tag)
 
 \fRCOMPLIANCE\fP
 
-  \fBnodemgr compliance attach\fP
-  \fB               \fP  attach ruleset specified by --ruleset and/or moduleset
-  \fB               \fP  specified by --moduleset for this node
+.RE
+\fBnodemgr compliance attach\fP
+.RS
+.RE
+\fB               \fP  
+..RSattach ruleset specified by --ruleset and/or moduleset
+.RE
+\fB               \fP  
+..RSspecified by --moduleset for this node
 
-  \fBnodemgr compliance attach moduleset\fP
-  \fB               \fP  attach moduleset specified by --moduleset for this node
+.RE
+\fBnodemgr compliance attach moduleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSattach moduleset specified by --moduleset for this node
 
-  \fBnodemgr compliance attach ruleset\fP
-  \fB               \fP  attach ruleset specified by --ruleset for this node
+.RE
+\fBnodemgr compliance attach ruleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSattach ruleset specified by --ruleset for this node
 
-  \fBnodemgr compliance auto\fP
-  \fB               \fP  run compliance checks or fix, according to the autofix
-  \fB               \fP  property of each module. --ruleset <md5> instruct the
-  \fB               \fP  collector to provide an historical ruleset.
+.RE
+\fBnodemgr compliance auto\fP
+.RS
+.RE
+\fB               \fP  
+..RSrun compliance checks or fix, according to the autofix
+.RE
+\fB               \fP  
+..RSproperty of each module. --ruleset <md5> instruct the
+.RE
+\fB               \fP  
+..RScollector to provide an historical ruleset.
 
-  \fBnodemgr compliance check\fP
-  \fB               \fP  run compliance checks. --ruleset <md5> instruct the
-  \fB               \fP  collector to provide an historical ruleset.
+.RE
+\fBnodemgr compliance check\fP
+.RS
+.RE
+\fB               \fP  
+..RSrun compliance checks. --ruleset <md5> instruct the
+.RE
+\fB               \fP  
+..RScollector to provide an historical ruleset.
 
-  \fBnodemgr compliance detach\fP
-  \fB               \fP  detach ruleset specified by --ruleset and/or moduleset
-  \fB               \fP  specified by --moduleset for this node
+.RE
+\fBnodemgr compliance detach\fP
+.RS
+.RE
+\fB               \fP  
+..RSdetach ruleset specified by --ruleset and/or moduleset
+.RE
+\fB               \fP  
+..RSspecified by --moduleset for this node
 
-  \fBnodemgr compliance detach moduleset\fP
-  \fB               \fP  detach moduleset specified by --moduleset for this node
+.RE
+\fBnodemgr compliance detach moduleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSdetach moduleset specified by --moduleset for this node
 
-  \fBnodemgr compliance detach ruleset\fP
-  \fB               \fP  detach ruleset specified by --ruleset for this node
+.RE
+\fBnodemgr compliance detach ruleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSdetach ruleset specified by --ruleset for this node
 
-  \fBnodemgr compliance env\fP
-  \fB               \fP  show the compliance modules environment variables.
+.RE
+\fBnodemgr compliance env\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow the compliance modules environment variables.
 
-  \fBnodemgr compliance fix\fP
-  \fB               \fP  run compliance fixes. --ruleset <md5> instruct the
-  \fB               \fP  collector to provide an historical ruleset.
+.RE
+\fBnodemgr compliance fix\fP
+.RS
+.RE
+\fB               \fP  
+..RSrun compliance fixes. --ruleset <md5> instruct the
+.RE
+\fB               \fP  
+..RScollector to provide an historical ruleset.
 
-  \fBnodemgr compliance fixable\fP
-  \fB               \fP  verify compliance fixes prerequisites. --ruleset <md5>
-  \fB               \fP  instruct the collector to provide an historical ruleset.
+.RE
+\fBnodemgr compliance fixable\fP
+.RS
+.RE
+\fB               \fP  
+..RSverify compliance fixes prerequisites. --ruleset <md5>
+.RE
+\fB               \fP  
+..RSinstruct the collector to provide an historical ruleset.
 
-  \fBnodemgr compliance list module\fP
-  \fB               \fP  list compliance modules available on this node
+.RE
+\fBnodemgr compliance list module\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist compliance modules available on this node
 
-  \fBnodemgr compliance list moduleset\fP
-  \fB               \fP  list available compliance modulesets. --moduleset f% limit
-  \fB               \fP  the scope to modulesets matching the f% pattern.
+.RE
+\fBnodemgr compliance list moduleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist available compliance modulesets. --moduleset f% limit
+.RE
+\fB               \fP  
+..RSthe scope to modulesets matching the f% pattern.
 
-  \fBnodemgr compliance list ruleset\fP
-  \fB               \fP  list available compliance rulesets. --ruleset f% limit the
-  \fB               \fP  scope to rulesets matching the f% pattern.
+.RE
+\fBnodemgr compliance list ruleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSlist available compliance rulesets. --ruleset f% limit the
+.RE
+\fB               \fP  
+..RSscope to rulesets matching the f% pattern.
 
-  \fBnodemgr compliance show moduleset\fP
-  \fB               \fP  show compliance rules applying to this node
+.RE
+\fBnodemgr compliance show moduleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow compliance rules applying to this node
 
-  \fBnodemgr compliance show ruleset\fP
-  \fB               \fP  show compliance rules applying to this node
+.RE
+\fBnodemgr compliance show ruleset\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow compliance rules applying to this node
 
-  \fBnodemgr compliance show status\fP
-  \fB               \fP  show compliance modules status
+.RE
+\fBnodemgr compliance show status\fP
+.RS
+.RE
+\fB               \fP  
+..RSshow compliance modules status
 
 \fRMISC\fP
 
-  \fBnodemgr prkey  \fP  show persistent reservation key of this node
+.RE
+\fBnodemgr prkey  \fP  
+..RSshow persistent reservation key of this node
 
 \fRNODE ACTIONS\fP
 
-  \fBnodemgr collect stats\fP
-  \fB               \fP  write in local files metrics not found in the standard
-  \fB               \fP  metrics collector. these files will be fed to the collector
-  \fB               \fP  by the 'pushstat' action.
+.RE
+\fBnodemgr collect stats\fP
+.RS
+.RE
+\fB               \fP  
+..RSwrite in local files metrics not found in the standard
+.RE
+\fB               \fP  
+..RSmetrics collector. these files will be fed to the collector
+.RE
+\fB               \fP  
+..RSby the 'pushstat' action.
 
-  \fBnodemgr dequeue actions\fP
-  \fB               \fP  dequeue and execute actions from the collector's action
-  \fB               \fP  queue for this node and its services.
+.RE
+\fBnodemgr dequeue actions\fP
+.RS
+.RE
+\fB               \fP  
+..RSdequeue and execute actions from the collector's action
+.RE
+\fB               \fP  
+..RSqueue for this node and its services.
 
-  \fBnodemgr logs   \fP  fancy display of the node logs
+.RE
+\fBnodemgr logs   \fP  
+..RSfancy display of the node logs
 
-  \fBnodemgr print schedule\fP
-  \fB               \fP  print the node tasks schedule
+.RE
+\fBnodemgr print schedule\fP
+.RS
+.RE
+\fB               \fP  
+..RSprint the node tasks schedule
 
-  \fBnodemgr provision\fP
-  \fB               \fP  provision the resources described in --resource arguments
+.RE
+\fBnodemgr provision\fP
+.RS
+.RE
+\fB               \fP  
+..RSprovision the resources described in --resource arguments
 
-  \fBnodemgr reboot \fP  reboot the node
+.RE
+\fBnodemgr reboot \fP  
+..RSreboot the node
 
-  \fBnodemgr rotate root pw\fP
-  \fB               \fP  set a new root password and store it in the collector
+.RE
+\fBnodemgr rotate root pw\fP
+.RS
+.RE
+\fB               \fP  
+..RSset a new root password and store it in the collector
 
-  \fBnodemgr scanscsi\fP
-  \fB               \fP  scan the scsi hosts in search of new disks
+.RE
+\fBnodemgr scanscsi\fP
+.RS
+.RE
+\fB               \fP  
+..RSscan the scsi hosts in search of new disks
 
-  \fBnodemgr schedule reboot\fP
-  \fB               \fP  mark the node for reboot at the next allowed period. the
-  \fB               \fP  allowed period is defined by a "reboot" section in
-  \fB               \fP  node.conf. the created flag file is
-  \fB               \fP  /opt/opensvc/var/REBOOT_FLAG
+.RE
+\fBnodemgr schedule reboot\fP
+.RS
+.RE
+\fB               \fP  
+..RSmark the node for reboot at the next allowed period. the
+.RE
+\fB               \fP  
+..RSallowed period is defined by a "reboot" section in
+.RE
+\fB               \fP  
+..RSnode.conf. the created flag file is
+.RE
+\fB               \fP  
+..RS/opt/opensvc/var/REBOOT_FLAG
 
-  \fBnodemgr schedule reboot status\fP
-  \fB               \fP  tell if the node is scheduled for reboot
+.RE
+\fBnodemgr schedule reboot status\fP
+.RS
+.RE
+\fB               \fP  
+..RStell if the node is scheduled for reboot
 
-  \fBnodemgr scheduler\fP
-  \fB               \fP  run the node task scheduler
+.RE
+\fBnodemgr scheduler\fP
+.RS
+.RE
+\fB               \fP  
+..RSrun the node task scheduler
 
-  \fBnodemgr schedulers\fP
-  \fB               \fP  execute a run of the node and services schedulers. this
-  \fB               \fP  action is installed in the system scheduler
+.RE
+\fBnodemgr schedulers\fP
+.RS
+.RE
+\fB               \fP  
+..RSexecute a run of the node and services schedulers. this
+.RE
+\fB               \fP  
+..RSaction is installed in the system scheduler
 
-  \fBnodemgr shutdown\fP
-  \fB               \fP  shutdown the node to powered off state
+.RE
+\fBnodemgr shutdown\fP
+.RS
+.RE
+\fB               \fP  
+..RSshutdown the node to powered off state
 
-  \fBnodemgr unschedule reboot\fP
-  \fB               \fP  unmark the node for reboot at the next allowed period. the
-  \fB               \fP  removed flag file is /opt/opensvc/var/REBOOT_FLAG
+.RE
+\fBnodemgr unschedule reboot\fP
+.RS
+.RE
+\fB               \fP  
+..RSunmark the node for reboot at the next allowed period. the
+.RE
+\fB               \fP  
+..RSremoved flag file is /opt/opensvc/var/REBOOT_FLAG
 
-  \fBnodemgr updatecomp\fP
-  \fB               \fP  upgrade the opensvc compliance modules. the modules must be
-  \fB               \fP  available as a tarball behind the node.repo/compliance url.
+.RE
+\fBnodemgr updatecomp\fP
+.RS
+.RE
+\fB               \fP  
+..RSupgrade the opensvc compliance modules. the modules must be
+.RE
+\fB               \fP  
+..RSavailable as a tarball behind the node.repo/compliance url.
 
-  \fBnodemgr updatepkg\fP
-  \fB               \fP  upgrade the opensvc agent version. the packages must be
-  \fB               \fP  available behind the node.repo/packages url.
+.RE
+\fBnodemgr updatepkg\fP
+.RS
+.RE
+\fB               \fP  
+..RSupgrade the opensvc agent version. the packages must be
+.RE
+\fB               \fP  
+..RSavailable behind the node.repo/packages url.
 
-  \fBnodemgr wol    \fP  forge and send udp wake on lan packet to mac address
-  \fB               \fP  specified by --mac and --broadcast arguments
+.RE
+\fBnodemgr wol    \fP  
+..RSforge and send udp wake on lan packet to mac address
+.RE
+\fB               \fP  
+..RSspecified by --mac and --broadcast arguments
 
 \fRNODE CONFIGURATION\fP
 
-  \fBnodemgr edit authconfig\fP
-  \fB               \fP  open the auth.conf configuration file with the preferred
-  \fB               \fP  editor
+.RE
+\fBnodemgr edit authconfig\fP
+.RS
+.RE
+\fB               \fP  
+..RSopen the auth.conf configuration file with the preferred
+.RE
+\fB               \fP  
+..RSeditor
 
-  \fBnodemgr edit config\fP
-  \fB               \fP  open the node.conf configuration file with the preferred
-  \fB               \fP  editor
+.RE
+\fBnodemgr edit config\fP
+.RS
+.RE
+\fB               \fP  
+..RSopen the node.conf configuration file with the preferred
+.RE
+\fB               \fP  
+..RSeditor
 
-  \fBnodemgr get    \fP  get the value of the node configuration parameter pointed
-  \fB               \fP  by --param
+.RE
+\fBnodemgr get    \fP  
+..RSget the value of the node configuration parameter pointed
+.RE
+\fB               \fP  
+..RSby --param
 
-  \fBnodemgr print authconfig\fP
-  \fB               \fP  open the node.conf configuration file with the preferred
-  \fB               \fP  editor
+.RE
+\fBnodemgr print authconfig\fP
+.RS
+.RE
+\fB               \fP  
+..RSopen the node.conf configuration file with the preferred
+.RE
+\fB               \fP  
+..RSeditor
 
-  \fBnodemgr print config\fP
-  \fB               \fP  open the node.conf configuration file with the preferred
-  \fB               \fP  editor
+.RE
+\fBnodemgr print config\fP
+.RS
+.RE
+\fB               \fP  
+..RSopen the node.conf configuration file with the preferred
+.RE
+\fB               \fP  
+..RSeditor
 
-  \fBnodemgr register\fP
-  \fB               \fP  obtain a registration number from the collector, used to
-  \fB               \fP  authenticate the node
+.RE
+\fBnodemgr register\fP
+.RS
+.RE
+\fB               \fP  
+..RSobtain a registration number from the collector, used to
+.RE
+\fB               \fP  
+..RSauthenticate the node
 
-  \fBnodemgr set    \fP  set a node configuration parameter (pointed by --param)
-  \fB               \fP  value (pointed by --value)
+.RE
+\fBnodemgr set    \fP  
+..RSset a node configuration parameter (pointed by --param)
+.RE
+\fB               \fP  
+..RSvalue (pointed by --value)
 
-  \fBnodemgr unset  \fP  unset a node configuration parameter (pointed by --param)
+.RE
+\fBnodemgr unset  \fP  
+..RSunset a node configuration parameter (pointed by --param)
 
 \fRPUSH DATA TO THE COLLECTOR\fP
 
-  \fBnodemgr checks \fP  run node sanity checks, push results to collector
+.RE
+\fBnodemgr checks \fP  
+..RSrun node sanity checks, push results to collector
 
-  \fBnodemgr pushasset\fP
-  \fB               \fP  push asset information to collector
+.RE
+\fBnodemgr pushasset\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush asset information to collector
 
-  \fBnodemgr pushbrocade\fP
-  \fB               \fP  push Brocade switch configuration to collector
+.RE
+\fBnodemgr pushbrocade\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush Brocade switch configuration to collector
 
-  \fBnodemgr pushcentera\fP
-  \fB               \fP  push EMC Centera configuration to collector
+.RE
+\fBnodemgr pushcentera\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush EMC Centera configuration to collector
 
-  \fBnodemgr pushdcs\fP
-  \fB               \fP  push Datacore configuration to collector
+.RE
+\fBnodemgr pushdcs\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush Datacore configuration to collector
 
-  \fBnodemgr pushdisks\fP
-  \fB               \fP  push disks usage information to collector
+.RE
+\fBnodemgr pushdisks\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush disks usage information to collector
 
-  \fBnodemgr pushemcvnx\fP
-  \fB               \fP  push EMC CX/VNX configuration to collector
+.RE
+\fBnodemgr pushemcvnx\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush EMC CX/VNX configuration to collector
 
-  \fBnodemgr pusheva\fP
-  \fB               \fP  push HP EVA configuration to collector
+.RE
+\fBnodemgr pusheva\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush HP EVA configuration to collector
 
-  \fBnodemgr pushfreenas\fP
-  \fB               \fP  push FreeNAS configuration to collector
+.RE
+\fBnodemgr pushfreenas\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush FreeNAS configuration to collector
 
-  \fBnodemgr pushgcedisks\fP
-  \fB               \fP  push Google Compute Engine disks configuration to collector
+.RE
+\fBnodemgr pushgcedisks\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush Google Compute Engine disks configuration to collector
 
-  \fBnodemgr pushhds\fP
-  \fB               \fP  push HDS configuration to collector
+.RE
+\fBnodemgr pushhds\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush HDS configuration to collector
 
-  \fBnodemgr pushhp3par\fP
-  \fB               \fP  push HP 3par configuration to collector
+.RE
+\fBnodemgr pushhp3par\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush HP 3par configuration to collector
 
-  \fBnodemgr pushibmds\fP
-  \fB               \fP  push IBM DS configuration to collector
+.RE
+\fBnodemgr pushibmds\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush IBM DS configuration to collector
 
-  \fBnodemgr pushibmsvc\fP
-  \fB               \fP  push IBM SVC configuration to collector
+.RE
+\fBnodemgr pushibmsvc\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush IBM SVC configuration to collector
 
-  \fBnodemgr pushnecism\fP
-  \fB               \fP  push NEC ISM configuration to collector
+.RE
+\fBnodemgr pushnecism\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush NEC ISM configuration to collector
 
-  \fBnodemgr pushnetapp\fP
-  \fB               \fP  push Netapp configuration to collector
+.RE
+\fBnodemgr pushnetapp\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush Netapp configuration to collector
 
-  \fBnodemgr pushnsr\fP
-  \fB               \fP  push EMC Networker index to collector
+.RE
+\fBnodemgr pushnsr\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush EMC Networker index to collector
 
-  \fBnodemgr pushpatch\fP
-  \fB               \fP  push patch/version list to collector
+.RE
+\fBnodemgr pushpatch\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush patch/version list to collector
 
-  \fBnodemgr pushpkg\fP
-  \fB               \fP  push package/version list to collector
+.RE
+\fBnodemgr pushpkg\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush package/version list to collector
 
-  \fBnodemgr pushstats\fP
-  \fB               \fP  push performance metrics to collector. By default pushed
-  \fB               \fP  stats interval begins yesterday at the beginning of the
-  \fB               \fP  allowed interval and ends now. This interval can be changed
-  \fB               \fP  using --begin/--end parameters. The location where stats
-  \fB               \fP  files are looked up can be changed using --stats-dir.
+.RE
+\fBnodemgr pushstats\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush performance metrics to collector. By default pushed
+.RE
+\fB               \fP  
+..RSstats interval begins yesterday at the beginning of the
+.RE
+\fB               \fP  
+..RSallowed interval and ends now. This interval can be changed
+.RE
+\fB               \fP  
+..RSusing --begin/--end parameters. The location where stats
+.RE
+\fB               \fP  
+..RSfiles are looked up can be changed using --stats-dir.
 
-  \fBnodemgr pushsym\fP
-  \fB               \fP  push symmetrix configuration to collector
+.RE
+\fBnodemgr pushsym\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush symmetrix configuration to collector
 
-  \fBnodemgr pushvioserver\fP
-  \fB               \fP  push IBM VIO server configuration to collector
+.RE
+\fBnodemgr pushvioserver\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush IBM VIO server configuration to collector
 
-  \fBnodemgr sysreport\fP
-  \fB               \fP  push system report to the collector for archiving and diff
-  \fB               \fP  analysis
+.RE
+\fBnodemgr sysreport\fP
+.RS
+.RE
+\fB               \fP  
+..RSpush system report to the collector for archiving and diff
+.RE
+\fB               \fP  
+..RSanalysis
 
 \fRSERVICE ACTIONS\fP
 
-  \fBnodemgr discover\fP
-  \fB               \fP  discover vservices accessible from this host, cloud nodes
-  \fB               \fP  for example
+.RE
+\fBnodemgr discover\fP
+.RS
+.RE
+\fB               \fP  
+..RSdiscover vservices accessible from this host, cloud nodes
+.RE
+\fB               \fP  
+..RSfor example
 .SH OPTIONS
 .TP
 .B --version

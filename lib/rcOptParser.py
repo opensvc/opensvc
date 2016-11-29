@@ -10,6 +10,8 @@ import os
 import optparse
 from textwrap import TextWrapper
 import rcColor
+from rcUtilities import term_width
+
 
 class OptParser(object):
     """
@@ -19,19 +21,29 @@ class OptParser(object):
     * layout tweaks
     """
 
-    def __init__(self, prog="", options=None, actions=None,
+    def __init__(self, args=None, prog="", options=None, actions=None,
                  deprecated_actions=None, global_options=None,
-                 svcmgr_options=None):
+                 svcmgr_options=None, colorize=True, width=None,
+                 formatter=None, indent=6):
+        self.args = args
         self.prog = prog
         self.options = options
         self.actions = actions
         self.deprecated_actions = deprecated_actions if deprecated_actions else []
         self.global_options = global_options if global_options else []
         self.svcmgr_options = svcmgr_options if svcmgr_options else []
+        self.colorize = colorize
+        self.width = term_width() if width is None else width
+
         self.usage = self.prog + " [ OPTIONS ] COMMAND\n\n"
-        self.indent = 6
+        self.indent = indent
         self.subsequent_indent = " " * self.indent
-        self.formatter = optparse.TitledHelpFormatter(self.indent, self.indent+2)
+        if formatter is None:
+            self.formatter = optparse.TitledHelpFormatter(self.indent,
+                                                          self.indent+2,
+                                                          self.width)
+        else:
+            self.formatter = formatter
         self.formatter.format_heading = lambda x: "\n"
         self.get_parser()
 
@@ -68,16 +80,20 @@ class OptParser(object):
         dependendin on the value of the options parameter.
         """
         fancya = "svcmgr " + action.replace('_', ' ')
-        desc = "  " + rcColor.colorize(fancya, rcColor.color.BOLD)
+        if self.colorize:
+            desc = "  " + rcColor.colorize(fancya, rcColor.color.BOLD)
+        else:
+            desc = "  " + fancya
         desc += '\n\n'
-        wrapper = TextWrapper(subsequent_indent=self.subsequent_indent, width=78)
+        wrapper = TextWrapper(subsequent_indent=self.subsequent_indent, width=self.width)
         text = self.subsequent_indent + self.actions[section][action]["msg"]
         desc += wrapper.fill(text)
+        desc += '\n'
 
         if options:
             desc += self.format_options(section, action)
 
-        desc += '\n\n'
+        desc += '\n'
         return desc
 
     def format_desc(self, svc=False, action=None, options=True):
@@ -159,7 +175,7 @@ class OptParser(object):
                 continue
             option(self.parser)
 
-        options, args = self.parser.parse_args()
+        options, args = self.parser.parse_args(self.args)
         action = self.get_action_from_args(args, options)
 
         # now we know the action. parse a second time with only options
@@ -175,29 +191,12 @@ class OptParser(object):
                 continue
             option(self.parser)
 
-        options, args = self.parser.parse_args()
+        options, args = self.parser.parse_args(self.args)
         self.parser.set_usage(self.usage + self.format_desc(action=action,
                                              options=options.parm_help))
 
         if options.parm_help or action not in self.supported_actions():
             self.print_context_help(action)
-
-    def configure_parser(self, args):
-        """
-        Setup the optparse parser, configured with contextualized options.
-        """
-        action = '_'.join(args)
-
-        for option in self.global_options:
-            option(self.parser)
-        if self.svclink():
-            for option in self.svcmgr_options:
-                option(self.parser)
-        for section in self.actions:
-            if action not in self.actions[section]:
-                continue
-            for option in self.actions[section][action]["options"]:
-                option(self.parser)
 
     def print_full_help(self):
         """
@@ -207,7 +206,8 @@ class OptParser(object):
         usage = self.usage + \
                 self.format_desc()
         self.parser.set_usage(usage)
-        self.parser.error("Missing action")
+        if self.args is None:
+            self.parser.error("Missing action")
 
     def print_short_help(self):
         """
@@ -221,11 +221,13 @@ class OptParser(object):
                 "\n\nOptions:\n" + \
                 "  -h, --help       Display more actions and options\n"
         self.parser.set_usage(usage)
-        self.parser.error("Missing action")
+        if self.args is None:
+            self.parser.error("Missing action")
 
     def print_context_help(self, action):
         """
         Trigger a parser error, which displays the help message contextualized
         for the action prefix.
         """
-        self.parser.error("Invalid service action: %s" % str(action))
+        if self.args is None:
+            self.parser.error("Invalid service action: %s" % str(action))
