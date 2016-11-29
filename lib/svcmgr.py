@@ -6,12 +6,11 @@ It's the entrypoint for all OpenSVC services management ops.
 from __future__ import print_function
 import sys
 import os
-import optparse
 
 import svcBuilder
 import rcStatus
 import rcColor
-import rcOptParser
+import svcmgr_parser
 import rcExceptions as ex
 from rcUtilities import ximport
 
@@ -47,7 +46,7 @@ def get_docker_argv():
     sys.argv = sys.argv[:pos+1]
     return docker_argv
 
-def get_build_kwargs(parser, options, action):
+def get_build_kwargs(optparser, options, action):
     """
     Return the service build function keyword arguments, deduced from
     parsed command line options.
@@ -68,7 +67,7 @@ def get_build_kwargs(parser, options, action):
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None and \
        hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-        parser.error("--onlyprimary and --onlysecondary are exclusive")
+        optparser.parser.error("--onlyprimary and --onlysecondary are exclusive")
 
     if hasattr(options, "parm_primary") and options.parm_primary is not None:
         build_kwargs["onlyprimary"] = options.parm_primary
@@ -243,16 +242,16 @@ def _main(node):
     ret = 0
 
     docker_argv = get_docker_argv()
-    parser = rcOptParser.get_parser()
-    options, args = parser.parse_args()
+    optparser = svcmgr_parser.OptParser()
+    options, args = optparser.parser.parse_args()
     rcColor.use_color = options.color
     try:
         node.options.format = options.format
     except AttributeError:
         pass
 
-    action = rcOptParser.get_action_from_args(parser, args, options)
-    build_kwargs = get_build_kwargs(parser, options, action)
+    action = optparser.get_action_from_args(args, options)
+    build_kwargs = get_build_kwargs(optparser, options, action)
 
     if action not in ("create", "pull"):
         try:
