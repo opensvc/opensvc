@@ -120,18 +120,6 @@ class Collector(object):
         if d['ret'] != 0:
             raise ex.excError(d['msg'])
 
-    def collector_status(self):
-        opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
-        d = self.collector.call('collector_status', opts)
-        if d is None:
-            raise ex.excError("xmlrpc unknown failure")
-        if d['ret'] != 0:
-            raise ex.excError(d['msg'])
-
-        return d['data']
-
     def collector_networks(self):
         opts = {}
         if self.svcname is not None:

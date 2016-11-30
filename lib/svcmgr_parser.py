@@ -909,10 +909,6 @@ ACTIONS = {
                 OPT.end,
             ],
         },
-        'collector_status': {
-            'msg': 'display service status on all nodes, according to the '
-                   'collector.',
-        },
         'collector_checks': {
             'msg': 'display service checks',
         },

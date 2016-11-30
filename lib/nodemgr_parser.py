@@ -597,9 +597,6 @@ ACTIONS = {
         'collector_disks': {
             'msg': 'display node disks',
         },
-        'collector_status': {
-            'msg': 'display node services status according to the collector',
-        },
         'collector_list_actions': {
             'msg': 'list actions on the node, whatever the service, during '
                    'the period specified by --begin/--end. --end defaults to '
