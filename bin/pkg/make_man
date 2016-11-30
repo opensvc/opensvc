@@ -128,13 +128,14 @@ def do_nodemgr():
     desc = """OpenSVC agent's node management command."""
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBnodemgr\\fP program provides commands to configure and execute all the agent functions that interact with the node."""
 
-    import nodemgr
-    parser = nodemgr.parser
+    import nodemgr_parser
+    optparser = nodemgr_parser.OptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    parser = optparser.parser
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
     synopsis = parser.get_usage()
     l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
-    l += parser.format_option_help()
+    #l += parser.format_option_help()
     l += parser.formatter._write_footer()
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)

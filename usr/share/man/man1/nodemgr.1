@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-11\-29
+.TH NODEMGR 1 2016\-11\-30
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -13,852 +13,40 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 .RE
 \fBnodemgr collector ack action\fP
 .RS
-.RE
-\fB               \fP  
-..RSacknowledge an action error on the node. an acknowlegment
-.RE
-\fB               \fP  
-..RScan be completed by --author (defaults to root@nodename)
-.RE
-\fB               \fP  
-..RSand --comment
 
-.RE
-\fBnodemgr collector alerts\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay node alerts
+acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment
 
-.RE
-\fBnodemgr collector asset\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay asset information known to the collector
-
-.RE
-\fBnodemgr collector checks\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay node checks
-
-.RE
-\fBnodemgr collector cli\fP
-.RS
-.RE
-\fB               \fP  
-..RSopen a Command Line Interface to the collector rest API.
-.RE
-\fB               \fP  
-..RSThe CLI offers autocompletion of paths and arguments,
-.RE
-\fB               \fP  
-..RSpiping JSON data from files. This command accepts the
-.RE
-\fB               \fP  
-..RS--user, --password, --api, --insecure and --config
-.RE
-\fB               \fP  
-..RSparameters. If executed as root, the collector is logged in
-.RE
-\fB               \fP  
-..RSwith the node credentials.
-
-.RE
-\fBnodemgr collector create tag\fP
-.RS
-.RE
-\fB               \fP  
-..RScreate a new tag with name specified by --tag
-
-.RE
-\fBnodemgr collector disks\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay node disks
-
-.RE
-\fBnodemgr collector events\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay node events during the period specified by
-.RE
-\fB               \fP  
-..RS--begin/--end. --end defaults to now. --begin defaults to 7
-.RE
-\fB               \fP  
-..RSdays ago.
-
-.RE
-\fBnodemgr collector list actions\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist actions on the node, whatever the service, during the
-.RE
-\fB               \fP  
-..RSperiod specified by --begin/--end. --end defaults to now.
-.RE
-\fB               \fP  
-..RS--begin defaults to 7 days ago
-
-.RE
-\fBnodemgr collector list filtersets\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow the list of filtersets available on the collector. if
-.RE
-\fB               \fP  
-..RSspecified, --filterset <pattern> limits the resulset to
-.RE
-\fB               \fP  
-..RSfiltersets matching <pattern>
-
-.RE
-\fBnodemgr collector list nodes\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow the list of nodes matching the filterset pointed by
-.RE
-\fB               \fP  
-..RS--filterset
-
-.RE
-\fBnodemgr collector list services\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow the list of services matching the filterset pointed by
-.RE
-\fB               \fP  
-..RS--filterset
-
-.RE
-\fBnodemgr collector list tags\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist all available tags. use --like to filter the output.
-
-.RE
-\fBnodemgr collector networks\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay network information known to the collector for each
-.RE
-\fB               \fP  
-..RSnode ip
-
-.RE
-\fBnodemgr collector search\fP
-.RS
-.RE
-\fB               \fP  
-..RSreport the collector objects matching --like [<type>:
-.RE
-\fB               \fP  
-..RS}<substring>, where <type> is the object type acronym as
-.RE
-\fB               \fP  
-..RSshown in the collector search widget.
-
-.RE
-\fBnodemgr collector show actions\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow actions detailed log. a single action is specified by
-.RE
-\fB               \fP  
-..RS--id. a range is specified by --begin/--end dates. --end
-.RE
-\fB               \fP  
-..RSdefaults to now. --begin defaults to 7 days ago
-
-.RE
-\fBnodemgr collector show tags\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist all node tags
-
-.RE
-\fBnodemgr collector status\fP
-.RS
-.RE
-\fB               \fP  
-..RSdisplay node services status according to the collector
-
-.RE
-\fBnodemgr collector tag\fP
-.RS
-.RE
-\fB               \fP  
-..RSset a node tag (pointed by --tag)
-
-.RE
-\fBnodemgr collector untag\fP
-.RS
-.RE
-\fB               \fP  
-..RSunset a node tag (pointed by --tag)
-
-\fRCOMPLIANCE\fP
-
-.RE
-\fBnodemgr compliance attach\fP
-.RS
-.RE
-\fB               \fP  
-..RSattach ruleset specified by --ruleset and/or moduleset
-.RE
-\fB               \fP  
-..RSspecified by --moduleset for this node
-
-.RE
-\fBnodemgr compliance attach moduleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSattach moduleset specified by --moduleset for this node
-
-.RE
-\fBnodemgr compliance attach ruleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSattach ruleset specified by --ruleset for this node
-
-.RE
-\fBnodemgr compliance auto\fP
-.RS
-.RE
-\fB               \fP  
-..RSrun compliance checks or fix, according to the autofix
-.RE
-\fB               \fP  
-..RSproperty of each module. --ruleset <md5> instruct the
-.RE
-\fB               \fP  
-..RScollector to provide an historical ruleset.
-
-.RE
-\fBnodemgr compliance check\fP
-.RS
-.RE
-\fB               \fP  
-..RSrun compliance checks. --ruleset <md5> instruct the
-.RE
-\fB               \fP  
-..RScollector to provide an historical ruleset.
-
-.RE
-\fBnodemgr compliance detach\fP
-.RS
-.RE
-\fB               \fP  
-..RSdetach ruleset specified by --ruleset and/or moduleset
-.RE
-\fB               \fP  
-..RSspecified by --moduleset for this node
-
-.RE
-\fBnodemgr compliance detach moduleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSdetach moduleset specified by --moduleset for this node
-
-.RE
-\fBnodemgr compliance detach ruleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSdetach ruleset specified by --ruleset for this node
-
-.RE
-\fBnodemgr compliance env\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow the compliance modules environment variables.
-
-.RE
-\fBnodemgr compliance fix\fP
-.RS
-.RE
-\fB               \fP  
-..RSrun compliance fixes. --ruleset <md5> instruct the
-.RE
-\fB               \fP  
-..RScollector to provide an historical ruleset.
-
-.RE
-\fBnodemgr compliance fixable\fP
-.RS
-.RE
-\fB               \fP  
-..RSverify compliance fixes prerequisites. --ruleset <md5>
-.RE
-\fB               \fP  
-..RSinstruct the collector to provide an historical ruleset.
-
-.RE
-\fBnodemgr compliance list module\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist compliance modules available on this node
-
-.RE
-\fBnodemgr compliance list moduleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist available compliance modulesets. --moduleset f% limit
-.RE
-\fB               \fP  
-..RSthe scope to modulesets matching the f% pattern.
-
-.RE
-\fBnodemgr compliance list ruleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSlist available compliance rulesets. --ruleset f% limit the
-.RE
-\fB               \fP  
-..RSscope to rulesets matching the f% pattern.
-
-.RE
-\fBnodemgr compliance show moduleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow compliance rules applying to this node
-
-.RE
-\fBnodemgr compliance show ruleset\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow compliance rules applying to this node
-
-.RE
-\fBnodemgr compliance show status\fP
-.RS
-.RE
-\fB               \fP  
-..RSshow compliance modules status
-
-\fRMISC\fP
-
-.RE
-\fBnodemgr prkey  \fP  
-..RSshow persistent reservation key of this node
-
-\fRNODE ACTIONS\fP
-
-.RE
-\fBnodemgr collect stats\fP
-.RS
-.RE
-\fB               \fP  
-..RSwrite in local files metrics not found in the standard
-.RE
-\fB               \fP  
-..RSmetrics collector. these files will be fed to the collector
-.RE
-\fB               \fP  
-..RSby the 'pushstat' action.
-
-.RE
-\fBnodemgr dequeue actions\fP
-.RS
-.RE
-\fB               \fP  
-..RSdequeue and execute actions from the collector's action
-.RE
-\fB               \fP  
-..RSqueue for this node and its services.
-
-.RE
-\fBnodemgr logs   \fP  
-..RSfancy display of the node logs
-
-.RE
-\fBnodemgr print schedule\fP
-.RS
-.RE
-\fB               \fP  
-..RSprint the node tasks schedule
-
-.RE
-\fBnodemgr provision\fP
-.RS
-.RE
-\fB               \fP  
-..RSprovision the resources described in --resource arguments
-
-.RE
-\fBnodemgr reboot \fP  
-..RSreboot the node
-
-.RE
-\fBnodemgr rotate root pw\fP
-.RS
-.RE
-\fB               \fP  
-..RSset a new root password and store it in the collector
-
-.RE
-\fBnodemgr scanscsi\fP
-.RS
-.RE
-\fB               \fP  
-..RSscan the scsi hosts in search of new disks
-
-.RE
-\fBnodemgr schedule reboot\fP
-.RS
-.RE
-\fB               \fP  
-..RSmark the node for reboot at the next allowed period. the
-.RE
-\fB               \fP  
-..RSallowed period is defined by a "reboot" section in
-.RE
-\fB               \fP  
-..RSnode.conf. the created flag file is
-.RE
-\fB               \fP  
-..RS/opt/opensvc/var/REBOOT_FLAG
-
-.RE
-\fBnodemgr schedule reboot status\fP
-.RS
-.RE
-\fB               \fP  
-..RStell if the node is scheduled for reboot
-
-.RE
-\fBnodemgr scheduler\fP
-.RS
-.RE
-\fB               \fP  
-..RSrun the node task scheduler
-
-.RE
-\fBnodemgr schedulers\fP
-.RS
-.RE
-\fB               \fP  
-..RSexecute a run of the node and services schedulers. this
-.RE
-\fB               \fP  
-..RSaction is installed in the system scheduler
-
-.RE
-\fBnodemgr shutdown\fP
-.RS
-.RE
-\fB               \fP  
-..RSshutdown the node to powered off state
-
-.RE
-\fBnodemgr unschedule reboot\fP
-.RS
-.RE
-\fB               \fP  
-..RSunmark the node for reboot at the next allowed period. the
-.RE
-\fB               \fP  
-..RSremoved flag file is /opt/opensvc/var/REBOOT_FLAG
-
-.RE
-\fBnodemgr updatecomp\fP
-.RS
-.RE
-\fB               \fP  
-..RSupgrade the opensvc compliance modules. the modules must be
-.RE
-\fB               \fP  
-..RSavailable as a tarball behind the node.repo/compliance url.
-
-.RE
-\fBnodemgr updatepkg\fP
-.RS
-.RE
-\fB               \fP  
-..RSupgrade the opensvc agent version. the packages must be
-.RE
-\fB               \fP  
-..RSavailable behind the node.repo/packages url.
-
-.RE
-\fBnodemgr wol    \fP  
-..RSforge and send udp wake on lan packet to mac address
-.RE
-\fB               \fP  
-..RSspecified by --mac and --broadcast arguments
-
-\fRNODE CONFIGURATION\fP
-
-.RE
-\fBnodemgr edit authconfig\fP
-.RS
-.RE
-\fB               \fP  
-..RSopen the auth.conf configuration file with the preferred
-.RE
-\fB               \fP  
-..RSeditor
-
-.RE
-\fBnodemgr edit config\fP
-.RS
-.RE
-\fB               \fP  
-..RSopen the node.conf configuration file with the preferred
-.RE
-\fB               \fP  
-..RSeditor
-
-.RE
-\fBnodemgr get    \fP  
-..RSget the value of the node configuration parameter pointed
-.RE
-\fB               \fP  
-..RSby --param
-
-.RE
-\fBnodemgr print authconfig\fP
-.RS
-.RE
-\fB               \fP  
-..RSopen the node.conf configuration file with the preferred
-.RE
-\fB               \fP  
-..RSeditor
-
-.RE
-\fBnodemgr print config\fP
-.RS
-.RE
-\fB               \fP  
-..RSopen the node.conf configuration file with the preferred
-.RE
-\fB               \fP  
-..RSeditor
-
-.RE
-\fBnodemgr register\fP
-.RS
-.RE
-\fB               \fP  
-..RSobtain a registration number from the collector, used to
-.RE
-\fB               \fP  
-..RSauthenticate the node
-
-.RE
-\fBnodemgr set    \fP  
-..RSset a node configuration parameter (pointed by --param)
-.RE
-\fB               \fP  
-..RSvalue (pointed by --value)
-
-.RE
-\fBnodemgr unset  \fP  
-..RSunset a node configuration parameter (pointed by --param)
-
-\fRPUSH DATA TO THE COLLECTOR\fP
-
-.RE
-\fBnodemgr checks \fP  
-..RSrun node sanity checks, push results to collector
-
-.RE
-\fBnodemgr pushasset\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush asset information to collector
-
-.RE
-\fBnodemgr pushbrocade\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush Brocade switch configuration to collector
-
-.RE
-\fBnodemgr pushcentera\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush EMC Centera configuration to collector
-
-.RE
-\fBnodemgr pushdcs\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush Datacore configuration to collector
-
-.RE
-\fBnodemgr pushdisks\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush disks usage information to collector
-
-.RE
-\fBnodemgr pushemcvnx\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush EMC CX/VNX configuration to collector
-
-.RE
-\fBnodemgr pusheva\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush HP EVA configuration to collector
-
-.RE
-\fBnodemgr pushfreenas\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush FreeNAS configuration to collector
-
-.RE
-\fBnodemgr pushgcedisks\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush Google Compute Engine disks configuration to collector
-
-.RE
-\fBnodemgr pushhds\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush HDS configuration to collector
-
-.RE
-\fBnodemgr pushhp3par\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush HP 3par configuration to collector
-
-.RE
-\fBnodemgr pushibmds\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush IBM DS configuration to collector
-
-.RE
-\fBnodemgr pushibmsvc\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush IBM SVC configuration to collector
-
-.RE
-\fBnodemgr pushnecism\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush NEC ISM configuration to collector
-
-.RE
-\fBnodemgr pushnetapp\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush Netapp configuration to collector
-
-.RE
-\fBnodemgr pushnsr\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush EMC Networker index to collector
-
-.RE
-\fBnodemgr pushpatch\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush patch/version list to collector
-
-.RE
-\fBnodemgr pushpkg\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush package/version list to collector
-
-.RE
-\fBnodemgr pushstats\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush performance metrics to collector. By default pushed
-.RE
-\fB               \fP  
-..RSstats interval begins yesterday at the beginning of the
-.RE
-\fB               \fP  
-..RSallowed interval and ends now. This interval can be changed
-.RE
-\fB               \fP  
-..RSusing --begin/--end parameters. The location where stats
-.RE
-\fB               \fP  
-..RSfiles are looked up can be changed using --stats-dir.
-
-.RE
-\fBnodemgr pushsym\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush symmetrix configuration to collector
-
-.RE
-\fBnodemgr pushvioserver\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush IBM VIO server configuration to collector
-
-.RE
-\fBnodemgr sysreport\fP
-.RS
-.RE
-\fB               \fP  
-..RSpush system report to the collector for archiving and diff
-.RE
-\fB               \fP  
-..RSanalysis
-
-\fRSERVICE ACTIONS\fP
-
-.RE
-\fBnodemgr discover\fP
-.RS
-.RE
-\fB               \fP  
-..RSdiscover vservices accessible from this host, cloud nodes
-.RE
-\fB               \fP  
-..RSfor example
-.SH OPTIONS
-.TP
-.B --version
-show program's version number and exit
-.TP
-.B -h, --help
-show this help message and exit
-.TP
-.B --refresh-api
-The OpenSVC collector api url
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --verbose
-add more information to some print commands: +next in 'print schedule'
-.TP
-.B --debug
-debug mode
-.TP
-.B --stats-dir=STATS_DIR
-points the directory where the metrics files are stored for pushstats
-.TP
-.B --module=MODULE
-compliance, set module list
-.TP
-.B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B --ruleset=RULESET
-compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B --filterset=FILTERSET
-set a filterset to limit collector extractions
-.TP
-.B --ruleset-date=RULESET_DATE
-compliance, use rulesets valid on specified date
-.TP
-.B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
-.TP
-.B --cron
-cron mode
-.TP
-.B --force
-force action
-.TP
-.B --symcli-db-file=SYMCLI_DB_FILE
-[pushsym option] use symcli offline mode with the specified file. aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx
-.TP
-.B --param=PARAM
-point a node configuration parameter for the 'get' and 'set' actions
-.TP
-.B --value=VALUE
-set a node configuration parameter value for the 'set --param' action
-.TP
-.B --duration=DURATION
-a duration expressed in minutes. used with the 'collector ack action' action
-.TP
-.B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
-.TP
-.B --end=END
-a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
-.TP
-.B --comment=COMMENT
-a comment to log when used with the 'collector ack action' action
 .TP
 .B --author=AUTHOR
 the acker name to log when used with the 'collector ack action' action
 .TP
-.B --id=ID
-specify an id to act on
-.TP
-.B --resource=RESOURCE
-a resource definition in json dictionary format fed to the provision action
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --mac=MAC
-list of mac addresses, comma separated, used by the 'wol' action
-.TP
-.B --tag=TAG
-a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
-.TP
-.B --like=LIKE
-a sql like filtering expression. leading and trailing wildcards are automatically set.
-.TP
-.B --broadcast=BROADCAST
-list of broadcast addresses, comma separated, used by the 'wol' action
-.TP
-.B --sync
-use synchronous collector rpc if available. to use with pushasset when chaining a compliance run, to make sure the node ruleset is up-to-date.
+.B --comment=COMMENT
+a comment to log when used with the 'collector ack action' action
+
+.RE
+\fBnodemgr collector alerts\fP
+.RS
+
+display node alerts
+
+.RE
+\fBnodemgr collector asset\fP
+.RS
+
+display asset information known to the collector
+
+.RE
+\fBnodemgr collector checks\fP
+.RS
+
+display node checks
+
+.RE
+\fBnodemgr collector cli\fP
+.RS
+
+open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. This command accepts the --user, --password, --api, --insecure and --config parameters. If executed as root, the collector is logged in with the node credentials.
+
 .TP
 .B --user=USER
 authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.
@@ -866,20 +54,749 @@ authenticate with the collector using the specified user credentials instead of 
 .B --password=PASSWORD
 authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
 .TP
-.B --insecure
-allow communications with a collector presenting unverified SSL certificates.
-.TP
 .B --api=API
 specify a collector api url different from the one set in node.conf. Honored by the 'collector cli' action.
 .TP
+.B --insecure
+allow communications with a collector presenting unverified SSL certificates.
+.TP
 .B --config=CONFIG
 specify a user-specific collector api connection configuration file. defaults to '~/.opensvc-cli'. Honored by the 'collector cli' action.
+
+.RE
+\fBnodemgr collector create tag\fP
+.RS
+
+create a new tag with name specified by --tag
+
+.TP
+.B --tag=TAG
+a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+
+.RE
+\fBnodemgr collector disks\fP
+.RS
+
+display node disks
+
+.RE
+\fBnodemgr collector events\fP
+.RS
+
+display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
+
+.TP
+.B --begin=BEGIN
+a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+.TP
+.B --end=END
+a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+
+.RE
+\fBnodemgr collector list actions\fP
+.RS
+
+list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago
+
+.TP
+.B --begin=BEGIN
+a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+.TP
+.B --end=END
+a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+
+.RE
+\fBnodemgr collector list filtersets\fP
+.RS
+
+show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>
+
+.RE
+\fBnodemgr collector list nodes\fP
+.RS
+
+show the list of nodes matching the filterset pointed by --filterset
+
+.RE
+\fBnodemgr collector list services\fP
+.RS
+
+show the list of services matching the filterset pointed by --filterset
+
+.RE
+\fBnodemgr collector list tags\fP
+.RS
+
+list all available tags. use --like to filter the output.
+
+.TP
+.B --like=LIKE
+a sql like filtering expression. leading and trailing wildcards are automatically set.
+
+.RE
+\fBnodemgr collector networks\fP
+.RS
+
+display network information known to the collector for each node ip
+
+.RE
+\fBnodemgr collector search\fP
+.RS
+
+report the collector objects matching --like [<type>:]<substring>, where <type> is the object type acronym as shown in the collector search widget.
+
+.TP
+.B --like=LIKE
+a sql like filtering expression. leading and trailing wildcards are automatically set.
+
+.RE
+\fBnodemgr collector show actions\fP
+.RS
+
+show actions detailed log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago
+
+.TP
+.B --begin=BEGIN
+a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+.TP
+.B --id=ID
+specify an id to act on
+.TP
+.B --end=END
+a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+
+.RE
+\fBnodemgr collector show tags\fP
+.RS
+
+list all node tags
+
+.RE
+\fBnodemgr collector status\fP
+.RS
+
+display node services status according to the collector
+
+.RE
+\fBnodemgr collector tag\fP
+.RS
+
+set a node tag (pointed by --tag)
+
+.TP
+.B --tag=TAG
+a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+
+.RE
+\fBnodemgr collector untag\fP
+.RS
+
+unset a node tag (pointed by --tag)
+
+\fRCOMPLIANCE\fP
+
+.RE
+\fBnodemgr compliance attach\fP
+.RS
+
+attach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node
+
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset=RULESET
+compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance attach moduleset\fP
+.RS
+
+attach moduleset specified by --moduleset for this node
+
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance attach ruleset\fP
+.RS
+
+attach ruleset specified by --ruleset for this node
+
+.TP
+.B --ruleset=RULESET
+compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance auto\fP
+.RS
+
+run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.
+
+.RE
+\fBnodemgr compliance check\fP
+.RS
+
+run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.
+
+.TP
+.B --attach
+attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset-date=RULESET_DATE
+compliance, use rulesets valid on specified date
+
+.RE
+\fBnodemgr compliance detach\fP
+.RS
+
+detach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node
+
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset=RULESET
+compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance detach moduleset\fP
+.RS
+
+detach moduleset specified by --moduleset for this node
+
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance detach ruleset\fP
+.RS
+
+detach ruleset specified by --ruleset for this node
+
+.TP
+.B --ruleset=RULESET
+compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance env\fP
+.RS
+
+show the compliance modules environment variables.
+
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+
+.RE
+\fBnodemgr compliance fix\fP
+.RS
+
+run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.
+
+.TP
+.B --attach
+attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset-date=RULESET_DATE
+compliance, use rulesets valid on specified date
+
+.RE
+\fBnodemgr compliance fixable\fP
+.RS
+
+verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.
+
+.TP
+.B --attach
+attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset-date=RULESET_DATE
+compliance, use rulesets valid on specified date
+
+.RE
+\fBnodemgr compliance list module\fP
+.RS
+
+list compliance modules available on this node
+
+.RE
+\fBnodemgr compliance list moduleset\fP
+.RS
+
+list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.
+
+.RE
+\fBnodemgr compliance list ruleset\fP
+.RS
+
+list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.
+
+.RE
+\fBnodemgr compliance show moduleset\fP
+.RS
+
+show compliance rules applying to this node
+
+.RE
+\fBnodemgr compliance show ruleset\fP
+.RS
+
+show compliance rules applying to this node
+
+.RE
+\fBnodemgr compliance show status\fP
+.RS
+
+show compliance modules status
+
+\fRMISC\fP
+
+.RE
+\fBnodemgr prkey\fP
+.RS
+
+show persistent reservation key of this node
+
+\fRNODE ACTIONS\fP
+
+.RE
+\fBnodemgr collect stats\fP
+.RS
+
+write in local files metrics not found in the standard metrics collector. these files will be fed to the collector by the 'pushstat' action.
+
+.RE
+\fBnodemgr dequeue actions\fP
+.RS
+
+dequeue and execute actions from the collector's action queue for this node and its services.
+
+.RE
+\fBnodemgr logs\fP
+.RS
+
+fancy display of the node logs
+
+.RE
+\fBnodemgr print schedule\fP
+.RS
+
+print the node tasks schedule
+
+.TP
+.B --verbose
+add more information to some print commands: +next in 'print schedule'
+
+.RE
+\fBnodemgr provision\fP
+.RS
+
+provision the resources described in --resource arguments
+
+.TP
+.B --resource=RESOURCE
+a resource definition in json dictionary format fed to the provision action
+
+.RE
+\fBnodemgr reboot\fP
+.RS
+
+reboot the node
+
+.RE
+\fBnodemgr rotate root pw\fP
+.RS
+
+set a new root password and store it in the collector
+
+.RE
+\fBnodemgr scanscsi\fP
+.RS
+
+scan the scsi hosts in search of new disks
+
+.RE
+\fBnodemgr schedule reboot\fP
+.RS
+
+mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf.
+
+.RE
+\fBnodemgr schedule reboot status\fP
+.RS
+
+tell if the node is scheduled for reboot
+
+.RE
+\fBnodemgr scheduler\fP
+.RS
+
+run the node task scheduler
+
+.RE
+\fBnodemgr schedulers\fP
+.RS
+
+execute a run of the node and services schedulers. this action is installed in the system scheduler
+
+.RE
+\fBnodemgr shutdown\fP
+.RS
+
+shutdown the node to powered off state
+
+.RE
+\fBnodemgr unschedule reboot\fP
+.RS
+
+unmark the node for reboot at the next allowed period.
+
+.RE
+\fBnodemgr updatecomp\fP
+.RS
+
+upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.
+
+.RE
+\fBnodemgr updatepkg\fP
+.RS
+
+upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.
+
+.RE
+\fBnodemgr wol\fP
+.RS
+
+forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments
+
+.TP
+.B --broadcast=BROADCAST
+list of broadcast addresses, comma separated, used by the 'wol' action
+.TP
+.B --mac=MAC
+list of mac addresses, comma separated, used by the 'wol' action
+
+\fRNODE CONFIGURATION\fP
+
+.RE
+\fBnodemgr edit authconfig\fP
+.RS
+
+open the auth.conf configuration file with the preferred editor
+
+.RE
+\fBnodemgr edit config\fP
+.RS
+
+open the node.conf configuration file with the preferred editor
+
+.RE
+\fBnodemgr get\fP
+.RS
+
+get the value of the node configuration parameter pointed by --param
+
+.TP
+.B --param=PARAM
+point a node configuration parameter for the 'get' and 'set' actions
+
+.RE
+\fBnodemgr print authconfig\fP
+.RS
+
+open the node.conf configuration file with the preferred editor
+
+.RE
+\fBnodemgr print config\fP
+.RS
+
+open the node.conf configuration file with the preferred editor
+
+.RE
+\fBnodemgr register\fP
+.RS
+
+obtain a registration number from the collector, used to authenticate the node
+
 .TP
 .B --app=APP
 Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.
 .TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.B --password=PASSWORD
+authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
+.TP
+.B --user=USER
+authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.
+
+.RE
+\fBnodemgr set\fP
+.RS
+
+set a node configuration parameter (pointed by --param) value (pointed by --value)
+
+.TP
+.B --param=PARAM
+point a node configuration parameter for the 'get' and 'set' actions
+.TP
+.B --value=VALUE
+set a node configuration parameter value for the 'set --param' action
+
+.RE
+\fBnodemgr unset\fP
+.RS
+
+unset a node configuration parameter (pointed by --param)
+
+.TP
+.B --param=PARAM
+point a node configuration parameter for the 'get' and 'set' actions
+
+\fRPUSH DATA TO THE COLLECTOR\fP
+
+.RE
+\fBnodemgr checks\fP
+.RS
+
+run node sanity checks, push results to collector
+
+.RE
+\fBnodemgr pushasset\fP
+.RS
+
+push asset information to collector
+
+.RE
+\fBnodemgr pushbrocade\fP
+.RS
+
+push Brocade switch configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushcentera\fP
+.RS
+
+push EMC Centera configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushdcs\fP
+.RS
+
+push Datacore configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushdisks\fP
+.RS
+
+push disks usage information to collector
+
+.RE
+\fBnodemgr pushemcvnx\fP
+.RS
+
+push EMC CX/VNX configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pusheva\fP
+.RS
+
+push HP EVA configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushfreenas\fP
+.RS
+
+push FreeNAS configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushgcedisks\fP
+.RS
+
+push Google Compute Engine disks configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushhds\fP
+.RS
+
+push HDS configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushhp3par\fP
+.RS
+
+push HP 3par configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushibmds\fP
+.RS
+
+push IBM DS configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushibmsvc\fP
+.RS
+
+push IBM SVC configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushnecism\fP
+.RS
+
+push NEC ISM configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushnetapp\fP
+.RS
+
+push Netapp configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushnsr\fP
+.RS
+
+push EMC Networker index to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushpatch\fP
+.RS
+
+push patch/version list to collector
+
+.RE
+\fBnodemgr pushpkg\fP
+.RS
+
+push package/version list to collector
+
+.RE
+\fBnodemgr pushstats\fP
+.RS
+
+push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.
+
+.TP
+.B --begin=BEGIN
+a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+.TP
+.B --end=END
+a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+.TP
+.B --stats-dir=STATS_DIR
+points the directory where the metrics files are stored for pushstats
+
+.RE
+\fBnodemgr pushsym\fP
+.RS
+
+push symmetrix configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr pushvioserver\fP
+.RS
+
+push IBM VIO server configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+
+.RE
+\fBnodemgr sysreport\fP
+.RS
+
+push system report to the collector for archiving and diff analysis
+
+\fRSERVICE ACTIONS\fP
+
+.RE
+\fBnodemgr discover\fP
+.RS
+
+discover vservices accessible from this host, cloud nodes for example
+.SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)
 .BR svcmgr (1)

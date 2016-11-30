@@ -11,6 +11,7 @@ import optparse
 from textwrap import TextWrapper
 import rcColor
 from rcUtilities import term_width
+import rcExceptions as ex
 
 
 class OptParser(object):
@@ -69,6 +70,8 @@ class OptParser(object):
         desc = ""
         parser = optparse.OptionParser(formatter=self.formatter, add_help_option=False)
         for option in self.actions[section][action].get("options", []):
+            if option is None:
+                raise ex.excError("unkown option referenced by action %s" % action)
             option(parser)
         desc += self.subsequent_indent + parser.format_option_help()
         return desc
@@ -79,7 +82,7 @@ class OptParser(object):
         The action message may or may include the possible options,
         dependendin on the value of the options parameter.
         """
-        fancya = "svcmgr " + action.replace('_', ' ')
+        fancya = self.prog + " " + action.replace('_', ' ')
         if self.colorize:
             desc = "  " + rcColor.colorize(fancya, rcColor.color.BOLD)
         else:
@@ -148,6 +151,9 @@ class OptParser(object):
                 self.print_short_help()
 
         action = '_'.join(args)
+
+        if action.startswith("collector_cli"):
+            action = "collector_cli"
 
         return action
 

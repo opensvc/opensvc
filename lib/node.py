@@ -41,23 +41,6 @@ except ImportError:
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
 
-deprecated_actions = [
-  "collector_json_asset",
-  "collector_json_networks",
-  "collector_json_list_unavailability_ack",
-  "collector_json_list_actions",
-  "collector_json_show_actions",
-  "collector_json_status",
-  "collector_json_checks",
-  "collector_json_disks",
-  "collector_json_alerts",
-  "collector_json_events",
-  "collector_json_list_nodes",
-  "collector_json_list_services",
-  "collector_json_list_filtersets",
-  "json_schedule",
-]
-
 deprecated_keywords = {
   "node.host_mode": "env",
   "node.environnement": "asset_env",
@@ -132,109 +115,6 @@ class Node(Svc, Freezer, Scheduler):
         self.options = Options()
         Scheduler.__init__(self)
         Freezer.__init__(self, '')
-        self.action_desc = {
-          'Node actions': {
-            'logs': 'fancy display of the node logs',
-            'shutdown': 'shutdown the node to powered off state',
-            'reboot': 'reboot the node',
-            'scheduler': 'run the node task scheduler',
-            'schedulers': 'execute a run of the node and services schedulers. this action is installed in the system scheduler',
-            'schedule_reboot_status': 'tell if the node is scheduled for reboot',
-            'schedule_reboot': 'mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf. the created flag file is %s' % self.reboot_flag,
-            'unschedule_reboot': 'unmark the node for reboot at the next allowed period. the removed flag file is %s' % self.reboot_flag,
-            'provision': 'provision the resources described in --resource arguments',
-            'updatepkg': 'upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.',
-            'updatecomp': 'upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.',
-            'scanscsi': 'scan the scsi hosts in search of new disks',
-            'dequeue_actions': "dequeue and execute actions from the collector's action queue for this node and its services.",
-            'rotate_root_pw': "set a new root password and store it in the collector",
-            'print_schedule': "print the node tasks schedule",
-            'wol': "forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments",
-            'collect_stats': "write in local files metrics not found in the standard metrics collector. these files will be fed to the collector by the 'pushstat' action.",
-          },
-          'Service actions': {
-            'discover': 'discover vservices accessible from this host, cloud nodes for example',
-          },
-          'Node configuration': {
-            'print_config': 'open the node.conf configuration file with the preferred editor',
-            'print_authconfig': 'open the node.conf configuration file with the preferred editor',
-            'edit_config': 'open the node.conf configuration file with the preferred editor',
-            'edit_authconfig': 'open the auth.conf configuration file with the preferred editor',
-            'register': 'obtain a registration number from the collector, used to authenticate the node',
-            'get': 'get the value of the node configuration parameter pointed by --param',
-            'set': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
-            'unset': 'unset a node configuration parameter (pointed by --param)',
-          },
-          'Push data to the collector': {
-            'pushasset':      'push asset information to collector',
-            'pushstats':      'push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.',
-            'pushdisks':      'push disks usage information to collector',
-            'pushpkg':        'push package/version list to collector',
-            'pushpatch':      'push patch/version list to collector',
-            'pushsym':        'push symmetrix configuration to collector',
-            'pushemcvnx':     'push EMC CX/VNX configuration to collector',
-            'pushcentera':    'push EMC Centera configuration to collector',
-            'pushnetapp':     'push Netapp configuration to collector',
-            'pusheva':        'push HP EVA configuration to collector',
-            'pushnecism':     'push NEC ISM configuration to collector',
-            'pushhds':        'push HDS configuration to collector',
-            'pushdcs':        'push Datacore configuration to collector',
-            'pushfreenas':    'push FreeNAS configuration to collector',
-            'pushibmsvc':     'push IBM SVC configuration to collector',
-            'pushhp3par':     'push HP 3par configuration to collector',
-            'pushibmds':      'push IBM DS configuration to collector',
-            'pushvioserver':  'push IBM VIO server configuration to collector',
-            'pushgcedisks':   'push Google Compute Engine disks configuration to collector',
-            'pushbrocade':    'push Brocade switch configuration to collector',
-            'pushnsr':        'push EMC Networker index to collector',
-            'sysreport':      'push system report to the collector for archiving and diff analysis',
-            'checks':         'run node sanity checks, push results to collector',
-          },
-          'Misc': {
-            'prkey':          'show persistent reservation key of this node',
-          },
-          'Compliance': {
-            'compliance_auto': 'run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.',
-            'compliance_env': 'show the compliance modules environment variables.',
-            'compliance_check': 'run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.',
-            'compliance_fix':   'run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.',
-            'compliance_fixable': 'verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.',
-            'compliance_list_module': 'list compliance modules available on this node',
-            'compliance_show_moduleset': 'show compliance rules applying to this node',
-            'compliance_list_moduleset': 'list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.',
-            'compliance_attach_moduleset': 'attach moduleset specified by --moduleset for this node',
-            'compliance_detach_moduleset': 'detach moduleset specified by --moduleset for this node',
-            'compliance_list_ruleset': 'list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.',
-            'compliance_show_ruleset': 'show compliance rules applying to this node',
-            'compliance_show_status': 'show compliance modules status',
-            'compliance_attach': 'attach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node',
-            'compliance_detach': 'detach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node',
-            'compliance_attach_ruleset': 'attach ruleset specified by --ruleset for this node',
-            'compliance_detach_ruleset': 'detach ruleset specified by --ruleset for this node',
-          },
-          'Collector management': {
-            'collector_cli': 'open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. This command accepts the --user, --password, --api, --insecure and --config parameters. If executed as root, the collector is logged in with the node credentials.',
-            'collector_events': 'display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.',
-            'collector_alerts': 'display node alerts',
-            'collector_checks': 'display node checks',
-            'collector_disks': 'display node disks',
-            'collector_status': 'display node services status according to the collector',
-            'collector_list_actions': 'list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago',
-            'collector_ack_action': 'acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment',
-            'collector_show_actions': 'show actions detailed log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago',
-            'collector_list_nodes': 'show the list of nodes matching the filterset pointed by --filterset',
-            'collector_list_services': 'show the list of services matching the filterset pointed by --filterset',
-            'collector_list_filtersets': 'show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>',
-            'collector_asset': 'display asset information known to the collector',
-            'collector_networks': 'display network information known to the collector for each node ip',
-            'collector_tag': 'set a node tag (pointed by --tag)',
-            'collector_untag': 'unset a node tag (pointed by --tag)',
-            'collector_show_tags': 'list all node tags',
-            'collector_list_tags': 'list all available tags. use --like to filter the output.',
-            'collector_create_tag': 'create a new tag with name specified by --tag',
-            'collector_search': 'report the collector objects matching --like [<type>: }<substring>, where <type> is the object type acronym as shown in the collector search widget.',
-          },
-        }
         self.unprivileged_actions = [
           "collector_cli",
           "print_schedule",
@@ -377,13 +257,6 @@ class Node(Svc, Freezer, Scheduler):
         return rcUtilities.vcall(cmd, log=self.log,
                                  err_to_warn=err_to_warn,
                                  err_to_info=err_to_info)
-
-    def supported_actions(self):
-        a = []
-        for s in self.action_desc:
-            a += self.action_desc[s].keys()
-        a += deprecated_actions
-        return a
 
     def build_services(self, *args, **kwargs):
         if self.svcs is not None and \
@@ -531,49 +404,6 @@ class Node(Svc, Freezer, Scheduler):
             if mtime > last:
                 return True
         return False
-
-    def format_desc(self, action=None):
-        from textwrap import TextWrapper
-        from compliance import Compliance
-        from collector import Collector
-        wrapper = TextWrapper(subsequent_indent="%19s"%"", width=78)
-        desc = ""
-        for s in sorted(self.action_desc):
-            valid_actions = []
-            for a in sorted(self.action_desc[s]):
-                if action is not None and not a.startswith(action):
-                    continue
-                valid_actions.append(a)
-            if len(valid_actions) == 0:
-                continue
-            l = len(s)
-            desc += s+'\n'
-            for i in range(0, l):
-                desc += '-'
-            desc += "\n\n"
-            for a in valid_actions:
-                if a.startswith("compliance_"):
-                    o = Compliance(self)
-                    if not hasattr(o, a):
-                        continue
-                elif a.startswith("collector_") and a != "collector_cli":
-                    o = Collector(self.options, self)
-                    if not hasattr(o, a):
-                        continue
-                elif not hasattr(self, a):
-                    continue
-                fancya = "nodemgr " + a.replace('_', ' ')
-                if len(fancya) < 15:
-                    text = "  %-16s %s\n"%(fancya, self.action_desc[s][a])
-                    desc += wrapper.fill(text)
-                else:
-                    text = "  %-16s"%(fancya)
-                    desc += wrapper.fill(text)
-                    desc += '\n'
-                    text = "%19s%s"%(" ", self.action_desc[s][a])
-                    desc += wrapper.fill(text)
-                desc += '\n\n'
-        return desc[0:-2]
 
     def __iadd__(self, s):
         if not isinstance(s, Svc):
