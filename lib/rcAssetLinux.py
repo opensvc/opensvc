@@ -385,7 +385,7 @@ class Asset(rcAsset.Asset):
             if 'BIOS Revision:' in l:
                 rev = l.split(':')[-1].strip()
                 break
-        if rev != "":
+        if len(rev) > 1 and not v.startswith(rev):
             return v+" "+rev
         return v
 
