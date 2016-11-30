@@ -368,6 +368,27 @@ class Asset(rcAsset.Asset):
             serial = self._get_serial_2()
         return serial
 
+    def _get_bios_version(self):
+        if self.container:
+            return 'n/a'
+        v = ""
+        rev = ""
+        try:
+            i = self.dmidecode.index('BIOS Information')
+        except ValueError:
+            return ''
+        for l in self.dmidecode[i+1:]:
+            if 'Version:' in l:
+                v = l.split(':')[-1].strip()
+                break
+        for l in self.dmidecode[i+1:]:
+            if 'BIOS Revision:' in l:
+                rev = l.split(':')[-1].strip()
+                break
+        if rev != "":
+            return v+" "+rev
+        return v
+
     def _get_enclosure(self):
         if self.container:
             return 'n/a'

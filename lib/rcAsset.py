@@ -260,6 +260,44 @@ class Asset(object):
         print("  %s"%s)
 
 
+    def get_bios_version(self):
+        s = ''
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'bios_version')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_bios_version()
+                source = self.s_probe
+            except:
+                pass
+        self.print_bios_version(s, source)
+        return s
+
+    def print_bios_version(self, s, source):
+        print("bios version (%s)"%source)
+        print("  %s"%s)
+
+    def get_sp_version(self):
+        s = ''
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'sp_version')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_sp_version()
+                source = self.s_probe
+            except:
+                pass
+        self.print_sp_version(s, source)
+        return s
+
+    def print_sp_version(self, s, source):
+        print("sp version (%s)"%source)
+        print("  %s"%s)
+
     def get_enclosure(self):
         s = 'Unknown'
         source = self.s_default
@@ -757,6 +795,8 @@ class Asset(object):
         self.data['cpu_model'] = self.get_cpu_model()
         self.data['serial'] = self.get_serial()
         self.data['model'] = self.get_model()
+        self.data['bios_version'] = self.get_bios_version()
+        self.data['sp_version'] = self.get_sp_version()
         self.data['node_env'] = self.get_node_env()
         self.data['enclosure'] = self.get_enclosure()
         self.data['listener_port'] = self.get_listener_port()
