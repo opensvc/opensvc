@@ -1,5 +1,6 @@
 import os
 import datetime
+import re
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset
@@ -233,7 +234,7 @@ class Asset(rcAsset.Asset):
 
     def _get_bios_version(self):
         arch = self._get_os_arch().lower()
-        if arch.startswith("sparc"):
+        if arch.startswith("sun4"):
             return self._get_bios_version_sparc()
         else:
             return self._get_bios_version_intel()
@@ -241,7 +242,9 @@ class Asset(rcAsset.Asset):
     def _get_bios_version_sparc(self):
         for l in self.prtdiag:
             if l.startswith("OBP "):
-                return l.replace("OBP ", "").strip()
+                v = l.replace("OBP ", "").strip()
+                v = re.sub(' [0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}', '', v)
+                return v
         return ''
 
     def _get_bios_version_intel(self):
