@@ -231,5 +231,34 @@ class Asset(rcAsset.Asset):
                  m.append((hba_id, target))
         return m
 
+    def _get_bios_version(self):
+        arch = self._get_os_arch().lower()
+        if arch.startswith("sparc"):
+            return self._get_bios_version_sparc()
+        else:
+            return self._get_bios_version_intel()
+
+    def _get_bios_version_sparc(self):
+        for l in self.prtdiag:
+            if l.startswith("OBP "):
+                return l.replace("OBP ", "").strip()
+        return ''
+
+    def _get_bios_version_intel(self):
+        if which('smbios') is None:
+            return ''
+        out, err, ret = justcall(['smbios'])
+        if ret != 0:
+            return ''
+        try:
+            i = out.index('BIOS information')
+        except ValueError:
+            return ''
+        for l in out[i:].splitlines():
+            if 'Version String' in l:
+                return l.split(':')[-1].strip()
+        return ''
+
+
 if __name__ == "__main__":
     print(Asset()._get_cpu_model())
