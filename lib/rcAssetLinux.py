@@ -389,6 +389,27 @@ class Asset(rcAsset.Asset):
             return v+" "+rev
         return v
 
+    def _get_sp_version(self):
+        if self.container:
+            return 'n/a'
+        sp_version = self._get_sp_version_ipmi()
+        if sp_version:
+            return sp_version
+        return ''
+
+    def _get_sp_version_ipmi(self):
+        if which("ipmitool") is None:
+            return
+        cmd = ["ipmitool", "mc", "info"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return
+        for l in out.splitlines():
+            if 'Firmware Revision' in l:
+                v = l.split(' : ')[-1].strip()
+                return v
+        return v
+
     def _get_enclosure(self):
         if self.container:
             return 'n/a'
