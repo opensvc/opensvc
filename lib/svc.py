@@ -3450,6 +3450,9 @@ class Svc(Resource, Scheduler):
 
     def _validate_config(self, path=None):
         from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue, deprecated_sections
+        from svcBuilder import build, handle_references
+        from rcUtilities import convert_size
+
         data = KeyDict(provision=True)
         ret = {
           "errors": 0,
@@ -3462,10 +3465,60 @@ class Svc(Resource, Scheduler):
             config = RawConfigParser()
             config.read(path)
 
+        def check_scoping(key, section, option):
+            if not key.at and "@" in option:
+                self.log.error("option %s.%s does not support scoping" % (section, option))
+                return 1
+            return 0
+
+        def check_references(section, option):
+            value = config.get(section, option)
+            try:
+                value = handle_references(self, config, value, scope=True)
+            except Exception as e:
+                self.log.error(str(e))
+                return 1
+            return 0
+
+        def get_val(section, option):
+            value = config.get(section, option)
+            if type(key.default) == bool:
+                value = bool(value)
+            elif type(key.default) == int:
+                try:
+                    value = int(value)
+                except:
+                    # might be a size string like 11mib
+                    value = convert_size(value)
+            return value
+
+        def check_candidates(key, section, option, value):
+            if key.strict_candidates and key.candidates and value not in key.candidates:
+                if isinstance(key.candidates, (set, list, tuple)):
+                    candidates = ", ".join(key.candidates)
+                else:
+                    candidates = str(key.candidates)
+                self.log.error("option %s.%s value %s is not in valid candidates: %s" % (section, option, str(value), candidates))
+                return 1
+            return 0
+
+        def check_known_option(key, section, option):
+            err = 0
+            err += check_scoping(key, section, option)
+            if check_references(section, option) != 0:
+                err += 1
+                return err
+            value = get_val(section, option)
+            err += check_candidates(key, section, option, value)
+            return err
+
         # validate DEFAULT options
         for option in config.defaults():
-            if data.sections["DEFAULT"].getkey(option) is None:
+            key = data.sections["DEFAULT"].getkey(option)
+            if key is None:
                 found = False
+                # the option can be set in the DEFAULT section for the
+                # benefit of a resource section
                 for section in config.sections():
                     family = section.split("#")[0]
                     if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
@@ -3478,10 +3531,11 @@ class Svc(Resource, Scheduler):
                 if not found:
                     self.log.warning("ignored option DEFAULT.%s" % option)
                     ret["warnings"] += 1
+            else:
+                # here we know its a native DEFAULT option
+                ret["errors"] += check_known_option(key, "DEFAULT", option)
 
         # validate resources options
-        from svcBuilder import build, handle_references
-        from rcUtilities import convert_size
         for section in config.sections():
             if section == "env":
                 # the "env" section is not handled by a resource driver, and is
@@ -3510,28 +3564,7 @@ class Svc(Resource, Scheduler):
                     self.log.warning("ignored option %s.%s, driver %s" % (section, option, rtype if rtype else "generic"))
                     ret["warnings"] += 1
                 else:
-                    if not key.at and "@" in option:
-                        self.log.error("option %s.%s does not support scoping" % (section, option))
-                        ret["errors"] += 1
-                    value = config.get(section, option)
-                    try:
-                        value = handle_references(self, config, value, scope=True)
-                    except Exception as e:
-                        self.log.error(str(e))
-                        ret["errors"] += 1
-                        continue
-                    value = config.get(section, option)
-                    if type(key.default) == bool:
-                        value = bool(value)
-                    elif type(key.default) == int:
-                        try:
-                            value = int(value)
-                        except:
-                            # might be a size string like 11mib
-                            value = convert_size(value)
-                    if key.strict_candidates and key.candidates and value not in key.candidates:
-                        self.log.error("option %s.%s value %s is not in valid candidates: %s" % (section, option, str(value), str(key.candidates)))
-                        ret["errors"] += 1
+                    ret["errors"] += check_known_option(key, section, option)
 
         try:
             svc = build(self.svcname, svcconf=path)

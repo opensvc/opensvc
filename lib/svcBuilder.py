@@ -3572,9 +3572,6 @@ def build(name, minimal=False, svcconf=None):
     if svc.svc_env is None:
         svc.svc_env = rcEnv.node_env
 
-    if svc.svc_env not in rcEnv.allowed_svc_envs:
-        raise ex.excInitError('%s is not a valid service env (%s)'%(svc.svc_env, ', '.join(rcEnv.allowed_svc_envs)))
-
     #
     # Setup service properties from config file content
     #
