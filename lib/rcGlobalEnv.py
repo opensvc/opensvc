@@ -93,7 +93,21 @@ class rcEnv:
     """
     session_uuid = str(uuid.uuid4())
 
-    allowed_svc_envs = ['PRD', 'PPRD', 'REC', 'INT', 'DEV', 'TST', 'TMP', 'DRP', 'FOR', 'PRA', 'PRJ', 'STG']
+    allowed_svc_envs = [
+        'DEV',
+        'DRP',
+        'FOR',
+        'INT',
+        'PRA',
+        'PRD',
+        'PRJ',
+        'PPRD',
+        'REC',
+        'STG',
+        'TMP',
+        'TST',
+        'UAT',
+    ]
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
     nodename = socket.gethostname().lower()
