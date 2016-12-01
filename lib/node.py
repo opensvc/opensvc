@@ -1671,7 +1671,7 @@ class Node(Svc, Freezer, Scheduler):
             svcname = svcname[0]
 
         if cf is None and template is None:
-            raise ex.excError("either --config or --template must be specified")
+            return
 
         if cf is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
