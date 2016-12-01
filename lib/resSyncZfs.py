@@ -148,8 +148,19 @@ class SyncZfs(resSync.Sync):
         self.sync_update()
 
     def sync_full(self):
-        """alias to sync_update"""
+        """
+        Purge all local and remote snaps, and call sync_update, which
+        will do a non-incremental send/recv.
+        """
+        self.destroy_all_snaps()
         self.sync_update()
+
+    def destroy_all_snaps(self):
+        self.force_remove_snap(self.src_snap_tosend)
+        self.force_remove_snap(self.src_snap_sent)
+        for node in self.targets:
+            self.force_remove_snap(self.dst_snap_tosend, node)
+            self.force_remove_snap(self.dst_snap_sent, node)
 
     def zfs_send_incremental(self, node):
         if self.recursive:
@@ -197,8 +208,14 @@ class SyncZfs(resSync.Sync):
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
-    def remove_snap(self, snap, node=None):
-        if not self.snap_exists(snap, node=node):
+    def force_remove_snap(self, snap, node=None):
+        try:
+            self.remove_snap(snap, node=node, check_exists=False)
+        except ex.excError:
+            pass
+
+    def remove_snap(self, snap, node=None, check_exists=True):
+        if check_exists and not self.snap_exists(snap, node=node):
             return
         if self.recursive :
             cmd = ['zfs', 'destroy', '-r', snap]
@@ -206,7 +223,11 @@ class SyncZfs(resSync.Sync):
             cmd = ['zfs', 'destroy', snap]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
-        (ret, out, err) = self.vcall(cmd)
+        if check_exists:
+            err_to_info = False
+        else:
+            err_to_info = True
+        (ret, out, err) = self.vcall(cmd, err_to_info=err_to_info)
         if ret != 0:
             raise ex.excError
 
