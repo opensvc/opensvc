@@ -63,13 +63,20 @@ class SvcVcs(svc.Svc):
             raise ex.excError("unexpected SystemList value: %s"%s)
 
         self.nodes = set([])
-        domainname = self.get_domainname()
         for i, w in enumerate(l):
             if i % 2 == 1:
                 continue
-            if len(domainname) > 0 and not w.endswith(domainname):
-                w += '.' + domainname
             self.nodes.add(w)
+
+        domainname = self.get_domainname()
+        if len(domainname) > 0 and rcEnv.nodename.endswith(domainname):
+            nodes = set([])
+            for w in self.nodes:
+                if w.endswith(domainname):
+                    nodes.add(w)
+                else:
+                    nodes.add(w+"."+domainname)
+            self.nodes = nodes
 
     def builder(self):
         if self.pkg_name is None:
