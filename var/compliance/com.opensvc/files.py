@@ -384,7 +384,7 @@ class CompFiles(CompObject):
            pinfo("file: mkdir", d)
            os.makedirs(d)
            try:
-               os.chown(d, f['uid'], f['gid'])
+               self.fix_file_owner(d)
            except Exception as e:
                perror("file:", e)
                pass
