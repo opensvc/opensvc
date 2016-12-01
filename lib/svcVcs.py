@@ -17,8 +17,6 @@ class SvcVcs(svc.Svc):
         self.n_vg = 0
         self.n_lv = 0
 
-        self.builder()
-
     def get_res_val(self, res, p):
         if not self.vcs_operational:
             raise ex.excError("VCS is not operational")

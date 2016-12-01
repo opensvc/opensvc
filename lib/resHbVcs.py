@@ -12,7 +12,6 @@ class Hb(resHb.Hb):
                  disabled=False,
                  restart=0,
                  subset=None,
-                 disabled=False,
                  tags=set([])):
         resHb.Hb.__init__(self,
                           rid,

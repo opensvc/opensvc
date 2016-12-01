@@ -18,7 +18,6 @@ class SvcRhcs(svc.Svc):
         self.member_to_nodename_h = {}
         for i in ifconfig.intf:
             self.node_ips += i.ipaddr
-        self.builder()
 
     def getaddr(self, ipname):
         a = socket.getaddrinfo(ipname, None)

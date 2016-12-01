@@ -3555,6 +3555,9 @@ def build(name, minimal=False, svcconf=None):
     svc.initd = svcinitd
     svc.config = conf
 
+    if hasattr(svc, "builder"):
+        svc.builder()
+
     #
     # Store and validate the service type
     #

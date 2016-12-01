@@ -10,7 +10,6 @@ class SvcSg(svc.Svc):
         svc.Svc.__init__(self, svcname, "ServiceGuard", optional=optional, disabled=disabled, tags=tags)
         self.pkg_name = pkg_name
         self.load_paths()
-        self.builder()
 
     def load_paths(self):
         p = '/usr/local/cmcluster/bin/'
