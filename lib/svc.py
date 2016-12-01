@@ -3337,6 +3337,7 @@ class Svc(Resource, Scheduler):
             import shutil
             dpaths = [
               os.path.join(rcEnv.pathetc, self.svcname+".dir"),
+              os.path.join(rcEnv.pathetc, self.svcname+".d"),
             ]
             fpaths = [
               self.cf,
@@ -3346,7 +3347,8 @@ class Svc(Resource, Scheduler):
               os.path.join(rcEnv.pathetc, self.svcname+".stonith"),
             ]
             for fpath in fpaths:
-                if os.path.exists(fpath):
+                if os.path.exists(fpath) and \
+                   (os.path.islink(fpath) or os.path.isfile(fpath)):
                     self.log.info("remove %s" % fpath)
                     os.unlink(fpath)
             for dpath in dpaths:
