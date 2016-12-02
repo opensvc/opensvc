@@ -3533,9 +3533,8 @@ def build(name, minimal=False, svcconf=None):
         kwargs['disabled'] = get_disabled(conf, "", "")
 
         if "pkg_name" in defaults:
-            if svcmode not in ["sg", "rhcs", "vcs"]:
-                raise ex.excInitError("can not set 'pkg_name' with '%s' mode" % svcmode)
-            kwargs['pkg_name'] = defaults["pkg_name"]
+            if svcmode in ["sg", "rhcs", "vcs"]:
+                kwargs['pkg_name'] = defaults["pkg_name"]
 
 
     #
