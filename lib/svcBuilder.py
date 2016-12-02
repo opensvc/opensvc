@@ -3933,6 +3933,12 @@ def create(svcname, resources=[], interactive=False, provision=False):
                 sections[section].update(d)
             else:
                 sections[section] = d
+        elif 'rtype' in d and d["rtype"] == "env":
+            del(d["rtype"])
+            if "env" in sections:
+                sections["env"].update(d)
+            else:
+                sections["env"] = d
         elif 'rtype' in d and d["rtype"] != "DEFAULT":
             if 'rid' in d:
                del(d['rid'])
@@ -4048,6 +4054,12 @@ def update(svcname, resources=[], interactive=False, provision=False):
             else:
                 sections[section] = d
             is_resource = True
+        elif 'rtype' in d and d["rtype"] == "env":
+            del(d["rtype"])
+            if "env" in sections:
+                sections["env"].update(d)
+            else:
+                sections["env"] = d
         elif 'rtype' in d and d["rtype"] != "DEFAULT":
             # new resource allocation, auto-allocated rid index
             if d['rtype'] in rtypes:

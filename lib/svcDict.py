@@ -258,7 +258,7 @@ class Section(object):
         section = self.section
         if self.section in deprecated_sections:
             return ""
-        if rtype and  self.section+"."+rtype in deprecated_sections:
+        if rtype and self.section+"."+rtype in deprecated_sections:
             return ""
         dpath = rcEnv.pathdoc
         fpath = os.path.join(dpath, "template."+section+".conf")
@@ -270,7 +270,7 @@ class Section(object):
         s += "# %-74s #\n" % section
         s += "# %-74s #\n" % " "
         s += "#"*78 + "\n\n"
-        if section == "DEFAULT":
+        if section in ("DEFAULT", "env"):
             s += "[%s]\n" % self.section
         else:
             s += "[%s#0]\n" % self.section
@@ -335,6 +335,9 @@ class KeywordStore(dict):
         return self.sections[str(key)]
 
     def __getitem__(self, key):
+        k = str(key)
+        if k not in self.sections:
+            return Section(k)
         return self.sections[str(key)]
 
     def __str__(self):
@@ -353,6 +356,8 @@ class KeywordStore(dict):
         return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
 
     def purge_keywords_from_dict(self, d, section):
+        if section == "env":
+            return d
         if 'type' in d:
             rtype = d['type']
         else:
@@ -381,7 +386,7 @@ class KeywordStore(dict):
         completion = copy.copy(d)
 
         # decompose rid into section and rtype
-        if rid == 'DEFAULT':
+        if rid in ('DEFAULT', 'env'):
             section = rid
             rtype = None
         else:
@@ -401,6 +406,8 @@ class KeywordStore(dict):
 
         # validate command line dictionary
         for keyword, value in d.items():
+            if section == "env":
+                break
             key = self.sections[section].getkey(keyword)
             if key is None and rtype is not None:
                 key = self.sections[section].getkey(keyword, rtype)
