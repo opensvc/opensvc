@@ -216,7 +216,10 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
         node.svcs[0].setenv(options.env, options.interactive)
         # setenv changed the service config file
         # we need to rebuild again
-        if refresh_node_svcs(node, svcnames, build_kwargs["minimal"]) != 0:
+        try:
+            refresh_node_svcs(node, svcnames, build_kwargs["minimal"])
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
             ret = 1
 
     if options.provision:
