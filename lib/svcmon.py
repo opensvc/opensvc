@@ -151,7 +151,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
 def svcmon_cluster(node):
     svcnames = ",".join([r.svcname for r in node.svcs])
     try:
-        data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)"%svcnames)
+        data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)&limit=0"%svcnames)
     except Exception as e:
         print(e, file=sys.stderr)
         return
@@ -194,7 +194,7 @@ def svcmon_cluster(node):
                print(fmt%inst)
 
 def svcmon_cluster_verbose_data(node, svc_ids):
-    data = node.collector_rest_get("/services_instances?props=svc_id,node_id,mon_availstatus,mon_overallstatus,mon_updated&meta=0&filters=svc_id (%s)"%",".join(svc_ids))
+    data = node.collector_rest_get("/services_instances?props=svc_id,node_id,mon_availstatus,mon_overallstatus,mon_updated&meta=0&filters=svc_id (%s)&limit=0"%",".join(svc_ids))
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return {}
@@ -210,7 +210,7 @@ def svcmon_cluster_verbose_data(node, svc_ids):
     for d in data["data"]:
         node_ids.add(d["node_id"])
 
-    node_data = node.collector_rest_get("/nodes?props=node_id,nodename&meta=0&filters=node_id (%s)"%",".join(node_ids))
+    node_data = node.collector_rest_get("/nodes?props=node_id,nodename&meta=0&filters=node_id (%s)&limit=0"%",".join(node_ids))
     if "error" in node_data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return {}
