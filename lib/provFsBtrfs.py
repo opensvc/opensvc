@@ -7,7 +7,7 @@ from rcUtilities import which, justcall
 from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(provFs.ProvisioningFs):
-    mkfs = ['mkfs.btrfs']
+    mkfs = ['mkfs.btrfs', '-f']
     info = ['btrfs', 'device', 'ready']
 
     def get_subvol(self):
