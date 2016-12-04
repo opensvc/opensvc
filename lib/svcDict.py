@@ -2960,7 +2960,21 @@ class KeywordFsMntOpt(Keyword):
                   section="fs",
                   keyword="mnt_opt",
                   order=13,
+                  at=True,
                   text="The mount options."
+                )
+
+class KeywordFsMkfsOpt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="mkfs_opt",
+                  provisioning=True,
+                  required=False,
+                  at=True,
+                  order=13,
+                  text="Eventual mkfs additional options."
                 )
 
 class KeywordFsType(Keyword):
@@ -4193,6 +4207,7 @@ class KeyDict(KeywordStore):
         self += KeywordFsZone()
         self += KeywordFsMnt()
         self += KeywordFsMntOpt()
+        self += KeywordFsMkfsOpt()
         self += KeywordFsSnapSize()
         self += KeywordFsVg()
         self += KeywordFsSize()

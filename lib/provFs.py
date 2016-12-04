@@ -53,17 +53,26 @@ class ProvisioningFs(Provisioning):
                self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
                return
 
-        if not self.check_fs():
-            if not hasattr(self, "mkfs"):
-                raise ex.excError("no mkfs method implemented")
-            cmd = self.mkfs + [self.mkfs_dev]
+        if self.check_fs():
+            self.r.log.info("already provisioned")
+            return
+
+        if hasattr(self, "do_mkfs"):
+            self.do_mkfs()
+        elif hasattr(self, "mkfs"):
+            try:
+                opts = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mkfs_opt").split()
+            except:
+                opts = []
+            cmd = self.mkfs + opts + [self.mkfs_dev]
             (ret, out, err) = self.r.vcall(cmd)
             if ret != 0:
                 self.r.log.error('Failed to format %s'%self.mkfs_dev)
                 raise ex.excError
-            self.r.log.info("provisioned")
         else:
-            self.r.log.info("already provisioned")
+            raise ex.excError("no mkfs method implemented")
+
+        self.r.log.info("provisioned")
 
 
     def provisioner(self):
