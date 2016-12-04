@@ -1297,6 +1297,7 @@ class KeywordNodes(Keyword):
                   section="DEFAULT",
                   keyword="nodes",
                   order=20,
+                  at=True,
                   required=True,
                   default=rcEnv.nodename,
                   default_text="<hostname of the current node>",
@@ -1310,6 +1311,7 @@ class KeywordAutostartNode(Keyword):
                   section="DEFAULT",
                   keyword="autostart_node",
                   order=20,
+                  at=True,
                   required=False,
                   default=rcEnv.nodename,
                   default_text="<hostname of the current node>",
@@ -1323,6 +1325,7 @@ class KeywordDrpnode(Keyword):
                   section="DEFAULT",
                   keyword="drpnode",
                   order=21,
+                  at=True,
                   text="The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources.",
                   example="node1"
                 )
@@ -1334,6 +1337,7 @@ class KeywordDrpnodes(Keyword):
                   section="DEFAULT",
                   keyword="drpnodes",
                   order=21,
+                  at=True,
                   text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
                   example="node1 node2"
                 )
