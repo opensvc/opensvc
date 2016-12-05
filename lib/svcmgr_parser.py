@@ -7,31 +7,69 @@ import rcOptParser
 PROG = "svcmgr"
 
 OPT = Storage(
-    eval=lambda parser: \
-    parser.add_option("--eval", default=False,
-                      action="store_true", dest="eval",
-                      help="If set with the 'get' action, the printed value of "
-                           "--param is scoped and dereferenced."),
-    daemon=lambda parser: \
-    parser.add_option("--daemon", default=False,
-                      action="store_true", dest="daemon",
-                      help="a flag inhibiting the daemonization. set by the "
-                           "daemonization routine."),
+    account=lambda parser: \
+    parser.add_option("--account", default=False,
+                      action="store_true", dest="account",
+                      help="decides that the unavailabity period should be "
+                           "deduced from the service availability anyway. "
+                           "used with the 'collector ack unavailability' "
+                           "action"),
+    attach=lambda parser: \
+    parser.add_option("--attach", default=False,
+                      action="store_true", dest="attach",
+                      help="attach the modulesets specified during a "
+                           "compliance check/fix/fixable command"),
+    author=lambda parser: \
+    parser.add_option("--author", default=None,
+                      action="store", dest="author",
+                      help="the acker name to log when used with the "
+                           "'collector ack unavailability' action"),
+    begin=lambda parser: \
+    parser.add_option("--begin", default=None,
+                      action="store", dest="begin",
+                      help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
+                           "used with the 'collector ack unavailability' "
+                           "action"),
+    cluster=lambda parser: \
+    parser.add_option("-c", "--cluster", default=False,
+                      action="store_true", dest="cluster",
+                      help="option to set when excuting from a clusterware to"
+                           " disable safety net"),
     color=lambda parser: \
     parser.add_option("--color", default="auto",
                       action="store", dest="color",
                       help="colorize output. possible values are : auto=guess "
                            "based on tty presence, always|yes=always colorize, "
                            "never|no=never colorize"),
+    comment=lambda parser: \
+    parser.add_option("--comment", default=None,
+                      action="store", dest="comment",
+                      help="a comment to log when used with the 'collector "
+                           "ack unavailability' action"),
+    config=lambda parser: \
+    parser.add_option("--config", default=None,
+                      action="store", dest="param_config",
+                      help="the configuration file to use when creating or "
+                           "installing a service"),
+    cron=lambda parser: \
+    parser.add_option("--cron", default=False,
+                      action="store_true", dest="cron",
+                      help="used by cron'ed action to tell the collector to "
+                           "treat the log entries as such"),
     debug=lambda parser: \
     parser.add_option("--debug", default=False,
                       action="store_true", dest="debug",
                       help="debug mode"),
-    recover=lambda parser: \
-    parser.add_option("--recover", default=False,
-                      action="store_true", dest="recover",
-                      help="Recover the stashed erroneous configuration file "
-                           "in a 'edit config' command"),
+    daemon=lambda parser: \
+    parser.add_option("--daemon", default=False,
+                      action="store_true", dest="daemon",
+                      help="a flag inhibiting the daemonization. set by the "
+                           "daemonization routine."),
+    disable_rollback=lambda parser: \
+    parser.add_option("--disable-rollback", default=False,
+                      action="store_true", dest="disable_rollback",
+                      help="Exit without resource activation rollback on start"
+                           " action error"),
     discard=lambda parser: \
     parser.add_option("--discard", default=False,
                       action="store_true", dest="discard",
@@ -41,127 +79,71 @@ OPT = Storage(
     parser.add_option("--dry-run", default=False,
                       action="store_true", dest="dry_run",
                       help="Show the action execution plan"),
-    disable_rollback=lambda parser: \
-    parser.add_option("--disable-rollback", default=False,
-                      action="store_true", dest="disable_rollback",
-                      help="Exit without resource activation rollback on start"
-                           " action error"),
-    parallel=lambda parser: \
-    parser.add_option("-p", "--parallel", default=False,
-                      action="store_true", dest="parallel",
-                      help="start actions on specified services in parallel"),
-    ignore_affinity=lambda parser: \
-    parser.add_option("--ignore-affinity", default=False,
-                      action="store_true", dest="ignore_affinity",
-                      help="ignore service anti-affinity with other services "
-                           "check"),
-    remote=lambda parser: \
-    parser.add_option("--remote", default=False,
-                      action="store_true", dest="remote",
-                      help="flag action as triggered by a remote node. used "
-                           "to avoid recursively triggering actions amongst "
-                           "nodes"),
-    force=lambda parser: \
-    parser.add_option("-f", "--force", default=False,
-                      action="store_true", dest="force",
-                      help="force action, ignore sanity check warnings"),
-    cron=lambda parser: \
-    parser.add_option("--cron", default=False,
-                      action="store_true", dest="cron",
-                      help="used by cron'ed action to tell the collector to "
-                           "treat the log entries as such"),
-    slaves=lambda parser: \
-    parser.add_option("--slaves", default=False,
-                      action="store_true", dest="slaves",
-                      help="option to set to limit the action scope to all "
-                           "slave service resources"),
-    slave=lambda parser: \
-    parser.add_option("--slave", default=None, action="store", dest="slave",
-                      help="option to set to limit the action scope to the "
-                           "service resources in the specified, comma-"
-                           "separated, slaves"),
-    master=lambda parser: \
-    parser.add_option("--master", default=False,
-                      action="store_true", dest="master",
-                      help="option to set to limit the action scope to the "
-                           "master service resources"),
-    cluster=lambda parser: \
-    parser.add_option("-c", "--cluster", default=False,
-                      action="store_true", dest="cluster",
-                      help="option to set when excuting from a clusterware to"
-                           " disable safety net"),
-    interactive=lambda parser: \
-    parser.add_option("-i", "--interactive", default=False,
-                      action="store_true", dest="interactive",
-                      help="prompt user for a choice instead of going for "
-                           "defaults or failing"),
-    rid=lambda parser: \
-    parser.add_option("--rid", default=None,
-                      action="store", dest="parm_rid",
-                      help="comma-separated list of resource to limit action "
-                           "to"),
-    subsets=lambda parser: \
-    parser.add_option("--subsets", default=None,
-                      action="store", dest="parm_subsets",
-                      help="comma-separated list of resource subsets to limit"
-                           " action to"),
-    tags=lambda parser: \
-    parser.add_option("--tags", default=None,
-                      action="store", dest="parm_tags",
-                      help="comma-separated list of resource tags to limit "
-                           "action to. The + separator can be used to impose "
-                           "multiple tag conditions. Example: tag1+tag2,tag3 "
-                           "limits the action to resources with both tag1 and"
-                           " tag2, or tag3."),
-    resource=lambda parser: \
-    parser.add_option("--resource", default=[],
-                      action="append",
-                      help="a resource definition in json dictionary format "
-                           "fed to create or update"),
-    provision=lambda parser: \
-    parser.add_option("--provision", default=False,
-                      action="store_true", dest="provision",
-                      help="with the install or create actions, provision the"
-                           " service resources after config file creation. "
-                           "defaults to False."),
-    unprovision=lambda parser: \
-    parser.add_option("--unprovision", default=False,
-                      action="store_true", dest="unprovision",
-                      help="with the delete action, unprovision the service "
-                           "resources before config files file deletion. "
-                           "defaults to False."),
+    duration=lambda parser: \
+    parser.add_option("--duration", default=None,
+                      action="store", dest="duration", type="int",
+                      help="a duration expressed in minutes. used with the "
+                           "'collector ack unavailability' action"),
+    end=lambda parser: \
+    parser.add_option("--end", default=None,
+                      action="store", dest="end",
+                      help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
+                           "with the 'collector ack unavailability' action"),
     env=lambda parser: \
     parser.add_option("--env", default=[],
                       action="append", dest="env",
                       help="with the create action, set a env section "
                            "parameter. multiple --env <key>=<val> can be "
                            "specified."),
-    waitlock=lambda parser: \
-    parser.add_option("--waitlock", default=-1,
-                      action="store", dest="parm_waitlock", type="int",
-                      help="comma-separated list of resource tags to limit "
-                           "action to"),
-    to=lambda parser: \
-    parser.add_option("--to", default=None,
-                      action="store", dest="parm_destination_node",
-                      help="remote node to start or migrate the service to"),
-    show_disabled=lambda parser: \
-    parser.add_option("--show-disabled", default=None,
-                      action="store_true", dest="show_disabled",
-                      help="tell print|json status action to include the "
-                           "disabled resources in the output, irrespective of"
-                           " the show_disabled service configuration setting."),
+    eval=lambda parser: \
+    parser.add_option("--eval", default=False,
+                      action="store_true", dest="eval",
+                      help="If set with the 'get' action, the printed value of "
+                           "--param is scoped and dereferenced."),
+    force=lambda parser: \
+    parser.add_option("-f", "--force", default=False,
+                      action="store_true", dest="force",
+                      help="force action, ignore sanity check warnings"),
+    format=lambda parser: \
+    parser.add_option("--format", default=None,
+                      action="store", dest="format",
+                      help="specify a data formatter for output of the print*"
+                           " and collector* commands. possible values are json"
+                           " or table."),
+    help=lambda parser: \
+    parser.add_option("-h", "--help", default=None,
+                      action="store_true", dest="parm_help",
+                      help="show this help message and exit"),
     hide_disabled=lambda parser: \
     parser.add_option("--hide-disabled", default=None,
                       action="store_false", dest="show_disabled",
                       help="tell print|json status action to not include the "
                            "disabled resources in the output, irrespective of"
                            " the show_disabled service configuration setting."),
-    attach=lambda parser: \
-    parser.add_option("--attach", default=False,
-                      action="store_true", dest="attach",
-                      help="attach the modulesets specified during a "
-                           "compliance check/fix/fixable command"),
+    id=lambda parser: \
+    parser.add_option("--id", default=0,
+                      action="store", dest="id", type="int",
+                      help="specify an object id to act on"),
+    ignore_affinity=lambda parser: \
+    parser.add_option("--ignore-affinity", default=False,
+                      action="store_true", dest="ignore_affinity",
+                      help="ignore service anti-affinity with other services "
+                           "check"),
+    interactive=lambda parser: \
+    parser.add_option("-i", "--interactive", default=False,
+                      action="store_true", dest="interactive",
+                      help="prompt user for a choice instead of going for "
+                           "defaults or failing"),
+    like=lambda parser: \
+    parser.add_option("--like", default="%",
+                      action="store", dest="like",
+                      help="a sql like filtering expression. leading and "
+                           "trailing wildcards are automatically set."),
+    master=lambda parser: \
+    parser.add_option("--master", default=False,
+                      action="store_true", dest="master",
+                      help="option to set to limit the action scope to the "
+                           "master service resources"),
     module=lambda parser: \
     parser.add_option("--module", default="",
                       action="store", dest="module",
@@ -171,98 +153,6 @@ OPT = Storage(
                       action="store", dest="moduleset",
                       help="compliance, set moduleset list. The 'all' value "
                            "can be used in conjonction with detach."),
-    ruleset=lambda parser: \
-    parser.add_option("--ruleset", default="",
-                      action="store", dest="ruleset",
-                      help="compliance, set ruleset list. The 'all' value can"
-                           " be used in conjonction with detach."),
-    ruleset_date=lambda parser: \
-    parser.add_option("--ruleset-date", default="",
-                      action="store", dest="ruleset_date",
-                      help="compliance, use rulesets valid on specified date"),
-    param=lambda parser: \
-    parser.add_option("--param", default=None,
-                      action="store", dest="param",
-                      help="point a service configuration parameter for the "
-                           "'get' and 'set' actions"),
-    value=lambda parser: \
-    parser.add_option("--value", default=None,
-                      action="store", dest="value",
-                      help="set a service configuration parameter value for "
-                           "the 'set --param' action"),
-    duration=lambda parser: \
-    parser.add_option("--duration", default=None,
-                      action="store", dest="duration", type="int",
-                      help="a duration expressed in minutes. used with the "
-                           "'collector ack unavailability' action"),
-    account=lambda parser: \
-    parser.add_option("--account", default=False,
-                      action="store_true", dest="account",
-                      help="decides that the unavailabity period should be "
-                           "deduced from the service availability anyway. "
-                           "used with the 'collector ack unavailability' "
-                           "action"),
-    begin=lambda parser: \
-    parser.add_option("--begin", default=None,
-                      action="store", dest="begin",
-                      help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
-                           "used with the 'collector ack unavailability' "
-                           "action"),
-    end=lambda parser: \
-    parser.add_option("--end", default=None,
-                      action="store", dest="end",
-                      help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
-                           "with the 'collector ack unavailability' action"),
-    comment=lambda parser: \
-    parser.add_option("--comment", default=None,
-                      action="store", dest="comment",
-                      help="a comment to log when used with the 'collector "
-                           "ack unavailability' action"),
-    author=lambda parser: \
-    parser.add_option("--author", default=None,
-                      action="store", dest="author",
-                      help="the acker name to log when used with the "
-                           "'collector ack unavailability' action"),
-    id=lambda parser: \
-    parser.add_option("--id", default=0,
-                      action="store", dest="id", type="int",
-                      help="specify an object id to act on"),
-    refresh=lambda parser: \
-    parser.add_option("--refresh", default=False,
-                      action="store_true", dest="refresh",
-                      help="drop last resource status cache and re-evaluate "
-                           "before printing with the 'print [json] status' "
-                           "commands"),
-    verbose=lambda parser: \
-    parser.add_option("--verbose", default=False,
-                      action="store_true", dest="verbose",
-                      help="add more information to some print commands: +next"
-                           " in 'print schedule'"),
-    tag=lambda parser: \
-    parser.add_option("--tag", default=None,
-                      action="store", dest="tag",
-                      help="a tag specifier used by 'collector create tag', "
-                           "'collector add tag', 'collector del tag'"),
-    like=lambda parser: \
-    parser.add_option("--like", default="%",
-                      action="store", dest="like",
-                      help="a sql like filtering expression. leading and "
-                           "trailing wildcards are automatically set."),
-    format=lambda parser: \
-    parser.add_option("--format", default=None,
-                      action="store", dest="format",
-                      help="specify a data formatter for output of the print*"
-                           " and collector* commands. possible values are json"
-                           " or table."),
-    service=lambda parser: \
-    parser.add_option("-s", "--service", default=None,
-                      action="store", dest="parm_svcs",
-                      help="comma-separated list of service to operate on"),
-    status=lambda parser: \
-    parser.add_option("--status", default=None,
-                      action="store", dest="parm_status",
-                      help="operate only on service in the specified status "
-                           "(up/down/warn)"),
     onlyprimary=lambda parser: \
     parser.add_option("--onlyprimary", default=None,
                       action="store_true", dest="parm_primary",
@@ -273,21 +163,131 @@ OPT = Storage(
                       action="store_true", dest="parm_secondary",
                       help="operate only on service not flagged for autostart"
                            " on this node"),
-    help=lambda parser: \
-    parser.add_option("-h", "--help", default=None,
-                      action="store_true", dest="parm_help",
-                      help="show this help message and exit"),
-    config=lambda parser: \
-    parser.add_option("--config", default=None,
-                      action="store", dest="param_config",
-                      help="the configuration file to use when creating or "
-                           "installing a service"),
+    parallel=lambda parser: \
+    parser.add_option("-p", "--parallel", default=False,
+                      action="store_true", dest="parallel",
+                      help="start actions on specified services in parallel"),
+    param=lambda parser: \
+    parser.add_option("--param", default=None,
+                      action="store", dest="param",
+                      help="point a service configuration parameter for the "
+                           "'get' and 'set' actions"),
+    provision=lambda parser: \
+    parser.add_option("--provision", default=False,
+                      action="store_true", dest="provision",
+                      help="with the install or create actions, provision the"
+                           " service resources after config file creation. "
+                           "defaults to False."),
+    recover=lambda parser: \
+    parser.add_option("--recover", default=False,
+                      action="store_true", dest="recover",
+                      help="Recover the stashed erroneous configuration file "
+                           "in a 'edit config' command"),
+    refresh=lambda parser: \
+    parser.add_option("--refresh", default=False,
+                      action="store_true", dest="refresh",
+                      help="drop last resource status cache and re-evaluate "
+                           "before printing with the 'print [json] status' "
+                           "commands"),
+    remote=lambda parser: \
+    parser.add_option("--remote", default=False,
+                      action="store_true", dest="remote",
+                      help="flag action as triggered by a remote node. used "
+                           "to avoid recursively triggering actions amongst "
+                           "nodes"),
+    resource=lambda parser: \
+    parser.add_option("--resource", default=[],
+                      action="append",
+                      help="a resource definition in json dictionary format "
+                           "fed to create or update"),
+    rid=lambda parser: \
+    parser.add_option("--rid", default=None,
+                      action="store", dest="parm_rid",
+                      help="comma-separated list of resource to limit action "
+                           "to"),
+    ruleset=lambda parser: \
+    parser.add_option("--ruleset", default="",
+                      action="store", dest="ruleset",
+                      help="compliance, set ruleset list. The 'all' value can"
+                           " be used in conjonction with detach."),
+    ruleset_date=lambda parser: \
+    parser.add_option("--ruleset-date", default="",
+                      action="store", dest="ruleset_date",
+                      help="compliance, use rulesets valid on specified date"),
+    service=lambda parser: \
+    parser.add_option("-s", "--service", default=None,
+                      action="store", dest="parm_svcs",
+                      help="comma-separated list of service to operate on"),
+    show_disabled=lambda parser: \
+    parser.add_option("--show-disabled", default=None,
+                      action="store_true", dest="show_disabled",
+                      help="tell print|json status action to include the "
+                           "disabled resources in the output, irrespective of"
+                           " the show_disabled service configuration setting."),
+    slave=lambda parser: \
+    parser.add_option("--slave", default=None, action="store", dest="slave",
+                      help="option to set to limit the action scope to the "
+                           "service resources in the specified, comma-"
+                           "separated, slaves"),
+    slaves=lambda parser: \
+    parser.add_option("--slaves", default=False,
+                      action="store_true", dest="slaves",
+                      help="option to set to limit the action scope to all "
+                           "slave service resources"),
+    status=lambda parser: \
+    parser.add_option("--status", default=None,
+                      action="store", dest="parm_status",
+                      help="operate only on service in the specified status "
+                           "(up/down/warn)"),
+    subsets=lambda parser: \
+    parser.add_option("--subsets", default=None,
+                      action="store", dest="parm_subsets",
+                      help="comma-separated list of resource subsets to limit"
+                           " action to"),
+    tag=lambda parser: \
+    parser.add_option("--tag", default=None,
+                      action="store", dest="tag",
+                      help="a tag specifier used by 'collector create tag', "
+                           "'collector add tag', 'collector del tag'"),
+    tags=lambda parser: \
+    parser.add_option("--tags", default=None,
+                      action="store", dest="parm_tags",
+                      help="comma-separated list of resource tags to limit "
+                           "action to. The + separator can be used to impose "
+                           "multiple tag conditions. Example: tag1+tag2,tag3 "
+                           "limits the action to resources with both tag1 and"
+                           " tag2, or tag3."),
     template=lambda parser: \
     parser.add_option("--template", default=None,
                       action="store", dest="param_template",
                       help="the configuration file template name or id, "
                            "served by the collector, to use when creating or "
                            "installing a service"),
+    to=lambda parser: \
+    parser.add_option("--to", default=None,
+                      action="store", dest="parm_destination_node",
+                      help="remote node to start or migrate the service to"),
+    unprovision=lambda parser: \
+    parser.add_option("--unprovision", default=False,
+                      action="store_true", dest="unprovision",
+                      help="with the delete action, unprovision the service "
+                           "resources before config files file deletion. "
+                           "defaults to False."),
+    value=lambda parser: \
+    parser.add_option("--value", default=None,
+                      action="store", dest="value",
+                      help="set a service configuration parameter value for "
+                           "the 'set --param' action"),
+    verbose=lambda parser: \
+    parser.add_option("--verbose", default=False,
+                      action="store_true", dest="verbose",
+                      help="add more information to some print commands: +next"
+                           " in 'print schedule'"),
+    waitlock=lambda parser: \
+    parser.add_option("--waitlock", default=-1,
+                      action="store", dest="parm_waitlock", type="int",
+                      help="comma-separated list of resource tags to limit "
+                           "action to"),
 )
 
 SVCMGR_OPTS = [
