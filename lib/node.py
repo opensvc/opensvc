@@ -1019,6 +1019,7 @@ class Node(Svc, Freezer, Scheduler):
             print("failed to write registration number: %s"%u, file=sys.stderr)
             return 1
         print("registered")
+        rcEnv.uuid = u
         self.pushasset()
         self.pushdisks()
         self.pushpkg()
