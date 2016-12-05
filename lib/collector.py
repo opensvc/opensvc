@@ -321,3 +321,14 @@ class Collector(object):
                 e_name = _d["fmt"]["name"] % e
                 e_id = _d["fmt"]["id"] % e
                 print(" %s: %s" % (e_id, e_name))
+
+    def collector_log(self):
+        path = "/logs"
+        data = {
+          "log_fmt": self.options.message,
+        }
+        d = self.node.collector_rest_post(path, data, svcname=self.svcname)
+        if "error" in d:
+            raise ex.excError(d["error"])
+        print("logged")
+

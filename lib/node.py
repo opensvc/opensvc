@@ -1501,12 +1501,14 @@ class Node(Svc, Freezer, Scheduler):
         cli = Cli(**data)
         return cli.run()
 
-    def collector_api(self):
+    def collector_api(self, svcname=None):
         if hasattr(self, "collector_api_cache"):
             return self.collector_api_cache
         data = {}
         if not hasattr(self.options, "user") or self.options.user is None:
             username, password = self.collector_auth_node()
+            if svcname:
+                username = svcname+"@"+username
         else:
             username, password = self.collector_auth_user()
         data["username"] = username
@@ -1539,8 +1541,8 @@ class Node(Svc, Freezer, Scheduler):
         url = url.replace("http://", "http://"+s)
         return url
 
-    def collector_request(self, path):
-        api = self.collector_api()
+    def collector_request(self, path, svcname=None):
+        api = self.collector_api(svcname=svcname)
         url = api["url"]
         request = Request(url+path)
         auth_string = '%s:%s' % (api["username"], api["password"])
@@ -1552,11 +1554,11 @@ class Node(Svc, Freezer, Scheduler):
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
-    def collector_rest_get(self, path):
-        return self.collector_rest_request(path)
+    def collector_rest_get(self, path, svcname=None):
+        return self.collector_rest_request(path, svcname=svcname)
 
-    def collector_rest_post(self, path, data=None):
-        return self.collector_rest_request(path, data)
+    def collector_rest_post(self, path, data=None, svcname=None):
+        return self.collector_rest_request(path, data, svcname=svcname)
 
     def urlretrieve(self, url, fpath):
         request = Request(url)
@@ -1571,8 +1573,8 @@ class Node(Svc, Freezer, Scheduler):
             for chunk in iter(lambda: f.read(4096), b""):
                 df.write(chunk)
 
-    def collector_rest_request(self, path, data=None):
-        api = self.collector_api()
+    def collector_rest_request(self, path, data=None, svcname=None):
+        api = self.collector_api(svcname=svcname)
         request = self.collector_request(path)
         if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")

@@ -144,6 +144,10 @@ OPT = Storage(
                       action="store_true", dest="master",
                       help="option to set to limit the action scope to the "
                            "master service resources"),
+    message=lambda parser: \
+    parser.add_option("--message", default="",
+                      action="store", dest="message",
+                      help="the message to send to the collector for logging"),
     module=lambda parser: \
     parser.add_option("--module", default="",
                       action="store", dest="module",
@@ -914,6 +918,12 @@ ACTIONS = {
         },
         'collector_disks': {
             'msg': 'display service disks',
+        },
+        'collector_log': {
+            'msg': 'log a message in the collector\'s service log',
+            'options': [
+                OPT.message,
+            ],
         },
         'collector_alerts': {
             'msg': 'display service alerts',

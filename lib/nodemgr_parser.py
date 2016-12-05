@@ -110,6 +110,10 @@ OPT = Storage(
                       action="store", dest="mac",
                       help="list of mac addresses, comma separated, used by "
                            "the 'wol' action"),
+    message=lambda parser: \
+    parser.add_option("--message", default="",
+                      action="store", dest="message",
+                      help="the message to send to the collector for logging"),
     module=lambda parser: \
     parser.add_option("--module", default="",
                       action="store", dest="module",
@@ -637,6 +641,12 @@ ACTIONS = {
             'msg': 'show the list of filtersets available on the collector. '
                    'if specified, --filterset <pattern> limits the resulset '
                    'to filtersets matching <pattern>',
+        },
+        'collector_log': {
+            'msg': 'log a message in the collector\'s node log',
+            'options': [
+                OPT.message,
+            ],
         },
         'collector_asset': {
             'msg': 'display asset information known to the collector',

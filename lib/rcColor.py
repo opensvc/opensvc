@@ -1,7 +1,9 @@
+from __future__ import print_function
 import os
 import sys
 import platform
 import rcExceptions as ex
+from rcUtilities import is_string
 
 use_color = "auto"
 
@@ -74,6 +76,8 @@ def format_table(d):
 
 def format_default(d):
     from rcPrintTable import print_table_default
+    if "error" in d and is_string(d["error"]):
+        print(d["error"], file=sys.stderr)
     print_table_default(d)
 
 def format_csv(d):
@@ -225,6 +229,9 @@ def formatter(fn):
             return
 
         _fmt(data)
+
+        if "error" in data:
+            return 1
 
     return decorator
 
