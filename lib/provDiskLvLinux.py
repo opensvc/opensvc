@@ -19,6 +19,33 @@ class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 
+    def unprovisioner(self):
+        try:
+            self.vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+        except:
+            self.r.log.debug("skip lv unprovision: no vg option")
+            return
+
+        if not which('lvdisplay'):
+            self.r.log.debug("skip lv unprovision: lvdisplay command not found")
+            return
+
+        self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        cmd = ["lvdisplay", self.dev]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            self.r.log.debug("skip lv unprovision: %s is not a lv" % self.dev)
+            return
+
+        if not which('lvremove'):
+            self.r.log.error("lvcreate command not found")
+            raise ex.excError
+
+        cmd = ["lvremove", "-f", self.dev]
+        ret, out, err = self.r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
     def provisioner(self):
         if not which('vgdisplay'):
             self.r.log.error("vgdisplay command not found")

@@ -33,9 +33,17 @@ class ProvisioningFs(Provisioning):
             return
         p.ProvisioningDisk(self.r).provisioner()
 
+    def unprovision_dev(self):
+        if rcEnv.sysname == 'Linux':
+            p = __import__("provDiskLvLinux")
+        else:
+            return
+        p.ProvisioningDisk(self.r).unprovisioner()
+
     def provisioner_fs(self):
         self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
         self.mnt = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mnt")
+
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
@@ -79,15 +87,21 @@ class ProvisioningFs(Provisioning):
         self.provisioner_fs()
         self.r.start()
 
-    def unprovisioner_fs(self):
-        pass
-
-    def unprovisioner(self):
-        self.r.stop()
-        self.unprovisioner_fs()
+    def purge_mountpoint(self):
         if os.path.exists(self.r.mountPoint) and not self.r.mountPoint in protected_dirs:
             self.r.log.info("rm -rf %s" % self.r.mountPoint)
             try:
                 shutil.rmtree(self.r.mountPoint)
             except Exception as e:
                 raise ex.excError(str(e))
+
+    def unprovisioner_fs(self):
+        pass
+
+    def unprovisioner(self):
+        self.r.stop()
+        self.unprovisioner_fs()
+        self.purge_mountpoint()
+        self.unprovision_dev()
+
+
