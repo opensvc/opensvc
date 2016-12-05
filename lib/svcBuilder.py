@@ -52,6 +52,10 @@ def handle_reference(svc, conf, ref, scope=False, impersonate=None):
             return rcEnv.nodename
         if ref == "svcname":
             return svc.svcname
+        if ref == "svcmgr":
+            return rcEnv.svcmgr
+        if ref == "nodemgr":
+            return rcEnv.nodemgr
 
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
