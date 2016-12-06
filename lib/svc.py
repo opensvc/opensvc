@@ -3237,8 +3237,12 @@ class Svc(Resource, Scheduler):
         if not os.isatty(0):
             raise ex.excError("--interactive is set but input fd is not a tty")
         for k, v in self.env_section_keys().items():
+            if k.endswith(".comment"):
+                continue
             if k in explicit_options:
                 continue
+            if self.config.has_option("env", k+".comment"):
+                print(self.config.get("env", k+".comment"))
             val = raw_input("%s [%s] > " % (k, str(v)))
             if val != "":
                 self._set("env", k, val)
