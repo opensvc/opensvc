@@ -34,6 +34,17 @@ class ProvisioningDisk(Provisioning):
         self.r.log.error("unexpected dev %s format" % self.r.device)
         raise ex.excError
 
+    def activate(self, dev):
+        if not which('lvchange'):
+            self.r.log.debug("lvchange command not found")
+            return
+
+        dev = self.get_dev()
+        cmd = ["lvchange", "-a", "y", dev]
+        ret, out, err = self.r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
     def unprovisioner(self):
         try:
             vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
@@ -71,14 +82,16 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError
 
         if not which('lvdisplay'):
-            self.r.log.debug("skip lv unprovision: lvdisplay command not found")
-            return
+            self.r.log.error("lvdisplay command not found")
+            raise ex.excError
 
         dev = self.get_dev()
         cmd = ["lvdisplay", dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             self.r.log.debug("skip lv provision: %s already exists" % dev)
+            if "NOT available" in out:
+                self.activate(dev)
             return
 
         try:
