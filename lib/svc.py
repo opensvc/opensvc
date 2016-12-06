@@ -17,11 +17,6 @@ import datetime
 import node
 from rcScheduler import *
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
 
@@ -696,7 +691,11 @@ class Svc(Resource, Scheduler):
 
     def env_section_keys(self, evaluate=False):
         config = self.print_config_data()
-        data = {}
+        try:
+            from collections import OrderedDict
+            data = OrderedDict()
+        except:
+            data = {}
         for key in config.get("env", {}).keys():
             if evaluate:
                 data[key] = conf_get_string_scope(self, self.config, 'env', key)
@@ -705,8 +704,17 @@ class Svc(Resource, Scheduler):
         return data
 
     def print_config_data(self):
-        svc_config = {}
-        tmp = {}
+        """
+        Return a simple dict (OrderedDict if possible), fed with the
+        service configuration sections and keys
+        """
+        try:
+            from collections import OrderedDict
+            Dict = OrderedDict
+        except:
+            Dict = dict
+        svc_config = Dict()
+        tmp = Dict()
         self.load_config()
         config = self.config
 
@@ -720,7 +728,7 @@ class Svc(Resource, Scheduler):
         sections = config.sections()
         for section in sections:
             options = config.options(section)
-            tmpsection = {}
+            tmpsection = Dict()
             for option in options:
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
@@ -3118,7 +3126,11 @@ class Svc(Resource, Scheduler):
             pass
 
     def load_config(self):
-        self.config = RawConfigParser()
+        try:
+            from collections import OrderedDict
+            self.config = RawConfigParser(dict_type=OrderedDict)
+        except:
+            self.config = RawConfigParser()
         self.config.read(self.cf)
 
     def unset(self):
