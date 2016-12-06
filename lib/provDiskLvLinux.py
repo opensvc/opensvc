@@ -19,9 +19,24 @@ class ProvisioningDisk(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 
+    def get_dev(self):
+        """
+        Return the device path in the /dev/<vg>/<lv> format
+        """
+        dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+        if dev.startswith('/dev/mapper/'):
+            dev = dev.replace(vg.replace('-', '--')+'-', '')
+            dev = dev.replace('--', '-')
+            return "/dev/"+vg+"/"+os.path.basename(dev)
+        if "/"+vg+"/" in dev:
+            return dev
+        self.r.log.error("unexpected dev %s format" % self.r.device)
+        raise ex.excError
+
     def unprovisioner(self):
         try:
-            self.vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+            vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
         except:
             self.r.log.debug("skip lv unprovision: no vg option")
             return
@@ -30,18 +45,18 @@ class ProvisioningDisk(Provisioning):
             self.r.log.debug("skip lv unprovision: lvdisplay command not found")
             return
 
-        self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
-        cmd = ["lvdisplay", self.dev]
+        dev = self.get_dev()
+        cmd = ["lvdisplay", dev]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            self.r.log.debug("skip lv unprovision: %s is not a lv" % self.dev)
+            self.r.log.debug("skip lv unprovision: %s is not a lv" % dev)
             return
 
         if not which('lvremove'):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
-        cmd = ["lvremove", "-f", self.dev]
+        cmd = ["lvremove", "-f", dev]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -55,6 +70,17 @@ class ProvisioningDisk(Provisioning):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
+        if not which('lvdisplay'):
+            self.r.log.debug("skip lv unprovision: lvdisplay command not found")
+            return
+
+        dev = self.get_dev()
+        cmd = ["lvdisplay", dev]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            self.r.log.debug("skip lv provision: %s already exists" % dev)
+            return
+
         try:
             self.size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
             self.size = str(self.size).upper()
@@ -62,29 +88,21 @@ class ProvisioningDisk(Provisioning):
                 size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
             else:
                 size_parm = ["-l", self.size]
-            self.vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+            vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return
 
-        cmd = ['vgdisplay', self.vg]
+        cmd = ['vgdisplay', vg]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            self.r.log.error("volume group %s does not exist"%self.vg)
+            self.r.log.error("volume group %s does not exist" % vg)
             raise ex.excError
 
-        # get lvname from fs dev
-        if self.r.device.startswith('/dev/mapper/'):
-            dev = self.r.device.replace('/dev/mapper/', '').replace(self.vg.replace('-', '--')+'-', '')
-            dev = dev.replace('--', '-')
-        elif "/"+self.vg+"/" in self.r.device:
-            dev = os.path.basename(self.r.device)
-        else:
-            self.r.log.error("unexpected dev %s format" % self.r.device)
-            raise ex.excError
+        lvname = os.path.basename(dev)
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', dev] + size_parm + [self.vg]
+        cmd = ['lvcreate', '-n', lvname] + size_parm + [vg]
         _cmd = "yes | " + " ".join(cmd)
         self.r.log.info(_cmd)
         p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
@@ -105,8 +123,8 @@ class ProvisioningDisk(Provisioning):
         except:
             # best effort
             pass
-        mapname = "%s-%s"%(self.vg.replace('-','--'),
-                           dev.replace('-','--'))
+        mapname = "%s-%s" % (vg.replace('-','--'),
+                             lvname.replace('-','--'))
         dev = '/dev/mapper/'+mapname
 
         for i in range(3, 0, -1):

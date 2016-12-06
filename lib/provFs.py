@@ -49,7 +49,6 @@ class ProvisioningFs(Provisioning):
             self.r.log.info("%s mount point created"%self.mnt)
 
         if not os.path.exists(self.dev) and self.r.fsType not in self.r.netfs:
-            self.r.log.info("dev %s does not exist. create a logical volume"%self.dev)
             self.provision_dev()
 
         self.mkfs_dev = self.dev
