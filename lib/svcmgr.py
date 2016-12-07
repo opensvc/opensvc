@@ -46,15 +46,30 @@ def get_docker_argv():
     sys.argv = sys.argv[:pos+1]
     return docker_argv
 
+def get_minimal(action, options):
+    """
+    Return True if the services can be built with minimal parsing
+    """
+    if action in ("set", "unset"):
+        return True
+    if action == "get" and not options.eval:
+        return True
+    if action == "edit_config":
+        return True
+    if action == "delete":
+       if not options.unprovision:
+           return True
+       if not options.rid and not options.tags and not options.subsets:
+           return True
+    return False
+
 def get_build_kwargs(optparser, options, action):
     """
     Return the service build function keyword arguments, deduced from
     parsed command line options.
     """
     build_kwargs = {}
-    build_kwargs["minimal"] = action in ("set", "unset") or \
-                              (action == "get" and not options.eval) or \
-                              (action == "delete" and not options.unprovision)
+    build_kwargs["minimal"] = get_minimal(action, options)
 
     if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
         if os.environ.get("OSVC_SERVICE_LINK"):
