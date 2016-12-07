@@ -63,6 +63,12 @@ def get_minimal(action, options):
             not options.parm_tags and \
             not options.parm_subsets:
            return True
+    if action.startswith("print_config"):
+        return True
+    if action.startswith("json_config"):
+        return True
+    if action.startswith("collector_"):
+        return True
     return False
 
 def get_build_kwargs(optparser, options, action):
