@@ -60,6 +60,9 @@ class ProvisioningFs(Provisioning):
                self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
                return
 
+        if not os.path.exists(self.mkfs_dev):
+            raise ex.excError("abort fs provisioning: %s does not exist" % self.mkfs_dev)
+
         if self.check_fs():
             self.r.log.info("already provisioned")
             return
