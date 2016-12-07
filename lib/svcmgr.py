@@ -59,9 +59,9 @@ def get_minimal(action, options):
     if action == "delete":
        if not options.unprovision:
            return True
-       if not options.parm_rid and \
-          not options.parm_tags and \
-          not options.parm_subsets:
+       elif not options.parm_rid and \
+            not options.parm_tags and \
+            not options.parm_subsets:
            return True
     return False
 
