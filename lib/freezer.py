@@ -25,8 +25,8 @@ class Freezer:
         for name in glob.glob(self.flag_dir + '/FROZEN*'):
             os.unlink(name)
 
-    def __init__(self, name=''):
-        if len(name) == 0:
+    def __init__(self, name=None):
+        if name is None:
             pass
         elif not os.path.exists(os.path.join(rcEnv.pathetc, name)):
             self.freeze = dummy

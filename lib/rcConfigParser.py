@@ -33,4 +33,8 @@ if sys.version_info[0] < 3:
                     fp.write("%s\n" % (key.encode("utf-8")))
                 fp.write("\n")
 else:
-    RawConfigParser = ConfigParser.RawConfigParser
+    class RawConfigParser(ConfigParser.RawConfigParser):
+        def __init__(self, *args, **kwargs):
+            if sys.version_info[0] >= 3:
+                kwargs["strict"] = False
+            ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)

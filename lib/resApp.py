@@ -24,10 +24,16 @@ def run_as_popen_kwargs(fpath):
     user_uid = st[stat.ST_UID]
     user_gid = st[stat.ST_GID]
     import pwd
-    user_name = pwd.getpwuid(st[stat.ST_UID])[0]
-    pw_record = pwd.getpwnam(user_name)
-    user_name      = pw_record.pw_name
-    user_home_dir  = pw_record.pw_dir
+    try:
+        user_name = pwd.getpwuid(st[user_uid])[0]
+    except:
+        user_name = "unknown"
+    try:
+        pw_record = pwd.getpwnam(user_name)
+        user_name      = pw_record.pw_name
+        user_home_dir  = pw_record.pw_dir
+    except:
+        user_home_dir  = rcEnv.pathtmp
     env = os.environ.copy()
     env['HOME']  = user_home_dir
     env['LOGNAME']  = user_name

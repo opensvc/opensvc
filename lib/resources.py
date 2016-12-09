@@ -478,17 +478,17 @@ class Resource(object):
                 self.optional,
                 encap)
 
-    def call(self, cmd, **kwargs):
+    def call(self, *args, **kwargs):
         """ wrap call, setting the resource logger
         """
         kwargs["log"] = self.log
-        return rcUtilities.call(cmd, **kwargs)
+        return rcUtilities.call(*args, **kwargs)
 
-    def vcall(self, cmd, **kwargs):
+    def vcall(self, *args, **kwargs):
         """ wrap vcall, setting the resource logger
         """
         kwargs["log"] = self.log
-        return rcUtilities.vcall(cmd, **kwargs)
+        return rcUtilities.vcall(*args, **kwargs)
 
     def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
         for tick in range(tmo//delay):

@@ -4,6 +4,7 @@ This executable is wrapped by the opensvc shell script.
 It's the entrypoint for all OpenSVC services management ops.
 """
 from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 
@@ -304,7 +305,7 @@ def _main(node):
 
     if action == "create":
         try:
-            node.install_service(svcnames, cf=options.param_config,
+            node.install_service(svcnames, fpath=options.param_config,
                                  template=options.param_template)
             ret = 0
         except Exception as exc:

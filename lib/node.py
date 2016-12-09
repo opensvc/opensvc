@@ -1,166 +1,265 @@
+"""
+This module implements the Node class.
+The node
+* handles communications with the collector
+* holds the list of services
+* has a scheduler
+"""
 from __future__ import print_function
-from svc import Svc
-from freezer import Freezer
-import svcBuilder
-import xmlrpcClient
+from __future__ import absolute_import
+from __future__ import division
 import os
 import datetime
-import time
 import sys
 import json
-from rcGlobalEnv import rcEnv
-import rcCommandWorker
 import socket
-import rcLogger
-import rcUtilities
-import rcExceptions as ex
-from subprocess import *
-from rcScheduler import *
-from rcConfigParser import RawConfigParser
-from rcColor import formatter
 
-if sys.version_info[0] >= 3:
-    from urllib.request import Request, urlopen
-    from urllib.error import HTTPError
-    from urllib.parse import urlencode
-else:
+if sys.version_info[0] < 3:
     from urllib2 import Request, urlopen
     from urllib2 import HTTPError
     from urllib import urlencode
+else:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
 
-try:
-    import base64
-except:
-    pass
-
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+from svc import Svc
+import svcBuilder
+import xmlrpcClient
+from rcGlobalEnv import rcEnv, Storage
+import rcCommandWorker
+import rcLogger
+import rcUtilities
+import rcExceptions as ex
+from rcScheduler import scheduler_fork, Scheduler, SchedOpts
+from rcConfigParser import RawConfigParser
+from rcColor import formatter
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
 
-deprecated_keywords = {
-  "node.host_mode": "env",
-  "node.environnement": "asset_env",
-  "node.environment": "asset_env",
+os.environ['LANG'] = 'C'
+
+try:
+    RCOS = __import__('rcOs'+rcEnv.sysname)
+except ImportError:
+    RCOS = __import__('rcOs')
+
+DEPRECATED_KEYWORDS = {
+    "node.host_mode": "env",
+    "node.environment": "asset_env",
+    "node.environnement": "asset_env",
 }
 
-reverse_deprecated_keywords = {
-  "node.env": ["host_mode"],
-  "node.asset_env": ["environnement", "environment"],
+REVERSE_DEPRECATED_KEYWORDS = {
+    "node.asset_env": ["environnement", "environment"],
+    "node.env": ["host_mode"],
 }
 
-actions_no_parallel = [
-  'edit_config',
-  'get',
-  'print_config',
-  'print_resource_status',
-  'print_schedule',
-  "print_status",
+ACTIONS_NO_PARALLEL = [
+    "edit_config",
+    "get",
+    "print_config",
+    "print_resource_status",
+    "print_schedule",
+    "print_status",
 ]
 
-actions_no_multiple_services = [
-  "print_resource_status",
+ACTIONS_NO_MULTIPLE_SERVICES = [
+    "print_resource_status",
 ]
 
+CONFIG_DEFAULTS = {
+    "clusters": "",
+    "node_env": "TST",
+    "push_schedule": "00:00-06:00@361 mon-sun",
+    "sync_schedule": "04:00-06:00@121 mon-sun",
+    "comp_schedule": "02:00-06:00@241 sun",
+    "collect_stats_schedule": "@10",
+    "no_schedule": "",
+}
 
-class Options(object):
-    def __init__(self):
-        self.cron = False
-        self.syncrpc = False
-        self.force = False
-        self.debug = False
-        self.stats_dir = None
-        self.begin = None
-        self.end = None
-        self.moduleset = ""
-        self.module = ""
-        self.ruleset_date = ""
-        self.waitlock = -1
-        self.parallel = False
-        self.objects = []
-        os.environ['LANG'] = 'C'
+UNPRIVILEGED_ACTIONS = [
+    "collector_cli",
+]
 
-class Node(Svc, Freezer, Scheduler):
-    """ Defines a cluster node.  It contain list of Svc.
-        Implements node-level actions and checks.
+class Node(Scheduler):
+    """
+    Defines a cluster node.  It contain list of Svc.
+    Implements node-level actions and checks.
     """
     def __str__(self):
-        s = self.nodename
-        return s
+        return self.nodename
 
     def __init__(self):
+        self.collector_api_cache = None
         self.ex_monitor_action_exit_code = 251
+        self.config = None
         self.auth_config = None
+        self.clusters = None
+        self.clouds = None
         self.nodename = socket.gethostname().lower()
-        self.setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
-        self.reboot_flag = os.path.join(rcEnv.pathvar, "REBOOT_FLAG")
-        self.config_defaults = {
-          'clusters': '',
-          'node_env': 'TST',
-          'push_schedule': '00:00-06:00@361 mon-sun',
-          'sync_schedule': '04:00-06:00@121 mon-sun',
-          'comp_schedule': '02:00-06:00@241 sun',
-          'collect_stats_schedule': '@10',
-          'no_schedule': '',
-        }
+        self.paths = Storage(
+            reboot_flag=os.path.join(rcEnv.pathvar, "REBOOT_FLAG"),
+        )
         self.svcs = None
-        try:
-            self.clusters = list(set(self.config.get('node', 'clusters').split()))
-        except:
-            self.clusters = []
         self.load_config()
-        self.options = Options()
-        Scheduler.__init__(self)
-        Freezer.__init__(self, '')
-        self.unprivileged_actions = [
-          "collector_cli",
-          "print_schedule",
-        ]
+        self.options = Storage(
+            cron=False,
+            syncrpc=False,
+            force=False,
+            debug=False,
+            stats_dir=None,
+            begin=None,
+            end=None,
+            moduleset="",
+            module="",
+            ruleset_date="",
+            waitlock=-1,
+            parallel=False,
+            objects=[],
+            format=None,
+            user=None,
+            api=None,
+            resource=[],
+            mac=None,
+            broadcast=None,
+            param=None,
+            value=None,
+        )
+        Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
         self.collector = xmlrpcClient.Collector(node=self)
         self.cmdworker = rcCommandWorker.CommandWorker()
-        try:
-            rcos = __import__('rcOs'+rcEnv.sysname)
-        except ImportError:
-            rcos = __import__('rcOs')
-        self.os = rcos.Os()
+        self.system = RCOS.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.log = rcLogger.initLogger(rcEnv.nodename)
         self.set_collector_env()
         self.scheduler_actions = {
-	 "checks": SchedOpts("checks"),
-	 "dequeue_actions": SchedOpts("dequeue_actions", schedule_option="no_schedule"),
-	 "pushstats": SchedOpts("stats"),
-	 "collect_stats": SchedOpts("stats_collection", schedule_option="collect_stats_schedule"),
-	 "pushpkg": SchedOpts("packages"),
-	 "pushpatch": SchedOpts("patches"),
-	 "pushasset": SchedOpts("asset"),
-	 "pushnsr": SchedOpts("nsr", schedule_option="no_schedule"),
-	 "pushhp3par": SchedOpts("hp3par", schedule_option="no_schedule"),
-	 "pushemcvnx": SchedOpts("emcvnx", schedule_option="no_schedule"),
-	 "pushcentera": SchedOpts("centera", schedule_option="no_schedule"),
-	 "pushnetapp": SchedOpts("netapp", schedule_option="no_schedule"),
-	 "pushibmds": SchedOpts("ibmds", schedule_option="no_schedule"),
-	 "pushdcs": SchedOpts("dcs", schedule_option="no_schedule"),
-	 "pushfreenas": SchedOpts("freenas", schedule_option="no_schedule"),
-	 "pushgcedisks": SchedOpts("gcedisks", schedule_option="no_schedule"),
-	 "pushhds": SchedOpts("hds", schedule_option="no_schedule"),
-	 "pushnecism": SchedOpts("necism", schedule_option="no_schedule"),
-	 "pusheva": SchedOpts("eva", schedule_option="no_schedule"),
-	 "pushibmsvc": SchedOpts("ibmsvc", schedule_option="no_schedule"),
-	 "pushvioserver": SchedOpts("vioserver", schedule_option="no_schedule"),
-	 "pushsym": SchedOpts("sym", schedule_option="no_schedule"),
-	 "pushbrocade": SchedOpts("brocade", schedule_option="no_schedule"),
-	 "pushdisks": SchedOpts("disks"),
-	 "sysreport": SchedOpts("sysreport"),
-	 "compliance_auto": SchedOpts("compliance", fname="node"+os.sep+"last_comp_check", schedule_option="comp_schedule"),
-	 "auto_rotate_root_pw": SchedOpts("rotate_root_pw", fname="node"+os.sep+"last_rotate_root_pw", schedule_option="no_schedule"),
-	 "auto_reboot": SchedOpts("reboot", fname="node"+os.sep+"last_auto_reboot", schedule_option="no_schedule")
+            "checks": SchedOpts(
+                "checks"
+            ),
+            "dequeue_actions": SchedOpts(
+                "dequeue_actions",
+                schedule_option="no_schedule"
+            ),
+            "pushstats": SchedOpts(
+                "stats"
+            ),
+            "collect_stats": SchedOpts(
+                "stats_collection",
+                schedule_option="collect_stats_schedule"
+            ),
+            "pushpkg": SchedOpts(
+                "packages"
+            ),
+            "pushpatch": SchedOpts(
+                "patches"
+            ),
+            "pushasset": SchedOpts(
+                "asset"
+            ),
+            "pushnsr": SchedOpts(
+                "nsr",
+                schedule_option="no_schedule"
+            ),
+            "pushhp3par": SchedOpts(
+                "hp3par",
+                schedule_option="no_schedule"
+            ),
+            "pushemcvnx": SchedOpts(
+                "emcvnx",
+                schedule_option="no_schedule"
+            ),
+            "pushcentera": SchedOpts(
+                "centera",
+                schedule_option="no_schedule"
+            ),
+            "pushnetapp": SchedOpts(
+                "netapp",
+                schedule_option="no_schedule"
+            ),
+            "pushibmds": SchedOpts(
+                "ibmds",
+                schedule_option="no_schedule"
+            ),
+            "pushdcs": SchedOpts(
+                "dcs",
+                schedule_option="no_schedule"
+            ),
+            "pushfreenas": SchedOpts(
+                "freenas",
+                schedule_option="no_schedule"
+            ),
+            "pushgcedisks": SchedOpts(
+                "gcedisks",
+                schedule_option="no_schedule"
+            ),
+            "pushhds": SchedOpts(
+                "hds",
+                schedule_option="no_schedule"
+            ),
+            "pushnecism": SchedOpts(
+                "necism",
+                schedule_option="no_schedule"
+            ),
+            "pusheva": SchedOpts(
+                "eva",
+                schedule_option="no_schedule"
+            ),
+            "pushibmsvc": SchedOpts(
+                "ibmsvc",
+                schedule_option="no_schedule"
+            ),
+            "pushvioserver": SchedOpts(
+                "vioserver",
+                schedule_option="no_schedule"
+            ),
+            "pushsym": SchedOpts(
+                "sym",
+                schedule_option="no_schedule"
+            ),
+            "pushbrocade": SchedOpts(
+                "brocade", schedule_option="no_schedule"
+            ),
+            "pushdisks": SchedOpts(
+                "disks"
+            ),
+            "sysreport": SchedOpts(
+                "sysreport"
+            ),
+            "compliance_auto": SchedOpts(
+                "compliance",
+                fname="node"+os.sep+"last_comp_check",
+                schedule_option="comp_schedule"
+            ),
+            "auto_rotate_root_pw": SchedOpts(
+                "rotate_root_pw",
+                fname="node"+os.sep+"last_rotate_root_pw",
+                schedule_option="no_schedule"
+            ),
+            "auto_reboot": SchedOpts(
+                "reboot",
+                fname="node"+os.sep+"last_auto_reboot",
+                schedule_option="no_schedule"
+            )
         }
 
-    def split_url(self, url, default_app=None):
+    @staticmethod
+    def check_privs(action):
+        """
+        Raise if the action requires root privileges but the current
+        running user is not root.
+        """
+        if action in UNPRIVILEGED_ACTIONS:
+            return
+        rcUtilities.check_privs()
+
+    @staticmethod
+    def split_url(url, default_app=None):
+        """
+        Split a node.conf node.dbopensvc style url into a
+        (protocol, host, port, app) tuple.
+        """
         if url == 'None':
             return 'https', '127.0.0.1', '443', '/'
 
@@ -174,44 +273,60 @@ class Node(Svc, Freezer, Scheduler):
         else:
             transport = 'https'
 
-        l = url.split('/')
-        if len(l) < 1:
-            raise
+        elements = url.split('/')
+        if len(elements) < 1:
+            raise ex.excError("url %s should have at least one slash")
 
         # app
-        if len(l) > 1:
-            app = l[1]
+        if len(elements) > 1:
+            app = elements[1]
         else:
             app = default_app
 
         # host/port
-        l = l[0].split(':')
-        if len(l) == 1:
-            host = l[0]
+        subelements = elements[0].split(':')
+        if len(subelements) == 1:
+            host = subelements[0]
             if transport == 'http':
                 port = '80'
             else:
                 port = '443'
-        elif len(l) == 2:
-            host = l[0]
-            port = l[1]
+        elif len(subelements) == 2:
+            host = subelements[0]
+            port = subelements[1]
         else:
-            raise
+            raise ex.excError("too many columns in %s" % ":".join(subelements))
 
         return transport, host, port, app
 
     def set_collector_env(self):
+        """
+        Store the collector connection elements parsed from the node.conf
+        node.uuid, node.dbopensvc and node.dbcompliance as properties of the
+        rcEnv class.
+        """
         if self.config is None:
-            self.load_config
+            self.load_config()
         if self.config is None:
             return
         if self.config.has_option('node', 'dbopensvc'):
             url = self.config.get('node', 'dbopensvc')
             try:
-                rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app = self.split_url(url, default_app="feed")
-                rcEnv.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (rcEnv.dbopensvc_transport, rcEnv.dbopensvc_host, rcEnv.dbopensvc_port, rcEnv.dbopensvc_app)
-            except Exception as e:
-                self.log.error("malformed dbopensvc url: %s (%s)" % (rcEnv.dbopensvc, str(e)))
+                (
+                    rcEnv.dbopensvc_transport,
+                    rcEnv.dbopensvc_host,
+                    rcEnv.dbopensvc_port,
+                    rcEnv.dbopensvc_app
+                ) = self.split_url(url, default_app="feed")
+                rcEnv.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (
+                    rcEnv.dbopensvc_transport,
+                    rcEnv.dbopensvc_host,
+                    rcEnv.dbopensvc_port,
+                    rcEnv.dbopensvc_app
+                )
+            except ex.excError as exc:
+                self.log.error("malformed dbopensvc url: %s (%s)",
+                               rcEnv.dbopensvc, str(exc))
         else:
             rcEnv.dbopensvc_transport = None
             rcEnv.dbopensvc_host = None
@@ -222,56 +337,72 @@ class Node(Svc, Freezer, Scheduler):
         if self.config.has_option('node', 'dbcompliance'):
             url = self.config.get('node', 'dbcompliance')
             try:
-                rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app = self.split_url(url, default_app="init")
-                rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
-            except Exception as e:
-                self.log.error("malformed dbcompliance url: %s (%s)" % (rcEnv.dbcompliance, str(e)))
+                (
+                    rcEnv.dbcompliance_transport,
+                    rcEnv.dbcompliance_host,
+                    rcEnv.dbcompliance_port,
+                    rcEnv.dbcompliance_app
+                ) = self.split_url(url, default_app="init")
+                rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
+                    rcEnv.dbcompliance_transport,
+                    rcEnv.dbcompliance_host,
+                    rcEnv.dbcompliance_port,
+                    rcEnv.dbcompliance_app
+                )
+            except ex.excError as exc:
+                self.log.error("malformed dbcompliance url: %s (%s)",
+                               rcEnv.dbcompliance, str(exc))
         else:
             rcEnv.dbcompliance_transport = rcEnv.dbopensvc_transport
             rcEnv.dbcompliance_host = rcEnv.dbopensvc_host
             rcEnv.dbcompliance_port = rcEnv.dbopensvc_port
             rcEnv.dbcompliance_app = "init"
-            rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (rcEnv.dbcompliance_transport, rcEnv.dbcompliance_host, rcEnv.dbcompliance_port, rcEnv.dbcompliance_app)
+            rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
+                rcEnv.dbcompliance_transport,
+                rcEnv.dbcompliance_host,
+                rcEnv.dbcompliance_port,
+                rcEnv.dbcompliance_app
+            )
 
         if self.config.has_option('node', 'uuid'):
             rcEnv.uuid = self.config.get('node', 'uuid')
         else:
             rcEnv.uuid = ""
 
-    def call(self, cmd=['/bin/false'], cache=False, info=False,
-             errlog=True, err_to_warn=False, err_to_info=False,
-             outlog=False):
-        """Use subprocess module functions to do a call
+    def call(self, *args, **kwargs):
         """
-        return rcUtilities.call(cmd, log=self.log,
-                                cache=cache,
-                                info=info, errlog=errlog,
-                                err_to_warn=err_to_warn,
-                                err_to_info=err_to_info,
-                                outlog=outlog)
+        Wrap rcUtilities call function, setting the node logger.
+        """
+        kwargs["log"] = self.log
+        return rcUtilities.call(*args, **kwargs)
 
-    def vcall(self, cmd, err_to_warn=False, err_to_info=False):
-        """Use subprocess module functions to do a call and
-        log the command line using the resource logger
+    def vcall(self, *args, **kwargs):
         """
-        return rcUtilities.vcall(cmd, log=self.log,
-                                 err_to_warn=err_to_warn,
-                                 err_to_info=err_to_info)
+        Wrap rcUtilities vcall function, setting the node logger.
+        """
+        kwargs["log"] = self.log
+        return rcUtilities.vcall(*args, **kwargs)
 
     def build_services(self, *args, **kwargs):
+        """
+        Instanciate a Svc objects for each requested services and add it to
+        the node.
+        If a service configuration file has changed since the last time we
+        sent it to the collector, resend. This behaviour can be blocked by
+        the caller, using the autopush=False keyword argument.
+        """
         if self.svcs is not None and \
            ('svcnames' not in kwargs or \
-           (type(kwargs['svcnames']) == list and len(kwargs['svcnames'])==0)):
+           (isinstance(kwargs['svcnames'], list) and len(kwargs['svcnames']) == 0)):
             return
 
         if 'svcnames' in kwargs and \
-           type(kwargs['svcnames']) == list and \
-           len(kwargs['svcnames'])>0 and \
+           isinstance(kwargs['svcnames'], list) and \
+           len(kwargs['svcnames']) > 0 and \
            self.svcs is not None:
             svcnames_request = set(kwargs['svcnames'])
             svcnames_actual = set([s.svcname for s in self.svcs])
-            svcnames_request = list(svcnames_request-svcnames_actual)
-            if len(svcnames_request) == 0:
+            if len(svcnames_request-svcnames_actual) == 0:
                 return
 
         self.svcs = []
@@ -280,45 +411,69 @@ class Node(Svc, Freezer, Scheduler):
             if not kwargs['autopush']:
                 autopush = False
             del kwargs['autopush']
+
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
+        if 'svcnames' in kwargs:
+            self.check_build_errors(kwargs['svcnames'], svcs, errors)
+
         for svc in svcs:
             self += svc
+
         if autopush:
             for svc in self.svcs:
-                if svc.collector_outdated():
-                    svc.autopush()
+                svc.autopush()
 
-        if 'svcnames' in kwargs:
-            if type(kwargs['svcnames']) == list:
-                n = len(kwargs['svcnames'])
-            else:
-                n = 1
-            if len(self.svcs) != n:
-                msg = ""
-                if n > 1:
-                    msg += "%d services validated out of %d\n" % (len(self.svcs), n)
-                if len(errors) == 1:
-                    msg += errors[0]
-                else:
-                    msg += "\n".join(list(map(lambda x: "- "+x, errors)))
-                raise ex.excError(msg)
-        import rcLogger
         rcLogger.set_namelen(self.svcs)
 
+    @staticmethod
+    def check_build_errors(svcnames, svcs, errors):
+        """
+        Raise error if the service builder did not return a Svc object for
+        each service we requested.
+        """
+        if isinstance(svcnames, list):
+            n_args = len(svcnames)
+        else:
+            n_args = 1
+        n_svcs = len(svcs)
+        if n_svcs == n_args:
+            return 0
+        msg = ""
+        if n_args > 1:
+            msg += "%d services validated out of %d\n" % (n_svcs, n_args)
+        if len(errors) == 1:
+            msg += errors[0]
+        else:
+            msg += "\n".join(["- "+err for err in errors])
+        raise ex.excError(msg)
 
     def close(self):
+        """
+        Stop the node class workers
+        """
         self.collector.stop_worker()
         self.cmdworker.stop_worker()
 
     def edit_config(self):
-        cf = os.path.join(rcEnv.pathetc, "node.conf")
-        return self.edit_cf(cf)
+        """
+        edit_config node action entrypoint
+        """
+        fpath = os.path.join(rcEnv.pathetc, "node.conf")
+        return self.edit_cf(fpath)
 
     def edit_authconfig(self):
-        cf = os.path.join(rcEnv.pathetc, "auth.conf")
-        return self.edit_cf(cf)
+        """
+        edit_authconfig node action entrypoint
+        """
+        fpath = os.path.join(rcEnv.pathetc, "auth.conf")
+        return self.edit_cf(fpath)
 
-    def edit_cf(self, cf):
+    @staticmethod
+    def edit_cf(fpath):
+        """
+        Choose an editor, setup the LANG, and exec the editor on the
+        file passed as argument.
+        """
         if "EDITOR" in os.environ:
             editor = os.environ["EDITOR"]
         elif os.name == "nt":
@@ -330,121 +485,185 @@ class Node(Svc, Freezer, Scheduler):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         os.environ["LANG"] = "en_US.UTF-8"
-        return os.system(' '.join((editor, cf)))
+        return os.system(' '.join((editor, fpath)))
 
     def write_config(self):
-        for o in self.config_defaults:
-            if self.config.has_option('DEFAULT', o):
-                self.config.remove_option('DEFAULT', o)
-        for s in self.config.sections():
-            if '#sync#' in s:
-                self.config.remove_section(s)
+        """
+        Rewrite node.conf using the in-memory ConfigParser object as reference.
+        """
+        for option in CONFIG_DEFAULTS:
+            if self.config.has_option('DEFAULT', option):
+                self.config.remove_option('DEFAULT', option)
+        for section in self.config.sections():
+            if '#sync#' in section:
+                self.config.remove_section(section)
         import tempfile
         import shutil
         try:
-            fp = tempfile.NamedTemporaryFile()
-            fname = fp.name
-            fp.close()
-            with open(fname, "w") as fp:
-                self.config.write(fp)
-            shutil.move(fname, rcEnv.nodeconf)
-        except Exception as e:
-            print("failed to write new %s (%s)" % (rcEnv.nodeconf, str(e)), file=sys.stderr)
-            raise Exception()
+            tmpf = tempfile.NamedTemporaryFile()
+            fpath = tmpf.name
+            tmpf.close()
+            with open(fpath, "w") as tmpf:
+                self.config.write(tmpf)
+            shutil.move(fpath, rcEnv.nodeconf)
+        except (OSError, IOError) as exc:
+            print("failed to write new %s (%s)" % (rcEnv.nodeconf, str(exc)),
+                  file=sys.stderr)
+            raise ex.excError
         try:
             os.chmod(rcEnv.nodeconf, 0o0600)
-        except:
+        except OSError:
             pass
         self.load_config()
 
     def purge_status_last(self):
-        for s in self.svcs:
-            s.purge_status_last()
+        """
+        Purge the cached status of each and every services and resources.
+        """
+        for svc in self.svcs:
+            svc.purge_status_last()
 
-    def read_cf(self, fpath, defaults={}):
+    @staticmethod
+    def read_cf(fpath, defaults=None):
+        """
+        Read and parse an arbitrary ini-formatted config file, and return
+        the RawConfigParser object.
+        """
         import codecs
+        if defaults is None:
+            defaults = {}
         config = RawConfigParser(defaults)
         if not os.path.exists(fpath):
             return config
-        with codecs.open(fpath, "r", "utf8") as f:
+        with codecs.open(fpath, "r", "utf8") as ofile:
             if sys.version_info[0] >= 3:
-                config.read_file(f)
+                config.read_file(ofile)
             else:
-                config.readfp(f)
+                config.readfp(ofile)
         return config
 
     def load_config(self):
+        """
+        Parse the node.conf configuration file and store the RawConfigParser
+        object as self.config.
+        IOError is catched and self.config is left to its current value, which
+        initially is None. So users of self.config should check for this None
+        value before use.
+        """
         try:
-            self.config = self.read_cf(rcEnv.nodeconf, self.config_defaults)
-        except:
-            self.config = None
+            self.config = self.read_cf(rcEnv.nodeconf, CONFIG_DEFAULTS)
+        except IOError:
+            # some action don't need self.config
+            pass
 
     def load_auth_config(self):
+        """
+        Parse the auth.conf configuration file and store the RawConfigParser
+        object as self.auth_config.
+        The actual parsing is done only on first call. This method is a noop
+        on subsequent calls.
+        """
         if self.auth_config is not None:
             return
         self.auth_config = self.read_cf(rcEnv.authconf)
 
-    def setup_sync_outdated(self):
-        """ return True if one configuration file has changed in the last 10'
-            else return False
+    @staticmethod
+    def setup_sync_outdated():
         """
-        import datetime
+        Return True if any configuration file has changed in the last 10'
+        else return False
+        """
         import glob
-        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
-        if not os.path.exists(self.setup_sync_flag):
+        setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
+        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        if not os.path.exists(setup_sync_flag):
             return True
-        for cf in cfs:
+        for fpath in fpaths:
             try:
-                mtime = os.stat(cf).st_mtime
-                f = open(self.setup_sync_flag)
-                last = float(f.read())
-                f.close()
-            except:
+                mtime = os.stat(fpath).st_mtime
+                with open(setup_sync_flag) as ofile:
+                    last = float(ofile.read())
+            except (OSError, IOError):
                 return True
             if mtime > last:
                 return True
         return False
 
-    def __iadd__(self, s):
-        if not isinstance(s, Svc):
+    def get_clusters(self):
+        """
+        Set the self.clusters list from the configuration file node.cluster
+        option value.
+        """
+        if self.clusters is not None:
+            return
+        if self.config and self.config.has_option("node", "cluster"):
+            self.clusters = list(set(self.config.get('node', 'clusters').split()))
+        else:
+            self.clusters = []
+
+    def __iadd__(self, svc):
+        """
+        Implement the Node() += Svc() operation, setting the node backpointer
+        in the added service, storing the service in a list and setting a
+        clustername if not already set in the service explicitely.
+        """
+        if not isinstance(svc, Svc):
             return self
         if self.svcs is None:
             self.svcs = []
-        s.node = self
-        if not hasattr(s, "clustername") and len(self.clusters) == 1:
-            s.clustername = self.clusters[0]
-        self.svcs.append(s)
+        svc.node = self
+        self.get_clusters()
+        if not hasattr(svc, "clustername") and len(self.clusters) == 1:
+            svc.clustername = self.clusters[0]
+        self.svcs.append(svc)
         return self
 
-    def action(self, a):
-        if "_json_" in a:
+    def action(self, action):
+        """
+        The node action wrapper.
+        Looks up which method to handle the action (some are not implemented
+        in the Node class), and call the handling method.
+        """
+        if "_json_" in action:
             self.options.format = "json"
-            a = a.replace("_json_", "_")
-        if a.startswith("json_"):
+            action = action.replace("_json_", "_")
+        if action.startswith("json_"):
             self.options.format = "json"
-            a = "print"+a[4:]
-        if a.startswith("compliance_"):
+            action = "print" + action[4:]
+        if action.startswith("compliance_"):
             from compliance import Compliance
-            o = Compliance(self)
-            if self.options.cron and a == "compliance_auto" and \
+            comp = Compliance(self)
+            if self.options.cron and action == "compliance_auto" and \
                self.config.has_option('compliance', 'auto_update') and \
                self.config.getboolean('compliance', 'auto_update'):
-                o.updatecomp = True
-                o.node = self
-            return getattr(o, a)()
-        elif a.startswith("collector_") and a != "collector_cli":
+                comp.updatecomp = True
+                comp.node = self
+            return getattr(comp, action)()
+        elif action.startswith("collector_") and action != "collector_cli":
             from collector import Collector
-            o = Collector(self.options, self)
-            data = getattr(o, a)()
+            coll = Collector(self.options, self)
+            data = getattr(coll, action)()
             return self.print_data(data)
         else:
-            return getattr(self, a)()
+            return getattr(self, action)()
 
     @formatter
     def print_data(self, data):
+        """
+        A dummy method decorated by the formatter function.
+        The formatter needs self to access the formatting options, so this
+        can't be a staticmethod.
+        """
+        fmt = self.options.format if self.options.format else "default"
+        self.log.debug("format data using the %s formatter", fmt)
         return data
 
     def scheduler(self):
+        """
+        The node scheduler entrypoint.
+        Evaluates execution constraints for all scheduled tasks and executes
+        the tasks if required.
+        """
         self.options.cron = True
         for action in self.scheduler_actions:
             try:
@@ -452,44 +671,53 @@ class Node(Svc, Freezer, Scheduler):
             except:
                 self.log.exception("")
 
-    def get_push_objects(self, s):
+    def get_push_objects(self, section):
+        """
+        Returns the object names to do inventory on.
+        Object names passed as nodemgr argument take precedence.
+        If not specified by argument, objet names found in the
+        configuration file section are returned.
+        """
         if len(self.options.objects) > 0:
             return self.options.objects
-        try:
-            objects = self.config.get(s, "objects").split(",")
-        except Exception as e:
-            objects = ["magix123456"]
-            print(e)
-        return objects
+        if self.config and self.config.has_option(section, "objects"):
+            return self.config.get(section, "objects").split(",")
+        return ["magix123456"]
 
     def collect_stats(self):
+        """
+        Do the stats collection if the scheduler constraints permit.
+        """
         if self.skip_action("collect_stats"):
             return
         self.task_collect_stats()
 
     @scheduler_fork
-    def collect_stats(self):
+    def task_collect_stats(self):
+        """
+        Choose the os specific stats collection module and call its collect
+        method.
+        """
         try:
-            m = __import__("rcStatsCollect"+rcEnv.sysname)
+            mod = __import__("rcStatsCollect"+rcEnv.sysname)
         except ImportError:
             return
-        m.collect(self)
+        mod.collect(self)
 
     def pushstats(self):
-        # set stats range to push to "last pushstat => now"
-
-        ts = self.get_timestamp_f(self.scheduler_actions["pushstats"].fname)
+        """
+        Set stats range to push to "last pushstat => now"
+        """
+        fpath = self.get_timestamp_f(self.scheduler_actions["pushstats"].fname)
         try:
-            with open(ts, "r") as f:
-                buff = f.read()
+            with open(fpath, "r") as ofile:
+                buff = ofile.read()
             start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
             now = datetime.datetime.now()
             delta = now - start
             interval = delta.days * 1440 + delta.seconds // 60 + 10
-            #print("push stats for the last %d minutes since last push" % interval)
-        except Exception as e:
+        except:
             interval = 1450
-            #print("can not determine last push date. push stats for the last %d minutes" % interval)
         if interval < 21:
             interval = 21
 
@@ -499,239 +727,396 @@ class Node(Svc, Freezer, Scheduler):
 
     @scheduler_fork
     def task_pushstats(self, interval):
-        if self.config.has_option("stats", "disable"):
+        """
+        The scheduled task that collects system statistics from system tools
+        like sar, and sends the data to the collector.
+        A list of metrics can be disabled from the task configuration section,
+        using the 'disable' option.
+        """
+        def get_disable_stats():
+            """
+            Returns the list of stats metrics collection disabled through the
+            configuration file stats.disable option.
+            """
+            if not self.config.has_option("stats", "disable"):
+                return []
             disable = self.config.get("stats", "disable")
-        else:
-            disable = []
-
-        if isinstance(disable, str):
             try:
-                disable = json.loads(disable)
-            except:
-                if ',' in disable:
-                    disable = disable.replace(' ','').split(',')
-                else:
-                    disable = disable.split(' ')
-        else:
-            disable = []
+                return json.loads(disable)
+            except ValueError:
+                pass
+            if ',' in disable:
+                return disable.replace(' ', '').split(',')
+            return disable.split()
 
+        disable = get_disable_stats()
         return self.collector.call('push_stats',
-                                stats_dir=self.options.stats_dir,
-                                stats_start=self.options.begin,
-                                stats_end=self.options.end,
-                                interval=interval,
-                                disable=disable)
+                                   stats_dir=self.options.stats_dir,
+                                   stats_start=self.options.begin,
+                                   stats_end=self.options.end,
+                                   interval=interval,
+                                   disable=disable)
 
     def pushpkg(self):
+        """
+        The pushpkg action entrypoint.
+        Inventories the installed packages.
+        """
         if self.skip_action("pushpkg"):
             return
         self.task_pushpkg()
 
     @scheduler_fork
     def task_pushpkg(self):
+        """
+        The pushpkg scheduler task.
+        """
         self.collector.call('push_pkg')
 
     def pushpatch(self):
+        """
+        The pushpatch action entrypoint.
+        Inventories the installed patches.
+        """
         if self.skip_action("pushpatch"):
             return
         self.task_pushpatch()
 
     @scheduler_fork
     def task_pushpatch(self):
+        """
+        The pushpatch scheduler task.
+        """
         self.collector.call('push_patch')
 
     def pushasset(self):
+        """
+        The pushasset action entrypoint.
+        Inventories the server properties.
+        """
         if self.skip_action("pushasset"):
             return
         self.task_pushasset()
 
     @scheduler_fork
     def task_pushasset(self):
+        """
+        The pushasset scheduler task.
+        """
         self.collector.call('push_asset', self)
 
     def pushnsr(self):
+        """
+        The pushnsr action entrypoint.
+        Inventories Networker Backup Server index databases.
+        """
         if self.skip_action("pushnsr"):
             return
         self.task_pushnsr()
 
     @scheduler_fork
     def task_pushnsr(self):
+        """
+        The pushnsr scheduler task.
+        """
         self.collector.call('push_nsr')
 
     def pushhp3par(self):
+        """
+        The push3par action entrypoint.
+        Inventories HP 3par storage arrays.
+        """
         if self.skip_action("pushhp3par"):
             return
         self.task_pushhp3par()
 
     @scheduler_fork
     def task_pushhp3par(self):
+        """
+        The push3par scheduler task.
+        """
         self.collector.call('push_hp3par', self.options.objects)
 
     def pushnetapp(self):
+        """
+        The pushnetapp action entrypoint.
+        Inventories NetApp storage arrays.
+        """
         if self.skip_action("pushnetapp"):
             return
         self.task_pushnetapp()
 
     @scheduler_fork
     def task_pushnetapp(self):
+        """
+        The pushnetapp scheduler task.
+        """
         self.collector.call('push_netapp', self.options.objects)
 
     def pushcentera(self):
+        """
+        The pushcentera action entrypoint.
+        Inventories Centera storage arrays.
+        """
         if self.skip_action("pushcentera"):
             return
         self.task_pushcentera()
 
     @scheduler_fork
     def task_pushcentera(self):
+        """
+        The pushcentera scheduler task.
+        """
         self.collector.call('push_centera', self.options.objects)
 
     def pushemcvnx(self):
+        """
+        The pushemcvnx action entrypoint.
+        Inventories EMC VNX storage arrays.
+        """
         if self.skip_action("pushemcvnx"):
             return
         self.task_pushemcvnx()
 
     @scheduler_fork
     def task_pushemcvnx(self):
+        """
+        The pushemcvnx scheduler task.
+        """
         self.collector.call('push_emcvnx', self.options.objects)
 
     def pushibmds(self):
+        """
+        The pushibmds action entrypoint.
+        Inventories IBM DS storage arrays.
+        """
         if self.skip_action("pushibmds"):
             return
         self.task_pushibmds()
 
     @scheduler_fork
     def task_pushibmds(self):
+        """
+        The pushibmds scheduler task.
+        """
         self.collector.call('push_ibmds', self.options.objects)
 
     def pushgcedisks(self):
+        """
+        The pushgcedisks action entrypoint.
+        Inventories Google Compute Engine disks.
+        """
         if self.skip_action("pushgcedisks"):
             return
         self.task_pushgcedisks()
 
     @scheduler_fork
     def task_pushgcedisks(self):
+        """
+        The pushgce scheduler task.
+        """
         self.collector.call('push_gcedisks', self.options.objects)
 
     def pushfreenas(self):
+        """
+        The pushfreenas action entrypoint.
+        Inventories FreeNas storage arrays.
+        """
         if self.skip_action("pushfreenas"):
             return
         self.task_pushfreenas()
 
     @scheduler_fork
     def task_pushfreenas(self):
+        """
+        The pushfreenas scheduler task.
+        """
         self.collector.call('push_freenas', self.options.objects)
 
     def pushdcs(self):
+        """
+        The pushdcs action entrypoint.
+        Inventories DataCore SAN Symphony storage arrays.
+        """
         if self.skip_action("pushdcs"):
             return
         self.task_pushdcs()
 
     @scheduler_fork
     def task_pushdcs(self):
+        """
+        The pushdcs scheduler task.
+        """
         self.collector.call('push_dcs', self.options.objects)
 
     def pushhds(self):
+        """
+        The pushhds action entrypoint.
+        Inventories Hitachi storage arrays.
+        """
         if self.skip_action("pushhds"):
             return
         self.task_pushhds()
 
     @scheduler_fork
     def task_pushhds(self):
+        """
+        The pushhds scheduler task.
+        """
         self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
+        """
+        The pushnecism action entrypoint.
+        Inventories NEC iSM storage arrays.
+        """
         if self.skip_action("pushnecism"):
             return
         self.task_pushnecism()
 
     @scheduler_fork
     def task_pushnecism(self):
+        """
+        The pushnecism scheduler task.
+        """
         self.collector.call('push_necism', self.options.objects)
 
     def pusheva(self):
+        """
+        The pusheva action entrypoint.
+        Inventories HP EVA storage arrays.
+        """
         if self.skip_action("pusheva"):
             return
         self.task_pusheva()
 
     @scheduler_fork
     def task_pusheva(self):
+        """
+        The pusheva scheduler task.
+        """
         self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
+        """
+        The pushibmsvc action entrypoint.
+        Inventories IBM SVC storage arrays.
+        """
         if self.skip_action("pushibmsvc"):
             return
         self.task_pushibmsvc()
 
     @scheduler_fork
     def task_pushibmsvc(self):
+        """
+        The pushibmsvc scheduler task.
+        """
         self.collector.call('push_ibmsvc', self.options.objects)
 
     def pushvioserver(self):
+        """
+        The pushvioserver action entrypoint.
+        Inventories IBM vio server storage arrays.
+        """
         if self.skip_action("pushvioserver"):
             return
         self.task_pushvioserver()
 
     @scheduler_fork
     def task_pushvioserver(self):
+        """
+        The pushvioserver scheduler task.
+        """
         self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
+        """
+        The pushsym action entrypoint.
+        Inventories EMC Symmetrix server storage arrays.
+        """
         if self.skip_action("pushsym"):
             return
         self.task_pushsym()
 
     @scheduler_fork
     def task_pushsym(self):
+        """
+        The pushsym scheduler task.
+        """
         objects = self.get_push_objects("sym")
         self.collector.call('push_sym', objects)
 
     def pushbrocade(self):
+        """
+        The pushsym action entrypoint.
+        Inventories Brocade SAN switches.
+        """
         if self.skip_action("pushbrocade"):
             return
         self.task_pushbrocade()
 
     @scheduler_fork
     def task_pushbrocade(self):
+        """
+        The pushbrocade scheduler task.
+        """
         self.collector.call('push_brocade', self.options.objects)
 
     def auto_rotate_root_pw(self):
+        """
+        The rotate_root_pw node action entrypoint.
+        """
         if self.skip_action("auto_rotate_root_pw"):
             return
         self.task_auto_rotate_root_pw()
 
     @scheduler_fork
     def task_auto_rotate_root_pw(self):
+        """
+        The rotate root password scheduler task.
+        """
         self.rotate_root_pw()
 
     def unschedule_reboot(self):
-        if not os.path.exists(self.reboot_flag):
+        """
+        Unflag the node for reboot during the next allowed period.
+        """
+        if not os.path.exists(self.paths.reboot_flag):
             print("reboot already not scheduled")
             return
-        os.unlink(self.reboot_flag)
+        os.unlink(self.paths.reboot_flag)
         print("reboot unscheduled")
 
     def schedule_reboot(self):
-        if not os.path.exists(self.reboot_flag):
-            with open(self.reboot_flag, "w") as f: f.write("")
+        """
+        Flag the node for reboot during the next allowed period.
+        """
+        if not os.path.exists(self.paths.reboot_flag):
+            with open(self.paths.reboot_flag, "w") as ofile:
+                ofile.write("")
         import stat
-        s = os.stat(self.reboot_flag)
-        if s.st_uid != 0:
-            os.chown(self.reboot_flag, 0, -1)
-            print("set %s root ownership"%self.reboot_flag)
-        if s.st_mode & stat.S_IWOTH:
-            mode = s.st_mode ^ stat.S_IWOTH
-            os.chmod(self.reboot_flag, mode)
-            print("set %s not world-writable"%self.reboot_flag)
+        statinfo = os.stat(self.paths.reboot_flag)
+        if statinfo.st_uid != 0:
+            os.chown(self.paths.reboot_flag, 0, -1)
+            print("set %s root ownership"%self.paths.reboot_flag)
+        if statinfo.st_mode & stat.S_IWOTH:
+            mode = statinfo.st_mode ^ stat.S_IWOTH
+            os.chmod(self.paths.reboot_flag, mode)
+            print("set %s not world-writable"%self.paths.reboot_flag)
         print("reboot scheduled")
 
     def schedule_reboot_status(self):
+        """
+        Display information about the next scheduled reboot
+        """
         import stat
-        if os.path.exists(self.reboot_flag):
-            s = os.stat(self.reboot_flag)
+        if os.path.exists(self.paths.reboot_flag):
+            statinfo = os.stat(self.paths.reboot_flag)
         else:
-            s = None
+            statinfo = None
 
-        if s is None or s.st_uid != 0 or s.st_mode & stat.S_IWOTH:
+        if statinfo is None or \
+           statinfo.st_uid != 0 or statinfo.st_mode & stat.S_IWOTH:
             print("reboot is not scheduled")
         else:
             sch = self.scheduler_actions["auto_reboot"]
@@ -739,54 +1124,79 @@ class Node(Svc, Freezer, Scheduler):
             print("reboot is scheduled")
             print("reboot schedule: %s" % schedule)
 
-        d, _max = self.get_next_schedule("auto_reboot")
-        if d:
-            print("next reboot slot:", d.strftime("%a %Y-%m-%d %H:%M"))
+        next_sched, _max = self.get_next_schedule("auto_reboot")
+        if next_sched:
+            print("next reboot slot:", next_sched.strftime("%a %Y-%m-%d %H:%M"))
         else:
             print("next reboot slot: none in the next %d days" % (_max/144))
 
     def auto_reboot(self):
+        """
+        The scheduler task executing the node reboot if the scheduler
+        constraints are satisfied and the reboot flag is set.
+        """
         if self.skip_action("auto_reboot"):
             return
         self.task_auto_reboot()
 
     @scheduler_fork
     def task_auto_reboot(self):
-        if not os.path.exists(self.reboot_flag):
-            print("%s is not present. no reboot scheduled" % self.reboot_flag)
+        """
+        Reboot the node if the reboot flag is set.
+        """
+        if not os.path.exists(self.paths.reboot_flag):
+            print("%s is not present. no reboot scheduled" % self.paths.reboot_flag)
             return
         import stat
-        s = os.stat(self.reboot_flag)
-        if s.st_uid != 0:
-            print("%s does not belong to root. abort scheduled reboot" % self.reboot_flag)
+        statinfo = os.stat(self.paths.reboot_flag)
+        if statinfo.st_uid != 0:
+            print("%s does not belong to root. abort scheduled reboot" % self.paths.reboot_flag)
             return
-        if s.st_mode & stat.S_IWOTH:
-            print("%s is world writable. abort scheduled reboot" % self.reboot_flag)
+        if statinfo.st_mode & stat.S_IWOTH:
+            print("%s is world writable. abort scheduled reboot" % self.paths.reboot_flag)
             return
-        print("remove %s and reboot" % self.reboot_flag)
-        os.unlink(self.reboot_flag)
+        print("remove %s and reboot" % self.paths.reboot_flag)
+        os.unlink(self.paths.reboot_flag)
         self.reboot()
 
     def pushdisks(self):
+        """
+        The pushdisks node action entrypoint.
+        """
         if self.skip_action("pushdisks"):
             return
         self.task_pushdisks()
 
     @scheduler_fork
     def task_pushdisks(self):
+        """
+        Send to the collector the list of disks visible on this node, and
+        their attributes.
+        """
         if self.svcs is None:
             self.build_services()
         self.collector.call('push_disks', self)
 
     def shutdown(self):
-        print("TODO")
+        """
+        The shutdown node action entrypoint.
+        To be overloaded by child classes.
+        """
+        self.log.warning("to be implemented")
 
     def reboot(self):
+        """
+        The reboot node action entrypoint.
+        """
         self.do_triggers("reboot", "pre")
         self.log.info("reboot")
         self._reboot()
 
     def do_triggers(self, action, when):
+        """
+        Determine which triggers need to be executed for the action and
+        executes them when appropriate.
+        """
         trigger = None
         blocking_trigger = None
         try:
@@ -798,55 +1208,74 @@ class Node(Svc, Freezer, Scheduler):
         except:
             pass
         if trigger:
-            self.log.info("execute trigger %s" % trigger)
+            self.log.info("execute trigger %s", trigger)
             try:
                 self.do_trigger(trigger)
             except ex.excError:
                 pass
         if blocking_trigger:
-            self.log.info("execute blocking trigger %s" % trigger)
+            self.log.info("execute blocking trigger %s", trigger)
             try:
                 self.do_trigger(blocking_trigger)
             except ex.excError:
                 if when == "pre":
-                    self.log.error("blocking pre trigger error: abort %s" % action)
+                    self.log.error("blocking pre trigger error: abort %s", action)
                 raise
 
     def do_trigger(self, cmd, err_to_warn=False):
+        """
+        The trigger execution wrapper.
+        """
         import shlex
         _cmd = shlex.split(cmd)
         ret, out, err = self.vcall(_cmd, err_to_warn)
         if ret != 0:
-            raise ex.excError
- 
+            raise ex.excError((ret, out, err))
+
     def _reboot(self):
-        print("TODO")
+        """
+        A system reboot method to be implemented by child classes.
+        """
+        self.log.warning("to be implemented")
 
     def sysreport(self):
+        """
+        The sysreport node action entrypoint.
+        """
         if self.skip_action("sysreport"):
             return
         try:
             self.task_sysreport()
-        except Exception as e:
-            print(e)
+        except (OSError, ex.excError) as exc:
+            print(exc)
             return 1
 
     @scheduler_fork
     def task_sysreport(self):
-        from rcGlobalEnv import rcEnv
+        """
+        Send to the collector a tarball of the files the user wants to track
+        that changed since the last call.
+        If the force option is set, send all files the user wants to track.
+        """
         try:
-            m = __import__('rcSysReport'+rcEnv.sysname)
+            mod = __import__('rcSysReport'+rcEnv.sysname)
         except ImportError:
             print("sysreport is not supported on this os")
             return
-        m.SysReport(node=self).sysreport(force=self.options.force)
+        mod.SysReport(node=self).sysreport(force=self.options.force)
 
     def get_prkey(self):
+        """
+        Returns the persistent reservation key.
+        Once generated from the algorithm, the prkey is written to the config
+        file to ensure its stability.
+        """
         if self.config.has_option("node", "prkey"):
             hostid = self.config.get("node", "prkey")
             if len(hostid) > 18 or not hostid.startswith("0x") or \
                len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
-                raise ex.excError("prkey in node.conf must have 16 significant hex digits max (ex: 0x90520a45138e85)")
+                raise ex.excError("prkey in node.conf must have 16 significant"
+                                  " hex digits max (ex: 0x90520a45138e85)")
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
         hostid = "0x"+self.hostid()
@@ -855,38 +1284,57 @@ class Node(Svc, Freezer, Scheduler):
         return hostid
 
     def prkey(self):
+        """
+        Print the persistent reservation key.
+        """
         print(self.get_prkey())
 
-    def hostid(self):
-        from rcGlobalEnv import rcEnv
-        m = __import__('hostid'+rcEnv.sysname)
-        return m.hostid()
+    @staticmethod
+    def hostid():
+        """
+        Return a stable host unique id
+        """
+        mod = __import__('hostid'+rcEnv.sysname)
+        return mod.hostid()
 
     def checks(self):
+        """
+        The checks node action entrypoint.
+        """
         if self.skip_action("checks"):
             return
         self.task_checks()
 
     @scheduler_fork
     def task_checks(self):
+        """
+        Runs health checks.
+        """
         import checks
         if self.svcs is None:
             self.build_services()
-        c = checks.checks(self.svcs)
-        c.node = self
-        c.do_checks()
+        checkers = checks.checks(self.svcs)
+        checkers.node = self
+        checkers.do_checks()
 
     def wol(self):
+        """
+        Send a Wake-On-LAN packet to a mac address on the broadcast address.
+        """
         import rcWakeOnLan
         if self.options.mac is None:
-            print("missing parameter. set --mac argument. multiple mac addresses must be separated by comma", file=sys.stderr)
+            print("missing parameter. set --mac argument. multiple mac "
+                  "addresses must be separated by comma", file=sys.stderr)
             print("example 1 : --mac 00:11:22:33:44:55", file=sys.stderr)
-            print("example 2 : --mac 00:11:22:33:44:55,66:77:88:99:AA:BB", file=sys.stderr)
+            print("example 2 : --mac 00:11:22:33:44:55,66:77:88:99:AA:BB",
+                  file=sys.stderr)
             return 1
         if self.options.broadcast is None:
-            print("missing parameter. set --broadcast argument. needed to identify accurate network to use", file=sys.stderr)
+            print("missing parameter. set --broadcast argument. needed to "
+                  "identify accurate network to use", file=sys.stderr)
             print("example 1 : --broadcast 10.25.107.255", file=sys.stderr)
-            print("example 2 : --broadcast 192.168.1.5,10.25.107.255", file=sys.stderr)
+            print("example 2 : --broadcast 192.168.1.5,10.25.107.255",
+                  file=sys.stderr)
             return 1
         macs = self.options.mac.split(',')
         broadcasts = self.options.broadcast.split(',')
@@ -894,47 +1342,59 @@ class Node(Svc, Freezer, Scheduler):
             for mac in macs:
                 req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast)
                 if not req.check_broadcast():
-                    print("Error : skipping broadcast address <%s>, not in the expected format 123.123.123.123"%req.broadcast, file=sys.stderr)
+                    print("Error : skipping broadcast address <%s>, not in "
+                          "the expected format 123.123.123.123" % req.broadcast,
+                          file=sys.stderr)
                     break
                 if not req.check_mac():
-                    print("Error : skipping mac address <%s>, not in the expected format 00:11:22:33:44:55"%req.mac, file=sys.stderr)
+                    print("Error : skipping mac address <%s>, not in the "
+                          "expected format 00:11:22:33:44:55" % req.mac,
+                          file=sys.stderr)
                     continue
                 if req.send():
                     print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
                 else:
-                    print("Error while trying to send Wake On Lan packet to mac address <%s>"%req.mac, file=sys.stderr)
+                    print("Error while trying to send Wake On Lan packet to "
+                          "mac address <%s>" % req.mac, file=sys.stderr)
 
     def unset(self):
+        """
+        Unset an option in the node configuration file.
+        """
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        l = self.options.param.split('.')
-        if len(l) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
+        elements = self.options.param.split('.')
+        if len(elements) != 2:
+            print("malformed parameter. format as 'section.key'",
+                  file=sys.stderr)
             return 1
-        section, option = l
+        section, option = elements
         if not self.config.has_section(section):
-            print("section '%s' not found"%section, file=sys.stderr)
+            print("section '%s' not found" % section, file=sys.stderr)
             return 1
         if not self.config.has_option(section, option):
-            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
+            print("option '%s' not found in section '%s'" % (option, section),
+                  file=sys.stderr)
             return 1
-        try:
-            self.config.remove_option(section, option)
-            self.write_config()
-        except:
-            return 1
+        self.config.remove_option(section, option)
+        self.write_config()
         return 0
 
     def get(self):
+        """
+        Print the raw value of any option of any section of the node
+        configuration file.
+        """
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        l = self.options.param.split('.')
-        if len(l) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
+        elements = self.options.param.split('.')
+        if len(elements) != 2:
+            print("malformed parameter. format as 'section.key'",
+                  file=sys.stderr)
             return 1
-        section, option = l
+        section, option = elements
 
         if not self.config.has_section(section):
             self.config.add_section(section)
@@ -943,83 +1403,107 @@ class Node(Svc, Freezer, Scheduler):
             print(self.config.get(section, option))
             return 0
         else:
-            if self.options.param in deprecated_keywords:
-                newkw = deprecated_keywords[self.options.param]
+            if self.options.param in DEPRECATED_KEYWORDS:
+                newkw = DEPRECATED_KEYWORDS[self.options.param]
                 if self.config.has_option(section, newkw):
                     print(self.config.get(section, newkw))
                     return 0
-            if self.options.param in reverse_deprecated_keywords:
-                for oldkw in reverse_deprecated_keywords[self.options.param]:
+            if self.options.param in REVERSE_DEPRECATED_KEYWORDS:
+                for oldkw in REVERSE_DEPRECATED_KEYWORDS[self.options.param]:
                     if self.config.has_option(section, oldkw):
                         print(self.config.get(section, oldkw))
                         return 0
-            print("option '%s' not found in section '%s'"%(option, section), file=sys.stderr)
+            print("option '%s' not found in section '%s'"%(option, section),
+                  file=sys.stderr)
             return 1
 
     def set(self):
+        """
+        Set any option in any section of the node configuration file
+        """
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
         if self.options.value is None:
             print("no value. set --value", file=sys.stderr)
             return 1
-        l = self.options.param.split('.')
-        if len(l) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
+        elements = self.options.param.split('.')
+        if len(elements) != 2:
+            print("malformed parameter. format as 'section.key'",
+                  file=sys.stderr)
             return 1
-        section, option = l
+        section, option = elements
         if not self.config.has_section(section):
             try:
                 self.config.add_section(section)
-            except ValueError as e:
-                print(e)
+            except ValueError as exc:
+                print(exc)
                 return 1
         self.config.set(section, option, self.options.value)
-        try:
-            self.write_config()
-        except:
-            return 1
+        self.write_config()
         return 0
 
-    def register(self):
-        if self.options.user is None:
-            u = self.collector.call('register_node')
-            if u is None:
-                print("failed to obtain a registration number", file=sys.stderr)
-                return 1
-            elif isinstance(u, dict) and "ret" in u and u["ret"] != 0:
-                print("failed to obtain a registration number", file=sys.stderr)
-                try:
-                    print(u["msg"])
-                except:
-                    pass
-                return 1
-            elif isinstance(u, list):
-                print(u[0], file=sys.stderr)
-                return 1
-        else:
-            try:
-                data = self.collector_rest_post("/register", {
-                  "nodename": rcEnv.nodename,
-                  "app": self.options.app
-                })
-            except Exception as e:
-                print(e, file=sys.stderr)
-                return 1
-            if "error" in data:
-                print(data["error"], file=sys.stderr)
-                return 1
-            u = data["data"]["uuid"]
+    def register_as_user(self):
+        """
+        Returns a node registration unique id, authenticating to the
+        collector as a user.
+        """
+        data = self.collector.call('register_node')
+        if data is None:
+            raise ex.excError("failed to obtain a registration number")
+        elif isinstance(data, dict) and "ret" in data and data["ret"] != 0:
+            msg = "failed to obtain a registration number"
+            if "msg" in data and len(data["msg"]) > 0:
+                msg += "\n" + data["msg"]
+            raise ex.excError(msg)
+        elif isinstance(data, list):
+            raise ex.excError(data[0])
+        return data
+
+    def register_as_node(self):
+        """
+        Returns a node registration unique id, authenticating to the
+        collector as a node.
+        """
         try:
-            if not self.config.has_section('node'):
-                self.config.add_section('node')
-            self.config.set('node', 'uuid', u)
-            self.write_config()
-        except:
-            print("failed to write registration number: %s"%u, file=sys.stderr)
+            data = self.collector_rest_post("/register", {
+                "nodename": rcEnv.nodename,
+                "app": self.options.app
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+        return data["data"]["uuid"]
+
+    def register(self):
+        """
+        Do anonymous or indentified node register to obtain a node uuid
+        that will be used as a password valid for the current hostname used
+        as a username in the application code context.
+        """
+        if self.options.user is None:
+            register_fn = "register_as_user"
+        else:
+            register_fn = "register_as_node"
+        try:
+            rcEnv.uuid = getattr(self, register_fn)()
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
             return 1
+
+        if not self.config.has_section('node'):
+            self.config.add_section('node')
+        self.config.set('node', 'uuid', rcEnv.uuid)
+
+        try:
+            self.write_config()
+        except ex.excError:
+            print("failed to write registration number: %s" % rcEnv.uuid,
+                  file=sys.stderr)
+            return 1
+
         print("registered")
-        rcEnv.uuid = u
         self.pushasset()
         self.pushdisks()
         self.pushpkg()
@@ -1028,33 +1512,44 @@ class Node(Svc, Freezer, Scheduler):
         self.checks()
         return 0
 
-    def service_action_worker(self, s, **kwargs):
+    def service_action_worker(self, svc, **kwargs):
+        """
+        The method the per-service subprocesses execute
+        """
         try:
-            r = s.action(**kwargs)
-        except s.exMonitorAction:
+            ret = svc.action(**kwargs)
+        except svc.exMonitorAction:
             self.close()
             sys.exit(self.ex_monitor_action_exit_code)
-        except:
+        finally:
             self.close()
             sys.exit(1)
         self.close()
-        sys.exit(r)
+        sys.exit(ret)
 
-    def devlist(self, tree=None):
+    @staticmethod
+    def devlist(tree=None):
+        """
+        Return the node's top-level device paths
+        """
         if tree is None:
             try:
-                m = __import__("rcDevTree"+rcEnv.sysname)
+                mod = __import__("rcDevTree"+rcEnv.sysname)
             except ImportError:
                 return
-            tree = m.DevTree()
+            tree = mod.DevTree()
             tree.load()
-        l = []
+        devpaths = []
         for dev in tree.get_top_devs():
             if len(dev.devpath) > 0:
-                l.append(dev.devpath[0])
-        return l
+                devpaths.append(dev.devpath[0])
+        return devpaths
 
     def updatecomp(self):
+        """
+        Downloads and installs the compliance module archive from the url
+        specified as node.repocomp or node.repo in node.conf.
+        """
         if self.config.has_option('node', 'repocomp'):
             pkg_name = self.config.get('node', 'repocomp').strip('/') + "/current"
         elif self.config.has_option('node', 'repo'):
@@ -1062,21 +1557,31 @@ class Node(Svc, Freezer, Scheduler):
         else:
             if self.options.cron:
                 return 0
-            print("node.repo or node.repocomp must be set in node.conf", file=sys.stderr)
+            print("node.repo or node.repocomp must be set in node.conf",
+                  file=sys.stderr)
             return 1
         import tempfile
-        f = tempfile.NamedTemporaryFile()
-        tmpf = f.name
-        f.close()
-        print("get %s (%s)"%(pkg_name, tmpf))
+        tmpf = tempfile.NamedTemporaryFile()
+        fpath = tmpf.name
+        tmpf.close()
         try:
-            self.urlretrieve(pkg_name, tmpf)
-        except IOError as e:
-            print("download failed", ":", e, file=sys.stderr)
-            try:
-                os.unlink(tmpf)
-            except:
-                pass
+            ret = self._updatecomp(pkg_name, fpath)
+        finally:
+            if os.path.exists(fpath):
+                os.unlink(fpath)
+        return ret
+
+    def _updatecomp(self, pkg_name, fpath):
+        """
+        Downloads and installs the compliance module archive from the url
+        specified by the pkg_name argument. The download destination file
+        is specified by fpath. The caller is responsible for its deletion.
+        """
+        print("get %s (%s)"%(pkg_name, fpath))
+        try:
+            self.urlretrieve(pkg_name, fpath)
+        except IOError as exc:
+            print("download failed", ":", exc, file=sys.stderr)
             if self.options.cron:
                 return 0
             return 1
@@ -1088,131 +1593,150 @@ class Node(Svc, Freezer, Scheduler):
         import shutil
         try:
             shutil.rmtree(backp)
-        except:
+        except (OSError, IOError):
             pass
         print("extract compliance in", rcEnv.pathtmp)
         import tarfile
-        tar = tarfile.open(f.name)
+        tar = tarfile.open(fpath)
         os.chdir(rcEnv.pathtmp)
         try:
             tar.extractall()
             tar.close()
-        except:
-            try:
-                os.unlink(tmpf)
-            except:
-                pass
+        except (OSError, IOError):
             print("failed to unpack", file=sys.stderr)
             return 1
-        try:
-            os.unlink(tmpf)
-        except:
-            pass
         print("install new compliance")
         shutil.move(compp, backp)
         shutil.move(tmpp, compp)
+        return 0
 
     def updatepkg(self):
-        if not os.path.exists(os.path.join(rcEnv.pathlib, 'rcUpdatePkg'+rcEnv.sysname+'.py')):
+        """
+        Downloads and upgrades the OpenSVC agent, using the system-specific
+        packaging tools.
+        """
+        modname = 'rcUpdatePkg'+rcEnv.sysname+'.py'
+        if not os.path.exists(os.path.join(rcEnv.pathlib, modname)):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
-        m = __import__('rcUpdatePkg'+rcEnv.sysname)
+        mod = __import__(modname)
         if self.config.has_option('node', 'repopkg'):
-            pkg_name = self.config.get('node', 'repopkg').strip('/') + "/" + m.repo_subdir + '/current'
+            pkg_name = self.config.get('node', 'repopkg').strip('/') + \
+                       "/" + mod.repo_subdir + '/current'
         elif self.config.has_option('node', 'repo'):
-            pkg_name = self.config.get('node', 'repo').strip('/') + "/packages/" + m.repo_subdir + '/current'
+            pkg_name = self.config.get('node', 'repo').strip('/') + \
+                       "/packages/" + mod.repo_subdir + '/current'
         else:
-            print("node.repo or node.repopkg must be set in node.conf", file=sys.stderr)
+            print("node.repo or node.repopkg must be set in node.conf",
+                  file=sys.stderr)
             return 1
         import tempfile
-        f = tempfile.NamedTemporaryFile()
-        tmpf = f.name
-        f.close()
-        print("get %s (%s)"%(pkg_name, tmpf))
+        tmpf = tempfile.NamedTemporaryFile()
+        fpath = tmpf.name
+        tmpf.close()
+        print("get %s (%s)"%(pkg_name, fpath))
         try:
-            self.urlretrieve(pkg_name, tmpf)
-        except IOError as e:
-            print("download failed", ":", e, file=sys.stderr)
+            self.urlretrieve(pkg_name, fpath)
+        except IOError as exc:
+            print("download failed", ":", exc, file=sys.stderr)
             try:
-                os.unlink(tmpf)
-            except:
+                os.unlink(fpath)
+            except OSError:
                 pass
             return 1
         print("updating opensvc")
-        m.update(tmpf)
+        mod.update(fpath)
         print("clean up")
         try:
-            os.unlink(tmpf)
-        except:
+            os.unlink(fpath)
+        except OSError:
             pass
         return 0
 
     def provision(self):
-        self.provision_resource = []
-        for rs in self.options.resource:
+        """
+        Execute a provisionner outside the scope of a service.
+        """
+        provision_resource = []
+        for definition in self.options.resource:
             try:
-                d = json.loads(rs)
-            except:
-                print("JSON read error: %s", rs, file=sys.stderr)
+                data = json.loads(definition)
+            except ValueError:
+                print("JSON read error: %s", definition, file=sys.stderr)
                 return 1
-            if 'rtype' not in d:
-                print("'rtype' key must be set in resource dictionary: %s", rs, file=sys.stderr)
+            if 'rtype' not in data:
+                print("'rtype' key must be set in resource dictionary: %s",
+                      definition, file=sys.stderr)
                 return 1
 
-            rtype = d['rtype']
+            rtype = data['rtype']
             if len(rtype) < 2:
-                print("invalid 'rtype' value: %s", rs, file=sys.stderr)
+                print("invalid 'rtype' value: %s", definition, file=sys.stderr)
                 return 1
             rtype = rtype[0].upper() + rtype[1:].lower()
 
-            if 'type' in d:
-                rtype +=  d['type'][0].upper() + d['type'][1:].lower()
+            if 'type' in data:
+                rtype += data['type'][0].upper() + data['type'][1:].lower()
             modname = 'prov' + rtype
             try:
-                m = __import__(modname)
+                mod = __import__(modname)
             except ImportError:
-                print("provisioning is not available for resource type:", d['rtype'], "(%s)"%modname, file=sys.stderr)
+                print("provisioning is not available for resource type:",
+                      data['rtype'], "(%s)" % modname, file=sys.stderr)
                 return 1
-            if not hasattr(m, "d_provisioner"):
-                print("provisioning with nodemgr is not available for this resource type:", d['rtype'], file=sys.stderr)
+            if not hasattr(mod, "d_provisioner"):
+                print("provisioning with nodemgr is not available for this "
+                      "resource type:", data['rtype'], file=sys.stderr)
                 return 1
 
-            self.provision_resource.append((m, d))
+            provision_resource.append((mod, data))
 
-        for o, d in self.provision_resource:
-            getattr(o, "d_provisioner")(d)
+        for mod, data in provision_resource:
+            getattr(mod, "d_provisioner")(data)
 
     def get_ruser(self, node):
+        """
+        Returns the remote user to use for remote commands on the node
+        specified as argument.
+        If not specified as node.ruser in the node configuration file,
+        the root user is returned.
+        """
         default = "root"
         if not self.config.has_option('node', "ruser"):
             return default
-        h = {}
-        s = self.config.get('node', 'ruser').split()
-        for e in s:
-            l = e.split("@")
-            if len(l) == 1:
-                default = e
-            elif len(l) == 2:
-                _ruser, _node = l
-                h[_node] = _ruser
+        node_ruser = {}
+        elements = self.config.get('node', 'ruser').split()
+        for element in elements:
+            subelements = element.split("@")
+            if len(subelements) == 1:
+                default = element
+            elif len(subelements) == 2:
+                _ruser, _node = subelements
+                node_ruser[_node] = _ruser
             else:
                 continue
-        if node in h:
-            return h[node]
+        if node in node_ruser:
+            return node_ruser[node]
         return default
 
     def dequeue_actions(self):
+        """
+        The dequeue_actions node action entrypoint.
+        """
         if self.skip_action("dequeue_actions"):
             return
         self.task_dequeue_actions()
 
     @scheduler_fork
     def task_dequeue_actions(self):
+        """
+        Poll the collector action queue until emptied.
+        """
         actions = self.collector.call('collector_get_action_queue')
         if actions is None:
             return "unable to fetch actions scheduled by the collector"
         import re
-        regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
+        regex = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
         data = []
         for action in actions:
             ret, out, err = self.dequeue_action(action)
@@ -1222,7 +1746,12 @@ class Node(Svc, Freezer, Scheduler):
         if len(actions) > 0:
             self.collector.call('collector_update_action_queue', data)
 
-    def dequeue_action(self, action):
+    @staticmethod
+    def dequeue_action(action):
+        """
+        Execute the nodemgr or svcmgr action described in payload element
+        received from the collector's action queue.
+        """
         if action.get("svcname") is None or action.get("svcname") == "":
             cmd = [rcEnv.nodemgr]
         else:
@@ -1235,175 +1764,215 @@ class Node(Svc, Freezer, Scheduler):
         return ret, out, err
 
     def rotate_root_pw(self):
-        pw = self.genpw()
+        """
+        Generate a random password, send it to the collector and set it as
+        the root user password.
+        """
+        passwd = self.genpw()
 
         from collector import Collector
-        o = Collector(self.options, self)
+        coll = Collector(self.options, self)
         try:
-            data = getattr(o, 'rotate_root_pw')(pw)
-        except Exception as e:
-            print("unexpected error sending the new password to the collector (%s). Abording password change."%str(e), file=sys.stderr)
+            getattr(coll, 'rotate_root_pw')(passwd)
+        except Exception as exc:
+            print("unexpected error sending the new password to the collector "
+                  "(%s). Abording password change." % str(exc), file=sys.stderr)
             return 1
 
         try:
-            rc = __import__('rcPasswd'+rcEnv.sysname)
+            mod = __import__('rcPasswd'+rcEnv.sysname)
         except ImportError:
             print("not implemented")
             return 1
-        except Exception as e:
-            print(e)
-            return 1
-        r = rc.change_root_pw(pw)
-        if r == 0:
+        ret = mod.change_root_pw(passwd)
+        if ret == 0:
             print("root password changed")
         else:
             print("failed to change root password")
-        return r
+        return ret
 
-    def genpw(self):
+    @staticmethod
+    def genpw():
+        """
+        Returns a random password.
+        """
         import string
         chars = string.letters + string.digits + r'+/'
-        assert 256 % len(chars) == 0  # non-biased later modulo
-        PWD_LEN = 16
-        return ''.join(chars[ord(c) % len(chars)] for c in os.urandom(PWD_LEN))
+        assert 256 % len(chars) == 0
+        pwd_len = 16
+        return ''.join(chars[ord(c) % len(chars)] for c in os.urandom(pwd_len))
 
-    def scanscsi(self):
+    @staticmethod
+    def scanscsi():
+        """
+        Rescans the scsi host buses for new logical units discovery.
+        """
         try:
-            m = __import__("rcDiskInfo"+rcEnv.sysname)
+            mod = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
             print("scanscsi is not supported on", rcEnv.sysname, file=sys.stderr)
             return 1
-        o = m.diskInfo()
-        if not hasattr(o, 'scanscsi'):
+        diskinfo = mod.diskInfo()
+        if not hasattr(diskinfo, 'scanscsi'):
             print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
-        return o.scanscsi()
+        return diskinfo.scanscsi()
 
     def discover(self):
+        """
+        Auto configures services wrapping cloud compute instances
+        """
         self.cloud_init()
 
     def cloud_init(self):
-        r = 0
-        for s in self.config.sections():
+        """
+        Initializes a cloud object for each cloud seaction in the configuration
+        file.
+        """
+        ret = 0
+        for section in self.config.sections():
             try:
-                self.cloud_init_section(s)
-            except ex.excInitError as e:
-                print(str(e), file=sys.stderr)
-                r |= 1
-        return r
+                self.cloud_init_section(section)
+            except ex.excInitError as exc:
+                print(str(exc), file=sys.stderr)
+                ret |= 1
+        return ret
 
-    def cloud_get(self, s):
-        if not s.startswith("cloud"):
+    def cloud_get(self, section):
+        """
+        Get the cloud object instance handling the config file section passed
+        as argument. If not already instanciated, create the instance and
+        store it in a dict hashed by section name.
+        """
+        if not section.startswith("cloud"):
             return
 
-        if not s.startswith("cloud#"):
-            raise ex.excInitError("cloud sections must have a unique name in the form '[cloud#n] in %s"%rcEnv.nodeconf)
+        if not section.startswith("cloud#"):
+            raise ex.excInitError("cloud sections must have a unique name in "
+                                  "the form '[cloud#n] in %s" % rcEnv.nodeconf)
 
-        if hasattr(self, "clouds") and s in self.clouds:
-            return self.clouds[s]
+        if self.clouds and section in self.clouds:
+            return self.clouds[section]
 
-        try:
-            cloud_type = self.config.get(s, 'type')
-        except:
-            raise ex.excInitError("type option is mandatory in cloud section in %s"%rcEnv.nodeconf)
-
-        # noop if already loaded
-        self.load_auth_config()
-        try:
-            auth_dict = {}
-            for key, val in self.auth_config.items(s):
-                auth_dict[key] = val
-        except:
-            raise ex.excInitError("%s must have a '%s' section"%(rcEnv.authconf, s))
+        if not self.config.has_option(section, "type"):
+            raise ex.excInitError("type option is mandatory in cloud section "
+                                  "in %s" % rcEnv.nodeconf)
+        cloud_type = self.config.get(section, 'type')
 
         if len(cloud_type) == 0:
             raise ex.excInitError("invalid cloud type in %s"%rcEnv.nodeconf)
 
+        self.load_auth_config()
+        if not self.auth_config.has_section(section):
+            raise ex.excInitError("%s must have a '%s' section" % (rcEnv.authconf, section))
+
+        auth_dict = {}
+        for key, val in self.auth_config.items(section):
+            auth_dict[key] = val
+
         mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
 
         try:
-            m = __import__(mod_name)
+            mod = __import__(mod_name)
         except ImportError:
             raise ex.excInitError("cloud type '%s' is not supported"%cloud_type)
 
-        if not hasattr(self, "clouds"):
+        if self.clouds is None:
             self.clouds = {}
-        c = m.Cloud(s, auth_dict)
-        self.clouds[s] = c
-        return c
+        cloud = mod.Cloud(section, auth_dict)
+        self.clouds[section] = cloud
+        return cloud
 
-    def cloud_init_section(self, s):
-        c = self.cloud_get(s)
+    def cloud_init_section(self, section):
+        """
+        Detects all cloud instances in the section, and init a service for each
+        """
+        cloud = self.cloud_get(section)
 
-        if c is None:
+        if cloud is None:
             return
 
-        cloud_id = c.cloud_id()
-        svcnames = c.list_svcnames()
+        cloud_id = cloud.cloud_id()
+        svcnames = cloud.list_svcnames()
 
-        self.cloud_purge_services(cloud_id, map(lambda x: x[1], svcnames))
+        self.cloud_purge_services(cloud_id, [x[1] for x in svcnames])
 
         for vmname, svcname in svcnames:
-            self.cloud_init_service(c, vmname, svcname)
+            self.cloud_init_service(cloud, vmname, svcname)
 
-    def cloud_purge_services(self, suffix, svcnames):
+    @staticmethod
+    def cloud_purge_services(suffix, svcnames):
+        """
+        Purge a lingering service no longer detected in the cloud.
+        """
         import glob
-        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
-        for cf in cfs:
-            svcname = os.path.basename(cf)[:-5]
+        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        for fpath in fpaths:
+            svcname = os.path.basename(fpath)[:-5]
             if svcname.endswith(suffix) and svcname not in svcnames:
                 print("purge_service(svcname)", svcname)
 
-    def cloud_init_service(self, c, vmname, svcname):
+    @staticmethod
+    def cloud_init_service(cloud, vmname, svcname):
+        """
+        Init a service for a detected cloud instance.
+        """
         import glob
-        cfs = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
-        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
-        if cf in cfs:
+        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        if fpath in fpaths:
             print(svcname, "is already defined")
             return
         print("initialize", svcname)
 
         defaults = {
-          'app': c.app_id(svcname),
-          'mode': c.mode,
-          'nodes': rcEnv.nodename,
-          'service_type': 'TST',
-          'vm_name': vmname,
-          'cloud_id': c.cid,
+            "app": cloud.app_id(svcname),
+            "mode": cloud.mode,
+            "nodes": rcEnv.nodename,
+            "service_type": "TST",
+            "vm_name": vmname,
+            "cloud_id": cloud.cid,
         }
         config = RawConfigParser(defaults)
 
         try:
-            fp = open(cf, 'w')
-            config.write(fp)
-            fp.close()
+            ofile = open(fpath, 'w')
+            config.write(ofile)
+            ofile.close()
         except:
-            print("failed to write %s"%cf, file=sys.stderr)
+            print("failed to write %s"%fpath, file=sys.stderr)
             raise Exception()
 
-        b = cf[:-5]
-        d = b + '.dir'
-        s = b + '.d'
-        x = rcEnv.svcmgr
+        basename = fpath[:-5]
+        launchers_d = basename + '.dir'
+        launchers_l = basename + '.d'
         try:
-            os.makedirs(d)
-        except:
+            os.makedirs(launchers_d)
+        except OSError:
             pass
         try:
-            os.symlink(d, s)
-        except:
+            os.symlink(launchers_d, launchers_l)
+        except OSError:
             pass
         try:
-            os.symlink(x, b)
-        except:
+            os.symlink(rcEnv.svcmgr, basename)
+        except OSError:
             pass
 
     def can_parallel(self, action):
-        if self.options.parallel and action not in actions_no_parallel:
+        """
+        Returns True if the action can be run in a subprocess per service
+        """
+        if self.options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
         return False
 
-    def action_need_aggregate(self, action):
+    @staticmethod
+    def action_need_aggregate(action):
+        """
+        Returns True if the action returns data from multiple sources (nodes
+        or services) to arrange for display.
+        """
         if action.startswith("print_"):
             return True
         if action.startswith("json_"):
@@ -1414,80 +1983,91 @@ class Node(Svc, Freezer, Scheduler):
             return True
         return False
 
-    @formatter
-    def print_aggregate(self, data):
-        return data
-
     def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
+        """
+        The services action wrapper.
+        Takes care of
+        * parallelization of the action in per-service subprocesses
+        * collection and aggregation of returned data and errors
+        """
         err = 0
-        outs = {}
+        data = Storage()
+        data.outs = {}
         need_aggregate = self.action_need_aggregate(action)
 
         # generic cache janitoring
         rcUtilities.purge_cache()
-        self.log.debug("session uuid: %s" % rcEnv.session_uuid)
+        self.log.debug("session uuid: %s", rcEnv.session_uuid)
 
-        if action in actions_no_multiple_services and len(self.svcs) > 1:
+        if action in ACTIONS_NO_MULTIPLE_SERVICES and len(self.svcs) > 1:
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
+
+        kwargs = {
+            "rid": rid,
+            "tags": tags,
+            "subsets": subsets,
+            "waitlock": self.options.waitlock
+        }
+
         if self.can_parallel(action):
+            kwargs["action"] = action
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
                 from multiprocessing import set_executable
                 set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
-            p = {}
-            svcs = {}
-        for s in self.svcs:
+            data.procs = {}
+            data.svcs = {}
+
+        for svc in self.svcs:
             if self.can_parallel(action):
-                d = {
-                  'action': action,
-                  'rid': rid,
-                  'tags': tags,
-                  'subsets': subsets,
-                  'waitlock': self.options.waitlock
-                }
-                svcs[s.svcname] = s
-                p[s.svcname] = Process(target=self.service_action_worker,
-                                       name='worker_'+s.svcname,
-                                       args=[s],
-                                       kwargs=d)
-                p[s.svcname].start()
+                data.svcs[svc.svcname] = svc
+                data.procs[svc.svcname] = Process(
+                    target=self.service_action_worker,
+                    name='worker_'+svc.svcname,
+                    args=[svc],
+                    kwargs=kwargs
+                )
+                data.procs[svc.svcname].start()
             else:
                 try:
-                    ret = s.action(action, rid=rid, tags=tags, subsets=subsets, waitlock=self.options.waitlock)
+                    ret = svc.action(action, **kwargs)
                     if need_aggregate:
                         if ret is not None:
-                            outs[s.svcname] = ret
+                            data.outs[svc.svcname] = ret
                     else:
                         err += ret
-                except s.exMonitorAction:
-                    s.action('toc')
+                except svc.exMonitorAction:
+                    svc.action('toc')
                 except ex.excSignal:
                     break
 
         if self.can_parallel(action):
-            for svcname in p:
-                p[svcname].join()
-                r = p[svcname].exitcode
-                if r == self.ex_monitor_action_exit_code:
-                    svcs[svcname].action('toc')
-                elif r > 0:
-                    # r is negative when p[svcname] is killed by signal.
+            for svcname in data.procs:
+                data.procs[svcname].join()
+                ret = data.procs[svcname].exitcode
+                if ret == self.ex_monitor_action_exit_code:
+                    data.svcs[svcname].action('toc')
+                elif ret > 0:
+                    # r is negative when data.procs[svcname] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
-                    err += r
+                    err += ret
 
         if need_aggregate:
             if len(self.svcs) == 1:
                 svcname = self.svcs[0].svcname
-                if svcname not in outs:
+                if svcname not in data.outs:
                     return
-                return self.print_aggregate(outs[self.svcs[0].svcname])
+                return self.print_data(data.outs[svcname])
             else:
-                return self.print_aggregate(outs)
+                return self.print_data(data.outs)
 
         return err
 
     def collector_cli(self):
+        """
+        The collector cli entrypoint.
+        """
         data = {}
 
         if os.getuid() == 0:
@@ -1502,7 +2082,11 @@ class Node(Svc, Freezer, Scheduler):
         return cli.run()
 
     def collector_api(self, svcname=None):
-        if hasattr(self, "collector_api_cache"):
+        """
+        Prepare the authentication info, either as node or as user.
+        Fetch and cache the collector's exposed rest api metadata.
+        """
+        if self.collector_api_cache is not None:
             return self.collector_api_cache
         data = {}
         if not hasattr(self.options, "user") or self.options.user is None:
@@ -1518,14 +2102,17 @@ class Node(Svc, Freezer, Scheduler):
         return self.collector_api_cache
 
     def collector_auth_node(self):
-        import platform
-        sysname, username, x, x, machine, x = platform.uname()
-        config = RawConfigParser({})
-        config.read(os.path.join(rcEnv.pathetc, "node.conf"))
-        password = config.get("node", "uuid")
+        """
+        Returns the authentcation info for login as node
+        """
+        username = rcEnv.nodename
+        password = self.config.get("node", "uuid")
         return username, password
 
     def collector_auth_user(self):
+        """
+        Returns the authentcation info for login as user
+        """
         username = self.options.user
         import getpass
         try:
@@ -1535,13 +2122,20 @@ class Node(Svc, Freezer, Scheduler):
         return username, password
 
     def collector_url(self):
+        """
+        Mangles the node.dbopensvc url to produce the rest api head url
+        """
         api = self.collector_api()
-        s = "%s:%s@" % (api["username"], api["password"])
-        url = api["url"].replace("https://", "https://"+s)
-        url = url.replace("http://", "http://"+s)
+        auth = "%s:%s@" % (api["username"], api["password"])
+        url = api["url"].replace("https://", "https://" + auth)
+        url = url.replace("http://", "http://" + auth)
         return url
 
     def collector_request(self, path, svcname=None):
+        """
+        Make a request to the collector's rest api
+        """
+        import base64
         api = self.collector_api(svcname=svcname)
         url = api["url"]
         request = Request(url+path)
@@ -1555,25 +2149,49 @@ class Node(Svc, Freezer, Scheduler):
         return request
 
     def collector_rest_get(self, path, svcname=None):
+        """
+        Make a GET request to the collector's rest api
+        """
         return self.collector_rest_request(path, svcname=svcname)
 
     def collector_rest_post(self, path, data=None, svcname=None):
+        """
+        Make a POST request to the collector's rest api
+        """
         return self.collector_rest_request(path, data, svcname=svcname)
 
-    def urlretrieve(self, url, fpath):
-        request = Request(url)
-        kwargs = {}
+    @staticmethod
+    def set_ssl_context(kwargs):
+        """
+        Python 2.7.9+ verifies certs by default and support the creationn
+        of an unverified context through ssl._create_unverified_context().
+        This method add an unverified context to a kwargs dict, when
+        necessary.
+        """
         try:
             import ssl
             kwargs["context"] = ssl._create_unverified_context()
-        except:
+        except (ImportError, AttributeError):
             pass
-        f = urlopen(request, **kwargs)
-        with open(fpath, 'wb') as df:
-            for chunk in iter(lambda: f.read(4096), b""):
-                df.write(chunk)
+        return kwargs
+
+    def urlretrieve(self, url, fpath):
+        """
+        A chunked download method
+        """
+        request = Request(url)
+        kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
+        ufile = urlopen(request, **kwargs)
+        with open(fpath, 'wb') as ofile:
+            for chunk in iter(lambda: ufile.read(4096), b""):
+                ofile.write(chunk)
+        ufile.close()
 
     def collector_rest_request(self, path, data=None, svcname=None):
+        """
+        Make a request to the collector's rest api
+        """
         api = self.collector_api(svcname=svcname)
         request = self.collector_request(path)
         if not api["url"].startswith("https"):
@@ -1582,161 +2200,163 @@ class Node(Svc, Freezer, Scheduler):
             import urllib
             request.add_data(urlencode(data))
         kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
         try:
-            import ssl
-            kwargs["context"] = ssl._create_unverified_context()
-        except:
-            pass
-        try:
-            f = urlopen(request, **kwargs)
-        except HTTPError as e:
+            ufile = urlopen(request, **kwargs)
+        except HTTPError as exc:
             try:
-                err = json.loads(e.read())["error"]
-                e = ex.excError(err)
-            except:
+                err = json.loads(exc.read())["error"]
+                exc = ex.excError(err)
+            except ValueError:
                 pass
-            raise e
-        import json
-        data = json.loads(f.read().decode("utf-8"))
-        f.close()
+            raise exc
+        data = json.loads(ufile.read().decode("utf-8"))
+        ufile.close()
         return data
 
     def collector_rest_get_to_file(self, path, fpath):
+        """
+        Download bulk chunked data from the collector's rest api
+        """
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
-            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+            raise ex.excError("refuse to submit auth tokens through a "
+                              "non-encrypted transport")
         kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
         try:
-            import ssl
-            kwargs["context"] = ssl._create_unverified_context()
-        except:
-            pass
-        try:
-            f = urlopen(request, **kwargs)
-        except HTTPError as e:
+            ufile = urlopen(request, **kwargs)
+        except HTTPError as exc:
             try:
-                err = json.loads(e.read())["error"]
-                e = ex.excError(err)
-            except:
+                err = json.loads(exc.read())["error"]
+                exc = ex.excError(err)
+            except ValueError:
                 pass
-            raise e
-        with open(fpath, 'wb') as df:
-            for chunk in iter(lambda: f.read(4096), b""):
-                df.write(chunk)
-        f.close()
+            raise exc
+        with open(fpath, 'wb') as ofile:
+            for chunk in iter(lambda: ufile.read(4096), b""):
+                ofile.write(chunk)
+        ufile.close()
 
-    def install_service_cf_from_template(self, svcname, template):
-        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
-        data = self.collector_rest_get("/provisioning_templates/"+template+"?props=tpl_definition&meta=0")
+    def install_svc_conf_from_templ(self, svcname, template):
+        """
+        Download a provisioning template from the collector's rest api,
+        and installs it as the service configuration file.
+        """
+        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        data = self.collector_rest_get(
+            "/provisioning_templates/"+template+"?props=tpl_definition&meta=0"
+        )
         if "error" in data:
             raise ex.excError(data["error"])
         if len(data["data"]) == 0:
             raise ex.excError("service not found on the collector")
         if len(data["data"][0]["tpl_definition"]) == 0:
             raise ex.excError("service has an empty configuration")
-        with open(cf, "w") as f:
-            f.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.install_service_cf_from_file(svcname, cf)
+        with open(fpath, "w") as ofile:
+            ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
+        self.install_svc_conf_from_file(svcname, fpath)
 
-    def install_service_cf_from_uri(self, svcname, cf):
+    def install_svc_conf_from_uri(self, svcname, fpath):
+        """
+        Download a provisioning template from an arbitrary uri,
+        and installs it as the service configuration file.
+        """
         import tempfile
-        f = tempfile.NamedTemporaryFile()
-        tmpf = f.name
-        f.close()
-        print("get %s (%s)"%(cf, tmpf))
+        tmpf = tempfile.NamedTemporaryFile()
+        tmpfpath = tmpf.name
+        tmpf.close()
+        print("get %s (%s)" % (fpath, tmpfpath))
         try:
-            self.urlretrieve(cf, tmpf)
-        except IOError as e:
-            print("download failed", ":", e, file=sys.stderr)
+            self.urlretrieve(fpath, tmpfpath)
+        except IOError as exc:
+            print("download failed", ":", exc, file=sys.stderr)
             try:
-                os.unlink(tmpf)
-            except:
+                os.unlink(tmpfpath)
+            except OSError:
                 pass
-        self.install_service_cf_from_file(svcname, tmpf)
+        self.install_svc_conf_from_file(svcname, tmpfpath)
 
-    def install_service_cf_from_file(self, svcname, cf):
-        if not os.path.exists(cf):
-            raise ex.excError("%s does not exists" % cf)
+    @staticmethod
+    def install_svc_conf_from_file(svcname, fpath):
+        """
+        Installs a local template as the service configuration file.
+        """
+        if not os.path.exists(fpath):
+            raise ex.excError("%s does not exists" % fpath)
 
         import shutil
 
         # install the configuration file in etc/
-        src_cf = os.path.realpath(cf)
+        src_cf = os.path.realpath(fpath)
         dst_cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
         if dst_cf != src_cf:
             shutil.copy2(src_cf, dst_cf)
 
-    def install_service(self, svcname, cf=None, template=None):
-        if type(svcname) == list:
+    def install_service(self, svcname, fpath=None, template=None):
+        """
+        Pick a collector's template, arbitrary uri, or local file service
+        configuration file fetching method. Run it, and create the
+        service symlinks and launchers directory.
+        """
+        if isinstance(svcname, list):
             if len(svcname) != 1:
                 raise ex.excError("only one service must be specified")
             svcname = svcname[0]
 
-        if cf is None and template is None:
+        if fpath is None and template is None:
             return
 
-        if cf is not None and template is not None:
+        if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
         if template is not None:
             if "://" in template:
-                self.install_service_cf_from_uri(svcname, template)
+                self.install_svc_conf_from_uri(svcname, template)
             elif os.path.exists(template):
-                self.install_service_cf_from_file(svcname, template)
+                self.install_svc_conf_from_file(svcname, template)
             else:
-                self.install_service_cf_from_template(svcname, template)
+                self.install_svc_conf_from_templ(svcname, template)
         else:
-            if "://" in cf:
-                self.install_service_cf_from_uri(svcname, cf)
+            if "://" in fpath:
+                self.install_svc_conf_from_uri(svcname, fpath)
             else:
-                self.install_service_cf_from_file(svcname, cf)
+                self.install_svc_conf_from_file(svcname, fpath)
 
-        # install .dir
-        d = os.path.join(rcEnv.pathetc, svcname+'.dir')
-        if not os.path.exists(d):
-            os.makedirs(d)
+        self.install_service_files(svcname)
 
-        if rcEnv.sysname == 'Windows':
-            return
-
-        # install .d
-        ld = os.path.join(rcEnv.pathetc, svcname+'.d')
-        if not os.path.exists(ld):
-            os.symlink(d, ld)
-        elif not os.path.exists(ld+os.sep):
-            # repair broken symlink
-            os.unlink(ld)
-            os.symlink(d, ld)
-
-        # install svcmgr link
-        ls = os.path.join(rcEnv.pathetc, svcname)
-        s = os.path.join(rcEnv.pathbin, 'svcmgr')
-        if not os.path.exists(ls):
-            os.symlink(s, ls)
-        elif os.path.realpath(s) != os.path.realpath(ls):
-            os.unlink(ls)
-            os.symlink(s, ls)
-
-    def install_service_files(self, svcname):
+    @staticmethod
+    def install_service_files(svcname):
+        """
+        Given a service name, install the symlink to svcmgr, create the
+        <svcname>.dir and install the <svcname>.d symlink pointing it.
+        """
         if rcEnv.sysname == 'Windows':
             return
 
         # install svcmgr link
-        ls = os.path.join(rcEnv.pathetc, svcname)
-        s = rcEnv.svcmgr
-        if not os.path.exists(ls):
-            os.symlink(s, ls)
-        elif os.path.realpath(s) != os.path.realpath(ls):
-            os.unlink(ls)
-            os.symlink(s, ls)
+        svcmgr_l = os.path.join(rcEnv.pathetc, svcname)
+        if not os.path.exists(svcmgr_l):
+            os.symlink(rcEnv.svcmgr, svcmgr_l)
+        elif os.path.realpath(rcEnv.svcmgr) != os.path.realpath(svcmgr_l):
+            os.unlink(svcmgr_l)
+            os.symlink(rcEnv.svcmgr, svcmgr_l)
 
     def pull_services(self, svcnames):
+        """
+        Download specified services configuration files from the collector and
+        install them.
+        """
         for svcname in svcnames:
             self.pull_service(svcname)
 
     def pull_service(self, svcname):
-        cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        """
+        Pull the specified service configuration file from the collector and
+        install it.
+        """
+        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
         data = self.collector_rest_get("/services/"+svcname+"?props=svc_config&meta=0")
         if "error" in data:
             self.log.error(data["error"])
@@ -1747,101 +2367,147 @@ class Node(Svc, Freezer, Scheduler):
         if len(data["data"][0]["svc_config"]) == 0:
             self.log.error("service has an empty configuration")
             return 1
-        with open(cf, "w") as f:
-            f.write(data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.log.info("%s pulled" % cf)
+        with open(fpath, "w") as ofile:
+            ofile.write(data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t"))
+        self.log.info("%s pulled", fpath)
         self.install_service_files(svcname)
 
     def set_rlimit(self):
-        try:
-            n = 64 * len(self.svcs)
-        except:
-            n = 4096
+        """
+        Set the operating system nofile rlimit to a sensible value for the
+        number of services configured.
+        """
+        nofile = 4096
+        if self.svcs and isinstance(self.svcs, list):
+            proportional_nofile = 64 * len(self.svcs)
+            if proportional_nofile > nofile:
+                nofile = proportional_nofile
+
         try:
             import resource
-            (vs, vg) = resource.getrlimit(resource.RLIMIT_NOFILE)
-            if vs < n:
-                self.log.debug("raise nofile resource from %d limit to %d" % (vs, n))
-                resource.setrlimit(resource.RLIMIT_NOFILE, (n, vg))
-        except:
-            pass
+            _vs, _vg = resource.getrlimit(resource.RLIMIT_NOFILE)
+            if _vs < nofile:
+                self.log.debug("raise nofile resource from %d limit to %d", _vs, nofile)
+                resource.setrlimit(resource.RLIMIT_NOFILE, (nofile, _vg))
+            else:
+                self.log.debug("current nofile %d already over minimum %d", _vs, nofile)
+        except Exception as exc:
+            self.log.debug(str(exc))
 
     def schedulers(self):
+        """
+        schedulers node action entrypoint.
+        Run the node scheduler and each configured service scheduler.
+        """
         self.scheduler()
 
         self.build_services()
-        for s in self.svcs:
-            s.scheduler()
+        for svc in self.svcs:
+            svc.scheduler()
 
     def logs(self):
+        """
+        logs node action entrypoint.
+        Read the node.log file, colorize its content and print.
+        """
         if not os.path.exists(rcEnv.logfile):
             return
         from rcColor import color, colorize
-        class shared:
-            skip = False
-        def c(line):
-            line = line.rstrip("\n")
-            l = line.split(" - ")
 
-            if len(l) < 3 or l[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
+        class Shared(object):
+            """
+            A class to store a shared flag
+            """
+            skip = False
+
+        def highlighter(line):
+            """
+            Colorize interesting parts to help readability
+            """
+            line = line.rstrip("\n")
+            elements = line.split(" - ")
+
+            if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
                 # this is a log line continuation (command output for ex.)
-                if shared.skip:
+                if Shared.skip:
                     return
                 else:
                     return line
 
-            if not self.options.debug and l[2] == "DEBUG":
-                shared.skip = True
+            if not self.options.debug and elements[2] == "DEBUG":
+                Shared.skip = True
                 return
             else:
-                shared.skip = False
+                Shared.skip = False
 
-            if len(l[1]) > rcLogger.namelen:
-                l[1] = "*"+l[1][-(rcLogger.namelen-1):]
-            l[1] = rcLogger.namefmt % l[1]
-            l[1] = colorize(l[1], color.BOLD)
-            l[2] = "%-7s" % l[2]
-            l[2] = l[2].replace("ERROR", colorize("ERROR", color.RED))
-            l[2] = l[2].replace("WARNING", colorize("WARNING", color.BROWN))
-            l[2] = l[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
-            return " ".join(l)
+            if len(elements[1]) > rcLogger.namelen:
+                elements[1] = "*"+elements[1][-(rcLogger.namelen-1):]
+            elements[1] = rcLogger.namefmt % elements[1]
+            elements[1] = colorize(elements[1], color.BOLD)
+            elements[2] = "%-7s" % elements[2]
+            elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
+            elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
+            elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
+            return " ".join(elements)
 
         try:
-            with open(rcEnv.logfile, "r") as f:
-                for line in f.readlines():
-                    s = c(line)
-                    if s:
-                         print(s)
+            with open(rcEnv.logfile, "r") as ofile:
+                for line in ofile.readlines():
+                    line = highlighter(line)
+                    if line:
+                        print(line)
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
-            except:
+            except (AttributeError, OSError, IOError):
                 pass
 
-    def _print_config(self, cf):
+    @staticmethod
+    def _print_config(fpath):
+        """
+        Colorize and print the content of the file passed as argument.
+        """
         from rcColor import colorize, color
         import re
-        def c(line):
+        def highlighter(line):
+            """
+            Colorize interesting parts to help readability
+            """
             line = line.rstrip("\n")
             if re.match(r'\[.+\]', line):
                 return colorize(line, color.BROWN)
-            line = re.sub("({.+})", colorize(r"\1", color.GREEN), line)
-            line = re.sub("^(\s*\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+"=", line)
-            line = re.sub("^(\s*\w+)(@\w+\s*)=", colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=", line)
+            line = re.sub(
+                r"({[\.\w\-_#{}\[\]()\$\+]+})",
+                colorize(r"\1", color.GREEN),
+                line
+            )
+            line = re.sub(
+                r"^(\s*\w+\s*)=",
+                colorize(r"\1", color.LIGHTBLUE)+"=",
+                line
+            )
+            line = re.sub(
+                r"^(\s*\w+)(@\w+\s*)=",
+                colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=",
+                line
+            )
             return line
         try:
-            with open(cf, 'r') as f:
-                for line in f.readlines():
-                    print(c(line))
-        except Exception as e:
-            raise ex.excError(e)
+            with open(fpath, 'r') as ofile:
+                for line in ofile.readlines():
+                    print(highlighter(line))
+        except Exception as exc:
+            raise ex.excError(exc)
 
     def print_config(self):
+        """
+        print_config node action entrypoint
+        """
         self._print_config(rcEnv.nodeconf)
 
     def print_authconfig(self):
+        """
+        print_authconfig node action entrypoint
+        """
         self._print_config(rcEnv.authconf)
 
-if __name__ == "__main__" :
-    for n in (Node,) :
-        help(n)

@@ -16,16 +16,12 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcUtilities
+import rcConfigParser
 
 # supported operators in arithmetic expressions
 operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
              ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
              ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
-
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -3376,7 +3372,7 @@ def add_apps_sysv(svc, conf):
 def get_pg_settings(svc, s):
     d = {}
     if s != "DEFAULT":
-        conf = ConfigParser.RawConfigParser()
+        conf = rcConfigParser.RawConfigParser()
         import codecs
         with codecs.open(svc.conf, "r", "utf8") as f:
             if sys.version_info[0] >= 3:
@@ -3477,7 +3473,7 @@ def build(name, minimal=False, svcconf=None):
     conf = None
     kwargs = {'svcname': name}
     if os.path.isfile(svcconf):
-        conf = ConfigParser.RawConfigParser()
+        conf = rcConfigParser.RawConfigParser()
         import codecs
         with codecs.open(svcconf, "r", "utf8") as f:
             if sys.version_info[0] >= 3:
@@ -3978,7 +3974,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
         sys.stderr.write("Abort\n")
         return {"ret": 1}
 
-    conf = ConfigParser.RawConfigParser(defaults)
+    conf = rcConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
         conf.add_section(section)
         for key, val in d.items():
@@ -4013,7 +4009,7 @@ def update(svcname, resources=[], interactive=False, provision=False):
     cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
     sections = {}
     rtypes = {}
-    conf = ConfigParser.RawConfigParser()
+    conf = rcConfigParser.RawConfigParser()
     conf.read(cf)
     defaults = conf.defaults()
     for section in conf.sections():
@@ -4091,7 +4087,7 @@ def update(svcname, resources=[], interactive=False, provision=False):
                     return {"ret": 1}
             rid.append(section)
 
-    conf = ConfigParser.RawConfigParser(defaults)
+    conf = rcConfigParser.RawConfigParser(defaults)
     for section, d in sections.items():
         conf.add_section(section)
         for key, val in d.items():

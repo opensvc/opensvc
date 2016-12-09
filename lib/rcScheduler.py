@@ -107,7 +107,11 @@ class SchedOpts(object):
         self.schedule_option = schedule_option
 
 class Scheduler(object):
-    def __init__(self):
+    def __init__(self, config_defaults=None):
+        if config_defaults is None:
+            self.config_defaults = {}
+        else:
+            self.config_defaults = config_defaults
         self.sched_log_shut = False
         self.calendar_names = {
           "jan": 1,
@@ -436,10 +440,8 @@ class Scheduler(object):
 
         if hasattr(self, "config"):
             config = self.config
-            config_defaults = self.config_defaults
         elif hasattr(self, "svc"):
             config =  self.svc.config
-            config_defaults = self.svc.config_defaults
 
         if config.has_section(section) and \
            config.has_option(section, 'schedule'):
@@ -469,8 +471,8 @@ class Scheduler(object):
             schedule_s = config.get('DEFAULT', option)
         elif hasattr(self, "resources_by_id") and section in self.resources_by_id and hasattr(self.resources_by_id[section], "default_schedule"):
             schedule_s = self.resources_by_id[section].default_schedule
-        elif option in config_defaults:
-            schedule_s = config_defaults[option]
+        elif option in self.config_defaults:
+            schedule_s = self.config_defaults[option]
         else:
             raise SchedNoDefault
 

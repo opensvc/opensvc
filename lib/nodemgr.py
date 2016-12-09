@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import absolute_import
+
 import sys
 import os
 import optparse
@@ -11,7 +14,7 @@ import rcStatus
 import rcColor
 import rcExceptions as ex
 from rcGlobalEnv import *
-from rcUtilities import check_privs, ximport
+from rcUtilities import ximport
 import nodemgr_parser
 
 node_mod = ximport('node')
@@ -25,7 +28,7 @@ def do_symcli_db_file(symcli_db_file):
     if symcli_db_file is None:
         return
     if not os.path.exists(symcli_db_file):
-        print("File does not exist: %s"%symcli_db_file)
+        print("File does not exist: %s" % symcli_db_file)
         return
     os.environ['SYMCLI_DB_FILE'] = symcli_db_file
     os.environ['SYMCLI_OFFLINE'] = '1'
@@ -42,8 +45,7 @@ def main(node):
     if action.startswith("collector_cli"):
         action = "collector_cli"
 
-    if action not in node.unprivileged_actions:
-        check_privs()
+    node.check_privs(action)
 
     err = 0
     try:

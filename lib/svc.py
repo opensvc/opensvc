@@ -23,6 +23,16 @@ if sys.version_info[0] < 3:
 def signal_handler(signum, frame):
     raise ex.excSignal
 
+CONFIG_DEFAULTS = {
+    'push_schedule': '00:00-06:00@361',
+    'sync_schedule': '04:00-06:00@121',
+    'comp_schedule': '00:00-06:00@361',
+    'status_schedule': '@9',
+    'monitor_schedule': '@1',
+    'resinfo_schedule': '@60',
+    'no_schedule': '',
+}
+
 actions_translation = {
   "push_env_mtime": "push_config_mtime",
   "push_env": "push_config",
@@ -280,7 +290,7 @@ class Svc(Resource, Scheduler):
         self.push_flag = os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config')
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
-        Scheduler.__init__(self)
+        Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
 
         self.ref_cache = {}
         self.log = rcLogger.initLogger(self.svcname)
@@ -298,15 +308,6 @@ class Svc(Resource, Scheduler):
         self.monitor_action = None
         self.group_status_cache = None
         self.abort_start_done = False
-        self.config_defaults = {
-          'push_schedule': '00:00-06:00@361',
-          'sync_schedule': '04:00-06:00@121',
-          'comp_schedule': '00:00-06:00@361',
-          'status_schedule': '@9',
-          'monitor_schedule': '@1',
-          'resinfo_schedule': '@60',
-          'no_schedule': '',
-        }
         self.scheduler_actions = {
          "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
          "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="status_schedule"),
@@ -1173,10 +1174,10 @@ class Svc(Resource, Scheduler):
         pass
 
     def reboot(self):
-        self.node.os._reboot()
+        self.node.system._reboot()
 
     def crash(self):
-        self.node.os.crash()
+        self.node.system.crash()
 
     def pg_freeze(self):
         if self.command_is_scoped():
@@ -2492,6 +2493,8 @@ class Svc(Resource, Scheduler):
             os.makedirs(sd)
 
     def autopush(self):
+        if not self.collector_outdated():
+            return
         self.log.handlers[1].setLevel(logging.CRITICAL)
         try:
             self.push()
