@@ -1,5 +1,6 @@
-import resources as Res
 import os
+
+import resources as Res
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
@@ -117,9 +118,33 @@ class Mount(Res.Resource):
         """
         return True
 
+    @staticmethod
+    def alarm_handler(signum, frame):
+        raise ex.excSignal
+
+    def check_stat(self):
+        if which("stat") is None:
+            return True
+
+        import signal, subprocess
+        signal.signal(signal.SIGALRM, self.alarm_handler)
+        signal.alarm(5)
+
+        try:
+            proc = subprocess.Popen('stat '+self.device, shell=True,
+                                    stderr=subprocess.PIPE,
+                                    stdout=subprocess.PIPE)
+            out, err = proc.communicate()
+            signal.alarm(0)
+        except ex.excSignal:
+            return False
+
+        return True
+
     def check_writable(self):
         if not self.can_check_writable():
             return False
+
         try:
             f = open(self.testfile, 'w')
             f.write(' ')
@@ -131,10 +156,14 @@ class Mount(Res.Resource):
             return False
         except:
             return False
+
         return True
 
     def _status(self, verbose=False):
         if self.is_up():
+            if not self.check_stat():
+                self.status_log("fs is not responding to stat")
+                return rcStatus.WARN
             if self.need_check_writable() and not self.check_writable():
                 self.status_log("fs is not writable")
                 return rcStatus.WARN
