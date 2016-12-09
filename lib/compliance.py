@@ -108,11 +108,23 @@ class Module(object):
         if rcEnv.pathbin != "/usr/bin":
             os.environ["PATH"] = os.environ["PATH"] + ":" + rcEnv.pathbin
 
+    def set_locale(self):
+        """
+        Switch to an utf-8 locale
+        """
+        import locale
+        locales = ["C.UTF-8", "en_US.UTF-8"]
+        for loc in locales:
+            try:
+                locale.setlocale(locale.LC_ALL, loc)
+                return
+            except locale.Error:
+                continue
+
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
         os.environ.update({
-          "LC_ALL": "C.UTF-8",
           "PYTHONIOENCODING": "utf-8",
           "OSVC_PYTHON": sys.executable,
           "OSVC_PATH_ETC": rcEnv.pathetc,
@@ -123,6 +135,7 @@ class Module(object):
           "OSVC_NODEMGR": rcEnv.nodemgr,
           "OSVC_SVCMGR": rcEnv.svcmgr,
         })
+        self.set_locale()
         self.set_env_path()
 
         # add services env section keys, with values eval'ed on this node
