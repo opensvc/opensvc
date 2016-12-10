@@ -145,7 +145,13 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     else:
         val = conf_get_val_scoped(svc, conf, s, o, impersonate=impersonate)
 
-    val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
+    try:
+        val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
+    except ex.excError:
+        if o.startswith("pre_") or o.startswith("post_") or o.startswith("blocking_"):
+            pass
+        else:
+            raise
 
     if t == 'string':
         pass

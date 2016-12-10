@@ -3494,8 +3494,14 @@ class Svc(Resource, Scheduler):
             value = config.get(section, option)
             try:
                 value = handle_references(self, config, value, scope=True)
-            except Exception as e:
-                self.log.error(str(e))
+            except ex.excError as exc:
+                if not option.startswith("pre_") and \
+                   not option.startswith("post_") and \
+                   not option.startswith("blocking_"):
+                    self.log.error(str(exc))
+                    return 1
+            except Exception as exc:
+                self.log.error(str(exc))
                 return 1
             return 0
 

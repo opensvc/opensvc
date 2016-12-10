@@ -129,6 +129,9 @@ class Resource(object):
             return
 
         cmd = getattr(self, attr)
+        if "|" in cmd or "&&" in cmd or ";" in cmd:
+            kwargs["shell"] = True
+
         if not kwargs.get("shell", False):
             if sys.version_info[0] < 3:
                 cmdv = shlex.split(cmd.encode('utf8'))
