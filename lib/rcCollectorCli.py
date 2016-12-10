@@ -2223,11 +2223,6 @@ class Cli(object):
             except CliError as e:
                 print(str(e), file=sys.stderr)
                 return
-            except Exception as e:
-                import traceback
-                e = sys.exc_info()
-                print(e[0], e[1], traceback.print_tb(e[2]))
-                return
         print("command not found:", line)
 
     def parse_options(self):
@@ -2343,6 +2338,9 @@ class Cli(object):
             line = subprocess.list2cmdline(self.args)
             try:
                 self.dispatch(line)
+            except ValueError as exc:
+                print(exc)
+                sys.exit(1)
             except KeyboardInterrupt:
                 print("Interrupted")
                 sys.exit(1)
@@ -2372,6 +2370,10 @@ class Cli(object):
             try:
                 line = raw_input(self.host+":"+path+' # ')
                 self.dispatch(line)
+            except ValueError as exc:
+                print(exc)
+                readline.redisplay()
+                pass
             except EOFError:
                 print()
                 return
