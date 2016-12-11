@@ -29,6 +29,15 @@ def lazy(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
+def lazy_initialized(self, attr):
+    """
+    Return True if the lazy property has been initialized
+    """
+    attr_name = '_lazy_' + attr
+    if hasattr(self, attr_name):
+        return True
+    return False
+
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff

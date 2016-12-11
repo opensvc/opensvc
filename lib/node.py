@@ -469,8 +469,10 @@ class Node(Scheduler):
         """
         Stop the node class workers
         """
-        self.collector.stop_worker()
-        self.cmdworker.stop_worker()
+        if utils.lazy_initialized(self, "collector"):
+            self.collector.stop_worker()
+        if utils.lazy_initialized(self, "cmdworker"):
+            self.cmdworker.stop_worker()
 
     def edit_config(self):
         """
