@@ -29,7 +29,7 @@ import xmlrpcClient
 from rcGlobalEnv import rcEnv, Storage
 import rcCommandWorker
 import rcLogger
-import rcUtilities
+import rcUtilities as utils
 import rcExceptions as ex
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
@@ -39,11 +39,6 @@ if sys.version_info[0] < 3:
     BrokenPipeError = IOError
 
 os.environ['LANG'] = 'C'
-
-try:
-    RCOS = __import__('rcOs'+rcEnv.sysname)
-except ImportError:
-    RCOS = __import__('rcOs')
 
 DEPRECATED_KEYWORDS = {
     "node.host_mode": "env",
@@ -98,7 +93,6 @@ class Node(Scheduler):
         self.auth_config = None
         self.clusters = None
         self.clouds = None
-        self.nodename = socket.gethostname().lower()
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.pathvar, "REBOOT_FLAG"),
         )
@@ -128,13 +122,25 @@ class Node(Scheduler):
             value=None,
         )
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
-        self.collector = xmlrpcClient.Collector(node=self)
-        self.cmdworker = rcCommandWorker.CommandWorker()
-        self.system = RCOS.Os()
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
-        self.log = rcLogger.initLogger(rcEnv.nodename)
         self.set_collector_env()
-        self.scheduler_actions = {
+
+
+    @utils.lazy
+    def log(self):
+        return rcLogger.initLogger(rcEnv.nodename)
+
+    @utils.lazy
+    def collector(self):
+        return xmlrpcClient.Collector(node=self)
+
+    @utils.lazy
+    def cmdworker(self):
+        return rcCommandWorker.CommandWorker()
+
+    @utils.lazy
+    def scheduler_actions(self):
+        return {
             "checks": SchedOpts(
                 "checks"
             ),
@@ -244,6 +250,18 @@ class Node(Scheduler):
             )
         }
 
+    @utils.lazy
+    def nodename(self):
+        return socket.gethostname().lower()
+
+    @utils.lazy
+    def system(self):
+        try:
+            rcos = __import__('rcOs'+rcEnv.sysname)
+        except ImportError:
+            rcos = __import__('rcOs')
+        return rcos.Os()
+
     @staticmethod
     def check_privs(action):
         """
@@ -252,7 +270,7 @@ class Node(Scheduler):
         """
         if action in UNPRIVILEGED_ACTIONS:
             return
-        rcUtilities.check_privs()
+        utils.check_privs()
 
     @staticmethod
     def split_url(url, default_app=None):
@@ -374,14 +392,14 @@ class Node(Scheduler):
         Wrap rcUtilities call function, setting the node logger.
         """
         kwargs["log"] = self.log
-        return rcUtilities.call(*args, **kwargs)
+        return utils.call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
         """
         Wrap rcUtilities vcall function, setting the node logger.
         """
         kwargs["log"] = self.log
-        return rcUtilities.vcall(*args, **kwargs)
+        return utils.vcall(*args, **kwargs)
 
     def build_services(self, *args, **kwargs):
         """
@@ -480,8 +498,7 @@ class Node(Scheduler):
             editor = "notepad"
         else:
             editor = "vi"
-        from rcUtilities import which
-        if not which(editor):
+        if not utils.which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         os.environ["LANG"] = "en_US.UTF-8"
@@ -1757,10 +1774,9 @@ class Node(Scheduler):
         else:
             cmd = [rcEnv.svcmgr, "-s", action.get("svcname")]
         import shlex
-        from rcUtilities import justcall
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
-        out, err, ret = justcall(cmd)
+        out, err, ret = utils.justcall(cmd)
         return ret, out, err
 
     def rotate_root_pw(self):
@@ -1996,7 +2012,7 @@ class Node(Scheduler):
         need_aggregate = self.action_need_aggregate(action)
 
         # generic cache janitoring
-        rcUtilities.purge_cache()
+        utils.purge_cache()
         self.log.debug("session uuid: %s", rcEnv.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(self.svcs) > 1:

@@ -17,6 +17,18 @@ if os.name == 'nt':
 else:
     close_fds = True
 
+def lazy(fn):
+    """
+    A decorator for on-demand initialization of a property
+    """
+    attr_name = '_lazy_' + fn.__name__
+    @property
+    def _lazyprop(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, fn(self))
+        return getattr(self, attr_name)
+    return _lazyprop
+
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff

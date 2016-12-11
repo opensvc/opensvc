@@ -2,7 +2,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 import logging
-import rcUtilities
+import rcUtilities as utils
 import sys
 import time
 import shlex
@@ -40,12 +40,16 @@ class Resource(object):
         self.skip = False
         self.monitor = monitor
         self.nb_restart = restart
-        self.log = logging.getLogger(self.log_label())
         self.rstatus = None
         self.always_on = always_on
-        if self.label is None: self.label = type
+        if self.label is None:
+            self.label = type
         self.status_logs = []
         self.can_rollback = False
+
+    @utils.lazy
+    def log(self):
+        return logging.getLogger(self.log_label())
 
     def fmt_info(self, keys=[]):
         for i, e in enumerate(keys):
@@ -111,7 +115,7 @@ class Resource(object):
     def enable(self):  self.disabled=False
 
     def clear_cache(self, sig):
-        rcUtilities.clear_cache(sig, o=self)
+        utils.clear_cache(sig, o=self)
 
     def action_triggers(self, type, action, **kwargs):
         if "blocking" in kwargs:
@@ -485,13 +489,13 @@ class Resource(object):
         """ wrap call, setting the resource logger
         """
         kwargs["log"] = self.log
-        return rcUtilities.call(*args, **kwargs)
+        return utils.call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
         """ wrap vcall, setting the resource logger
         """
         kwargs["log"] = self.log
-        return rcUtilities.vcall(*args, **kwargs)
+        return utils.vcall(*args, **kwargs)
 
     def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
         for tick in range(tmo//delay):

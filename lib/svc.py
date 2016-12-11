@@ -2,8 +2,8 @@ from __future__ import print_function
 from resources import Resource, ResourceSet
 from freezer import Freezer
 import rcStatus
-from rcGlobalEnv import rcEnv, get_osvc_paths
-from rcUtilities import justcall
+from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
+from rcUtilities import justcall, lazy
 from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
@@ -236,30 +236,7 @@ status_types = [
   "stonith.ilo",
 ]
 
-class Options(object):
-    def __init__(self):
-        self.color = "auto"
-        self.slaves = False
-        self.slave = None
-        self.master = False
-        self.cron = False
-        self.force = False
-        self.remote = False
-        self.ignore_affinity = False
-        self.debug = False
-        self.disable_rollback = False
-        self.show_disabled = None
-        self.moduleset = ""
-        self.module = ""
-        self.ruleset_date = ""
-        self.dry_run = False
-        self.refresh = False
-        self.parm_rid = None
-        self.parm_tags = None
-        self.parm_subsets = None
-        self.discard = False
-        self.recover = False
-        os.environ['LANG'] = 'C'
+os.environ['LANG'] = 'C'
 
 class Svc(Resource, Scheduler):
     """Service class define a Service Resource
@@ -271,7 +248,29 @@ class Svc(Resource, Scheduler):
         """usage : aSvc=Svc(type)"""
         self.encap = False
         self.has_encap_resources = False
-        self.options = Options()
+        self.options = Storage(
+            color="auto",
+            slaves=False,
+            slave=None,
+            master=False,
+            cron=False,
+            force=False,
+            remote=False,
+            ignore_affinity=False,
+            debug=False,
+            disable_rollback=False,
+            show_disabled=None,
+            moduleset="",
+            module="",
+            ruleset_date="",
+            dry_run=False,
+            refresh=False,
+            parm_rid=None,
+            parm_tags=None,
+            parm_subsets=None,
+            discard=False,
+            recover=False,
+        )
         self.node = None
         self.ha = False
         self.sync_dblogger = False
@@ -293,8 +292,6 @@ class Svc(Resource, Scheduler):
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
 
         self.ref_cache = {}
-        self.log = rcLogger.initLogger(self.svcname)
-        self.freezer = Freezer(svcname)
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
@@ -308,9 +305,28 @@ class Svc(Resource, Scheduler):
         self.monitor_action = None
         self.group_status_cache = None
         self.abort_start_done = False
-        self.scheduler_actions = {
-         "compliance_auto": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_comp_check", schedule_option="comp_schedule"),
-         "push_service_status": SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_service_status", schedule_option="status_schedule"),
+
+    @lazy
+    def freezer(self):
+        return Freezer(self.svcname)
+
+    @lazy
+    def log(self):
+        return rcLogger.initLogger(self.svcname)
+
+    @lazy
+    def scheduler_actions(self):
+        return {
+            "compliance_auto": SchedOpts(
+                "DEFAULT",
+                fname=self.svcname+os.sep+"last_comp_check",
+                schedule_option="comp_schedule"
+            ),
+            "push_service_status": SchedOpts(
+                "DEFAULT",
+                fname=self.svcname+os.sep+"last_push_service_status",
+                schedule_option="status_schedule"
+            ),
         }
 
     def __lt__(self, other):
@@ -409,8 +425,6 @@ class Svc(Resource, Scheduler):
             self.resources_by_id[r.rid] = r
 
         r.svc = self
-        import logging
-        r.log = logging.getLogger(r.log_label())
 
         if r.type.startswith("hb"):
             self.ha = True
