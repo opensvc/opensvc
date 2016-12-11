@@ -385,9 +385,17 @@ class Svc(Resource, Scheduler):
             return False
 
     def __iadd__(self, r):
-        """svc+=aResourceSet
-        svc+=aResource
         """
+        Svc += ResourceSet
+        Svc += Resource
+        """
+        if hasattr(r, 'resources'):
+            # new ResourceSet or ResourceSet-derived class
+            self.resSets.append(r)
+            self.type2resSets[r.type] = r
+            r.svc = self
+            return self
+
         if r.subset is not None:
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
@@ -400,11 +408,6 @@ class Svc(Resource, Scheduler):
         if rtype in self.type2resSets:
             # the resource set already exists. add resource or resourceset.
             self.type2resSets[rtype] += r
-
-        elif hasattr(r, 'resources'):
-            # new ResourceSet or ResourceSet-derived class
-            self.resSets.append(r)
-            self.type2resSets[rtype] = r
 
         elif isinstance(r, Resource):
             parallel = self.get_subset_parallel(rtype)
@@ -598,11 +601,11 @@ class Svc(Resource, Scheduler):
         sets = sorted(sets, key=lambda x: x.type, reverse=reverse)
 
         for r in sets:
-            if action in actions_no_trigger or r.skip:
+            if action in actions_no_trigger or r.all_skip(action):
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
-                r.pre_action(r, action)
+                r.pre_action(action)
             except ex.excError:
                 raise
             except ex.excAbortAction:
@@ -621,11 +624,11 @@ class Svc(Resource, Scheduler):
             r.action(action, tags=tags, xtags=xtags)
 
         for r in sets:
-            if action in actions_no_trigger or r.skip:
+            if action in actions_no_trigger or r.all_skip(action):
                 break
             try:
                 r.log.debug("start %s post_action"%r.type)
-                r.post_action(r, action)
+                r.post_action(action)
             except ex.excError:
                 raise
             except ex.excAbortAction:

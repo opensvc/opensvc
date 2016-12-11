@@ -11,8 +11,8 @@ import datetime
 import resSync
 
 class syncDds(resSync.Sync):
-    def pre_action(self, rset, action):
-        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+    def pre_action(self, action):
+        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
 
         if len(resources) == 0:
             return

@@ -261,12 +261,12 @@ class Rsync(resSync.Sync):
             self.svc.need_postsync |= set([node])
         return
 
-    def pre_action(self, rset, action):
+    def pre_action(self, action):
         """Actions to do before resourceSet iterates through the resources to
            trigger action() on each one
         """
 
-        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
 
         if len(resources) == 0:
             return
@@ -305,23 +305,23 @@ class Rsync(resSync.Sync):
 
         Snap = lookup_snap_mod()
         try:
-            rset.snaps = Snap.Snap(self.rid)
-            rset.snaps.log = self.log
-            rset.snaps.try_snap(rset, action)
+            self.rset.snaps = Snap.Snap(self.rid)
+            self.rset.snaps.log = self.log
+            self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
 
-    def post_action(self, rset, action):
+    def post_action(self, action):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
-        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
 
-        if len(rset.resources) == 0:
+        if len(self.rset.resources) == 0:
             return
 
-        if hasattr(rset, 'snaps'):
-            rset.snaps.snap_cleanup(rset)
+        if hasattr(self.rset, 'snaps'):
+            self.rset.snaps.snap_cleanup(self.rset)
 
     def sync_nodes(self):
         try:

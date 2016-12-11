@@ -1,23 +1,28 @@
+"""
+Defines the resource class, which is the parent class of every
+resource driver.
+"""
+from __future__ import print_function
+
 import os
-import rcExceptions as ex
-import rcStatus
 import logging
-import rcUtilities as utils
 import sys
 import time
 import shlex
+
+import rcExceptions as ex
+import rcStatus
+import rcUtilities as utils
 from rcGlobalEnv import rcEnv
 import rcColor
 
-allow_action_with_noaction = [
-  "presync",
+ALLOW_ACTION_WITH_NOACTION = [
+    "presync",
 ]
 
 class Resource(object):
-    """Define basic resource
-    properties: type, optional=optional, disabled=disabled, tags=tags
-    a Resource should provide do_action(action):
-    with action into (start/stop/status)
+    """
+    Resource drivers parent class
     """
     label = None
 
@@ -29,8 +34,14 @@ class Resource(object):
                  disabled=False,
                  monitor=False,
                  restart=0,
-                 tags=set([]),
-                 always_on=set([])):
+                 tags=None,
+                 always_on=None):
+        if tags is None:
+            tags = set()
+        if always_on is None:
+            always_on = set()
+        self.svc = None
+        self.rset = None
         self.rid = rid
         self.tags = tags
         self.type = type
@@ -49,240 +60,386 @@ class Resource(object):
 
     @utils.lazy
     def log(self):
+        """
+        Lazy init for the resource logger.
+        """
         return logging.getLogger(self.log_label())
 
-    def fmt_info(self, keys=[]):
-        for i, e in enumerate(keys):
-            if len(e) == 2:
-                keys[i] = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype, self.rid] + e
-            elif len(e) == 3:
-                keys[i] = [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype] + e
+    def fmt_info(self, keys=None):
+        """
+        Returns the resource generic keys sent to the collector upon push
+        resinfo.
+        """
+        if keys is None:
+            return []
+        for idx, key in enumerate(keys):
+            if len(key) == 2:
+                keys[idx] = [
+                    self.svc.svcname,
+                    self.svc.node.nodename,
+                    self.svc.clustertype,
+                    self.rid
+                ] + key
+            elif len(key) == 3:
+                keys[idx] = [
+                    self.svc.svcname,
+                    self.svc.node.nodename,
+                    self.svc.clustertype
+                ] + key
         return keys
 
     def log_label(self):
-        s = ""
+        """
+        Return the resource label used in logs entries.
+        """
+        label = ""
         if hasattr(self, "svc"):
-            s += self.svc.svcname + '.'
+            label += self.svc.svcname + '.'
 
         if self.rid is None:
-            s += self.type
-            return s
+            label += self.type
+            return label
 
         if self.subset is None:
-            s += self.rid
-            return s
+            label += self.rid
+            return label
 
-        v = self.rid.split('#')
-        if len(v) != 2:
-            s += rid
-            return s
+        elements = self.rid.split('#')
+        if len(elements) != 2:
+            label += self.rid
+            return label
 
-        s += "%s:%s#%s" % (self.type.split(".")[0], self.subset, v[1])
-        return s
+        ridx = elements[1]
+        label += "%s:%s#%s" % (self.type.split(".")[0], self.subset, ridx)
+        return label
 
     def __str__(self):
-        output="object=%s rid=%s type=%s" % (self.__class__.__name__,
-                                             self.rid, self.type)
-        if self.optional : output+=" opt="+str(self.optional)
-        if self.disabled : output+=" disa="+str(self.disabled)
+        output = "object=%s rid=%s type=%s" % (
+            self.__class__.__name__,
+            self.rid,
+            self.type
+        )
+        if self.optional:
+            output += " opt=" + str(self.optional)
+        if self.disabled:
+            output += " disa=" + str(self.disabled)
         return output
 
     def __lt__(self, other):
-        """resources needed to be started or stopped in a specific order
+        """
+        Resources needing to be started or stopped in a specific order
         should redefine that.
         """
         return self.rid < other.rid
 
     def save_exc(self):
+        """
+        A helper method to save stacks in the service log.
+        """
         self.log.error("unexpected error. stack saved in the service debug log")
         self.log.debug("", exc_info=True)
 
     def setup_environ(self):
-        """ setup environement variables for use by triggers and startup
-            scripts. This method needs defining in each class with their
-            class variable.
-            Env vars names should, by convention, be prefixed by OPENSVC_
+        """
+        Setup environement variables for use by triggers and startup
+        scripts. This method needs defining in each class with their
+        class variable.
+        Env vars names should, by convention, be prefixed by OPENSVC_
         """
         pass
 
-    def is_optional(self): return self.optional
-    def is_disabled(self): return self.disabled
+    def is_optional(self):
+        """
+        Accessor for the optional resource property.
+        """
+        return self.optional
 
-    def set_optional(self): self.optional=True
-    def unset_optional(self): self.optional=False
+    def is_disabled(self):
+        """
+        Accessor for the disabled resource property.
+        """
+        return self.disabled
 
-    def disable(self): self.disabled=True
-    def enable(self):  self.disabled=False
+    def set_optional(self):
+        """
+        Set the optional resource property to True.
+        """
+        self.optional = True
+
+    def unset_optional(self):
+        """
+        Set the optional resource property to False.
+        """
+        self.optional = False
+
+    def disable(self):
+        """
+        Set the disabled resource property to True.
+        """
+        self.disabled = True
+
+    def enable(self):
+        """
+        Set the disabled resource property to False.
+        """
+        self.disabled = False
 
     def clear_cache(self, sig):
+        """
+        Wraps the rcUtilities clear_cache function, setting the resource
+        as object keyword argument.
+        """
         utils.clear_cache(sig, o=self)
 
-    def action_triggers(self, type, action, **kwargs):
+    @staticmethod
+    def get_trigger_cmdv(cmd, kwargs):
+        """
+        Return the cmd arg useable by subprocess Popen
+        """
+        if not kwargs.get("shell", False):
+            if sys.version_info[0] < 3:
+                cmdv = shlex.split(cmd.encode('utf8'))
+                cmdv = [elem.decode('utf8') for elem in cmdv]
+            else:
+                cmdv = shlex.split(cmd)
+        else:
+            cmdv = cmd
+        return cmdv
+
+    def action_triggers(self, driver, action, **kwargs):
+        """
+        Executes a resource trigger. Guess if the shell mode is needed from
+        the trigger syntax.
+        """
         if "blocking" in kwargs:
             blocking = kwargs["blocking"]
-            del(kwargs["blocking"])
+            del kwargs["blocking"]
         else:
             blocking = False
 
-        if type == "":
+        if driver == "":
             attr = action
         else:
-            attr = type+"_"+action
+            attr = driver+"_"+action
 
         if not hasattr(self, attr):
             return
 
         cmd = getattr(self, attr)
+
         if "|" in cmd or "&&" in cmd or ";" in cmd:
             kwargs["shell"] = True
 
-        if not kwargs.get("shell", False):
-            if sys.version_info[0] < 3:
-                cmdv = shlex.split(cmd.encode('utf8'))
-                cmdv = map(lambda s: s.decode('utf8'), cmdv)
-            else:
-                cmdv = shlex.split(cmd)
-        else:
-            cmdv = cmd
+        cmdv = self.get_trigger_cmdv(cmd, kwargs)
 
         if self.svc.options.dry_run:
-            self.log.info("exec trigger %s" % getattr(self, attr))
+            self.log.info("exec trigger %s", getattr(self, attr))
             return
 
         try:
-            ret, out, err = self.vcall(cmdv, **kwargs)
-        except OSError as e:
+            result = self.vcall(cmdv, **kwargs)
+            ret = result[0]
+        except OSError as exc:
             ret = 1
-            if e.errno == 8:
-                self.log.error("%s exec format error: check the script shebang" % cmd)
+            if exc.errno == 8:
+                self.log.error("%s exec format error: check the script shebang", cmd)
             else:
-                self.log.error("%s error: %s" % (cmd, str(e)))
-        except Exception as e:
+                self.log.error("%s error: %s", cmd, str(exc))
+        except Exception as exc:
             ret = 1
-            self.log.error("%s error: %s" % (cmd, str(e)))
+            self.log.error("%s error: %s", cmd, str(exc))
 
         if blocking and ret != 0:
-            raise ex.excError("%s trigger %s blocking error" % (type, cmd))
+            raise ex.excError("%s trigger %s blocking error" % (driver, cmd))
 
     def action_main(self, action):
+        """
+        Shortcut the resource action if in dry-run mode.
+        """
         if self.svc.options.dry_run:
             if self.rset.parallel:
                 header = "+ "
             else:
                 header = ""
-            self.log.info("%s%s %s"%(header, action, self.label))
+            self.log.info("%s%s %s", header, action, self.label)
             return
         getattr(self, action)()
 
     def do_action(self, action):
-        self.log.debug('do_action: action=%s res=%s'%(action, self.rid))
-        if hasattr(self, action):
-            if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
-                standby_action = action+'standby'
-                if hasattr(self, standby_action):
-                    self.action_main(standby_action)
-                    return
-                else:
-                    self.log.info("skip '%s' on standby resource (--force to override)"%action)
-                    return
-            self.check_requires(action)
-            self.setup_environ()
-            self.action_triggers("pre", action)
-            self.action_triggers("blocking_pre", action, blocking=True)
-            self.action_main(action)
-            self.action_triggers("post", action)
-            self.action_triggers("blocking_post", action, blocking=True)
-            if not self.svc.options.dry_run and \
-               ("start" in action or "stop" in action or "rollback" in action or "sync" in action or action in ("unprovision", "provision", "install", "create", "switch", "migrate")):
-                """ refresh resource status cache after changing actions
-                """
-                self.status(refresh=True, restart=False)
-            return
-
-        """Every class inheriting resource should define start() stop() status()
-        Alert on these minimal implementation requirements
         """
-        if action in ("start","stop","status") :
-            raise ex.excUndefined(action,self.__class__.__name__,\
-                                    "Resource.do_action")
+        Call the resource action method if implemented.
 
-    def action(self, action=None):
-        """ action() try to call do_action() on self
-        return if action is not None or if self is disabled
-        return status depends on optional property value:
-        if self is optional then return True
-        else return do_action() return value
+        If the action is a stopping action and the resource is flagged
+        always_on on this node, skip.
+
+        Call the defined pre and post triggers.
+
         """
-        if not self.rid == "app" and not self.svc.encap and 'encap' in self.tags:
-            self.log.debug('skip encap resource action: action=%s res=%s'%(action, self.rid))
+        if not hasattr(self, action):
+            self.log.debug("%s action is not implemented", action)
+
+        self.log.debug('do action %s', action)
+
+        if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
+            standby_action = action+'standby'
+            if hasattr(self, standby_action):
+                self.action_main(standby_action)
+                return
+            else:
+                self.log.info("skip '%s' on standby resource (--force to override)", action)
+                return
+
+        self.check_requires(action)
+        self.setup_environ()
+        self.action_triggers("pre", action)
+        self.action_triggers("blocking_pre", action, blocking=True)
+        self.action_main(action)
+        self.action_triggers("post", action)
+        self.action_triggers("blocking_post", action, blocking=True)
+        if self.need_refresh_status(action):
+            self.status(refresh=True, restart=False)
+        return
+
+    def need_refresh_status(self, action):
+        """
+        Return True for action known to be causing a resource status change.
+        """
+        actions = (
+            "unprovision",
+            "provision",
+            "install",
+            "create",
+            "switch",
+            "migrate"
+        )
+        if self.svc.options.dry_run:
+            return False
+        if "start" in action or "stop" in action:
+            return True
+        if "rollback" in action:
+            return True
+        if "sync" in action and self.type.startswith("sync"):
+            return True
+        if action in actions:
+            return True
+        return False
+
+    def skip_action(self, action):
+        """
+        Return True if the action should be skipped.
+        """
+        actions = (
+            "provision",
+            "unprovision",
+        )
+        if not self.skip:
+            return False
+        if action.startswith("start") or action.startswith("stop"):
+            return True
+        if action.startswith("sync"):
+            return True
+        if action.startswith("_pg_"):
+            return True
+        if action in actions:
+            return True
+        return False
+
+    def action(self, action):
+        """
+        Try to call the resource do_action() if:
+        * action is not None
+        * the resource is not skipped by resource selectors
+
+        If the resource is disabled, the return status depends on the optional
+        property:
+        * if optional, return True
+        * else return do_action() return value
+        """
+        if self.rid != "app" and not self.svc.encap and 'encap' in self.tags:
+            self.log.debug('skip encap resource action: action=%s res=%s', action, self.rid)
             return
 
         if 'noaction' in self.tags and \
            not hasattr(self, "delayed_noaction") and \
-           not action in allow_action_with_noaction:
-            self.log.debug('skip resource action (noaction tag): action=%s res=%s'%(action, self.rid))
+           action not in ALLOW_ACTION_WITH_NOACTION:
+            self.log.debug('skip resource action %s (noaction tag)', action)
             return
 
-        self.log.debug('action: action=%s res=%s'%(action, self.rid))
-        if action == None:
+        self.log.debug('action: %s', action)
+
+        if action is None:
             self.log.debug('action: action cannot be None')
             return True
-        if self.skip and (\
-             action.startswith("start") or \
-             action.startswith("stop") or \
-             action.startswith("sync") or \
-             action.startswith("_pg_") or \
-             action == "unprovision" or \
-             action == "provision"
-           ):
+        if self.skip_action(action):
             self.log.debug('action: skip action on filtered-out resource')
             return True
         if self.disabled:
             self.log.debug('action: skip action on disabled resource')
             return True
-        try :
+        try:
             self.do_action(action)
-        except ex.excUndefined as e:
-            print(e)
+        except ex.excUndefined as exc:
+            print(exc)
             return False
-        except ex.excError as e:
+        except ex.excError as exc:
             if self.optional:
-                if len(str(e)) > 0:
-                    self.log.error(str(e))
-                self.log.info("ignore %s error on optional resource" % action)
+                if len(str(exc)) > 0:
+                    self.log.error(str(exc))
+                self.log.info("ignore %s error on optional resource", action)
             else:
                 raise
 
-    def status_stdby(self, s):
-        """ This function modifies the passed status according
-            to this node inclusion in the always_on nodeset
+    def status_stdby(self, status):
+        """
+        This function modifies the passed status according
+        to this node inclusion in the always_on nodeset.
         """
         if rcEnv.nodename not in self.always_on:
-            return s
-        if s == rcStatus.UP:
+            return status
+        if status == rcStatus.UP:
             return rcStatus.STDBY_UP
-        elif s == rcStatus.DOWN:
+        elif status == rcStatus.DOWN:
             return rcStatus.STDBY_DOWN
-        return s
+        return status
 
     def try_status(self, verbose=False):
+        """
+        Catch status methods errors and push them to the resource log buffer
+        so they will be display in print status.
+        """
         try:
             return self._status(verbose=verbose)
-        except Exception as e:
-            self.status_log(str(e), "error")
+        except Exception as exc:
+            self.status_log(str(exc), "error")
             return rcStatus.UNDEF
 
     def _status(self, verbose=False):
+        """
+        The resource status evaluation method.
+        To be implemented by drivers.
+        """
+        if verbose:
+            self.log.debug("default resource status: undef")
         return rcStatus.UNDEF
 
-    def force_status(self, s):
-        self.rstatus = s
+    def force_status(self, status):
+        """
+        Force a resource status, bypassing the evaluation method.
+        """
+        self.rstatus = status
         self.status_logs = [("info", "forced")]
         self.write_status()
 
-    def status(self, verbose=False, refresh=False, restart=True, ignore_nostatus=False):
-        # refresh param: used by do_action() to force a res status re-eval
-        # self.svc.options.refresh: used to purge disk cache
+    def status(self, **kwargs):
+        """
+        Resource status evaluation method wrapper.
+        Handles caching, resource restart, nostatus tag and disabled flag.
+        """
+        verbose = kwargs.get("verbose", False)
+        refresh = kwargs.get("refresh", False)
+        restart = kwargs.get("restart", False)
+        ignore_nostatus = kwargs.get("ignore_nostatus", False)
+
         if self.disabled:
             return rcStatus.NA
 
@@ -303,7 +460,9 @@ class Resource(object):
         if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
-            self.log.debug("refresh status: %s => %s" % (rcStatus.status_str(last_status), rcStatus.status_str(self.rstatus)))
+            self.log.debug("refresh status: %s => %s",
+                           rcStatus.status_str(last_status),
+                           rcStatus.status_str(self.rstatus))
             self.write_status()
 
         if restart:
@@ -312,58 +471,69 @@ class Resource(object):
         return self.rstatus
 
     def do_restart(self, last_status):
+        """
+        Restart a resource defined to be restarted when seen down.
+        """
         restart_last_status = (
-          rcStatus.UP,
-          rcStatus.STDBY_UP,
-          rcStatus.STDBY_UP_WITH_UP,
-          rcStatus.STDBY_UP_WITH_DOWN
+            rcStatus.UP,
+            rcStatus.STDBY_UP,
+            rcStatus.STDBY_UP_WITH_UP,
+            rcStatus.STDBY_UP_WITH_DOWN
         )
         no_restart_status = (
-          rcStatus.UP,
-          rcStatus.STDBY_UP,
-          rcStatus.NA,
-          rcStatus.UNDEF,
-          rcStatus.STDBY_UP_WITH_UP,
-          rcStatus.STDBY_UP_WITH_DOWN,
+            rcStatus.UP,
+            rcStatus.STDBY_UP,
+            rcStatus.NA,
+            rcStatus.UNDEF,
+            rcStatus.STDBY_UP_WITH_UP,
+            rcStatus.STDBY_UP_WITH_DOWN,
         )
         if self.nb_restart == 0:
             return
         if self.rstatus in no_restart_status:
             return
         if last_status not in restart_last_status:
-            self.status_log("not restarted because previous status is %s" % rcStatus.status_str(last_status), "info")
+            self.status_log("not restarted because previous status is %s" % \
+                            rcStatus.status_str(last_status), "info")
             return
 
         if not hasattr(self, 'start'):
-            self.log.error("resource restart configured on resource %s with no 'start' action support"%self.rid)
+            self.log.error("resource restart configured on resource %s with "
+                           "no 'start' action support", self.rid)
             return
 
         if self.svc.frozen():
-            s = "resource restart skipped: service is frozen"
-            self.log.info(s)
-            self.status_log(s, "info")
+            msg = "resource restart skipped: service is frozen"
+            self.log.info(msg)
+            self.status_log(msg, "info")
             return
 
         for i in range(self.nb_restart):
             try:
-                self.log.info("restart resource %s. try number %d/%d"%(self.rid, i+1, self.nb_restart))
+                self.log.info("restart resource %s. try number %d/%d",
+                              self.rid, i+1, self.nb_restart)
                 self.action("start")
-            except Exception as e:
-                self.log.error("restart resource failed: " + str(e))
+            except Exception as exc:
+                self.log.error("restart resource failed: " + str(exc))
             self.rstatus = self.try_status()
             self.write_status()
             if self.rstatus == rcStatus.UP:
-                self.log.info("monitored resource %s restarted."%self.rid)
+                self.log.info("monitored resource %s restarted.", self.rid)
                 return
             if i + 1 < self.nb_restart:
                 time.sleep(1)
-        return
 
     def write_status(self):
+        """
+        Helper method to janitor resource status cache and history in files.
+        """
         self.write_status_last()
         self.write_status_history()
 
     def fpath_status_last(self):
+        """
+        Return the file path for the resource status cache.
+        """
         dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
         fname = "resource.status.last." + self.rid
         fpath = os.path.join(dirname, fname)
@@ -372,6 +542,9 @@ class Resource(object):
         return fpath
 
     def fpath_status_history(self):
+        """
+        Return the file path for the resource status history.
+        """
         dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
         fname = "resource.status.history." + self.rid
         fpath = os.path.join(dirname, fname)
@@ -380,57 +553,75 @@ class Resource(object):
         return fpath
 
     def purge_status_last(self):
+        """
+        Purge the on-disk resource status cache.
+        """
         try:
             os.unlink(self.fpath_status_last())
         except:
             pass
 
     def load_status_last(self):
+        """
+        Fetch the resource status from the on-disk cache.
+        """
         try:
-            with open(self.fpath_status_last(), 'r') as f:
-                lines = f.read().split("\n")
-                status_str = lines[0]
-                s = rcStatus.status_value(status_str)
-                if len(lines) > 1:
-                    for line in lines[1:]:
-                        if line.startswith("info: "):
-                            self.status_logs.append(("info", line.replace("info: ", "", 1)))
-                        elif line.startswith("warn: "):
-                            self.status_logs.append(("warn", line.replace("warn: ", "", 1)))
-                        elif line.startswith("error: "):
-                            self.status_logs.append(("error", line.replace("error: ", "", 1)))
-                        else:
-                            self.status_logs.append(("warn", line))
-        except Exception as e:
-            self.log.debug(e)
-            s = None
-        return s
+            with open(self.fpath_status_last(), 'r') as ofile:
+                lines = ofile.read().splitlines()
+        except (OSError, IOError) as exc:
+            self.log.debug(exc)
+            return
+
+        try:
+            status_str = lines[0]
+            status = rcStatus.status_value(status_str)
+        except (AttributeError, ValueError) as exc:
+            self.log.debug(exc)
+            return
+
+        if len(lines) > 1:
+            for line in lines[1:]:
+                if line.startswith("info: "):
+                    self.status_logs.append(("info", line.replace("info: ", "", 1)))
+                elif line.startswith("warn: "):
+                    self.status_logs.append(("warn", line.replace("warn: ", "", 1)))
+                elif line.startswith("error: "):
+                    self.status_logs.append(("error", line.replace("error: ", "", 1)))
+                else:
+                    self.status_logs.append(("warn", line))
+
+        return status
 
     def write_status_last(self):
-        with open(self.fpath_status_last(), 'w') as f:
-            s = rcStatus.status_str(self.rstatus)+'\n'
-            if len(self.status_logs) > 0:
-                s += '\n'.join(map(lambda x: x[0]+": "+x[1], self.status_logs))+'\n'
-            f.write(s)
+        """
+        Write the in-memory resource status to the on-disk cache.
+        """
+        status_str = rcStatus.status_str(self.rstatus)+'\n'
+        if len(self.status_logs) > 0:
+            status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
+        with open(self.fpath_status_last(), 'w') as ofile:
+            ofile.write(status_str)
 
     def write_status_history(self):
+        """
+        Log a change to the resource status history file.
+        """
         fpath = self.fpath_status_history()
         try:
-            with open(fpath, 'r') as f:
-                lines = f.readlines()
+            with open(fpath, 'r') as ofile:
+                lines = ofile.readlines()
                 last = lines[-1].split(" | ")[-1].strip("\n")
         except:
             last = None
         current = rcStatus.status_str(self.rstatus)
         if current == last:
             return
-        import logging
         log = logging.getLogger("status_history")
         logformatter = logging.Formatter("%(asctime)s | %(message)s")
         logfilehandler = logging.handlers.RotatingFileHandler(
-          fpath,
-          maxBytes=512000,
-          backupCount=1,
+            fpath,
+            maxBytes=512000,
+            backupCount=1,
         )
         logfilehandler.setFormatter(logformatter)
         log.addHandler(logfilehandler)
@@ -439,45 +630,65 @@ class Resource(object):
         log.removeHandler(logfilehandler)
 
     def status_log(self, text, level="warn"):
+        """
+        Add a message to the resource status log buffer, for
+        display in the print status output.
+        """
         if len(text) == 0:
             return
         if (level, text) in self.status_logs:
             return
         self.status_logs.append((level, text))
 
-    def status_logs_get(self, levels=["info", "warn", "error"]):
-        return [e[1] for e in self.status_logs if e[0] in levels and e[1] != ""]
+    def status_logs_get(self, levels=None):
+        """
+        Return filtered messages from the the resource status log buffer.
+        """
+        if levels is None:
+            levels = ["info", "warn", "error"]
+        return [entry[1] for entry in self.status_logs if \
+                entry[0] in levels and entry[1] != ""]
 
-    def status_logs_count(self, levels=["info", "warn", "error"]):
+    def status_logs_count(self, levels=None):
+        """
+        Return the number of status log buffer entries matching the
+        specified levels.
+        """
+        if levels is None:
+            levels = ["info", "warn", "error"]
         return len(self.status_logs_get(levels=levels))
 
     def status_logs_str(self, color=False):
-        s = ""
+        """
+        Returns the formatted resource status log buffer entries.
+        """
+        status_str = ""
         for level, text in self.status_logs:
             if len(text) == 0:
                 continue
-            _s = level + ": " + text + "\n"
+            entry = level + ": " + text + "\n"
             if color:
                 if level == "warn":
-                    c = rcColor.color.BROWN
+                    color = rcColor.color.BROWN
                 elif level == "error":
-                    c = rcColor.color.RED
+                    color = rcColor.color.RED
                 else:
-                    c = rcColor.color.LIGHTBLUE
-                s += rcColor.colorize(_s, c)
+                    color = rcColor.color.LIGHTBLUE
+                status_str += rcColor.colorize(entry, color)
             else:
-                s += _s
-        return s
+                status_str += entry
+        return status_str
 
     def status_quad(self, color=True):
-        r = self.status(verbose=True)
-        if 'encap' in self.tags:
-            encap = True
-        else:
-            encap = False
+        """
+        Returns the resource properties and status as a tuple, as
+        excepted by svcmon, print status and the collector feed api.
+        """
+        status = self.status(verbose=True)
+        encap = 'encap' in self.tags
         return (self.rid,
                 self.type,
-                rcStatus.status_str(r),
+                rcStatus.status_str(status),
                 self.label,
                 self.status_logs_str(color=color),
                 self.monitor,
@@ -486,75 +697,145 @@ class Resource(object):
                 encap)
 
     def call(self, *args, **kwargs):
-        """ wrap call, setting the resource logger
+        """
+        Wrap rcUtilities call, setting the resource logger
         """
         kwargs["log"] = self.log
         return utils.call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
-        """ wrap vcall, setting the resource logger
+        """
+        Wrap vcall, setting the resource logger
         """
         kwargs["log"] = self.log
         return utils.vcall(*args, **kwargs)
 
-    def wait_for_fn(self, fn, tmo, delay, errmsg="Waited too long for startup"):
+    @staticmethod
+    def wait_for_fn(func, tmo, delay, errmsg="Waited too long for startup"):
+        """
+        A helper function to execute a test function until it returns True
+        or the number of retries is exhausted.
+        """
         for tick in range(tmo//delay):
-            if fn():
+            if func():
                 return
             time.sleep(delay)
         raise ex.excError(errmsg)
 
     def devlist(self):
+        """
+        List devices the resource holds.
+        """
         return self.disklist()
 
-    def disklist(self):
-        """List disks the resource holds. Some resource have none,
-        and can leave this function as is.
+    @staticmethod
+    def default_disklist():
+        """
+        If not superceded, this method return an empty disk set.
         """
         return set()
 
+    def disklist(self):
+        """
+        List disks the resource holds. Some resource have none, and can leave
+        this function as is.
+        """
+        return self.default_disklist()
+
     def presync(self):
+        """
+        A method called before a sync action is executed.
+        """
         pass
 
     def postsync(self):
+        """
+        A method called after a sync action is executed.
+        """
         pass
 
     def provision(self):
+        """
+        The resource provision action entrypoint.
+        """
         pass
 
     def unprovision(self):
+        """
+        The resource unprovision action entrypoint.
+        """
         pass
 
-    def files_to_sync(self):
+    @staticmethod
+    def default_files_to_sync():
+        """
+        If files_to_sync() is not superceded, return an empty list as the
+        default resource files to sync.
+        """
         return []
 
+    def files_to_sync(self):
+        """
+        Returns a list of files to contribute to sync#i0
+        """
+        return self.default_files_to_sync()
+
     def rollback(self):
+        """
+        Executes a resource stop if the resource start has marked the resource
+        as rollbackable.
+        """
         if self.can_rollback:
             self.stop()
 
     def stop(self):
+        """
+        The resource stop action entrypoint.
+        """
         pass
 
     def startstandby(self):
+        """
+        Promote the action to start if the resource is flagged always_on on
+        this node.
+        """
         if rcEnv.nodename in self.always_on:
-             self.start()
+            self.start()
 
     def start(self):
+        """
+        The resource start action entrypoint.
+        """
         pass
 
     def shutdown(self):
+        """
+        Always promote to the stop action
+        """
         self.stop()
 
     def _pg_freeze(self):
+        """
+        Wrapper function for the process group freeze method.
+        """
         return self._pg_freezer("freeze")
 
     def _pg_thaw(self):
+        """
+        Wrapper function for the process group thaw method.
+        """
         return self._pg_freezer("thaw")
 
     def _pg_kill(self):
+        """
+        Wrapper function for the process group kill method.
+        """
         return self._pg_freezer("kill")
 
-    def _pg_freezer(self, a):
+    def _pg_freezer(self, action):
+        """
+        Wrapper function for the process group methods.
+        """
         if hasattr(self, "svc"):
             create_pg = self.svc.create_pg
         else:
@@ -562,169 +843,202 @@ class Resource(object):
         if not create_pg:
             return
         try:
-            pg = __import__('rcPg'+rcEnv.sysname)
+            mod = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
             self.log.info("process group are not supported on this platform")
             return
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
             raise
-        if a == "freeze":
-            pg.freeze(self)
-        elif a == "thaw":
-            pg.thaw(self)
-        elif a == "kill":
-            pg.kill(self)
+        if action == "freeze":
+            mod.freeze(self)
+        elif action == "thaw":
+            mod.thaw(self)
+        elif action == "kill":
+            mod.kill(self)
 
     def pg_frozen(self):
+        """
+        Return True if the resource has its process group frozen
+        """
         if not self.svc.create_pg:
             return False
         try:
-            pg = __import__('rcPg'+rcEnv.sysname)
+            mod = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
             self.status_log("process group are not supported on this platform", "warn")
             return False
-        return pg.frozen(self)
+        return mod.frozen(self)
 
     def create_pg(self):
+        """
+        Create a process group if this service asks for it and if possible.
+        """
         if not self.svc.create_pg:
             return
         try:
-            pg = __import__('rcPg'+rcEnv.sysname)
+            mod = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
             self.log.info("process group are not supported on this platform")
             return
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
             raise
-        pg.create_pg(self)
+        mod.create_pg(self)
 
     def check_requires(self, action):
+        """
+        Iterate the resource 'requires' definition, and validate each
+        requirement.
+        """
         param = action + "_requires"
         if not hasattr(self, param):
             return
         requires = getattr(self, param)
         if len(requires) == 0:
             return
-        for e in requires:
-            self._check_requires(e)
+        for element in requires:
+            self._check_requires(element)
 
-    def _check_requires(self, e):
-        if e is None:
+    def _check_requires(self, element):
+        """
+        Validate a requires element, raising excError if the requirement is
+        not met.
+        """
+        if element is None:
             return
-        if e.count("(") == 1:
-            rid, states = e.rstrip(")").split("(")
+        if element.count("(") == 1:
+            rid, states = element.rstrip(")").split("(")
             states = states.split(",")
         else:
-            rid = e
+            rid = element
             states = ["up", "stdby up"]
         if rid not in self.svc.resources_by_id:
-            self.log.warning("ignore requires on %s: resource not found" % rid)
+            self.log.warning("ignore requires on %s: resource not found", rid)
             return
-        r = self.svc.resources_by_id[rid]
-        current_state = rcStatus.status_str(r.status())
+        resource = self.svc.resources_by_id[rid]
+        current_state = rcStatus.status_str(resource.status())
         if current_state not in states:
-            raise ex.excError("requires on resource %s in state %s, current state %s" % (rid, " or ".join(states), current_state))
+            raise ex.excError("requires on resource %s in state %s, "
+                              "current state %s" % \
+                              (rid, " or ".join(states), current_state))
 
 
-class ResourceSet(Resource):
-    """ Define Set of same type resources
-    Example 1: ResourceSet("fs",[m1,m2])
-    Example 2: r=ResourceSet("fs",[ip1])
-    It define the resource type
+class ResourceSet(object):
+    """
+    Define a set of resources of the same type.
+    Example: ResourceSet("fs", [m1, m2])
     """
     def __init__(self,
                  type=None,
-                 resources=[],
+                 resources=None,
                  parallel=False,
                  optional=False,
                  disabled=False,
-                 tags=set([])):
+                 tags=None):
         self.parallel = parallel
+        self.svc = None
+        self.type = type
+        self.optional = optional
+        self.disabled = disabled
+        self.tags = tags
         self.resources = []
-        Resource.__init__(self,
-                          type=type,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags)
-        for r in resources:
-            self += r
+        if resources is not None:
+            for resource in resources:
+                self += resource
 
     def __lt__(self, other):
         return self.type < other.type
 
-    def __iadd__(self,r):
-        """Example 1 iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
-        Example 2 : iadd a single Resource : R+=ip1
+    def __iadd__(self, other):
         """
-        if isinstance(r,ResourceSet) :
-            self.resources.extend(r.resources)
-        elif isinstance(r,Resource) :
-            """ Setup a back pointer to the resource set
-            """
-            r.rset = self
-            self.resources.append(r)
-            if hasattr(r, 'sort_rset'):
-                r.sort_rset(self)
-        return (self)
+        Add a resource to the resourceset.
+
+        Example 1: iadd another ResourceSet: R+=ResSet ... R+=[m1,m2]
+        Example 2: iadd a single Resource: R+=ip1
+        """
+        if isinstance(other, ResourceSet):
+            self.resources.extend(other.resources)
+        elif isinstance(other, Resource):
+            # setup a back pointer to the resource set
+            other.rset = self
+            self.resources.append(other)
+            if hasattr(other, 'sort_rset'):
+                other.sort_rset(self)
+        return self
 
     def __str__(self):
-        output="resSet %s [" % ( Resource.__str__(self) )
-        for r in self.resources:
-            output+= " (%s)" % (r.__str__())
-        return "%s]" % (output)
+        output = "resSet %s [" % Resource.__str__(self)
+        for resource in self.resources:
+            output += " (%s)" % (resource.__str__())
+        return "%s]" % output
 
-    def pre_action(self, rset=None, action=None):
+    def pre_action(self, action):
+        """
+        Call the pre_action of each resource driver in the resource set.
+        """
         if len(self.resources) == 0:
             return
         types_done = []
-        for r in self.resources:
-            if r.type in types_done:
+        for resource in self.resources:
+            if resource.type in types_done:
                 continue
-            types_done.append(r.type)
-            if not hasattr(r, "pre_action"):
+            types_done.append(resource.type)
+            if not hasattr(resource, "pre_action"):
                 continue
-            r.pre_action(self, action)
+            resource.pre_action(self, action)
 
-    def post_action(self, rset=None, action=None):
+    def post_action(self, action):
+        """
+        Call the post_action of each resource driver in the resource set.
+        """
         if len(self.resources) == 0:
             return
         types_done = []
-        for r in self.resources:
-            if r.type in types_done:
+        for resource in self.resources:
+            if resource.type in types_done:
                 continue
-            types_done.append(r.type)
-            if not hasattr(r, "post_action"):
+            types_done.append(resource.type)
+            if not hasattr(resource, "post_action"):
                 continue
-            r.post_action(self, action)
+            resource.post_action(self, action)
 
     def purge_status_last(self):
-        for r in self.resources:
-            r.purge_status_last()
-
-    def status(self, verbose=False):
-        """aggregate status a ResourceSet
         """
-        s = rcStatus.Status()
-        for r in self.resources:
-            if r.is_disabled():
+        Purge the on-disk status cache of each resource of the resourceset.
+        """
+        for resource in self.resources:
+            resource.purge_status_last()
+
+    def status(self, **kwargs):
+        """
+        Return the aggregate status a ResourceSet.
+        """
+        agg_status = rcStatus.Status()
+        for resource in self.resources:
+            if resource.is_disabled():
                 continue
-            if not r.svc.encap and 'encap' in r.tags:
+            if not resource.svc.encap and 'encap' in resource.tags:
                 # don't evaluate encap service resources
                 continue
+
             try:
-                status = r.status()
+                status = resource.status(**kwargs)
             except:
                 import traceback
-                e = sys.exc_info()
-                print(e[0], e[1], traceback.print_tb(e[2]))
-
+                exc = sys.exc_info()
+                print(exc[0], exc[1], traceback.print_tb(exc[2]))
                 status = rcStatus.NA
 
-            s += status
-        return s.status
+            agg_status += status
+        return agg_status.status
 
-    def tag_match(self, rtags, keeptags):
+    @staticmethod
+    def tag_match(rtags, keeptags):
+        """
+        A helper method to determine if resource has a tag in the specified
+        list of tags.
+        """
         if len(keeptags) == 0:
             return True
         for tag in rtags:
@@ -732,122 +1046,153 @@ class ResourceSet(Resource):
                 return True
         return False
 
-    def has_resource_with_types(self, l, strict=False):
-        for r in self.resources:
-            if r.type in l:
+    def has_resource_with_types(self, types, strict=False):
+        """
+        Return True if the resourceset has at least one resource of the
+        specified type.
+        """
+        for resource in self.resources:
+            if resource.type in types:
                 return True
-            if not strict and "." in r.type and r.type.split(".")[0] in l:
+            if not strict and "." in resource.type and \
+               resource.type.split(".")[0] in types:
                 return True
         return False
 
     def has_encap_resources(self):
-        resources = [r for r in self.resources if self.tag_match(r.tags, set(['encap']))]
+        """
+        Return True if the resourceset has at least one encap resource
+        """
+        resources = [res for res in self.resources if \
+                     self.tag_match(res.tags, set(['encap']))]
         if len(resources) == 0:
             return False
         return True
 
-    def action(self, action=None, tags=set([]), xtags=set([])):
-        """Call action on each resource of the ResourceSet
+    def sort_resources(self, resources, action):
         """
+        Return resources after a resourceset-specific sort.
+        To be implemented by child classes if desired.
+        """
+        if action in ["fs", "start", "startstandby", "provision"] or self.type.startswith("sync"):
+            resources.sort()
+        else:
+            resources.sort(reverse=True)
+        return resources
+
+    def action_resources(self, action, tags, xtags):
+        """
+        Return resources to execute the action on.
+        """
+        if len(xtags) > 0 and not self.svc.command_is_scoped():
+            resources = [res for res in self.resources if not self.tag_match(res.tags, xtags)]
+        else:
+            resources = self.resources
+
+        resources = [res for res in resources if self.tag_match(res.tags, tags)]
+        self.log.debug("resources after tags[%s] filter: %s",
+                       str(tags), ','.join([res.rid for res in resources]))
+
+        resources = [res for res in resources if not res.disabled]
+        self.log.debug("resources after 'disable' filter: %s",
+                       ','.join([res.rid for res in resources]))
+
+        if action == "startstandby":
+            # filter out resource not in standby mode
+            resources = [res for res in resources if rcEnv.nodename in res.always_on]
+
+        resources = self.sort_resources(resources, action)
+        return resources
+
+    def action(self, action, **kwargs):
+        """
+        Call the action method for each resource of the ResourceSet.
+        Handle parallel or serialized execution plans.
+        """
+        tags = kwargs.get("tags", set())
+        xtags = kwargs.get("xtags", set())
+
         if self.parallel:
             # verify we can actually do parallel processing, fallback to serialized
             try:
                 from multiprocessing import Process
                 if rcEnv.sysname == "Windows":
-                    import os
                     from multiprocessing import set_executable
                     set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             except:
                 self.parallel = False
 
-        if len(xtags) > 0 and not self.svc.command_is_scoped():
-            resources = [r for r in self.resources if not self.tag_match(r.tags, xtags)]
-        else:
-            resources = self.resources
+        resources = self.action_resources(action, tags, xtags)
 
-        resources = [r for r in resources if self.tag_match(r.tags, tags)]
-        self.log.debug("resources after tags[%s] filter: %s"%(str(tags), ','.join([r.rid for r in resources])))
-
-        resources = [r for r in resources if not r.disabled]
-        self.log.debug("resources after 'disable' filter: %s"% ','.join([r.rid for r in resources]))
-
-        if action == "startstandby":
-            # filter out resource not in standby mode
-            resources = [r for r in resources if rcEnv.nodename in r.always_on]
-
-        if hasattr(self, "sort_resources"):
-            resources = self.sort_resources(resources, action)
-        elif action in ["fs", "start", "startstandby", "provision"] or action.startswith("sync"):
-            # CODE TO KILL ASAP
-            resources.sort()
-        else:
-            # CODE TO KILL ASAP
-            resources.sort(reverse=True)
-
-        if not self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
-            ps = {}
-            for r in resources:
-                if not r.can_rollback and action == "rollback":
+        if not self.svc.options.dry_run and \
+           self.parallel and len(resources) > 1 and \
+           action not in ["presync", "postsync"]:
+            procs = {}
+            for resource in resources:
+                if not resource.can_rollback and action == "rollback":
                     continue
-                if r.skip or r.disabled:
+                if resource.skip or resource.disabled:
                     continue
-                p = Process(target=self.action_job, args=(r, action,))
-                p.start()
-                r.log.info("action %s started in child process %d"%(action, p.pid))
-                ps[r.rid] = p
-            for p in ps.values():
-                p.join()
+                proc = Process(target=self.action_job, args=(resource, action,))
+                proc.start()
+                resource.log.info("action %s started in child process %d"%(action, proc.pid))
+                procs[resource.rid] = proc
+            for proc in procs.values():
+                proc.join()
             err = []
-            for r in resources:
-                if r.rid not in ps:
+            for resource in resources:
+                if resource.rid not in procs:
                     continue
-                p = ps[r.rid]
-                if p.exitcode == 1 and not r.optional:
-                    err.append(r.rid)
-                elif p.exitcode == 2:
+                proc = procs[resource.rid]
+                if proc.exitcode == 1 and not resource.optional:
+                    err.append(resource.rid)
+                elif proc.exitcode == 2:
                     # can_rollback resource property is lost with the thread
                     # the action_job tells us what to do with it through its exitcode
-                    r.can_rollback = True
+                    resource.can_rollback = True
             if len(err) > 0:
-                raise ex.excError("%s non-optional resources jobs returned with error" % ",".join(err))
+                raise ex.excError("%s non-optional resources jobs returned "
+                                  "with error" % ",".join(err))
         else:
-            if self.svc.options.dry_run and self.parallel and len(resources) > 1 and action not in ["presync", "postsync"]:
-                r.log.info("entering parallel subset")
-            for r in resources:
+            if self.svc.options.dry_run and \
+               self.parallel and len(resources) > 1 and \
+               action not in ["presync", "postsync"]:
+                self.log.info("entering parallel subset")
+            for resource in resources:
                 try:
-                    r.action(action)
+                    resource.action(action)
                 except ex.excAbortAction:
                     break
 
-    def action_job(self, r, action):
+    def action_job(self, resource, action):
+        """
+        The worker job used for parallel execution of a resource action in
+        a resource set.
+        """
         try:
-            getattr(r, 'action')(action)
-        except Exception as e:
-            self.log.error(str(e))
+            getattr(resource, 'action')(action)
+        except Exception as exc:
+            self.log.error(str(exc))
             sys.exit(1)
-        if r.can_rollback:
+        if resource.can_rollback:
             sys.exit(2)
         sys.exit(0)
 
+    def all_skip(self, action):
+        """
+        Return False if any resource will not skip the action.
+        """
+        for resource in self.resources:
+            if not resource.skip_action(action):
+                return False
+        return True
+
+    @utils.lazy
+    def log(self):
+        """
+        Lazy init for the resource logger.
+        """
+        return logging.getLogger(self.type)
 
 if __name__ == "__main__":
-    for c in (Resource,ResourceSet) :
-        help(c)
-    print("""m1=Resource("Type1")""")
-    m1=Resource("Type1")
-    print("m1=",m1)
-    print("""m2=Resource("Type1")""")
-    m2=Resource("Type1")
-    print("m1=",m1)
-    print("m2=",m2)
-    print("""sets=ResourceSet("TypeRes2")""")
-    sets=ResourceSet("TypeRes2")
-    print("sets=", sets)
-    print("""sets+=m1""")
-    sets+=m1
-    print("sets=", sets)
-    print("""sets+=m2""")
-    sets+=m2
-    print("sets=", sets)
-
-
+    pass

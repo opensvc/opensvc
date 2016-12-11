@@ -69,14 +69,14 @@ class RsetApps(Res.ResourceSet):
                                  parallel=parallel,
                                  tags=tags)
 
-    def action(self, action=None, tags=set([]), xtags=set([])):
+    def action(self, action, tags=set([]), xtags=set([])):
         if action == 'start' and self.type == "app":
             import svcBuilder
             svcBuilder.add_apps_sysv(self.svc, self.svc.config)
             self.resources = self.svc.type2resSets["app"].resources
 
         try:
-            Res.ResourceSet.action(self, action=action, tags=tags, xtags=xtags)
+            Res.ResourceSet.action(self, action, tags=tags, xtags=xtags)
         except Exception as e:
             if action in ("stop", "shutdown", "rollback"):
                 self.log.info("there were errors during app stop. please check the quality of the scripts. continuing anyway.")

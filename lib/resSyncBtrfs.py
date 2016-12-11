@@ -74,13 +74,13 @@ class SyncBtrfs(resSync.Sync):
         except rcBtrfs.ExecError as e:
             raise ex.excError(str(e))
 
-    def pre_action(self, rset, action):
+    def pre_action(self, action):
         """Prepare snapshots
         Don't sync PRD services when running on !PRD node
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
-        resources = [ r for r in rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
 
         if len(resources) == 0:
             return

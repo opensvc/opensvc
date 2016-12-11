@@ -129,7 +129,8 @@ class OptParser(object):
         actions += self.deprecated_actions
         return actions
 
-    def svclink(self):
+    @staticmethod
+    def svclink():
         """
         Return True if the service link was used to call svcmgr,
         else return False
@@ -198,8 +199,9 @@ class OptParser(object):
             option(self.parser)
 
         options, args = self.parser.parse_args(self.args)
-        self.parser.set_usage(self.usage + self.format_desc(action=action,
-                                             options=options.parm_help))
+        usage = self.usage + self.format_desc(action=action,
+                                              options=options.parm_help)
+        self.parser.set_usage(usage)
 
         if options.parm_help or action not in self.supported_actions():
             self.print_context_help(action)

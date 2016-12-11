@@ -1531,12 +1531,12 @@ class Node(Scheduler):
         self.checks()
         return 0
 
-    def service_action_worker(self, svc, **kwargs):
+    def service_action_worker(self, svc, action, **kwargs):
         """
         The method the per-service subprocesses execute
         """
         try:
-            ret = svc.action(**kwargs)
+            ret = svc.action(action, **kwargs)
         except svc.exMonitorAction:
             self.close()
             sys.exit(self.ex_monitor_action_exit_code)
@@ -2029,7 +2029,6 @@ class Node(Scheduler):
         }
 
         if self.can_parallel(action):
-            kwargs["action"] = action
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
                 from multiprocessing import set_executable
@@ -2043,7 +2042,7 @@ class Node(Scheduler):
                 data.procs[svc.svcname] = Process(
                     target=self.service_action_worker,
                     name='worker_'+svc.svcname,
-                    args=[svc],
+                    args=[svc, action],
                     kwargs=kwargs
                 )
                 data.procs[svc.svcname].start()
@@ -2215,8 +2214,10 @@ class Node(Scheduler):
         if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         if data:
-            import urllib
-            request.add_data(urlencode(data))
+            try:
+                request.add_data(urlencode(data))
+            except AttributeError:
+                request.data = urlencode(data).encode('utf-8')
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
         try:
