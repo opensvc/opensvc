@@ -324,7 +324,7 @@ class Resource(object):
             return True
         return False
 
-    def skip_action(self, action):
+    def skip_resource_action(self, action):
         """
         Return True if the action should be skipped.
         """
@@ -370,7 +370,7 @@ class Resource(object):
         if action is None:
             self.log.debug('action: action cannot be None')
             return True
-        if self.skip_action(action):
+        if self.skip_resource_action(action):
             self.log.debug('action: skip action on filtered-out resource')
             return True
         if self.disabled:
@@ -986,7 +986,7 @@ class ResourceSet(object):
             types_done.append(resource.type)
             if not hasattr(resource, "pre_action"):
                 continue
-            resource.pre_action(self, action)
+            resource.pre_action(action)
 
     def post_action(self, action):
         """
@@ -1001,7 +1001,7 @@ class ResourceSet(object):
             types_done.append(resource.type)
             if not hasattr(resource, "post_action"):
                 continue
-            resource.post_action(self, action)
+            resource.post_action(action)
 
     def purge_status_last(self):
         """
@@ -1183,7 +1183,7 @@ class ResourceSet(object):
         Return False if any resource will not skip the action.
         """
         for resource in self.resources:
-            if not resource.skip_action(action):
+            if not resource.skip_resource_action(action):
                 return False
         return True
 
