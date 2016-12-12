@@ -289,6 +289,7 @@ class Svc(Resource, Scheduler):
         self.paths = Storage(
             cf=os.path.join(rcEnv.pathetc, self.svcname+'.conf'),
             push_flag=os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config'),
+            run_flag=os.path.join(os.sep, "var", "run", "opensvc."+svcname),
         )
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
@@ -340,6 +341,9 @@ class Svc(Resource, Scheduler):
     def scheduler(self):
         self.cron = True
         self.sync_dblogger = True
+        if not self.has_run_flag():
+            self.log.info("the scheduler is off during init")
+            return
         for action in self.scheduler_actions:
             try:
                 if action == "sync_all":
@@ -2707,9 +2711,38 @@ class Svc(Resource, Scheduler):
             return actions_translation[action]
         return action
 
-    def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=-1):
+    def action(self, *args, **kwargs):
+        try:
+            return self._action(*args, **kwargs)
+        finally:
+            if args[0] != "scheduler":
+                self.set_run_flag()
+
+    def _action(self, *args, **kwargs):
+        """
+        Filter resources on which the service action must act.
+        Abort if the service is frozen, or if --cluster is not set on a HA service.
+        Set up the environment variables.
+        Finally do the service action either in logged or unlogged mode.
+        """
+        action = args[0]
+        rid = kwargs.get("rid", [])
+        tags = kwargs.get("tags", [])
+        subsets = kwargs.get("subsets", [])
+        xtags = kwargs.get("xtags", set())
+        waitlock = kwargs.get("waitlock", -1)
+
+        if rid is None:
+            rid = []
+        if tags is None:
+            tags = []
+        if subsets is None:
+            subsets = []
+        if xtags is None:
+            xtags = set()
         if waitlock < 0:
             waitlock = self.lock_timeout
+
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.resources_by_id.keys()) - set([None])
             l = self.expand_rids(rid)
@@ -3615,6 +3648,43 @@ class Svc(Resource, Scheduler):
             ret["errors"] += 1
 
         return ret
+
+    def has_run_flag(self):
+        """
+        Return True if the run flag is set or if the run flag dir does not
+        exist.
+        """
+        flag_d = os.path.dirname(self.paths.run_flag)
+        if not os.path.exists(flag_d):
+            return True
+        if os.path.exists(self.paths.run_flag):
+            return True
+        return False
+
+    def set_run_flag(self):
+        """
+        Create the /var/run/opensvc.<svcname> flag if and /var/run exists,
+        and if the flag does not exist yet.
+
+        This flag absence inhibit the service scheduler.
+
+        A known issue with scheduled tasks during init is the 'monitor vs
+        boot' lock contention.
+        """
+        flag_d = os.path.dirname(self.paths.run_flag)
+        if not os.path.exists(flag_d):
+            self.log.debug("%s does not exists", flag_d)
+            return
+        if os.path.exists(self.paths.run_flag):
+            self.log.debug("%s already exists", self.paths.run_flag)
+            return
+        self.log.debug("create %s", self.paths.run_flag)
+        try:
+            with open(self.paths.run_flag, "w") as ofile:
+                 pass
+        except (IOError, OSError) as exc:
+            self.log.error("failed to create %s: %s",
+                           self.paths.run_flag, str(exc))
 
 if __name__ == "__main__" :
     for c in (Svc,) :
