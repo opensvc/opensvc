@@ -262,7 +262,8 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
 
 def _main(node):
     """
-    Do to many things
+    Build the service list, full or minimal depending on the requested action.
+    Execute action-specific codepaths.
     """
     build_err = False
     svcnames = []
