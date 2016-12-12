@@ -11,10 +11,12 @@ import os
 import svcBuilder
 import rcStatus
 import rcColor
-import svcmgr_parser
+from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport
 
+import datetime
+print(datetime.datetime.now())
 
 def refresh_node_svcs(node, svcnames, minimal):
     """
@@ -269,7 +271,7 @@ def _main(node):
     ret = 0
 
     docker_argv = get_docker_argv()
-    optparser = svcmgr_parser.OptParser()
+    optparser = SvcmgrOptParser()
     options, args = optparser.parser.parse_args()
     rcColor.use_color = options.color
     try:

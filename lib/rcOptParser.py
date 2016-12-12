@@ -13,7 +13,6 @@ import rcColor
 from rcUtilities import term_width
 import rcExceptions as ex
 
-
 class OptParser(object):
     """
     A class wrapping the optparse module use, adding some features:
@@ -72,7 +71,7 @@ class OptParser(object):
         for option in self.actions[section][action].get("options", []):
             if option is None:
                 raise ex.excError("unkown option referenced by action %s" % action)
-            option(parser)
+            parser.add_option(option)
         desc += self.subsequent_indent + parser.format_option_help()
         return desc
 
@@ -180,7 +179,7 @@ class OptParser(object):
         for option in self.options.values():
             if self.svclink() and option in self.svcmgr_options:
                 continue
-            option(self.parser)
+            self.parser.add_option(option)
 
         options, args = self.parser.parse_args(self.args)
         action = self.get_action_from_args(args, options)
@@ -196,7 +195,7 @@ class OptParser(object):
         for option in self.options.values():
             if self.svclink() and option in self.svcmgr_options:
                 continue
-            option(self.parser)
+            self.parser.add_option(option)
 
         options, args = self.parser.parse_args(self.args)
         usage = self.usage + self.format_desc(action=action,

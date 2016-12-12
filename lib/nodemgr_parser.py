@@ -2,204 +2,205 @@
 svcmgr command line actions and options
 """
 from rcGlobalEnv import Storage
-import rcOptParser
+from rcOptParser import OptParser
+from optparse import Option
 
 PROG = "nodemgr"
 
-OPT = Storage(
-    api=lambda parser: \
-    parser.add_option("--api", default=None, action="store", dest="api",
-                      help="specify a collector api url different from the "
-                           "one set in node.conf. Honored by the 'collector "
-                           "cli' action."),
-    app=lambda parser: \
-    parser.add_option("--app", default=None, action="store", dest="app",
-                      help="Optional with the register command, register the "
-                           "node in the specified app. If not specified, the "
-                           "node is registered in the first registering "
-                           "user's app found."),
-    attach=lambda parser: \
-    parser.add_option("--attach", default=False,
-                      action="store_true", dest="attach",
-                      help="attach the modulesets specified during a "
-                           "compliance check/fix/fixable command"),
-    author=lambda parser: \
-    parser.add_option("--author", default=None,
-                      action="store", dest="author",
-                      help="the acker name to log when used with the "
-                           "'collector ack action' action"),
-    begin=lambda parser: \
-    parser.add_option("--begin", default=None,
-                      action="store", dest="begin",
-                      help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
-                           "used with the 'collector ack action' and pushstats "
-                           "action"),
-    broadcast=lambda parser: \
-    parser.add_option("--broadcast", default=None,
-                      action="store", dest="broadcast",
-                      help="list of broadcast addresses, comma separated, "
-                           "used by the 'wol' action"),
-    color=lambda parser: \
-    parser.add_option("--color", default="auto",
-                      action="store", dest="color",
-                      help="colorize output. possible values are : auto=guess "
-                           "based on tty presence, always|yes=always colorize,"
-                           " never|no=never colorize"),
-    comment=lambda parser: \
-    parser.add_option("--comment", default=None,
-                      action="store", dest="comment",
-                      help="a comment to log when used with the 'collector ack "
-                           "action' action"),
-    config=lambda parser: \
-    parser.add_option("--config", default=None, action="store", dest="config",
-                      help="specify a user-specific collector api connection "
-                           "configuration file. defaults to '~/.opensvc-cli'. "
-                           "Honored by the 'collector cli' action."),
-    cron=lambda parser: \
-    parser.add_option("--cron", default=False,
-                      action="store_true", dest="cron",
-                      help="cron mode"),
-    debug=lambda parser: \
-    parser.add_option("--debug", default=False,
-                      action="store_true", dest="debug",
-                      help="debug mode"),
-    duration=lambda parser: \
-    parser.add_option("--duration", default=None,
-                      action="store", dest="duration", type="int",
-                      help="a duration expressed in minutes. used with the "
-                           "'collector ack action' action"),
-    end=lambda parser: \
-    parser.add_option("--end", default=None,
-                      action="store", dest="end",
-                      help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
-                           "with the 'collector ack action' and pushstats "
-                           "action"),
-    filterset=lambda parser: \
-    parser.add_option("--filterset", default="",
-                      action="store", dest="filterset",
-                      help="set a filterset to limit collector extractions"),
-    force=lambda parser: \
-    parser.add_option("--force", default=False,
-                      action="store_true", dest="force",
-                      help="force action"),
-    format=lambda parser: \
-    parser.add_option("--format", default=None, action="store", dest="format",
-                      help="specify a data formatter for output of the print* "
-                           "and collector* commands. possible values are json "
-                           "or table."),
-    help=lambda parser: \
-    parser.add_option("-h", "--help", default=None,
-                      action="store_true", dest="parm_help",
-                      help="show this help message and exit"),
-    id=lambda parser: \
-    parser.add_option("--id", default=0,
-                      action="store", dest="id", type="int",
-                      help="specify an id to act on"),
-    insecure=lambda parser: \
-    parser.add_option("--insecure", default=False,
-                      action="store_true", dest="insecure",
-                      help="allow communications with a collector presenting "
-                           "unverified SSL certificates."),
-    like=lambda parser: \
-    parser.add_option("--like", default="%",
-                      action="store", dest="like",
-                      help="a sql like filtering expression. leading and "
-                           "trailing wildcards are automatically set."),
-    mac=lambda parser: \
-    parser.add_option("--mac", default=None,
-                      action="store", dest="mac",
-                      help="list of mac addresses, comma separated, used by "
-                           "the 'wol' action"),
-    message=lambda parser: \
-    parser.add_option("--message", default="",
-                      action="store", dest="message",
-                      help="the message to send to the collector for logging"),
-    module=lambda parser: \
-    parser.add_option("--module", default="",
-                      action="store", dest="module",
-                      help="compliance, set module list"),
-    moduleset=lambda parser: \
-    parser.add_option("--moduleset", default="",
-                      action="store", dest="moduleset",
-                      help="compliance, set moduleset list. The 'all' value "
-                           "can be used in conjonction with detach."),
-    opt_object=lambda parser: \
-    parser.add_option("--object", default=[], action="append", dest="objects",
-                      help="an object to limit a push* action to. multiple "
-                           "--object <object id> parameters can be set on a "
-                           "single command line"),
-    param=lambda parser: \
-    parser.add_option("--param", default=None,
-                      action="store", dest="param",
-                      help="point a node configuration parameter for the 'get'"
-                           " and 'set' actions"),
-    password=lambda parser: \
-    parser.add_option("--password", default=None,
-                      action="store", dest="password",
-                      help="authenticate with the collector using the "
-                           "specified user credentials instead of the node "
-                           "credentials. Prompted if necessary but not "
-                           "specified."),
-    refresh_api=lambda parser: \
-    parser.add_option("--refresh-api", default=False,
-                      action="store_true", dest="refresh_api",
-                      help="The OpenSVC collector api url"),
-    resource=lambda parser: \
-    parser.add_option("--resource", default=[],
-                      action="append",
-                      help="a resource definition in json dictionary format "
-                           "fed to the provision action"),
-    ruleset=lambda parser: \
-    parser.add_option("--ruleset", default="",
-                      action="store", dest="ruleset",
-                      help="compliance, set ruleset list. The 'all' value can "
-                           "be used in conjonction with detach."),
-    ruleset_date=lambda parser: \
-    parser.add_option("--ruleset-date", default="",
-                      action="store", dest="ruleset_date",
-                      help="compliance, use rulesets valid on specified date"),
-    stats_dir=lambda parser: \
-    parser.add_option("--stats-dir", default=None,
-                      action="store", dest="stats_dir",
-                      help="points the directory where the metrics files are "
-                           "stored for pushstats"),
-    symcli_db_file=lambda parser: \
-    parser.add_option("--symcli-db-file", default=None,
-                      action="store", dest="symcli_db_file",
-                      help="[pushsym option] use symcli offline mode with the "
-                           "specified file. aclx files are expected to be "
-                           "found in the same directory and named either "
-                           "<symid>.aclx or <same_prefix_as_bin_file>.aclx"),
-    sync=lambda parser: \
-    parser.add_option("--sync", default=False,
-                      action="store_true", dest="syncrpc",
-                      help="use synchronous collector rpc if available. to "
-                           "use with pushasset when chaining a compliance "
-                           "run, to make sure the node ruleset is "
-                           "up-to-date."),
-    tag=lambda parser: \
-    parser.add_option("--tag", default=None,
-                      action="store", dest="tag",
-                      help="a tag specifier used by 'collector create tag', "
-                           "'collector add tag', 'collector del tag'"),
-    user=lambda parser: \
-    parser.add_option("--user", default=None, action="store", dest="user",
-                      help="authenticate with the collector using the "
-                           "specified user credentials instead of the node "
-                           "credentials. Required for the 'register' action "
-                           "when the collector is configured to refuse "
-                           "anonymous register."),
-    value=lambda parser: \
-    parser.add_option("--value", default=None,
-                      action="store", dest="value",
-                      help="set a node configuration parameter value for the "
-                           "'set --param' action"),
-    verbose=lambda parser: \
-    parser.add_option("--verbose", default=False,
-                      action="store_true", dest="verbose",
-                      help="add more information to some print commands: +next "
-                           "in 'print schedule'"),
-)
+OPT = Storage({
+    "api": Option(
+        "--api", default=None, action="store", dest="api",
+        help="specify a collector api url different from the "
+             "one set in node.conf. Honored by the 'collector "
+             "cli' action."),
+    "app": Option(
+        "--app", default=None, action="store", dest="app",
+        help="Optional with the register command, register the "
+             "node in the specified app. If not specified, the "
+             "node is registered in the first registering "
+             "user's app found."),
+    "attach": Option(
+        "--attach", default=False,
+        action="store_true", dest="attach",
+        help="attach the modulesets specified during a "
+             "compliance check/fix/fixable command"),
+    "author": Option(
+        "--author", default=None,
+        action="store", dest="author",
+        help="the acker name to log when used with the "
+             "'collector ack action' action"),
+    "begin": Option(
+        "--begin", default=None,
+        action="store", dest="begin",
+        help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
+             "used with the 'collector ack action' and pushstats "
+             "action"),
+    "broadcast": Option(
+        "--broadcast", default=None,
+        action="store", dest="broadcast",
+        help="list of broadcast addresses, comma separated, "
+             "used by the 'wol' action"),
+    "color": Option(
+        "--color", default="auto",
+        action="store", dest="color",
+        help="colorize output. possible values are : auto=guess "
+             "based on tty presence, always|yes=always colorize,"
+             " never|no=never colorize"),
+    "comment": Option(
+        "--comment", default=None,
+        action="store", dest="comment",
+        help="a comment to log when used with the 'collector ack "
+             "action' action"),
+    "config": Option(
+        "--config", default=None, action="store", dest="config",
+        help="specify a user-specific collector api connection "
+             "configuration file. defaults to '~/.opensvc-cli'. "
+             "Honored by the 'collector cli' action."),
+    "cron": Option(
+        "--cron", default=False,
+        action="store_true", dest="cron",
+        help="cron mode"),
+    "debug": Option(
+        "--debug", default=False,
+        action="store_true", dest="debug",
+        help="debug mode"),
+    "duration": Option(
+        "--duration", default=None,
+        action="store", dest="duration", type="int",
+        help="a duration expressed in minutes. used with the "
+             "'collector ack action' action"),
+    "end": Option(
+        "--end", default=None,
+        action="store", dest="end",
+        help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
+             "with the 'collector ack action' and pushstats "
+             "action"),
+    "filterset": Option(
+        "--filterset", default="",
+        action="store", dest="filterset",
+        help="set a filterset to limit collector extractions"),
+    "force": Option(
+        "--force", default=False,
+        action="store_true", dest="force",
+        help="force action"),
+    "format": Option(
+        "--format", default=None, action="store", dest="format",
+        help="specify a data formatter for output of the print* "
+             "and collector* commands. possible values are json "
+             "or table."),
+    "help": Option(
+        "-h", "--help", default=None,
+        action="store_true", dest="parm_help",
+        help="show this help message and exit"),
+    "id": Option(
+        "--id", default=0,
+        action="store", dest="id", type="int",
+        help="specify an id to act on"),
+    "insecure": Option(
+        "--insecure", default=False,
+        action="store_true", dest="insecure",
+        help="allow communications with a collector presenting "
+             "unverified SSL certificates."),
+    "like": Option(
+        "--like", default="%",
+        action="store", dest="like",
+        help="a sql like filtering expression. leading and "
+             "trailing wildcards are automatically set."),
+    "mac": Option(
+        "--mac", default=None,
+        action="store", dest="mac",
+        help="list of mac addresses, comma separated, used by "
+             "the 'wol' action"),
+    "message": Option(
+        "--message", default="",
+        action="store", dest="message",
+        help="the message to send to the collector for logging"),
+    "module": Option(
+        "--module", default="",
+        action="store", dest="module",
+        help="compliance, set module list"),
+    "moduleset": Option(
+        "--moduleset", default="",
+        action="store", dest="moduleset",
+        help="compliance, set moduleset list. The 'all' value "
+             "can be used in conjonction with detach."),
+    "opt_object": Option(
+        "--object", default=[], action="append", dest="objects",
+        help="an object to limit a push* action to. multiple "
+             "--object <object id> parameters can be set on a "
+             "single command line"),
+    "param": Option(
+        "--param", default=None,
+        action="store", dest="param",
+        help="point a node configuration parameter for the 'get'"
+             " and 'set' actions"),
+    "password": Option(
+        "--password", default=None,
+        action="store", dest="password",
+        help="authenticate with the collector using the "
+             "specified user credentials instead of the node "
+             "credentials. Prompted if necessary but not "
+             "specified."),
+    "refresh_api": Option(
+        "--refresh-api", default=False,
+        action="store_true", dest="refresh_api",
+        help="The OpenSVC collector api url"),
+    "resource": Option(
+        "--resource", default=[],
+        action="append",
+        help="a resource definition in json dictionary format "
+             "fed to the provision action"),
+    "ruleset": Option(
+        "--ruleset", default="",
+        action="store", dest="ruleset",
+        help="compliance, set ruleset list. The 'all' value can "
+             "be used in conjonction with detach."),
+    "ruleset_date": Option(
+        "--ruleset-date", default="",
+        action="store", dest="ruleset_date",
+        help="compliance, use rulesets valid on specified date"),
+    "stats_dir": Option(
+        "--stats-dir", default=None,
+        action="store", dest="stats_dir",
+        help="points the directory where the metrics files are "
+             "stored for pushstats"),
+    "symcli_db_file": Option(
+        "--symcli-db-file", default=None,
+        action="store", dest="symcli_db_file",
+        help="[pushsym option] use symcli offline mode with the "
+             "specified file. aclx files are expected to be "
+             "found in the same directory and named either "
+             "<symid>.aclx or <same_prefix_as_bin_file>.aclx"),
+    "sync": Option(
+        "--sync", default=False,
+        action="store_true", dest="syncrpc",
+        help="use synchronous collector rpc if available. to "
+             "use with pushasset when chaining a compliance "
+             "run, to make sure the node ruleset is "
+             "up-to-date."),
+    "tag": Option(
+        "--tag", default=None,
+        action="store", dest="tag",
+        help="a tag specifier used by 'collector create tag', "
+             "'collector add tag', 'collector del tag'"),
+    "user": Option(
+        "--user", default=None, action="store", dest="user",
+        help="authenticate with the collector using the "
+             "specified user credentials instead of the node "
+             "credentials. Required for the 'register' action "
+             "when the collector is configured to refuse "
+             "anonymous register."),
+    "value": Option(
+        "--value", default=None,
+        action="store", dest="value",
+        help="set a node configuration parameter value for the "
+             "'set --param' action"),
+    "verbose": Option(
+        "--verbose", default=False,
+        action="store_true", dest="verbose",
+        help="add more information to some print commands: +next "
+             "in 'print schedule'"),
+})
 
 GLOBAL_OPTS = [
     OPT.cron,
@@ -707,16 +708,16 @@ DEPRECATED_ACTIONS = [
     "json_schedule",
 ]
 
-class OptParser(rcOptParser.OptParser):
+class NodemgrOptParser(OptParser):
     """
     The nodemgr-specific options parser class
     """
     def __init__(self, args=None, colorize=True, width=None, formatter=None,
                  indent=6):
-        rcOptParser.OptParser.__init__(self, args=args, prog=PROG, options=OPT,
-                                       actions=ACTIONS,
-                                       deprecated_actions=DEPRECATED_ACTIONS,
-                                       global_options=GLOBAL_OPTS,
-                                       colorize=colorize, width=width,
-                                       formatter=formatter, indent=indent)
+        OptParser.__init__(self, args=args, prog=PROG, options=OPT,
+                           actions=ACTIONS,
+                           deprecated_actions=DEPRECATED_ACTIONS,
+                           global_options=GLOBAL_OPTS,
+                           colorize=colorize, width=width,
+                           formatter=formatter, indent=indent)
 

@@ -15,7 +15,7 @@ import rcColor
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import ximport
-import nodemgr_parser
+from nodemgr_parser import NodemgrOptParser
 
 node_mod = ximport('node')
 
@@ -34,7 +34,7 @@ def do_symcli_db_file(symcli_db_file):
     os.environ['SYMCLI_OFFLINE'] = '1'
 
 def main(node):
-    optparser = nodemgr_parser.OptParser()
+    optparser = NodemgrOptParser()
     options, args = optparser.parser.parse_args()
     action = optparser.get_action_from_args(args, options)
 
