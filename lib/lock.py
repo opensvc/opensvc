@@ -45,19 +45,20 @@ def monlock(timeout=0, delay=0, fname='svcmon.lock'):
 def monunlock(lockfd):
     unlock(lockfd)
 
-def lock(timeout=30, delay=5, lockfile=None, intent=None):
+def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
-        l = [1]
+        l = [0]
     else:
         l = range(int(timeout/delay))
     if len(l) == 0:
-        l = [1]
+        l = [0]
     err = ""
     for i in l:
         if i > 0:
             time.sleep(delay)
         try:
-            return lock_nowait(lockfile, intent)
+            fd = lock_nowait(lockfile, intent)
+            return fd
         except lockAcquire as e:
             err = str(e)
         except Exception:
