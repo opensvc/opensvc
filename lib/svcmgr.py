@@ -15,9 +15,6 @@ from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport
 
-import datetime
-print(datetime.datetime.now())
-
 def refresh_node_svcs(node, svcnames, minimal):
     """
     Delete the list of Svc objects in the Node object and create a new one.
