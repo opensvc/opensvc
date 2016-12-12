@@ -286,8 +286,10 @@ class Svc(Resource, Scheduler):
         self.force = False
         self.cluster = False
         self.disable_rollback = False
-        self.cf = os.path.join(rcEnv.pathetc, self.svcname+'.conf')
-        self.push_flag = os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config')
+        self.paths = Storage(
+            cf=os.path.join(rcEnv.pathetc, self.svcname+'.conf'),
+            push_flag=os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config'),
+        )
         Resource.__init__(self, type=type, optional=optional,
                           disabled=disabled, tags=tags)
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
@@ -1574,7 +1576,7 @@ class Svc(Resource, Scheduler):
         return running_af_svc
 
     def print_config_mtime(self):
-        mtime = os.stat(self.cf).st_mtime
+        mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
     def need_start_encap(self, container):
@@ -2390,7 +2392,7 @@ class Svc(Resource, Scheduler):
     def print_config(self):
         if self.options.format is not None:
             return self.print_config_data()
-        self.node._print_config(self.cf)
+        self.node._print_config(self.paths.cf)
 
     def make_temp_config(self):
         import shutil
@@ -2399,11 +2401,11 @@ class Svc(Resource, Scheduler):
             if self.options.recover:
                 pass
             elif self.options.discard:
-                shutil.copy(self.cf, path)
+                shutil.copy(self.paths.cf, path)
             else:
                 raise ex.excError("%s exists: service is already being edited. Set --discard to edit from the current configuration, or --recover to open the unapplied config" % path)
         else:
-            shutil.copy(self.cf, path)
+            shutil.copy(self.paths.cf, path)
         return path
 
     def edit_config(self):
@@ -2423,7 +2425,7 @@ class Svc(Resource, Scheduler):
         r = self._validate_config(path=path)
         if r["errors"] == 0:
             import shutil
-            shutil.copy(path, self.cf)
+            shutil.copy(path, self.paths.cf)
             os.unlink(path)
         else:
             print("your changes were not applied because of the errors reported above. you can use the edit config command with --recover to try to fix your changes or with --discard to restart from the live config")
@@ -2527,15 +2529,15 @@ class Svc(Resource, Scheduler):
             self.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
-        self.log.info("send %s to collector" % self.cf)
+        self.log.info("send %s to collector" % self.paths.cf)
         try:
             self.create_var_subdir()
             import time
-            with open(self.push_flag, 'w') as f:
+            with open(self.paths.push_flag, 'w') as f:
                 f.write(str(time.time()))
-            self.log.info("update %s timestamp" % self.push_flag)
+            self.log.info("update %s timestamp" % self.paths.push_flag)
         except:
-            self.log.error("failed to update %s timestamp" % self.push_flag)
+            self.log.error("failed to update %s timestamp" % self.paths.push_flag)
 
     def push_encap_config(self):
         if self.encap or not self.has_encap_resources:
@@ -2555,7 +2557,7 @@ class Svc(Resource, Scheduler):
             ret = 1
 
         paths = get_osvc_paths(osvc_root_path=r.osvc_root_path, sysname=r.guestos)
-        encap_cf = os.path.join(paths.pathetc, os.path.basename(self.cf))
+        encap_cf = os.path.join(paths.pathetc, os.path.basename(self.paths.cf))
 
         if out == "":
             # this is what happens when the container is down
@@ -2563,14 +2565,14 @@ class Svc(Resource, Scheduler):
 
         if ret == 0:
             encap_mtime = int(float(out.strip()))
-            local_mtime = int(os.stat(self.cf).st_mtime)
+            local_mtime = int(os.stat(self.paths.cf).st_mtime)
             if encap_mtime > local_mtime:
                 if hasattr(r, 'rcp_from'):
                     out, err, ret = r.rcp_from(encap_cf, rcEnv.pathetc+'/')
                 else:
                     cmd = rcEnv.rcp.split() + [r.name+':'+encap_cf, rcEnv.pathetc+'/']
                     out, err, ret = justcall(cmd)
-                os.utime(self.cf, (encap_mtime, encap_mtime))
+                os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s"%(encap_cf, r.name))
                 if ret != 0:
                     raise ex.excError()
@@ -2579,14 +2581,14 @@ class Svc(Resource, Scheduler):
                 return
 
         if hasattr(r, 'rcp'):
-            out, err, ret = r.rcp(self.cf, encap_cf)
+            out, err, ret = r.rcp(self.paths.cf, encap_cf)
         else:
-            cmd = rcEnv.rcp.split() + [self.cf, r.name+':'+encap_cf]
+            cmd = rcEnv.rcp.split() + [self.paths.cf, r.name+':'+encap_cf]
             out, err, ret = justcall(cmd)
         if ret != 0:
-            self.log.error("failed to send %s to %s" % (self.cf, r.name))
+            self.log.error("failed to send %s to %s" % (self.paths.cf, r.name))
             raise ex.excError()
-        self.log.info("send %s to %s" % (self.cf, r.name))
+        self.log.info("send %s to %s" % (self.paths.cf, r.name))
 
         cmd = ['create', '--config', encap_cf]
         out, err, ret = self._encap_cmd(cmd, container=r)
@@ -3112,16 +3114,16 @@ class Svc(Resource, Scheduler):
             return False
 
         import datetime
-        if not os.path.exists(self.push_flag):
+        if not os.path.exists(self.paths.push_flag):
             self.log.debug("no last push timestamp found")
             return True
         try:
-            mtime = os.stat(self.cf).st_mtime
-            f = open(self.push_flag)
+            mtime = os.stat(self.paths.cf).st_mtime
+            f = open(self.paths.push_flag)
             last_push = float(f.read())
             f.close()
         except:
-            self.log.error("can not read timestamp from %s or %s"%(self.cf, self.push_flag))
+            self.log.error("can not read timestamp from %s or %s"%(self.paths.cf, self.paths.push_flag))
             return True
         if mtime > last_push:
             self.log.debug("configuration file changed since last push")
@@ -3137,12 +3139,12 @@ class Svc(Resource, Scheduler):
             fp.close()
             with open(fname, "w") as fp:
                 self.config.write(fp)
-            shutil.move(fname, self.cf)
+            shutil.move(fname, self.paths.cf)
         except Exception as e:
-            print("failed to write new %s (%s)" % (self.cf, str(e)), file=sys.stderr)
+            print("failed to write new %s (%s)" % (self.paths.cf, str(e)), file=sys.stderr)
             raise ex.excError()
         try:
-            os.chmod(self.cf, 0o0644)
+            os.chmod(self.paths.cf, 0o0644)
         except:
             pass
 
@@ -3152,7 +3154,7 @@ class Svc(Resource, Scheduler):
             self.config = RawConfigParser(dict_type=OrderedDict)
         except:
             self.config = RawConfigParser()
-        self.config.read(self.cf)
+        self.config.read(self.paths.cf)
 
     def unset(self):
         self.load_config()
@@ -3167,7 +3169,7 @@ class Svc(Resource, Scheduler):
             return 1
         section, option = l
         section = "[%s]" % section
-        with open(self.cf, 'r') as f:
+        with open(self.paths.cf, 'r') as f:
             lines = f.read().split("\n")
 
         need_write = False
@@ -3198,7 +3200,7 @@ class Svc(Resource, Scheduler):
             return 1
 
         try:
-            with open(self.cf, "w") as f:
+            with open(self.paths.cf, "w") as f:
                 f.write("\n".join(lines))
         except:
             return 1
@@ -3270,7 +3272,7 @@ class Svc(Resource, Scheduler):
 
     def _set(self, section, option, value):
         section = "[%s]" % section
-        with open(self.cf, 'r') as f:
+        with open(self.paths.cf, 'r') as f:
             lines = f.read().split("\n")
 
         done = False
@@ -3324,7 +3326,7 @@ class Svc(Resource, Scheduler):
             lines.append("%s = %s" % (option, value))
 
         try:
-            with open(self.cf, "w") as f:
+            with open(self.paths.cf, "w") as f:
                 f.write("\n".join(lines))
         except:
             return 1
@@ -3353,10 +3355,10 @@ class Svc(Resource, Scheduler):
                     self.config.remove_option(s, "disable")
 
         try:
-            with open(self.cf, 'w') as f:
+            with open(self.paths.cf, 'w') as f:
                 self.config.write(f)
         except:
-            self.log.error("failed to open", self.cf, "for writing")
+            self.log.error("failed to open", self.paths.cf, "for writing")
             return 1
 
         return 0
@@ -3377,7 +3379,7 @@ class Svc(Resource, Scheduler):
               os.path.join(rcEnv.pathetc, self.svcname+".d"),
             ]
             fpaths = [
-              self.cf,
+              self.paths.cf,
               os.path.join(rcEnv.pathetc, self.svcname),
               os.path.join(rcEnv.pathetc, self.svcname+".d"),
               os.path.join(rcEnv.pathetc, self.svcname+".cluster"),
@@ -3393,7 +3395,7 @@ class Svc(Resource, Scheduler):
                     self.log.info("remove %s" % dpath)
                     shutil.rmtree(dpath)
             return 0
-        with open(self.cf, 'r') as f:
+        with open(self.paths.cf, 'r') as f:
             lines = f.read().split("\n")
         need_write = False
 
@@ -3415,10 +3417,10 @@ class Svc(Resource, Scheduler):
         if not need_write:
             return 0
         try:
-            with open(self.cf, "w") as f:
+            with open(self.paths.cf, "w") as f:
                 f.write("\n".join(lines))
         except:
-            print("failed to rewrite", self.cf, file=sys.stderr)
+            print("failed to rewrite", self.paths.cf, file=sys.stderr)
             return 1
         return 0
 
