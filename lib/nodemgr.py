@@ -39,7 +39,7 @@ def main(node):
     action = optparser.get_action_from_args(args, options)
 
     rcColor.use_color = options.color
-    node.options = options
+    node.options.update(options.__dict__)
     do_symcli_db_file(options.symcli_db_file)
 
     if action.startswith("collector_cli"):
