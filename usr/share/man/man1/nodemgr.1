@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-11\-30
+.TH NODEMGR 1 2016\-12\-12
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -134,6 +134,16 @@ list all available tags. use --like to filter the output.
 a sql like filtering expression. leading and trailing wildcards are automatically set.
 
 .RE
+\fBnodemgr collector log\fP
+.RS
+
+log a message in the collector's node log
+
+.TP
+.B --message=MESSAGE
+the message to send to the collector for logging
+
+.RE
 \fBnodemgr collector networks\fP
 .RS
 
@@ -170,12 +180,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action'
 .RS
 
 list all node tags
-
-.RE
-\fBnodemgr collector status\fP
-.RS
-
-display node services status according to the collector
 
 .RE
 \fBnodemgr collector tag\fP
@@ -772,6 +776,9 @@ push symmetrix configuration to collector
 .TP
 .B --object=OBJECTS
 an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+.TP
+.B --symcli-db-file=SYMCLI_DB_FILE
+[pushsym option] use symcli offline mode with the specified file. aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx
 
 .RE
 \fBnodemgr pushvioserver\fP

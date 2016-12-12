@@ -313,7 +313,7 @@ GLOBAL_OPTS = [
     OPT.help,
 ]
 
-ACTION_OPTS = [
+ACTION_OPTS = SVCMGR_OPTS + [
     OPT.dry_run,
     OPT.force,
     OPT.master,

@@ -203,9 +203,11 @@ OPT = Storage({
 })
 
 GLOBAL_OPTS = [
+    OPT.color,
     OPT.cron,
     OPT.debug,
     OPT.format,
+    OPT.help,
 ]
 
 ACTIONS = {
@@ -358,6 +360,7 @@ ACTIONS = {
             'msg': 'push symmetrix configuration to collector',
             'options': [
                 OPT.opt_object,
+                OPT.symcli_db_file,
             ],
          },
         'pushemcvnx': {

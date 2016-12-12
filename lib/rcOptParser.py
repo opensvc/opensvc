@@ -7,6 +7,7 @@ to format contextualized help messages.
 
 from __future__ import print_function
 import os
+import sys
 import optparse
 from textwrap import TextWrapper
 import rcColor
@@ -25,6 +26,7 @@ class OptParser(object):
                  deprecated_actions=None, global_options=None,
                  svcmgr_options=None, colorize=True, width=None,
                  formatter=None, indent=6):
+        self.parser = None
         self.args = args
         self.prog = prog
         self.options = options
@@ -161,18 +163,18 @@ class OptParser(object):
         """
         Setup an optparse parser
         """
+        if self.parser is not None:
+            return
+
         try:
             from version import version
         except ImportError:
             version = "dev"
 
-        __ver = self.prog + " version " + version
+        self.version = self.prog + " version " + version
 
-        # parse a first time with all possible options to never fail on
-        # undefined option
         self.parser = optparse.OptionParser(
-            version=__ver,
-            usage=self.usage + self.format_desc(),
+            version=self.version,
             add_help_option=False,
         )
 
@@ -181,29 +183,56 @@ class OptParser(object):
                 continue
             self.parser.add_option(option)
 
+
+    def set_full_usage(self):
+        """
+        Setup for display of all actions and options.
+        Used by the man page generator.
+        """
+        usage = self.usage + self.format_desc(action=None,
+                                              options=True)
+        self.parser.set_usage(usage)
+
+    def parse_args(self):
+        """
+        Setup an optparse parser and parse
+        """
+        self.args = sys.argv[1:]
+
+        # parse a first time with all possible options to never fail on
+        # undefined option.
         options, args = self.parser.parse_args(self.args)
         action = self.get_action_from_args(args, options)
 
-        # now we know the action. parse a second time with only options
-        # supported by the action
-        self.parser = optparse.OptionParser(
-            version=__ver,
-            usage=self.usage + self.format_desc(),
-            add_help_option=False,
-        )
-
-        for option in self.options.values():
-            if self.svclink() and option in self.svcmgr_options:
-                continue
-            self.parser.add_option(option)
-
-        options, args = self.parser.parse_args(self.args)
+        # now we know the action. and we know if --help was set.
+        # we can prepare a contextualized usage message.
         usage = self.usage + self.format_desc(action=action,
                                               options=options.parm_help)
         self.parser.set_usage(usage)
 
         if options.parm_help or action not in self.supported_actions():
             self.print_context_help(action)
+
+        # parse a second time with only options supported by the action
+        # so we can raise on options incompatible with the action
+        parser = optparse.OptionParser(
+            version=self.version,
+            usage=usage,
+            add_help_option=False,
+        )
+
+        for section_data in self.actions.values():
+            if action not in section_data:
+                continue
+            for option in section_data[action].get("options", []):
+                if self.svclink() and option in self.svcmgr_options:
+                    continue
+                parser.add_option(option)
+        for option in self.global_options:
+            parser.add_option(option)
+        options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
+        return options, action
+
 
     def print_full_help(self):
         """
@@ -236,5 +265,4 @@ class OptParser(object):
         Trigger a parser error, which displays the help message contextualized
         for the action prefix.
         """
-        if self.args is None:
-            self.parser.error("Invalid service action: %s" % str(action))
+        self.parser.error("Invalid service action: %s" % str(action))

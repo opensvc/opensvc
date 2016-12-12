@@ -109,7 +109,8 @@ def do_svcmgr():
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmgr\\fP program provides commands to provision, configure, stop, start and replicate services instances on the local node."""
 
     import svcmgr_parser
-    optparser = svcmgr_parser.OptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    optparser = svcmgr_parser.SvcmgrOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    optparser.set_full_usage()
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
@@ -129,7 +130,8 @@ def do_nodemgr():
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBnodemgr\\fP program provides commands to configure and execute all the agent functions that interact with the node."""
 
     import nodemgr_parser
-    optparser = nodemgr_parser.OptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    optparser = nodemgr_parser.NodemgrOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    optparser.set_full_usage()
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)

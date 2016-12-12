@@ -24,7 +24,11 @@ try:
 except:
     version = "dev"
 
-def do_symcli_db_file(symcli_db_file):
+def do_symcli_db_file(options):
+    try:
+        symcli_db_file = options.symcli_db_file
+    except AttributeError:
+        return
     if symcli_db_file is None:
         return
     if not os.path.exists(symcli_db_file):
@@ -35,12 +39,11 @@ def do_symcli_db_file(symcli_db_file):
 
 def main(node):
     optparser = NodemgrOptParser()
-    options, args = optparser.parser.parse_args()
-    action = optparser.get_action_from_args(args, options)
+    options, action = optparser.parse_args()
 
     rcColor.use_color = options.color
     node.options.update(options.__dict__)
-    do_symcli_db_file(options.symcli_db_file)
+    do_symcli_db_file(options)
 
     if action.startswith("collector_cli"):
         action = "collector_cli"

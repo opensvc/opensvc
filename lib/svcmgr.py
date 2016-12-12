@@ -269,14 +269,13 @@ def _main(node):
 
     docker_argv = get_docker_argv()
     optparser = SvcmgrOptParser()
-    options, args = optparser.parser.parse_args()
+    options, action = optparser.parse_args()
     rcColor.use_color = options.color
     try:
         node.options.format = options.format
     except AttributeError:
         pass
 
-    action = optparser.get_action_from_args(args, options)
     build_kwargs = get_build_kwargs(optparser, options, action)
 
     if action not in ("create", "pull"):

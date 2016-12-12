@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-11\-30
+.TH SVCMGR 1 2016\-12\-12
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -138,6 +138,16 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 a comment to log when used with the 'collector ack unavailability' action
 
 .RE
+\fBsvcmgr collector log\fP
+.RS
+
+log a message in the collector's service log
+
+.TP
+.B --message=MESSAGE
+the message to send to the collector for logging
+
+.RE
 \fBsvcmgr collector networks\fP
 .RS
 
@@ -164,12 +174,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .RS
 
 list all service tags
-
-.RE
-\fBsvcmgr collector status\fP
-.RS
-
-display service status on all nodes, according to the collector.
 
 .RE
 \fBsvcmgr collector tag\fP
