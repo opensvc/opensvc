@@ -124,11 +124,7 @@ class Node(Scheduler):
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.set_collector_env()
-
-
-    @utils.lazy
-    def log(self):
-        return rcLogger.initLogger(rcEnv.nodename)
+        self.log = rcLogger.initLogger(rcEnv.nodename)
 
     @utils.lazy
     def collector(self):

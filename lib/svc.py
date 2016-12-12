@@ -308,14 +308,11 @@ class Svc(Scheduler):
         self.group_status_cache = None
         self.abort_start_done = False
         self.disabled = False
+        self.log = rcLogger.initLogger(self.svcname)
 
     @lazy
     def freezer(self):
         return Freezer(self.svcname)
-
-    @lazy
-    def log(self):
-        return rcLogger.initLogger(self.svcname)
 
     @lazy
     def scheduler_actions(self):
