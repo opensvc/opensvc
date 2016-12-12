@@ -1077,6 +1077,10 @@ class Node(Svc, Freezer, Scheduler):
             os.unlink(fname)
         except:
             pass
+        self.action("pushasset")
+        self.build_services()
+        for svc in self.svcs:
+            svc.set_run_flag()
         return 0
 
     def provision(self):

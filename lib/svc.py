@@ -71,6 +71,7 @@ class Svc(Resource, Scheduler):
         self.disable_rollback = False
         self.pathenv = os.path.join(rcEnv.pathetc, self.svcname+'.env')
         self.push_flag = os.path.join(rcEnv.pathvar, svcname, 'last_pushed_env')
+        self.run_flag = os.path.join(os.sep, "var", "run", "opensvc."+svcname)
         self.disk_types = [
          "disk.loop",
          "disk.raw",
@@ -179,6 +180,9 @@ class Svc(Resource, Scheduler):
     def scheduler(self):
         self.cron = True
         self.sync_dblogger = True
+        if not self.has_run_flag():
+            self.log.info("the scheduler is off during init")
+            return
         for action in self.scheduler_actions:
             try:
                 if action == "sync_all":
@@ -2473,7 +2477,14 @@ class Svc(Resource, Scheduler):
             return translation[action]
         return action
 
-    def action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
+    def action(self, *args, **kwargs):
+        try:
+            return self._action(*args, **kwargs)
+        finally:
+            if args[0] != "scheduler":
+                self.set_run_flag()
+
+    def _action(self, action, rid=[], tags=[], subsets=[], xtags=set([]), waitlock=60):
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.resources_by_id.keys()) - set([None])
             l = self.expand_rids(rid)
@@ -3245,6 +3256,44 @@ class Svc(Resource, Scheduler):
             ret["errors"] += 1
 
         return ret
+
+    def has_run_flag(self):
+        """
+        Return True if the run flag is set or if the run flag dir does not
+        exist.
+        """
+        flag_d = os.path.dirname(self.run_flag)
+        if not os.path.exists(flag_d):
+            return True
+        if os.path.exists(self.run_flag):
+            return True
+        return False
+
+    def set_run_flag(self):
+        """
+        Create the /var/run/opensvc.<svcname> flag if and /var/run exists,
+        and if the flag does not exist yet.
+
+        This flag absence inhibit the service scheduler.
+
+        A known issue with scheduled tasks during init is the 'monitor vs
+        boot' lock contention.
+        """
+        flag_d = os.path.dirname(self.run_flag)
+        if not os.path.exists(flag_d):
+            self.log.debug("%s does not exists", flag_d)
+            return
+        if os.path.exists(self.run_flag):
+            self.log.debug("%s already exists", self.run_flag)
+            return
+        self.log.debug("create %s", self.run_flag)
+        try:
+            with open(self.run_flag, "w") as ofile:
+                 pass
+        except (IOError, OSError) as exc:
+            self.log.error("failed to create %s: %s",
+                           self.run_flag, str(exc))
+
 
 if __name__ == "__main__" :
     for c in (Svc,) :
