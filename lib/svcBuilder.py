@@ -3721,36 +3721,40 @@ def build(name, minimal=False, svcconf=None):
     if svc.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
         raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
 
-    if "drp_type" in defaults:
-        svc.drp_type = defaults["drp_type"]
-    else:
+    try:
+        svc.drp_type = conf_get_string_scope(svc, conf, 'DEFAULT', 'drp_type')
+    except ex.OptNotFound:
         svc.drp_type = ''
 
-    if "comment" in defaults:
-        svc.comment = defaults["comment"]
-    else:
+    try:
+        svc.comment = conf_get_string_scope(svc, conf, 'DEFAULT', 'comment')
+    except ex.OptNotFound:
         svc.comment = ''
 
-    if "monitor_action" in defaults:
-        svc.monitor_action = defaults["monitor_action"]
+    try:
+        svc.monitor_action = conf_get_string_scope(svc, conf, 'DEFAULT', "monitor_action")
+    except ex.OptNotFound:
+        pass
 
-    if "app" in defaults:
-        svc.app = defaults["app"]
-    else:
+    try:
+        svc.app = conf_get_string_scope(svc, conf, 'DEFAULT', "app")
+    except ex.OptNotFound:
         svc.app = ''
 
-    if "drnoaction" in defaults:
-        svc.drnoaction = defaults["drnoaction"]
-    else:
+    try:
+        svc.drnoaction = conf_get_boolean_scope(svc, conf, 'DEFAULT', "drnoaction")
+    except ex.OptNotFound:
         svc.drnoaction = False
 
-    if "bwlimit" in defaults:
-        svc.bwlimit = defaults["bwlimit"]
-    else:
+    try:
+        svc.bwlimit = conf_get_int_scope(svc, conf, 'DEFAULT', "bwlimit")
+    except ex.OptNotFound:
         svc.bwlimit = None
 
-    if "cluster" in defaults:
-        svc.clustername = defaults["cluster"]
+    try:
+        svc.clustername = conf_get_string_scope(svc, conf, 'DEFAULT', "cluster")
+    except ex.OptNotFound:
+        pass
 
     #
     # docker options
