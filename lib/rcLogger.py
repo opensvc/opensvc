@@ -77,7 +77,7 @@ def set_namelen(svcs):
 
     maxlen = min_name_len
     for svc in svcs:
-        if svc.is_disabled():
+        if svc.disabled:
             continue
         for r in svc.resources_by_id.values():
             if r is None:

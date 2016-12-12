@@ -3598,6 +3598,11 @@ def build(name, minimal=False, svcconf=None):
     except ex.OptNotFound:
         svc.lock_timeout = 60
 
+    if conf.has_option('DEFAULT', 'disable'):
+        svc.disabled = conf.getboolean("DEFAULT", "disable")
+    else:
+        svc.disabled = False
+
     if minimal:
         return svc
 

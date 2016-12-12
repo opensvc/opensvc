@@ -239,7 +239,7 @@ status_types = [
 
 os.environ['LANG'] = 'C'
 
-class Svc(Resource, Scheduler):
+class Svc(Scheduler):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
     type
@@ -291,8 +291,6 @@ class Svc(Resource, Scheduler):
             push_flag=os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config'),
             run_flag=os.path.join(os.sep, "var", "run", "opensvc."+svcname),
         )
-        Resource.__init__(self, type=type, optional=optional,
-                          disabled=disabled, tags=tags)
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
 
         self.ref_cache = {}
@@ -309,6 +307,7 @@ class Svc(Resource, Scheduler):
         self.monitor_action = None
         self.group_status_cache = None
         self.abort_start_done = False
+        self.disabled = False
 
     @lazy
     def freezer(self):
