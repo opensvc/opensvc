@@ -312,10 +312,16 @@ class Svc(Scheduler):
 
     @lazy
     def freezer(self):
+        """
+        Lazy allocator for the freezer object.
+        """
         return Freezer(self.svcname)
 
     @lazy
     def scheduler_actions(self):
+        """
+        Define the non-resource dependent scheduler tasks.
+        """
         return {
             "compliance_auto": SchedOpts(
                 "DEFAULT",
@@ -330,11 +336,15 @@ class Svc(Scheduler):
         }
 
     def __lt__(self, other):
-        """order by service name
+        """
+        Order by service name
         """
         return self.svcname < other.svcname
 
     def scheduler(self):
+        """
+        The service scheduler action entrypoint.
+        """
         self.cron = True
         self.sync_dblogger = True
         if not self.has_run_flag():
@@ -354,6 +364,10 @@ class Svc(Scheduler):
                 self.save_exc()
 
     def post_build(self):
+        """
+        A method run after the service is done building.
+        Add resource-dependent tasks to the scheduler.
+        """
         if not self.encap:
             self.scheduler_actions["push_config"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_config", schedule_option="push_schedule")
 
@@ -372,10 +386,17 @@ class Svc(Scheduler):
         self.scheduler_actions["push_resinfo"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_resinfo", schedule_option="resinfo_schedule")
 
     def purge_status_last(self):
+        """
+        Purge all service resources on-disk status caches.
+        """
         for rset in self.resSets:
             rset.purge_status_last()
 
     def get_subset_parallel(self, rtype):
+        """
+        Return True if the resources of a resourceset can run an action in
+        parallel executing per-resource workers.
+        """
         rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
         if not hasattr(self, "config"):
@@ -441,6 +462,10 @@ class Svc(Scheduler):
         return self
 
     def dblogger(self, action, begin, end, actionlogfile):
+        """
+        Send to the collector the service status after an action, and
+        the action log.
+        """
         self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=self.sync_dblogger)
         g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
         self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=self.sync_dblogger)
@@ -451,6 +476,9 @@ class Svc(Scheduler):
             pass
 
     def svclock(self, action=None, timeout=30, delay=5):
+        """
+        Acquire the service action lock.
+        """
         suffix = None
         if action in actions_no_lock:
             # no need to serialize this action
@@ -493,110 +521,132 @@ class Svc(Scheduler):
             self.lockfd = lockfd
 
     def svcunlock(self):
+        """
+        Release the service action lock.
+        """
         lock.unlock(self.lockfd)
         self.lockfd = None
 
     def setup_signal_handlers(self):
+        """
+        Install signal handlers.
+        """
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
     def get_resources(self, _type=None, strict=False, discard_disabled=True):
-         if _type is None:
-             rsets = self.resSets
-         else:
-             rsets = self.get_res_sets(_type, strict=strict)
+        """
+        Return the list of resources matching criteria.
+        """
+        if _type is None:
+            rsets = self.resSets
+        else:
+            rsets = self.get_res_sets(_type, strict=strict)
 
-         resources = []
-         for rs in rsets:
-             for r in rs.resources:
-                 if not self.encap and 'encap' in r.tags:
-                     continue
-                 if discard_disabled and r.disabled:
-                     continue
-                 resources.append(r)
-         return resources
+        resources = []
+        for rs in rsets:
+            for r in rs.resources:
+                if not self.encap and 'encap' in r.tags:
+                    continue
+                if discard_disabled and r.disabled:
+                    continue
+                resources.append(r)
+        return resources
 
     def get_res_sets(self, _type, strict=False):
-         if not isinstance(_type, list):
-             l = [_type]
-         else:
-             l = _type
-         rsets = {}
-         for rs in self.resSets:
-             if ':' in rs.type and rs.has_resource_with_types(l, strict=strict):
-                 # subset
-                 rsets[rs.type] = rs
-                 continue
-             rs_base_type = rs.type.split(".")[0]
-             if rs.type in l:
-                 # exact match
-                 if rs_base_type not in rsets:
-                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
-                     rsets[rs_base_type].svc = self
-                 rsets[rs_base_type] += rs
-             elif rs_base_type in l and not strict:
-                 # group match
-                 if rs_base_type not in rsets:
-                     rsets[rs_base_type] = type(rs)(type=rs_base_type)
-                     rsets[rs_base_type].svc = self
-                 rsets[rs_base_type] += rs
-         rsets = list(rsets.values())
-         rsets.sort()
-         return rsets
+        """
+        Return the list of resourceset matching the specified type.
+        """
+        if not isinstance(_type, list):
+            l = [_type]
+        else:
+            l = _type
+        rsets = {}
+        for rs in self.resSets:
+            if ':' in rs.type and rs.has_resource_with_types(l, strict=strict):
+                # subset
+                rsets[rs.type] = rs
+                continue
+            rs_base_type = rs.type.split(".")[0]
+            if rs.type in l:
+                # exact match
+                if rs_base_type not in rsets:
+                    rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                    rsets[rs_base_type].svc = self
+                rsets[rs_base_type] += rs
+            elif rs_base_type in l and not strict:
+                # group match
+                if rs_base_type not in rsets:
+                    rsets[rs_base_type] = type(rs)(type=rs_base_type)
+                    rsets[rs_base_type].svc = self
+                rsets[rs_base_type] += rs
+        rsets = list(rsets.values())
+        rsets.sort()
+        return rsets
 
-    def has_res_set(self, type, strict=False):
-        if len(self.get_res_sets(type, strict=strict)) > 0:
+    def has_res_set(self, _type, strict=False):
+        """
+        Return True if the service has a resource set of the specified type.
+        """
+        if len(self.get_res_sets(_type, strict=strict)) > 0:
             return True
         else:
             return False
 
     def all_set_action(self, action=None, tags=set([])):
+        """
+        Execute an action on all resources all resource sets.
+        """
         self.set_action(self.resSets, action=action, tags=tags)
 
     def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
-        """ Call action on each member of the subset of specified type
+        """
+        Execute an action on all resources of the resource sets of the
+        specified type.
         """
         self.set_action(self.get_res_sets(type, strict=strict), action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, sets, action):
+        """
+        Return True if the action is a sync action and at least one of the
+        specified resource sets has a resource requiring a snapshot.
+        """
         if action not in ["sync_nodes", "sync_drp", "sync_resync", "sync_update"]:
             return False
         for rs in sets:
             for r in rs.resources:
-                """ avoid to run pre/post snap triggers when there is no
-                    resource flagged for snap and on drpnodes
-                """
+                # avoid to run pre/post snap triggers when there is no
+                # resource flagged for snap and on drpnodes
                 if hasattr(r, "snap") and r.snap is True and \
                    rcEnv.nodename in self.nodes:
                     return True
         return False
 
     def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
-        """ TODO: r.is_optional() not doing what's expected if r is a rset
+        """
+        TODO: r.is_optional() not doing what's expected if r is a rset
         """
         ns = self.need_snap_trigger(sets, action)
 
-        """ snapshots are created in pre_action and destroyed in post_action
-            place presnap and postsnap triggers around pre_action
-        """
+        # snapshots are created in pre_action and destroyed in post_action
+        # place presnap and postsnap triggers around pre_action
         if ns and self.presnap_trigger is not None:
             (ret, out, err) = self.vcall(self.presnap_trigger)
             if ret != 0:
                 raise ex.excError
 
-        """ Multiple resourcesets of the same type need to be sorted
-            so that the start and stop action happen in a predictible order.
-            Sort alphanumerically on reseourceset type.
-
-            Example, on start:
-             app
-             app.1
-             app.2
-            on stop:
-             app.2
-             app.1
-             app
-        """
+        # Multiple resourcesets of the same type need to be sorted
+        # so that the start and stop action happen in a predictible order.
+        # Sort alphanumerically on reseourceset type.
+        #
+        #  Example, on start:
+        #   app
+        #   app.1
+        #   app.2
+        #  on stop:
+        #   app.2
+        #   app.1
+        #   app
         if "stop" in action or action in ("rollback", "shutdown", "unprovision"):
             reverse = True
         else:
@@ -640,7 +690,6 @@ class Svc(Scheduler):
                 self.save_exc()
                 raise ex.excError
 
-
     def __str__(self):
         output="Service %s available resources:" % (Resource.__str__(self))
         for k in self.type2resSets.keys() : output += " %s" % k
@@ -649,7 +698,8 @@ class Svc(Scheduler):
         return output
 
     def status(self):
-        """aggregate status a service
+        """
+        Return the aggregate status a service.
         """
         ss = rcStatus.Status()
         for r in self.get_res_sets(status_types, strict=True):
@@ -674,6 +724,10 @@ class Svc(Scheduler):
         return ss.status
 
     def print_status_data(self):
+        """
+        Return a structure containing hierarchical status of
+        the service.
+        """
         d = {
             "resources": {},
             "frozen": self.frozen(),
@@ -708,9 +762,17 @@ class Svc(Scheduler):
         return d
 
     def env_section_keys_evaluated(self):
+        """
+        Return the dict of key/val pairs in the [env] section of the
+        service configuration, after dereferencing.
+        """
         return self.env_section_keys(evaluate=True)
 
     def env_section_keys(self, evaluate=False):
+        """
+        Return the dict of key/val pairs in the [env] section of the
+        service configuration, without dereferencing.
+        """
         config = self.print_config_data()
         try:
             from collections import OrderedDict
@@ -758,6 +820,9 @@ class Svc(Scheduler):
         return svc_config
 
     def logs(self):
+        """
+        Extract and display the service logs, honoring --color and --debug
+        """
         if not os.path.exists(rcEnv.logfile):
             return
         from rcColor import color, colorize
@@ -805,6 +870,9 @@ class Svc(Scheduler):
                 pass
 
     def print_resource_status(self):
+        """
+        Print a single resource status string.
+        """
         if len(self.action_rid) != 1:
             print("action 'print_resource_status' is not allowed on mutiple resources", file=sys.stderr)
             return 1
@@ -817,10 +885,12 @@ class Svc(Scheduler):
         return 0
 
     def print_status(self):
+        """
+        Display in human-readable format the hierarchical service status.
+        """
         if self.options.format is not None:
             return self.print_status_data()
-        """print() each resource status for a service
-        """
+
         from textwrap import wrap
         from rcUtilities import term_width
         from rcColor import color, colorize
@@ -956,6 +1026,10 @@ class Svc(Scheduler):
                     print_res(e, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):
+        """
+        Return the list of resource status in a format adequate for
+        collector feeding.
+        """
         if status is None:
             status = self.group_status()
 
@@ -1105,6 +1179,10 @@ class Svc(Scheduler):
         return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups):
+        """
+        Return the aggregated status of all resources of the specified resource
+        sets.
+        """
         self.setup_environ()
         rset_status = {}
         for t in status_types:
@@ -1119,12 +1197,20 @@ class Svc(Scheduler):
         return rset_status
 
     def resource_monitor(self):
+        """
+        The resource monitor action entrypoint
+        """
         if self.skip_action("resource_monitor"):
             return
         self.task_resource_monitor()
 
     @scheduler_fork
     def task_resource_monitor(self):
+        """
+        The resource monitor action.
+        Trigger the service defined monitor_action if the hb resource is up
+        but a monitored resource is down and not restartable.
+        """
         self.options.refresh = True
         if self.group_status_cache is None:
             self.group_status(excluded_groups=set(['sync']))
@@ -1191,15 +1277,28 @@ class Svc(Scheduler):
             self.log.debug("monitored resources are up (%s)" % rids)
 
     class exMonitorAction(Exception):
+        """
+        A class dedicated to propagate up the stack a need to run the
+        resource_monitor action.
+        """
         pass
 
     def reboot(self):
+        """
+        A method wrapper the node reboot method.
+        """
         self.node.system._reboot()
 
     def crash(self):
+        """
+        A method wrapper the node crash method.
+        """
         self.node.system.crash()
 
     def pg_freeze(self):
+        """
+        Freeze all process of the process groups of the service.
+        """
         if self.command_is_scoped():
             self.sub_set_action('app', '_pg_freeze')
             self.sub_set_action('container', '_pg_freeze')
@@ -1209,6 +1308,9 @@ class Svc(Scheduler):
                 r.status(refresh=True, restart=False)
 
     def pg_thaw(self):
+        """
+        Thaw all process of the process groups of the service.
+        """
         if self.command_is_scoped():
             self.sub_set_action('app', '_pg_thaw')
             self.sub_set_action('container', '_pg_thaw')
@@ -1218,6 +1320,9 @@ class Svc(Scheduler):
                 r.status(refresh=True, restart=False)
 
     def pg_kill(self):
+        """
+        Kill all process of the process groups of the service.
+        """
         if self.command_is_scoped():
             self.sub_set_action('app', '_pg_kill')
             self.sub_set_action('container', '_pg_kill')
@@ -1234,10 +1339,19 @@ class Svc(Scheduler):
         self.sub_set_action('stonith.callout', 'start')
 
     def toc(self):
+        """
+        Call the resource monitor action.
+        """
         self.log.info("start monitor action '%s'"%self.monitor_action)
         getattr(self, self.monitor_action)()
 
     def encap_cmd(self, cmd, verbose=False, error="raise"):
+        """
+        Execute a command in all service containers.
+        If error is set to "raise", stop iterating at first error.
+        If error is set to "continue", log errors and proceed to the next
+        container.
+        """
         for container in self.get_resources('container'):
             try:
                 out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
@@ -1249,6 +1363,9 @@ class Svc(Scheduler):
                     self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
 
     def _encap_cmd(self, cmd, container, verbose=False):
+        """
+        Execute a command in a service container.
+        """
         if container.pg_frozen():
             raise ex.excError("can't join a frozen container. abort encap command.")
         vmhostname = container.vm_hostname()
@@ -3056,6 +3173,12 @@ class Svc(Scheduler):
             self.log.error("rollback %s failed"%action)
 
     def do_logged_action(self, action, waitlock=60):
+        """
+        Setup action logging to a machine-readable temp logfile, in preparation
+        to the collector feeding.
+        Do the action.
+        Finally, feed the log to the collector.
+        """
         from datetime import datetime
         import tempfile
         import logging
