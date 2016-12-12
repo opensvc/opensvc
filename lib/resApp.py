@@ -9,7 +9,8 @@ import stat
 
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
-import resources as Res
+from resources import Resource
+from resourceset import ResourceSet
 import rcStatus
 import rcExceptions as ex
 
@@ -53,7 +54,7 @@ class StatusWARN(Exception):
 class StatusNA(Exception):
     pass
 
-class RsetApps(Res.ResourceSet):
+class RsetApps(ResourceSet):
     def __init__(self,
                  type=None,
                  resources=[],
@@ -61,7 +62,7 @@ class RsetApps(Res.ResourceSet):
                  optional=False,
                  disabled=False,
                  tags=set([])):
-        Res.ResourceSet.__init__(self,
+        ResourceSet.__init__(self,
                                  type=type,
                                  resources=resources,
                                  optional=optional,
@@ -76,7 +77,7 @@ class RsetApps(Res.ResourceSet):
             self.resources = self.svc.type2resSets["app"].resources
 
         try:
-            Res.ResourceSet.action(self, action, tags=tags, xtags=xtags)
+            ResourceSet.action(self, action, tags=tags, xtags=xtags)
         except Exception as e:
             if action in ("stop", "shutdown", "rollback"):
                 self.log.info("there were errors during app stop. please check the quality of the scripts. continuing anyway.")
@@ -94,7 +95,7 @@ class RsetApps(Res.ResourceSet):
         return resources
 
 
-class App(Res.Resource):
+class App(Resource):
     def __init__(self, rid=None,
                  script=None,
                  start=None,
@@ -113,7 +114,7 @@ class App(Res.Resource):
         if script is None:
             raise ex.excInitError("script parameter must be defined in resource %s"%rid)
 
-        Res.Resource.__init__(self, rid, "app", optional=optional,
+        Resource.__init__(self, rid, "app", optional=optional,
                               subset=subset,
                               disabled=disabled, tags=tags,
                               monitor=monitor, restart=restart)

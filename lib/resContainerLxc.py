@@ -287,6 +287,8 @@ class Lxc(resContainer.Container):
         return True
 
     def install_cf(self):
+        if self.cf is None:
+            return
         cf = self.get_cf_path()
         if cf is None:
             self.log.debug("could not determine the config file standard hosting directory")

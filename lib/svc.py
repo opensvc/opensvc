@@ -1,5 +1,6 @@
 from __future__ import print_function
-from resources import Resource, ResourceSet
+from resources import Resource
+from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
