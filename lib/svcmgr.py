@@ -58,12 +58,10 @@ def get_minimal(action, options):
     if action == "edit_config":
         return True
     if action == "delete":
-       if not options.unprovision:
-           return True
-       elif not options.parm_rid and \
-            not options.parm_tags and \
-            not options.parm_subsets:
-           return True
+        if options.unprovision:
+            return False
+        else:
+            return True
     if action.startswith("print_config"):
         return True
     if action.startswith("json_config"):
@@ -118,7 +116,7 @@ def set_svcs_options(node, options, docker_argv):
         slave = None
 
     for svc in node.svcs:
-        svc.options = options
+        svc.options.update(options.__dict__)
         svc.force = options.force
         svc.remote = options.remote
         svc.cron = options.cron
@@ -172,7 +170,8 @@ def do_svcs_action(node, options, action):
 
     if not options.daemon and ( \
         action.startswith("stop") or \
-        action in ("shutdown", "unprovision", "switch") \
+        action in ("shutdown", "unprovision", "switch") or \
+        (action == "delete" and options.unprovision == True)
        ):
         ret = do_svcs_action_detached()
     else:
