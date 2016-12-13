@@ -183,7 +183,6 @@ class OptParser(object):
                 continue
             self.parser.add_option(option)
 
-
     def set_full_usage(self):
         """
         Setup for display of all actions and options.
@@ -195,7 +194,8 @@ class OptParser(object):
 
     def parse_args(self):
         """
-        Setup an optparse parser and parse
+        Parse system's argv, validate options compatibility with the action
+        and return options and action
         """
         self.args = sys.argv[1:]
 
@@ -221,14 +221,14 @@ class OptParser(object):
             add_help_option=False,
         )
 
+        action_options = []
         for section_data in self.actions.values():
             if action not in section_data:
                 continue
-            for option in section_data[action].get("options", []):
-                if self.svclink() and option in self.svcmgr_options:
-                    continue
-                parser.add_option(option)
-        for option in self.global_options:
+            action_options = section_data[action].get("options", [])
+        for option in action_options + self.global_options:
+            if self.svclink() and option in self.svcmgr_options:
+                continue
             parser.add_option(option)
         options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
         return options, action

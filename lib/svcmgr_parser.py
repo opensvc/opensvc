@@ -302,7 +302,7 @@ SVCMGR_OPTS = [
     OPT.status,
 ]
 
-GLOBAL_OPTS = [
+GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cluster,
     OPT.color,
     OPT.cron,
@@ -313,7 +313,7 @@ GLOBAL_OPTS = [
     OPT.help,
 ]
 
-ACTION_OPTS = SVCMGR_OPTS + [
+ACTION_OPTS = [
     OPT.dry_run,
     OPT.force,
     OPT.master,
