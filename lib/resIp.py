@@ -309,7 +309,7 @@ class Ip(Res.Resource):
         }
 
         if dns_record_name:
-            data["name"] = dns_record_name
+            post_data["name"] = dns_record_name
 
         try:
             data = self.svc.node.collector_rest_post(
