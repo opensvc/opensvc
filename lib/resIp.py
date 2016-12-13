@@ -40,10 +40,16 @@ class Ip(Res.Resource):
         self.gateway = gateway
 
     def info(self):
+        try:
+            self.getaddr()
+        except ex.excError:
+            pass
+        from rcUtilities import to_cidr
         data = [
+          ["ipaddr", self.addr],
           ["ipname", self.ipName],
           ["ipdev", self.ipDev],
-          ["mask", str(self.mask)],
+          ["mask", str(to_cidr(self.mask))],
           ["gateway", str(self.gateway)],
         ]
         return self.fmt_info(data)
