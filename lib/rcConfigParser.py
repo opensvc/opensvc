@@ -14,7 +14,7 @@ if sys.version_info[0] < 3:
         def write(self, fp):
             """Write an .ini-format representation of the configuration state."""
             if self._defaults:
-                fp.write("[%s]\n" % DEFAULTSECT)
+                fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
                 for (key, value) in self._defaults.items():
                     if type(value) != unicode:
                         value = value.decode(sys.stdin.encoding)
