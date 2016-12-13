@@ -87,7 +87,6 @@ class Node(Scheduler):
         return self.nodename
 
     def __init__(self):
-        self.collector_api_cache = None
         self.ex_monitor_action_exit_code = 251
         self.config = None
         self.auth_config = None
@@ -2088,11 +2087,11 @@ class Node(Scheduler):
         data = {}
 
         if os.getuid() == 0:
-            if not hasattr(self.options, "user") or self.options.user is None:
+            if self.options.user is None:
                 user, password = self.collector_auth_node()
                 data["user"] = user
                 data["password"] = password
-            if not hasattr(self.options, "api") or self.options.api is None:
+            if self.options.api is None:
                 data["api"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         from rcCollectorCli import Cli
         cli = Cli(**data)
@@ -2103,10 +2102,8 @@ class Node(Scheduler):
         Prepare the authentication info, either as node or as user.
         Fetch and cache the collector's exposed rest api metadata.
         """
-        if self.collector_api_cache is not None:
-            return self.collector_api_cache
         data = {}
-        if not hasattr(self.options, "user") or self.options.user is None:
+        if self.options.user is None:
             username, password = self.collector_auth_node()
             if svcname:
                 username = svcname+"@"+username
@@ -2115,8 +2112,7 @@ class Node(Scheduler):
         data["username"] = username
         data["password"] = password
         data["url"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
-        self.collector_api_cache = data
-        return self.collector_api_cache
+        return data
 
     def collector_auth_node(self):
         """
@@ -2210,7 +2206,7 @@ class Node(Scheduler):
         Make a request to the collector's rest api
         """
         api = self.collector_api(svcname=svcname)
-        request = self.collector_request(path)
+        request = self.collector_request(path, svcname=svcname)
         if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         if data:
