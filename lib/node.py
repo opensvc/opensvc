@@ -2226,7 +2226,7 @@ class Node(Scheduler):
             try:
                 err = json.loads(exc.read())["error"]
                 exc = ex.excError(err)
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
             raise exc
         data = json.loads(ufile.read().decode("utf-8"))
