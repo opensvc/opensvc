@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-12\-12
+.TH SVCMGR 1 2016\-12\-13
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -414,6 +414,40 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
+
+.RE
+\fBsvcmgr dns update\fP
+.RS
+
+update the collector dns records for the service
+
+.TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 
 .RE
 \fBsvcmgr docker\fP

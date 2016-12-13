@@ -92,6 +92,7 @@ actions_allow_on_frozen = [
 actions_allow_on_cluster = actions_allow_on_frozen + [
     "boot",
     "docker",
+    "dns_update",
     "postsync",
     "presync",
     "resource_monitor",
@@ -123,6 +124,7 @@ actions_no_log = [
 
 actions_no_trigger = [
     "delete",
+    "dns_update",
     "enable",
     "disable",
     "status",
@@ -2342,6 +2344,12 @@ class Svc(Scheduler):
                 self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
                 raise
 
+    def dns_update(self):
+        """
+        Call the dns update method of each resource.
+        """
+        self.all_set_action("dns_update")
+
     def postsync(self):
         """ action triggered by a remote master node after
             sync_nodes and sync_drp. Typically make use of files
@@ -3804,6 +3812,13 @@ class Svc(Scheduler):
         except (IOError, OSError) as exc:
             self.log.error("failed to create %s: %s",
                            self.paths.run_flag, str(exc))
+
+    def save_exc(self):
+        """
+        A helper method to save stacks in the service log.
+        """
+        self.log.error("unexpected error. stack saved in the service debug log")
+        self.log.debug("", exc_info=True)
 
 if __name__ == "__main__" :
     for c in (Svc,) :

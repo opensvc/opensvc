@@ -338,6 +338,10 @@ ACTIONS = {
                    'startstandby if not',
             'options': ACTION_OPTS,
         },
+        'dns_update': {
+            'msg': 'update the collector dns records for the service',
+            'options': ACTION_OPTS,
+        },
         'shutdown': {
             'msg': 'stop a service, disabling the background database logging',
             'options': ACTION_OPTS,

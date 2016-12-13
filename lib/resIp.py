@@ -271,6 +271,60 @@ class Ip(Res.Resource):
         if arp_announce:
             self.arp_announce()
 
+        try:
+            self.dns_update()
+        except ex.excError as exc:
+            self.log.error(str(exc))
+
+    def dns_update(self):
+        """
+        Post a dns update request to the collector.
+        """
+        from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
+
+        try:
+            dns_update = conf_get_boolean_scope(self.svc, self.svc.config, self.rid, "dns_update")
+        except ex.OptNotFound:
+            self.log.debug("skip dns update: dns_update is not set")
+            return
+
+        if not self.is_up():
+            self.log.debug("skip dns update: resource is not up")
+            return
+
+        try:
+            dns_record_name = conf_get_string_scope(self.svc, self.svc.config, self.rid, "dns_record_name")
+        except ex.OptNotFound:
+            dns_record_name = None
+            self.log.debug("dns update: dns_record_name is not set")
+
+        try:
+            self.getaddr()
+        except ex.excError as exc:
+            self.log.error(str(exc))
+            return
+
+        post_data = {
+            "content": self.addr,
+        }
+
+        if dns_record_name:
+            data["name"] = dns_record_name
+
+        try:
+            data = self.svc.node.collector_rest_post(
+                "/dns/services/records",
+                post_data,
+                svcname=self.svc.svcname,
+            )
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+
+        self.log.info("dns updated")
+
+
     def stop(self):
         self.getaddr(cache_fallback=True)
         if self.is_up() is False:

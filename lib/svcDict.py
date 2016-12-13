@@ -2109,6 +2109,32 @@ class KeywordIpIpname(Keyword):
                   text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
                 )
 
+class KeywordIpDnsRecordName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="dns_record_name",
+                  order=12,
+                  at=True,
+                  required=False,
+                  text="Add the value as a prefix to the DNS record name. The record created is thus formatted as <dns_record_name>.<svcname>.<app>.<managed zone>."
+                )
+
+class KeywordIpDnsUpdate(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="dns_update",
+                  order=12,
+                  at=True,
+                  default=False,
+                  required=False,
+                  candidates=[True, False],
+                  text="Setting this parameter triggers a DNS update. The record created is formatted as <svcname>.<app>.<managed zone>, unless dns_record_name is specified."
+                )
+
 class KeywordIpZone(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4153,6 +4179,8 @@ class KeyDict(KeywordStore):
         self += KeywordIpDelNetRoute()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
+        self += KeywordIpDnsUpdate()
+        self += KeywordIpDnsRecordName()
         self += KeywordIpZone()
         self += KeywordIpDockerContainerRid()
         self += KeywordIpAmazonEip()

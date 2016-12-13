@@ -923,3 +923,8 @@ class Resource(object):
                               "current state %s" % \
                               (rid, " or ".join(states), current_state))
 
+    def dns_update(self):
+        """
+        Placeholder for resource specific implementation of the dns update.
+        """
+        pass
