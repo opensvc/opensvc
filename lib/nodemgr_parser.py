@@ -585,6 +585,7 @@ ACTIONS = {
                 OPT.api,
                 OPT.insecure,
                 OPT.config,
+                OPT.refresh_api,
             ],
         },
         'collector_events': {
