@@ -26,7 +26,11 @@ class ProvisioningDisk(Provisioning):
         """
         dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
-            dev = label_to_dev(dev)
+            _dev = label_to_dev(dev)
+            if _dev is None:
+                self.r.log.info("unable to find device identified by %s", dev)
+                return
+            dev = _dev
         vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
         if dev.startswith('/dev/mapper/'):
             dev = dev.replace(vg.replace('-', '--')+'-', '')
@@ -43,6 +47,8 @@ class ProvisioningDisk(Provisioning):
             return
 
         dev = self.get_dev()
+        if dev is None:
+            return
         cmd = ["lvchange", "-a", "y", dev]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
@@ -60,6 +66,8 @@ class ProvisioningDisk(Provisioning):
             return
 
         dev = self.get_dev()
+        if dev is None:
+            return
         cmd = ["lvdisplay", dev]
         out, err, ret = justcall(cmd)
         if ret != 0:
