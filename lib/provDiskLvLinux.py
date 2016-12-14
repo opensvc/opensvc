@@ -1,5 +1,6 @@
 from provisioning import Provisioning
 from rcUtilities import justcall, which, convert_size
+from rcUtilitiesLinux import label_to_dev
 from rcGlobalEnv import rcEnv
 from svcBuilder import conf_get_string_scope
 from subprocess import *
@@ -24,6 +25,8 @@ class ProvisioningDisk(Provisioning):
         Return the device path in the /dev/<vg>/<lv> format
         """
         dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        if dev.startswith("LABEL=") or dev.startswith("UUID="):
+            dev = label_to_dev(dev)
         vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
         if dev.startswith('/dev/mapper/'):
             dev = dev.replace(vg.replace('-', '--')+'-', '')

@@ -3,12 +3,23 @@ import tempfile
 import os
 import time
 import rcExceptions as ex
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, lazy
 from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(provFs.ProvisioningFs):
-    mkfs = ['mkfs.btrfs', '-f']
     info = ['btrfs', 'device', 'ready']
+
+    @lazy
+    def mkfs(self):
+        return ['mkfs.btrfs', '-f', '-L', self.label]
+
+    @lazy
+    def raw_label(self):
+        return '{svcname}.' + self.r.rid.replace("#", ".")
+
+    @lazy
+    def label(self):
+        return self.r.svc.svcname + '.' + self.r.rid.replace("#", ".")
 
     def get_subvol(self):
         l = self.r.mntOpt.split(",")
@@ -23,35 +34,17 @@ class ProvisioningFs(provFs.ProvisioningFs):
         self.r.vcall(cmd)
         os.removedirs(mnt)
 
-    def label(self, mnt):
-        cmd = ["btrfs", "filesystem", "label", mnt]
-        ret, out, err = self.r.call(cmd, errlog=False)
-        if ret == 0 and len(out.strip()) > 0:
-            label = out.strip()
-            raw_label = out.strip().replace(self.r.svc.svcname, "{svcname}")
-            relabel = False
-        else:
-            label = self.r.svc.svcname + '.' + self.r.rid.replace("#", ".")
-            raw_label = '{svcname}.' + self.r.rid.replace("#", ".")
-            relabel = True
-
-        if relabel:
-            cmd = ["btrfs", "filesystem", "label", mnt, label]
-            ret, out, err = self.r.vcall(cmd)
-            if ret != 0:
-                self.cleanup(mnt)
-                raise ex.excError
-
-        self.r.svc.config.set(self.r.rid, "dev", "LABEL="+raw_label)
+    def write_label(self):
+        self.r.svc.config.set(self.r.rid, "dev", "LABEL="+self.raw_label)
         self.r.svc.write_config()
-        self.r.device = "LABEL="+label
-        self.wait_label(label)
+        self.r.device = "LABEL="+self.label
+        self.wait_label()
 
-    def wait_label(self, label):
+    def wait_label(self):
         if which("findfs") is None:
             self.r.log.info("findfs program not found, wait arbitrary 20 seconds for label to be usable")
             time.sleep(20)
-        cmd = ["findfs", "LABEL="+label]
+        cmd = ["findfs", "LABEL="+self.label]
         for i in range(20):
             out, err, ret = justcall(cmd)
             self.r.log.debug("%s\n%s\n%s" % (" ".join(cmd), out, err))
@@ -74,7 +67,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
         mnt = tempfile.mkdtemp()
 
         self.mount(mnt)
-        self.label(mnt)
+        self.write_label()
 
         # create subvol
         path = os.path.join(mnt, subvol)
