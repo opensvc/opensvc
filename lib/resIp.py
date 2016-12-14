@@ -220,6 +220,9 @@ class Ip(Res.Resource):
         return rcIfconfig.ifconfig()
 
     def start(self):
+        if self.ipName is None:
+            self.log.warning("skip start: no ipname set")
+            return
         self.getaddr()
         try:
             self.allow_start()
@@ -339,6 +342,9 @@ class Ip(Res.Resource):
 
 
     def stop(self):
+        if self.ipName is None:
+            self.log.warning("skip stop: no ipname set")
+            return
         self.getaddr(cache_fallback=True)
         if self.is_up() is False:
             self.log.info("%s is already down on %s" % (self.addr, self.ipDev))
