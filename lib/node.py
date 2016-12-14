@@ -2209,7 +2209,7 @@ class Node(Scheduler):
         request = self.collector_request(path, svcname=svcname)
         if not api["url"].startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
-        if data:
+        if data is not None:
             try:
                 request.add_data(urlencode(data))
             except AttributeError:
