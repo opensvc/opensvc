@@ -3325,6 +3325,14 @@ class Svc(Scheduler):
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         section, option = l
+        try:
+            self._unset(section, option)
+            return 0
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+
+    def _unset(self, section, option):
         section = "[%s]" % section
         lines = self._read_cf().splitlines()
 
@@ -3348,21 +3356,17 @@ class Svc(Scheduler):
                         del(lines[i])
 
         if not in_section:
-            print("section %s not found"%section, file=sys.stderr)
-            return 1
+            raise ex.excError("section %s not found" % section)
 
         if not need_write:
-            print("option '%s' not found in section %s"%(option, section), file=sys.stderr)
-            return 1
+            raise ex.excError("option '%s' not found in section %s" % (option, section))
 
         buff = "\n".join(lines)
 
         try:
             self._write_cf(buff)
         except (IOError, OSError) as exc:
-            self.log.error(str(exc))
-            return 1
-        return 0
+            raise ex.excError(str(exc))
 
     def get(self):
         self.load_config()
@@ -3403,7 +3407,12 @@ class Svc(Scheduler):
         elif len(l) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
-        return self._set(l[0], l[1], self.options.value)
+        try:
+            self._set(l[0], l[1], self.options.value)
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+        return 0
 
     def setenv(self, l, interactive=False):
         explicit_options = []
@@ -3466,7 +3475,7 @@ class Svc(Scheduler):
                             continue
                         _value += " %s" % lines[j].strip()
                     if value.replace("\n", " ") == _value:
-                        return 0
+                        return
                     lines[i] = "%s = %s" % (option, value)
                     j = i
                     while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("[") and lines[j+1].strip() != "":
@@ -3487,9 +3496,7 @@ class Svc(Scheduler):
         try:
             self._write_cf(buff)
         except (IOError, OSError) as exc:
-            self.log.error(str(exc))
-            return 1
-        return 0
+            raise ex.excError(str(exc))
 
     def set_disable(self, rids=[], disable=True):
         if not self.command_is_scoped() and (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
