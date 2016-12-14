@@ -2105,20 +2105,33 @@ class KeywordIpIpname(Keyword):
                   keyword="ipname",
                   order=12,
                   at=True,
-                  required=True,
-                  text="The DNS name of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
+                  required=False,
+                  text="The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
                 )
 
-class KeywordIpDnsRecordName(Keyword):
+class KeywordIpDnsNameSuffix(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="ip",
-                  keyword="dns_record_name",
+                  keyword="dns_name_suffix",
                   order=12,
                   at=True,
                   required=False,
-                  text="Add the value as a prefix to the DNS record name. The record created is thus formatted as <dns_record_name>.<svcname>.<app>.<managed zone>."
+                  text="Add the value as a suffix to the DNS record name. The record created is thus formatted as <svcname>-<dns_name_suffix>.<app>.<managed zone>."
+                )
+
+class KeywordIpNetwork(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="network",
+                  order=12,
+                  at=True,
+                  required=False,
+                  example="10.0.0.0",
+                  text="The network, in dotted notation, from where the ip provisioner allocates. Also used by the docker ip driver to delete the network route if del_net_route is set to true.",
                 )
 
 class KeywordIpDnsUpdate(Keyword):
@@ -2414,20 +2427,6 @@ class KeywordIpIpdevext(Keyword):
                   required=False,
                   example="v4",
                   text="The interface name extension for crossbow ipadm configuration."
-                )
-
-class KeywordIpNetwork(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="ip",
-                  rtype="docker",
-                  keyword="network",
-                  order=12,
-                  at=True,
-                  required=False,
-                  example="10.0.0.0",
-                  text="The network base address. Used to delete the network route if del_net_route is set to true."
                 )
 
 class KeywordIpDelNetRoute(Keyword):
@@ -4175,12 +4174,12 @@ class KeyDict(KeywordStore):
         self += KeywordIpIpname()
         self += KeywordIpIpdev()
         self += KeywordIpIpdevext()
-        self += KeywordIpNetwork()
         self += KeywordIpDelNetRoute()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
         self += KeywordIpDnsUpdate()
-        self += KeywordIpDnsRecordName()
+        self += KeywordIpDnsNameSuffix()
+        self += KeywordIpNetwork()
         self += KeywordIpZone()
         self += KeywordIpDockerContainerRid()
         self += KeywordIpAmazonEip()

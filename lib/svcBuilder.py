@@ -568,7 +568,7 @@ def add_ip_gce(svc, conf, s):
     try:
         kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
     except ex.OptNotFound:
-        svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
+        svc.log.error("ipname must be defined in config file section %s" % s)
         return
 
     try:
@@ -667,8 +667,7 @@ def add_ip(svc, conf, s):
     try:
         kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
     except ex.OptNotFound:
-        svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
-        return
+        pass
 
     try:
         kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')

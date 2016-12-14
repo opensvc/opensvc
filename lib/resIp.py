@@ -36,10 +36,15 @@ class Ip(Res.Resource):
         self.ipDev = ipDev
         self.ipName = ipName
         self.mask = mask
-        self.label = ipName + '@' + ipDev
         self.gateway = gateway
+        self.set_label()
+
+    def set_label(self):
+        self.label = str(self.ipName) + '@' + self.ipDev
 
     def info(self):
+        if self.ipName is None:
+            return
         try:
             self.getaddr()
         except ex.excError:
@@ -55,6 +60,8 @@ class Ip(Res.Resource):
         return self.fmt_info(data)
 
     def getaddr(self, cache_fallback=False):
+        if self.ipName is None:
+            raise ex.excError("ip address is not allocated yet")
         if hasattr(self, 'addr'):
             return
         try:
@@ -293,10 +300,10 @@ class Ip(Res.Resource):
             return
 
         try:
-            dns_record_name = conf_get_string_scope(self.svc, self.svc.config, self.rid, "dns_record_name")
+            dns_name_suffix = conf_get_string_scope(self.svc, self.svc.config, self.rid, "dns_name_suffix")
         except ex.OptNotFound:
-            dns_record_name = None
-            self.log.debug("dns update: dns_record_name is not set")
+            dns_name_suffix = None
+            self.log.debug("dns update: dns_name_suffix is not set")
 
         try:
             self.getaddr()
@@ -308,8 +315,8 @@ class Ip(Res.Resource):
             "content": self.addr,
         }
 
-        if dns_record_name:
-            post_data["name"] = dns_record_name
+        if dns_name_suffix:
+            post_data["name"] = dns_name_suffix
 
         try:
             data = self.svc.node.collector_rest_post(
@@ -361,10 +368,69 @@ class Ip(Res.Resource):
             self.log.error("%s refuse to go down"%self.addr)
             raise ex.excError
 
+    def allocate(self):
+        """
+        Request an ip in the ipdev network from the collector.
+        """
+        from svcBuilder import conf_get_string_scope
+        import ipaddress
+
+        try:
+            ipname = conf_get_string_scope(self.svc, self.svc.config, self.rid, "ipname")
+            self.log.info("skip allocate: an ip is already defined")
+            return
+        except ex.OptNotFound:
+            pass
+
+        try:
+            # explicit network setting
+            network = conf_get_string_scope(self.svc, self.svc.config, self.rid, "network")
+        except ex.OptNotFound:
+            network = None
+
+        if network is None:
+            # implicit network: the network of the first ipdev ip
+            ifconfig = rcIfconfig.ifconfig()
+            intf = ifconfig.interface(self.ipDev)
+            if isinstance(intf.ipaddr, list):
+                baseaddr = intf.ipaddr[0]
+            else:
+                baseaddr = intf.ipaddr
+            network = str(ipaddress.IPv4Interface(baseaddr).network.network_address)
+
+        post_data = {
+            "network": network,
+        }
+
+        try:
+            post_data["name"] = conf_get_string_scope(self.svc, self.svc.config, self.rid, "dns_name_suffix")
+        except ex.OptNotFound:
+            self.log.debug("allocate: dns_name_suffix is not set")
+
+        try:
+            data = self.svc.node.collector_rest_post(
+                "/networks/%s/allocate" % network,
+                post_data,
+                svcname=self.svc.svcname,
+            )
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+
+        self.ipName = data["data"]["ip"]
+        self.addr = self.ipName
+        self.set_label()
+        self.svc._set(self.rid, "ipname", self.ipName)
+        self.log.info("ip %s allocated" % self.ipName)
+
+
     def provision(self):
-        m = __import__("provIp")
-        prov = m.ProvisioningIp(self)
-        prov.provisioner()
+        self.allocate()
+        self.start()
+
+    def unprovision(self):
+        self.stop()
 
 
 if __name__ == "__main__":
