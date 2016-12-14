@@ -291,6 +291,10 @@ class Ip(Res.Resource):
         """
         from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
 
+        if self.ipName is None:
+            self.log.debug("skip dns update: ipname is not set")
+            return
+
         try:
             dns_update = conf_get_boolean_scope(self.svc, self.svc.config, self.rid, "dns_update")
         except ex.OptNotFound:
@@ -420,11 +424,54 @@ class Ip(Res.Resource):
         if "error" in data:
             raise ex.excError(data["error"])
 
+        if "info" in data:
+            self.log.info(data["info"])
+
         self.ipName = data["data"]["ip"]
         self.addr = self.ipName
         self.set_label()
         self.svc._set(self.rid, "ipname", self.ipName)
         self.log.info("ip %s allocated" % self.ipName)
+
+    def release(self):
+        """
+        Release an allocated ip a collector managed network.
+        """
+        from svcBuilder import conf_get_string_scope
+
+        if self.ipName is None:
+            self.log.info("skip release: no ipname set")
+            return
+
+        try:
+            self.getaddr()
+        except ex.excError:
+            self.log.info("skip release: ipname does not resolve to an address")
+            return
+
+        post_data = {}
+
+        try:
+            post_data["name"] = conf_get_string_scope(self.svc, self.svc.config, self.rid, "dns_name_suffix")
+        except ex.OptNotFound:
+            self.log.debug("allocate: dns_name_suffix is not set")
+
+        try:
+            data = self.svc.node.collector_rest_post(
+                "/networks/%s/release" % self.addr,
+                post_data,
+                svcname=self.svc.svcname,
+            )
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+
+        if "info" in data:
+            self.log.info(data["info"])
+
+        self.svc._unset(self.rid, "ipname")
+        self.log.info("ip %s released" % self.ipName)
 
 
     def provision(self):
@@ -433,6 +480,7 @@ class Ip(Res.Resource):
 
     def unprovision(self):
         self.stop()
+        self.release()
 
 
 if __name__ == "__main__":
