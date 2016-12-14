@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
@@ -3314,7 +3315,6 @@ class Svc(Scheduler):
         self.config.read(self.paths.cf)
 
     def unset(self):
-        self.load_config()
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -3326,8 +3326,7 @@ class Svc(Scheduler):
             return 1
         section, option = l
         section = "[%s]" % section
-        with open(self.paths.cf, 'r') as f:
-            lines = f.read().split("\n")
+        lines = self._read_cf().splitlines()
 
         need_write = False
         in_section = False
@@ -3356,10 +3355,12 @@ class Svc(Scheduler):
             print("option '%s' not found in section %s"%(option, section), file=sys.stderr)
             return 1
 
+        buff = "\n".join(lines)
+
         try:
-            with open(self.paths.cf, "w") as f:
-                f.write("\n".join(lines))
-        except:
+            self._write_cf(buff)
+        except (IOError, OSError) as exc:
+            self.log.error(str(exc))
             return 1
         return 0
 
@@ -3429,8 +3430,7 @@ class Svc(Scheduler):
 
     def _set(self, section, option, value):
         section = "[%s]" % section
-        with open(self.paths.cf, 'r') as f:
-            lines = f.read().split("\n")
+        lines = self._read_cf().splitlines()
 
         done = False
         in_section = False
@@ -3482,10 +3482,12 @@ class Svc(Scheduler):
                 lines.append(section)
             lines.append("%s = %s" % (option, value))
 
+        buff = "\n".join(lines)
+
         try:
-            with open(self.paths.cf, "w") as f:
-                f.write("\n".join(lines))
-        except:
+            self._write_cf(buff)
+        except (IOError, OSError) as exc:
+            self.log.error(str(exc))
             return 1
         return 0
 
@@ -3512,10 +3514,9 @@ class Svc(Scheduler):
                     self.config.remove_option(s, "disable")
 
         try:
-            with open(self.paths.cf, 'w') as f:
-                self.config.write(f)
-        except:
-            self.log.error("failed to open", self.paths.cf, "for writing")
+            self.write_config()
+        except (IOError, OSError) as exc:
+            self.log.error(str(exc))
             return 1
 
         return 0
@@ -3552,8 +3553,7 @@ class Svc(Scheduler):
                     self.log.info("remove %s" % dpath)
                     shutil.rmtree(dpath)
             return 0
-        with open(self.paths.cf, 'r') as f:
-            lines = f.read().split("\n")
+        lines = self._read_cf().splitlines()
         need_write = False
 
         for rid in self.action_rid:
@@ -3573,10 +3573,12 @@ class Svc(Scheduler):
 
         if not need_write:
             return 0
+
+        buff = "\n".join(lines)
+
         try:
-            with open(self.paths.cf, "w") as f:
-                f.write("\n".join(lines))
-        except:
+            self._write_cf(buff)
+        except (IOError, OSError) as exc:
             print("failed to rewrite", self.paths.cf, file=sys.stderr)
             return 1
         return 0
@@ -3819,6 +3821,30 @@ class Svc(Scheduler):
         """
         self.log.error("unexpected error. stack saved in the service debug log")
         self.log.debug("", exc_info=True)
+
+    def _read_cf(self):
+        """
+        Return the service config file content.
+        """
+        import codecs
+        with codecs.open(self.paths.cf, "r", "utf8") as ofile:
+             buff = ofile.read()
+        return buff
+
+    def _write_cf(self, buff):
+        """
+        Truncate the service config file and write buff.
+        """
+        import codecs
+        import tempfile
+        import shutil
+        ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.pathtmp, prefix=self.svcname)
+        fpath = ofile.name
+        os.chmod(fpath, 0o0644)
+        ofile.close()
+        with codecs.open(fpath, "w", "utf8") as ofile:
+             ofile.write(buff)
+        shutil.move(fpath, self.paths.cf)
 
 if __name__ == "__main__" :
     for c in (Svc,) :
