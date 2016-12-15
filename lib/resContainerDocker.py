@@ -109,23 +109,29 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         self.docker_start()
         self.docker('start')
 
-    def start(self):
+    def _start(self):
         if self.svc.running_action == "boot" and self.run_swarm and not self.swarm_primary():
             self.log.info("skip boot: this container will be booted by the flex primary node, or through a start action from any flex node")
             return
         resContainer.Container.start(self)
         self.get_running_instance_ids(refresh=True)
+
+    def start(self):
+        self._start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def container_stop(self):
         self.docker('stop')
 
     def stop(self):
+        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
+        self._stop()
+
+    def _stop(self):
         self.status()
         if hasattr(self, "swarm_node") and self.swarm_node != rcEnv.nodename:
             self.log.info("skip stop: this container is handled by the %s node" % self.swarm_node)
             return
-        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         resContainer.Container.stop(self)
         self.get_running_instance_ids(refresh=True)
         self.docker_stop()
@@ -242,10 +248,12 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
 
     def provision(self):
         # docker resources are naturally provisioned
-        self.start()
+        self._start()
         self.status(refresh=True)
+        self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
-        self.stop()
+        self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
+        self._stop()
         self.status(refresh=True)
 
