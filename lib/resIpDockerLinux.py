@@ -332,7 +332,9 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         nspid = self.get_nspid()
         self.create_netns_link(nspid=nspid)
         if intf is None:
-            raise ex.excError("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
+            raise ex.excContinueAction("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
+        if self.mask is None:
+            raise ex.excContinueAction("netmask is not set")
         cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
         self.delete_netns_link(nspid=nspid)
