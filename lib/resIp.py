@@ -394,6 +394,10 @@ class Ip(Res.Resource):
         except ex.OptNotFound:
             pass
 
+        if self.ipDev is None:
+            self.log.info("skip allocate: ipdev is not set")
+            return
+
         try:
             # explicit network setting
             network = conf_get_string_scope(self.svc, self.svc.config, self.rid, "network")
@@ -404,11 +408,15 @@ class Ip(Res.Resource):
             # implicit network: the network of the first ipdev ip
             ifconfig = rcIfconfig.ifconfig()
             intf = ifconfig.interface(self.ipDev)
-            if isinstance(intf.ipaddr, list):
-                baseaddr = intf.ipaddr[0]
-            else:
-                baseaddr = intf.ipaddr
-            network = str(ipaddress.IPv4Interface(baseaddr).network.network_address)
+            try:
+                if isinstance(intf.ipaddr, list):
+                    baseaddr = intf.ipaddr[0]
+                else:
+                    baseaddr = intf.ipaddr
+                network = str(ipaddress.IPv4Interface(baseaddr).network.network_address)
+            except ValueError:
+                self.log.info("skip allocate: ipdev has no configured address and network is not set")
+                return
 
         post_data = {
             "network": network,
