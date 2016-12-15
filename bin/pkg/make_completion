@@ -1,0 +1,170 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import datetime
+
+pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+pathlib = os.path.join(pathsvc, "lib")
+completion_fpath = os.path.join(pathsvc, "usr", "share", "bash_completion.d", "opensvc")
+
+sys.path = [pathlib] + sys.path
+
+import svcmgr_parser
+import nodemgr_parser
+
+template = """
+
+%(lists)s
+
+svcs=$(find /etc/opensvc /opt/opensvc/etc -maxdepth 1 -lname "*/bin/svcmgr" -a ! -name "*.*" -exec basename {} \; 2>/dev/null)
+
+opt_has_arg()
+{
+    for option in ${opts_with_arg[@]}
+    do
+        if [ "$option" == "$1" ]
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+_comp_handler() 
+{
+    local a prev action opts
+    COMPREPLY=()
+    a="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "${prev}" in
+        --color)
+            COMPREPLY=( $(compgen -W "yes no" -- ${a}) )
+            return 0
+            ;;
+        --format)
+            COMPREPLY=( $(compgen -W "csv json table" -- ${a}) )
+            return 0
+            ;;
+        --service|-s)
+            COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
+            return 0
+            ;;
+        *)
+        ;;
+    esac
+
+    action=()
+    typeset -i skip=0
+
+    for word in ${COMP_WORDS[@]}
+    do
+        if [ "${word#-}" != "${word}" ]
+        then
+            opt_has_arg ${word} && skip=1
+        elif [ $skip -eq 1 ]
+        then
+            skip=0
+        else
+            action+=(${word})
+        fi
+    done
+
+    action="${action[@]}"
+    action="${action// /_}"
+    opts="${!action}"
+
+    while [ "$action" != "" -a "$opts" == "" ]
+    do
+        opts="${!action}"
+        action="${action:0:(-1)}"
+    done
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${a}))
+    return 0
+}
+
+complete -F _comp_handler svcmgr
+
+for s in ${svcs} ; do
+    complete -F _comp_handler $s
+done
+
+complete -F _comp_handler nodemgr
+
+"""
+
+def do_prog_lists(prog, actions, global_opts):
+    buff =""
+    data = {}
+    for section in actions:
+        for action in actions[section]:
+            elements = [prog] + action.split("_")
+            n_elements = len(elements)
+            for i in range(n_elements-1):
+                prefix = "_".join(elements[:i+1])
+                suffix = set([elements[i+1]])
+                if prefix not in data:
+                    data[prefix] = set()
+                data[prefix] |= suffix
+
+    for prefix in sorted(data):
+        suffix = data[prefix]
+        candidates = sorted(list(suffix))
+        candidates = " ".join(candidates)
+        buff += '%s="%s"\n' % (prefix, candidates)
+        
+    for section in actions:
+        for action in actions[section]:
+            l = actions[section][action].get("options", []) + global_opts
+            options = [str(opt) for opt in l]
+            options = " ".join(sorted(options))
+            options = options.replace("/", " ")
+            action = prog + "_" + action
+            buff += '%s="%s"\n' % (action, options)
+
+    return buff
+
+def do_opts_with_arg():
+    opts_with_arg = set()
+    for section in svcmgr_parser.ACTIONS:
+        for action in svcmgr_parser.ACTIONS[section]:
+            l = svcmgr_parser.ACTIONS[section][action].get("options", []) + svcmgr_parser.GLOBAL_OPTS
+            for opt in l:
+                if opt.action not in ("store", "append"):
+                    continue
+                opts_with_arg |= set(str(opt).split("/"))
+    for section in nodemgr_parser.ACTIONS:
+        for action in nodemgr_parser.ACTIONS[section]:
+            l = nodemgr_parser.ACTIONS[section][action].get("options", []) + nodemgr_parser.GLOBAL_OPTS
+            for opt in l:
+                if opt.action not in ("store", "append"):
+                    continue
+                opts_with_arg |= set(str(opt).split("/"))
+
+    buff = "\nopts_with_arg=( %s )\n\n" % (
+        ' '.join(sorted(['"'+opt+'"' for opt in opts_with_arg])),
+    )
+
+    return buff
+
+def do_lists():
+    buff = ""
+    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, svcmgr_parser.GLOBAL_OPTS)
+    buff += do_prog_lists("nodemgr", nodemgr_parser.ACTIONS, nodemgr_parser.GLOBAL_OPTS)
+    buff += do_opts_with_arg()
+    return buff
+
+def write(buff):
+    print "writing", completion_fpath
+    with open(completion_fpath, "w") as f:
+        f.write(buff)
+
+def main():
+    buff = template % dict(lists=do_lists())
+    write(buff)
+
+if __name__ == "__main__":
+    main()
+
