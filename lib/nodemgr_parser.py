@@ -333,6 +333,9 @@ ACTIONS = {
     'Push data to the collector': {
         'pushasset': {
             'msg': 'push asset information to collector',
+            'options': [
+                OPT.sync,
+            ],
          },
         'pushstats': {
             'msg': 'push performance metrics to collector. By default pushed '
