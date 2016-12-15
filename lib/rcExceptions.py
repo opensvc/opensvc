@@ -65,6 +65,10 @@ class excEndAction(Exception):
     """ End multi-resource action. Not an error.
     """
 
+class excContinueAction(Exception):
+    """ Abort current resource action, but proceed anyway
+    """
+
 class excAbortAction(Exception):
     """ Abort multi-resource action
     """

@@ -250,8 +250,17 @@ class ResourceSet(object):
             for resource in resources:
                 try:
                     resource.action(action)
-                except ex.excAbortAction:
+                except ex.excAbortAction as exc:
+                    msg = str(exc)
+                    if msg is not "":
+                        resource.log.warning(msg)
+                    resource.log.warning("abort action on resource set")
                     break
+                except ex.excContinueAction as exc:
+                    msg = str(exc)
+                    if msg is not "":
+                        resource.log.info(msg)
+                    resource.log.info("continue action on resource set")
 
     def action_job(self, resource, action):
         """
