@@ -445,6 +445,18 @@ class Ip(Res.Resource):
         self.addr = self.ipName
         self.set_label()
         self.svc._set(self.rid, "ipname", self.ipName)
+        if self.gateway in (None, ""):
+            gateway = data.get("data", {}).get("network", {}).get("gateway")
+            if gateway:
+                self.log.info("set gateway=%s" % gateway)
+                self.svc._set(self.rid, "gateway", gateway)
+                self.gateway = gateway
+        if self.mask in (None, ""):
+            netmask = data.get("data", {}).get("network", {}).get("netmask")
+            if netmask:
+                self.log.info("set netmask=%s" % netmask)
+                self.svc._set(self.rid, "netmask", netmask)
+                self.mask = str(netmask)
         self.log.info("ip %s allocated" % self.ipName)
 
     def release(self):
