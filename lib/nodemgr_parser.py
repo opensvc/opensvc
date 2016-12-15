@@ -174,9 +174,8 @@ OPT = Storage({
     "sync": Option(
         "--sync", default=False,
         action="store_true", dest="syncrpc",
-        help="use synchronous collector rpc if available. to "
-             "use with pushasset when chaining a compliance "
-             "run, to make sure the node ruleset is "
+        help="use synchronous collector rpc. to use when chaining "
+             "a compliance run, to make sure the node ruleset is "
              "up-to-date."),
     "tag": Option(
         "--tag", default=None,

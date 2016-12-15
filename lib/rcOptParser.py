@@ -71,8 +71,10 @@ class OptParser(object):
         desc = ""
         parser = optparse.OptionParser(formatter=self.formatter, add_help_option=False)
         for option in self.actions[section][action].get("options", []):
-            if option is None:
-                raise ex.excError("unkown option referenced by action %s" % action)
+            parser.add_option(option)
+        for option in self.global_options:
+            if self.svclink() and option in self.svcmgr_options:
+                continue
             parser.add_option(option)
         desc += self.subsequent_indent + parser.format_option_help()
         return desc
