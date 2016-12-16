@@ -3668,7 +3668,7 @@ def build(name, minimal=False, svcconf=None):
         try:
             svc.clustertype = conf_get_string_scope(svc, conf, 'DEFAULT', 'cluster_type')
         except ex.OptNotFound:
-            svc.clustertype = 'failover'
+            pass
 
     if 'flex' in svc.clustertype:
         svc.ha = True

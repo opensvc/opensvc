@@ -252,6 +252,7 @@ class Svc(Scheduler):
         """usage : aSvc=Svc(type)"""
         self.encap = False
         self.has_encap_resources = False
+        self.clustertype = "failover"
         self.options = Storage(
             color="auto",
             slaves=False,
