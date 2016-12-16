@@ -33,7 +33,7 @@ class syncNexenta(resSync.Sync):
             self.log.error(str(e))
             raise ex.excError
 
-        if not self.can_sync() and not self.svc.force:
+        if not self.can_sync() and not self.svc.options.force:
             return
         s = self.master.autosync_get_state(self.autosync)
         if s == "disabled":

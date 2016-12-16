@@ -59,7 +59,7 @@ class Disk(resVg.Disk):
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if self.svc.force or s['overall'].status == rcStatus.UP:
+        if self.svc.options.force or s['overall'].status == rcStatus.UP:
             self.write_mksf()
             self.write_share()
 

@@ -280,7 +280,7 @@ class Resource(object):
 
         self.log.debug('do action %s', action)
 
-        if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.force:
+        if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.options.force:
             standby_action = action+'standby'
             if hasattr(self, standby_action):
                 self.action_main(standby_action)

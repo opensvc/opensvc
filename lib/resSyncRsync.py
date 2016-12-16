@@ -142,7 +142,7 @@ class Rsync(resSync.Sync):
            state
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if not self.svc.force and \
+        if not self.svc.options.force and \
            s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
             if s['overall'].status == rcStatus.WARN:

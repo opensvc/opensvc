@@ -45,7 +45,7 @@ class syncEvasnap(resSync.Sync):
         if not self.can_sync():
             return
 
-        if not self.svc.force and status == rcStatus.UP:
+        if not self.svc.options.force and status == rcStatus.UP:
             self.log.info("snapshots are already fresh. use --force to bypass")
             return
 

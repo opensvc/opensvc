@@ -66,7 +66,7 @@ class syncSymSrdfS(resSync.Sync):
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if self.svc.force or s['overall'].status == rcStatus.UP:
+        if self.svc.options.force or s['overall'].status == rcStatus.UP:
             self.do_rdf_dgexport()
             self.do_local_dgexport()
 

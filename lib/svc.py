@@ -286,7 +286,6 @@ class Svc(Scheduler):
         self.sync_dblogger = False
         self.create_pg = False
         self.cron = False
-        self.force = False
         self.cluster = False
         self.disable_rollback = False
         self.presync_done = False
@@ -1793,7 +1792,7 @@ class Svc(Scheduler):
             self.startstandby()
 
     def shutdown(self):
-        self.force = True
+        self.options.force = True
         self.master_shutdownhb()
         self.slave_shutdown()
         try:
@@ -2967,7 +2966,7 @@ class Svc(Scheduler):
         if action not in actions_allow_on_frozen and \
            'compliance' not in action and \
            'collector' not in action:
-            if self.frozen() and not self.force:
+            if self.frozen() and not self.options.force:
                 self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
                 return 1
 

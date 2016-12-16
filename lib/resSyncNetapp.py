@@ -238,7 +238,7 @@ class syncNetapp(resSync.Sync):
             try:
                 self.sync_quiesce()
             except:
-                if self.svc.force:
+                if self.svc.options.force:
                     self.log.warning("force mode is on. bypass failed quiesce.")
                     pass
                 else:

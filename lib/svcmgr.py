@@ -116,14 +116,9 @@ def set_svcs_options(node, options, docker_argv):
 
     for svc in node.svcs:
         svc.options.update(options.__dict__)
-        svc.force = options.force
+        svc.options.slave = slave
         svc.remote = options.remote
         svc.cron = options.cron
-        svc.options.slaves = options.slaves
-        svc.options.slave = slave
-        svc.options.master = options.master
-        svc.options.recover = options.recover
-        svc.options.discard = options.discard
         svc.cluster = options.cluster
         if docker_argv is not None:
             svc.docker_argv = docker_argv
