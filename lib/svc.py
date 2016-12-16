@@ -1922,11 +1922,11 @@ class Svc(Scheduler):
             n_hb += 1
             if not r.disabled:
                 n_hb_enabled += 1
-        if n_hb > 0 and n_hb_enabled == 0 and self.cluster:
+        if n_hb > 0 and n_hb_enabled == 0 and self.options.cluster:
             raise ex.excAbortAction("this service has heartbeat resources, but all disabled. this state is interpreted as a maintenance mode. actions submitted with --cluster are not allowed to inhibit actions triggered by the heartbeat daemon.")
         if n_hb_enabled == 0:
             return
-        if not self.cluster:
+        if not self.options.cluster:
             for r in self.get_resources("hb"):
                 if not r.skip and hasattr(r, action):
                     self.running_action = action
@@ -2447,7 +2447,7 @@ class Svc(Scheduler):
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
         if self.options.debug:
             rcmd += ['--debug']
-        if self.cluster and action_mode:
+        if self.options.cluster and action_mode:
             rcmd += ['--cluster']
         if self.cron:
             rcmd += ['--cron']
@@ -3023,7 +3023,7 @@ class Svc(Scheduler):
             self.node.options.format = "json"
             self.options.format = "json"
 
-        if self.cluster and self.options.format != "json":
+        if self.options.cluster and self.options.format != "json":
             raise ex.excError("only the json output format is allowed with --cluster")
         if action.startswith("collector_"):
             from collector import Collector
@@ -3054,7 +3054,7 @@ class Svc(Scheduler):
                         res[n] = {"error": str(e)}
             res[rcEnv.nodename] = data
             return res
-        elif self.cluster:
+        elif self.options.cluster:
             # no remote though --cluster is set
             res = {}
             res[rcEnv.nodename] = data
@@ -3063,7 +3063,7 @@ class Svc(Scheduler):
         return data
 
     def do_cluster_action(self, action, waitlock=60, collect=False, action_mode=True):
-        if not self.cluster:
+        if not self.options.cluster:
             return
         if action in ("edit_config", "validate_config") or "sync" in action:
             return
@@ -3207,7 +3207,7 @@ class Svc(Scheduler):
 
         self.svcunlock()
 
-        if action == "start" and self.cluster and self.ha:
+        if action == "start" and self.options.cluster and self.ha:
             """ This situation is typical of a hb-initiated service start.
                 While the hb starts the service, its resource status is warn from
                 opensvc point of view. So after a successful startup, the hb res

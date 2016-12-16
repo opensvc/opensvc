@@ -345,7 +345,7 @@ class Hb(resHb.Hb):
         raise ex.excError("waited %d seconds for %s state to become either %s. current state: %s"%(timeout, node, ' or '.join(states), status))
 
     def switch(self):
-        if self.svc.cluster:
+        if self.svc.options.cluster:
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
@@ -396,7 +396,7 @@ class Hb(resHb.Hb):
         raise ex.excEndAction("heartbeat actions done")
 
     def start(self):
-        if self.svc.cluster:
+        if self.svc.options.cluster:
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
@@ -449,7 +449,7 @@ class Hb(resHb.Hb):
         raise ex.excEndAction("heartbeat actions done")
 
     def stop(self):
-        if self.svc.cluster:
+        if self.svc.options.cluster:
             """
             if called by the heartbeat daemon, don't drive the hb service
             """
