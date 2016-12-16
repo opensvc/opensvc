@@ -285,13 +285,14 @@ class Svc(Scheduler):
             push_flag=os.path.join(rcEnv.pathvar, self.svcname, 'last_pushed_config'),
             run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
         )
-        self.ref_cache = {}
         self.resources_by_id = {}
         self.resSets = []
         self.type2resSets = {}
         self.disks = set()
         self.devs = set()
 
+        self.ref_cache = {}
+        self.encap_json_status_cache = {}
         self.rset_status_cache = None
         self.lockfd = None
         self.group_status_cache = None
@@ -1539,15 +1540,13 @@ class Svc(Scheduler):
         return os.path.join(rcEnv.pathvar, self.svcname, "encap.status."+rid)
 
     def purge_cache_encap_json_status(self, rid):
-        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+        if rid in self.encap_json_status_cache:
             del(self.encap_json_status_cache[rid])
         path = self.get_encap_json_status_path(rid)
         if os.path.exists(path):
             os.unlink(path)
 
     def put_cache_encap_json_status(self, rid, data):
-        if not hasattr(self, 'encap_json_status_cache'):
-            self.encap_json_status_cache = {}
         self.encap_json_status_cache[rid] = data
         path = self.get_encap_json_status_path(rid)
         directory = os.path.dirname(path)
@@ -1560,7 +1559,7 @@ class Svc(Scheduler):
             os.unlink(path)
 
     def get_cache_encap_json_status(self, rid):
-        if hasattr(self, "encap_json_status_cache") and rid in self.encap_json_status_cache:
+        if rid in self.encap_json_status_cache:
             return self.encap_json_status_cache[rid]
         path = self.get_encap_json_status_path(rid)
         try:
