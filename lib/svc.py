@@ -242,6 +242,34 @@ status_types = [
 
 os.environ['LANG'] = 'C'
 
+def _slave_action(fn):
+    def _fn(self):
+        if self.encap or not self.has_encap_resources:
+            return
+        if (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
+           (not self.options.master and not self.options.slaves and self.options.slave is None):
+            raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+        if self.options.slaves or \
+           self.options.slave is not None or \
+           (not self.options.master and not self.options.slaves and self.options.slave is None):
+            try:
+                fn(self)
+            except Exception as e:
+                raise ex.excError(str(e))
+    return _fn
+
+def _master_action(fn):
+    def _fn(self):
+        if not self.encap and \
+           (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
+           self.has_encap_resources and \
+           (not self.options.master and not self.options.slaves and self.options.slave is None):
+            raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+        if self.options.master or \
+           (not self.options.master and not self.options.slaves and self.options.slave is None):
+            fn(self)
+    return _fn
+
 class Svc(Scheduler):
     """Service class define a Service Resource
     It contain list of ResourceSet where each ResourceSets contain same resource
@@ -1803,39 +1831,15 @@ class Svc(Scheduler):
         self.master_shutdownip()
 
     def command_is_scoped(self):
+        """
+        Return True if a resource filter has been setup through
+        --rid, --subsets or --tags
+        """
         if self.options.parm_rid is not None or \
            self.options.parm_tags is not None or \
            self.options.parm_subsets is not None:
             return True
         return False
-
-    def _slave_action(fn):
-        def _fn(self):
-            if self.encap or not self.has_encap_resources:
-                return
-            if (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
-               (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
-            if self.options.slaves or \
-               self.options.slave is not None or \
-               (not self.options.master and not self.options.slaves and self.options.slave is None):
-                try:
-                    fn(self)
-                except Exception as e:
-                    raise ex.excError(str(e))
-        return _fn
-
-    def _master_action(fn):
-        def _fn(self):
-            if not self.encap and \
-               (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
-               self.has_encap_resources and \
-               (not self.options.master and not self.options.slaves and self.options.slave is None):
-                raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
-            if self.options.master or \
-               (not self.options.master and not self.options.slaves and self.options.slave is None):
-                fn(self)
-        return _fn
 
     def run_task(self, rid):
         if self.skip_action(rid):
