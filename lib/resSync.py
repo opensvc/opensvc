@@ -59,7 +59,7 @@ class Sync(Res.Resource, Scheduler):
         return True
 
     def skip_sync(self, ts):
-        if not self.svc.cron:
+        if not self.svc.options.cron:
             return False
         if self.skip_action_schedule(self.rid, "sync_schedule", last=ts):
             return True
@@ -142,7 +142,7 @@ class Sync(Res.Resource, Scheduler):
         else:
             s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
             if s['overall'].status != rcStatus.UP:
-                if self.svc.cron:
+                if self.svc.options.cron:
                     self.log.debug("won't sync this resource for a service not up")
                 else:
                     self.log.info("won't sync this resource for a service not up")
@@ -153,7 +153,7 @@ class Sync(Res.Resource, Scheduler):
         """
         if self.svc.clustertype in ["flex", "autoflex"] and \
            self.svc.flex_primary != rcEnv.nodename:
-            if self.svc.cron:
+            if self.svc.options.cron:
                 self.log.debug("won't sync this resource from a flex non-primary node")
             else:
                 self.log.info("won't sync this resource from a flex non-primary node")
@@ -161,7 +161,7 @@ class Sync(Res.Resource, Scheduler):
 
     def pre_sync_check_prd_svc_on_non_prd_node(self):
         if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
-            if self.svc.cron:
+            if self.svc.options.cron:
                 self.log.debug("won't sync a PRD service running on a !PRD node")
             else:
                 self.log.info("won't sync a PRD service running on a !PRD node")

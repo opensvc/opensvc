@@ -285,8 +285,6 @@ class Svc(Scheduler):
         self.drp_flex_primary = ""
         self.sync_dblogger = False
         self.create_pg = False
-        self.cron = False
-        self.cluster = False
         self.disable_rollback = False
         self.presync_done = False
         self.presnap_trigger = None
@@ -365,7 +363,7 @@ class Svc(Scheduler):
         """
         The service scheduler action entrypoint.
         """
-        self.cron = True
+        self.options.cron = True
         self.sync_dblogger = True
         if not self.has_run_flag():
             self.log.info("the scheduler is off during init")
@@ -2439,7 +2437,7 @@ class Svc(Scheduler):
         self.need_postsync = set([])
 
     def remote_action(self, node, action, waitlock=-1, sync=False, verbose=True, action_mode=True):
-        if self.cron:
+        if self.options.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
             sync = True
@@ -2449,7 +2447,7 @@ class Svc(Scheduler):
             rcmd += ['--debug']
         if self.options.cluster and action_mode:
             rcmd += ['--cluster']
-        if self.cron:
+        if self.options.cron:
             rcmd += ['--cron']
         if waitlock >= 0:
             rcmd += ['--waitlock', str(waitlock)]
@@ -2647,7 +2645,7 @@ class Svc(Scheduler):
     def sync_all(self):
         if not self.can_sync(["sync"]):
             return
-        if self.cron:
+        if self.options.cron:
             self.sched_delay()
         self.presync()
         self.sub_set_action("sync.rsync", "sync_nodes")
@@ -2665,7 +2663,7 @@ class Svc(Scheduler):
 
     def push_service_status(self):
         if self.encap:
-            if not self.cron:
+            if not self.options.cron:
                 self.log.info("push service status is disabled for encapsulated services")
             return
         if self.skip_action("push_service_status"):
@@ -2674,7 +2672,7 @@ class Svc(Scheduler):
 
     @scheduler_fork
     def task_push_service_status(self):
-        if self.cron:
+        if self.options.cron:
             self.sched_delay()
         import rcSvcmon
         self.options.refresh = True
@@ -2687,7 +2685,7 @@ class Svc(Scheduler):
 
     @scheduler_fork
     def task_push_resinfo(self):
-        if self.cron:
+        if self.options.cron:
             self.sched_delay()
         self.node.collector.call('push_resinfo', [self])
 
@@ -2714,7 +2712,7 @@ class Svc(Scheduler):
     def push(self):
         if self.encap:
             return
-        if self.cron:
+        if self.options.cron:
             self.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])

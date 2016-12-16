@@ -320,7 +320,7 @@ class Collector(object):
              repr(hostid),
              repr(version),
              repr(str(begin)),
-             '1' if svc.cron else '0']
+             '1' if svc.options.cron else '0']
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -375,7 +375,7 @@ class Collector(object):
                              date,
                              msg,
                              res_err,
-                             '1' if svc.cron else '0'])
+                             '1' if svc.options.cron else '0'])
 
             res_err = 'ok'
             (date, res, lvl, msg, pid) = line.split(';;')
@@ -414,7 +414,7 @@ class Collector(object):
                          date,
                          msg,
                          res_err,
-                         '1' if svc.cron else '0'])
+                         '1' if svc.options.cron else '0'])
 
         if len(vals) > 0:
             args = [vars, vals]
@@ -453,7 +453,7 @@ class Collector(object):
              repr(str(end)),
              repr(str(end-begin)),
              repr(str(err)),
-             '1' if svc.cron else '0']
+             '1' if svc.options.cron else '0']
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]

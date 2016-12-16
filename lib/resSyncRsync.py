@@ -146,9 +146,9 @@ class Rsync(resSync.Sync):
            s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
             if s['overall'].status == rcStatus.WARN:
-                if not self.svc.cron:
+                if not self.svc.options.cron:
                     self.log.info("won't sync this resource service in warn status")
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("won't sync this resource for a service not up")
             return set([])
 
@@ -213,14 +213,14 @@ class Rsync(resSync.Sync):
 
     def sync(self, target):
         if target not in self.target.keys():
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info('%s => %s sync not applicable to %s'%(self.src, self.dst, target))
             return 0
 
         targets = self.nodes_to_sync(target)
 
         if len(targets) == 0:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no nodes to sync")
             raise ex.syncNoNodesToSync
 
@@ -240,7 +240,7 @@ class Rsync(resSync.Sync):
             src = self.src
 
         if len(src) == 0:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no files to sync")
             raise ex.syncNoFilesToSync
 
@@ -295,7 +295,7 @@ class Rsync(resSync.Sync):
             targets |= rtargets[i]
 
         if len(targets) == 0:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no node to sync")
             raise ex.excAbortAction
 
@@ -327,11 +327,11 @@ class Rsync(resSync.Sync):
         try:
             self.sync("nodes")
         except ex.syncNoFilesToSync:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no file to sync")
             pass
         except ex.syncNoNodesToSync:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no node to sync")
             pass
 
@@ -339,11 +339,11 @@ class Rsync(resSync.Sync):
         try:
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no file to sync")
             pass
         except ex.syncNoNodesToSync:
-            if not self.svc.cron:
+            if not self.svc.options.cron:
                 self.log.info("no node to sync")
             pass
 

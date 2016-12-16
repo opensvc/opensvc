@@ -78,7 +78,7 @@ def fork(fn, args=[], kwargs={}, serialize=False, delay=300):
 def scheduler_fork(fn):
     def _fn(*args, **kwargs):
         self = args[0]
-        if self.options.cron or (hasattr(self, "cron") and self.cron):
+        if self.options.cron:
             fork(fn, args, kwargs, serialize=True, delay=59)
         else:
             fn(*args, **kwargs)
@@ -821,7 +821,7 @@ class Scheduler(object):
         return timestamp_f
 
     def is_croned(self):
-        if self.options.cron or (hasattr(self, "cron") and self.cron):
+        if self.options.cron:
             return True
         return False
 
