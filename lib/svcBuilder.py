@@ -3537,8 +3537,6 @@ def build(name, minimal=False, svcconf=None):
             if svcmode in ["sg", "rhcs", "vcs"]:
                 kwargs['pkg_name'] = defaults["pkg_name"]
 
-        kwargs['disabled'] = get_disabled(conf, "", "")
-
 
     #
     # dynamically import the module matching the service mode
@@ -3595,7 +3593,7 @@ def build(name, minimal=False, svcconf=None):
     if conf.has_option('DEFAULT', 'disable'):
         svc.disabled = conf.getboolean("DEFAULT", "disable")
     else:
-        svc.disabled = False
+        pass
 
     if minimal:
         return svc

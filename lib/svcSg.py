@@ -9,8 +9,9 @@ class SvcSg(svc.Svc):
       "nodes",
     ]
 
-    def __init__(self, svcname, pkg_name=None, optional=False, disabled=False, tags=set([])):
-        svc.Svc.__init__(self, svcname, "ServiceGuard", optional=optional, disabled=disabled, tags=tags)
+    def __init__(self, svcname, pkg_name=None):
+        self.type = "sg"
+        svc.Svc.__init__(self, svcname)
         self.pkg_name = pkg_name
         self.load_paths()
 

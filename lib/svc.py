@@ -243,33 +243,33 @@ STATUS_TYPES = [
 
 os.environ['LANG'] = 'C'
 
-def _slave_action(fn):
-    def _fn(self):
+def _slave_action(func):
+    def _func(self):
         if self.encap or not self.has_encap_resources:
             return
         if (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'prstart', 'prstop', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
            (not self.options.master and not self.options.slaves and self.options.slave is None):
-            raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+            raise ex.excError("specify either --master, --slave(s) or both (%s)"%func.__name__)
         if self.options.slaves or \
            self.options.slave is not None or \
            (not self.options.master and not self.options.slaves and self.options.slave is None):
             try:
-                fn(self)
+                func(self)
             except Exception as e:
                 raise ex.excError(str(e))
-    return _fn
+    return _func
 
-def _master_action(fn):
-    def _fn(self):
+def _master_action(func):
+    def _func(self):
         if not self.encap and \
            (self.command_is_scoped() or self.running_action not in ('migrate', 'switch', 'boot', 'shutdown', 'restart', 'start', 'stop', 'startstandby', 'stopstandby')) and \
            self.has_encap_resources and \
            (not self.options.master and not self.options.slaves and self.options.slave is None):
-            raise ex.excError("specify either --master, --slave(s) or both (%s)"%fn.__name__)
+            raise ex.excError("specify either --master, --slave(s) or both (%s)"%func.__name__)
         if self.options.master or \
            (not self.options.master and not self.options.slaves and self.options.slave is None):
-            fn(self)
-    return _fn
+            func(self)
+    return _func
 
 class Svc(Scheduler):
     """Service class define a Service Resource
@@ -277,7 +277,8 @@ class Svc(Scheduler):
     type
     """
 
-    def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
+    def __init__(self, svcname=None):
+        self.type = "hosted"
         self.svcname = svcname
         self.hostid = rcEnv.nodename
         self.paths = Storage(
@@ -301,6 +302,10 @@ class Svc(Scheduler):
         self.ha = False
         self.has_encap_resources = False
         self.encap = False
+        self.action_rid = []
+        self.running_action = None
+        self.config = None
+        self.need_postsync = set()
 
         # set by the builder
         self.node = None
@@ -423,13 +428,13 @@ class Svc(Scheduler):
             self.scheduler_actions["resource_monitor"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_resource_monitor", schedule_option="monitor_schedule")
 
         syncs = []
-        for r in self.get_resources("sync"):
-            syncs += [SchedOpts(r.rid, fname=self.svcname+os.sep+"last_syncall_"+r.rid, schedule_option="sync_schedule")]
+        for resource in self.get_resources("sync"):
+            syncs += [SchedOpts(resource.rid, fname=self.svcname+os.sep+"last_syncall_"+resource.rid, schedule_option="sync_schedule")]
         if len(syncs) > 0:
             self.scheduler_actions["sync_all"] = syncs
 
-        for r in self.get_resources("task"):
-            self.scheduler_actions[r.rid] = SchedOpts(r.rid, fname=self.svcname+os.sep+"last_"+r.rid, schedule_option="no_schedule")
+        for resource in self.get_resources("task"):
+            self.scheduler_actions[resource.rid] = SchedOpts(resource.rid, fname=self.svcname+os.sep+"last_"+resource.rid, schedule_option="no_schedule")
 
         self.scheduler_actions["push_resinfo"] = SchedOpts("DEFAULT", fname=self.svcname+os.sep+"last_push_resinfo", schedule_option="resinfo_schedule")
 
@@ -447,7 +452,7 @@ class Svc(Scheduler):
         """
         rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
-        if not hasattr(self, "config"):
+        if self.config is None:
             self.load_config()
         if not self.config.has_section(subset_section):
             return False
@@ -549,7 +554,7 @@ class Svc(Scheduler):
             lockfile = ".".join((lockfile, suffix))
 
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % (timeout, delay, action, lockfile)
-        self.log.debug("acquire service lock %s" % details)
+        self.log.debug("acquire service lock %s", details)
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent=action)
         except lock.lockTimeout as e:
@@ -593,12 +598,12 @@ class Svc(Scheduler):
 
         resources = []
         for rs in rsets:
-            for r in rs.resources:
-                if not self.encap and 'encap' in r.tags:
+            for resource in rs.resources:
+                if not self.encap and 'encap' in resource.tags:
                     continue
-                if discard_disabled and r.disabled:
+                if discard_disabled and resource.disabled:
                     continue
-                resources.append(r)
+                resources.append(resource)
         return resources
 
     def get_res_sets(self, _type, strict=False):
@@ -641,13 +646,13 @@ class Svc(Scheduler):
         else:
             return False
 
-    def all_set_action(self, action=None, tags=set([])):
+    def all_set_action(self, action=None, tags=set()):
         """
         Execute an action on all resources all resource sets.
         """
         self.set_action(self.resSets, action=action, tags=tags)
 
-    def sub_set_action(self, type=None, action=None, tags=set([]), xtags=set([]), strict=False):
+    def sub_set_action(self, type=None, action=None, tags=set(), xtags=set(), strict=False):
         """
         Execute an action on all resources of the resource sets of the
         specified type.
@@ -662,15 +667,15 @@ class Svc(Scheduler):
         if action not in ["sync_nodes", "sync_drp", "sync_resync", "sync_update"]:
             return False
         for rs in sets:
-            for r in rs.resources:
+            for resource in rs.resources:
                 # avoid to run pre/post snap triggers when there is no
                 # resource flagged for snap and on drpnodes
-                if hasattr(r, "snap") and r.snap is True and \
+                if hasattr(resource, "snap") and resource.snap is True and \
                    rcEnv.nodename in self.nodes:
                     return True
         return False
 
-    def set_action(self, sets=[], action=None, tags=set([]), xtags=set([]), strict=False):
+    def set_action(self, sets=[], action=None, tags=set(), xtags=set(), strict=False):
         """
         TODO: r.is_optional() not doing what's expected if r is a rset
         """
@@ -701,12 +706,12 @@ class Svc(Scheduler):
             reverse = False
         sets = sorted(sets, key=lambda x: x.type, reverse=reverse)
 
-        for r in sets:
-            if action in ACTIONS_NO_TRIGGER or r.all_skip(action):
+        for rset in sets:
+            if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
                 break
             try:
-                r.log.debug("start %s pre_action"%r.type)
-                r.pre_action(action)
+                rset.log.debug("start %s pre_action", rset.type)
+                rset.pre_action(action)
             except ex.excError:
                 raise
             except ex.excAbortAction:
@@ -720,16 +725,16 @@ class Svc(Scheduler):
             if ret != 0:
                 raise ex.excError(err)
 
-        for r in sets:
-            self.log.debug('set_action: action=%s rset=%s'%(action, r.type))
-            r.action(action, tags=tags, xtags=xtags)
+        for rset in sets:
+            self.log.debug('set_action: action=%s rset=%s', action, rset.type)
+            rset.action(action, tags=tags, xtags=xtags)
 
-        for r in sets:
-            if action in ACTIONS_NO_TRIGGER or r.all_skip(action):
+        for rset in sets:
+            if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
                 break
             try:
-                r.log.debug("start %s post_action"%r.type)
-                r.post_action(action)
+                rset.log.debug("start %s post_action", rset.type)
+                rset.post_action(action)
             except ex.excError:
                 raise
             except ex.excAbortAction:
@@ -740,11 +745,11 @@ class Svc(Scheduler):
 
     def __str__(self):
         output = "Service %s available resources:" % (Resource.__str__(self))
-        for k in self.type2resSets.keys():
-            output += " %s" % k
+        for key in self.type2resSets.keys():
+            output += " %s" % key
         output += "\n"
-        for r in self.resSets:
-            output += "  [%s]" % (r.__str__())
+        for rset in self.resSets:
+            output += "  [%s]" % (rset.__str__())
         return output
 
     def status(self):
@@ -778,38 +783,40 @@ class Svc(Scheduler):
         Return a structure containing hierarchical status of
         the service.
         """
-        d = {
+        data = {
             "resources": {},
             "frozen": self.frozen(),
         }
 
         containers = self.get_resources('container')
         if len(containers) > 0:
-            d['encap'] = {}
+            data['encap'] = {}
             for container in containers:
                 if container.name is None or len(container.name) == 0:
                     continue
                 try:
-                    d['encap'][container.name] = self.encap_json_status(container)
+                    data['encap'][container.name] = self.encap_json_status(container)
                 except:
-                    d['encap'][container.name] = {'resources': {}}
+                    data['encap'][container.name] = {'resources': {}}
 
-        for rs in self.get_res_sets(STATUS_TYPES, strict=True):
-            for r in rs.resources:
-                rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad(color=False)
-                d['resources'][rid] = {'status': status,
-                                       'type': rtype,
-                                       'label': label,
-                                       'log': log,
-                                       'tags': sorted(list(r.tags)),
-                                       'monitor':monitor,
-                                       'disable': disable,
-                                       'optional': optional,
-                                       'encap': encap}
-        ss = self.group_status()
-        for g in ss:
-            d[g] = str(ss[g])
-        return d
+        for rset in self.get_res_sets(STATUS_TYPES, strict=True):
+            for resource in rset.resources:
+                rid, rtype, status, label, log, monitor, disable, optional, encap = resource.status_quad(color=False)
+                data['resources'][rid] = {
+                    'status': status,
+                    'type': rtype,
+                    'label': label,
+                    'log': log,
+                    'tags': sorted(list(resource.tags)),
+                    'monitor':monitor,
+                    'disable': disable,
+                    'optional': optional,
+                    'encap': encap,
+                }
+        group_status = self.group_status()
+        for group in group_status:
+            data[group] = str(group_status[group])
+        return data
 
     def env_section_keys_evaluated(self):
         """
@@ -1291,7 +1298,7 @@ class Svc(Scheduler):
                     rstatus_log = ''.join((' ', '(', r.status_logs_str().strip().strip("# "), ')'))
                 else:
                     rstatus_log = ''
-                self.log.info("monitored resource %s is in state %s%s"%(r.rid, rcStatus.status_str(r.rstatus), rstatus_log))
+                self.log.info("monitored resource %s is in state %s%s", r.rid, rcStatus.status_str(r.rstatus), rstatus_log)
 
                 if self.monitor_action is not None and \
                    hasattr(self, self.monitor_action):
@@ -1319,7 +1326,7 @@ class Svc(Scheduler):
                         rstatus_log = ''.join((' ', '(', r.get("log").strip().strip("# "), ')'))
                     else:
                         rstatus_log = ''
-                    self.log.info("monitored resource %s is in state %s%s"%(erid, r.get("status"), rstatus_log))
+                    self.log.info("monitored resource %s is in state %s%s", erid, r.get("status"), rstatus_log)
 
                     if self.monitor_action is not None and \
                        hasattr(self, self.monitor_action):
@@ -1331,8 +1338,8 @@ class Svc(Scheduler):
         if len(monitored_resources) == 0:
             self.log.debug("no monitored resource")
         else:
-            rids = ','.join([r if type(r) in (str, unicode) else r.rid for r in monitored_resources])
-            self.log.debug("monitored resources are up (%s)" % rids)
+            rids = ','.join([r if isinstance(r, (str, unicode)) else r.rid for r in monitored_resources])
+            self.log.debug("monitored resources are up (%s)", rids)
 
     class exMonitorAction(Exception):
         """
@@ -1445,7 +1452,7 @@ class Svc(Scheduler):
         """
         Call the resource monitor action.
         """
-        self.log.info("start monitor action '%s'"%self.monitor_action)
+        self.log.info("start monitor action '%s'", self.monitor_action)
         getattr(self, self.monitor_action)()
 
     def encap_cmd(self, cmd, verbose=False, error="raise"):
@@ -1460,10 +1467,12 @@ class Svc(Scheduler):
                 out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
             except ex.excEncapUnjoignable as e:
                 if error != "continue":
-                    self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                    self.log.error("container %s is not joinable to execute "
+                                   "action '%s'", container.name, ' '.join(cmd))
                     raise
                 elif verbose:
-                    self.log.warning("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                    self.log.warning("container %s is not joinable to execute "
+                                     "action '%s'", container.name, ' '.join(cmd))
 
     def _encap_cmd(self, cmd, container, verbose=False):
         """
@@ -1477,13 +1486,15 @@ class Svc(Scheduler):
         except:
             autostart_node = []
         if cmd == ["start"] and container.booted and vmhostname in autostart_node:
-            self.log.info("skip encap service start in container %s: already started on boot"%vmhostname)
+            self.log.info("skip encap service start in container %s: already "
+                          "started on boot", vmhostname)
             return '', '', 0
         if not self.has_encap_resources:
-            self.log.debug("skip encap %s: no encap resource" % ' '.join(cmd))
+            self.log.debug("skip encap %s: no encap resource", ' '.join(cmd))
             return '', '', 0
         if not container.is_up():
-            self.log.info("skip encap %s: the container is not running here" % ' '.join(cmd))
+            self.log.info("skip encap %s: the container is not running here",
+                          ' '.join(cmd))
             return '', '', 0
 
         if self.options.slave is not None and not \
@@ -1493,7 +1504,9 @@ class Svc(Scheduler):
             return '', '', 0
 
         if cmd == ['start'] and not self.need_start_encap(container):
-            self.log.info("skip start in container %s: the encap service is configured to start on container boot."%container.name)
+            self.log.info("skip start in container %s: the encap service is "
+                          "configured to start on container boot.",
+                          container.name)
             return '', '', 0
 
         # now we known we'll execute a command in the slave, so purge the encap cache
@@ -1528,7 +1541,7 @@ class Svc(Scheduler):
             raise ex.excEncapUnjoignable("undefined rcmd/runmethod in resource %s"%container.rid)
 
         if verbose:
-            self.log.info('logs from %s child service:'%container.name)
+            self.log.info('logs from %s child service:', container.name)
             print(out)
             if len(err) > 0:
                 print(err)
@@ -1541,7 +1554,7 @@ class Svc(Scheduler):
 
     def purge_cache_encap_json_status(self, rid):
         if rid in self.encap_json_status_cache:
-            del(self.encap_json_status_cache[rid])
+            del self.encap_json_status_cache[rid]
         path = self.get_encap_json_status_path(rid)
         if os.path.exists(path):
             os.unlink(path)
@@ -1554,7 +1567,7 @@ class Svc(Scheduler):
             os.makedirs(directory)
         try:
             with open(path, 'w') as f:
-                 gs = f.write(json.dumps(data))
+                f.write(json.dumps(data))
         except:
             os.unlink(path)
 
@@ -1564,10 +1577,10 @@ class Svc(Scheduler):
         path = self.get_encap_json_status_path(rid)
         try:
             with open(path, 'r') as f:
-                 gs = json.loads(f.read())
+                group_status = json.loads(f.read())
         except:
-            gs = None
-        return gs
+            group_status = None
+        return group_status
 
     def encap_json_status(self, container, refresh=False):
         if container.guestos == 'windows':
@@ -1642,7 +1655,7 @@ class Svc(Scheduler):
 
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb", "stonith"]),
-                     excluded_groups=set([])):
+                     excluded_groups=set()):
         from copy import copy
         """print() each resource status for a service
         """
@@ -1761,7 +1774,7 @@ class Svc(Scheduler):
             if r.skip:
                 continue
             disks |= r.disklist()
-        self.log.debug("found disks %s held by service" % disks)
+        self.log.debug("found disks %s held by service", disks)
         return disks
 
     def devlist(self, filtered=True):
@@ -1777,7 +1790,7 @@ class Svc(Scheduler):
             if filtered and r.skip:
                 continue
             devs |= r.devlist()
-        self.log.debug("found devs %s held by service" % devs)
+        self.log.debug("found devs %s held by service", devs)
         return devs
 
     def get_non_affine_svc(self):
@@ -1874,9 +1887,9 @@ class Svc(Scheduler):
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
             if self.options.ignore_affinity:
-                self.log.error("force start of %s on the same node as %s despite anti-affinity settings"%(self.svcname, ', '.join(af_svc)))
+                self.log.error("force start of %s on the same node as %s despite anti-affinity settings", self.svcname, ', '.join(af_svc))
             else:
-                self.log.error("refuse to start %s on the same node as %s"%(self.svcname, ', '.join(af_svc)))
+                self.log.error("refuse to start %s on the same node as %s", self.svcname, ', '.join(af_svc))
                 return
         self.master_startip()
         self.master_startfs()
@@ -2146,8 +2159,8 @@ class Svc(Scheduler):
             try:
                 from multiprocessing import Process
                 mp = True
-                def wrapper(fn):
-                    if fn():
+                def wrapper(func):
+                    if func():
                         sys.exit(1)
             except:
                 mp = False
@@ -2303,8 +2316,8 @@ class Svc(Scheduler):
         """ Used after start/stop container because the ip resource
             status change after its own start/stop
         """
-        for r in self.get_resources("ip"):
-            r.status(refresh=True, restart=False)
+        for resource in self.get_resources("ip"):
+            resource.status(refresh=True, restart=False)
 
     @_master_action
     def shutdowncontainer(self):
@@ -2411,13 +2424,13 @@ class Svc(Scheduler):
     def slave_startstandby(self):
         cmd = ['startstandby']
         for container in self.get_resources('container'):
-            if not container.is_up() and not rcEnv.nodename in container.always_on:
+            if not container.is_up() and rcEnv.nodename not in container.always_on:
                 # no need to try to startstandby the encap service on a container we not activated
                 continue
             try:
                 out, err, ret = self._encap_cmd(cmd, container, verbose=True)
             except ex.excError:
-                self.log.error("container %s is not joinable to execute action '%s'"%(container.name, ' '.join(cmd)))
+                self.log.error("container %s is not joinable to execute action '%s'", container.name, ' '.join(cmd))
                 raise
 
     def dns_update(self):
@@ -2445,12 +2458,12 @@ class Svc(Scheduler):
             remote syncs to finish
         """
         self.svcunlock()
-        for n in self.need_postsync:
-            self.remote_action(n, 'postsync', waitlock=3600)
+        for nodename in self.need_postsync:
+            self.remote_action(nodename, 'postsync', waitlock=3600)
 
-        self.need_postsync = set([])
+        self.need_postsync = set()
 
-    def remote_action(self, node, action, waitlock=-1, sync=False, verbose=True, action_mode=True):
+    def remote_action(self, nodename, action, waitlock=-1, sync=False, verbose=True, action_mode=True):
         if self.options.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
@@ -2466,9 +2479,9 @@ class Svc(Scheduler):
         if waitlock >= 0:
             rcmd += ['--waitlock', str(waitlock)]
         rcmd += action.split()
-        cmd = rcEnv.rsh.split() + [node] + rcmd
+        cmd = rcEnv.rsh.split() + [nodename] + rcmd
         if verbose:
-            self.log.info("exec '%s' on node %s"%(' '.join(rcmd), node))
+            self.log.info("exec '%s' on node %s", ' '.join(rcmd), nodename)
         if sync:
             out, err, ret = justcall(cmd)
             return out, err, ret
@@ -2479,7 +2492,7 @@ class Svc(Scheduler):
         """ prepare files to send to slave nodes in var/.
             Each resource can prepare its own set of files.
         """
-        self.need_postsync = set([])
+        self.need_postsync = set()
         if self.presync_done:
             return
         self.all_set_action("presync")
@@ -2732,15 +2745,15 @@ class Svc(Scheduler):
             self.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
-        self.log.info("send %s to collector" % self.paths.cf)
+        self.log.info("send %s to collector", self.paths.cf)
         try:
             self.create_var_subdir()
             import time
             with open(self.paths.push_flag, 'w') as f:
                 f.write(str(time.time()))
-            self.log.info("update %s timestamp" % self.paths.push_flag)
+            self.log.info("update %s timestamp", self.paths.push_flag)
         except:
-            self.log.error("failed to update %s timestamp" % self.paths.push_flag)
+            self.log.error("failed to update %s timestamp", self.paths.push_flag)
 
     def push_encap_config(self):
         if self.encap or not self.has_encap_resources:
@@ -2776,7 +2789,7 @@ class Svc(Scheduler):
                     cmd = rcEnv.rcp.split() + [r.name+':'+encap_cf, rcEnv.pathetc+'/']
                     out, err, ret = justcall(cmd)
                 os.utime(self.paths.cf, (encap_mtime, encap_mtime))
-                self.log.info("fetch %s from %s"%(encap_cf, r.name))
+                self.log.info("fetch %s from %s", encap_cf, r.name)
                 if ret != 0:
                     raise ex.excError()
                 return
@@ -2789,16 +2802,16 @@ class Svc(Scheduler):
             cmd = rcEnv.rcp.split() + [self.paths.cf, r.name+':'+encap_cf]
             out, err, ret = justcall(cmd)
         if ret != 0:
-            self.log.error("failed to send %s to %s" % (self.paths.cf, r.name))
+            self.log.error("failed to send %s to %s", self.paths.cf, r.name)
             raise ex.excError()
-        self.log.info("send %s to %s" % (self.paths.cf, r.name))
+        self.log.info("send %s to %s", self.paths.cf, r.name)
 
         cmd = ['create', '--config', encap_cf]
         out, err, ret = self._encap_cmd(cmd, container=r)
         if ret != 0:
-            self.log.error("failed to create %s slave service" % r.name)
+            self.log.error("failed to create %s slave service", r.name)
             raise ex.excError()
-        self.log.info("create %s slave service" % r.name)
+        self.log.info("create %s slave service", r.name)
 
     def tag_match(self, rtags, keeptags):
         for tag in rtags:
@@ -2806,7 +2819,7 @@ class Svc(Scheduler):
                 return True
         return False
 
-    def set_skip_resources(self, keeprid=[], xtags=set([])):
+    def set_skip_resources(self, keeprid=[], xtags=set()):
         if len(keeprid) > 0:
             ridfilter = True
         else:
@@ -2837,7 +2850,7 @@ class Svc(Scheduler):
             r.setup_environ()
 
     def expand_rid(self, rid):
-        l = set([])
+        l = set()
         for e in self.resources_by_id.keys():
             if e is None:
                 continue
@@ -2853,7 +2866,7 @@ class Svc(Scheduler):
     def expand_rids(self, rid):
         if len(rid) == 0:
             return
-        l = set([])
+        l = set()
         for e in set(rid):
             if '#' in e:
                 if e not in self.resources_by_id:
@@ -2862,24 +2875,24 @@ class Svc(Scheduler):
                 continue
             l |= self.expand_rid(e)
         if len(l) > 0:
-            self.log.debug("rids added from --rid %s: %s" % (",".join(rid), ",".join(l)))
+            self.log.debug("rids added from --rid %s: %s", ",".join(rid), ",".join(l))
         return l
 
     def expand_subsets(self, subsets):
         if len(subsets) == 0 or subsets is None:
             return
-        l = set([])
+        l = set()
         for r in self.resources_by_id.values():
             if r.subset in subsets:
                 l.add(r.rid)
         if len(l) > 0:
-            self.log.debug("rids added from --subsets %s: %s" % (",".join(subsets), ",".join(l)))
+            self.log.debug("rids added from --subsets %s: %s", ",".join(subsets), ",".join(l))
         return l
 
     def expand_tags(self, tags):
         if len(tags) == 0 or tags is None:
             return
-        l = set([])
+        l = set()
         unions = []
         intersection = []
         for i, tag in enumerate(tags):
@@ -2902,7 +2915,7 @@ class Svc(Scheduler):
                 if set(intersection) & r.tags == set(intersection):
                     l.add(r.rid)
         if len(l) > 0:
-            self.log.debug("rids added from --tags %s: %s" % (",".join(tags), ",".join(l)))
+            self.log.debug("rids added from --tags %s: %s", ",".join(tags), ",".join(l))
         return l
 
     def action_translate(self, action):
@@ -2954,7 +2967,7 @@ class Svc(Scheduler):
             if l is not None:
                 rids &= l
             rids = list(rids)
-            self.log.debug("rids retained after expansions intersection: %s" % ";".join(rids))
+            self.log.debug("rids retained after expansions intersection: %s", ";".join(rids))
 
             if not self.options.slaves and self.options.slave is None and \
                len(set(rid) | set(subsets) | set(tags)) > 0 and len(rids) == 0:
@@ -2981,7 +2994,7 @@ class Svc(Scheduler):
            'compliance' not in action and \
            'collector' not in action:
             if self.frozen() and not self.options.force:
-                self.log.info("Abort action '%s' for frozen service. Use --force to override." % action)
+                self.log.info("Abort action '%s' for frozen service. Use --force to override.", action)
                 return 1
 
             if action == "boot" and len([r for r in self.resources_by_id.values() if rcEnv.nodename in r.always_on]) == 0 and \
@@ -3042,17 +3055,17 @@ class Svc(Scheduler):
         if action.startswith("collector_"):
             from collector import Collector
             o = Collector(self.options, self.node, self.svcname)
-            fn = getattr(o, action)
+            func = getattr(o, action)
         else:
-            fn = getattr(self, action)
+            func = getattr(self, action)
 
-        if not hasattr(fn, "__call__"):
+        if not hasattr(func, "__call__"):
             raise ex.excError("%s is not callable" % action)
 
         psinfo = self.do_cluster_action(_action, collect=True, action_mode=False)
 
         try:
-            data = fn()
+            data = func()
         except Exception as e:
             data = {"error": str(e)}
 
@@ -3186,9 +3199,8 @@ class Svc(Scheduler):
                 err = getattr(self, action)()
                 if err is None:
                     err = 0
-                self.running_action = None
             else:
-                self.log.error("unsupported action %s" % action)
+                self.log.error("unsupported action %s", action)
                 err = 1
         except ex.excEndAction as e:
             s = "'%s' action ended by last resource"%action
@@ -3218,6 +3230,8 @@ class Svc(Scheduler):
         except:
             err = 1
             self.save_exc()
+        finally:
+            self.running_action = None
 
         self.svcunlock()
 
@@ -3243,20 +3257,20 @@ class Svc(Scheduler):
         if 'start' not in action:
             return
         if self.options.disable_rollback:
-            self.log.info("skip rollback %s: as instructed by --disable-rollback"%action)
+            self.log.info("skip rollback %s: as instructed by --disable-rollback", action)
             return
         if self.disable_rollback:
-            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false"%action)
+            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
             return
         rids = [r.rid for r in self.get_resources() if r.can_rollback and not r.always_on]
         if len(rids) == 0:
-            self.log.info("skip rollback %s: no resource activated"%action)
+            self.log.info("skip rollback %s: no resource activated", action)
             return
-        self.log.info("trying to rollback %s on %s"%(action, ', '.join(rids)))
+        self.log.info("trying to rollback %s on %s", action, ', '.join(rids))
         try:
             self.rollback()
         except:
-            self.log.error("rollback %s failed"%action)
+            self.log.error("rollback %s failed", action)
 
     def do_logged_action(self, action, waitlock=60):
         """
@@ -3366,7 +3380,7 @@ class Svc(Scheduler):
             last_push = float(f.read())
             f.close()
         except:
-            self.log.error("can not read timestamp from %s or %s"%(self.paths.cf, self.paths.push_flag))
+            self.log.error("can not read timestamp from %s or %s", self.paths.cf, self.paths.push_flag)
             return True
         if mtime > last_push:
             self.log.debug("configuration file changed since last push")
@@ -3435,10 +3449,10 @@ class Svc(Scheduler):
                     _option = v[0].strip()
                     if option != _option:
                         continue
-                    del(lines[i])
+                    del lines[i]
                     need_write = True
                     while i < len(lines) and "=" not in lines[i] and not lines[i].strip().startswith("[") and lines[i].strip() != "":
-                        del(lines[i])
+                        del lines[i]
 
         if not in_section:
             raise ex.excError("section %s not found" % section)
@@ -3548,9 +3562,9 @@ class Svc(Scheduler):
                         continue
                     if done:
                         # option already set : remove dup
-                        del(lines[i])
+                        del lines[i]
                         while i < len(lines) and "=" not in lines[i] and not lines[i].strip().startswith("[") and lines[i].strip() != "":
-                            del(lines[i])
+                            del lines[i]
                         continue
                     _value = v[1].strip()
                     j = i
@@ -3564,7 +3578,7 @@ class Svc(Scheduler):
                     lines[i] = "%s = %s" % (option, value)
                     j = i
                     while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("[") and lines[j+1].strip() != "":
-                        del(lines[j+1])
+                        del lines[j+1]
                     done = True
 
         if not done:
@@ -3589,9 +3603,9 @@ class Svc(Scheduler):
 
         for rid in rids:
             if rid != 'DEFAULT' and not self.config.has_section(rid):
-                self.log.error("service %s has no resource %s" % (self.svcname, rid))
+                self.log.error("service %s has no resource %s", self.svcname, rid)
                 continue
-            self.log.info("set %s.disable = %s" % (rid, str(disable)))
+            self.log.info("set %s.disable = %s", rid, str(disable))
             self.config.set(rid, "disable", str(disable).lower())
 
         #
@@ -3602,7 +3616,7 @@ class Svc(Scheduler):
             for s in self.config.sections():
                 if self.config.has_option(s, "disable") and \
                    self.config.getboolean(s, "disable") == False:
-                    self.log.info("remove %s.disable = false" % s)
+                    self.log.info("remove %s.disable = false", s)
                     self.config.remove_option(s, "disable")
 
         try:
@@ -3638,11 +3652,11 @@ class Svc(Scheduler):
             for fpath in fpaths:
                 if os.path.exists(fpath) and \
                    (os.path.islink(fpath) or os.path.isfile(fpath)):
-                    self.log.info("remove %s" % fpath)
+                    self.log.info("remove %s", fpath)
                     os.unlink(fpath)
             for dpath in dpaths:
                 if os.path.exists(dpath):
-                    self.log.info("remove %s" % dpath)
+                    self.log.info("remove %s", dpath)
                     shutil.rmtree(dpath)
             return 0
         lines = self._read_cf().splitlines()
@@ -3656,9 +3670,9 @@ class Svc(Scheduler):
                 if sline == section:
                     in_section = True
                     need_write = True
-                    del(lines[i])
+                    del lines[i]
                     while i < len(lines) and not lines[i].strip().startswith("["):
-                       del(lines[i])
+                        del lines[i]
 
             if not in_section:
                 print("service", self.svcname, "has no resource", rid, file=sys.stderr)
@@ -3683,17 +3697,18 @@ class Svc(Scheduler):
             return 1
 
         def subst(argv):
-            n = len(argv)
             for i, arg in enumerate(argv):
                 if arg == "%instances%":
                     del argv[i]
-                    s = [r.container_name for r in containers if not r.skip and not r.disabled]
+                    s = [resource.container_name for resource in containers
+                         if not resource.skip and not resource.disabled]
                     for instance in s:
                         argv.insert(i, instance)
             for i, arg in enumerate(argv):
                 if arg == "%images%":
                     del argv[i]
-                    s = list(set([r.run_image for r in containers if not r.skip and not r.disabled]))
+                    s = list(set([resource.run_image for resource in containers
+                                  if not resource.skip and not resource.disabled]))
                     for image in s:
                         argv.insert(i, image)
             for i, arg in enumerate(argv):
@@ -3719,26 +3734,46 @@ class Svc(Scheduler):
         return 1
 
     def freeze(self):
-        for r in self.get_resources("hb"):
-            r.freeze()
+        """
+        Call the freeze method of hb resources, then set the frozen flag.
+        """
+        for resource in self.get_resources("hb"):
+            resource.freeze()
         self.freezer.freeze()
 
     def thaw(self):
-        for r in self.get_resources("hb"):
-            r.thaw()
+        """
+        Call the thaw method of hb resources, then unset the frozen flag.
+        """
+        for resource in self.get_resources("hb"):
+            resource.thaw()
         self.freezer.thaw()
 
     def frozen(self):
+        """
+        Return True if the service is frozen.
+        """
         return self.freezer.frozen()
 
     def pull(self):
+        """
+        Pull a service configuration from the collector, installs it and
+        create the svcmgr link.
+        """
         self.node.pull_service(self.svcname)
 
     def validate_config(self, path=None):
+        """
+        The validate config action entrypoint.
+        """
         ret = self._validate_config(path=path)
         return ret["warnings"] + ret["errors"]
 
     def _validate_config(self, path=None):
+        """
+        The validate config core method.
+        Returns a dict with the list of syntax warnings and errors.
+        """
         from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue, deprecated_sections
         from svcBuilder import build, handle_references
         from rcUtilities import convert_size
@@ -3757,7 +3792,7 @@ class Svc(Scheduler):
 
         def check_scoping(key, section, option):
             if not key.at and "@" in option:
-                self.log.error("option %s.%s does not support scoping" % (section, option))
+                self.log.error("option %s.%s does not support scoping", section, option)
                 return 1
             return 0
 
@@ -3778,9 +3813,9 @@ class Svc(Scheduler):
 
         def get_val(section, option):
             value = config.get(section, option)
-            if type(key.default) == bool:
+            if isinstance(key.default, bool):
                 value = bool(value)
-            elif type(key.default) == int:
+            elif isinstance(key.default, int):
                 try:
                     value = int(value)
                 except:
@@ -3794,7 +3829,8 @@ class Svc(Scheduler):
                     candidates = ", ".join(key.candidates)
                 else:
                     candidates = str(key.candidates)
-                self.log.error("option %s.%s value %s is not in valid candidates: %s" % (section, option, str(value), candidates))
+                self.log.error("option %s.%s value %s is not in valid candidates: %s",
+                               section, option, str(value), candidates)
                 return 1
             return 0
 
@@ -3825,7 +3861,7 @@ class Svc(Scheduler):
                         found = True
                         break
                 if not found:
-                    self.log.warning("ignored option DEFAULT.%s" % option)
+                    self.log.warning("ignored option DEFAULT.%s", option)
                     ret["warnings"] += 1
             else:
                 # here we know its a native DEFAULT option
@@ -3843,11 +3879,11 @@ class Svc(Scheduler):
             else:
                 rtype = None
             if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
-                self.log.warning("ignored section %s" % section)
+                self.log.warning("ignored section %s", section)
                 ret["warnings"] += 1
                 continue
             if family in deprecated_sections:
-                self.log.warning("deprecated section prefix %s" % family)
+                self.log.warning("deprecated section prefix %s", family)
                 ret["warnings"] += 1
                 family, rtype = deprecated_sections[family]
             for option in config.options(section):
@@ -3857,15 +3893,16 @@ class Svc(Scheduler):
                 if key is None:
                     key = data.sections[family].getkey(option)
                 if key is None:
-                    self.log.warning("ignored option %s.%s, driver %s" % (section, option, rtype if rtype else "generic"))
+                    self.log.warning("ignored option %s.%s, driver %s", section,
+                                     option, rtype if rtype else "generic")
                     ret["warnings"] += 1
                 else:
                     ret["errors"] += check_known_option(key, section, option)
 
         try:
-            svc = build(self.svcname, svcconf=path)
+            build(self.svcname, svcconf=path)
         except Exception as e:
-            self.log.error("the new configuration causes the following build error: %s" % str(e))
+            self.log.error("the new configuration causes the following build error: %s", str(e))
             ret["errors"] += 1
 
         return ret
@@ -3902,7 +3939,7 @@ class Svc(Scheduler):
         self.log.debug("create %s", self.paths.run_flag)
         try:
             with open(self.paths.run_flag, "w") as ofile:
-                 pass
+                pass
         except (IOError, OSError) as exc:
             self.log.error("failed to create %s: %s",
                            self.paths.run_flag, str(exc))
@@ -3927,7 +3964,7 @@ class Svc(Scheduler):
         """
         import codecs
         with codecs.open(self.paths.cf, "r", "utf8") as ofile:
-             buff = ofile.read()
+            buff = ofile.read()
         return buff
 
     def _write_cf(self, buff):
@@ -3942,6 +3979,6 @@ class Svc(Scheduler):
         os.chmod(fpath, 0o0644)
         ofile.close()
         with codecs.open(fpath, "w", "utf8") as ofile:
-             ofile.write(buff)
+            ofile.write(buff)
         shutil.move(fpath, self.paths.cf)
 
