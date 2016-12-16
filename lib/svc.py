@@ -303,7 +303,7 @@ class Svc(Scheduler):
         # set by the builder
         self.node = None
         self.clustertype = "failover"
-        self.show_disabled=False,
+        self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set()
         self.drpnodes = set()
@@ -737,10 +737,12 @@ class Svc(Scheduler):
                 raise ex.excError
 
     def __str__(self):
-        output="Service %s available resources:" % (Resource.__str__(self))
-        for k in self.type2resSets.keys() : output += " %s" % k
-        output+="\n"
-        for r in self.resSets:  output+= "  [%s]" % (r.__str__())
+        output = "Service %s available resources:" % (Resource.__str__(self))
+        for k in self.type2resSets.keys():
+            output += " %s" % k
+        output += "\n"
+        for r in self.resSets:
+            output += "  [%s]" % (r.__str__())
         return output
 
     def status(self):
@@ -908,7 +910,7 @@ class Svc(Scheduler):
                 for line in f.readlines():
                     s = c(line)
                     if s:
-                         print(s)
+                        print(s)
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
@@ -958,12 +960,12 @@ class Svc(Scheduler):
                     if subpfx and not subpfx.startswith(color.END):
                         subpfx = color.END + subpfx
                     print('\n'.join(wrap(msg,
-                                         initial_indent = subpfx,
-                                         subsequent_indent = subpfx,
+                                         initial_indent=subpfx,
+                                         subsequent_indent=subpfx,
                                          width=tw
                                         )
                                    )
-                    )
+                         )
 
         if self.options.show_disabled is not None:
             discard_disabled = not self.options.show_disabled
@@ -1022,15 +1024,15 @@ class Svc(Scheduler):
             for i, e in enumerate(l):
                 if i == last:
                     fmt = head_c+"  '- %-14s %4s %-10s %s"
-                    pfx = head_c+"     %-14s %4s %-10s "%('','','')
-                    subpfx = head_c+"        %-11s %4s %-10s "%('','','')
+                    pfx = head_c+"     %-14s %4s %-10s " % ('', '', '')
+                    subpfx = head_c+"        %-11s %4s %-10s " % ('', '', '')
                     print_res(e, fmt, pfx, subpfx=subpfx)
                     subresbar = " "
                 else:
                     fmt = head_c+"  |- %-14s %4s %-10s %s"
-                    pfx = head_c+"  |  %-14s %4s %-10s "%('','','')
+                    pfx = head_c+"  |  %-14s %4s %-10s " % ('', '', '')
                     if e[0] in cr and len(cr[e[0]]) > 0:
-                        subpfx = head_c+"  |  |  %-11s %4s %-10s "%('','','')
+                        subpfx = head_c+"  |  |  %-11s %4s %-10s " % ('', '', '')
                     else:
                         subpfx = None
                     print_res(e, fmt, pfx, subpfx=subpfx)
@@ -1041,11 +1043,11 @@ class Svc(Scheduler):
                         for _i, _e in enumerate(cr[e[0]]):
                             if _i == _last:
                                 fmt = head_c+"  "+subresbar+"  '- %-11s %4s %-10s %s"
-                                pfx = head_c+"  "+subresbar+"     %-11s %4s %-10s "%('','','')
+                                pfx = head_c+"  "+subresbar+"     %-11s %4s %-10s " % ('', '', '')
                                 print_res(_e, fmt, pfx)
                             else:
                                 fmt = head_c+"  "+subresbar+"  |- %-11s %4s %-10s %s"
-                                pfx = head_c+"  "+subresbar+"  |  %-11s %4s %-10s "%('','','')
+                                pfx = head_c+"  "+subresbar+"  |  %-11s %4s %-10s " % ('', '', '')
                                 print_res(_e, fmt, pfx)
 
         if n_accessory_resources > 0:
@@ -1064,11 +1066,11 @@ class Svc(Scheduler):
             for i, e in enumerate(l):
                 if i == last:
                     fmt = "   '- %-14s %4s %-10s %s"
-                    pfx = "      %-14s %4s %-10s "%('','','')
+                    pfx = "      %-14s %4s %-10s " % ('', '', '')
                     print_res(e, fmt, pfx)
                 else:
                     fmt = "   |- %-14s %4s %-10s %s"
-                    pfx = "   |  %-14s %4s %-10s "%('','','')
+                    pfx = "   |  %-14s %4s %-10s " % ('', '', '')
                     print_res(e, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):
@@ -1084,18 +1086,20 @@ class Svc(Scheduler):
         else:
             frozen = "0"
 
-        r_vars=["svcname",
-                "nodename",
-                "vmname",
-                "rid",
-                "res_type",
-                "res_desc",
-                "res_status",
-                "res_monitor",
-                "res_optional",
-                "res_disable",
-                "updated",
-                "res_log"]
+        r_vars = [
+            "svcname",
+            "nodename",
+            "vmname",
+            "rid",
+            "res_type",
+            "res_desc",
+            "res_status",
+            "res_monitor",
+            "res_optional",
+            "res_disable",
+            "updated",
+            "res_log",
+        ]
         r_vals = []
         import datetime
         now = datetime.datetime.now()
@@ -1105,61 +1109,67 @@ class Svc(Scheduler):
                 if 'encap' in r.tags:
                     continue
                 rstatus = rcStatus.status_str(r.rstatus)
-                r_vals.append([self.svcname,
-                               rcEnv.nodename,
-                               "",
-                               r.rid,
-                               r.type,
-                               r.label,
-                               str(rstatus),
-                               "1" if r.monitor else "0",
-                               "1" if r.optional else "0",
-                               "1" if r.disabled else "0",
-                               str(now),
-                               r.status_logs_str()])
-
-        g_vars=["mon_svcname",
-                "mon_svctype",
-                "mon_nodname",
-                "mon_vmname",
-                "mon_vmtype",
-                "mon_nodtype",
-                "mon_ipstatus",
-                "mon_diskstatus",
-                "mon_syncstatus",
-                "mon_hbstatus",
-                "mon_containerstatus",
-                "mon_fsstatus",
-                "mon_sharestatus",
-                "mon_appstatus",
-                "mon_availstatus",
-                "mon_overallstatus",
-                "mon_updated",
-                "mon_prinodes",
-                "mon_frozen"]
-
-        containers = self.get_resources('container')
-        containers = [ c for c in containers if c.type != "container.docker" ]
-        if len(containers) == 0:
-            g_vals=[self.svcname,
-                    self.svc_env,
+                r_vals.append([
+                    self.svcname,
                     rcEnv.nodename,
                     "",
-                    "hosted",
-                    rcEnv.node_env,
-                    str(status["ip"]),
-                    str(status["disk"]),
-                    str(status["sync"]),
-                    str(status["hb"]),
-                    str(status["container"]),
-                    str(status["fs"]),
-                    str(status["share"]),
-                    str(status["app"]),
-                    str(status["avail"]),
-                    str(status["overall"]),
+                    r.rid,
+                    r.type,
+                    r.label,
+                    str(rstatus),
+                    "1" if r.monitor else "0",
+                    "1" if r.optional else "0",
+                    "1" if r.disabled else "0",
                     str(now),
-                    ' '.join(self.nodes),
-                    frozen]
+                    r.status_logs_str(),
+                ])
+
+        g_vars = [
+            "mon_svcname",
+            "mon_svctype",
+            "mon_nodname",
+            "mon_vmname",
+            "mon_vmtype",
+            "mon_nodtype",
+            "mon_ipstatus",
+            "mon_diskstatus",
+            "mon_syncstatus",
+            "mon_hbstatus",
+            "mon_containerstatus",
+            "mon_fsstatus",
+            "mon_sharestatus",
+            "mon_appstatus",
+            "mon_availstatus",
+            "mon_overallstatus",
+            "mon_updated",
+            "mon_prinodes",
+            "mon_frozen",
+        ]
+
+        containers = self.get_resources('container')
+        containers = [c for c in containers if c.type != "container.docker"]
+        if len(containers) == 0:
+            g_vals = [
+                self.svcname,
+                self.svc_env,
+                rcEnv.nodename,
+                "",
+                "hosted",
+                rcEnv.node_env,
+                str(status["ip"]),
+                str(status["disk"]),
+                str(status["sync"]),
+                str(status["hb"]),
+                str(status["container"]),
+                str(status["fs"]),
+                str(status["share"]),
+                str(status["app"]),
+                str(status["avail"]),
+                str(status["overall"]),
+                str(now),
+                ' '.join(self.nodes),
+                frozen,
+            ]
         else:
             g_vals = []
             for container in containers:
@@ -2476,11 +2486,12 @@ class Svc(Scheduler):
         self.presync_done = True
 
     def sync_nodes(self):
-        rtypes = ["sync.rsync",
-                  "sync.zfs",
-                  "sync.btrfs",
-                  "sync.docker",
-                  "sync.dds",
+        rtypes = [
+            "sync.rsync",
+            "sync.zfs",
+            "sync.btrfs",
+            "sync.docker",
+            "sync.dds",
         ]
         if not self.can_sync(rtypes, 'nodes'):
             return
@@ -2490,11 +2501,12 @@ class Svc(Scheduler):
         self.remote_postsync()
 
     def sync_drp(self):
-        rtypes = ["sync.rsync",
-                  "sync.zfs",
-                  "sync.btrfs",
-                  "sync.docker",
-                  "sync.dds",
+        rtypes = [
+            "sync.rsync",
+            "sync.zfs",
+            "sync.btrfs",
+            "sync.docker",
+            "sync.dds",
         ]
         if not self.can_sync(rtypes, 'drpnodes'):
             return
@@ -3933,25 +3945,3 @@ class Svc(Scheduler):
              ofile.write(buff)
         shutil.move(fpath, self.paths.cf)
 
-if __name__ == "__main__" :
-    for c in (Svc,) :
-        help(c)
-    print("""s1=Svc("Zone")""")
-    s1=Svc("Zone")
-    print("s1=",s1)
-    print("""s2=Svc("basic")""")
-    s2=Svc("basic")
-    print("s2=",s2)
-    print("""s1+=Resource("ip")""")
-    s1+=Resource("ip")
-    print("s1=",s1)
-    print("""s1+=Resource("ip")""")
-    s1+=Resource("ip")
-    print("""s1+=Resource("fs")""")
-    s1+=Resource("fs")
-    print("""s1+=Resource("fs")""")
-    s1+=Resource("fs")
-    print("s1=",s1)
-
-    print("""s1.action("status")""")
-    s1.action("status")
