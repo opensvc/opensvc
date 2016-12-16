@@ -249,16 +249,16 @@ class Hb(resHb.Hb):
             self.log.info("local already frozen")
             do_local = False
 
-        if not self.svc.remote and remote_status in ['frozen_stop', 'start_ready']:
+        if not self.svc.options.remote and remote_status in ['frozen_stop', 'start_ready']:
             self.log.info("remote already frozen")
             do_remote = False
-        if self.svc.remote:
+        if self.svc.options.remote:
             do_remote = False
 
         if not do_local and not do_remote:
             return
 
-        if not self.svc.remote and remote_status == 'stopped' and local_status == 'started':
+        if not self.svc.options.remote and remote_status == 'stopped' and local_status == 'started':
             out, err, ret = self.svc.remote_action(peer, "freeze --remote", sync=True)
             self.print_remote(out, err)
             do_remote = False
@@ -297,18 +297,18 @@ class Hb(resHb.Hb):
             self.log.info("local already unfrozen")
             do_local = False
 
-        if not self.svc.remote and remote_status not in ['frozen_stop', 'start_ready']:
+        if not self.svc.options.remote and remote_status not in ['frozen_stop', 'start_ready']:
             self.log.info("remote already unfrozen")
             do_remote = False
 
-        if self.svc.remote and self.svc.running_action == "thaw":
-            self.log.debug("skip remote action: remote flag %s, running action %s"%(str(self.svc.remote), self.svc.running_action))
+        if self.svc.options.remote and self.svc.running_action == "thaw":
+            self.log.debug("skip remote action: remote flag %s, running action %s"%(str(self.svc.options.remote), self.svc.running_action))
             do_remote = False
 
         if not do_local and not do_remote:
             return
 
-        if not self.svc.remote and remote_status == 'start_ready' and local_status == 'frozen_stop':
+        if not self.svc.options.remote and remote_status == 'start_ready' and local_status == 'frozen_stop':
             out, err, ret = self.svc.remote_action(peer, "thaw --remote", sync=True)
             self.print_remote(out, err)
             do_remote = False
@@ -370,14 +370,14 @@ class Hb(resHb.Hb):
                 raise ex.excError("local state is stop_failed")
             remote_status = self.service_remote_status()
             self.log.debug('switch [local was started]: remote_status=%s'%(remote_status))
-            if not self.svc.remote and remote_status in ['stopped', 'frozen_stop']:
+            if not self.svc.options.remote and remote_status in ['stopped', 'frozen_stop']:
                 out, err, ret = self.svc.remote_action(peer, "start --remote", sync=True)
                 self.print_remote(out, err)
                 if ret != 0:
                     raise ex.excError(err)
             self.wait_for_state(["started", "start_failed", "starting"], remote=True)
         elif remote_status == "started":
-            if not self.svc.remote:
+            if not self.svc.options.remote:
                 out, err, ret = self.svc.remote_action(peer, "stop --remote", sync=True)
                 self.print_remote(out, err)
                 if ret != 0:
@@ -429,7 +429,7 @@ class Hb(resHb.Hb):
         if local_status == 'start_failed':
             raise ex.excError("start_failed on local node. please investigate the reason and freeze-stop the service on local node before trying to start.")
 
-        if not self.svc.remote and remote_status == 'stopped':
+        if not self.svc.options.remote and remote_status == 'stopped':
             out, err, ret = self.svc.remote_action(peer, "freeze --remote", sync=True)
             self.print_remote(out, err)
             do_remote = False
@@ -467,7 +467,7 @@ class Hb(resHb.Hb):
         self.log.debug('stop: local_status=%s remote_status=%s'%(local_status, remote_status))
         peer = self.get_peer()
 
-        if not self.svc.remote and remote_status != 'frozen_stop':
+        if not self.svc.options.remote and remote_status != 'frozen_stop':
             out, err, ret = self.svc.remote_action(peer, "stop --remote", sync=True)
             if ret != 0:
                 raise ex.excError(err)

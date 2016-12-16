@@ -117,7 +117,6 @@ def set_svcs_options(node, options, docker_argv):
     for svc in node.svcs:
         svc.options.update(options.__dict__)
         svc.options.slave = slave
-        svc.remote = options.remote
         if docker_argv is not None:
             svc.docker_argv = docker_argv
 
