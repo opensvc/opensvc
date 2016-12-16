@@ -1,5 +1,12 @@
 from __future__ import print_function
 
+import sys
+import os
+import signal
+import logging
+import datetime
+import lock
+
 from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
@@ -9,15 +16,9 @@ from rcUtilities import justcall, lazy, vcall
 from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
-import sys
-import os
-import signal
-import lock
 import rcLogger
-import logging
-import datetime
 import node
-from rcScheduler import *
+from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
@@ -35,7 +36,7 @@ CONFIG_DEFAULTS = {
     'no_schedule': '',
 }
 
-actions_translation = {
+ACTIONS_TRANSLATIONS = {
     "push_env_mtime": "push_config_mtime",
     "push_env": "push_config",
     "json_env": "json_config",
@@ -55,7 +56,7 @@ actions_translation = {
     "syncverify": "sync_verify",
 }
 
-actions_allow_on_frozen = [
+ACTIONS_ALLOW_ON_FROZEN = [
     "autopush",
     "delete",
     "disable",
@@ -90,7 +91,7 @@ actions_allow_on_frozen = [
     "validate_config",
 ]
 
-actions_allow_on_cluster = actions_allow_on_frozen + [
+ACTIONS_ALLOW_ON_CLUSTER = ACTIONS_ALLOW_ON_FROZEN + [
     "boot",
     "docker",
     "dns_update",
@@ -105,7 +106,7 @@ actions_allow_on_cluster = actions_allow_on_frozen + [
     "validate_config",
 ]
 
-actions_no_log = [
+ACTIONS_NO_LOG = [
     "delete",
     "edit_config",
     "get",
@@ -123,7 +124,7 @@ actions_no_log = [
     "validate_config",
 ]
 
-actions_no_trigger = [
+ACTIONS_NO_TRIGGER = [
     "delete",
     "dns_update",
     "enable",
@@ -144,7 +145,7 @@ actions_no_trigger = [
     "resource_monitor",
 ]
 
-actions_no_lock = [
+ACTIONS_NO_LOCK = [
     "docker",
     "edit_config",
     "freeze",
@@ -164,7 +165,7 @@ actions_no_lock = [
     "validate_config",
 ]
 
-disk_types = [
+DISK_TYPES = [
     "disk.drbd",
     "disk.gandi",
     "disk.gce",
@@ -177,7 +178,7 @@ disk_types = [
     "disk.zpool",
 ]
 
-status_types = [
+STATUS_TYPES = [
     "app",
     "container.amazon",
     "container.docker",
@@ -526,7 +527,7 @@ class Svc(Scheduler):
         Acquire the service action lock.
         """
         suffix = None
-        if action in actions_no_lock:
+        if action in ACTIONS_NO_LOCK:
             # no need to serialize this action
             return
         if action.startswith("collector"):
@@ -700,7 +701,7 @@ class Svc(Scheduler):
         sets = sorted(sets, key=lambda x: x.type, reverse=reverse)
 
         for r in sets:
-            if action in actions_no_trigger or r.all_skip(action):
+            if action in ACTIONS_NO_TRIGGER or r.all_skip(action):
                 break
             try:
                 r.log.debug("start %s pre_action"%r.type)
@@ -723,7 +724,7 @@ class Svc(Scheduler):
             r.action(action, tags=tags, xtags=xtags)
 
         for r in sets:
-            if action in actions_no_trigger or r.all_skip(action):
+            if action in ACTIONS_NO_TRIGGER or r.all_skip(action):
                 break
             try:
                 r.log.debug("start %s post_action"%r.type)
@@ -750,7 +751,7 @@ class Svc(Scheduler):
         Return the aggregate status a service.
         """
         ss = rcStatus.Status()
-        for r in self.get_res_sets(status_types, strict=True):
+        for r in self.get_res_sets(STATUS_TYPES, strict=True):
             if not self.encap and 'encap' in r.tags:
                 continue
             if "sync." not in r.type:
@@ -792,7 +793,7 @@ class Svc(Scheduler):
                 except:
                     d['encap'][container.name] = {'resources': {}}
 
-        for rs in self.get_res_sets(status_types, strict=True):
+        for rs in self.get_res_sets(STATUS_TYPES, strict=True):
             for r in rs.resources:
                 rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad(color=False)
                 d['resources'][rid] = {'status': status,
@@ -1241,7 +1242,7 @@ class Svc(Scheduler):
         """
         self.setup_environ()
         rset_status = {}
-        for t in status_types:
+        for t in STATUS_TYPES:
             g = t.split('.')[0]
             if g not in groups:
                 continue
@@ -1586,7 +1587,7 @@ class Svc(Scheduler):
             groups = set(["container", "ip", "disk", "fs", "share", "hb"])
             for g in groups:
                 gs[g] = 'down'
-            for rs in self.get_res_sets(status_types, strict=True):
+            for rs in self.get_res_sets(STATUS_TYPES, strict=True):
                 g = rs.type.split('.')[0]
                 if g not in groups:
                     continue
@@ -1655,7 +1656,7 @@ class Svc(Scheduler):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for t in [_t for _t in status_types if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
+        for t in [_t for _t in STATUS_TYPES if not _t.startswith('sync') and not _t.startswith('hb') and not _t.startswith('stonith')]:
             if t in excluded_groups:
                 continue
             group = t.split('.')[0]
@@ -1688,7 +1689,7 @@ class Svc(Scheduler):
                 status["overall"] += rcStatus.WARN
                 break
 
-        for t in [_t for _t in status_types if _t.startswith('stonith')]:
+        for t in [_t for _t in STATUS_TYPES if _t.startswith('stonith')]:
             if 'stonith' not in groups:
                 continue
             if t in excluded_groups:
@@ -1698,7 +1699,7 @@ class Svc(Scheduler):
                 status['stonith'] += s
                 status["overall"] += s
 
-        for t in [_t for _t in status_types if _t.startswith('hb')]:
+        for t in [_t for _t in STATUS_TYPES if _t.startswith('hb')]:
             if 'hb' not in groups:
                 continue
             if t in excluded_groups:
@@ -1708,7 +1709,7 @@ class Svc(Scheduler):
                 status['hb'] += s
                 status["overall"] += s
 
-        for t in [_t for _t in status_types if _t.startswith('sync')]:
+        for t in [_t for _t in STATUS_TYPES if _t.startswith('sync')]:
             if 'sync' not in groups:
                 continue
             if t in excluded_groups:
@@ -1921,7 +1922,7 @@ class Svc(Scheduler):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
     def cluster_mode_safety_net(self, action):
-        if action in actions_allow_on_cluster:
+        if action in ACTIONS_ALLOW_ON_CLUSTER:
             return
         if not self.has_res_set(['hb.ovm', 'hb.openha', 'hb.linuxha', 'hb.sg', 'hb.rhcs', 'hb.vcs']):
             return
@@ -2099,7 +2100,7 @@ class Svc(Scheduler):
         self.sub_set_action("sync.symsnap", "startstandby")
         self.sub_set_action("sync.ibmdssnap", "startstandby")
         self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action(disk_types, "startstandby", xtags=set(['zone']))
+        self.sub_set_action(DISK_TYPES, "startstandby", xtags=set(['zone']))
 
     @_master_action
     def master_startdisk(self):
@@ -2112,7 +2113,7 @@ class Svc(Scheduler):
         self.sub_set_action("sync.hp3par", "start")
         self.sub_set_action("sync.ibmdssnap", "start")
         self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action(disk_types, "start", xtags=set(['zone']))
+        self.sub_set_action(DISK_TYPES, "start", xtags=set(['zone']))
 
     def stopdisk(self):
         self.slave_stopdisk()
@@ -2125,17 +2126,17 @@ class Svc(Scheduler):
     @_master_action
     def master_stopdisk(self):
         self.sub_set_action("sync.btrfssnap", "stop")
-        self.sub_set_action(disk_types, "stop", xtags=set(['zone']))
+        self.sub_set_action(DISK_TYPES, "stop", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
 
     @_master_action
     def master_shutdowndisk(self):
         self.sub_set_action("sync.btrfssnap", "shutdown")
-        self.sub_set_action(disk_types, "shutdown", xtags=set(['zone']))
+        self.sub_set_action(DISK_TYPES, "shutdown", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
 
     def rollbackdisk(self):
-        self.sub_set_action(disk_types, "rollback", xtags=set(['zone']))
+        self.sub_set_action(DISK_TYPES, "rollback", xtags=set(['zone']))
         self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
 
     def abort_start(self):
@@ -2906,8 +2907,8 @@ class Svc(Scheduler):
         return l
 
     def action_translate(self, action):
-        if action in actions_translation:
-            return actions_translation[action]
+        if action in ACTIONS_TRANSLATIONS:
+            return ACTIONS_TRANSLATIONS[action]
         return action
 
     def action(self, *args, **kwargs):
@@ -2977,7 +2978,7 @@ class Svc(Scheduler):
         action = self.action_translate(action)
 
 
-        if action not in actions_allow_on_frozen and \
+        if action not in ACTIONS_ALLOW_ON_FROZEN and \
            'compliance' not in action and \
            'collector' not in action:
             if self.frozen() and not self.options.force:
@@ -3016,7 +3017,7 @@ class Svc(Scheduler):
            action.startswith("collector") or \
            action.startswith("json_"):
             return self.do_print_action(action)
-        if action in actions_no_log or \
+        if action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
            self.options.dry_run:
