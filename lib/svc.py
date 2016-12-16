@@ -3084,8 +3084,8 @@ class Svc(Scheduler):
             peers -= set([rcEnv.nodename])
 
         a = [e for e in sys.argv[1:] if e != "--cluster"]
-        if hasattr(self, "docker_argv") and len(self.docker_argv) > 0:
-            a += self.docker_argv
+        if self.options.docker_argv and len(self.options.docker_argv) > 0:
+            a += self.options.docker_argv
 
         if collect:
             def wrapper(q, **kwargs):
@@ -3662,7 +3662,7 @@ class Svc(Scheduler):
     def docker(self):
         import subprocess
         containers = self.get_resources('container')
-        if not hasattr(self, "docker_argv"):
+        if self.options.docker_argv is None:
             print("no docker command arguments supplied", file=sys.stderr)
             return 1
 
@@ -3695,7 +3695,7 @@ class Svc(Scheduler):
         for r in containers:
             if hasattr(r, "docker_cmd"):
                 r.docker_start(verbose=False)
-                cmd = r.docker_cmd + subst(self.docker_argv)
+                cmd = r.docker_cmd + subst(self.options.docker_argv)
                 p = subprocess.Popen(cmd)
                 p.communicate()
                 return p.returncode

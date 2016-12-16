@@ -117,8 +117,7 @@ def set_svcs_options(node, options, docker_argv):
     for svc in node.svcs:
         svc.options.update(options.__dict__)
         svc.options.slave = slave
-        if docker_argv is not None:
-            svc.docker_argv = docker_argv
+        svc.options.docker_argv = docker_argv
 
 def do_svcs_action_detached():
     """
