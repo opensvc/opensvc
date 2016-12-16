@@ -233,7 +233,9 @@ class rcEnv:
     vt_supported = vt_vm + vt_container
 
     dbopensvc = "None"
+    dbopensvc_host = None
     dbcompliance = "None"
+    dbcompliance_host = None
     paths = get_osvc_paths(sysname=sysname, detect=True)
     pathsvc = paths.pathsvc
     pathlib = paths.pathlib

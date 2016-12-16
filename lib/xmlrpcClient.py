@@ -332,6 +332,10 @@ class Collector(object):
     def end_action(self, svc, action, begin, end, logfile, sync=True):
         err = 'ok'
         dateprev = None
+        res = None
+        res_err = None
+        pid = None
+        msg = None
         lines = open(logfile, 'r').read()
         pids = set([])
 
@@ -359,7 +363,7 @@ class Collector(object):
             """Push to database the previous line, so that begin and end
             date are available.
             """
-            if dateprev is not None:
+            if res is not None and dateprev is not None:
                 res = res.lower()
                 res = res.replace(svc.svcname+'.','')
                 vals.append([svc.svcname,
