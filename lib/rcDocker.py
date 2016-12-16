@@ -354,8 +354,13 @@ class DockerLib(object):
         if not os.path.exists(self.docker_pid_file):
             self.log.debug("docker_running: no pid file %s" % self.docker_pid_file)
             return False
-        with open(self.docker_pid_file, "r") as f:
-            buff = f.read()
+        try:
+            with open(self.docker_pid_file, "r") as f:
+                buff = f.read()
+        except IOError as exc:
+            if exc.errno == 2:
+                return False
+            return ex.excError("docker_running: "+str(exc))
         self.log.debug("docker_running: pid found in pid file %s" % buff)
         exe = os.path.join(os.sep, "proc", buff, "exe")
         try:
