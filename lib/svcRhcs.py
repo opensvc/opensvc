@@ -8,6 +8,9 @@ from xml.etree.ElementTree import ElementTree, SubElement
 import rcIfconfigLinux as rcIfconfig
 
 class SvcRhcs(svc.Svc):
+    builder_props = [
+      "nodes",
+    ]
 
     def __init__(self, svcname, pkg_name=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, "rhcs", optional=optional, disabled=disabled, tags=tags)

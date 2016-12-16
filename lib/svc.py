@@ -5,7 +5,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy
+from rcUtilities import justcall, lazy, vcall
 from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
@@ -249,10 +249,56 @@ class Svc(Scheduler):
     """
 
     def __init__(self, svcname=None, type="hosted", optional=False, disabled=False, tags=set([])):
-        """usage : aSvc=Svc(type)"""
-        self.encap = False
+        self.svcname = svcname
+        self.hostid = rcEnv.nodename
+        self.paths = Storage(
+            cf=os.path.join(rcEnv.pathetc, self.svcname+'.conf'),
+            push_flag=os.path.join(rcEnv.pathvar, self.svcname, 'last_pushed_config'),
+            run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
+        )
+        self.ref_cache = {}
+        self.resources_by_id = {}
+        self.resSets = []
+        self.type2resSets = {}
+        self.disks = set()
+        self.devs = set()
+
+        self.rset_status_cache = None
+        self.lockfd = None
+        self.group_status_cache = None
+        self.abort_start_done = False
+        self.action_start_date = datetime.datetime.now()
+        self.ha = False
         self.has_encap_resources = False
+        self.encap = False
+
+        # set by the builder
+        self.node = None
         self.clustertype = "failover"
+        self.show_disabled=False,
+        self.svc_env = rcEnv.node_env
+        self.nodes = set()
+        self.drpnodes = set()
+        self.drpnode = ""
+        self.encapnodes = set()
+        self.flex_primary = ""
+        self.drp_flex_primary = ""
+        self.sync_dblogger = False
+        self.create_pg = False
+        self.cron = False
+        self.force = False
+        self.cluster = False
+        self.disable_rollback = False
+        self.presync_done = False
+        self.presnap_trigger = None
+        self.postsnap_trigger = None
+        self.monitor_action = None
+        self.disabled = False
+        self.anti_affinity = None
+        self.autostart_node = []
+        self.lock_timeout = 60
+
+        # merged by the cmdline parser
         self.options = Storage(
             color="auto",
             slaves=False,
@@ -276,43 +322,14 @@ class Svc(Scheduler):
             discard=False,
             recover=False,
         )
-        self.node = None
-        self.ha = False
-        self.sync_dblogger = False
-        self.svcname = svcname
-        self.create_pg = True
-        self.hostid = rcEnv.nodename
-        self.resSets = []
-        self.type2resSets = {}
-        self.disks = set([])
-        self.devs = set([])
-        self.cron = False
-        self.force = False
-        self.cluster = False
-        self.disable_rollback = False
-        self.paths = Storage(
-            cf=os.path.join(rcEnv.pathetc, self.svcname+'.conf'),
-            push_flag=os.path.join(rcEnv.pathvar, svcname, 'last_pushed_config'),
-            run_flag=os.path.join(os.sep, "var", "run", "opensvc."+svcname),
-        )
+
+        self.log = rcLogger.initLogger(self.svcname)
         Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
 
-        self.ref_cache = {}
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
-        self.resources_by_id = {}
-        self.rset_status_cache = None
-        self.presync_done = False
-        self.presnap_trigger = None
-        self.postsnap_trigger = None
-        self.lockfd = None
-        self.action_start_date = datetime.datetime.now()
-        self.monitor_action = None
-        self.group_status_cache = None
-        self.abort_start_done = False
-        self.disabled = False
-        self.log = rcLogger.initLogger(self.svcname)
+
 
     @lazy
     def freezer(self):
@@ -1299,6 +1316,51 @@ class Svc(Scheduler):
         """
         self.node.system.crash()
 
+    def _pg_freeze(self):
+        """
+        Wrapper function for the process group freeze method.
+        """
+        return self._pg_freezer("freeze")
+
+    def _pg_thaw(self):
+        """
+        Wrapper function for the process group thaw method.
+        """
+        return self._pg_freezer("thaw")
+
+    def _pg_kill(self):
+        """
+        Wrapper function for the process group kill method.
+        """
+        return self._pg_freezer("kill")
+
+    def _pg_freezer(self, action):
+        """
+        Wrapper function for the process group methods.
+        """
+        if not self.create_pg:
+            return
+        if self.pg is None:
+            return
+        if action == "freeze":
+            self.pg.freeze(self)
+        elif action == "thaw":
+            self.pg.thaw(self)
+        elif action == "kill":
+            self.pg.kill(self)
+
+    @lazy
+    def pg(self):
+        try:
+            mod = __import__('rcPg'+rcEnv.sysname)
+        except ImportError:
+            self.log.info("process group are not supported on this platform")
+            return
+        except Exception as exc:
+            print(exc)
+            raise
+        return mod
+
     def pg_freeze(self):
         """
         Freeze all process of the process groups of the service.
@@ -1684,8 +1746,9 @@ class Svc(Scheduler):
         return devs
 
     def get_non_affine_svc(self):
-        if not hasattr(self, "anti_affinity"):
+        if not self.anti_affinity:
             return []
+        self.log.debug("build anti-affine services %s", str(self.anti_affinity))
         self.node.build_services(svcnames=self.anti_affinity)
         running_af_svc = []
         for svc in self.node.svcs:
@@ -3235,39 +3298,47 @@ class Svc(Scheduler):
         self.sub_set_action("container.hpvm", "_migrate")
         self.sub_set_action("container.esx", "_migrate")
 
+    def destination_node_sanity_checks(self):
+        if self.options.destination_node is None:
+            raise ex.excError("a destination node must be provided this action")
+        if self.options.destination_node == rcEnv.nodename:
+            raise ex.excError("the destination is the source node")
+        if self.options.destination_node not in self.nodes:
+            raise ex.excError("the destination node %s is not in the service "
+                              "nodes list" % self.options.destination_node)
+
     @_master_action
     def migrate(self):
-        if not hasattr(self, "destination_node"):
-            raise ex.excError("a destination node must be provided for the switch action")
-        if self.destination_node == rcEnv.nodename:
-            raise ex.excError("the destination node is source node")
-        if self.destination_node not in self.nodes:
-            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
+        """
+        Service online migration.
+        """
+        self.destination_node_sanity_checks()
         self.master_prstop()
         try:
-            self.remote_action(node=self.destination_node, action='startfs --master')
+            self.remote_action(node=self.options.destination_node, action='startfs --master')
             self._migrate()
         except:
             if self.has_res_set(['disk.scsireserv']):
-                self.log.error("scsi reservations were dropped. you have to acquire them now using the 'prstart' action either on source node or destination node, depending on your problem analysis.")
+                self.log.error("scsi reservations were dropped. you have to "
+                               "acquire them now using the 'prstart' action "
+                               "either on source node or destination node, "
+                               "depending on your problem analysis.")
             raise
         self.master_stopfs()
-        self.remote_action(node=self.destination_node, action='prstart --master')
+        self.remote_action(node=self.options.destination_node, action='prstart --master')
 
     def switch(self):
+        """
+        Service move to another node.
+        """
+        self.destination_node_sanity_checks()
         self.sub_set_action("hb", "switch")
-        if not hasattr(self, "destination_node"):
-            raise ex.excError("a destination node must be provided for the switch action")
-        if self.destination_node == rcEnv.nodename:
-            raise ex.excError("the destination node is source node")
-        if self.destination_node not in self.nodes:
-            raise ex.excError("the destination node %s is not in the service node list"%self.destination_node)
         self.stop()
-        self.remote_action(node=self.destination_node, action='start')
+        self.remote_action(node=self.options.destination_node, action='start')
 
     def collector_outdated(self):
-        """ return True if the configuration file has changed since last push
-            else return False
+        """
+        Return True if the configuration file has changed since last push.
         """
         if self.encap:
             return False
@@ -3829,6 +3900,13 @@ class Svc(Scheduler):
         """
         self.log.error("unexpected error. stack saved in the service debug log")
         self.log.debug("", exc_info=True)
+
+    def vcall(self, *args, **kwargs):
+        """
+        Wrap vcall, setting the service logger
+        """
+        kwargs["log"] = self.log
+        return vcall(*args, **kwargs)
 
     def _read_cf(self):
         """

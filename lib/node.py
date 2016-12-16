@@ -2382,8 +2382,10 @@ class Node(Scheduler):
         if len(data["data"][0]["svc_config"]) == 0:
             self.log.error("service has an empty configuration")
             return 1
-        with open(fpath, "w") as ofile:
-            ofile.write(data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t"))
+        buff = data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t")
+        import codecs
+        with codecs.open(fpath, "w", "utf8") as ofile:
+            ofile.write(buff)
         self.log.info("%s pulled", fpath)
         self.install_service_files(svcname)
 

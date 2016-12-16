@@ -73,7 +73,7 @@ class Ovm(resContainer.Container):
         return l[0]
 
     def _migrate(self):
-        cmd = ['xm', 'migrate', '-l', self.uuid, self.svc.destination_node]
+        cmd = ['xm', 'migrate', '-l', self.uuid, self.svc.options.destination_node]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError

@@ -836,26 +836,16 @@ class Resource(object):
         """
         Wrapper function for the process group methods.
         """
-        if hasattr(self, "svc"):
-            create_pg = self.svc.create_pg
-        else:
-            create_pg = self.create_pg
-        if not create_pg:
+        if not self.svc.create_pg:
             return
-        try:
-            mod = __import__('rcPg'+rcEnv.sysname)
-        except ImportError:
-            self.log.info("process group are not supported on this platform")
+        if self.svc.pg is None:
             return
-        except Exception as exc:
-            print(exc)
-            raise
         if action == "freeze":
-            mod.freeze(self)
+            self.svc.pg.freeze(self)
         elif action == "thaw":
-            mod.thaw(self)
+            self.svc.pg.thaw(self)
         elif action == "kill":
-            mod.kill(self)
+            self.svc.pg.kill(self)
 
     def pg_frozen(self):
         """
@@ -863,12 +853,9 @@ class Resource(object):
         """
         if not self.svc.create_pg:
             return False
-        try:
-            mod = __import__('rcPg'+rcEnv.sysname)
-        except ImportError:
-            self.status_log("process group are not supported on this platform", "warn")
+        if self.svc.pg is None:
             return False
-        return mod.frozen(self)
+        return self.svc.pg.frozen(self)
 
     def create_pg(self):
         """
@@ -876,15 +863,9 @@ class Resource(object):
         """
         if not self.svc.create_pg:
             return
-        try:
-            mod = __import__('rcPg'+rcEnv.sysname)
-        except ImportError:
-            self.log.info("process group are not supported on this platform")
+        if self.svc.pg is None:
             return
-        except Exception as exc:
-            print(exc)
-            raise
-        mod.create_pg(self)
+        self.svc.pg.create_pg(self)
 
     def check_requires(self, action):
         """

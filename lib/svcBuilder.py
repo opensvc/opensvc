@@ -3525,8 +3525,6 @@ def build(name, minimal=False, svcconf=None):
             flex_primary = ''
         d_nodes['flex_primary'] = flex_primary
 
-        kwargs['disabled'] = get_disabled(conf, "", "")
-
         if "drp_flex_primary" in defaults:
             drp_flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drp_flex_primary").lower()
         elif len(drpnodes) > 0:
@@ -3535,11 +3533,11 @@ def build(name, minimal=False, svcconf=None):
             drp_flex_primary = ''
         d_nodes['drp_flex_primary'] = drp_flex_primary
 
-        kwargs['disabled'] = get_disabled(conf, "", "")
-
         if "pkg_name" in defaults:
             if svcmode in ["sg", "rhcs", "vcs"]:
                 kwargs['pkg_name'] = defaults["pkg_name"]
+
+        kwargs['disabled'] = get_disabled(conf, "", "")
 
 
     #
@@ -3560,42 +3558,39 @@ def build(name, minimal=False, svcconf=None):
     svc.config = conf
 
     if hasattr(svc, "builder"):
+        builder_props = svc.builder_props
         svc.builder()
+    else:
+        builder_props = []
 
     #
     # Store and validate the service type
     #
-    if not hasattr(svc, "env"):
-        if "env" in defaults:
-            svc.svc_env = defaults["env"]
-        elif "service_type" in defaults:
-            svc.svc_env = defaults["service_type"]
-        else:
-            svc.svc_env = None
-
-    if svc.svc_env is None:
-        svc.svc_env = rcEnv.node_env
+    if "env" in defaults:
+        svc.svc_env = defaults["env"]
+    elif "service_type" in defaults:
+        svc.svc_env = defaults["service_type"]
 
     #
     # Setup service properties from config file content
     #
-    if not hasattr(svc, "nodes"):
+    if "nodes" not in builder_props:
         svc.nodes = set(nodes)
-    if not hasattr(svc, "drpnodes"):
+    if "drpnodes" not in builder_props:
         svc.drpnodes = set(drpnodes)
-    if not hasattr(svc, "drpnode"):
+    if "drpnode" not in builder_props:
         svc.drpnode = drpnode
-    if not hasattr(svc, "encapnodes"):
+    if "encapnodes" not in builder_props:
         svc.encapnodes = set(encapnodes)
-    if not hasattr(svc, "flex_primary"):
+    if "flex_primary" not in builder_props:
         svc.flex_primary = flex_primary
-    if not hasattr(svc, "drp_flex_primary"):
+    if "drp_flex_primary" not in builder_props:
         svc.drp_flex_primary = drp_flex_primary
 
     try:
         svc.lock_timeout = conf_get_int_scope(svc, conf, 'DEFAULT', 'lock_timeout')
     except ex.OptNotFound:
-        svc.lock_timeout = 60
+        pass
 
     if conf.has_option('DEFAULT', 'disable'):
         svc.disabled = conf.getboolean("DEFAULT", "disable")
@@ -3644,13 +3639,13 @@ def build(name, minimal=False, svcconf=None):
     try:
         svc.create_pg = conf_get_boolean_scope(svc, conf, "DEFAULT", 'create_pg')
     except ex.OptNotFound:
-        svc.create_pg = False
+        pass
     svc.pg_settings = get_pg_settings(svc, "DEFAULT")
 
     try:
         svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()
     except ex.OptNotFound:
-        svc.autostart_node = []
+        pass
 
     try:
         anti_affinity = conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity')
@@ -3845,11 +3840,13 @@ def list_services():
         l.append(name)
     return l
 
-def build_services(status=None, svcnames=[],
+def build_services(status=None, svcnames=None,
                    onlyprimary=False, onlysecondary=False, minimal=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
+    if svcnames is None:
+        svcnames = []
 
     check_privs()
 

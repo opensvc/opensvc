@@ -125,7 +125,6 @@ def set_svcs_options(node, options, docker_argv):
         svc.options.recover = options.recover
         svc.options.discard = options.discard
         svc.cluster = options.cluster
-        svc.destination_node = options.parm_destination_node
         if docker_argv is not None:
             svc.docker_argv = docker_argv
 

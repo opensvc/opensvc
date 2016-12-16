@@ -5,6 +5,9 @@ from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 
 class SvcVcs(svc.Svc):
+    builder_props = [
+      "nodes",
+    ]
 
     def __init__(self, svcname, pkg_name=None, optional=False, disabled=False, tags=set([])):
         svc.Svc.__init__(self, svcname, "vcs", optional=optional, disabled=disabled, tags=tags)
