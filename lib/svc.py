@@ -3513,17 +3513,24 @@ class Svc(Scheduler):
             raise ex.excError(str(exc))
 
     def get(self):
+        """
+        The 'get' action entrypoint.
+        Verifies the --param and --value are set, set DEFAULT as section
+        if no section was specified, and finally,
+        * print the raw value if --eval is not set
+        * print the dereferenced and evaluated value if --eval is set
+        """
         self.load_config()
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        l = self.options.param.split('.')
-        if len(l) == 1:
-            l.insert(0, "DEFAULT")
-        elif len(l) != 2:
+        elements = self.options.param.split('.')
+        if len(elements) == 1:
+            elements.insert(0, "DEFAULT")
+        elif len(elements) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
-        section, option = l
+        section, option = elements
         if section != 'DEFAULT' and not self.config.has_section(section):
             print("section [%s] not found"%section, file=sys.stderr)
             return 1
@@ -3538,6 +3545,12 @@ class Svc(Scheduler):
         return 0
 
     def set(self):
+        """
+        The 'set' action entrypoint.
+        Verifies the --param and --value are set, set DEFAULT as section
+        if no section was specified, and set the value using the internal
+        _set() method.
+        """
         self.load_config()
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
@@ -3545,85 +3558,114 @@ class Svc(Scheduler):
         if self.options.value is None:
             print("no value. set --value", file=sys.stderr)
             return 1
-        l = self.options.param.split('.')
-        if len(l) == 1:
-            l.insert(0, "DEFAULT")
-        elif len(l) != 2:
+        elements = self.options.param.split('.')
+        if len(elements) == 1:
+            elements.insert(0, "DEFAULT")
+        elif len(elements) != 2:
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         try:
-            self._set(l[0], l[1], self.options.value)
+            self._set(elements[0], elements[1], self.options.value)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return 1
         return 0
 
-    def setenv(self, l, interactive=False):
+    def setenv(self, args, interactive=False):
+        """
+        For each option in the 'env' section of the configuration file,
+        * rewrite the value using the value specified in a corresponding
+          --env <option>=<value> commandline arg
+        * or prompt for the value if --interactive is set, and rewrite
+        * or leave the value as is, considering the default is accepted
+        """
         explicit_options = []
-        for s in l:
-            i = s.index("=")
-            option = s[:i]
-            value = s[i+1:]
+
+        for arg in args:
+            idx = arg.index("=")
+            option = arg[:idx]
+            value = arg[idx+1:]
             self._set("env", option, value)
             explicit_options.append(option)
+
         if not interactive:
             return
+
         if not os.isatty(0):
             raise ex.excError("--interactive is set but input fd is not a tty")
-        for k, v in self.env_section_keys().items():
-            if k.endswith(".comment"):
+
+        for key, default_val in self.env_section_keys().items():
+            if key.endswith(".comment"):
                 continue
-            if k in explicit_options:
+            if key in explicit_options:
                 continue
-            if self.config.has_option("env", k+".comment"):
-                print(self.config.get("env", k+".comment"))
-            val = raw_input("%s [%s] > " % (k, str(v)))
-            if val != "":
-                self._set("env", k, val)
+            if self.config.has_option("env", key+".comment"):
+                print(self.config.get("env", key+".comment"))
+            newval = raw_input("%s [%s] > " % (key, str(default_val)))
+            if newval != "":
+                self._set("env", key, newval)
 
     def _set(self, section, option, value):
+        """
+        Set <option> to <value> in <section> of the configuration file.
+        """
         section = "[%s]" % section
         lines = self._read_cf().splitlines()
-
         done = False
         in_section = False
-        for i, line in enumerate(lines):
+
+        for idx, line in enumerate(lines):
             sline = line.strip()
             if sline == section:
                 in_section = True
             elif in_section:
                 if sline.startswith("[") and not done:
                     # section found and parsed and no option => add option
-                    j = i
-                    while j > 0 and lines[j-1].strip() == "":
-                        j -= 1
-                    lines.insert(j, "%s = %s" % (option, value))
+                    section_idx = idx
+                    while section_idx > 0 and lines[section_idx-1].strip() == "":
+                        section_idx -= 1
+                    lines.insert(section_idx, "%s = %s" % (option, value))
                     done = True
                     break
                 elif "=" in sline:
-                    v = sline.split("=")
-                    _option = v[0].strip()
+                    elements = sline.split("=")
+                    _option = elements[0].strip()
+
                     if option != _option:
                         continue
+
                     if done:
                         # option already set : remove dup
-                        del lines[i]
-                        while i < len(lines) and "=" not in lines[i] and not lines[i].strip().startswith("[") and lines[i].strip() != "":
-                            del lines[i]
+                        del lines[idx]
+                        while idx < len(lines) and "=" not in lines[idx] and \
+                              not lines[idx].strip().startswith("[") and \
+                              lines[idx].strip() != "":
+                            del lines[idx]
                         continue
-                    _value = v[1].strip()
-                    j = i
-                    while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("["):
-                        j += 1
-                        if lines[j].strip() == "":
+
+                    _value = elements[1].strip()
+                    section_idx = idx
+
+                    while section_idx < len(lines)-1 and  \
+                          "=" not in lines[section_idx+1] and \
+                          not lines[section_idx+1].strip().startswith("["):
+                        section_idx += 1
+                        if lines[section_idx].strip() == "":
                             continue
-                        _value += " %s" % lines[j].strip()
+                        _value += " %s" % lines[section_idx].strip()
+
                     if value.replace("\n", " ") == _value:
                         return
-                    lines[i] = "%s = %s" % (option, value)
-                    j = i
-                    while j < len(lines)-1 and "=" not in lines[j+1] and not lines[j+1].strip().startswith("[") and lines[j+1].strip() != "":
-                        del lines[j+1]
+
+                    lines[idx] = "%s = %s" % (option, value)
+                    section_idx = idx
+
+                    while section_idx < len(lines)-1 and \
+                          "=" not in lines[section_idx+1] and \
+                          not lines[section_idx+1].strip().startswith("[") and \
+                          lines[section_idx+1].strip() != "":
+                        del lines[section_idx+1]
+
                     done = True
 
         if not done:
@@ -3642,8 +3684,17 @@ class Svc(Scheduler):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
 
-    def set_disable(self, rids=[], disable=True):
-        if not self.command_is_scoped() and (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
+    def set_disable(self, rids=None, disable=True):
+        """
+        Set the disable to <disable> (True|False) in the configuration file,
+        * at DEFAULT level if no resources were specified
+        * in each resource section if resources were specified
+        """
+        if rids is None:
+            rids = []
+
+        if not self.command_is_scoped() and \
+           (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
             rids = ['DEFAULT']
 
         for rid in rids:
@@ -3658,11 +3709,11 @@ class Svc(Scheduler):
         # we don't want res#n.disable = False
         #
         if rids == ["DEFAULT"] and disable:
-            for s in self.config.sections():
-                if self.config.has_option(s, "disable") and \
-                   self.config.getboolean(s, "disable") == False:
-                    self.log.info("remove %s.disable = false", s)
-                    self.config.remove_option(s, "disable")
+            for section in self.config.sections():
+                if self.config.has_option(section, "disable") and \
+                   not self.config.getboolean(section, "disable"):
+                    self.log.info("remove %s.disable = false", section)
+                    self.config.remove_option(section, "disable")
 
         try:
             self.write_config()
@@ -3673,12 +3724,26 @@ class Svc(Scheduler):
         return 0
 
     def enable(self):
+        """
+        The 'enable' action entrypoint.
+        """
         return self.set_disable(self.action_rid, False)
 
     def disable(self):
+        """
+        The 'disable' action entrypoint.
+        """
         return self.set_disable(self.action_rid, True)
 
     def delete(self):
+        """
+        The 'delete' action entrypoint.
+        If --unprovision is set, call the unprovision method.
+        Then if no resource specifier is set, remove all service files in
+        <pathetc>.
+        If a resource specifier is set, only delete the corresponding
+        sections in the configuration file.
+        """
         if self.options.unprovision:
             self.unprovision()
         if len(self.action_rid) in (0, len(self.resources_by_id.keys())):
@@ -3729,7 +3794,7 @@ class Svc(Scheduler):
 
         try:
             self._write_cf(buff)
-        except (IOError, OSError) as exc:
+        except (IOError, OSError):
             print("failed to rewrite", self.paths.cf, file=sys.stderr)
             return 1
         return 0
@@ -3753,44 +3818,44 @@ class Svc(Scheduler):
             Parse the docker argv and substitute known patterns.
             """
             import re
-            for i, arg in enumerate(argv):
+            for idx, arg in enumerate(argv):
                 if arg in ("%instances%", "{instances}"):
-                    del argv[i]
-                    s = [resource.container_name for resource in containers
-                         if not resource.skip and not resource.disabled]
-                    for instance in s:
-                        argv.insert(i, instance)
-            for i, arg in enumerate(argv):
+                    del argv[idx]
+                    instances = [resource.container_name for resource in containers
+                                 if not resource.skip and not resource.disabled]
+                    for instance in instances:
+                        argv.insert(idx, instance)
+            for idx, arg in enumerate(argv):
                 if arg in ("%images%", "{images}"): 
-                    del argv[i]
-                    s = list(set([resource.run_image for resource in containers
-                                  if not resource.skip and not resource.disabled]))
-                    for image in s:
-                        argv.insert(i, image)
-            for i, arg in enumerate(argv):
+                    del argv[idx]
+                    images = list(set([resource.run_image for resource in containers
+                                       if not resource.skip and not resource.disabled]))
+                    for image in images:
+                        argv.insert(idx, image)
+            for idx, arg in enumerate(argv):
                 if arg in ("%as_service%", "{as_service}"):
-                    del argv[i]
-                    argv[i:i] = ["-u", self.svcname+"@"+rcEnv.nodename]
-                    argv[i:i] = ["-p", self.node.config.get("node", "uuid")]
+                    del argv[idx]
+                    argv[idx:idx] = ["-u", self.svcname+"@"+rcEnv.nodename]
+                    argv[idx:idx] = ["-p", self.node.config.get("node", "uuid")]
                     if len(containers) > 0:
                         if containers[0].docker_min_version("1.12"):
                             pass
                         elif containers[0].docker_min_version("1.11"):
-                            argv[i:i] = ["--email", ""]
-            for i, arg in enumerate(argv):
+                            argv[idx:idx] = ["--email", ""]
+            for idx, arg in enumerate(argv):
                 if re.match(r'\{container#\w+\}', arg):
                     container_name = self.svcname + "." + arg.strip("{}").replace("#", ".")
-                    del argv[i]
-                    argv.insert(i, container_name)
+                    del argv[idx]
+                    argv.insert(idx, container_name)
             return argv
 
-        for r in containers:
-            if hasattr(r, "docker_cmd"):
-                r.docker_start(verbose=False)
-                cmd = r.docker_cmd + subst(self.options.docker_argv)
-                p = subprocess.Popen(cmd)
-                p.communicate()
-                return p.returncode
+        for container in containers:
+            if hasattr(container, "docker_cmd"):
+                container.docker_start(verbose=False)
+                cmd = container.docker_cmd + subst(self.options.docker_argv)
+                proc = subprocess.Popen(cmd)
+                proc.communicate()
+                return proc.returncode
         print("this service has no docker resource", file=sys.stderr)
         return 1
 
