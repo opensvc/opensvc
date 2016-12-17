@@ -3752,22 +3752,23 @@ class Svc(Scheduler):
             """
             Parse the docker argv and substitute known patterns.
             """
+            import re
             for i, arg in enumerate(argv):
-                if arg == "%instances%":
+                if arg in ("%instances%", "{instances}"):
                     del argv[i]
                     s = [resource.container_name for resource in containers
                          if not resource.skip and not resource.disabled]
                     for instance in s:
                         argv.insert(i, instance)
             for i, arg in enumerate(argv):
-                if arg == "%images%":
+                if arg in ("%images%", "{images}"): 
                     del argv[i]
                     s = list(set([resource.run_image for resource in containers
                                   if not resource.skip and not resource.disabled]))
                     for image in s:
                         argv.insert(i, image)
             for i, arg in enumerate(argv):
-                if arg == "%as_service%":
+                if arg in ("%as_service%", "{as_service}"):
                     del argv[i]
                     argv[i:i] = ["-u", self.svcname+"@"+rcEnv.nodename]
                     argv[i:i] = ["-p", self.node.config.get("node", "uuid")]
@@ -3776,6 +3777,11 @@ class Svc(Scheduler):
                             pass
                         elif containers[0].docker_min_version("1.11"):
                             argv[i:i] = ["--email", ""]
+            for i, arg in enumerate(argv):
+                if re.match(r'\{container#\w+\}', arg):
+                    container_name = self.svcname + "." + arg.strip("{}").replace("#", ".")
+                    del argv[i]
+                    argv.insert(i, container_name)
             return argv
 
         for r in containers:
