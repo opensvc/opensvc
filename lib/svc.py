@@ -3835,7 +3835,7 @@ class Svc(Scheduler):
         The validate config core method.
         Returns a dict with the list of syntax warnings and errors.
         """
-        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue, deprecated_sections
+        from svcDict import KeyDict, deprecated_sections
         from svcBuilder import build, handle_references
         from rcUtilities import convert_size
 
@@ -3878,19 +3878,19 @@ class Svc(Scheduler):
                 return 1
             return 0
 
-        def get_val(section, option):
+        def get_val(key, section, option):
             """
             Fetch the value and convert it to expected type.
             """
             value = config.get(section, option)
             if isinstance(key.default, bool):
-                value = bool(value)
+                return bool(value)
             elif isinstance(key.default, int):
                 try:
-                    value = int(value)
-                except:
+                    return int(value)
+                except ValueError:
                     # might be a size string like 11mib
-                    value = convert_size(value)
+                    return convert_size(value)
             return value
 
         def check_candidates(key, section, option, value):
@@ -3917,70 +3917,88 @@ class Svc(Scheduler):
             if check_references(section, option) != 0:
                 err += 1
                 return err
-            value = get_val(section, option)
+            value = get_val(key, section, option)
             err += check_candidates(key, section, option, value)
             return err
 
-        # validate DEFAULT options
-        for option in config.defaults():
-            key = data.sections["DEFAULT"].getkey(option)
-            if key is None:
-                found = False
-                # the option can be set in the DEFAULT section for the
-                # benefit of a resource section
-                for section in config.sections():
-                    family = section.split("#")[0]
-                    if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
-                        continue
-                    if family in deprecated_sections:
-                        family, rtype = deprecated_sections[family]
-                    if data.sections[family].getkey(option) is not None:
-                        found = True
-                        break
-                if not found:
-                    self.log.warning("ignored option DEFAULT.%s", option)
-                    ret["warnings"] += 1
-            else:
-                # here we know its a native DEFAULT option
-                ret["errors"] += check_known_option(key, "DEFAULT", option)
-
-        # validate resources options
-        for section in config.sections():
-            if section == "env":
-                # the "env" section is not handled by a resource driver, and is
-                # unknown to the svcDict. Just ignore it.
-                continue
-            family = section.split("#")[0]
-            if config.has_option(section, "type"):
-                rtype = config.get(section, "type")
-            else:
-                rtype = None
-            if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
-                self.log.warning("ignored section %s", section)
-                ret["warnings"] += 1
-                continue
-            if family in deprecated_sections:
-                self.log.warning("deprecated section prefix %s", family)
-                ret["warnings"] += 1
-                family, rtype = deprecated_sections[family]
-            for option in config.options(section):
-                if option in config.defaults():
-                    continue
-                key = data.sections[family].getkey(option, rtype=rtype)
+        def validate_default_options(config, data, ret):
+            """
+            Validate DEFAULT section options.
+            """
+            for option in config.defaults():
+                key = data.sections["DEFAULT"].getkey(option)
                 if key is None:
-                    key = data.sections[family].getkey(option)
-                if key is None:
-                    self.log.warning("ignored option %s.%s, driver %s", section,
-                                     option, rtype if rtype else "generic")
-                    ret["warnings"] += 1
+                    found = False
+                    # the option can be set in the DEFAULT section for the
+                    # benefit of a resource section
+                    for section in config.sections():
+                        family = section.split("#")[0]
+                        if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
+                            continue
+                        if family in deprecated_sections:
+                            results = deprecated_sections[family]
+                            family = results[0]
+                        if data.sections[family].getkey(option) is not None:
+                            found = True
+                            break
+                    if not found:
+                        self.log.warning("ignored option DEFAULT.%s", option)
+                        ret["warnings"] += 1
                 else:
-                    ret["errors"] += check_known_option(key, section, option)
+                    # here we know its a native DEFAULT option
+                    ret["errors"] += check_known_option(key, "DEFAULT", option)
+            return ret
 
-        try:
-            build(self.svcname, svcconf=path)
-        except Exception as exc:
-            self.log.error("the new configuration causes the following build error: %s", str(exc))
-            ret["errors"] += 1
+        def validate_resources_options(config, data, ret):
+            """
+            Validate resource sections options.
+            """
+            for section in config.sections():
+                if section == "env":
+                    # the "env" section is not handled by a resource driver, and is
+                    # unknown to the svcDict. Just ignore it.
+                    continue
+                family = section.split("#")[0]
+                if config.has_option(section, "type"):
+                    rtype = config.get(section, "type")
+                else:
+                    rtype = None
+                if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
+                    self.log.warning("ignored section %s", section)
+                    ret["warnings"] += 1
+                    continue
+                if family in deprecated_sections:
+                    self.log.warning("deprecated section prefix %s", family)
+                    ret["warnings"] += 1
+                    family, rtype = deprecated_sections[family]
+                for option in config.options(section):
+                    if option in config.defaults():
+                        continue
+                    key = data.sections[family].getkey(option, rtype=rtype)
+                    if key is None:
+                        key = data.sections[family].getkey(option)
+                    if key is None:
+                        self.log.warning("ignored option %s.%s, driver %s", section,
+                                         option, rtype if rtype else "generic")
+                        ret["warnings"] += 1
+                    else:
+                        ret["errors"] += check_known_option(key, section, option)
+            return ret
+
+        def validate_build(path, ret):
+            """
+            Try a service build to catch errors missed in other tests.
+            """
+            try:
+                build(self.svcname, svcconf=path)
+            except Exception as exc:
+                self.log.error("the new configuration causes the following build error: %s", str(exc))
+                ret["errors"] += 1
+            return ret
+
+        ret = validate_default_options(config, data, ret)
+        ret = validate_resources_options(config, data, ret)
+        ret = validate_build(path, ret)
 
         return ret
 
