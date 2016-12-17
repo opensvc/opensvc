@@ -40,16 +40,13 @@ class check(checks.check):
 
     def find_svc(self, name, mnt):
         for svc in self.svcs:
-            for rs in svc.get_res_sets('container'):
-                for r in rs.resources:
-                    if  r.type == "container.zone":
-                        zp = self.get_zonepath(r.name)
-                        if zp is not None and zp == mnt:
-                            return svc.svcname
-            for rs in svc.get_res_sets('fs'):
-                for r in rs.resources:
-                    if hasattr(r, "device") and r.device == name:
-                        return svc.svcname
+            for resource in svc.get_resources('container.zone'):
+                zpath = self.get_zonepath(resource.name)
+                if zpath is not None and zpath == mnt:
+                    return svc.svcname
+            for resource in svc.get_resources('fs'):
+                if hasattr(resource, "device") and resource.device == name:
+                    return svc.svcname
         return ''
 
     def do_check(self):

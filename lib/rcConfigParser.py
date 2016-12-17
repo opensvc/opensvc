@@ -12,7 +12,9 @@ if sys.version_info[0] < 3:
             ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
 
         def write(self, fp):
-            """Write an .ini-format representation of the configuration state."""
+            """
+            Write an .ini formatted representation of the configuration.
+            """
             if self._defaults:
                 fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
                 for (key, value) in self._defaults.items():

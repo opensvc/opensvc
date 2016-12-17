@@ -53,34 +53,33 @@ class ProvisioningZone(Provisioning):
         cf = os.path.join(rcEnv.pathetc, self.r.svc.svcname+'.conf')
         s = ""
 
-        for rs in self.r.svc.get_res_sets(["ip"]):
-            for r in [_r for _r in rs.resources]:
-                # Add mandatory tags for sol11 zones
-                r.tags.add("noaction")
-                r.tags.add("noalias")
-                r.tags.add("exclusive")
-                r.tags.remove("preboot")
-                r.tags.remove("postboot")
+        for r in self.r.svc.get_resources(["ip"]):
+            # Add mandatory tags for sol11 zones
+            r.tags.add("noaction")
+            r.tags.add("noalias")
+            r.tags.add("exclusive")
+            r.tags.remove("preboot")
+            r.tags.remove("postboot")
 
-                # Add nonrouted tag if no gateway provisioning keyword is passed
-                if not r.svc.config.has_option(r.rid, "gateway"):
-                    r.tags.add("nonrouted")
+            # Add nonrouted tag if no gateway provisioning keyword is passed
+            if not r.svc.config.has_option(r.rid, "gateway"):
+                r.tags.add("nonrouted")
 
-                if not r.svc.config.has_option(r.rid, "gateway"):
-                    continue
-                default_route = r.svc.config.get(r.rid, "gateway")
+            if not r.svc.config.has_option(r.rid, "gateway"):
+                continue
+            default_route = r.svc.config.get(r.rid, "gateway")
 
-                if not r.svc.config.has_option(r.rid, "netmask"):
-                    continue
-                netmask = r.svc.config.get(r.rid, "netmask")
+            if not r.svc.config.has_option(r.rid, "netmask"):
+                continue
+            netmask = r.svc.config.get(r.rid, "netmask")
 
-                if s == "":
-                    s += "network_interface=%s {primary\n"%r.ipDev
-                    s += " hostname=%s\n"%r.ipName
-                    s += " ip_address=%s\n"%r.addr
-                    s += " netmask=%s\n"%netmask
-                    s += " protocol_ipv6=no\n"
-                    s += " default_route=%s}\n"%default_route
+            if s == "":
+                s += "network_interface=%s {primary\n"%r.ipDev
+                s += " hostname=%s\n"%r.ipName
+                s += " ip_address=%s\n"%r.addr
+                s += " netmask=%s\n"%netmask
+                s += " protocol_ipv6=no\n"
+                s += " default_route=%s}\n"%default_route
 
         # save new service env file
         self.r.svc.config.set(r.rid, "tags", ' '.join(r.tags))
@@ -211,11 +210,10 @@ class ProvisioningZone(Provisioning):
         if zone is None:
             zone = self.r
         cmds = []
-        for rs in self.r.svc.get_res_sets(["ip"]):
-            for r in [_r for _r in rs.resources]:
-                if not self.test_net_interface(r.ipDev):
-                    raise excError("Missing interface: %s"%r.ipDev)
-                cmds.append("add net ; set physical=%s ; end"%r.ipDev)
+        for r in self.r.svc.get_resources(["ip"]):
+            if not self.test_net_interface(r.ipDev):
+                raise excError("Missing interface: %s" % r.ipDev)
+            cmds.append("add net ; set physical=%s ; end" % r.ipDev)
         for cmd in cmds:
             zone.zonecfg([cmd])
 

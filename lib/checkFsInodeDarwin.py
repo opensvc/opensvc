@@ -6,10 +6,9 @@ class check(checks.check):
 
     def find_svc(self, mountpt):
         for svc in self.svcs:
-            for rs in svc.get_res_sets('fs'):
-                for r in rs.resources:
-                    if r.mountPoint == mountpt:
-                        return svc.svcname
+            for resource in svc.get_resources('fs'):
+                if resource.mountPoint == mountpt:
+                    return svc.svcname
         return ''
 
     def do_check(self):

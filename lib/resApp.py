@@ -74,7 +74,7 @@ class RsetApps(ResourceSet):
         if action == 'start' and self.type == "app":
             import svcBuilder
             svcBuilder.add_apps_sysv(self.svc, self.svc.config)
-            self.resources = self.svc.type2resSets["app"].resources
+            self.resources = self.svc.get_resources("app")
 
         try:
             ResourceSet.action(self, action, tags=tags, xtags=xtags)

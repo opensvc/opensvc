@@ -6,10 +6,9 @@ class check(checks.check):
 
     def find_svc(self, vgname):
         for svc in self.svcs:
-            for rs in svc.get_res_sets('disk.vg'):
-                for r in rs.resources:
-                    if r.name == vgname:
-                        return svc.svcname
+            for resource in svc.get_resources('disk.vg'):
+                if resource.name == vgname:
+                    return svc.svcname
         return ''
 
     def do_check(self):

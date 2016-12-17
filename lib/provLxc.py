@@ -227,9 +227,8 @@ iface %(ipdev)s inet static
 
     def setup_ips(self):
         self.purge_known_hosts()
-        for rs in self.r.svc.get_res_sets("ip"):
-            for r in rs.resources:
-                self.setup_ip(r)
+        for resource in self.r.svc.get_resources("ip"):
+            self.setup_ip(resource)
 
     def purge_known_hosts(self, ip=None):
         if ip is None:

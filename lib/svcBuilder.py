@@ -2261,9 +2261,8 @@ def add_mandatory_syncs(svc, conf):
             src.append(cluster)
         if os.path.exists(localrc):
             src.append(localrc)
-        for rs in svc.resSets:
-            for r in rs.resources:
-                src += r.files_to_sync()
+        for resource in svc.get_resources():
+            src += resource.files_to_sync()
         dst = os.path.join("/")
         exclude = ['--exclude=*.core']
         targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
@@ -3367,7 +3366,7 @@ def add_apps_sysv(svc, conf):
             h[script] = init_app(script)
         h[script]['check'] = get_seq(os.path.basename(f))
 
-    if "app" not in svc.type2resSets:
+    if "app" not in svc.resourcesets_by_type:
         svc += resApp.RsetApps("app")
 
     for script, kwargs in h.items():

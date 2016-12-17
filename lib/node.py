@@ -23,7 +23,6 @@ else:
     from urllib.error import HTTPError
     from urllib.parse import urlencode
 
-from svc import Svc
 import svcBuilder
 import xmlrpcClient
 from rcGlobalEnv import rcEnv, Storage
@@ -621,7 +620,7 @@ class Node(Scheduler):
         in the added service, storing the service in a list and setting a
         clustername if not already set in the service explicitely.
         """
-        if not isinstance(svc, Svc):
+        if not hasattr(svc, "svcname"):
             return self
         if self.svcs is None:
             self.svcs = []
@@ -1532,7 +1531,7 @@ class Node(Scheduler):
         """
         try:
             ret = svc.action(action, **kwargs)
-        except svc.exMonitorAction:
+        except ex.MonitorAction:
             self.close()
             sys.exit(self.ex_monitor_action_exit_code)
         finally:
@@ -2053,7 +2052,7 @@ class Node(Scheduler):
                             data.outs[svc.svcname] = ret
                     else:
                         err += ret
-                except svc.exMonitorAction:
+                except ex.MonitorAction:
                     svc.action('toc')
                 except ex.excSignal:
                     break

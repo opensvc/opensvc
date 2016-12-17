@@ -40,9 +40,8 @@ class ProvisioningKvm(Provisioning):
 
     def setup_ips(self):
         self.purge_known_hosts()
-        for rs in self.r.svc.get_res_sets("ip"):
-            for r in rs.resources:
-                self.purge_known_hosts(r.addr)
+        for resource in self.r.svc.get_resources("ip"):
+            self.purge_known_hosts(resource.addr)
 
     def purge_known_hosts(self, ip=None):
         if ip is None:
@@ -115,10 +114,9 @@ class ProvisioningKvm(Provisioning):
             cf.append(s)
         except ex.excError:
             pass
-        for rs in self.r.svc.get_res_sets("ip"):
-            for r in rs.resources:
-                s = ';'.join((r.rid, r.ipDev, r.addr, r.mask))
-                cf.append(s)
+        for resource in self.r.svc.get_resources("ip"):
+            s = ';'.join((resource.rid, resource.ipDev, resource.addr, resource.mask))
+            cf.append(s)
         cf.append('')
         return '\n'.join(cf)
 

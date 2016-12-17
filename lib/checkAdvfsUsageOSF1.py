@@ -13,10 +13,9 @@ class check(checks.check):
 
     def find_svc(self, name):
         for svc in self.svcs:
-            for rs in svc.get_res_sets('pool'):
-                for r in rs.resources:
-                    if r.poolname == name:
-                        return svc.svcname
+            for resource in svc.get_resources('pool'):
+                if resource.poolname == name:
+                    return svc.svcname
         return ''
 
     def do_check(self):
