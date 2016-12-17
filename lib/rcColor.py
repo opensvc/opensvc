@@ -224,7 +224,7 @@ def formatter(fn):
         if len(data) == 0:
             return
 
-        if type(data) != dict and type(data) != list:
+        if not isinstance(data, (dict, list)):
             print(data)
             return
 
