@@ -255,8 +255,8 @@ def _slave_action(func):
            (not self.options.master and not self.options.slaves and self.options.slave is None):
             try:
                 func(self)
-            except Exception as e:
-                raise ex.excError(str(e))
+            except Exception as exc:
+                raise ex.excError(str(exc))
     return _func
 
 def _master_action(func):
@@ -458,7 +458,7 @@ class Svc(Scheduler):
             return False
         try:
             return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
-        except Exception as e:
+        except Exception:
             return False
 
     def __iadd__(self, r):
@@ -557,19 +557,19 @@ class Svc(Scheduler):
         self.log.debug("acquire service lock %s", details)
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent=action)
-        except lock.lockTimeout as e:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(e)))
+        except lock.lockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.lockNoLockFile:
             raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.lockCreateError:
             raise ex.excError("can not create lock file %s" % details)
-        except lock.lockAcquire as e:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(e)))
+        except lock.lockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
         except ex.excSignal:
             raise ex.excError("interrupted by signal %s" % details)
-        except Exception as e:
+        except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(e)))
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
         if lockfd is not None:
             self.lockfd = lockfd
 
@@ -1011,10 +1011,10 @@ class Svc(Scheduler):
                 encap_res_status[container.rid] = js["resources"]
                 if js.get("frozen", False):
                     container.status_log("frozen", "info")
-            except ex.excNotAvailable as e:
+            except ex.excNotAvailable:
                 encap_res_status[container.rid] = {}
-            except Exception as e:
-                print(e)
+            except Exception as exc:
+                print(exc)
                 encap_res_status[container.rid] = {}
 
         l = []
@@ -1185,7 +1185,7 @@ class Svc(Scheduler):
                 encap_res_status = {}
                 try:
                     encap_res_status = self.encap_json_status(container)
-                except ex.excNotAvailable as e:
+                except ex.excNotAvailable:
                     encap_res_status = {'resources': [],
                                         'ip': 'n/a',
                                         'disk': 'n/a',
@@ -1197,8 +1197,8 @@ class Svc(Scheduler):
                                         'app': 'n/a',
                                         'avail': 'n/a',
                                         'overall': 'n/a'}
-                except Exception as e:
-                    print(e)
+                except Exception as exc:
+                    print(exc)
                     continue
 
                 vhostname = container.vm_hostname()
@@ -1311,7 +1311,7 @@ class Svc(Scheduler):
             try:
                 encap_status = self.encap_json_status(container)
                 res = encap_status["resources"]
-            except Exception as e:
+            except Exception:
                 encap_status = {}
                 res = {}
             if encap_status.get("frozen"):
@@ -1465,7 +1465,7 @@ class Svc(Scheduler):
         for container in self.get_resources('container'):
             try:
                 out, err, ret = self._encap_cmd(cmd, container, verbose=verbose)
-            except ex.excEncapUnjoignable as e:
+            except ex.excEncapUnjoignable:
                 if error != "continue":
                     self.log.error("container %s is not joinable to execute "
                                    "action '%s'", container.name, ' '.join(cmd))
@@ -1583,14 +1583,18 @@ class Svc(Scheduler):
         return group_status
 
     def encap_json_status(self, container, refresh=False):
+        """
+        Return the status data from the agent runnning the encapsulated part
+        of the service.
+        """
         if container.guestos == 'windows':
             raise ex.excNotAvailable
         if container.status(ignore_nostatus=True) == rcStatus.DOWN:
-            """
-               passive node for the vservice => forge encap resource status
-                 - encap sync are n/a
-                 - other encap res are down
-            """
+            #
+            #  passive node for the vservice => forge encap resource status
+            #    - encap sync are n/a
+            #    - other encap res are down
+            #
             gs = {
                 "avail": "down",
                 "overall": "down",
@@ -1625,40 +1629,41 @@ class Svc(Scheduler):
             if gs:
                 return gs
 
-        gs = {
+        group_status = {
             "avail": "n/a",
             "overall": "n/a",
             "resources": {},
         }
         groups = set(["container", "ip", "disk", "fs", "share", "hb", "app", "sync"])
-        for g in groups:
-            gs[g] = 'n/a'
+        for group in groups:
+            group_status[group] = 'n/a'
 
         cmd = ['json', 'status']
         try:
-            out, err, ret = self._encap_cmd(cmd, container)
-        except ex.excError as e:
-            return gs
-        except Exception as e:
-            print(e)
-            return gs
+            results = self._encap_cmd(cmd, container)
+        except ex.excError:
+            return group_status
+        except Exception as exc:
+            print(exc)
+            return group_status
 
         import json
         try:
-            gs = json.loads(out)
+            group_status = json.loads(results[0])
         except:
             pass
 
-        self.put_cache_encap_json_status(container.rid, gs)
+        self.put_cache_encap_json_status(container.rid, group_status)
 
-        return gs
+        return group_status
 
     def group_status(self,
                      groups=set(["container", "ip", "disk", "fs", "share", "sync", "app", "hb", "stonith"]),
                      excluded_groups=set()):
-        from copy import copy
-        """print() each resource status for a service
         """
+        Return the status data of the service.
+        """
+        from copy import copy
         status = {}
         moregroups = groups | set(["overall", "avail"])
         groups = groups.copy() - excluded_groups
@@ -1742,6 +1747,9 @@ class Svc(Scheduler):
         return status
 
     def print_disklist(self):
+        """
+        Print the list of disks the service handles.
+        """
         if self.options.format is not None:
             return self.print_disklist_data()
         l = self.disklist()
@@ -1749,6 +1757,9 @@ class Svc(Scheduler):
             print('\n'.join(l))
 
     def print_devlist(self):
+        """
+        Print the list of devices the service handles.
+        """
         if self.options.format is not None:
             return self.print_devlist_data()
         l = self.devlist()
@@ -1756,18 +1767,28 @@ class Svc(Scheduler):
             print('\n'.join(l))
 
     def print_disklist_data(self):
+        """
+        Return the list of disks the service handles.
+        """
         return list(self.disklist())
 
     def print_devlist_data(self):
+        """
+        Return the list of devices the service handles.
+        """
         return list(self.devlist())
 
     def disklist(self):
+        """
+        Return the set of disks the service handles, from cache if possible.
+        """
         if len(self.disks) == 0:
             self.disks = self._disklist()
         return self.disks
 
     def _disklist(self):
-        """List all disks held by all resources of this service
+        """
+        Return the set of disks the service handles.
         """
         disks = set()
         for r in self.get_resources():
@@ -1778,12 +1799,16 @@ class Svc(Scheduler):
         return disks
 
     def devlist(self, filtered=True):
+        """
+        Return the set of devices the service handles, from cache if possible.
+        """
         if len(self.devs) == 0:
             self.devs = self._devlist(filtered=filtered)
         return self.devs
 
     def _devlist(self, filtered=True):
-        """List all devs held by all resources of this service
+        """
+        Return the set of devices the service handles.
         """
         devs = set()
         for r in self.get_resources():
@@ -1794,6 +1819,11 @@ class Svc(Scheduler):
         return devs
 
     def get_non_affine_svc(self):
+        """
+        Return the list services defined as anti-affine, filtered to retain
+        only the running ones (those that will cause an actual affinity error
+        on start for this service).
+        """
         if not self.anti_affinity:
             return []
         self.log.debug("build anti-affine services %s", str(self.anti_affinity))
@@ -1808,10 +1838,18 @@ class Svc(Scheduler):
         return running_af_svc
 
     def print_config_mtime(self):
+        """
+        Print the service configuration file last modified timestamp. Used by
+        remote agents to determine which agent holds the most recent version.
+        """
         mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
     def need_start_encap(self, container):
+        """
+        Return True if this service has an encapsulated part that would need
+        starting.
+        """
         self.load_config()
         defaults = self.config.defaults()
         if defaults.get('autostart_node@'+container.name) in (container.name, 'encapnodes'):
@@ -1823,6 +1861,13 @@ class Svc(Scheduler):
         return True
 
     def boot(self):
+        """
+        The 'boot' action entrypoint.
+        A boot is a start if the running node is defined as autostart_node.
+        A boot is a startstandby if the running node is not defined as autostart_node.
+        A boot is a startstandby if the service is handled by a HA monitor.
+        Start errors cause a fallback to startstandby as a best effort.
+        """
         if rcEnv.nodename not in self.autostart_node:
             self.startstandby()
             return
@@ -1835,8 +1880,8 @@ class Svc(Scheduler):
 
         try:
             self.start()
-        except ex.excError as e:
-            self.log.error(str(e))
+        except ex.excError as exc:
+            self.log.error(str(exc))
             self.log.info("start failed. try to start standby")
             self.startstandby()
 
@@ -2653,7 +2698,7 @@ class Svc(Scheduler):
             for r in self.get_resources(rt):
                 try:
                     ret |= r.can_sync(target)
-                except ex.excError as e:
+                except ex.excError:
                     return False
                 if ret:
                     return True
@@ -3004,14 +3049,14 @@ class Svc(Scheduler):
 
             try:
                 self.cluster_mode_safety_net(action)
-            except ex.excAbortAction as e:
-                self.log.info(str(e))
+            except ex.excAbortAction as exc:
+                self.log.info(str(exc))
                 return 0
-            except ex.excEndAction as e:
-                self.log.info(str(e))
+            except ex.excEndAction as exc:
+                self.log.info(str(exc))
                 return 0
-            except ex.excError as e:
-                self.log.error(str(e))
+            except ex.excError as exc:
+                self.log.error(str(exc))
                 return 1
             #
             # here we know we will run a resource state-changing action
@@ -3066,8 +3111,8 @@ class Svc(Scheduler):
 
         try:
             data = func()
-        except Exception as e:
-            data = {"error": str(e)}
+        except Exception as exc:
+            data = {"error": str(exc)}
 
         if psinfo:
             # --cluster is set and we have remote responses
@@ -3077,8 +3122,8 @@ class Svc(Scheduler):
                 if self.options.format == "json":
                     try:
                         res[n] = json.loads(res[n])
-                    except Exception as e:
-                        res[n] = {"error": str(e)}
+                    except Exception as exc:
+                        res[n] = {"error": str(exc)}
             res[rcEnv.nodename] = data
             return res
         elif self.options.cluster:
@@ -3183,8 +3228,8 @@ class Svc(Scheduler):
         err = 0
         try:
             self.svclock(action, timeout=waitlock)
-        except Exception as e:
-            self.log.error(str(e))
+        except Exception as exc:
+            self.log.error(str(exc))
             return 1
 
         psinfo = self.do_cluster_action(action, waitlock=waitlock)
@@ -3202,22 +3247,22 @@ class Svc(Scheduler):
             else:
                 self.log.error("unsupported action %s", action)
                 err = 1
-        except ex.excEndAction as e:
+        except ex.excEndAction as exc:
             s = "'%s' action ended by last resource"%action
-            if len(str(e)) > 0:
-                s += ": %s"%str(e)
+            if len(str(exc)) > 0:
+                s += ": %s"%str(exc)
             self.log.info(s)
             err = 0
-        except ex.excAbortAction as e:
+        except ex.excAbortAction as exc:
             s = "'%s' action aborted by last resource"%action
-            if len(str(e)) > 0:
-                s += ": %s"%str(e)
+            if len(str(exc)) > 0:
+                s += ": %s"%str(exc)
             self.log.info(s)
             err = 0
-        except ex.excError as e:
+        except ex.excError as exc:
             s = "'%s' action stopped on execution error"%action
-            if len(str(e)) > 0:
-                s += ": %s"%str(e)
+            if len(str(exc)) > 0:
+                s += ": %s"%str(exc)
             self.log.error(s)
             err = 1
             self.rollback_handler(action)
@@ -3397,8 +3442,8 @@ class Svc(Scheduler):
             with open(fname, "w") as fp:
                 self.config.write(fp)
             shutil.move(fname, self.paths.cf)
-        except Exception as e:
-            print("failed to write new %s (%s)" % (self.paths.cf, str(e)), file=sys.stderr)
+        except Exception as exc:
+            print("failed to write new %s (%s)" % (self.paths.cf, str(exc)), file=sys.stderr)
             raise ex.excError()
         try:
             os.chmod(self.paths.cf, 0o0644)
@@ -3690,6 +3735,13 @@ class Svc(Scheduler):
         return 0
 
     def docker(self):
+        """
+        The 'docker' action entry point.
+        Parse the docker argv and substitute known patterns before relaying
+        the argv to the docker command.
+        Set the socket to point the service-private docker daemon if
+        the service has such a daemon.
+        """
         import subprocess
         containers = self.get_resources('container')
         if self.options.docker_argv is None:
@@ -3697,6 +3749,9 @@ class Svc(Scheduler):
             return 1
 
         def subst(argv):
+            """
+            Parse the docker argv and substitute known patterns.
+            """
             for i, arg in enumerate(argv):
                 if arg == "%instances%":
                     del argv[i]
@@ -3791,12 +3846,18 @@ class Svc(Scheduler):
             config.read(path)
 
         def check_scoping(key, section, option):
+            """
+            Verify the specified option scoping is allowed.
+            """
             if not key.at and "@" in option:
                 self.log.error("option %s.%s does not support scoping", section, option)
                 return 1
             return 0
 
         def check_references(section, option):
+            """
+            Verify the specified option references.
+            """
             value = config.get(section, option)
             try:
                 value = handle_references(self, config, value, scope=True)
@@ -3812,6 +3873,9 @@ class Svc(Scheduler):
             return 0
 
         def get_val(section, option):
+            """
+            Fetch the value and convert it to expected type.
+            """
             value = config.get(section, option)
             if isinstance(key.default, bool):
                 value = bool(value)
@@ -3824,6 +3888,9 @@ class Svc(Scheduler):
             return value
 
         def check_candidates(key, section, option, value):
+            """
+            Verify the specified option value is in allowed candidates.
+            """
             if key.strict_candidates and key.candidates and value not in key.candidates:
                 if isinstance(key.candidates, (set, list, tuple)):
                     candidates = ", ".join(key.candidates)
@@ -3835,6 +3902,10 @@ class Svc(Scheduler):
             return 0
 
         def check_known_option(key, section, option):
+            """
+            Verify the specified option scoping, references and that the value
+            is in allowed candidates.
+            """
             err = 0
             err += check_scoping(key, section, option)
             if check_references(section, option) != 0:
@@ -3901,8 +3972,8 @@ class Svc(Scheduler):
 
         try:
             build(self.svcname, svcconf=path)
-        except Exception as e:
-            self.log.error("the new configuration causes the following build error: %s", str(e))
+        except Exception as exc:
+            self.log.error("the new configuration causes the following build error: %s", str(exc))
             ret["errors"] += 1
 
         return ret
@@ -3938,7 +4009,7 @@ class Svc(Scheduler):
             return
         self.log.debug("create %s", self.paths.run_flag)
         try:
-            with open(self.paths.run_flag, "w") as ofile:
+            with open(self.paths.run_flag, "w"):
                 pass
         except (IOError, OSError) as exc:
             self.log.error("failed to create %s: %s",
