@@ -119,7 +119,12 @@ class OptParser(object):
             for valid_action in valid_actions:
                 if svc and not hasattr(svc, valid_action):
                     continue
-                desc += self.format_action(section, valid_action, options=options)
+                try:
+                    desc += self.format_action(section, valid_action, options=options)
+                except ValueError:
+                    # http://bugs.python.org/issue13107 triggered by lxc-attach
+                    # term environment.
+                    desc += action + "\n"
         return desc[0:-2]
 
     def supported_actions(self):
