@@ -274,6 +274,13 @@ ACTIONS_DO_MASTER_AND_SLAVE = [
     "switch",
 ]
 
+ACTIONS_NEED_SNAP_TRIGGER = [
+    "sync_drp",
+    "sync_nodes",
+    "sync_resync",
+    "sync_update",
+]
+
 os.environ['LANG'] = 'C'
 
 def _slave_action(func):
@@ -596,9 +603,15 @@ class Svc(Scheduler):
         Send to the collector the service status after an action, and
         the action log.
         """
-        self.node.collector.call('end_action', self, action, begin, end, actionlogfile, sync=self.sync_dblogger)
+        self.node.collector.call(
+            'end_action', self, action, begin, end, actionlogfile,
+            sync=self.sync_dblogger
+        )
         g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
-        self.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals, sync=self.sync_dblogger)
+        self.node.collector.call(
+            'svcmon_update_combo', g_vars, g_vals, r_vars, r_vals,
+            sync=self.sync_dblogger
+        )
         os.unlink(actionlogfile)
         try:
             logging.shutdown()
@@ -610,12 +623,14 @@ class Svc(Scheduler):
         Acquire the service action lock.
         """
         suffix = None
-        if action in ACTIONS_NO_LOCK:
-            # no need to serialize this action
+        if action in ACTIONS_NO_LOCK or \
+           action.startswith("collector") or \
+           self.lockfd is not None:
+            # explicitly blacklisted or
+            # no need to serialize requests or
+            # already acquired
             return
-        if action.startswith("collector"):
-            # no need to serialize collector gets
-            return
+
         if action.startswith("compliance"):
             # compliance modules are allowed to execute actions on the service
             # so give them their own lock
@@ -623,17 +638,20 @@ class Svc(Scheduler):
         elif action.startswith("sync"):
             suffix = "sync"
 
-        if self.lockfd is not None:
-            # already acquired
-            return
         lockfile = os.path.join(rcEnv.pathlock, self.svcname)
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 
-        details = "(timeout %d, delay %d, action %s, lockfile %s)" % (timeout, delay, action, lockfile)
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, lockfile)
         self.log.debug("acquire service lock %s", details)
         try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent=action)
+            lockfd = lock.lock(
+                timeout=timeout,
+                delay=delay,
+                lockfile=lockfile,
+                intent=action
+            )
         except lock.lockTimeout as exc:
             raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.lockNoLockFile:
@@ -647,6 +665,7 @@ class Svc(Scheduler):
         except Exception as exc:
             self.save_exc()
             raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
         if lockfd is not None:
             self.lockfd = lockfd
 
@@ -657,7 +676,8 @@ class Svc(Scheduler):
         lock.unlock(self.lockfd)
         self.lockfd = None
 
-    def setup_signal_handlers(self):
+    @staticmethod
+    def setup_signal_handlers():
         """
         Install signal handlers.
         """
@@ -720,25 +740,27 @@ class Svc(Scheduler):
         """
         return len(self.get_resourcesets(_type, strict=strict)) > 0
 
-    def all_set_action(self, action=None, tags=set()):
+    def all_set_action(self, action=None, tags=None):
         """
         Execute an action on all resources all resource sets.
         """
         self.set_action(self.resourcesets, action=action, tags=tags)
 
-    def sub_set_action(self, _type=None, action=None, tags=set(), xtags=set(), strict=False):
+    def sub_set_action(self, _type=None, action=None, tags=None, xtags=None,
+                       strict=False):
         """
         Execute an action on all resources of the resource sets of the
         specified type.
         """
-        self.set_action(self.get_resourcesets(_type, strict=strict), action=action, tags=tags, xtags=xtags)
+        rsets = self.get_resourcesets(_type, strict=strict)
+        self.set_action(rsets, action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, rsets, action):
         """
         Return True if the action is a sync action and at least one of the
         specified resource sets has a resource requiring a snapshot.
         """
-        if action not in ["sync_nodes", "sync_drp", "sync_resync", "sync_update"]:
+        if action not in ACTIONS_NEED_SNAP_TRIGGER:
             return False
         for rset in rsets:
             for resource in rset.resources:
@@ -763,14 +785,45 @@ class Svc(Scheduler):
         if xtags is None:
             xtags = set()
 
-        need_snap = self.need_snap_trigger(rsets, action)
+        def do_trigger(when):
+            """
+            Excecute a <when> trigger on each resource of the set,
+            if the action allows triggers.
+            If a trigger raises,
+            * excError, stop looping over the resources and propagate up
+              to the caller.
+            * excAbortAction, continue looping over the resources
+            * any other exception, save the traceback in the debug log
+              and stop looping over the resources and raise an excError
+            """
+            for rset in rsets:
+                if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
+                    break
+                try:
+                    rset.log.debug("start %s %s_action", rset.type, when)
+                    getattr(rset, when + "_action")(action)
+                except ex.excError:
+                    raise
+                except ex.excAbortAction:
+                    continue
+                except:
+                    self.save_exc()
+                    raise ex.excError
 
-        # snapshots are created in pre_action and destroyed in post_action
-        # place presnap and postsnap triggers around pre_action
-        if need_snap and self.presnap_trigger is not None:
-            (ret, out, err) = self.vcall(self.presnap_trigger)
-            if ret != 0:
-                raise ex.excError
+        def do_snap_trigger(when):
+            """
+            Execute the <when>snap trigger.
+            """
+            if not need_snap:
+                return
+            trigger = getattr(self, when + "snap_trigger")
+            if trigger is None:
+                return
+            results = self.vcall(trigger)
+            if results[0] != 0:
+                raise ex.excError(results[2])
+
+        need_snap = self.need_snap_trigger(rsets, action)
 
         # Multiple resourcesets of the same type need to be sorted
         # so that the start and stop action happen in a predictible order.
@@ -787,42 +840,17 @@ class Svc(Scheduler):
         reverse = "stop" in action or action in ("rollback", "shutdown", "unprovision")
         rsets = sorted(rsets, key=lambda x: x.type, reverse=reverse)
 
-        for rset in rsets:
-            if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
-                break
-            try:
-                rset.log.debug("start %s pre_action", rset.type)
-                rset.pre_action(action)
-            except ex.excError:
-                raise
-            except ex.excAbortAction:
-                continue
-            except:
-                self.save_exc()
-                raise ex.excError
-
-        if need_snap and self.postsnap_trigger is not None:
-            (ret, out, err) = self.vcall(self.postsnap_trigger)
-            if ret != 0:
-                raise ex.excError(err)
+        # snapshots are created in pre_action and destroyed in post_action
+        # place presnap and postsnap triggers around pre_action
+        do_snap_trigger("pre")
+        do_trigger("pre")
+        do_snap_trigger("post")
 
         for rset in rsets:
             self.log.debug('set_action: action=%s rset=%s', action, rset.type)
             rset.action(action, tags=tags, xtags=xtags)
 
-        for rset in rsets:
-            if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
-                break
-            try:
-                rset.log.debug("start %s post_action", rset.type)
-                rset.post_action(action)
-            except ex.excError:
-                raise
-            except ex.excAbortAction:
-                continue
-            except:
-                self.save_exc()
-                raise ex.excError
+        do_trigger("post")
 
     def __str__(self):
         """
@@ -866,7 +894,17 @@ class Svc(Scheduler):
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
-                rid, rtype, status, label, log, monitor, disable, optional, encap = resource.status_quad(color=False)
+                (
+                    rid,
+                    rtype,
+                    status,
+                    label,
+                    log,
+                    monitor,
+                    disable,
+                    optional,
+                    encap
+                ) = resource.status_quad(color=False)
                 data['resources'][rid] = {
                     'status': status,
                     'type': rtype,
@@ -1005,7 +1043,8 @@ class Svc(Scheduler):
         Print a single resource status string.
         """
         if len(self.action_rid) != 1:
-            print("action 'print_resource_status' is not allowed on mutiple resources", file=sys.stderr)
+            print("action 'print_resource_status' is not allowed on mutiple "
+                  "resources", file=sys.stderr)
             return 1
         for rid in self.action_rid:
             if rid not in self.resources_by_id:
@@ -1026,18 +1065,22 @@ class Svc(Scheduler):
         from rcUtilities import term_width
         from rcColor import color, colorize
 
-        tw = term_width()
+        width = term_width()
 
-        def print_res(e, fmt, pfx, subpfx=None):
+        def print_res(squad, fmt, pfx, subpfx=None):
+            """
+            Print a resource line, with forest markers, rid, flags, label and
+            resource log.
+            """
             if subpfx is None:
                 subpfx = pfx
-            rid, status, label, log, monitor, disabled, optional, encap = e
+            rid, status, label, log, monitor, disabled, optional, encap = squad
             flags = ''
             flags += 'M' if monitor else '.'
             flags += 'D' if disabled else '.'
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
-            print(fmt%(rid, flags, rcStatus.colorize_status(status), label))
+            print(fmt % (rid, flags, rcStatus.colorize_status(status), label))
             for msg in log.split("\n"):
                 if len(msg) > 0:
                     if subpfx and not subpfx.startswith(color.END):
@@ -1045,7 +1088,7 @@ class Svc(Scheduler):
                     print('\n'.join(wrap(msg,
                                          initial_indent=subpfx,
                                          subsequent_indent=subpfx,
-                                         width=tw
+                                         width=width
                                         )
                                    )
                          )
@@ -1055,106 +1098,138 @@ class Svc(Scheduler):
         else:
             discard_disabled = not self.show_disabled
 
-        avail_resources = sorted(self.get_resources("ip", discard_disabled=discard_disabled))
-        avail_resources += sorted(self.get_resources("disk", discard_disabled=discard_disabled))
-        avail_resources += sorted(self.get_resources("fs", discard_disabled=discard_disabled))
-        avail_resources += sorted(self.get_resources("container", discard_disabled=discard_disabled))
-        avail_resources += sorted(self.get_resources("share", discard_disabled=discard_disabled))
-        avail_resources += sorted(self.get_resources("app", discard_disabled=discard_disabled))
-        accessory_resources = sorted(self.get_resources("hb", discard_disabled=discard_disabled))
-        accessory_resources += sorted(self.get_resources("stonith", discard_disabled=discard_disabled))
-        accessory_resources += sorted(self.get_resources("sync", discard_disabled=discard_disabled))
+        def get_res(group):
+            """
+            Wrap get_resources() with discard_disable relaying and sorted
+            resultset.
+            """
+            resources = self.get_resources(
+                group,
+                discard_disabled=discard_disabled,
+            )
+            return sorted(resources)
+
+        avail_resources = get_res("ip")
+        avail_resources += get_res("disk")
+        avail_resources += get_res("fs")
+        avail_resources += get_res("container")
+        avail_resources += get_res("share")
+        avail_resources += get_res("app")
+        accessory_resources = get_res("hb")
+        accessory_resources += get_res("stonith")
+        accessory_resources += get_res("sync")
         n_accessory_resources = len(accessory_resources)
 
         print(colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
-        print(fmt%("overall", '', rcStatus.colorize_status(self.group_status()['overall']), frozen))
+        color_status = rcStatus.colorize_status(self.group_status()['overall'])
+        print(fmt % ("overall", '', color_status, frozen))
         if n_accessory_resources == 0:
             fmt = "'- %-17s %4s %-10s %s"
             head_c = " "
         else:
             fmt = "|- %-17s %4s %-10s %s"
             head_c = "|"
-        print(fmt%("avail", '', rcStatus.colorize_status(self.group_status()['avail']), ''))
+        color_status = rcStatus.colorize_status(self.group_status()['avail'])
+        print(fmt % ("avail", '', color_status, ''))
 
-        encap_res_status = {}
+        ers = {}
         for container in self.get_resources('container'):
             try:
-                js = self.encap_json_status(container)
-                encap_res_status[container.rid] = js["resources"]
-                if js.get("frozen", False):
+                ejs = self.encap_json_status(container)
+                ers[container.rid] = ejs["resources"]
+                if ejs.get("frozen", False):
                     container.status_log("frozen", "info")
             except ex.excNotAvailable:
-                encap_res_status[container.rid] = {}
+                ers[container.rid] = {}
             except Exception as exc:
                 print(exc)
-                encap_res_status[container.rid] = {}
+                ers[container.rid] = {}
 
-        l = []
-        cr = {}
-        for r in avail_resources:
-            rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
-            l.append((rid, status, label, log, monitor, disable, optional, encap))
-            if rid.startswith("container") and rid in encap_res_status:
-                _l = []
-                for _rid, val in encap_res_status[rid].items():
-                    _l.append((_rid, val['status'], val['label'], val['log'], val['monitor'], val['disable'], val['optional'], val['encap']))
-                cr[rid] = _l
+        lines = []
+        encap_squad = {}
+        for resource in avail_resources:
+            (
+                rid,
+                rtype,
+                status,
+                label,
+                log,
+                monitor,
+                disable,
+                optional,
+                encap
+            ) = resource.status_quad()
+            lines.append((rid, status, label, log, monitor, disable, optional, encap))
+            if rid.startswith("container") and rid in ers:
+                squad = []
+                for _rid, val in ers[rid].items():
+                    squad.append((
+                        _rid,
+                        val['status'],
+                        val['label'],
+                        val['log'],
+                        val['monitor'],
+                        val['disable'],
+                        val['optional'],
+                        val['encap'],
+                    ))
+                encap_squad[rid] = squad
 
-        last = len(l) - 1
+        last = len(lines) - 1
         if last >= 0:
-            for i, e in enumerate(l):
-                if i == last:
+            for idx, line in enumerate(lines):
+                if idx == last:
                     fmt = head_c+"  '- %-14s %4s %-10s %s"
                     pfx = head_c+"     %-14s %4s %-10s " % ('', '', '')
                     subpfx = head_c+"        %-11s %4s %-10s " % ('', '', '')
-                    print_res(e, fmt, pfx, subpfx=subpfx)
+                    print_res(line, fmt, pfx, subpfx=subpfx)
                     subresbar = " "
                 else:
                     fmt = head_c+"  |- %-14s %4s %-10s %s"
                     pfx = head_c+"  |  %-14s %4s %-10s " % ('', '', '')
-                    if e[0] in cr and len(cr[e[0]]) > 0:
+                    if line[0] in encap_squad and len(encap_squad[line[0]]) > 0:
                         subpfx = head_c+"  |  |  %-11s %4s %-10s " % ('', '', '')
                     else:
                         subpfx = None
-                    print_res(e, fmt, pfx, subpfx=subpfx)
+                    print_res(line, fmt, pfx, subpfx=subpfx)
                     subresbar = "|"
-                if e[0] in cr:
-                    _last = len(cr[e[0]]) - 1
+                if line[0] in encap_squad:
+                    _last = len(encap_squad[line[0]]) - 1
                     if _last >= 0:
-                        for _i, _e in enumerate(cr[e[0]]):
-                            if _i == _last:
+                        for _idx, _line in enumerate(encap_squad[line[0]]):
+                            if _idx == _last:
                                 fmt = head_c+"  "+subresbar+"  '- %-11s %4s %-10s %s"
                                 pfx = head_c+"  "+subresbar+"     %-11s %4s %-10s " % ('', '', '')
-                                print_res(_e, fmt, pfx)
+                                print_res(_line, fmt, pfx)
                             else:
                                 fmt = head_c+"  "+subresbar+"  |- %-11s %4s %-10s %s"
                                 pfx = head_c+"  "+subresbar+"  |  %-11s %4s %-10s " % ('', '', '')
-                                print_res(_e, fmt, pfx)
+                                print_res(_line, fmt, pfx)
 
         if n_accessory_resources > 0:
             fmt = "'- %-17s %4s %-10s %s"
             print(fmt%("accessory", '', '', ''))
 
-        l = []
-        for r in accessory_resources:
-            rid, rtype, status, label, log, monitor, disable, optional, encap = r.status_quad()
-            if rid in encap_res_status:
-                status = rcStatus.Status(rcStatus.status_value(encap_res_status[rid]['status']))
-            l.append((rid, status, label, log, monitor, disable, optional, encap))
+        lines = []
+        for resource in accessory_resources:
+            rid, rtype, status, label, log, monitor, disable, optional, encap = resource.status_quad()
+            if rid in ers:
+                status = rcStatus.Status(rcStatus.status_value(ers[rid]['status']))
+            lines.append((rid, status, label, log, monitor, disable, optional, encap))
 
-        last = len(l) - 1
+        last = len(lines) - 1
         if last >= 0:
-            for i, e in enumerate(l):
-                if i == last:
+            for idx, line in enumerate(lines):
+                if idx == last:
                     fmt = "   '- %-14s %4s %-10s %s"
                     pfx = "      %-14s %4s %-10s " % ('', '', '')
-                    print_res(e, fmt, pfx)
+                    print_res(line, fmt, pfx)
                 else:
                     fmt = "   |- %-14s %4s %-10s %s"
                     pfx = "   |  %-14s %4s %-10s " % ('', '', '')
-                    print_res(e, fmt, pfx)
+                    print_res(line, fmt, pfx)
 
     def svcmon_push_lists(self, status=None):
         """
@@ -1256,64 +1331,70 @@ class Svc(Scheduler):
         else:
             g_vals = []
             for container in containers:
-                encap_res_status = {}
+                ers = {}
                 try:
-                    encap_res_status = self.encap_json_status(container)
+                    ers = self.encap_json_status(container)
                 except ex.excNotAvailable:
-                    encap_res_status = {'resources': [],
-                                        'ip': 'n/a',
-                                        'disk': 'n/a',
-                                        'sync': 'n/a',
-                                        'hb': 'n/a',
-                                        'container': 'n/a',
-                                        'fs': 'n/a',
-                                        'share': 'n/a',
-                                        'app': 'n/a',
-                                        'avail': 'n/a',
-                                        'overall': 'n/a'}
+                    ers = {
+                        'resources': [],
+                        'ip': 'n/a',
+                        'disk': 'n/a',
+                        'sync': 'n/a',
+                        'hb': 'n/a',
+                        'container': 'n/a',
+                        'fs': 'n/a',
+                        'share': 'n/a',
+                        'app': 'n/a',
+                        'avail': 'n/a',
+                        'overall': 'n/a',
+                    }
                 except Exception as exc:
                     print(exc)
                     continue
 
                 vhostname = container.vm_hostname()
 
-                for rid in encap_res_status['resources']:
-                    rstatus = encap_res_status['resources'][rid]['status']
-                    r_vals.append([self.svcname,
-                                   rcEnv.nodename,
-                                   vhostname,
-                                   str(rid),
-                                   encap_res_status['resources'][rid].get('type', ''),
-                                   str(encap_res_status['resources'][rid]['label']),
-                                   str(rstatus),
-                                   "1" if encap_res_status['resources'][rid].get('monitor', False) else "0",
-                                   "1" if encap_res_status['resources'][rid].get('optional', False) else "0",
-                                   "1" if encap_res_status['resources'][rid].get('disabled', False) else "0",
-                                   str(now),
-                                   str(encap_res_status['resources'][rid]['log'])])
+                for rid in ers['resources']:
+                    rstatus = ers['resources'][rid]['status']
+                    r_vals.append([
+                        self.svcname,
+                        rcEnv.nodename,
+                        vhostname,
+                        str(rid),
+                        ers['resources'][rid].get('type', ''),
+                        str(ers['resources'][rid]['label']),
+                        str(rstatus),
+                        "1" if ers['resources'][rid].get('monitor', False) else "0",
+                        "1" if ers['resources'][rid].get('optional', False) else "0",
+                        "1" if ers['resources'][rid].get('disabled', False) else "0",
+                        str(now),
+                        str(ers['resources'][rid]['log']),
+                    ])
 
-                if 'avail' not in status or 'avail' not in encap_res_status:
+                if 'avail' not in status or 'avail' not in ers:
                     continue
 
-                g_vals.append([self.svcname,
-                               self.svc_env,
-                               rcEnv.nodename,
-                               vhostname,
-                               container.type.replace('container.', ''),
-                               rcEnv.node_env,
-                               str(status["ip"]+rcStatus.Status(encap_res_status['ip'])),
-                               str(status["disk"]+rcStatus.Status(encap_res_status['disk'])),
-                               str(status["sync"]+rcStatus.Status(encap_res_status['sync'])),
-                               str(status["hb"]+rcStatus.Status(encap_res_status['hb'])),
-                               str(status["container"]+rcStatus.Status(encap_res_status['container'])),
-                               str(status["fs"]+rcStatus.Status(encap_res_status['fs'])),
-                               str(status["share"]+rcStatus.Status(encap_res_status['share'] if 'share' in encap_res_status else 'n/a')),
-                               str(status["app"]+rcStatus.Status(encap_res_status['app'])),
-                               str(status["avail"]+rcStatus.Status(encap_res_status['avail'])),
-                               str(status["overall"]+rcStatus.Status(encap_res_status['overall'])),
-                               str(now),
-                               ' '.join(self.nodes),
-                               frozen])
+                g_vals.append([
+                    self.svcname,
+                    self.svc_env,
+                    rcEnv.nodename,
+                    vhostname,
+                    container.type.replace('container.', ''),
+                    rcEnv.node_env,
+                    str(status["ip"]+rcStatus.Status(ers['ip'])),
+                    str(status["disk"]+rcStatus.Status(ers['disk'])),
+                    str(status["sync"]+rcStatus.Status(ers['sync'])),
+                    str(status["hb"]+rcStatus.Status(ers['hb'])),
+                    str(status["container"]+rcStatus.Status(ers['container'])),
+                    str(status["fs"]+rcStatus.Status(ers['fs'])),
+                    str(status["share"]+rcStatus.Status(ers['share'] if 'share' in ers else 'n/a')),
+                    str(status["app"]+rcStatus.Status(ers['app'])),
+                    str(status["avail"]+rcStatus.Status(ers['avail'])),
+                    str(status["overall"]+rcStatus.Status(ers['overall'])),
+                    str(now),
+                    ' '.join(self.nodes),
+                    frozen,
+                ])
 
         return g_vars, g_vals, r_vars, r_vals
 
@@ -1371,7 +1452,7 @@ class Svc(Scheduler):
         for resource in monitored_resources:
             if resource.rstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
                 if len(resource.status_logs) > 0:
-                    rstatus_log = ''.join((' ', '(', resource.status_logs_str().strip().strip("# "), ')'))
+                    rstatus_log = " (%s)" % resource.status_logs_str().strip().strip("# ")
                 else:
                     rstatus_log = ''
                 self.log.info("monitored resource %s is in state %s%s",
@@ -1403,22 +1484,25 @@ class Svc(Scheduler):
                 monitored_resources.append(erid)
                 if rdata.get("status") not in ("up", "n/a"):
                     if len(rdata.get("log")) > 0:
-                        rstatus_log = ''.join((' ', '(', rdata.get("log").strip().strip("# "), ')'))
+                        rstatus_log = " (%s)" % rdata.get("log").strip().strip("# ")
                     else:
-                        rstatus_log = ''
-                    self.log.info("monitored resource %s is in state %s%s", erid, rdata.get("status"), rstatus_log)
+                        rstatus_log = ""
+                    self.log.info("monitored resource %s is in state %s%s",
+                                  erid, rdata.get("status"), rstatus_log)
 
                     if self.monitor_action is not None and \
                        hasattr(self, self.monitor_action):
                         raise ex.MonitorAction
                     else:
-                        self.log.info("Would TOC but no (or unknown) resource monitor action set.")
+                        self.log.info("Would TOC but no (or unknown) resource "
+                                      "monitor action set.")
                     return
 
         if len(monitored_resources) == 0:
             self.log.debug("no monitored resource")
         else:
-            rids = ','.join([r if isinstance(r, (str, unicode)) else r.rid for r in monitored_resources])
+            rids = ','.join([res if isinstance(res, (str, unicode)) else res.rid \
+                             for res in monitored_resources])
             self.log.debug("monitored resources are up (%s)", rids)
 
     def reboot(self):
