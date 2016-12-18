@@ -3091,15 +3091,13 @@ class Svc(Scheduler):
             cmd = rcEnv.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
             cmd_results = justcall(cmd)
         if cmd_results[2] != 0:
-            self.log.error("failed to send %s to %s", self.paths.cf, container.name)
-            raise ex.excError()
+            raise ex.excError("failed to send %s to %s" % (self.paths.cf, container.name))
         self.log.info("send %s to %s", self.paths.cf, container.name)
 
         cmd = ['create', '--config', encap_cf]
         cmd_results = self._encap_cmd(cmd, container=container)
         if cmd_results[2] != 0:
-            self.log.error("failed to create %s slave service", container.name)
-            raise ex.excError()
+            raise ex.excError("failed to create %s slave service" % container.name)
         self.log.info("create %s slave service", container.name)
 
     @staticmethod

@@ -433,7 +433,10 @@ class Node(Scheduler):
 
         if autopush:
             for svc in self.svcs:
-                svc.autopush()
+                try:
+                    svc.autopush()
+                except ex.excError as exc:
+                    self.log.error(str(exc))
 
         rcLogger.set_namelen(self.svcs)
 
