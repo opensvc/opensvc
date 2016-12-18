@@ -376,6 +376,9 @@ class Resource(object):
         if self.disabled:
             self.log.debug('action: skip action on disabled resource')
             return True
+        if not hasattr(self, action):
+            self.log.debug('action: not applicable (not implemented)')
+            return True
         try:
             self.do_action(action)
         except ex.excUndefined as exc:
