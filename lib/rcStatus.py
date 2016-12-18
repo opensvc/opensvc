@@ -131,6 +131,10 @@ class Status(object):
         return status_str(self.status)
 
     def __init__(self, initial_status=UNDEF):
+        try:
+            initial_status = int(initial_status)
+        except TypeError:
+            pass
         if type(initial_status) == int:
             self.status = initial_status
         elif type(initial_status) == Status:
