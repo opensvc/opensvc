@@ -1631,8 +1631,8 @@ class Node(Scheduler):
         Downloads and upgrades the OpenSVC agent, using the system-specific
         packaging tools.
         """
-        modname = 'rcUpdatePkg'+rcEnv.sysname+'.py'
-        if not os.path.exists(os.path.join(rcEnv.pathlib, modname)):
+        modname = 'rcUpdatePkg'+rcEnv.sysname
+        if not os.path.exists(os.path.join(rcEnv.pathlib, modname+'.py')):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         mod = __import__(modname)
