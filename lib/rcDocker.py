@@ -306,9 +306,11 @@ class DockerLib(object):
             return
 
         resource = self.docker_data_dir_resource()
-        if resource is not None and resource._status() not in (rcStatus.UP, rcStatus.STDBY_UP):
-            state= rcStatus.status_str(resource._status())
-            self.log.warning("the docker daemon data dir is handled by the %s resource in %s state. can't start the docker daemon" % (resource.rid, state))
+        state = resource._status()
+        if resource is not None and state not in (rcStatus.UP, rcStatus.STDBY_UP):
+            self.log.warning("the docker daemon data dir is handled by the %s "
+                             "resource in %s state. can't start the docker "
+                             "daemon" % (resource.rid, rcStatus.Status(state)))
             lock.unlock(lockfd)
             return
 
