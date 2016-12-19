@@ -305,8 +305,8 @@ class Compliance(object):
         else:
             self.svc = None
             self.node = o
-        self.skip_action = o.skip_action
-        self.sched_log = o.sched_log
+        self.skip_action = o.sched.skip_action
+        self.sched_log = o.sched.sched_log
         self.options = o.options
         self.module_o = {}
         self.module = []

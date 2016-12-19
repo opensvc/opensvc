@@ -11,7 +11,7 @@ import random
 import logging
 
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
+from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import is_string
 from rcColor import formatter
 
@@ -82,10 +82,10 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
         os._exit(1)
 
     self = args[0]
-    if hasattr(self, "svcname") and self.svcname is not None:
-        title = self.svcname+"."+func.__name__.lstrip("_")
-    else:
+    if self.name == "node":
         title = "node."+func.__name__.lstrip("_")
+    else:
+        title = self.name+"."+func.__name__.lstrip("_")
 
     if serialize:
         lockfile = title+".fork.lock"
@@ -94,15 +94,15 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
         from lock import lock, unlock
         try:
             lockfd = lock(lockfile=lockfile, timeout=0, delay=0)
-            self.sched_log(title, "lock acquired", "debug")
+            self.sched.sched_log(title, "lock acquired", "debug")
         except Exception:
-            self.sched_log(title, "task is already running", "warning")
+            self.sched.sched_log(title, "task is already running", "warning")
             os._exit(0)
 
     # now wait for a random delay to not DoS the collector.
-    if delay > 0 and not hasattr(self, "svcname"):
+    if delay > 0 and self.name == "node":
         delay = int(random.random()*delay)
-        self.sched_log(title, "delay %d secs to level database load"%delay, "debug")
+        self.sched.sched_log(title, "delay %d secs to level database load"%delay, "debug")
         try:
             time.sleep(delay)
         except KeyboardInterrupt as exc:
@@ -181,11 +181,24 @@ class Scheduler(object):
     The node and each service inherit an independent scheduler through
     this class.
     """
-    def __init__(self, config_defaults=None):
-        if config_defaults is None:
-            self.config_defaults = {}
+    def __init__(self, config_defaults=None, config=None, options=None,
+                 scheduler_actions=None, log=None, name="node", svc=None):
+        self.config_defaults = config_defaults
+        self.config = config
+
+        if scheduler_actions is None:
+            self.scheduler_actions = {}
         else:
-            self.config_defaults = config_defaults
+            self.scheduler_actions = scheduler_actions
+
+        if options is None:
+            self.options = Storage()
+        else:
+            self.options = options
+
+        self.name = name
+        self.svc = svc
+        self.log = log
         self.sched_log_shut = False
 
     def sched_log(self, task, msg, level):
@@ -226,7 +239,7 @@ class Scheduler(object):
         return {"next_sched": None, "minutes": None}
 
     @staticmethod
-    def need_action_interval(last, delay=10, now=None):
+    def _need_action_interval(last, delay=10, now=None):
         """
         Return False if timestamp is fresher than now-interval
         Return True otherwize.
@@ -266,10 +279,10 @@ class Scheduler(object):
         if not isinstance(sopt, list):
             sopt = [sopt]
         for _sopt in sopt:
-            self.timestamp(_sopt.fname)
+            self._timestamp(_sopt.fname)
 
     @staticmethod
-    def timestamp(timestamp_f):
+    def _timestamp(timestamp_f):
         """
         Update the timestamp file <timestamp_f>.
         If <timestamp_f> if is not a fullpath, consider it parented to
@@ -285,13 +298,13 @@ class Scheduler(object):
             ofile.write(str(datetime.datetime.now())+'\n')
         return True
 
-    def skip_action_interval(self, last, interval, now=None):
+    def _skip_action_interval(self, last, interval, now=None):
         """
-        Return the negation of need_action_interval()
+        Return the negation of _need_action_interval()
         """
-        return not self.need_action_interval(last, interval, now=now)
+        return not self._need_action_interval(last, interval, now=now)
 
-    def in_timerange_probabilistic(self, timerange, now=None):
+    def _in_timerange_probabilistic(self, timerange, now=None):
         """
         Validate a timerange constraint of a scheduled task, with an added
         failure probability decreasing with the remaining allowed window.
@@ -312,9 +325,9 @@ class Scheduler(object):
             return
 
         try:
-            begin = self.time_to_minutes(timerange["begin"])
-            end = self.time_to_minutes(timerange["end"])
-            now = self.time_to_minutes(now)
+            begin = self._time_to_minutes(timerange["begin"])
+            end = self._time_to_minutes(timerange["end"])
+            now = self._time_to_minutes(now)
         except:
             raise SchedNotAllowed("time conversion error in probabilistic "
                                   "challenge")
@@ -357,7 +370,7 @@ class Scheduler(object):
                               "over %d"%(rnd, proba))
 
     @staticmethod
-    def time_to_minutes(dt_spec):
+    def _time_to_minutes(dt_spec):
         """
         Convert a datetime or a %H:%M formatted string to minutes.
         """
@@ -372,7 +385,7 @@ class Scheduler(object):
             dt_spec = dtm.tm_hour * 60 + dtm.tm_min
         return dt_spec
 
-    def in_timeranges(self, schedule, fname=None, now=None, last=None):
+    def _in_timeranges(self, schedule, fname=None, now=None, last=None):
         """
         Validate the timerange constraints of a schedule.
         Iterates multiple allowed timeranges, and switch between simple and
@@ -387,7 +400,7 @@ class Scheduler(object):
                 self.in_timerange_interval(timerange, fname=fname, now=now, last=last)
                 if fname is not None:
                     # fname as None indicates we run in test mode
-                    self.in_timerange_probabilistic(timerange, now=now)
+                    self._in_timerange_probabilistic(timerange, now=now)
                 return
             except SchedNotAllowed as exc:
                 errors.append(str(exc))
@@ -398,9 +411,9 @@ class Scheduler(object):
         Validate if <now> is in <timerange>.
         """
         try:
-            begin = self.time_to_minutes(timerange["begin"])
-            end = self.time_to_minutes(timerange["end"])
-            now = self.time_to_minutes(now)
+            begin = self._time_to_minutes(timerange["begin"])
+            end = self._time_to_minutes(timerange["end"])
+            now = self._time_to_minutes(now)
         except:
             raise SchedNotAllowed("conversion error in timerange challenge")
 
@@ -446,7 +459,7 @@ class Scheduler(object):
             last = self.get_last(fname)
         if last is None:
             return
-        if self.skip_action_interval(last, timerange["interval"], now=now):
+        if self._skip_action_interval(last, timerange["interval"], now=now):
             raise SchedNotAllowed("last run is too soon")
         return
 
@@ -454,10 +467,14 @@ class Scheduler(object):
         """
         Validate if <now> is in the allowed days and in the allowed timranges.
         """
-        self.in_days(schedule, now=now)
-        self.in_timeranges(schedule, fname=fname, now=now, last=last)
+        self._in_days(schedule, now=now)
+        self._in_timeranges(schedule, fname=fname, now=now, last=last)
 
     def in_schedule(self, schedules, fname=None, now=None, last=None):
+        """
+        Validate if <now> pass the constraints of a set of schedules,
+        iterating over each non-excluded one.
+        """
         if len(schedules) == 0:
             raise SchedNotAllowed("no schedule")
         errors = []
@@ -473,6 +490,11 @@ class Scheduler(object):
         raise SchedNotAllowed(", ".join(errors))
 
     def sched_convert_to_schedule(self, config, section, prefix=""):
+        """
+        Read and convert a deprecated schedule definition from a configuration
+        file section, handle json-formatted lists, and finally return a
+        current-style schedule string.
+        """
         def get_val(param):
             if not config.has_section(section) or \
                (not config.has_option(section, param) and \
@@ -519,25 +541,36 @@ class Scheduler(object):
         return buff.strip()
 
     def sched_get_schedule_raw(self, section, option):
+        """
+        Read the old/new style schedule options of a configuration file
+        section. Convert if necessary and return the new-style formatted
+        string.
+        """
         if option is None:
             raise SchedNoDefault
 
-        if hasattr(self, "config"):
-            config = self.config
-        elif hasattr(self, "svc"):
-            config = self.svc.config
+        config = self.config
+
+        def has_old_schedule_options(config, section):
+            """
+            Return True if a configuration file section has a deprecated
+            schedule definition keyword
+            """
+            if config.has_option(section, 'sync_days') or \
+               config.has_option(section, 'sync_interval') or \
+               config.has_option(section, 'sync_period'):
+                return True
+            if config.has_option(section, 'days') or \
+               config.has_option(section, 'interval') or \
+               config.has_option(section, 'period'):
+                return True
+            return False
 
         if config.has_section(section) and \
            config.has_option(section, 'schedule'):
             schedule_s = config.get(section, 'schedule')
-        elif section.startswith("sync") and config.has_section(section) and (\
-              config.has_option(section, 'sync_days') or \
-              config.has_option(section, 'sync_interval') or \
-              config.has_option(section, 'sync_period') or \
-              config.has_option(section, 'days') or \
-              config.has_option(section, 'interval') or \
-              config.has_option(section, 'period') \
-             ):
+        elif section.startswith("sync") and config.has_section(section) and \
+             has_old_schedule_options(config, section):
             if section.startswith("sync"):
                 prefix = "sync_"
             elif section.startswith("app"):
@@ -553,10 +586,9 @@ class Scheduler(object):
             schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
         elif config.has_option('DEFAULT', option):
             schedule_s = config.get('DEFAULT', option)
-        elif hasattr(self, "resources_by_id") and \
-             section in self.resources_by_id and \
-             hasattr(self.resources_by_id[section], "default_schedule"):
-            schedule_s = self.resources_by_id[section].default_schedule
+        elif self.svc and section in self.svc.resources_by_id and \
+             hasattr(self.svc.resources_by_id[section], "default_schedule"):
+            schedule_s = self.svc.resources_by_id[section].default_schedule
         elif option in self.config_defaults:
             schedule_s = self.config_defaults[option]
         else:
@@ -564,21 +596,28 @@ class Scheduler(object):
 
         return schedule_s
 
-    def in_days(self, schedule, now=None):
+    def _in_days(self, schedule, now=None):
         self._sched_validate_month(schedule["month"], now=now)
         self._sched_validate_week(schedule["week"], now=now)
         self._sched_validate_day(schedule["day"], now=now)
 
     def _sched_validate_day(self, day, now=None):
-        for s in day.split(","):
+        """
+        Split the allowed <day> spec and for each element,
+        validate if <now> is in allowed <day> of week and of month.
+        """
+        for _day in day.split(","):
             try:
-                self.__sched_validate_day(s, now=now)
+                self.__sched_validate_day(_day, now=now)
                 return
             except SchedNotAllowed:
                 pass
         raise SchedNotAllowed("not in allowed days")
 
     def __sched_validate_day(self, day, now=None):
+        """
+        Validate if <now> is in allowed <day> of week and of month.
+        """
         n_col = day.count(":")
         day_of_month = None
         from_tail = None
@@ -618,7 +657,7 @@ class Scheduler(object):
             except ValueError:
                 raise SchedSyntaxError("day_of_month is not a number")
 
-        day = self.sched_expand_value(day)
+        day = self._sched_expand_value(day)
 
         if day in ("*", ""):
             allowed_days = range(7)
@@ -658,7 +697,10 @@ class Scheduler(object):
         return
 
     def _sched_validate_week(self, week, now=None):
-        week = self.sched_expand_value(week)
+        """
+        Validate if <now> is in allowed <week>.
+        """
+        week = self._sched_expand_value(week)
 
         if week == "*":
             return
@@ -671,6 +713,9 @@ class Scheduler(object):
         return
 
     def _sched_validate_month(self, month, now=None):
+        """
+        Validate if <now> is in allowed <month>.
+        """
         if month == "*":
             return
 
@@ -689,7 +734,7 @@ class Scheduler(object):
             if month_s in ("", "*"):
                 _allowed_months = set(range(12))
             else:
-                _allowed_months = self.sched_expand_value(month_s)
+                _allowed_months = self._sched_expand_value(month_s)
             if modulo_s is not None:
                 _allowed_months &= self.__sched_validate_month(modulo_s)
             allowed_months |= _allowed_months
@@ -719,7 +764,7 @@ class Scheduler(object):
         return set([m for m in range(1, 13) if (m + shift) % modulo == 0])
 
     @staticmethod
-    def sched_to_int(name):
+    def _sched_to_int(name):
         try:
             idx = int(name)
             return idx
@@ -729,7 +774,7 @@ class Scheduler(object):
                 raise SchedSyntaxError("unknown calendar name '%s'" % name)
             return CALENDAR_NAMES[name]
 
-    def sched_expand_value(self, spec):
+    def _sched_expand_value(self, spec):
         """
         Top level schedule definition parser.
         Split the definition into sub-schedules, and parse each one.
@@ -743,25 +788,25 @@ class Scheduler(object):
             if n_dash > 1:
                 raise SchedSyntaxError("only one '-' allowed in timerange '%s'" % spec)
             elif n_dash == 0:
-                elements.add(self.sched_to_int(subspec))
+                elements.add(self._sched_to_int(subspec))
                 continue
             begin, end = subspec.split("-")
-            begin = self.sched_to_int(begin)
-            end = self.sched_to_int(end)
+            begin = self._sched_to_int(begin)
+            end = self._sched_to_int(end)
             _range = sorted([begin, end])
             elements |= set(range(_range[0], _range[1]+1))
         return elements
 
-    def interval_from_timerange(self, timerange):
+    def _interval_from_timerange(self, timerange):
         """
         Return a default interval from a timerange data structure.
         This interval is the timerange length in minute, plus one.
         """
-        begin_m = self.time_to_minutes(timerange['begin'])
-        end_m = self.time_to_minutes(timerange['end'])
+        begin_m = self._time_to_minutes(timerange['begin'])
+        end_m = self._time_to_minutes(timerange['end'])
         return end_m - begin_m + 1
 
-    def sched_parse_timerange(self, spec, section=None):
+    def _sched_parse_timerange(self, spec, section=None):
         """
         Return the list of timerange data structure parsed from the <spec>
         definition string.
@@ -779,8 +824,8 @@ class Scheduler(object):
             if begin.count(":") != 1 or \
                end.count(":") != 1:
                 raise SchedSyntaxError("only one ':' allowed in timerange '%s' end" % spec)
-            begin_m = self.time_to_minutes(begin)
-            end_m = self.time_to_minutes(end)
+            begin_m = self._time_to_minutes(begin)
+            end_m = self._time_to_minutes(end)
             if begin_m > end_m:
                 tmp = end
                 end = begin
@@ -809,7 +854,7 @@ class Scheduler(object):
             ecount = _spec.count("@")
             if ecount == 0:
                 tr_data = parse_timerange(_spec)
-                tr_data["interval"] = self.interval_from_timerange(tr_data)
+                tr_data["interval"] = self._interval_from_timerange(tr_data)
                 tr_data["probabilistic"] = probabilistic
                 tr_list.append(tr_data)
                 continue
@@ -861,7 +906,7 @@ class Scheduler(object):
             ecount = len(elements)
             if ecount == 1:
                 _data = {
-                    "timeranges": self.sched_parse_timerange(elements[0], section=section),
+                    "timeranges": self._sched_parse_timerange(elements[0], section=section),
                     "day": "*",
                     "week": "*",
                     "month": "*",
@@ -869,7 +914,7 @@ class Scheduler(object):
             elif ecount == 2:
                 _tr, _day = elements
                 _data = {
-                    "timeranges": self.sched_parse_timerange(_tr, section=section),
+                    "timeranges": self._sched_parse_timerange(_tr, section=section),
                     "day": _day,
                     "week": "*",
                     "month": "*",
@@ -877,7 +922,7 @@ class Scheduler(object):
             elif ecount == 3:
                 _tr, _day, _week = elements
                 _data = {
-                    "timeranges": self.sched_parse_timerange(_tr, section=section),
+                    "timeranges": self._sched_parse_timerange(_tr, section=section),
                     "day": _day,
                     "week": _week,
                     "month": "*",
@@ -885,7 +930,7 @@ class Scheduler(object):
             elif ecount == 4:
                 _tr, _day, _week, _month = elements
                 _data = {
-                    "timeranges": self.sched_parse_timerange(_tr, section=section),
+                    "timeranges": self._sched_parse_timerange(_tr, section=section),
                     "day": _day,
                     "week": _week,
                     "month": _month,
@@ -932,7 +977,7 @@ class Scheduler(object):
         timestamp_f = os.path.realpath(os.path.join(rcEnv.pathvar, fname))
         return timestamp_f
 
-    def is_croned(self):
+    def _is_croned(self):
         """
         Return True if the cron option is set.
         """
@@ -942,7 +987,7 @@ class Scheduler(object):
                     schedule_option=None, now=None,
                     deferred_write_timestamp=False):
         if action not in self.scheduler_actions:
-            if not self.is_croned():
+            if not self._is_croned():
                 return False
             return {"count": 0, "keep": [], "skip": []}
 
@@ -980,21 +1025,16 @@ class Scheduler(object):
         if schedule_option is None:
             schedule_option = sopt.schedule_option
 
-        if hasattr(self, "svcname"):
-            scheduler = self.svcname
-        else:
-            scheduler = "node"
-
         def title():
             """
             Return a string to use as the task title in log entries.
             """
-            buff = ".".join((scheduler, action))
+            buff = ".".join((self.name, action))
             if "#" in section:
                 buff += "." + section
             return buff
 
-        if not self.is_croned():
+        if not self._is_croned():
             # don't update the timestamp file
             return False
 
@@ -1010,7 +1050,7 @@ class Scheduler(object):
         # update the timestamp file
         if not deferred_write_timestamp:
             timestamp_f = self.get_timestamp_f(fname)
-            self.timestamp(timestamp_f)
+            self._timestamp(timestamp_f)
             self.sched_log(title(), "last run timestamp updated", "debug")
 
         return False
@@ -1023,14 +1063,14 @@ class Scheduler(object):
             print("you are not allowed to print schedules", file=sys.stderr)
             raise ex.excError()
         if self.options.format is None:
-            self.print_schedule_default()
+            self._print_schedule_default()
             return
-        data = self.print_schedule_data()
-        if not hasattr(self, "svcname"):
-            # format ourself
-            return self._print_schedule(data)
-        # let the Node object do the formatting (for aggregation)
-        return data
+        data = self._print_schedule_data()
+        if self.svc and len(self.svc.node.svcs) > 1:
+            # let the Node object do the formatting (for aggregation)
+            return data
+        # format ourself
+        return self._print_schedule(data)
 
     @formatter
     def _print_schedule(self, data):
@@ -1040,7 +1080,7 @@ class Scheduler(object):
         """
         return data
 
-    def print_schedule_default(self):
+    def _print_schedule_default(self):
         """
         Print the scheduling table in normal or detailled mode.
         """
@@ -1052,19 +1092,19 @@ class Scheduler(object):
             print_sched_fmt = "%(action)-21s  %(last_run)-21s  %(config_parameter)-24s  %(schedule_definition)s"
             print("action                 last run               config parameter          schedule definition")
             print("------                 --------               ----------------          -------------------")
-        for data in self.print_schedule_data():
+        for data in self._print_schedule_data():
             print(print_sched_fmt % data)
 
-    def print_schedule_data(self):
+    def _print_schedule_data(self):
         """
         Return a list of dict of schedule information for all tasks.
         """
         data = []
         for action in sorted(self.scheduler_actions):
-            data += self._print_schedule_data(action)
+            data += self.__print_schedule_data(action)
         return data
 
-    def _print_schedule_data(self, action):
+    def __print_schedule_data(self, action):
         """
         Return a dict of a scheduled task, or list of dict of a task-set,
         containing schedule information.
@@ -1072,13 +1112,13 @@ class Scheduler(object):
         data = []
         if isinstance(self.scheduler_actions[action], list):
             for sopt in self.scheduler_actions[action]:
-                data += [self.__print_schedule_data(action, sopt)]
+                data += [self.___print_schedule_data(action, sopt)]
         else:
             sopt = self.scheduler_actions[action]
-            data += [self.__print_schedule_data(action, sopt)]
+            data += [self.___print_schedule_data(action, sopt)]
         return data
 
-    def __print_schedule_data(self, action, sopt):
+    def ___print_schedule_data(self, action, sopt):
         """
         Return a dict of a scheduled task information.
         """

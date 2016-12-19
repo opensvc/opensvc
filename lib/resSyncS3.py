@@ -219,7 +219,7 @@ class syncS3(resSync.Sync):
     def in_full_schedule(self):
         from rcScheduler import Scheduler, SchedNotAllowed, SchedSyntaxError
         sched = Scheduler()
-        schedule = self.sched_get_schedule("dummy", "dummy", schedules=self.full_schedule)
+        schedule = sched.sched_get_schedule("dummy", "dummy", schedules=self.full_schedule)
         try:
             sched.in_schedule(schedule, now=datetime.datetime.now())
         except SchedNotAllowed:

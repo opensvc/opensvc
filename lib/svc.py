@@ -333,7 +333,7 @@ def _master_action(func):
             func(self)
     return _func
 
-class Svc(Scheduler):
+class Svc(object):
     """
     A OpenSVC service class.
     A service is a collection of resources.
@@ -420,12 +420,36 @@ class Svc(Scheduler):
         )
 
         self.log = rcLogger.initLogger(self.svcname)
-        Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
 
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
 
+    @lazy
+    def sched(self):
+        """
+        Lazy init of the service scheduler.
+        """
+        return Scheduler(
+            name=self.svcname,
+            config_defaults=CONFIG_DEFAULTS,
+            options=self.options,
+            config=self.config,
+            log=self.log,
+            svc=self,
+            scheduler_actions={
+                "compliance_auto": SchedOpts(
+                    "DEFAULT",
+                    fname=self.svcname+os.sep+"last_comp_check",
+                    schedule_option="comp_schedule"
+                ),
+                "push_service_status": SchedOpts(
+                    "DEFAULT",
+                    fname=self.svcname+os.sep+"last_push_service_status",
+                    schedule_option="status_schedule"
+                ),
+            },
+        )
 
     @lazy
     def freezer(self):
@@ -434,29 +458,17 @@ class Svc(Scheduler):
         """
         return Freezer(self.svcname)
 
-    @lazy
-    def scheduler_actions(self):
-        """
-        Define the non-resource dependent scheduler tasks.
-        """
-        return {
-            "compliance_auto": SchedOpts(
-                "DEFAULT",
-                fname=self.svcname+os.sep+"last_comp_check",
-                schedule_option="comp_schedule"
-            ),
-            "push_service_status": SchedOpts(
-                "DEFAULT",
-                fname=self.svcname+os.sep+"last_push_service_status",
-                schedule_option="status_schedule"
-            ),
-        }
-
     def __lt__(self, other):
         """
         Order by service name
         """
         return self.svcname < other.svcname
+
+    def print_schedule(self):
+        """
+        The 'print schedule' node and service action entrypoint.
+        """
+        return self.sched.print_schedule()
 
     def scheduler(self):
         """
@@ -467,7 +479,7 @@ class Svc(Scheduler):
         if not self.has_run_flag():
             self.log.info("the scheduler is off during init")
             return
-        for action in self.scheduler_actions:
+        for action in self.sched.scheduler_actions:
             try:
                 if action == "sync_all":
                     # save the action logging to the collector if sync_all
@@ -486,14 +498,14 @@ class Svc(Scheduler):
         Add resource-dependent tasks to the scheduler.
         """
         if not self.encap:
-            self.scheduler_actions["push_config"] = SchedOpts(
+            self.sched.scheduler_actions["push_config"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_push_config",
                 schedule_option="push_schedule"
             )
 
         if self.ha and "flex" not in self.clustertype:
-            self.scheduler_actions["resource_monitor"] = SchedOpts(
+            self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_resource_monitor",
                 schedule_option="monitor_schedule"
@@ -509,16 +521,16 @@ class Svc(Scheduler):
             )]
 
         if len(syncs) > 0:
-            self.scheduler_actions["sync_all"] = syncs
+            self.sched.scheduler_actions["sync_all"] = syncs
 
         for resource in self.get_resources("task"):
-            self.scheduler_actions[resource.rid] = SchedOpts(
+            self.sched.scheduler_actions[resource.rid] = SchedOpts(
                 resource.rid,
                 fname=self.svcname+os.sep+"last_"+resource.rid,
                 schedule_option="no_schedule"
             )
 
-        self.scheduler_actions["push_resinfo"] = SchedOpts(
+        self.sched.scheduler_actions["push_resinfo"] = SchedOpts(
             "DEFAULT",
             fname=self.svcname+os.sep+"last_push_resinfo",
             schedule_option="resinfo_schedule"
@@ -1420,7 +1432,7 @@ class Svc(Scheduler):
         """
         The resource monitor action entrypoint
         """
-        if self.skip_action("resource_monitor"):
+        if self.sched.skip_action("resource_monitor"):
             return
         self.task_resource_monitor()
 
@@ -2113,7 +2125,7 @@ class Svc(Scheduler):
         return False
 
     def run_task(self, rid):
-        if self.skip_action(rid):
+        if self.sched.skip_action(rid):
             return
         self.resources_by_id[rid].run()
 
@@ -2982,7 +2994,7 @@ class Svc(Scheduler):
         """
         The 'sync_all' scheduler task entrypoint.
         """
-        data = self.skip_action("sync_all", deferred_write_timestamp=True)
+        data = self.sched.skip_action("sync_all", deferred_write_timestamp=True)
         if len(data["keep"]) == 0:
             return
         self._sched_sync_all(data["keep"])
@@ -2994,7 +3006,7 @@ class Svc(Scheduler):
         scheduler constraints.
         """
         self.action("sync_all", rid=[o.section for o in sched_options])
-        self.sched_write_timestamp(sched_options)
+        self.sched.sched_write_timestamp(sched_options)
 
     def sync_all(self):
         """
@@ -3003,7 +3015,7 @@ class Svc(Scheduler):
         if not self.can_sync(["sync"]):
             return
         if self.options.cron:
-            self.sched_delay()
+            self.sched.sched_delay()
         self.presync()
         self.sub_set_action("sync.rsync", "sync_nodes")
         self.sub_set_action("sync.zfs", "sync_nodes")
@@ -3030,7 +3042,7 @@ class Svc(Scheduler):
             if not self.options.cron:
                 self.log.info("push service status is disabled for encapsulated services")
             return
-        if self.skip_action("push_service_status"):
+        if self.sched.skip_action("push_service_status"):
             return
         self.task_push_service_status()
 
@@ -3040,7 +3052,7 @@ class Svc(Scheduler):
         Refresh and push the service status to the collector.
         """
         if self.options.cron:
-            self.sched_delay()
+            self.sched.sched_delay()
         import rcSvcmon
         self.options.refresh = True
         rcSvcmon.svcmon_normal([self])
@@ -3049,7 +3061,7 @@ class Svc(Scheduler):
         """
         The 'push_resinfo' scheduler task and action entrypoint.
         """
-        if self.skip_action("push_resinfo"):
+        if self.sched.skip_action("push_resinfo"):
             return
         self.task_push_resinfo()
 
@@ -3059,14 +3071,14 @@ class Svc(Scheduler):
         Push the per-resource key/value pairs to the collector.
         """
         if self.options.cron:
-            self.sched_delay()
+            self.sched.sched_delay()
         self.node.collector.call('push_resinfo', [self])
 
     def push_config(self):
         """
         The 'push_config' scheduler task entrypoint.
         """
-        if self.skip_action("push_config"):
+        if self.sched.skip_action("push_config"):
             return
         self.push()
 
@@ -3103,7 +3115,7 @@ class Svc(Scheduler):
         if self.encap:
             return
         if self.options.cron:
-            self.sched_delay()
+            self.sched.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
         self.log.info("send %s to collector", self.paths.cf)

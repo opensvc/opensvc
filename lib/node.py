@@ -8,6 +8,7 @@ The node
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import os
 import datetime
 import sys
@@ -77,7 +78,7 @@ UNPRIVILEGED_ACTIONS = [
     "collector_cli",
 ]
 
-class Node(Scheduler):
+class Node(object):
     """
     Defines a cluster node.  It contain list of Svc.
     Implements node-level actions and checks.
@@ -119,10 +120,128 @@ class Node(Scheduler):
             param=None,
             value=None,
         )
-        Scheduler.__init__(self, config_defaults=CONFIG_DEFAULTS)
         rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
+
+
+    @utils.lazy
+    def sched(self):
+        return Scheduler(
+            config_defaults=CONFIG_DEFAULTS,
+            options=self.options,
+            config=self.config,
+            log=self.log,
+            scheduler_actions={
+                "checks": SchedOpts(
+                    "checks"
+                ),
+                "dequeue_actions": SchedOpts(
+                    "dequeue_actions",
+                    schedule_option="no_schedule"
+                ),
+                "pushstats": SchedOpts(
+                    "stats"
+                ),
+                "collect_stats": SchedOpts(
+                    "stats_collection",
+                    schedule_option="collect_stats_schedule"
+                ),
+                "pushpkg": SchedOpts(
+                    "packages"
+                ),
+                "pushpatch": SchedOpts(
+                    "patches"
+                ),
+                "pushasset": SchedOpts(
+                    "asset"
+                ),
+                "pushnsr": SchedOpts(
+                    "nsr",
+                    schedule_option="no_schedule"
+                ),
+                "pushhp3par": SchedOpts(
+                    "hp3par",
+                    schedule_option="no_schedule"
+                ),
+                "pushemcvnx": SchedOpts(
+                    "emcvnx",
+                    schedule_option="no_schedule"
+                ),
+                "pushcentera": SchedOpts(
+                    "centera",
+                    schedule_option="no_schedule"
+                ),
+                "pushnetapp": SchedOpts(
+                    "netapp",
+                    schedule_option="no_schedule"
+                ),
+                "pushibmds": SchedOpts(
+                    "ibmds",
+                    schedule_option="no_schedule"
+                ),
+                "pushdcs": SchedOpts(
+                    "dcs",
+                    schedule_option="no_schedule"
+                ),
+                "pushfreenas": SchedOpts(
+                    "freenas",
+                    schedule_option="no_schedule"
+                ),
+                "pushgcedisks": SchedOpts(
+                    "gcedisks",
+                    schedule_option="no_schedule"
+                ),
+                "pushhds": SchedOpts(
+                    "hds",
+                    schedule_option="no_schedule"
+                ),
+                "pushnecism": SchedOpts(
+                    "necism",
+                    schedule_option="no_schedule"
+                ),
+                "pusheva": SchedOpts(
+                    "eva",
+                    schedule_option="no_schedule"
+                ),
+                "pushibmsvc": SchedOpts(
+                    "ibmsvc",
+                    schedule_option="no_schedule"
+                ),
+                "pushvioserver": SchedOpts(
+                    "vioserver",
+                    schedule_option="no_schedule"
+                ),
+                "pushsym": SchedOpts(
+                    "sym",
+                    schedule_option="no_schedule"
+                ),
+                "pushbrocade": SchedOpts(
+                    "brocade", schedule_option="no_schedule"
+                ),
+                "pushdisks": SchedOpts(
+                    "disks"
+                ),
+                "sysreport": SchedOpts(
+                    "sysreport"
+                ),
+                "compliance_auto": SchedOpts(
+                    "compliance",
+                    fname="node"+os.sep+"last_comp_check",
+                    schedule_option="comp_schedule"
+                ),
+                "auto_rotate_root_pw": SchedOpts(
+                    "rotate_root_pw",
+                    fname="node"+os.sep+"last_rotate_root_pw",
+                    schedule_option="no_schedule"
+                ),
+                "auto_reboot": SchedOpts(
+                    "reboot",
+                    fname="node"+os.sep+"last_auto_reboot",
+                    schedule_option="no_schedule"
+                )
+            },
+        )
 
     @utils.lazy
     def collector(self):
@@ -131,118 +250,6 @@ class Node(Scheduler):
     @utils.lazy
     def cmdworker(self):
         return rcCommandWorker.CommandWorker()
-
-    @utils.lazy
-    def scheduler_actions(self):
-        return {
-            "checks": SchedOpts(
-                "checks"
-            ),
-            "dequeue_actions": SchedOpts(
-                "dequeue_actions",
-                schedule_option="no_schedule"
-            ),
-            "pushstats": SchedOpts(
-                "stats"
-            ),
-            "collect_stats": SchedOpts(
-                "stats_collection",
-                schedule_option="collect_stats_schedule"
-            ),
-            "pushpkg": SchedOpts(
-                "packages"
-            ),
-            "pushpatch": SchedOpts(
-                "patches"
-            ),
-            "pushasset": SchedOpts(
-                "asset"
-            ),
-            "pushnsr": SchedOpts(
-                "nsr",
-                schedule_option="no_schedule"
-            ),
-            "pushhp3par": SchedOpts(
-                "hp3par",
-                schedule_option="no_schedule"
-            ),
-            "pushemcvnx": SchedOpts(
-                "emcvnx",
-                schedule_option="no_schedule"
-            ),
-            "pushcentera": SchedOpts(
-                "centera",
-                schedule_option="no_schedule"
-            ),
-            "pushnetapp": SchedOpts(
-                "netapp",
-                schedule_option="no_schedule"
-            ),
-            "pushibmds": SchedOpts(
-                "ibmds",
-                schedule_option="no_schedule"
-            ),
-            "pushdcs": SchedOpts(
-                "dcs",
-                schedule_option="no_schedule"
-            ),
-            "pushfreenas": SchedOpts(
-                "freenas",
-                schedule_option="no_schedule"
-            ),
-            "pushgcedisks": SchedOpts(
-                "gcedisks",
-                schedule_option="no_schedule"
-            ),
-            "pushhds": SchedOpts(
-                "hds",
-                schedule_option="no_schedule"
-            ),
-            "pushnecism": SchedOpts(
-                "necism",
-                schedule_option="no_schedule"
-            ),
-            "pusheva": SchedOpts(
-                "eva",
-                schedule_option="no_schedule"
-            ),
-            "pushibmsvc": SchedOpts(
-                "ibmsvc",
-                schedule_option="no_schedule"
-            ),
-            "pushvioserver": SchedOpts(
-                "vioserver",
-                schedule_option="no_schedule"
-            ),
-            "pushsym": SchedOpts(
-                "sym",
-                schedule_option="no_schedule"
-            ),
-            "pushbrocade": SchedOpts(
-                "brocade", schedule_option="no_schedule"
-            ),
-            "pushdisks": SchedOpts(
-                "disks"
-            ),
-            "sysreport": SchedOpts(
-                "sysreport"
-            ),
-            "compliance_auto": SchedOpts(
-                "compliance",
-                fname="node"+os.sep+"last_comp_check",
-                schedule_option="comp_schedule"
-            ),
-            "auto_rotate_root_pw": SchedOpts(
-                "rotate_root_pw",
-                fname="node"+os.sep+"last_rotate_root_pw",
-                schedule_option="no_schedule"
-            ),
-            "auto_reboot": SchedOpts(
-                "reboot",
-                fname="node"+os.sep+"last_auto_reboot",
-                schedule_option="no_schedule"
-            )
-        }
 
     @utils.lazy
     def nodename(self):
@@ -674,6 +681,12 @@ class Node(Scheduler):
         self.log.debug("format data using the %s formatter", fmt)
         return data
 
+    def print_schedule(self):
+        """
+        The 'print schedule' node and service action entrypoint.
+        """
+        return self.sched.print_schedule()
+
     def scheduler(self):
         """
         The node scheduler entrypoint.
@@ -681,11 +694,22 @@ class Node(Scheduler):
         the tasks if required.
         """
         self.options.cron = True
-        for action in self.scheduler_actions:
+        for action in self.sched.scheduler_actions:
             try:
                 self.action(action)
             except:
                 self.log.exception("")
+
+    def schedulers(self):
+        """
+        schedulers node action entrypoint.
+        Run the node scheduler and each configured service scheduler.
+        """
+        self.scheduler()
+
+        self.build_services()
+        for svc in self.svcs:
+            svc.scheduler()
 
     def get_push_objects(self, section):
         """
@@ -704,7 +728,7 @@ class Node(Scheduler):
         """
         Do the stats collection if the scheduler constraints permit.
         """
-        if self.skip_action("collect_stats"):
+        if self.sched.skip_action("collect_stats"):
             return
         self.task_collect_stats()
 
@@ -724,7 +748,7 @@ class Node(Scheduler):
         """
         Set stats range to push to "last pushstat => now"
         """
-        fpath = self.get_timestamp_f(self.scheduler_actions["pushstats"].fname)
+        fpath = self.sched.get_timestamp_f(self.sched.scheduler_actions["pushstats"].fname)
         try:
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
@@ -737,7 +761,7 @@ class Node(Scheduler):
         if interval < 21:
             interval = 21
 
-        if self.skip_action("pushstats"):
+        if self.sched.skip_action("pushstats"):
             return
         self.task_pushstats(interval)
 
@@ -778,7 +802,7 @@ class Node(Scheduler):
         The pushpkg action entrypoint.
         Inventories the installed packages.
         """
-        if self.skip_action("pushpkg"):
+        if self.sched.skip_action("pushpkg"):
             return
         self.task_pushpkg()
 
@@ -794,7 +818,7 @@ class Node(Scheduler):
         The pushpatch action entrypoint.
         Inventories the installed patches.
         """
-        if self.skip_action("pushpatch"):
+        if self.sched.skip_action("pushpatch"):
             return
         self.task_pushpatch()
 
@@ -810,7 +834,7 @@ class Node(Scheduler):
         The pushasset action entrypoint.
         Inventories the server properties.
         """
-        if self.skip_action("pushasset"):
+        if self.sched.skip_action("pushasset"):
             return
         self.task_pushasset()
 
@@ -826,7 +850,7 @@ class Node(Scheduler):
         The pushnsr action entrypoint.
         Inventories Networker Backup Server index databases.
         """
-        if self.skip_action("pushnsr"):
+        if self.sched.skip_action("pushnsr"):
             return
         self.task_pushnsr()
 
@@ -842,7 +866,7 @@ class Node(Scheduler):
         The push3par action entrypoint.
         Inventories HP 3par storage arrays.
         """
-        if self.skip_action("pushhp3par"):
+        if self.sched.skip_action("pushhp3par"):
             return
         self.task_pushhp3par()
 
@@ -858,7 +882,7 @@ class Node(Scheduler):
         The pushnetapp action entrypoint.
         Inventories NetApp storage arrays.
         """
-        if self.skip_action("pushnetapp"):
+        if self.sched.skip_action("pushnetapp"):
             return
         self.task_pushnetapp()
 
@@ -874,7 +898,7 @@ class Node(Scheduler):
         The pushcentera action entrypoint.
         Inventories Centera storage arrays.
         """
-        if self.skip_action("pushcentera"):
+        if self.sched.skip_action("pushcentera"):
             return
         self.task_pushcentera()
 
@@ -890,7 +914,7 @@ class Node(Scheduler):
         The pushemcvnx action entrypoint.
         Inventories EMC VNX storage arrays.
         """
-        if self.skip_action("pushemcvnx"):
+        if self.sched.skip_action("pushemcvnx"):
             return
         self.task_pushemcvnx()
 
@@ -906,7 +930,7 @@ class Node(Scheduler):
         The pushibmds action entrypoint.
         Inventories IBM DS storage arrays.
         """
-        if self.skip_action("pushibmds"):
+        if self.sched.skip_action("pushibmds"):
             return
         self.task_pushibmds()
 
@@ -922,7 +946,7 @@ class Node(Scheduler):
         The pushgcedisks action entrypoint.
         Inventories Google Compute Engine disks.
         """
-        if self.skip_action("pushgcedisks"):
+        if self.sched.skip_action("pushgcedisks"):
             return
         self.task_pushgcedisks()
 
@@ -938,7 +962,7 @@ class Node(Scheduler):
         The pushfreenas action entrypoint.
         Inventories FreeNas storage arrays.
         """
-        if self.skip_action("pushfreenas"):
+        if self.sched.skip_action("pushfreenas"):
             return
         self.task_pushfreenas()
 
@@ -954,7 +978,7 @@ class Node(Scheduler):
         The pushdcs action entrypoint.
         Inventories DataCore SAN Symphony storage arrays.
         """
-        if self.skip_action("pushdcs"):
+        if self.sched.skip_action("pushdcs"):
             return
         self.task_pushdcs()
 
@@ -970,7 +994,7 @@ class Node(Scheduler):
         The pushhds action entrypoint.
         Inventories Hitachi storage arrays.
         """
-        if self.skip_action("pushhds"):
+        if self.sched.skip_action("pushhds"):
             return
         self.task_pushhds()
 
@@ -986,7 +1010,7 @@ class Node(Scheduler):
         The pushnecism action entrypoint.
         Inventories NEC iSM storage arrays.
         """
-        if self.skip_action("pushnecism"):
+        if self.sched.skip_action("pushnecism"):
             return
         self.task_pushnecism()
 
@@ -1002,7 +1026,7 @@ class Node(Scheduler):
         The pusheva action entrypoint.
         Inventories HP EVA storage arrays.
         """
-        if self.skip_action("pusheva"):
+        if self.sched.skip_action("pusheva"):
             return
         self.task_pusheva()
 
@@ -1018,7 +1042,7 @@ class Node(Scheduler):
         The pushibmsvc action entrypoint.
         Inventories IBM SVC storage arrays.
         """
-        if self.skip_action("pushibmsvc"):
+        if self.sched.skip_action("pushibmsvc"):
             return
         self.task_pushibmsvc()
 
@@ -1034,7 +1058,7 @@ class Node(Scheduler):
         The pushvioserver action entrypoint.
         Inventories IBM vio server storage arrays.
         """
-        if self.skip_action("pushvioserver"):
+        if self.sched.skip_action("pushvioserver"):
             return
         self.task_pushvioserver()
 
@@ -1050,7 +1074,7 @@ class Node(Scheduler):
         The pushsym action entrypoint.
         Inventories EMC Symmetrix server storage arrays.
         """
-        if self.skip_action("pushsym"):
+        if self.sched.skip_action("pushsym"):
             return
         self.task_pushsym()
 
@@ -1067,7 +1091,7 @@ class Node(Scheduler):
         The pushsym action entrypoint.
         Inventories Brocade SAN switches.
         """
-        if self.skip_action("pushbrocade"):
+        if self.sched.skip_action("pushbrocade"):
             return
         self.task_pushbrocade()
 
@@ -1082,7 +1106,7 @@ class Node(Scheduler):
         """
         The rotate_root_pw node action entrypoint.
         """
-        if self.skip_action("auto_rotate_root_pw"):
+        if self.sched.skip_action("auto_rotate_root_pw"):
             return
         self.task_auto_rotate_root_pw()
 
@@ -1135,12 +1159,12 @@ class Node(Scheduler):
            statinfo.st_uid != 0 or statinfo.st_mode & stat.S_IWOTH:
             print("reboot is not scheduled")
         else:
-            sch = self.scheduler_actions["auto_reboot"]
-            schedule = self.sched_get_schedule_raw(sch.section, sch.schedule_option)
+            sch = self.sched.scheduler_actions["auto_reboot"]
+            schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
             print("reboot is scheduled")
             print("reboot schedule: %s" % schedule)
 
-        result = self.get_next_schedule("auto_reboot")
+        result = self.sched.get_next_schedule("auto_reboot")
         if result["next_sched"]:
             print("next reboot slot:",
                   result["next_sched"].strftime("%a %Y-%m-%d %H:%M"))
@@ -1152,7 +1176,7 @@ class Node(Scheduler):
         The scheduler task executing the node reboot if the scheduler
         constraints are satisfied and the reboot flag is set.
         """
-        if self.skip_action("auto_reboot"):
+        if self.sched.skip_action("auto_reboot"):
             return
         self.task_auto_reboot()
 
@@ -1180,7 +1204,7 @@ class Node(Scheduler):
         """
         The pushdisks node action entrypoint.
         """
-        if self.skip_action("pushdisks"):
+        if self.sched.skip_action("pushdisks"):
             return
         self.task_pushdisks()
 
@@ -1259,7 +1283,7 @@ class Node(Scheduler):
         """
         The sysreport node action entrypoint.
         """
-        if self.skip_action("sysreport"):
+        if self.sched.skip_action("sysreport"):
             return
         try:
             self.task_sysreport()
@@ -1318,7 +1342,7 @@ class Node(Scheduler):
         """
         The checks node action entrypoint.
         """
-        if self.skip_action("checks"):
+        if self.sched.skip_action("checks"):
             return
         self.task_checks()
 
@@ -1744,7 +1768,7 @@ class Node(Scheduler):
         """
         The dequeue_actions node action entrypoint.
         """
-        if self.skip_action("dequeue_actions"):
+        if self.sched.skip_action("dequeue_actions"):
             return
         self.task_dequeue_actions()
 
@@ -2413,17 +2437,6 @@ class Node(Scheduler):
                 self.log.debug("current nofile %d already over minimum %d", _vs, nofile)
         except Exception as exc:
             self.log.debug(str(exc))
-
-    def schedulers(self):
-        """
-        schedulers node action entrypoint.
-        Run the node scheduler and each configured service scheduler.
-        """
-        self.scheduler()
-
-        self.build_services()
-        for svc in self.svcs:
-            svc.scheduler()
 
     def logs(self):
         """
