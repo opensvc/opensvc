@@ -35,8 +35,8 @@ class Apps(resApp.Apps):
         if container.guestos == 'Windows':
             raise ex.excNotAvailable
         if container.status(refresh=True) != rcStatus.UP:
-            self.log.debug("abort resApp action because container status is %s"%rcStatus.status_str(container.status()))
-            self.status_log("container is %s"%rcStatus.status_str(container.status()))
+            self.log.debug("abort resApp action because container status is %s" % rcStatus.Status(container.status()))
+            self.status_log("container is %s" % rcStatus.Status(container.status()))
             raise ex.excNotAvailable
         if not self.check_reachable(container):
             self.log.debug("abort resApp action because container is unreachable")

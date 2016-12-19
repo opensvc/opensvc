@@ -464,8 +464,8 @@ class Resource(object):
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.log.debug("refresh status: %s => %s",
-                           rcStatus.status_str(last_status),
-                           rcStatus.status_str(self.rstatus))
+                           rcStatus.Status(last_status),
+                           rcStatus.Status(self.rstatus))
             self.write_status()
 
         if restart:
@@ -497,7 +497,7 @@ class Resource(object):
             return
         if last_status not in restart_last_status:
             self.status_log("not restarted because previous status is %s" % \
-                            rcStatus.status_str(last_status), "info")
+                            rcStatus.Status(last_status), "info")
             return
 
         if not hasattr(self, 'start'):
@@ -576,8 +576,7 @@ class Resource(object):
             return
 
         try:
-            status_str = lines[0]
-            status = rcStatus.status_value(status_str)
+            status = rcStatus.Status(lines[0])
         except (AttributeError, ValueError) as exc:
             self.log.debug(exc)
             return
@@ -599,7 +598,7 @@ class Resource(object):
         """
         Write the in-memory resource status to the on-disk cache.
         """
-        status_str = rcStatus.status_str(self.rstatus)+'\n'
+        status_str = "%s\n" % rcStatus.Status(self.rstatus)
         if len(self.status_logs) > 0:
             status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
         with open(self.fpath_status_last(), 'w') as ofile:
@@ -616,7 +615,7 @@ class Resource(object):
                 last = lines[-1].split(" | ")[-1].strip("\n")
         except:
             last = None
-        current = rcStatus.status_str(self.rstatus)
+        current = rcStatus.Status(self.rstatus)
         if current == last:
             return
         log = logging.getLogger("status_history")
@@ -687,11 +686,11 @@ class Resource(object):
         Returns the resource properties and status as a tuple, as
         excepted by svcmon, print status and the collector feed api.
         """
-        status = self.status(verbose=True)
+        status = rcStatus.Status(self.status(verbose=True))
         encap = 'encap' in self.tags
         return (self.rid,
                 self.type,
-                rcStatus.status_str(status),
+                status,
                 self.label,
                 self.status_logs_str(color=color),
                 self.monitor,
@@ -901,7 +900,7 @@ class Resource(object):
             self.log.warning("ignore requires on %s: resource not found", rid)
             return
         resource = self.svc.resources_by_id[rid]
-        current_state = rcStatus.status_str(resource.status())
+        current_state = rcStatus.Status(resource.status())
         if current_state not in states:
             raise ex.excError("requires on resource %s in state %s, "
                               "current state %s" % \

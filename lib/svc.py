@@ -1051,7 +1051,7 @@ class Svc(Scheduler):
                 print("resource not found")
                 continue
             resource = self.resources_by_id[rid]
-            print(rcStatus.colorize_status(rcStatus.status_str(resource.status())))
+            print(rcStatus.colorize_status(str(resource.status())))
         return 0
 
     def print_status(self):
@@ -1265,7 +1265,7 @@ class Svc(Scheduler):
             for resource in rset.resources:
                 if 'encap' in resource.tags:
                     continue
-                rstatus = rcStatus.status_str(resource.rstatus)
+                rstatus = str(resource.rstatus)
                 r_vals.append([
                     self.svcname,
                     rcEnv.nodename,
@@ -1401,20 +1401,20 @@ class Svc(Scheduler):
     def get_rset_status(self, groups):
         """
         Return the aggregated status of all resources of the specified resource
-        sets.
+        sets, as a dict of status indexed by resourceset type.
         """
         self.setup_environ()
-        rset_status = {}
+        rsets_status = {}
         for status_type in STATUS_TYPES:
             group = status_type.split('.')[0]
             if group not in groups:
                 continue
             for rset in self.get_resourcesets(status_type, strict=True):
-                if rset.type not in rset_status:
-                    rset_status[rset.type] = rset.status()
+                if rset.type not in rsets_status:
+                    rsets_status[rset.type] = rset.status()
                 else:
-                    rset_status[rset.type] = rcStatus._merge(rset_status[rset.type], rset.status())
-        return rset_status
+                    rsets_status[rset.type] += rset.status()
+        return rsets_status
 
     def resource_monitor(self):
         """
@@ -1457,7 +1457,7 @@ class Svc(Scheduler):
                     rstatus_log = ''
                 self.log.info("monitored resource %s is in state %s%s",
                               resource.rid,
-                              rcStatus.status_str(resource.rstatus),
+                              str(resource.rstatus),
                               rstatus_log)
 
                 if self.monitor_action is not None and \
