@@ -1140,11 +1140,12 @@ class Node(Scheduler):
             print("reboot is scheduled")
             print("reboot schedule: %s" % schedule)
 
-        next_sched, _max = self.get_next_schedule("auto_reboot")
-        if next_sched:
-            print("next reboot slot:", next_sched.strftime("%a %Y-%m-%d %H:%M"))
+        result = self.get_next_schedule("auto_reboot")
+        if result["next_sched"]:
+            print("next reboot slot:",
+                  result["next_sched"].strftime("%a %Y-%m-%d %H:%M"))
         else:
-            print("next reboot slot: none in the next %d days" % (_max/144))
+            print("next reboot slot: none in the next %d days" % (result["minutes"]/144))
 
     def auto_reboot(self):
         """
