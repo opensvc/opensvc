@@ -2249,18 +2249,20 @@ def add_mandatory_syncs(svc, conf):
 
     """1
     """
+    def add_file(flist, fpath):
+        if not os.path.exists(fpath):
+            return flist
+        flist.append(fpath)
+        return flist
+
     if len(svc.nodes|svc.drpnodes) > 1:
         kwargs = {}
         src = []
-        src.append(os.path.join(rcEnv.pathetc, svc.svcname))
-        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.conf'))
-        src.append(os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-        localrc = os.path.join(rcEnv.pathetc, svc.svcname+'.dir')
-        cluster = os.path.join(rcEnv.pathetc, svc.svcname+'.cluster')
-        if os.path.exists(cluster):
-            src.append(cluster)
-        if os.path.exists(localrc):
-            src.append(localrc)
+        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname))
+        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.conf'))
+        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
+        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.cluster'))
+        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.dir'))
         for resource in svc.get_resources():
             src += resource.files_to_sync()
         dst = os.path.join("/")
