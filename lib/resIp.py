@@ -186,31 +186,38 @@ class Ip(Res.Resource):
             raise ex.IpConflict(self.addr)
         return
 
-    def lock(self, timeout=60, delay=1):
+    def lock(self):
         import lock
-        lockfile = os.path.join(rcEnv.pathlock, 'startip')
+        if self.svc.options.waitlock is not None:
+            timeout = self.svc.options.waitlock
+        else:
+            timeout = 120
+        delay = 1
         lockfd = None
+        action = "startip"
+        lockfile = os.path.join(rcEnv.pathlock, action)
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, lockfile)
+        self.log.debug("acquire service lock %s", details)
+
         try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
-        except lock.lockTimeout:
-            self.log.error("timed out waiting for lock")
-            raise ex.excError
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
+        except lock.lockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.lockNoLockFile:
-            self.log.error("lock_nowait: set the 'lockfile' param")
-            raise ex.excError
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.lockCreateError:
-            self.log.error("can not create lock file %s"%lockfile)
-            raise ex.excError
-        except lock.lockAcquire as e:
-            self.log.warn("another action is currently running (pid=%s)"%e.pid)
-            raise ex.excError
+            raise ex.excError("can not create lock file %s" % details)
+        except lock.lockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
         except ex.excSignal:
-            self.log.error("interrupted by signal")
-            raise ex.excError
-        except:
+            raise ex.excError("interrupted by signal %s" % details)
+        except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error")
-        self.lockfd = lockfd
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
+        if lockfd is not None:
+            self.lockfd = lockfd
 
     def unlock(self):
         import lock
@@ -233,52 +240,10 @@ class Ip(Res.Resource):
         self.log.debug('pre-checks passed')
 
         self.lock()
-        ifconfig = self.get_ifconfig()
-        if self.mask is None:
-            intf = ifconfig.interface(self.ipDev)
-            if intf is None:
-                self.log.error("netmask parameter is mandatory with 'noalias' tag")
-                self.unlock()
-                raise ex.excError
-            self.mask = intf.mask
-        if self.mask == '':
-            self.log.error("No netmask set on parent interface %s" % self.ipDev)
-            self.unlock()
-            raise ex.excError
-        elif isinstance(self.mask, list):
-            if len(self.mask) > 0:
-                self.mask = self.mask[0]
-            else:
-                self.log.error("No netmask set on parent interface %s" % self.ipDev)
-                self.unlock()
-                raise ex.excError
-        if 'noalias' in self.tags:
-            self.stacked_dev = self.ipDev
-        else:
-            self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
-                                                        self.addr,\
-                                                        self.log)
-        if self.stacked_dev is None:
-            self.log.error("could not determine a stacked dev for parent interface %s" % self.ipDev)
-            self.unlock()
-            raise ex.excError
-
-        arp_announce = True
         try:
-            (ret, out, err) = self.startip_cmd()
-            self.can_rollback = True
-        except ex.excNotSupported:
-            self.log.info("start ip not supported")
-            ret = 0
-            out = ""
-            err = ""
-            arp_announce = False
-            pass
-
-        self.unlock()
-        if ret != 0:
-            self.log.error("failed")
-            raise ex.excError
+            arp_announce = self.start_locked()
+        finally:
+            self.unlock()
 
         if arp_announce:
             self.arp_announce()
@@ -287,6 +252,45 @@ class Ip(Res.Resource):
             self.dns_update()
         except ex.excError as exc:
             self.log.error(str(exc))
+
+    def start_locked(self):
+        ifconfig = self.get_ifconfig()
+        if self.mask is None:
+            intf = ifconfig.interface(self.ipDev)
+            if intf is None:
+                raise ex.excError("netmask parameter is mandatory with 'noalias' tag")
+            self.mask = intf.mask
+        if self.mask == '':
+            raise ex.excError("No netmask set on parent interface %s" % self.ipDev)
+        elif isinstance(self.mask, list):
+            if len(self.mask) > 0:
+                self.mask = self.mask[0]
+            else:
+                raise ex.excError("No netmask set on parent interface %s" % self.ipDev)
+        if 'noalias' in self.tags:
+            self.stacked_dev = self.ipDev
+        else:
+            self.stacked_dev = ifconfig.get_stacked_dev(self.ipDev,\
+                                                        self.addr,\
+                                                        self.log)
+        if self.stacked_dev is None:
+            raise ex.excError("could not determine a stacked dev for parent interface %s" % self.ipDev)
+
+        arp_announce = True
+        try:
+            ret, out, err = self.startip_cmd()
+            self.can_rollback = True
+        except ex.excNotSupported:
+            self.log.info("start ip not supported")
+            ret = 0
+            out = ""
+            err = ""
+            arp_announce = False
+
+        if ret != 0:
+            raise ex.excError("failed")
+
+        return arp_announce
 
     def dns_update(self):
         """
