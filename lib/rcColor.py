@@ -235,3 +235,39 @@ def formatter(fn):
 
     return decorator
 
+def print_color_config(fpath):
+    """
+    Colorize and print the content of the file passed as argument.
+    """
+    from rcColor import colorize, color
+    import re
+    def highlighter(line):
+        """
+        Colorize interesting parts to help readability
+        """
+        line = line.rstrip("\n")
+        if re.match(r'\[.+\]', line):
+            return colorize(line, color.BROWN)
+        line = re.sub(
+            r"({[\.\w\-_#{}\[\]()\$\+]+})",
+            colorize(r"\1", color.GREEN),
+            line
+        )
+        line = re.sub(
+            r"^(\s*\w+\s*)=",
+            colorize(r"\1", color.LIGHTBLUE)+"=",
+            line
+        )
+        line = re.sub(
+            r"^(\s*\w+)(@\w+\s*)=",
+            colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=",
+            line
+        )
+        return line
+    try:
+        with open(fpath, 'r') as ofile:
+            for line in ofile.readlines():
+                print(highlighter(line))
+    except Exception as exc:
+        raise ex.excError(exc)
+

@@ -2900,7 +2900,8 @@ class Svc(Scheduler):
         """
         if self.options.format is not None:
             return self.print_config_data()
-        self.node._print_config(self.paths.cf)
+        from rcColor import print_color_config
+        print_color_config(self.paths.cf)
 
     def make_temp_config(self):
         """

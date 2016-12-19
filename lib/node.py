@@ -2481,52 +2481,17 @@ class Node(Scheduler):
             except (AttributeError, OSError, IOError):
                 pass
 
-    @staticmethod
-    def _print_config(fpath):
-        """
-        Colorize and print the content of the file passed as argument.
-        """
-        from rcColor import colorize, color
-        import re
-        def highlighter(line):
-            """
-            Colorize interesting parts to help readability
-            """
-            line = line.rstrip("\n")
-            if re.match(r'\[.+\]', line):
-                return colorize(line, color.BROWN)
-            line = re.sub(
-                r"({[\.\w\-_#{}\[\]()\$\+]+})",
-                colorize(r"\1", color.GREEN),
-                line
-            )
-            line = re.sub(
-                r"^(\s*\w+\s*)=",
-                colorize(r"\1", color.LIGHTBLUE)+"=",
-                line
-            )
-            line = re.sub(
-                r"^(\s*\w+)(@\w+\s*)=",
-                colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=",
-                line
-            )
-            return line
-        try:
-            with open(fpath, 'r') as ofile:
-                for line in ofile.readlines():
-                    print(highlighter(line))
-        except Exception as exc:
-            raise ex.excError(exc)
-
     def print_config(self):
         """
         print_config node action entrypoint
         """
-        self._print_config(rcEnv.nodeconf)
+        from rcColor import print_color_config
+        print_color_config(rcEnv.nodeconf)
 
     def print_authconfig(self):
         """
         print_authconfig node action entrypoint
         """
-        self._print_config(rcEnv.authconf)
+        from rcColor import print_color_config
+        print_color_config(rcEnv.authconf)
 
