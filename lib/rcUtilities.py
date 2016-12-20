@@ -559,6 +559,7 @@ def cidr_to_dotted(s):
     return _out
 
 def to_dotted(s):
+    s = str(s)
     if '.' in s:
         return s
     return cidr_to_dotted(s)
