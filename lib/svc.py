@@ -15,7 +15,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, vcall
+from rcUtilities import justcall, lazy, vcall, is_string
 from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
@@ -1513,7 +1513,7 @@ class Svc(object):
         if len(monitored_resources) == 0:
             self.log.debug("no monitored resource")
         else:
-            rids = ','.join([res if isinstance(res, (str, unicode)) else res.rid \
+            rids = ','.join([res if is_string(res) else res.rid \
                              for res in monitored_resources])
             self.log.debug("monitored resources are up (%s)", rids)
 
