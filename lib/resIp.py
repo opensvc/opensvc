@@ -172,7 +172,7 @@ class Ip(Res.Resource):
             raise ex.IpConflict(self.addr)
         return
 
-    def lock(self, timeout=60, delay=1):
+    def lock(self, timeout=120, delay=1):
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'startip')
         lockfd = None
