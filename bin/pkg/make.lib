@@ -81,6 +81,7 @@ function prepare_chroot {
 	# purge unwanted files
 	cd /tmp
 	rm -rf $CHROOT/opt/opensvc/bin/pkg
+	rm -rf $CHROOT/opt/opensvc/lib/tests
 	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
 
 	DOCDIR=$CHROOT/usr/share/doc/opensvc
