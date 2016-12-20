@@ -1,3 +1,5 @@
+# coding: utf8
+
 """
 This executable is wrapped by the opensvc shell script.
 
@@ -5,6 +7,7 @@ It's the entrypoint for all OpenSVC services management ops.
 """
 from __future__ import print_function
 from __future__ import absolute_import
+
 import sys
 import os
 
@@ -38,7 +41,7 @@ def get_docker_argv(argv=None):
         argv = sys.argv
     if len(argv) < 2:
         return
-    if 'docker' not in argv:
+    if "docker" not in argv:
         return
     pos = argv.index('docker')
     if len(argv) > pos + 1:

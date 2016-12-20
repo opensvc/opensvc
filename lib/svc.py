@@ -2,6 +2,7 @@
 The module defining the Svc class.
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys
 import os
@@ -15,7 +16,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, vcall, is_string
+from rcUtilities import justcall, lazy, vcall, is_string, try_decode
 from rcConfigParser import RawConfigParser
 from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
@@ -4107,6 +4108,7 @@ class Svc(object):
         lines = self._read_cf().splitlines()
         done = False
         in_section = False
+        value = try_decode(value)
 
         for idx, line in enumerate(lines):
             sline = line.strip()
