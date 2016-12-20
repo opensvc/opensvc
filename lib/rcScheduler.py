@@ -1189,26 +1189,38 @@ class Scheduler(object):
         try:
             schedule = self.sched_get_schedule("dummy", "dummy", schedules=schedule_s)
         except SchedSyntaxError as exc:
-            print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
-            return
+            if expected == None:
+                print("passed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
+                return True
+            else:
+                print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
+                return False
         try:
             self.in_schedule(schedule, fname=None, now=dtm)
             result = True
             result_s = ""
         except SchedSyntaxError as exc:
-            print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
-            return
+            if expected == None:
+                print("passed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
+                return True
+            else:
+                print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
+                return False
         except SchedNotAllowed as exc:
             result = False
             result_s = "("+str(exc)+")"
 
         if result == expected:
             check = "passed"
+            ret = True
         else:
             check = "failed"
+            ret = False
 
         print("%s : test '%s' in schedule %-50s expected %s => result %s %s" % \
               (check, date_s, repr(schedule_s), str(expected), str(result), result_s))
+
+        return ret
 
 def test_scheduler():
     """
@@ -1259,24 +1271,24 @@ def test_scheduler():
         ("18:00-18:59@60 wed", "2016-08-30 18:00", False),
         ("23:00-23:59@61 *:first", "2016-09-01 23:00", True),
         # syntax errors
-        ("23:00-23:59@61 *:first:*", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 *:", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 *:*", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * %2+1+2", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * %foo", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * %2+foo", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 freday", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * junuary", "2016-09-01 23:00", True),
-        ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", True),
-        ("23:00-23:59-01:00@61", "2016-09-01 23:00", True),
-        ("23:00-23:59:00@61 * * %2%3", "2016-09-01 23:00", True),
-        ("23:00-23:59@61@10", "2016-09-01 23:00", True),
-        ("23:00-23:59 * * * * *", "2016-09-01 23:00", True),
+        ("23:00-23:59@61 *:first:*", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 *:", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 *:*", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * %2+1+2", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * %foo", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * %2+foo", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 freday", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * junuary", "2016-09-01 23:00", None),
+        ("23:00-23:59@61 * * %2%3", "2016-09-01 23:00", None),
+        ("23:00-23:59-01:00@61", "2016-09-01 23:00", None),
+        ("23:00-23:59:00@61 * * %2%3", "2016-09-01 23:00", None),
+        ("23:00-23:59@61@10", "2016-09-01 23:00", None),
+        ("23:00-23:59 * * * * *", "2016-09-01 23:00", None),
     ]
     sched = Scheduler()
     for test in tests:
-        sched.test_schedule(*test)
+        assert sched.test_schedule(*test)
 
 if __name__ == "__main__":
     test_scheduler()
