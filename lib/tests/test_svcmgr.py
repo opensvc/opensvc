@@ -78,11 +78,11 @@ def test_create_empty():
     ret = svcmgr.main(argv=["create", "-s", "unittest"])
     assert ret == 0
 
-def test_create_set_default():
+def test_set_default():
     ret = svcmgr.main(argv=["-s", "unittest", "set", "--param", "comment", "--value", UNICODE_STRING])
     assert ret == 0
 
-def test_create_get_default():
+def test_get_default():
     _stdout = sys.stdout
 
     try:
@@ -99,11 +99,11 @@ def test_create_get_default():
     assert ret == 0
     assert try_decode(output) == UNICODE_STRING
 
-def test_create_unset_default():
+def test_unset_default():
     ret = svcmgr.main(argv=["-s", "unittest", "unset", "--param", "comment"])
     assert ret == 0
 
-def test_create_get_default_not_found():
+def test_get_default_not_found():
     _stderr = sys.stdout
 
     try:

@@ -1,10 +1,15 @@
+# coding: utf8
+
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys
 import json
 from StringIO import StringIO
 
 import nodemgr
+
+UNICODE_STRING = "bêh"
 
 def test_nodemgr_print_schedule():
     ret = nodemgr.main(argv=["print", "schedule"])
@@ -68,6 +73,45 @@ def test_nodemgr_print_authconfig_json():
 
     assert ret == 0
     assert isinstance(json.loads(output), dict)
+
+def test_set():
+    ret = nodemgr.main(argv=["set", "--param", "unittest.comment", "--value", UNICODE_STRING])
+    assert ret == 0
+
+def test_get():
+    _stdout = sys.stdout
+
+    try:
+        out = StringIO()
+        sys.stdout = out
+        ret = nodemgr.main(argv=["get", "--param", "unittest.comment"])
+        output = out.getvalue().strip()
+    finally:
+        sys.stdout = _stdout
+
+    from rcUtilities import try_decode
+    print(output)
+
+    assert ret == 0
+    assert try_decode(output) == UNICODE_STRING
+
+def test_unset():
+    ret = nodemgr.main(argv=["unset", "--param", "unittest.comment"])
+    assert ret == 0
+
+def test_get_not_found():
+    _stderr = sys.stdout
+
+    try:
+        err = StringIO()
+        sys.stderr = err
+        ret = nodemgr.main(argv=["get", "--param", "unittest.comment"])
+        output = err.getvalue().strip()
+    finally:
+        sys.stderr = _stderr
+
+    assert ret == 1
+    assert "not found" in output
 
 def test_nodemgr_checks():
     ret = nodemgr.main(argv=["checks"])
