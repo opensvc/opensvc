@@ -29,11 +29,12 @@ import xmlrpcClient
 from rcGlobalEnv import rcEnv, Storage
 import rcCommandWorker
 import rcLogger
-import rcUtilities as utils
 import rcExceptions as ex
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
+from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
+                        call, which, purge_cache
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
@@ -125,8 +126,11 @@ class Node(object):
         self.log = rcLogger.initLogger(rcEnv.nodename)
 
 
-    @utils.lazy
+    @lazy
     def sched(self):
+        """
+        Lazy initialization of the node Scheduler object.
+        """
         return Scheduler(
             config_defaults=CONFIG_DEFAULTS,
             options=self.options,
@@ -243,20 +247,36 @@ class Node(object):
             },
         )
 
-    @utils.lazy
+    @lazy
     def collector(self):
+        """
+        Lazy initialization of the node Collector object.
+        """
+        self.log.debug("initiatize node::collector")
         return xmlrpcClient.Collector(node=self)
 
-    @utils.lazy
+    @lazy
     def cmdworker(self):
+        """
+        Lazy initialization of the node asynchronous command execution queue.
+        """
+        self.log.debug("initiatize node::cmdworker")
         return rcCommandWorker.CommandWorker()
 
-    @utils.lazy
+    @lazy
     def nodename(self):
+        """
+        Lazy initialization of the node name.
+        """
+        self.log.debug("initiatize node::nodename")
         return socket.gethostname().lower()
 
-    @utils.lazy
+    @lazy
     def system(self):
+        """
+        Lazy initialization of the operating system object, which implements
+        specific methods like crash or fast-reboot.
+        """
         try:
             rcos = __import__('rcOs'+rcEnv.sysname)
         except ImportError:
@@ -271,7 +291,7 @@ class Node(object):
         """
         if action in UNPRIVILEGED_ACTIONS:
             return
-        utils.check_privs()
+        check_privs()
 
     @staticmethod
     def split_url(url, default_app=None):
@@ -393,14 +413,14 @@ class Node(object):
         Wrap rcUtilities call function, setting the node logger.
         """
         kwargs["log"] = self.log
-        return utils.call(*args, **kwargs)
+        return call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
         """
         Wrap rcUtilities vcall function, setting the node logger.
         """
         kwargs["log"] = self.log
-        return utils.vcall(*args, **kwargs)
+        return vcall(*args, **kwargs)
 
     def build_services(self, *args, **kwargs):
         """
@@ -473,9 +493,9 @@ class Node(object):
         """
         Stop the node class workers
         """
-        if utils.lazy_initialized(self, "collector"):
+        if lazy_initialized(self, "collector"):
             self.collector.stop_worker()
-        if utils.lazy_initialized(self, "cmdworker"):
+        if lazy_initialized(self, "cmdworker"):
             self.cmdworker.stop_worker()
 
     def edit_config(self):
@@ -504,7 +524,7 @@ class Node(object):
             editor = "notepad"
         else:
             editor = "vi"
-        if not utils.which(editor):
+        if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         os.environ["LANG"] = "en_US.UTF-8"
@@ -1804,7 +1824,7 @@ class Node(object):
         import shlex
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
-        out, err, ret = utils.justcall(cmd)
+        out, err, ret = justcall(cmd)
         return ret, out, err
 
     def rotate_root_pw(self):
@@ -2040,7 +2060,7 @@ class Node(object):
         need_aggregate = self.action_need_aggregate(action)
 
         # generic cache janitoring
-        utils.purge_cache()
+        purge_cache()
         self.log.debug("session uuid: %s", rcEnv.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(self.svcs) > 1:
