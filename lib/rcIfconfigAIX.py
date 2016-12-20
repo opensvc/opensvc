@@ -1,5 +1,5 @@
 from subprocess import *
-from rcUtilities import hexmask_to_str
+from rcUtilities import hexmask_to_dotted
 
 import rcIfconfig
 
@@ -68,7 +68,7 @@ class ifconfig(rcIfconfig.ifconfig):
             elif 'inet' == prev:
                 i.ipaddr += [w]
             elif 'netmask' == prev:
-                i.mask += [hexmask_to_str(w)]
+                i.mask += [hexmask_to_dotted(w)]
             elif 'inet6' == prev:
                 i.ip6addr += [w.split('/')[0]]
                 i.ip6mask += [w.split('/')[1]]

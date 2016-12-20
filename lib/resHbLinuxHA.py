@@ -15,7 +15,7 @@ class Hb(resHb.Hb):
                  optional=False,
                  disabled=False,
                  restart=0,
-                 subset=subset,
+                 subset=set(),
                  tags=set([])):
         resHb.Hb.__init__(self,
                           rid,

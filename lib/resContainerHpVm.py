@@ -7,7 +7,7 @@ from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
 import resContainer
 u = __import__('rcUtilitiesHP-UX')
-import resVgHpVm
+import resDiskHpVm
 
 class HpVm(resContainer.Container):
     def __init__(self,

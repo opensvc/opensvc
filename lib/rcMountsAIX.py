@@ -3,7 +3,7 @@ import rcMounts
 from rcUtilities import *
 
 class Mounts(rcMounts.Mounts):
-    df_one_cmd = ['df', dev]
+    df_one_cmd = ['df']
 
     def match_mount(self, i, dev, mnt):
         """Given a line of 'mount' output, returns True if (dev, mnt) matches

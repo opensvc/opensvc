@@ -8,7 +8,7 @@ import resApp
 import rcStatus
 import rcExceptions as ex
 
-class Apps(resApp.Apps):
+class Apps(resApp.App):
     app_d = os.path.join(os.sep, 'svc', 'etc', 'init.d')
 
     def set_perms(self, rc):

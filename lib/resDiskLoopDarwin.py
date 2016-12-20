@@ -6,7 +6,7 @@ from rcUtilities import call, which
 import rcStatus
 import resDiskLoop as Res
 import rcExceptions as ex
-from rcDiskLoopDarwin import file_to_loop
+from rcLoopDarwin import file_to_loop
 
 class Disk(Res.Disk):
     def is_up(self):

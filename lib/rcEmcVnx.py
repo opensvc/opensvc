@@ -10,10 +10,10 @@ from rcGlobalEnv import rcEnv
 if rcEnv.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.pathbin
 
-if which('/opt/Navisphere/bin/naviseccli') is None:
-    raise ex.excError('can not find Navicli programs in usual /opt/Navisphere/bin')
-
 def naviseccli(cmd, scope=None, spa=None, spb=None, username=None, password=None):
+    if which('/opt/Navisphere/bin/naviseccli') is None:
+        raise ex.excError('can not find Navicli programs in usual /opt/Navisphere/bin')
+
     _cmd = ['/opt/Navisphere/bin/naviseccli', '-h', spa]
     _cmd += cmd
     out, err, ret = justcall(_cmd)

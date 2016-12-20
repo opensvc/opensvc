@@ -148,7 +148,6 @@ class Mount(Res.Mount):
             self.Mounts = rcMounts.Mounts()
         if self.is_up() is False:
             self.log.info("%s is already umounted" % self.label)
-                    (self.device, self.mountPoint))
             return
         for i in range(3):
             ret = try_umount(self)
