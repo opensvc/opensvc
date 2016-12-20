@@ -117,6 +117,26 @@ def test_create_get_default_not_found():
     assert ret == 1
     assert "not found" in output
 
+def test_validate_config():
+    ret = svcmgr.main(argv=["validate", "config", "-s", "unittest"])
+    assert ret == 0
+
+def test_frozen():
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 0
+
+def test_freeze():
+    ret = svcmgr.main(argv=["freeze", "-s", "unittest"])
+    assert ret == 0
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 1
+
+def test_thaw():
+    ret = svcmgr.main(argv=["thaw", "-s", "unittest"])
+    assert ret == 0
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 0
+
 def test_delete():
     ret = svcmgr.main(argv=["delete", "-s", "unittest"])
     assert ret == 0
