@@ -27,23 +27,25 @@ def refresh_node_svcs(node, svcnames, minimal):
     node.svcs = None
     node.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
 
-def get_docker_argv():
+def get_docker_argv(argv=None):
     """
     Extract docker argv from svcmgr argv.
 
     svcmgr acts as a wrapper for docker, setting the service-specific socket
     if necessary.
     """
-    if len(sys.argv) < 2:
+    if argv is None:
+        argv = sys.argv
+    if len(argv) < 2:
         return
-    if 'docker' not in sys.argv:
+    if 'docker' not in argv:
         return
-    pos = sys.argv.index('docker')
-    if len(sys.argv) > pos + 1:
-        docker_argv = sys.argv[pos+1:]
+    pos = argv.index('docker')
+    if len(argv) > pos + 1:
+        docker_argv = argv[pos+1:]
     else:
         docker_argv = []
-    sys.argv = sys.argv[:pos+1]
+    argv = argv[:pos+1]
     return docker_argv
 
 def get_minimal(action, options):
@@ -119,18 +121,20 @@ def set_svcs_options(node, options, docker_argv):
         svc.options.slave = slave
         svc.options.docker_argv = docker_argv
 
-def do_svcs_action_detached():
+def do_svcs_action_detached(argv=None):
     """
     Executes the services action in detached process mode, so that
     a term/kill signal on the parent process does not abort the action.
 
     Keyboard interrupts do abort the detached process though.
     """
+    if argv is None:
+        argv = sys.argv
     ret = 0
     try:
         import subprocess
         import signal
-        proc = subprocess.Popen([sys.executable] + sys.argv + ["--daemon"],
+        proc = subprocess.Popen([sys.executable] + argv + ["--daemon"],
                                 stdout=None, stderr=None, stdin=None,
                                 close_fds=True, cwd=os.sep,
                                 preexec_fn=os.setsid)
@@ -149,7 +153,7 @@ def do_svcs_action_detached():
         ret = 1
     return ret
 
-def do_svcs_action(node, options, action):
+def do_svcs_action(node, options, action, argv):
     """
     Execute the services action, switching between detached mode for
     stop*/shutdown/unprovision/switch, and inline mode for other actions.
@@ -162,7 +166,7 @@ def do_svcs_action(node, options, action):
         action in ("shutdown", "unprovision", "switch") or \
         (action == "delete" and options.unprovision == True)
        ):
-        ret = do_svcs_action_detached()
+        ret = do_svcs_action_detached(argv)
     else:
         try:
             ret = node.do_svcs_action(action, rid=rid, tags=tags,
@@ -248,7 +252,7 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
 
     return data["ret"]
 
-def _main(node):
+def _main(node, argv=None):
     """
     Build the service list, full or minimal depending on the requested action.
     Execute action-specific codepaths.
@@ -257,9 +261,9 @@ def _main(node):
     svcnames = []
     ret = 0
 
-    docker_argv = get_docker_argv()
+    docker_argv = get_docker_argv(argv)
     optparser = SvcmgrOptParser()
-    options, action = optparser.parse_args()
+    options, action = optparser.parse_args(argv)
     rcColor.use_color = options.color
     try:
         node.options.format = options.format
@@ -309,7 +313,7 @@ def _main(node):
 
     node.set_rlimit()
     set_svcs_options(node, options, docker_argv)
-    ret = do_svcs_action(node, options, action)
+    ret = do_svcs_action(node, options, action, argv=argv)
 
     try:
         import logging
@@ -319,7 +323,7 @@ def _main(node):
 
     return ret
 
-def main():
+def main(argv=None):
     """
     Instanciate a Node object.
     Call the real deal making sure the node is finally freed.
@@ -329,17 +333,18 @@ def main():
         node = node_mod.Node()
     except Exception as exc:
         print(exc, file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     try:
-        ret = _main(node)
+        ret = _main(node, argv=argv)
     except KeyboardInterrupt:
         ret = 1
     finally:
         node.close()
 
-    sys.exit(ret)
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    ret = main()
+    sys.exit(ret)

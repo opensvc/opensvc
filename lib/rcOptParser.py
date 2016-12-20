@@ -199,12 +199,15 @@ class OptParser(object):
                                               options=True)
         self.parser.set_usage(usage)
 
-    def parse_args(self):
+    def parse_args(self, argv=None):
         """
         Parse system's argv, validate options compatibility with the action
         and return options and action
         """
-        self.args = sys.argv[1:]
+        if argv is not None:
+            self.args = argv
+        else:
+            self.args = sys.argv[1:]
 
         # parse a first time with all possible options to never fail on
         # undefined option.

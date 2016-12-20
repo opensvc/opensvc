@@ -37,9 +37,9 @@ def do_symcli_db_file(options):
     os.environ['SYMCLI_DB_FILE'] = symcli_db_file
     os.environ['SYMCLI_OFFLINE'] = '1'
 
-def main(node):
+def _main(node, argv=None):
     optparser = NodemgrOptParser()
-    options, action = optparser.parse_args()
+    options, action = optparser.parse_args(argv)
 
     rcColor.use_color = options.color
     node.options.update(options.__dict__)
@@ -68,11 +68,15 @@ def main(node):
         err = 1
     return err
 
-if __name__ == "__main__":
+def main(argv=None):
     node = node_mod.Node()
 
     try:
-        r = main(node)
+        return _main(node, argv=argv)
     finally:
         node.close()
-    sys.exit(r)
+
+if __name__ == "__main__":
+    ret = main()
+    sys.exit(ret)
+
