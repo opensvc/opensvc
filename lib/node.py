@@ -673,6 +673,7 @@ class Node(object):
         if action.startswith("json_"):
             self.options.format = "json"
             action = "print" + action[4:]
+
         if action.startswith("compliance_"):
             from compliance import Compliance
             comp = Compliance(self)
@@ -686,7 +687,11 @@ class Node(object):
             from collector import Collector
             coll = Collector(self.options, self)
             data = getattr(coll, action)()
-            return self.print_data(data)
+            self.print_data(data)
+            return 0
+        elif action.startswith("print"):
+            getattr(self, action)()
+            return 0
         else:
             return getattr(self, action)()
 
@@ -2515,10 +2520,34 @@ class Node(object):
             except (AttributeError, OSError, IOError):
                 pass
 
+    @formatter
+    def print_config_data(self, src_config):
+        """
+        Return a simple dict (OrderedDict if possible), fed with the
+        service configuration sections and keys
+        """
+        try:
+            from collections import OrderedDict
+            best_dict = OrderedDict
+        except ImportError:
+            best_dict = dict
+
+        config = best_dict()
+
+        for section in src_config.sections():
+            options = src_config.options(section)
+            tmpsection = best_dict()
+            for option in options:
+                tmpsection[option] = src_config.get(section, option)
+            config[section] = tmpsection
+        return config
+
     def print_config(self):
         """
         print_config node action entrypoint
         """
+        if self.options.format is not None:
+            return self.print_config_data(self.config)
         from rcColor import print_color_config
         print_color_config(rcEnv.nodeconf)
 
@@ -2526,6 +2555,9 @@ class Node(object):
         """
         print_authconfig node action entrypoint
         """
+        if self.options.format is not None:
+            self.load_auth_config()
+            return self.print_config_data(self.auth_config)
         from rcColor import print_color_config
         print_color_config(rcEnv.authconf)
 
