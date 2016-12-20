@@ -10,7 +10,21 @@ from functools import wraps
 import lock
 import json
 
-protected_dirs = ['/', '/usr', '/var', '/sys', '/proc', '/tmp', '/opt', '/dev', '/dev/pts', '/home', '/boot', '/dev/shm']
+PROTECTED_DIRS = [
+    '/',
+    '/bin',
+    '/boot',
+    '/dev',
+    '/dev/pts',
+    '/dev/shm',
+    '/home',
+    '/opt',
+    '/proc',
+    '/sys',
+    '/tmp',
+    '/usr',
+    '/var',
+]
 
 if os.name == 'nt':
     close_fds = False
@@ -71,7 +85,7 @@ def mimport(*args, **kwargs):
             return ""
 
     mod = ""
-    for i, e in enumerate(*args):
+    for i, e in enumerate(args):
         if e in ("res", "prov") and i == 0:
             mod += e
         else:
@@ -122,6 +136,8 @@ def is_exe(fpath):
     """Returns True if file path is executable, False otherwize
     does not follow symlink
     """
+    if os.path.isdir(fpath):
+        return False
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
 def which(program):
@@ -285,8 +301,15 @@ def getmount(path):
         path = os.path.abspath(os.path.join(path, os.pardir))
     return path
 
+def protected_dir(path):
+    path = path.rstrip("/")
+    if path in PROTECTED_DIRS:
+        return True
+    return False
+
 def protected_mount(path):
-    if getmount(path) in protected_dirs:
+    mount = getmount(path)
+    if mount in PROTECTED_DIRS:
         return True
     return False
 

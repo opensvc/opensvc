@@ -1,5 +1,5 @@
 from provisioning import Provisioning
-from rcUtilities import justcall, which, protected_dirs
+from rcUtilities import justcall, which, protected_dir
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
@@ -90,7 +90,7 @@ class ProvisioningFs(Provisioning):
         self.r.start()
 
     def purge_mountpoint(self):
-        if os.path.exists(self.r.mountPoint) and not self.r.mountPoint in protected_dirs:
+        if os.path.exists(self.r.mountPoint) and not protected_dir(self.r.mountPoint):
             self.r.log.info("rm -rf %s" % self.r.mountPoint)
             try:
                 shutil.rmtree(self.r.mountPoint)
