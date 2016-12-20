@@ -69,4 +69,36 @@ def test_nodemgr_print_authconfig_json():
     assert ret == 0
     assert isinstance(json.loads(output), dict)
 
+def test_nodemgr_checks():
+    ret = nodemgr.main(argv=["checks"])
+    assert ret == 0
+
+def test_nodemgr_sysreport():
+    ret = nodemgr.main(argv=["sysreport"])
+    assert ret == 0
+
+def test_nodemgr_pushasset():
+    ret = nodemgr.main(argv=["pushasset"])
+    assert ret == 0
+
+def test_nodemgr_collect_stats():
+    ret = nodemgr.main(argv=["collect_stats"])
+    assert ret == 0
+
+def test_nodemgr_pushstats():
+    ret = nodemgr.main(argv=["pushstats"])
+    assert ret == 0
+
+def test_nodemgr_pushpkg():
+    ret = nodemgr.main(argv=["pushpkg"])
+    assert ret == 0
+
+def test_nodemgr_pushpatch():
+    ret = nodemgr.main(argv=["pushpatch"])
+    assert ret == 0
+
+def test_nodemgr_pushdisks():
+    ret = nodemgr.main(argv=["pushdisks"])
+    assert ret == 0
+
 

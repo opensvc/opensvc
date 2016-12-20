@@ -693,7 +693,10 @@ class Node(object):
             getattr(self, action)()
             return 0
         else:
-            return getattr(self, action)()
+            ret = getattr(self, action)()
+            if ret is None:
+                return 0
+            return ret
 
     @formatter
     def print_data(self, data):
