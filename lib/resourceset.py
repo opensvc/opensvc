@@ -9,7 +9,7 @@ import logging
 
 import rcExceptions as ex
 import rcStatus
-import rcUtilities as utils
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from resources import Resource
 
@@ -285,7 +285,7 @@ class ResourceSet(object):
                 return False
         return True
 
-    @utils.lazy
+    @lazy
     def log(self):
         """
         Lazy init for the resource logger.

@@ -9,14 +9,14 @@ import ast
 import operator as op
 import platform
 
-from rcGlobalEnv import *
+from rcGlobalEnv import rcEnv, Storage
 from rcNode import discover_node
-from rcUtilities import *
 import rcLogger
 import resSyncRsync
 import rcExceptions as ex
-import rcUtilities
 import rcConfigParser
+from rcUtilities import convert_bool, convert_size, cmdline2list, ximport, \
+                        check_privs
 
 # supported operators in arithmetic expressions
 operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
@@ -156,12 +156,12 @@ def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
     if t == 'string':
         pass
     elif t == 'boolean':
-        val = rcUtilities.convert_bool(val)
+        val = convert_bool(val)
     elif t == 'integer':
         try:
             val = int(val)
         except:
-            val = rcUtilities.convert_size(val)
+            val = convert_size(val)
     else:
         raise Exception("unknown keyword type: %s" % t)
 
@@ -2273,7 +2273,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
         if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += rcUtilities.cmdline2list(conf.get(kwargs['rid'], 'options'))
+            kwargs['options'] += cmdline2list(conf.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
@@ -2305,7 +2305,7 @@ def add_mandatory_syncs(svc, conf):
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
         if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += rcUtilities.cmdline2list(conf.get(kwargs['rid'], 'options'))
+            kwargs['options'] += cmdline2list(conf.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)

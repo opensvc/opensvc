@@ -12,7 +12,7 @@ import shlex
 
 import rcExceptions as ex
 import rcStatus
-import rcUtilities as utils
+from rcUtilities import lazy, clear_cache, call, vcall
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -58,7 +58,7 @@ class Resource(object):
         self.status_logs = []
         self.can_rollback = False
 
-    @utils.lazy
+    @lazy
     def log(self):
         """
         Lazy init for the resource logger.
@@ -189,7 +189,7 @@ class Resource(object):
         Wraps the rcUtilities clear_cache function, setting the resource
         as object keyword argument.
         """
-        utils.clear_cache(sig, o=self)
+        clear_cache(sig, o=self)
 
     @staticmethod
     def get_trigger_cmdv(cmd, kwargs):
@@ -703,14 +703,14 @@ class Resource(object):
         Wrap rcUtilities call, setting the resource logger
         """
         kwargs["log"] = self.log
-        return utils.call(*args, **kwargs)
+        return call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
         """
         Wrap vcall, setting the resource logger
         """
         kwargs["log"] = self.log
-        return utils.vcall(*args, **kwargs)
+        return vcall(*args, **kwargs)
 
     @staticmethod
     def wait_for_fn(func, tmo, delay, errmsg="Waited too long for startup"):
