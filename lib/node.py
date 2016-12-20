@@ -2120,10 +2120,10 @@ class Node(object):
             if len(self.svcs) == 1:
                 svcname = self.svcs[0].svcname
                 if svcname not in data.outs:
-                    return
-                return self.print_data(data.outs[svcname])
+                    return 1
+                self.print_data(data.outs[svcname])
             else:
-                return self.print_data(data.outs)
+                self.print_data(data.outs)
 
         return err
 

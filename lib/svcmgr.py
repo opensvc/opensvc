@@ -336,13 +336,11 @@ def main(argv=None):
         return 1
 
     try:
-        ret = _main(node, argv=argv)
+        return _main(node, argv=argv)
     except KeyboardInterrupt:
-        ret = 1
+        return 1
     finally:
         node.close()
-
-    return 1
 
 
 if __name__ == "__main__":
