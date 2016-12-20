@@ -918,7 +918,7 @@ class Svc(object):
                     encap
                 ) = resource.status_quad(color=False)
                 data['resources'][rid] = {
-                    'status': status,
+                    'status': str(status),
                     'type': rtype,
                     'label': label,
                     'log': log,
