@@ -331,6 +331,7 @@ def main(argv=None):
     Instanciate a Node object.
     Call the real deal making sure the node is finally freed.
     """
+    ret = 0
     node_mod = ximport('node')
     try:
         node = node_mod.Node()
@@ -339,12 +340,19 @@ def main(argv=None):
         return 1
 
     try:
-        return _main(node, argv=argv)
+        ret = _main(node, argv=argv)
+    except ex.excError as exc:
+        print(exc, file=sys.stderr)
+        return 1
     except KeyboardInterrupt:
         return 1
     finally:
         node.close()
 
+    if ret is None:
+        ret = 0
+
+    return ret
 
 if __name__ == "__main__":
     ret = main()
