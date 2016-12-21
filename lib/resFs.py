@@ -11,10 +11,10 @@ class Mount(Res.Resource):
     """
     def __init__(self,
                  rid=None,
-                 mountPoint=None,
+                 mount_point=None,
                  device=None,
-                 fsType=None,
-                 mntOpt=None,
+                 fs_type=None,
+                 mount_options=None,
                  snap_size=None,
                  always_on=set([]),
                  optional=False,
@@ -32,24 +32,24 @@ class Mount(Res.Resource):
                               monitor=monitor,
                               restart=restart,
                               subset=subset)
-        self.mountPoint = mountPoint
+        self.mount_point = mount_point
         self.device = device
-        self.fsType = fsType
-        self.mntOpt = mntOpt
+        self.fs_type = fs_type
+        self.mount_options = mount_options
         self.snap_size = snap_size
         self.always_on = always_on
-        self.label = device + '@' + mountPoint
-        if self.fsType != "none":
-            self.label = self.fsType + " " + self.label
+        self.label = device + '@' + mount_point
+        if self.fs_type != "none":
+            self.label = self.fs_type + " " + self.label
         self.fsck_h = {}
-        self.testfile = os.path.join(mountPoint, '.opensvc')
+        self.testfile = os.path.join(mount_point, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
 
     def info(self):
         data = [
           ["dev", self.device],
-          ["mnt", self.mountPoint],
-          ["mnt_opt", self.mntOpt if self.mntOpt else ""],
+          ["mnt", self.mount_point],
+          ["mnt_opt", self.mount_options if self.mount_options else ""],
         ]
         return self.fmt_info(data)
 
@@ -58,7 +58,7 @@ class Mount(Res.Resource):
         self.create_mntpt()
 
     def validate_dev(self):
-        if self.fsType in ["zfs", "advfs"] + self.netfs:
+        if self.fs_type in ["zfs", "advfs"] + self.netfs:
             return
         if self.device == "none":
             # pseudo fs have no dev
@@ -69,45 +69,45 @@ class Mount(Res.Resource):
             raise ex.excError("device does not exist %s" % self.device)
 
     def create_mntpt(self):
-        if self.fsType in ["zfs", "advfs"]:
+        if self.fs_type in ["zfs", "advfs"]:
             return
-        if os.path.exists(self.mountPoint):
+        if os.path.exists(self.mount_point):
             return
         try:
-            os.makedirs(self.mountPoint)
-            self.log.info("create missing mountpoint %s" % self.mountPoint)
+            os.makedirs(self.mount_point)
+            self.log.info("create missing mountpoint %s" % self.mount_point)
         except:
-            self.log.warning("failed to create missing mountpoint %s" % self.mountPoint)
+            self.log.warning("failed to create missing mountpoint %s" % self.mount_point)
 
     def fsck(self):
-        if self.fsType in ("", "none") or os.path.isdir(self.device):
+        if self.fs_type in ("", "none") or os.path.isdir(self.device):
             # bind mounts are in this case
             return
-        if self.fsType not in self.fsck_h:
-            self.log.debug("no fsck method for %s"%self.fsType)
+        if self.fs_type not in self.fsck_h:
+            self.log.debug("no fsck method for %s"%self.fs_type)
             return
-        bin = self.fsck_h[self.fsType]['bin']
+        bin = self.fsck_h[self.fs_type]['bin']
         if which(bin) is None:
-            self.log.warning("%s not found. bypass."%self.fsType)
+            self.log.warning("%s not found. bypass."%self.fs_type)
             return
-        if 'reportcmd' in self.fsck_h[self.fsType]:
-            cmd = self.fsck_h[self.fsType]['reportcmd']
+        if 'reportcmd' in self.fsck_h[self.fs_type]:
+            cmd = self.fsck_h[self.fs_type]['reportcmd']
             (ret, out, err) = self.vcall(cmd, err_to_info=True)
-            if ret not in self.fsck_h[self.fsType]['reportclean']:
+            if ret not in self.fsck_h[self.fs_type]['reportclean']:
                 return
-        cmd = self.fsck_h[self.fsType]['cmd']
+        cmd = self.fsck_h[self.fs_type]['cmd']
         (ret, out, err) = self.vcall(cmd)
-        if 'allowed_ret' in self.fsck_h[self.fsType]:
-            allowed_ret = self.fsck_h[self.fsType]['allowed_ret']
+        if 'allowed_ret' in self.fsck_h[self.fs_type]:
+            allowed_ret = self.fsck_h[self.fs_type]['allowed_ret']
         else:
             allowed_ret = [0]
         if ret not in allowed_ret:
             raise ex.excError
 
     def need_check_writable(self):
-        if 'ro' in self.mntOpt.split(','):
+        if 'ro' in self.mount_options.split(','):
             return False
-        if self.fsType in self.netfs:
+        if self.fs_type in self.netfs:
             return False
         return True
 
@@ -178,7 +178,7 @@ class Mount(Res.Resource):
           'proc',
           'sysfs',
         ]
-        if self.fsType in pseudofs + self.netfs:
+        if self.fs_type in pseudofs + self.netfs:
             return set([])
         for res in self.svc.get_resources():
             if hasattr(res, "is_child_dev") and res.is_child_dev(self.device):
@@ -187,23 +187,23 @@ class Mount(Res.Resource):
         return set([self.device])
 
     def __str__(self):
-        return "%s mnt=%s dev=%s fsType=%s mntOpt=%s" % (Res.Resource.__str__(self),\
-                self.mountPoint, self.device, self.fsType, self.mntOpt)
+        return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (Res.Resource.__str__(self),\
+                self.mount_point, self.device, self.fs_type, self.mount_options)
 
     def __cmp__(self, other):
         """order so that deepest mountpoint can be umount first
         """
-        return cmp(self.mountPoint, other.mountPoint)
+        return cmp(self.mount_point, other.mount_point)
 
     def provision(self):
-        m = mimport(["prov", "fs", self.fsType], fallback=True)
+        m = mimport(["prov", "fs", self.fs_type], fallback=True)
         if not hasattr(m, "ProvisioningFs"):
             raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
         prov = getattr(m, "ProvisioningFs")(self)
         prov.provisioner()
 
     def unprovision(self):
-        m = mimport(["prov", "fs", self.fsType], fallback=True)
+        m = mimport(["prov", "fs", self.fs_type], fallback=True)
         if not hasattr(m, "ProvisioningFs"):
             raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
         prov = getattr(m, "ProvisioningFs")(self)

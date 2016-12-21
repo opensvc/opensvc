@@ -13,10 +13,10 @@ class Mount(Res.Mount):
     """ define SunOS mount/umount doAction """
     def __init__(self,
                  rid,
-                 mountPoint,
+                 mount_point,
                  device,
-                 fsType,
-                 mntOpt,
+                 fs_type,
+                 mount_options,
                  snap_size=None,
                  always_on=set([]),
                  disabled=False,
@@ -29,10 +29,10 @@ class Mount(Res.Mount):
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self,
                            rid,
-                           mountPoint,
+                           mount_point,
                            device,
-                           fsType,
-                           mntOpt,
+                           fs_type,
+                           mount_options,
                            snap_size,
                            always_on,
                            disabled=disabled,
@@ -56,12 +56,12 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mountPoint)
+        return self.Mounts.has_mount(self.device, self.mount_point)
 
     def start(self):
         self.Mounts = None
         Res.Mount.start(self)
-        m = re.match("<(\w+)>", self.mountPoint)
+        m = re.match("<(\w+)>", self.mount_point)
         if m:
             # the zone was not created when the service was built. now it should,
             # so try the redetect the zonepath
@@ -69,9 +69,9 @@ class Mount(Res.Mount):
             for r in self.svc.get_resources("container.zone"):
                 if r.name == zone:
                     zonepath = r.get_zonepath()
-                    self.mountPoint = re.sub("<\w+>", zonepath, self.mountPoint)
+                    self.mount_point = re.sub("<\w+>", zonepath, self.mount_point)
 
-        if self.fsType == 'zfs' :
+        if self.fs_type == 'zfs' :
             if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount' ) != 'noauto' :
                 self.log.info("%s should be set to canmount=noauto (zfs set canmount=noauto %s)"%(self.label, self.device))
 
@@ -79,38 +79,38 @@ class Mount(Res.Mount):
             self.log.info("%s is already mounted" % self.label)
             return
 
-        if self.fsType == 'zfs' :
+        if self.fs_type == 'zfs' :
             if 'encap' not in self.tags and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
                 if zfs_setprop(self.device, 'zoned', 'off'):
                     raise ex.excError
-            if zfs_getprop(self.device, 'mountpoint') != self.mountPoint:
-                if not zfs_setprop(self.device, 'mountpoint', self.mountPoint):
+            if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
+                if not zfs_setprop(self.device, 'mountpoint', self.mount_point):
                     raise ex.excError
 
             self.Mounts = None
             if self.is_up() is True:
                 return
 
-            (stdout,stderr,returncode)= justcall(['rm', self.mountPoint+"/.opensvc" ])
+            (stdout,stderr,returncode)= justcall(['rm', self.mount_point+"/.opensvc" ])
             ret, out, err = self.vcall(['zfs', 'mount', self.device ])
             if ret != 0:
                 ret, out, err = self.vcall(['zfs', 'mount', '-O', self.device ])
                 if ret != 0:
                     raise ex.excError
             return
-        elif self.fsType != "":
-            fstype = ['-F', self.fsType]
+        elif self.fs_type != "":
+            fstype = ['-F', self.fs_type]
             self.fsck()
         else:
             fstype = []
 
-        if self.mntOpt != "":
-            mntopt = ['-o', self.mntOpt]
+        if self.mount_options != "":
+            mntopt = ['-o', self.mount_options]
         else:
             mntopt = []
 
-        if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0o755)
+        if not os.path.exists(self.mount_point):
+            os.makedirs(self.mount_point, 0o755)
 
         for i in range(3):
             ret = self.try_mount(fstype, mntopt)
@@ -125,7 +125,7 @@ class Mount(Res.Mount):
         self.can_rollback = True
 
     def can_check_writable(self):
-        if self.fsType != 'zfs':
+        if self.fs_type != 'zfs':
             return True
         pool = self.device.split("/")[0]
         cmd = ["zpool", "status", pool]
@@ -136,30 +136,30 @@ class Mount(Res.Mount):
         return True
 
     def try_mount(self, fstype, mntopt):
-        cmd = ['mount'] + fstype + mntopt + [self.device, self.mountPoint]
+        cmd = ['mount'] + fstype + mntopt + [self.device, self.mount_point]
         ret, out, err = self.vcall(cmd)
         return ret
 
     def try_umount(self):
-        if self.fsType == 'zfs' :
+        if self.fs_type == 'zfs' :
             ret, out, err = self.vcall(['zfs', 'umount', self.device ], err_to_info=True)
             if ret != 0 :
                 ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ], err_to_info=True)
                 if ret != 0 :
                     raise ex.excError
             return
-        (ret, out, err) = self.vcall(['umount', self.mountPoint], err_to_info=True)
+        (ret, out, err) = self.vcall(['umount', self.mount_point], err_to_info=True)
         if ret == 0 :
             return
         for i in range(4):
-            (ret, out, err) = self.vcall(['fuser', '-ck', self.mountPoint],
+            (ret, out, err) = self.vcall(['fuser', '-ck', self.mount_point],
                                     err_to_info=True)
-            (ret, out, err) = self.vcall(['umount', self.mountPoint],
+            (ret, out, err) = self.vcall(['umount', self.mount_point],
                                     err_to_info=True)
             if ret == 0 :
                 return
-            if self.fsType != 'lofs' :
-                (ret, out, err) = self.vcall(['umount', '-f', self.mountPoint],
+            if self.fs_type != 'lofs' :
+                (ret, out, err) = self.vcall(['umount', '-f', self.mount_point],
                                         err_to_info=True)
                 if ret == 0 :
                     return

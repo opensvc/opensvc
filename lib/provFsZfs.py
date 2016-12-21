@@ -12,8 +12,8 @@ class ProvisioningFs(provFs.ProvisioningFs):
         ds = Dataset(self.r.device, log=self.r.log)
         if ds.exists():
             ds.destroy(["-r"])
-        if os.path.exists(self.r.mountPoint) and os.path.isdir(self.r.mountPoint):
-            os.rmdir(self.r.mountPoint)
+        if os.path.exists(self.r.mount_point) and os.path.isdir(self.r.mount_point):
+            os.rmdir(self.r.mount_point)
 
     def provision_dev(self):
         if not which('zfs'):
@@ -21,7 +21,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
             raise ex.excError
         ds = Dataset(self.r.device, log=self.r.log)
         if ds.exists() is False:
-            ds.create(['-p', '-o', 'mountpoint='+self.r.mountPoint, '-o', 'canmount=noauto'])
+            ds.create(['-p', '-o', 'mountpoint='+self.r.mount_point, '-o', 'canmount=noauto'])
 
         nv_list = dict()
         try:

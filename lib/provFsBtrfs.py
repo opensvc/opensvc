@@ -29,7 +29,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
     @lazy
     def subvol(self):
-        l = self.r.mntOpt.split(",")
+        l = self.r.mount_options.split(",")
         for e in l:
             if not e.startswith("subvol="):
                 continue

@@ -404,7 +404,7 @@ class Zone(resContainer.Container):
         mounts.sort(reverse=True)
         mntpts = []
         for resource in self.svc.get_resources('fs'):
-            mntpts.append(resource.mountPoint)
+            mntpts.append(resource.mount_point)
         for mount in mounts.mounts:
             # don't unmount zonepath itself
             if mount.mnt == self.zonepath:

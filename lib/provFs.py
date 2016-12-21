@@ -48,7 +48,7 @@ class ProvisioningFs(Provisioning):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
 
-        if not os.path.exists(self.dev) and self.r.fsType not in self.r.netfs:
+        if not os.path.exists(self.dev) and self.r.fs_type not in self.r.netfs:
             self.provision_dev()
 
         self.mkfs_dev = self.dev
@@ -90,10 +90,10 @@ class ProvisioningFs(Provisioning):
         self.r.start()
 
     def purge_mountpoint(self):
-        if os.path.exists(self.r.mountPoint) and not protected_dir(self.r.mountPoint):
-            self.r.log.info("rm -rf %s" % self.r.mountPoint)
+        if os.path.exists(self.r.mount_point) and not protected_dir(self.r.mount_point):
+            self.r.log.info("rm -rf %s" % self.r.mount_point)
             try:
-                shutil.rmtree(self.r.mountPoint)
+                shutil.rmtree(self.r.mount_point)
             except Exception as e:
                 raise ex.excError(str(e))
 

@@ -43,7 +43,7 @@ class Disk(Res.Disk):
         d = os.path.dirname(self.loopFile)
         mntpts = {}
         for r in self.svc.get_resources(["fs"]):
-            mntpts[r.mountPoint] = r
+            mntpts[r.mount_point] = r
         while True:
             if d in mntpts.keys():
                 return mntpts[d]

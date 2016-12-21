@@ -13,10 +13,10 @@ class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
     def __init__(self,
                  rid,
-                 mountPoint,
+                 mount_point,
                  device,
-                 fsType,
-                 mntOpt,
+                 fs_type,
+                 mount_options,
                  always_on=set([]),
                  snap_size=None,
                  disabled=False,
@@ -28,10 +28,10 @@ class Mount(Res.Mount):
         self.Mounts = None
         Res.Mount.__init__(self,
                            rid,
-                           mountPoint,
+                           mount_point,
                            device,
-                           fsType,
-                           mntOpt,
+                           fs_type,
+                           mount_options,
                            snap_size,
                            always_on=always_on,
                            disabled=disabled,
@@ -58,12 +58,12 @@ class Mount(Res.Mount):
         self.loopdevice = None
 
     def try_umount(self, mnt=None):
-        if self.fsType == "zfs":
+        if self.fs_type == "zfs":
             self.umount_zfs()
             return 0
 
         if mnt is None:
-            mnt = self.mountPoint
+            mnt = self.mount_point
         cmd = ['umount', mnt]
         (ret, out, err) = self.vcall(cmd, err_to_warn=True)
         if ret == 0:
@@ -102,26 +102,26 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        ret = self.Mounts.has_mount(self.device, self.mountPoint)
+        ret = self.Mounts.has_mount(self.device, self.mount_point)
         if ret:
             return True
 
         # might be defined as a symlink. Linux display realpaths in /proc/mounts
-        ret = self.Mounts.has_mount(self.device, os.path.realpath(self.mountPoint))
+        ret = self.Mounts.has_mount(self.device, os.path.realpath(self.mount_point))
         if ret:
             return True
 
         # might be defined as a symlink. Linux display realpaths in /proc/mounts
-        ret = self.Mounts.has_mount(os.path.realpath(self.device), os.path.realpath(self.mountPoint))
+        ret = self.Mounts.has_mount(os.path.realpath(self.device), os.path.realpath(self.mount_point))
         if ret:
             return True
 
         # might be a mount by label or uuid
         for dev in self.devlist():
-            ret = self.Mounts.has_mount(dev, self.mountPoint)
+            ret = self.Mounts.has_mount(dev, self.mount_point)
             if ret:
                 return True
-            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mount_point))
             if ret:
                 return True
 
@@ -130,10 +130,10 @@ class Mount(Res.Mount):
         l = self.device.split('/')
         if len(l) == 4 and l[2] != "mapper":
             dev = "/dev/mapper/%s-%s"%(l[2].replace('-','--'),l[3].replace('-','--'))
-            ret = self.Mounts.has_mount(dev, self.mountPoint)
+            ret = self.Mounts.has_mount(dev, self.mount_point)
             if ret:
                 return True
-            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+            ret = self.Mounts.has_mount(dev, os.path.realpath(self.mount_point))
             if ret:
                 return True
 
@@ -149,10 +149,10 @@ class Mount(Res.Mount):
                 # might be a loopback mount
                 devs = file_to_loop(self.device)
                 for dev in devs:
-                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    ret = self.Mounts.has_mount(dev, self.mount_point)
                     if ret:
                         return True
-                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mount_point))
                     if ret:
                         return True
             elif S_ISBLK(mode):
@@ -161,10 +161,10 @@ class Mount(Res.Mount):
                 dm_major = major('device-mapper')
                 if os.major(st.st_rdev) == dm_major:
                     dev = '/dev/dm-' + str(os.minor(st.st_rdev))
-                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    ret = self.Mounts.has_mount(dev, self.mount_point)
                     if ret:
                         return True
-                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mountPoint))
+                    ret = self.Mounts.has_mount(dev, os.path.realpath(self.mount_point))
                     if ret:
                         return True
 
@@ -319,7 +319,7 @@ class Mount(Res.Mount):
         return set([dev])
 
     def can_check_writable(self):
-        if self.fsType == "zfs":
+        if self.fs_type == "zfs":
             return self.can_check_zfs_writable()
         if len(self.mplist()) > 0:
             self.log.debug("a multipath under fs has queueing enabled and no active path")
@@ -342,32 +342,32 @@ class Mount(Res.Mount):
                     devs = file_to_loop(self.device)
                     if len(devs) > 0:
                         self.loopdevice = devs[0]
-                        mntopt_l = self.mntOpt.split(',')
+                        mntopt_l = self.mount_options.split(',')
                         if "loop" in mntopt_l:
                             mntopt_l.remove("loop")
-                            self.mntOpt = ','.join(mntopt_l)
+                            self.mount_options = ','.join(mntopt_l)
             except Exception as e:
                 raise ex.excError(str(e))
  
-        if self.fsType == "zfs":
+        if self.fs_type == "zfs":
             self.check_zfs_canmount()
 
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
             return 0
 
-        if self.fsType == "btrfs":
+        if self.fs_type == "btrfs":
             cmd = ['btrfs', 'device', 'scan']
             ret, out, err = self.vcall(cmd)
 
         self.fsck()
-        if not os.path.exists(self.mountPoint):
+        if not os.path.exists(self.mount_point):
             try:
-                os.makedirs(self.mountPoint, 0o755)
+                os.makedirs(self.mount_point, 0o755)
             except Exception as e:
                 raise ex.excError(str(e))
 
-        if self.fsType == "zfs":
+        if self.fs_type == "zfs":
             self.mount_zfs()
         else:
             self.mount_generic()
@@ -399,12 +399,12 @@ class Mount(Res.Mount):
         if 'encap' not in self.tags and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off'):
                 raise ex.excError
-        if zfs_getprop(self.device, 'mountpoint') != self.mountPoint:
-            if not zfs_setprop(self.device, 'mountpoint', self.mountPoint):
+        if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
+            if not zfs_setprop(self.device, 'mountpoint', self.mount_point):
                 raise ex.excError
 
         try:
-            os.unlink(self.mountPoint+"/.opensvc")
+            os.unlink(self.mount_point+"/.opensvc")
         except:
             pass
         ret, out, err = self.vcall(['zfs', 'mount', self.device ])
@@ -414,13 +414,13 @@ class Mount(Res.Mount):
                 raise ex.excError
 
     def mount_generic(self):
-        if self.fsType != "":
-            fstype = ['-t', self.fsType]
+        if self.fs_type != "":
+            fstype = ['-t', self.fs_type]
         else:
             fstype = []
 
-        if self.mntOpt != "":
-            mntopt = ['-o', self.mntOpt]
+        if self.mount_options != "":
+            mntopt = ['-o', self.mount_options]
         else:
             mntopt = []
 
@@ -429,7 +429,7 @@ class Mount(Res.Mount):
         else:
             device = self.loopdevice
 
-        cmd = ['mount']+fstype+mntopt+[device, self.mountPoint]
+        cmd = ['mount']+fstype+mntopt+[device, self.mount_point]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -441,7 +441,7 @@ class Mount(Res.Mount):
                 dest = os.path.realpath(p)
             except:
                 continue
-            if dest.startswith(self.mountPoint):
+            if dest.startswith(self.mount_point):
                 l = p.split("/")
                 try:
                     pid = int(l[2])
@@ -462,10 +462,10 @@ class Mount(Res.Mount):
         if self.is_up() is False:
             self.log.info("%s is already umounted" % self.label)
             return
-        if not os.path.exists(self.mountPoint):
-            raise ex.excError('mount point %s does not exist' % self.mountPoint)
+        if not os.path.exists(self.mount_point):
+            raise ex.excError('mount point %s does not exist' % self.mount_point)
         try:
-            os.stat(self.mountPoint)
+            os.stat(self.mount_point)
         except OSError as e:
             if e.errno == (5, 13):
                 self.log.warning("I/O error on mount point. try to umount anyway")
@@ -478,7 +478,7 @@ class Mount(Res.Mount):
             ret = self.try_umount()
             if ret == 0: break
         if ret != 0:
-            raise ex.excError('failed to umount %s'%self.mountPoint)
+            raise ex.excError('failed to umount %s'%self.mount_point)
         self.Mounts = None
 
     def remove_dev_holders(self, devpath, tree):
@@ -507,7 +507,7 @@ class Mount(Res.Mount):
     def remove_deeper_mounts(self):
         import rcMountsLinux
         mounts = rcMountsLinux.Mounts()
-        mnt_realpath = os.path.realpath(self.mountPoint)
+        mnt_realpath = os.path.realpath(self.mount_point)
         for m in mounts:
             _mnt_realpath = os.path.realpath(m.mnt)
             if _mnt_realpath != mnt_realpath and \

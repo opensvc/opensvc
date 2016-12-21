@@ -9,17 +9,17 @@ import rcExceptions as ex
 from stat import *
 
 def try_umount(self):
-    cmd = ['diskutil', 'umount', self.mountPoint]
+    cmd = ['diskutil', 'umount', self.mount_point]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
         return 0
 
-    cmd = ['diskutil', 'umount', 'force', self.mountPoint]
+    cmd = ['diskutil', 'umount', 'force', self.mount_point]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
         return 0
 
-    cmd = ['umount', self.mountPoint]
+    cmd = ['umount', self.mount_point]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
         return 0
@@ -27,7 +27,7 @@ def try_umount(self):
     """ don't try to kill process using the source of a
         protected bind mount
     """
-    if protected_mount(self.mountPoint):
+    if protected_mount(self.mount_point):
         return 1
 
     """ best effort kill of all processes that might block
@@ -38,16 +38,16 @@ def try_umount(self):
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     for i in range(4):
-        nb_killed = self.killfuser(self.mountPoint)
-        self.log.info('umount %s'%self.mountPoint)
-        cmd = ['umount', self.mountPoint]
+        nb_killed = self.killfuser(self.mount_point)
+        self.log.info('umount %s'%self.mount_point)
+        cmd = ['umount', self.mount_point]
         ret = qcall(cmd)
         if ret == 0 or nb_killed == 0:
             break
 
     if ret != 0:
-        self.log.info("no more process using %s, yet umount fails. try forced umount."%self.mountPoint)
-        cmd = ['umount', '-f', self.mountPoint]
+        self.log.info("no more process using %s, yet umount fails. try forced umount."%self.mount_point)
+        cmd = ['umount', '-f', self.mount_point]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     return ret
@@ -57,10 +57,10 @@ class Mount(Res.Mount):
     """ define FreeBSD mount/umount doAction """
     def __init__(self,
                  rid,
-                 mountPoint,
+                 mount_point,
                  device,
-                 fsType,
-                 mntOpt,
+                 fs_type,
+                 mount_options,
                  snap_size=None,
                  always_on=set([]),
                  disabled=False,
@@ -74,10 +74,10 @@ class Mount(Res.Mount):
         self.isloop = False
         Res.Mount.__init__(self,
                            rid,
-                           mountPoint,
+                           mount_point,
                            device,
-                           fsType,
-                           mntOpt,
+                           fs_type,
+                           mount_options,
                            snap_size,
                            always_on,
                            disabled=disabled,
@@ -103,11 +103,11 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        ret = self.Mounts.has_mount(self.device, self.mountPoint)
+        ret = self.Mounts.has_mount(self.device, self.mount_point)
         if ret:
             return True
 
-        if self.fsType not in self.netfs:
+        if self.fs_type not in self.netfs:
             try:
                 st = os.stat(self.device)
                 mode = st[ST_MODE]
@@ -119,7 +119,7 @@ class Mount(Res.Mount):
                 # might be a loopback mount
                 devs = file_to_loop(self.device)
                 for dev in devs:
-                    ret = self.Mounts.has_mount(dev, self.mountPoint)
+                    ret = self.Mounts.has_mount(dev, self.mount_point)
                     if ret:
                         return True
 
@@ -167,7 +167,7 @@ class Mount(Res.Mount):
             self.Mounts = rcMounts.Mounts()
         Res.Mount.start(self)
 
-        if self.fsType in self.netfs or self.device == "none":
+        if self.fs_type in self.netfs or self.device == "none":
             # TODO showmount -e
             pass
         else:
@@ -186,27 +186,27 @@ class Mount(Res.Mount):
             self.log.info("%s is already mounted" % self.label)
             return 0
 
-        if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0o755)
+        if not os.path.exists(self.mount_point):
+            os.makedirs(self.mount_point, 0o755)
 
         if self.isloop is True:
-            cmd = ['hdiutil', 'attach', '-mountpoint', self.mountPoint , self.device]
+            cmd = ['hdiutil', 'attach', '-mountpoint', self.mount_point , self.device]
             (ret, out, err) = self.vcall(cmd)
         else:
             self.fsck()
             try:
-                cmd = ['diskutil', 'mount', '-mountPoint', self.mountPoint , self.device]
+                cmd = ['diskutil', 'mount', '-mount_point', self.mount_point , self.device]
                 (ret, out, err) = self.vcall(cmd)
             except:
-                if self.fsType != "":
-                    fstype = ['-t', self.fsType]
+                if self.fs_type != "":
+                    fstype = ['-t', self.fs_type]
                 else:
                     fstype = []
-                if self.mntOpt != "":
-                    mntopt = ['-o', self.mntOpt]
+                if self.mount_options != "":
+                    mntopt = ['-o', self.mount_options]
                 else:
                     mntopt = []
-                cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
+                cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
                 (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -223,7 +223,7 @@ class Mount(Res.Mount):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
-            self.log.error('failed to umount %s'%self.mountPoint)
+            self.log.error('failed to umount %s'%self.mount_point)
             raise ex.excError
         self.Mounts = None
 

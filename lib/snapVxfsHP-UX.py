@@ -48,7 +48,7 @@ class Snap(snap.Snap):
         (ret, buff, err) = self.vcall(['mount', '-F', 'vxfs', '-o', 'ro,snapof='+m.device, snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
-        self.snaps[m.mountPoint] = dict(lv_name=lv_name,
+        self.snaps[m.mount_point] = dict(lv_name=lv_name,
                                         vg_name=vg_name,
                                         snap_name=snap_name,
                                         snap_mnt=snap_mnt,

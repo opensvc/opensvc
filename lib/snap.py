@@ -5,12 +5,12 @@ import rcExceptions as ex
 
 def find_mount(rs, dir):
     """Sort mounts from deepest to shallowest and return the
-       first mount whose 'mountPoint' is matching 'dir'
+       first mount whose 'mount_point' is matching 'dir'
     """
     for m in sorted(rs.resources, reverse=True):
         if m.is_disabled():
             continue
-        if m.mountPoint in dir:
+        if m.mount_point in dir:
             return m
     return None
 
@@ -96,7 +96,7 @@ class Snap(Res.Resource):
             for j, src in enumerate(r.alt_src):
                 if src not in mounts_h:
                     continue
-                mnt = mounts_h[src].mountPoint
+                mnt = mounts_h[src].mount_point
                 if mnt not in self.snaps:
                     continue
                 snap_mnt = self.snaps[mnt]['snap_mnt']

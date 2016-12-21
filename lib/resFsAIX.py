@@ -8,7 +8,7 @@ import rcExceptions as ex
 from stat import *
 
 def try_umount(self):
-    cmd = ['umount', self.mountPoint]
+    cmd = ['umount', self.mount_point]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
     if ret == 0:
         return 0
@@ -16,7 +16,7 @@ def try_umount(self):
     """ don't try to kill process using the source of a
         protected bind mount
     """
-    if protected_mount(self.mountPoint):
+    if protected_mount(self.mount_point):
         return 1
 
     """ best effort kill of all processes that might block
@@ -27,10 +27,10 @@ def try_umount(self):
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
     for i in range(4):
-        cmd = ['fuser', '-k', '-x', '-c', self.mountPoint]
+        cmd = ['fuser', '-k', '-x', '-c', self.mount_point]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        self.log.info('umount %s'%self.mountPoint)
-        cmd = ['umount', self.mountPoint]
+        self.log.info('umount %s'%self.mount_point)
+        cmd = ['umount', self.mount_point]
         ret = qcall(cmd)
         if ret == 0:
             break
@@ -42,10 +42,10 @@ class Mount(Res.Mount):
     """ define Linux mount/umount doAction """
     def __init__(self,
                  rid,
-                 mountPoint,
+                 mount_point,
                  device,
-                 fsType,
-                 mntOpt,
+                 fs_type,
+                 mount_options,
                  snap_size=None,
                  always_on=set([]),
                  disabled=False,
@@ -57,10 +57,10 @@ class Mount(Res.Mount):
         self.Mounts = None
         Res.Mount.__init__(self,
                            rid,
-                           mountPoint,
+                           mount_point,
                            device,
-                           fsType,
-                           mntOpt,
+                           fs_type,
+                           mount_options,
                            snap_size,
                            always_on,
                            disabled=disabled,
@@ -76,7 +76,7 @@ class Mount(Res.Mount):
 
     def is_up(self):
         self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mountPoint)
+        return self.Mounts.has_mount(self.device, self.mount_point)
 
     def realdev(self):
         try:
@@ -126,17 +126,17 @@ class Mount(Res.Mount):
             self.log.info("%s is already mounted" % self.label)
             return 0
         self.fsck()
-        if not os.path.exists(self.mountPoint):
-            os.makedirs(self.mountPoint, 0o755)
-        if self.fsType != "":
-            fstype = ['-v', self.fsType]
+        if not os.path.exists(self.mount_point):
+            os.makedirs(self.mount_point, 0o755)
+        if self.fs_type != "":
+            fstype = ['-v', self.fs_type]
         else:
             fstype = []
-        if self.mntOpt != "":
-            mntopt = ['-o', self.mntOpt]
+        if self.mount_options != "":
+            mntopt = ['-o', self.mount_options]
         else:
             mntopt = []
-        cmd = ['mount']+fstype+mntopt+[self.device, self.mountPoint]
+        cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -153,7 +153,7 @@ class Mount(Res.Mount):
             ret = try_umount(self)
             if ret == 0: break
         if ret != 0:
-            self.log.error('failed to umount %s'%self.mountPoint)
+            self.log.error('failed to umount %s'%self.mount_point)
             raise ex.excError
         self.Mounts = None
 

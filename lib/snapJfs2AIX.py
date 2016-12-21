@@ -83,13 +83,13 @@ class Snap(snap.Snap):
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0o755)
         snap_dev = os.path.join(os.sep, 'dev', snap_name)
-        (ret, buff, err) = self.vcall(['snapshot', '-o', 'snapfrom='+m.mountPoint, snap_dev])
+        (ret, buff, err) = self.vcall(['snapshot', '-o', 'snapfrom='+m.mount_point, snap_dev])
         if ret != 0:
             raise ex.syncSnapMountError
         (ret, buff, err) = self.vcall(['mount', '-o', 'snapshot', snap_dev, snap_mnt])
         if ret != 0:
             raise ex.syncSnapMountError
-        self.snaps[m.mountPoint] = dict(lv_name=lv_name,
+        self.snaps[m.mount_point] = dict(lv_name=lv_name,
                                         vg_name=vg_name,
                                         snap_name=snap_name,
                                         snap_mnt=snap_mnt,

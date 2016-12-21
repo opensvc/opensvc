@@ -56,16 +56,16 @@ class ProvisioningSrp(Provisioning):
 
     def cleanup(self):
         rs = self.r.svc.get_resources('fs')
-        rs.sort(lambda x, y: cmp(x.mountPoint, y.mountPoint), reverse=True)
+        rs.sort(lambda x, y: cmp(x.mount_point, y.mount_point), reverse=True)
         for r in rs:
-            if r.mountPoint == self.rootpath:
+            if r.mount_point == self.rootpath:
                 continue
-            if not r.mountPoint.startswith(self.rootpath):
+            if not r.mount_point.startswith(self.rootpath):
                 continue
             r.stop()
             self.need_start.append(r)
-            os.unlink(r.mountPoint)
-            p = r.mountPoint
+            os.unlink(r.mount_point)
+            p = r.mount_point
             while True:
                 p = os.path.realpath(os.path.join(p, '..'))
                 if p == self.rootpath:

@@ -68,8 +68,8 @@ class Docker(resContainer.Container, rcDocker.DockerLib):
         mntpts = []
         mntpt_res = {}
         for resource in self.svc.get_resources('fs'):
-            mntpts.append(resource.mountPoint)
-            mntpt_res[resource.mountPoint] = resource
+            mntpts.append(resource.mount_point)
+            mntpt_res[resource.mount_point] = resource
         for mntpt in sorted(mntpts, reverse=True):
             if mntpt.startswith(self.docker_data_dir):
                 return mntpt_res[mntpt]

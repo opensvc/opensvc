@@ -24,21 +24,21 @@ class Snap(snap.Snap):
         if fset not in d.fsets:
             raise ex.syncNotSnapable
         clonefset = fset +'@osvc_sync'
-        mountPoint = m.mountPoint
-        snapMountPoint = os.path.join(rcEnv.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mountPoint))
-        snapMountPoint = os.path.normpath(snapMountPoint)
-        if not os.path.exists(snapMountPoint):
+        mount_point = m.mount_point
+        snap_mount_point = os.path.join(rcEnv.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mount_point))
+        snap_mount_point = os.path.normpath(snap_mount_point)
+        if not os.path.exists(snap_mount_point):
             try:
-                os.makedirs(snapMountPoint)
-                self.log.info('create directory %s'%snapMountPoint)
+                os.makedirs(snap_mount_point)
+                self.log.info('create directory %s'%snap_mount_point)
             except:
-                self.log.error('failed to create directory %s'%snapMountPoint)
+                self.log.error('failed to create directory %s'%snap_mount_point)
                 raise ex.syncSnapCreateError
         clonedev = '#'.join((dom, clonefset))
-        if Mounts().has_mount(clonedev, snapMountPoint):
-            cmd = ['fuser', '-kcv', snapMountPoint]
+        if Mounts().has_mount(clonedev, snap_mount_point):
+            cmd = ['fuser', '-kcv', snap_mount_point]
             (ret, out, err) = self.vcall(cmd, err_to_info=True)
-            cmd = ['umount', snapMountPoint]
+            cmd = ['umount', snap_mount_point]
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
@@ -49,14 +49,14 @@ class Snap(snap.Snap):
         (ret, buff, err) = self.vcall(['clonefset', dom, fset, clonefset])
         if ret != 0:
             raise ex.syncSnapCreateError
-        (ret, buff, err) = self.vcall(['mount', '-t', 'advfs', clonedev, snapMountPoint])
+        (ret, buff, err) = self.vcall(['mount', '-t', 'advfs', clonedev, snap_mount_point])
         if ret != 0:
             raise ex.syncSnapCreateError
-        self.snaps[mountPoint]={'snap_mnt' : snapMountPoint, \
+        self.snaps[mount_point]={'snap_mnt' : snap_mount_point, \
                                 'snapdev' : clonedev }
 
     def snapdestroykey(self, snap_key):
-        """ destroy a snapshot for a mountPoint
+        """ destroy a snapshot for a mount_point
         """
         clonedev = self.snaps[snap_key]['snapdev']
         dom, clonefset = clonedev.split('#')

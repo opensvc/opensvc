@@ -38,7 +38,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
     def get_docker_data_dir_svc_fs(self):
         l = []
         for r in self.svc.get_resources("fs"):
-            l.append(r.mountPoint)
+            l.append(r.mount_point)
         l = sorted(l)
         v = self.docker_data_dir.split("/")
         while len(v) > 0:

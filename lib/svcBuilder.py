@@ -1557,11 +1557,11 @@ def add_fs(svc, conf, s):
     kwargs = {}
 
     try:
-        kwargs['fsType'] = conf_get_string_scope(svc, conf, s, 'type')
+        kwargs['fs_type'] = conf_get_string_scope(svc, conf, s, 'type')
     except ex.OptNotFound:
-        kwargs['fsType'] = ""
+        kwargs['fs_type'] = ""
 
-    if kwargs['fsType'] == "directory":
+    if kwargs['fs_type'] == "directory":
         add_fs_directory(svc, conf, s)
         return
 
@@ -1572,21 +1572,21 @@ def add_fs(svc, conf, s):
         return
 
     try:
-        kwargs['mountPoint'] = conf_get_string_scope(svc, conf, s, 'mnt')
+        kwargs['mount_point'] = conf_get_string_scope(svc, conf, s, 'mnt')
     except ex.OptNotFound:
         svc.log.error("mnt must be set in section %s"%s)
         return
 
-    if kwargs['mountPoint'][-1] != "/" and kwargs['mountPoint'][-1] == '/':
+    if kwargs['mount_point'][-1] != "/" and kwargs['mount_point'][-1] == '/':
         """ Remove trailing / to not risk losing rsync src trailing /
             upon snap mountpoint substitution.
         """
-        kwargs['mountPoint'] = kwargs['mountPoint'][0:-1]
+        kwargs['mount_point'] = kwargs['mount_point'][0:-1]
 
     try:
-        kwargs['mntOpt'] = conf_get_string_scope(svc, conf, s, 'mnt_opt')
+        kwargs['mount_options'] = conf_get_string_scope(svc, conf, s, 'mnt_opt')
     except ex.OptNotFound:
-        kwargs['mntOpt'] = ""
+        kwargs['mount_options'] = ""
 
     try:
         kwargs['snap_size'] = conf_get_int_scope(svc, conf, s, 'snap_size')
@@ -1610,9 +1610,9 @@ def add_fs(svc, conf, s):
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
             raise ex.excError()
-        kwargs['mountPoint'] = zp+'/root'+kwargs['mountPoint']
+        kwargs['mount_point'] = zp+'/root'+kwargs['mount_point']
         if "<%s>" % zone != zp:
-            kwargs['mountPoint'] = os.path.realpath(kwargs['mountPoint'])
+            kwargs['mount_point'] = os.path.realpath(kwargs['mount_point'])
 
     try:
         mount = __import__('resFs'+rcEnv.sysname)

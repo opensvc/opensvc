@@ -16,8 +16,8 @@ class Snap(snap.Snap):
         if not dataset_exists(dataset, 'filesystem'):
             raise ex.syncNotSnapable
         snapdev = dataset +'@osvc_sync'
-        mountPoint = m.mountPoint
-        snapMountPoint= mountPoint + '/.zfs/snapshot/osvc_sync/'
+        mount_point = m.mount_point
+        snap_mount_point= mount_point + '/.zfs/snapshot/osvc_sync/'
         if dataset_exists(snapdev, 'snapshot'):
             (ret, buff, err) = self.vcall(['zfs', 'destroy', snapdev ])
             if ret != 0:
@@ -25,11 +25,11 @@ class Snap(snap.Snap):
         (ret, buff, err) = self.vcall(['zfs', 'snapshot', snapdev ])
         if ret != 0:
             raise ex.syncSnapCreateError
-        self.snaps[mountPoint]={'snap_mnt' : snapMountPoint, \
+        self.snaps[mount_point]={'snap_mnt' : snap_mount_point, \
                                 'snapdev' : snapdev }
 
     def snapdestroykey(self, snap_key):
-        """ destroy a snapshot for a mountPoint
+        """ destroy a snapshot for a mount_point
         """
         snapdev = self.snaps[snap_key]['snapdev']
         if not dataset_exists(snapdev, 'snapshot'):

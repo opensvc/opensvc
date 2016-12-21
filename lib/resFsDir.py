@@ -35,7 +35,7 @@ class FsDir(Res.Resource):
                               restart=restart,
                               subset=subset)
         self.path = path
-        self.mountPoint = path # for fs ordering
+        self.mount_point = path # for fs ordering
         self.user = user
         self.group = group
         self.perm = perm
@@ -126,7 +126,7 @@ class FsDir(Res.Resource):
     def __cmp__(self, other):
         """order so that deepest mountpoint can be umount first
         """
-        return cmp(self.mountPoint, other.mountPoint)
+        return cmp(self.mount_point, other.mount_point)
 
     def provision(self):
         self.create()
