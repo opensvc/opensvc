@@ -214,7 +214,8 @@ class Rsync(resSync.Sync):
     def sync(self, target):
         if target not in self.target.keys():
             if not self.svc.options.cron:
-                self.log.info('%s => %s sync not applicable to %s'%(self.src, self.dst, target))
+                self.log.info('%s => %s sync not applicable to %s', 
+                              " ".join(self.src), self.dst, target)
             return 0
 
         targets = self.nodes_to_sync(target)
