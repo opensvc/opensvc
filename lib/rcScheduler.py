@@ -82,10 +82,10 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
         os._exit(1)
 
     self = args[0]
-    if self.name == "node":
+    if self.sched.name == "node":
         title = "node."+func.__name__.lstrip("_")
     else:
-        title = self.name+"."+func.__name__.lstrip("_")
+        title = self.sched.name+"."+func.__name__.lstrip("_")
 
     if serialize:
         lockfile = title+".fork.lock"
@@ -100,7 +100,7 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
             os._exit(0)
 
     # now wait for a random delay to not DoS the collector.
-    if delay > 0 and self.name == "node":
+    if delay > 0 and self.sched.name == "node":
         delay = int(random.random()*delay)
         self.sched.sched_log(title, "delay %d secs to level database load"%delay, "debug")
         try:
