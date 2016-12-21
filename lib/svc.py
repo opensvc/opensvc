@@ -373,6 +373,7 @@ class Svc(object):
         self.need_postsync = set()
 
         # set by the builder
+        self.conf = None
         self.node = None
         self.clustertype = "failover"
         self.show_disabled = False

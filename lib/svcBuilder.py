@@ -3377,6 +3377,8 @@ def add_apps_sysv(svc, conf):
 
 def get_pg_settings(svc, s):
     d = {}
+    if svc.conf is None or not os.path.exists(svc.conf):
+        return d
     if s != "DEFAULT":
         conf = rcConfigParser.RawConfigParser()
         import codecs
