@@ -319,7 +319,7 @@ parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 
 def _main(node, argv=None):
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(argv)
     rcColor.use_color = options.color
 
     if options.upddb:
