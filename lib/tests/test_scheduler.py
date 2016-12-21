@@ -1,6 +1,9 @@
 import rcScheduler
+import node
+node = node.Node()
+node.options.cron = True
 
-def test_scheduler():
+def test_schedules():
     tests = [
         ("", "2015-02-27 10:00", False),
         ("@0", "2015-02-27 10:00", False),
@@ -64,5 +67,11 @@ def test_scheduler():
     sched = rcScheduler.Scheduler()
     for test in tests:
         assert sched.test_schedule(*test)
+
+def test_fork():
+    def dummy(*args, **kwargs):
+        return 0
+    rcScheduler.fork(dummy, args=[node], kwargs={}, serialize=True, delay=0)
+    rcScheduler.fork(dummy, args=[node], kwargs={}, serialize=False, delay=0)
 
 
