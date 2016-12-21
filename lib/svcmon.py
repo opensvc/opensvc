@@ -152,9 +152,10 @@ def svcmon_cluster(node, options):
     svcnames = ",".join([r.svcname for r in node.svcs])
     try:
         data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)&limit=0"%svcnames)
-    except Exception as e:
-        print(e, file=sys.stderr)
-        return
+    except Exception as exc:
+        print("error fetching data from the collector rest api: %s" % str(exc), file=sys.stderr)
+        return 1
+
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return 1
@@ -348,9 +349,9 @@ def _main(node, argv=None):
             s.options.refresh = options.refresh
 
     if options.cluster:
-        svcmon_cluster(node, options)
+        ret = svcmon_cluster(node, options)
     else:
-        svcmon_normal(node.svcs, options)
+        ret = svcmon_normal(node.svcs, options)
 
     node.close()
 
@@ -364,7 +365,10 @@ def _main(node, argv=None):
             traceback.print_exc()
             return 1
 
-    return 0
+    if ret is None:
+        ret = 0
+
+    return ret
 
 def main(argv=None):
     if argv is None:
