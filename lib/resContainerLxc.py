@@ -78,7 +78,9 @@ class Lxc(resContainer.Container):
         self.find_cf()
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
         if action == 'start':
-            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf, '-f', self.cf]
+            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
+            if self.cf:
+                cmd += ['-f', self.cf]
         elif action == 'stop':
             cmd = ['lxc-stop', '-n', self.name, '-o', outf]
         else:
