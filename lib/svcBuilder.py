@@ -3462,8 +3462,6 @@ def build(name, minimal=False, svcconf=None):
     if svcconf is None:
         svcconf = os.path.join(rcEnv.pathetc, name) + '.conf'
     svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
-    logfile = os.path.join(rcEnv.pathlog, name) + '.log'
-    rcEnv.logfile = logfile
 
     #
     # node discovery is hidden in a separate module to
@@ -3551,7 +3549,6 @@ def build(name, minimal=False, svcconf=None):
     # Store useful properties
     #
     svc.svcmode = svcmode
-    svc.logfile = logfile
     svc.conf = svcconf
     svc.initd = svcinitd
     svc.config = conf

@@ -996,7 +996,8 @@ class Svc(object):
         """
         Extract and display the service logs, honoring --color and --debug
         """
-        if not os.path.exists(rcEnv.logfile):
+        logfile = self.log.handlers[0].stream.name
+        if not os.path.exists(logfile):
             return
 
         from rcColor import color, colorize
@@ -1040,7 +1041,7 @@ class Svc(object):
             return " ".join(elements)
 
         try:
-            with open(rcEnv.logfile, "r") as ofile:
+            with open(logfile, "r") as ofile:
                 for line in ofile.readlines():
                     buff = fmt(line)
                     if buff:

@@ -121,7 +121,6 @@ class Node(object):
             param=None,
             value=None,
         )
-        rcEnv.logfile = os.path.join(rcEnv.pathlog, "node.log")
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
 
@@ -2471,7 +2470,8 @@ class Node(object):
         logs node action entrypoint.
         Read the node.log file, colorize its content and print.
         """
-        if not os.path.exists(rcEnv.logfile):
+        logfile = self.log.handlers[0].stream.name
+        if not os.path.exists(logfile):
             return
         from rcColor import color, colorize
 
@@ -2512,7 +2512,7 @@ class Node(object):
             return " ".join(elements)
 
         try:
-            with open(rcEnv.logfile, "r") as ofile:
+            with open(logfile, "r") as ofile:
                 for line in ofile.readlines():
                     line = highlighter(line)
                     if line:

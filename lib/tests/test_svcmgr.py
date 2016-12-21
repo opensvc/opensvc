@@ -137,6 +137,10 @@ def test_thaw():
     ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
     assert ret == 0
 
+def test_logs():
+    ret = svcmgr.main(argv=["logs", "-s", "unittest"])
+    assert ret == 0
+
 def test_push():
     ret = svcmgr.main(argv=["push", "-s", "unittest"])
     assert ret == 0

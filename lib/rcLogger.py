@@ -98,13 +98,17 @@ def set_namelen(svcs):
     namefmt = "%-"+str(namelen)+"s"
 
 def initLogger(name, handlers=["file", "stream", "syslog"]):
+    if name == rcEnv.nodename:
+        logfile = os.path.join(rcEnv.pathlog, "node") + '.log'
+    else:
+        logfile = os.path.join(rcEnv.pathlog, name) + '.log'
     log = logging.getLogger(name)
     log.handlers = []
 
     if "file" in handlers:
         try:
             fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            filehandler = logging.handlers.RotatingFileHandler(rcEnv.logfile,
+            filehandler = logging.handlers.RotatingFileHandler(logfile,
                                                                maxBytes=5242880,
                                                                backupCount=5)
             filehandler.setFormatter(fileformatter)

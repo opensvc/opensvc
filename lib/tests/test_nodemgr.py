@@ -145,4 +145,8 @@ def test_nodemgr_pushdisks():
     ret = nodemgr.main(argv=["pushdisks"])
     assert ret == 0
 
+def test_nodemgr_logs():
+    ret = nodemgr.main(argv=["logs"])
+    assert ret == 0
+
 
