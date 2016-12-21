@@ -52,7 +52,7 @@ def max_len(svcs):
                 _len = l
     return _len
 
-def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
+def svcmon_normal1(svc, options, fmt=None, queue=None, lock=None):
     # don't schedule svcmon updates for encap services.
     # those are triggered by the master node
     status = svc.group_status()
@@ -138,7 +138,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
     if lock is not None:
         lock.release()
 
-    if upddb:
+    if options.upddb:
         o = svc.svcmon_push_lists(status)
         _size = len(str(o))
         if queue is None or _size > 30000:
@@ -148,7 +148,7 @@ def svcmon_normal1(svc,upddb=False, fmt=None, queue=None, lock=None):
         else:
             queue.put(svc.svcmon_push_lists(status))
 
-def svcmon_cluster(node):
+def svcmon_cluster(node, options):
     svcnames = ",".join([r.svcname for r in node.svcs])
     try:
         data = node.collector_rest_get("/services?props=svc_id,svcname,svc_app,svc_env,svc_cluster_type,svc_status,svc_availstatus,svc_status_updated&meta=0&orderby=svcname&filters=svcname (%s)&limit=0"%svcnames)
@@ -242,7 +242,7 @@ def svcmon_cluster_verbose_data(node, svc_ids):
         _data[d["svc_id"]].append(d)
     return _data
 
-def svcmon_normal(svcs, upddb=False):
+def svcmon_normal(svcs, options):
     svcname_len = max_len(svcs)
     fmt_svcname = '%-' + str(svcname_len) + 's'
     if options.verbose:
@@ -262,23 +262,23 @@ def svcmon_normal(svcs, upddb=False):
         lock = None
 
     for svc in svcs:
-        if svc.encap and upddb:
+        if svc.encap and options.upddb:
             continue
         if not mp:
-            svcmon_normal1(svc, upddb, fmt, None)
+            svcmon_normal1(svc, options, fmt, None)
             continue
         try:
             queues[svc.svcname] = Queue(maxsize=32000)
         except:
             # some platform don't support Queue's synchronize (bug 3770)
             queues[svc.svcname] = None
-        p = Process(target=svcmon_normal1, args=(svc, upddb, fmt, queues[svc.svcname], lock))
+        p = Process(target=svcmon_normal1, args=(svc, options, fmt, queues[svc.svcname], lock))
         p.start()
         ps.append(p)
     for p in ps:
         p.join()
 
-    if upddb and mp:
+    if options.upddb and mp:
         g_vals = []
         r_vals = []
         if options.delay > 0:
@@ -318,12 +318,10 @@ parser.add_option("-c", "--cluster", default=False, action="store_true", dest="c
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
 
-(options, args) = parser.parse_args()
-rcColor.use_color = options.color
+def _main(node, argv=None):
+    (options, args) = parser.parse_args()
+    rcColor.use_color = options.color
 
-node = node.Node()
-
-def main():
     if options.upddb:
         lockf = 'svcmon.lock'
         try:
@@ -350,9 +348,9 @@ def main():
             s.options.refresh = options.refresh
 
     if options.cluster:
-        svcmon_cluster(node)
+        svcmon_cluster(node, options)
     else:
-        svcmon_normal(node.svcs, options.upddb)
+        svcmon_normal(node.svcs, options)
 
     node.close()
 
@@ -368,11 +366,28 @@ def main():
 
     return 0
 
-if __name__ == "__main__":
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+
+    node_mod = ximport('node')
     try:
-        r = main()
+        node = node_mod.Node()
+    except Exception as exc:
+        print(exc, file=sys.stderr)
+        return 1
+
+    try:
+        return _main(node, argv)
     except ex.excError as e:
         print(e, file=sys.stderr)
-        r = 1
-    sys.exit(r)
+        return 1
+    finally:
+        node.close()
+
+    return 0
+
+if __name__ == "__main__":
+    ret = main()
+    sys.exit(ret)
 
