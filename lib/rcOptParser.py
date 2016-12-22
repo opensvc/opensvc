@@ -13,7 +13,7 @@ import sys
 import optparse
 from textwrap import TextWrapper
 import rcColor
-from rcUtilities import term_width
+from rcUtilities import term_width, is_string
 import rcExceptions as ex
 
 class OptParser(object):
@@ -58,7 +58,7 @@ class OptParser(object):
         """
         valid_actions = []
         for candidate_action in sorted(self.actions[section]):
-            if isinstance(action, str) and \
+            if is_string(action) and \
                not candidate_action.startswith(action):
                 continue
             if isinstance(action, list) and candidate_action not in action:
@@ -109,7 +109,7 @@ class OptParser(object):
         Format and return a svcmgr parser help message, contextualized to display
         only actions matching the action argument.
         """
-        desc = ""
+        desc = self.usage
         for section in sorted(self.actions):
             valid_actions = self.get_valid_actions(section, action)
             if len(valid_actions) == 0:
@@ -197,8 +197,7 @@ class OptParser(object):
         Setup for display of all actions and options.
         Used by the man page generator.
         """
-        usage = self.usage + self.format_desc(action=None,
-                                              options=True)
+        usage = self.format_desc(action=None, options=True)
         self.parser.set_usage(usage)
 
     def parse_args(self, argv=None):
@@ -218,8 +217,7 @@ class OptParser(object):
 
         # now we know the action. and we know if --help was set.
         # we can prepare a contextualized usage message.
-        usage = self.usage + self.format_desc(action=action,
-                                              options=options.parm_help)
+        usage = self.format_desc(action=action, options=options.parm_help)
         self.parser.set_usage(usage)
 
         if options.parm_help or action not in self.supported_actions():
@@ -251,8 +249,7 @@ class OptParser(object):
         Reset the parser usage to the full actions list and their options.
         Then trigger a parser error, which displays the help message.
         """
-        usage = self.usage + \
-                self.format_desc()
+        usage = self.format_desc()
         self.parser.set_usage(usage)
         if self.args is None:
             self.parser.error("Missing action")
@@ -264,8 +261,7 @@ class OptParser(object):
         help message.
         """
         highlight_actions = ["start", "stop", "print_status"]
-        usage = self.usage + \
-                self.format_desc(action=highlight_actions, options=False) + \
+        usage = self.format_desc(action=highlight_actions, options=False) + \
                 "\n\nOptions:\n" + \
                 "  -h, --help       Display more actions and options\n"
         self.parser.set_usage(usage)
