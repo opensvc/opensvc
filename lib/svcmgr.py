@@ -38,18 +38,18 @@ def get_docker_argv(argv=None):
     if necessary.
     """
     if argv is None:
-        argv = sys.argv
+        argv = sys.argv[1:]
     if len(argv) < 2:
-        return
+        return argv, []
     if "docker" not in argv:
-        return
+        return argv, []
     pos = argv.index('docker')
     if len(argv) > pos + 1:
         docker_argv = argv[pos+1:]
     else:
         docker_argv = []
     argv = argv[:pos+1]
-    return docker_argv
+    return argv, docker_argv
 
 def get_minimal(action, options):
     """
@@ -109,7 +109,7 @@ def get_build_kwargs(optparser, options, action):
 
     return build_kwargs
 
-def set_svcs_options(node, options, docker_argv):
+def set_svcs_options(node, options):
     """
     Relay some properties extracted from the command line as Svc object
     properties.
@@ -122,7 +122,6 @@ def set_svcs_options(node, options, docker_argv):
     for svc in node.svcs:
         svc.options.update(options.__dict__)
         svc.options.slave = slave
-        svc.options.docker_argv = docker_argv
 
 def do_svcs_action_detached(argv=None):
     """
@@ -264,9 +263,10 @@ def _main(node, argv=None):
     svcnames = []
     ret = 0
 
-    docker_argv = get_docker_argv(argv)
+    argv, docker_argv = get_docker_argv(argv)
     optparser = SvcmgrOptParser()
     options, action = optparser.parse_args(argv)
+    options.docker_argv = docker_argv
     rcColor.use_color = options.color
     try:
         node.options.format = options.format
@@ -315,7 +315,7 @@ def _main(node, argv=None):
     node.options.waitlock = options.parm_waitlock
 
     node.set_rlimit()
-    set_svcs_options(node, options, docker_argv)
+    set_svcs_options(node, options)
     ret = do_svcs_action(node, options, action, argv=argv)
 
     try:
